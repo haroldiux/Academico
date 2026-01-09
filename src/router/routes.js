@@ -99,6 +99,13 @@ const routes = [
             meta: { title: 'Documentar Tema' }
           }
         ]
+      },
+      // Preguntas (Banco de preguntas por logro)
+      {
+        path: 'preguntas/:asignaturaId/:temaId/:logroId',
+        name: 'preguntas',
+        component: () => import('pages/preguntas/PreguntasPage.vue'),
+        meta: { title: 'Banco de Preguntas' }
       }
     ],
   },

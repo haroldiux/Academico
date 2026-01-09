@@ -134,6 +134,17 @@
                         <div class="col">
                           <q-input v-model="logro.descripcion" dense borderless class="text-body1 text-weight-medium" placeholder="Descripción del logro..." />
                         </div>
+                        <q-btn 
+                          flat 
+                          round 
+                          dense 
+                          icon="quiz" 
+                          color="purple" 
+                          size="sm" 
+                          @click="irBancoPreguntas(logro)"
+                        >
+                          <q-tooltip>Banco de Preguntas</q-tooltip>
+                        </q-btn>
                         <q-btn flat round dense icon="delete" color="red" size="sm" @click="eliminarLogro(logro)" />
                       </div>
                     </q-card-section>
@@ -573,11 +584,12 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 
 const route = useRoute()
+const router = useRouter()
 const $q = useQuasar()
 const store = useAsignaturasStore()
 
@@ -873,6 +885,12 @@ function agregarLogro() {
 function eliminarLogro(logro) {
   formTema.value.logros_esperados = formTema.value.logros_esperados.filter(l => l.id !== logro.id)
   formTema.value.logros_esperados.forEach((l, i) => { l.codigo = `LE.${i + 1}` })
+}
+
+function irBancoPreguntas(logro) {
+  const aId = asignatura.value?.id
+  const tId = tema.value?.id
+  router.push(`/preguntas/${aId}/${tId}/${logro.id}`)
 }
 
 function abrirDialogIndicador(logro) {
