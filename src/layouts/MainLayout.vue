@@ -25,6 +25,9 @@
           </div>
         </div>
 
+        <!-- Rol Switcher (Dev) -->
+        <RolSwitcher class="q-mr-md" />
+
         <!-- Connected Badge -->
         <div class="connected-badge">
           <span class="connected-dot"></span>
@@ -39,14 +42,14 @@
 
         <!-- User Avatar -->
         <q-btn flat round dense class="user-btn">
-          <div class="user-avatar">CM</div>
+          <div class="user-avatar">{{ authStore.avatar }}</div>
           <q-menu anchor="bottom right" self="top right" class="user-menu">
             <div class="user-menu-content">
               <div class="user-menu-header">
-                <div class="user-avatar-lg">CM</div>
+                <div class="user-avatar-lg">{{ authStore.avatar }}</div>
                 <div>
-                  <p class="user-name">Carlos Mendoza</p>
-                  <p class="user-role">Admin</p>
+                  <p class="user-name">{{ authStore.nombreCompleto }}</p>
+                  <p class="user-role">{{ rolLabel }}</p>
                 </div>
               </div>
               <q-separator class="menu-separator" />
@@ -59,7 +62,7 @@
                 <q-item-section>Configuración</q-item-section>
               </q-item>
               <q-separator class="menu-separator" />
-              <q-item clickable v-ripple class="menu-item logout">
+              <q-item clickable v-ripple class="menu-item logout" @click="handleLogout">
                 <q-item-section avatar><q-icon name="logout" size="18px" /></q-item-section>
                 <q-item-section>Cerrar Sesión</q-item-section>
               </q-item>
@@ -74,66 +77,54 @@
       <div class="sidebar-content">
         <!-- User Card -->
         <div class="sidebar-user-card">
-          <div class="sidebar-user-avatar">U</div>
+          <div class="sidebar-user-avatar">{{ authStore.avatar }}</div>
           <div class="sidebar-user-info">
-            <p class="sidebar-user-name">Usuario Admin</p>
-            <p class="sidebar-user-role">Admin</p>
+            <p class="sidebar-user-name">{{ authStore.nombreCompleto }}</p>
+            <p class="sidebar-user-role">{{ rolLabel }}</p>
           </div>
           <q-btn flat round dense icon="expand_more" size="sm" class="expand-btn" />
         </div>
 
-        <!-- Navigation -->
+        <!-- Navigation Dinámico -->
         <q-scroll-area class="sidebar-nav-area">
           <nav class="sidebar-nav">
-            <router-link to="/" custom v-slot="{ isActive, navigate }">
+            <router-link 
+              v-for="item in menuItems" 
+              :key="item.to" 
+              :to="item.to" 
+              custom 
+              v-slot="{ isActive, navigate }"
+            >
               <div @click="navigate" :class="['nav-item', { 'active': isActive }]">
-                <q-icon name="dashboard" size="20px" />
-                <span>Dashboard</span>
+                <q-icon :name="item.icon" size="20px" />
+                <span>{{ item.label }}</span>
+                <q-chip v-if="item.badge" size="xs" color="red" text-color="white" class="q-ml-auto">
+                  {{ item.badge }}
+                </q-chip>
               </div>
             </router-link>
 
-            <router-link to="/admin/usuarios" custom v-slot="{ isActive, navigate }">
-              <div @click="navigate" :class="['nav-item', { 'active': isActive }]">
-                <q-icon name="people" size="20px" />
-                <span>Usuarios</span>
-              </div>
-            </router-link>
-
-            <router-link to="/admin/roles" custom v-slot="{ isActive, navigate }">
-              <div @click="navigate" :class="['nav-item', { 'active': isActive }]">
-                <q-icon name="admin_panel_settings" size="20px" />
-                <span>Roles</span>
-              </div>
-            </router-link>
-
-            <router-link to="/documentacion" custom v-slot="{ isActive, navigate }">
-              <div @click="navigate" :class="['nav-item', { 'active': isActive }]">
-                <q-icon name="description" size="20px" />
-                <span>Documentación</span>
-              </div>
-            </router-link>
-
-            <div class="nav-item disabled">
-              <q-icon name="assessment" size="20px" />
-              <span>Reportes</span>
-              <span class="nav-badge">Próx.</span>
-            </div>
-
-            <div class="nav-item disabled">
-              <q-icon name="settings" size="20px" />
-              <span>Configuración</span>
-              <span class="nav-badge">Próx.</span>
+            <!-- Items deshabilitados -->
+            <div v-if="!authStore.isAuthenticated" class="nav-item disabled">
+              <q-icon name="login" size="20px" />
+              <span>Iniciar sesión para ver opciones</span>
             </div>
           </nav>
         </q-scroll-area>
 
+        <!-- Sede/Carrera Info -->
+        <div v-if="sedeActual" class="sidebar-context">
+          <q-icon name="location_on" size="16px" />
+          <span>{{ sedeActual?.nombre }}</span>
+        </div>
+
         <!-- Footer -->
         <div class="sidebar-footer">
-          <div class="nav-item">
+          <div class="nav-item" @click="$router.push('/ayuda')">
             <q-icon name="help_outline" size="20px" />
             <span>Ayuda</span>
           </div>
-          <div class="nav-item logout">
+          <div class="nav-item logout" @click="handleLogout">
             <q-icon name="logout" size="20px" />
             <span>Cerrar Sesión</span>
           </div>
@@ -149,15 +140,53 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useThemeStore } from 'src/stores/theme'
+import { useAuthStore, ROLES } from 'src/stores/auth'
+import { usePermisos } from 'src/composables/usePermisos'
+import RolSwitcher from 'src/components/RolSwitcher.vue'
 
+const router = useRouter()
 const themeStore = useThemeStore()
+const authStore = useAuthStore()
+const { getMenuItems, sedeActual } = usePermisos()
+
 const leftDrawerOpen = ref(true)
 const searchQuery = ref('')
 
+// Verificar autenticación al montar
+onMounted(() => {
+  authStore.checkAuth()
+  // Si no hay usuario, loguear como Admin por defecto (desarrollo)
+  if (!authStore.isAuthenticated) {
+    authStore.loginAs(ROLES.ADMIN)
+  }
+})
+
+const rolLabel = computed(() => {
+  const labels = {
+    [ROLES.SUPER_ADMIN]: 'Super Administrador',
+    [ROLES.ADMIN]: 'Administrador',
+    [ROLES.VICERRECTOR_NACIONAL]: 'Vicerrector Nacional',
+    [ROLES.VICERRECTOR_SEDE]: 'Vicerrector Sede',
+    [ROLES.DIRECCION_ACADEMICA]: 'Dirección Académica',
+    [ROLES.DIRECTOR_CARRERA]: 'Director de Carrera',
+    [ROLES.DOCENTE]: 'Docente',
+    [ROLES.EVALUACIONES]: 'Evaluaciones'
+  }
+  return labels[authStore.rol] || 'Usuario'
+})
+
+const menuItems = computed(() => getMenuItems())
+
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
+}
+
+function handleLogout() {
+  authStore.logout()
+  router.push('/')
 }
 </script>
 
@@ -239,6 +268,55 @@ function toggleLeftDrawer() {
   border-radius: 4px;
   font-size: 10px;
   color: var(--text-secondary);
+}
+
+/* Connected Badge - usando variables */
+.connected-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 20px;
+  color: var(--accent-green);
+  font-size: 0.875rem;
+  margin-right: 12px;
+}
+
+.connected-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Theme Toggle */
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 12px;
+}
+
+.theme-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--primary);
 }
 
 /* User */
@@ -435,6 +513,18 @@ function toggleLeftDrawer() {
   border-radius: 4px;
   font-size: 10px;
   color: var(--text-secondary);
+}
+
+.sidebar-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin: 0 8px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
 }
 
 .sidebar-footer {
