@@ -944,12 +944,12 @@ function getMomentoColor(m) {
 
 <style scoped>
 .q-page {
-  background: #0a0a0b;
+  background: var(--bg-primary);
   min-height: 100vh;
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #7C3AED, #A78BFA);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -957,22 +957,22 @@ function getMomentoColor(m) {
 
 /* Cards */
 .card-main {
-  background: rgba(17, 17, 19, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 16px !important;
 }
 
 /* Tabs */
 .card-main :deep(.q-tabs) {
-  background: rgba(39, 39, 42, 0.3);
+  background: var(--bg-tertiary);
 }
 
 .card-main :deep(.q-tab) {
-  color: #a1a1aa;
+  color: var(--text-secondary);
 }
 
 .card-main :deep(.q-tab--active) {
-  color: #A78BFA;
+  color: var(--primary-light);
 }
 
 /* Tab Panels */
@@ -982,47 +982,111 @@ function getMomentoColor(m) {
 
 /* Form inputs */
 .card-main :deep(.q-field__control) {
-  background: rgba(39, 39, 42, 0.5);
+  background: var(--bg-tertiary);
 }
 
 .card-main :deep(.q-field__native),
 .card-main :deep(.q-field__input) {
-  color: white !important;
+  color: var(--text-primary) !important;
 }
 
-/* Logro and Momento Cards */
+/* Override Quasar color backgrounds */
+.card-main :deep(.bg-green-1),
+.card-main :deep(.bg-blue-1),
+.card-main :deep(.bg-grey-1),
+.card-main :deep(.bg-amber-1),
+.card-main :deep(.bg-purple-1),
+.card-main :deep(.bg-orange-1),
+.card-main :deep(.bg-red-1),
+.card-main :deep(.bg-teal-1) {
+  background: var(--bg-tertiary) !important;
+}
+
+/* Logro Cards */
 .logro-card {
-  background: rgba(39, 39, 42, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
   transition: all 0.3s ease;
 }
 
 .logro-card:hover {
-  border-color: rgba(124, 58, 237, 0.3) !important;
-  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.15);
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 20px var(--shadow-color);
 }
 
+.logro-card :deep(.bg-green-1) {
+  background: rgba(34, 197, 94, 0.15) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logro-card :deep(.q-item) {
+  background: transparent !important;
+}
+
+/* Content Cards (Conceptual, Procedimental, Actitudinal) */
+.card-main :deep(.q-card.flat.bordered) {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.card-main :deep(.q-card .q-card-section.bg-blue-1) {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-main :deep(.q-card .q-card-section.bg-amber-1),
+.card-main :deep(.q-card .q-card-section.bg-orange-1) {
+  background: rgba(249, 115, 22, 0.15) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-main :deep(.q-card .q-card-section.bg-purple-1) {
+  background: rgba(124, 58, 237, 0.15) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-main :deep(.q-card .q-card-section.bg-pink-1),
+.card-main :deep(.q-card .q-card-section.bg-red-1) {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* List items */
+.card-main :deep(.q-list) {
+  background: transparent !important;
+}
+
+.card-main :deep(.q-item) {
+  background: transparent !important;
+  color: var(--text-primary);
+}
+
+.card-main :deep(.q-item__label) {
+  color: var(--text-primary);
+}
+
+/* Momento card */
 .momento-card {
-  background: rgba(39, 39, 42, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
   transition: all 0.3s ease;
 }
 
 .momento-card:hover {
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 20px var(--shadow-color);
 }
 
 /* Section Cards */
 .section-card {
-  background: rgba(39, 39, 42, 0.3) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px !important;
 }
 
 /* Dialog */
 .dialog-header {
-  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   padding: 20px 24px;
   margin: -16px -16px 0 -16px;
   border-radius: 16px 16px 0 0;
@@ -1042,16 +1106,31 @@ function getMomentoColor(m) {
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border-color);
 }
 
-/* Progress bars in header */
+/* Progress bars */
 :deep(.q-linear-progress) {
-  background: rgba(39, 39, 42, 0.5) !important;
+  background: var(--bg-hover) !important;
 }
 
-/* Chips */
-:deep(.q-chip) {
-  background: rgba(39, 39, 42, 0.8);
+/* Separators */
+:deep(.q-separator) {
+  background: var(--border-color) !important;
+}
+
+/* Empty state boxes */
+.card-main :deep(.rounded-borders.bg-grey-1) {
+  background: var(--bg-tertiary) !important;
+  border: 1px dashed var(--border-color);
+}
+
+/* Text colors */
+.card-main :deep(.text-grey-6) {
+  color: var(--text-muted) !important;
+}
+
+.card-main :deep(.text-blue-grey-7) {
+  color: var(--text-secondary) !important;
 }
 </style>

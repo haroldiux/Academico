@@ -209,12 +209,12 @@
             </q-chip>
           </div>
 
-          <q-list separator class="rounded-borders">
+          <q-list separator class="unidades-list">
             <q-expansion-item
               v-for="unidad in asignatura?.unidades"
               :key="unidad.id"
               group="unidades"
-              header-class="bg-grey-1"
+              class="unidad-item"
             >
               <template v-slot:header>
                 <q-item-section avatar>
@@ -241,7 +241,7 @@
               </template>
 
               <!-- Elemento de Competencia -->
-              <q-card flat class="q-mx-lg q-my-md" style="background: #e3f2fd;">
+              <q-card flat class="q-mx-lg q-my-md competencia-card">
                 <q-card-section>
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
@@ -266,8 +266,7 @@
                   :key="tema.id"
                   clickable
                   @click="irATema(unidad, tema)"
-                  class="rounded-borders q-mb-xs"
-                  style="background: #fafafa;"
+                  class="rounded-borders q-mb-xs tema-item"
                 >
                   <q-item-section avatar>
                     <q-avatar color="orange-2" text-color="orange-9" size="36px">
@@ -466,12 +465,12 @@ function eliminarBibliografia(biblio) {
 
 <style scoped>
 .q-page {
-  background: #0a0a0b;
+  background: var(--bg-primary);
   min-height: 100vh;
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #7C3AED, #A78BFA);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -479,22 +478,22 @@ function eliminarBibliografia(biblio) {
 
 /* Cards */
 .card-main {
-  background: rgba(17, 17, 19, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 16px !important;
 }
 
 /* Tabs */
 .card-main :deep(.q-tabs) {
-  background: rgba(39, 39, 42, 0.3);
+  background: var(--bg-tertiary);
 }
 
 .card-main :deep(.q-tab) {
-  color: #a1a1aa;
+  color: var(--text-secondary);
 }
 
 .card-main :deep(.q-tab--active) {
-  color: #A78BFA;
+  color: var(--primary-light);
 }
 
 /* Tab Panels */
@@ -504,49 +503,85 @@ function eliminarBibliografia(biblio) {
 
 /* Form inputs */
 .card-main :deep(.q-field__control) {
-  background: rgba(39, 39, 42, 0.5);
+  background: var(--bg-tertiary);
 }
 
 .card-main :deep(.q-field__native),
 .card-main :deep(.q-field__input) {
-  color: white !important;
+  color: var(--text-primary) !important;
 }
 
 /* Expansion items */
 .card-main :deep(.q-expansion-item) {
-  background: rgba(39, 39, 42, 0.3);
+  background: var(--bg-tertiary) !important;
   border-radius: 12px;
   margin-bottom: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color) !important;
 }
 
 .card-main :deep(.q-expansion-item__container) {
-  background: transparent;
+  background: transparent !important;
+}
+
+.card-main :deep(.q-expansion-item .q-item) {
+  background: transparent !important;
+  color: var(--text-primary);
+}
+
+/* List items */
+.card-main :deep(.q-list) {
+  background: transparent !important;
 }
 
 .card-main :deep(.q-item) {
-  color: white;
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary);
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.card-main :deep(.q-item:hover) {
+  background: var(--bg-hover) !important;
+}
+
+.card-main :deep(.q-item__label) {
+  color: var(--text-primary);
 }
 
 .card-main :deep(.q-item__label--caption) {
-  color: #71717a;
+  color: var(--text-muted);
 }
 
 /* Element competency card */
-.card-main :deep(.q-card[style*="e3f2fd"]) {
-  background: rgba(124, 58, 237, 0.1) !important;
-  border: 1px solid rgba(124, 58, 237, 0.2);
+.card-main :deep(.q-card) {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
 }
 
-/* Theme items */
-.card-main :deep(.q-item[style*="fafafa"]) {
-  background: rgba(39, 39, 42, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+/* Linear progress */
+.card-main :deep(.q-linear-progress) {
+  background: var(--bg-hover) !important;
+}
+
+/* Separator */
+.card-main :deep(.q-separator) {
+  background: var(--border-color) !important;
+}
+
+/* Avatar */
+.card-main :deep(.q-avatar) {
+  font-weight: 600;
+}
+
+/* Bibliografía cards */
+.card-main :deep(.q-card.flat.bordered) {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
 }
 
 /* Dialog */
 .dialog-header {
-  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   padding: 20px 24px;
   margin: -16px -16px 0 -16px;
   border-radius: 16px 16px 0 0;
@@ -566,7 +601,7 @@ function eliminarBibliografia(biblio) {
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border-color);
 }
 
 /* Animations */
@@ -577,5 +612,50 @@ function eliminarBibliografia(biblio) {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Unidades List */
+.unidades-list {
+  background: transparent !important;
+}
+
+.unidad-item {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  margin-bottom: 12px !important;
+}
+
+.unidad-item :deep(.q-expansion-item__toggle-icon) {
+  color: var(--text-secondary);
+}
+
+.unidad-item :deep(.q-item) {
+  background: transparent !important;
+}
+
+.unidad-item :deep(.q-item__label) {
+  color: var(--text-primary);
+}
+
+.unidad-item :deep(.q-item__label--caption) {
+  color: var(--text-muted);
+}
+
+/* Competencia Card */
+.competencia-card {
+  background: rgba(124, 58, 237, 0.1) !important;
+  border: 1px solid rgba(124, 58, 237, 0.2) !important;
+}
+
+/* Tema Item */
+.tema-item {
+  background: var(--bg-hover) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.tema-item:hover {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--primary) !important;
 }
 </style>

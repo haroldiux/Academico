@@ -1,11 +1,9 @@
 // https://github.com/michael-ciniawsky/postcss-load-config
 
 import autoprefixer from 'autoprefixer'
-import tailwindcss from 'tailwindcss'
 
 export default {
   plugins: [
-    tailwindcss(),
     autoprefixer({
       overrideBrowserslist: [
         'last 4 Chrome versions',

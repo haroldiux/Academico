@@ -227,7 +227,7 @@ const asignaturasRecientes = computed(() => {
   return asignaturasStore.asignaturas.slice(0, 4).map((a, i) => ({
     ...a,
     color: colors[i % colors.length],
-    progreso: Math.round(Math.random() * 40 + 60) // Simulado
+    progreso: Math.round(Math.random() * 40 + 60)
   }))
 })
 
@@ -241,7 +241,7 @@ const evaluacionesProgramadas = computed(() => 8)
 <style scoped>
 .dashboard-page {
   padding: 24px;
-  background: #0a0a0b;
+  background: var(--bg-primary);
   min-height: 100vh;
 }
 
@@ -253,26 +253,26 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .greeting {
-  color: #71717a;
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin: 0 0 4px 0;
 }
 
 .page-title {
-  color: white;
+  color: var(--text-primary);
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 4px 0;
 }
 
 .welcome-text {
-  color: #a1a1aa;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   margin: 0;
 }
 
 .highlight {
-  color: #7C3AED;
+  color: var(--primary);
 }
 
 .header-right {
@@ -282,11 +282,11 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .notification-btn {
-  color: #a1a1aa;
+  color: var(--text-secondary);
 }
 
 .primary-btn {
-  background: linear-gradient(135deg, #7C3AED, #6D28D9) !important;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
   color: white !important;
   padding: 10px 20px;
   border-radius: 10px;
@@ -311,15 +311,15 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .stat-card {
-  background: rgba(17, 17, 19, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 20px;
   transition: all 0.2s ease;
 }
 
 .stat-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--primary);
   transform: translateY(-2px);
 }
 
@@ -333,13 +333,13 @@ const evaluacionesProgramadas = computed(() => 8)
   margin-bottom: 16px;
 }
 
-.stat-icon.purple { background: rgba(124, 58, 237, 0.2); color: #A78BFA; }
-.stat-icon.green { background: rgba(16, 185, 129, 0.2); color: #34D399; }
-.stat-icon.orange { background: rgba(249, 115, 22, 0.2); color: #FB923C; }
-.stat-icon.blue { background: rgba(59, 130, 246, 0.2); color: #60A5FA; }
+.stat-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
+.stat-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+.stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
+.stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
 
 .stat-label {
-  color: #71717a;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   margin: 0 0 8px 0;
 }
@@ -351,7 +351,7 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .stat-value {
-  color: white;
+  color: var(--text-primary);
   font-size: 2rem;
   font-weight: 700;
   line-height: 1;
@@ -362,9 +362,9 @@ const evaluacionesProgramadas = computed(() => 8)
   font-weight: 500;
 }
 
-.stat-trend.positive { color: #34D399; }
-.stat-trend.negative { color: #F87171; }
-.stat-trend.neutral { color: #a1a1aa; }
+.stat-trend.positive { color: var(--accent-green); }
+.stat-trend.negative { color: var(--accent-red); }
+.stat-trend.neutral { color: var(--text-secondary); }
 
 /* Content Grid */
 .content-grid {
@@ -379,8 +379,8 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .main-card, .side-card {
-  background: rgba(17, 17, 19, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 24px;
 }
@@ -393,25 +393,25 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .card-title {
-  color: white;
+  color: var(--text-primary);
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0 0 4px 0;
 }
 
 .card-subtitle {
-  color: #71717a;
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin: 0;
 }
 
 .view-all-btn {
-  color: #7C3AED !important;
+  color: var(--primary) !important;
   font-size: 0.875rem;
 }
 
 .calendar-btn {
-  color: #71717a;
+  color: var(--text-muted);
 }
 
 /* Items List */
@@ -426,16 +426,16 @@ const evaluacionesProgramadas = computed(() => 8)
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: rgba(39, 39, 42, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .list-item:hover {
-  background: rgba(39, 39, 42, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--bg-hover);
+  border-color: var(--primary);
 }
 
 .item-icon {
@@ -452,14 +452,14 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .item-title {
-  color: white;
+  color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 500;
   margin: 0 0 2px 0;
 }
 
 .item-subtitle {
-  color: #71717a;
+  color: var(--text-muted);
   font-size: 0.75rem;
   margin: 0;
 }
@@ -471,14 +471,14 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .progress-text {
-  color: white;
+  color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 600;
   min-width: 40px;
 }
 
 .item-arrow {
-  color: #52525b;
+  color: var(--text-muted);
 }
 
 /* Side Card */
@@ -494,14 +494,14 @@ const evaluacionesProgramadas = computed(() => 8)
 
 .progress-value {
   display: block;
-  color: white;
+  color: var(--text-primary);
   font-size: 2rem;
   font-weight: 700;
 }
 
 .progress-label {
   display: block;
-  color: #71717a;
+  color: var(--text-muted);
   font-size: 0.75rem;
   margin-top: 4px;
 }
@@ -514,7 +514,7 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .mini-stat {
-  background: rgba(39, 39, 42, 0.5);
+  background: var(--bg-tertiary);
   border-radius: 12px;
   padding: 16px;
   text-align: center;
@@ -526,13 +526,13 @@ const evaluacionesProgramadas = computed(() => 8)
   margin: 0;
 }
 
-.mini-stat-value.green { color: #34D399; }
-.mini-stat-value.orange { color: #F97316; }
-.mini-stat-value.purple { color: #A78BFA; }
-.mini-stat-value.blue { color: #60A5FA; }
+.mini-stat-value.green { color: var(--accent-green); }
+.mini-stat-value.orange { color: var(--accent-orange); }
+.mini-stat-value.purple { color: var(--primary-light); }
+.mini-stat-value.blue { color: var(--accent-blue); }
 
 .mini-stat-label {
-  color: #71717a;
+  color: var(--text-muted);
   font-size: 0.75rem;
   margin: 4px 0 0 0;
 }
@@ -543,7 +543,7 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .section-title {
-  color: white;
+  color: var(--text-primary);
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0 0 16px 0;
@@ -568,8 +568,8 @@ const evaluacionesProgramadas = computed(() => 8)
   flex-direction: column;
   align-items: center;
   padding: 24px 16px;
-  background: rgba(17, 17, 19, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   cursor: pointer;
   text-decoration: none;
@@ -578,7 +578,7 @@ const evaluacionesProgramadas = computed(() => 8)
 }
 
 .quick-access-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--primary);
   transform: translateY(-2px);
 }
 
@@ -597,15 +597,15 @@ const evaluacionesProgramadas = computed(() => 8)
   margin-bottom: 12px;
 }
 
-.quick-icon.purple { background: rgba(124, 58, 237, 0.2); color: #A78BFA; }
-.quick-icon.green { background: rgba(16, 185, 129, 0.2); color: #34D399; }
-.quick-icon.orange { background: rgba(249, 115, 22, 0.2); color: #FB923C; }
-.quick-icon.blue { background: rgba(59, 130, 246, 0.2); color: #60A5FA; }
-.quick-icon.red { background: rgba(239, 68, 68, 0.2); color: #F87171; }
-.quick-icon.cyan { background: rgba(20, 184, 166, 0.2); color: #2DD4BF; }
+.quick-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
+.quick-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+.quick-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
+.quick-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.quick-icon.red { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+.quick-icon.cyan { background: rgba(20, 184, 166, 0.15); color: var(--secondary); }
 
 .quick-label {
-  color: #d4d4d8;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -615,9 +615,9 @@ const evaluacionesProgramadas = computed(() => 8)
   top: 8px;
   right: 8px;
   padding: 2px 6px;
-  background: #3f3f46;
+  background: var(--bg-hover);
   border-radius: 4px;
   font-size: 10px;
-  color: #a1a1aa;
+  color: var(--text-secondary);
 }
 </style>
