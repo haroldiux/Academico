@@ -73,6 +73,24 @@ const routes = [
             name: 'carreras',
             component: () => import('pages/admin/CarrerasPage.vue'),
             meta: { title: 'Gestión de Carreras' }
+          },
+          {
+            path: 'asignaturas',
+            name: 'asignaturas',
+            component: () => import('pages/admin/AsignaturasPage.vue'),
+            meta: { title: 'Gestión de Asignaturas' }
+          },
+          {
+            path: 'grupos',
+            name: 'grupos',
+            component: () => import('pages/admin/GruposPage.vue'),
+            meta: { title: 'Gestión de Grupos' }
+          },
+          {
+            path: 'docentes',
+            name: 'docentes',
+            component: () => import('pages/admin/DocentesPage.vue'),
+            meta: { title: 'Gestión de Docentes' }
           }
         ]
       },

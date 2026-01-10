@@ -223,7 +223,10 @@ export function usePermisos() {
         { label: 'Roles', icon: 'admin_panel_settings', to: '/admin/roles' },
         { label: 'Sedes', icon: 'location_city', to: '/admin/sedes' },
         { label: 'Carreras', icon: 'school', to: '/admin/carreras' },
-        { label: 'Asignaturas', icon: 'menu_book', to: '/documentacion' },
+        { label: 'Asignaturas', icon: 'menu_book', to: '/admin/asignaturas' },
+        { label: 'Grupos', icon: 'groups', to: '/admin/grupos' },
+        { label: 'Docentes', icon: 'person', to: '/admin/docentes' },
+        { label: 'Documentación', icon: 'description', to: '/documentacion' },
         { label: 'Estadísticas', icon: 'analytics', to: '/admin/estadisticas' },
         { label: 'Configuración', icon: 'settings', to: '/admin/configuracion' }
       ]
