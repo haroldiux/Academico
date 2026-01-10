@@ -19,6 +19,14 @@
       <div class="col-auto row q-gutter-sm">
         <q-btn
           outline
+          color="indigo"
+          icon="calendar_month"
+          label="Planificación Semestral"
+          no-caps
+          :to="`/documentacion/${route.params.id}/planificacion`"
+        />
+        <q-btn
+          outline
           color="green"
           icon="picture_as_pdf"
           label="Generar PDF"

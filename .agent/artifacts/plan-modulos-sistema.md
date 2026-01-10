@@ -1,102 +1,73 @@
 # Plan de Implementación - Sistema Académico UNITEPC
 
-## Estado Actual del Sistema
+## Estado Actual del Sistema (Actualizado: 10/01/2026)
 
 ### ✅ Módulos Implementados:
 1. **Autenticación y Roles** - auth.js, RolSwitcher
 2. **Dashboards por Rol** - 6 dashboards (Docente, Director Carrera, Dir. Académica, Vicerrector Sede, Vicerrector Nacional, Admin)
 3. **Documentación Académica** - Asignaturas, Unidades, Temas
 4. **Banco de Preguntas** - Importación Excel, CRUD preguntas
-5. **Gestión de Sedes** - SedesPage.vue
-6. **Gestión de Carreras** - CarrerasPage.vue
-7. **Gestión de Usuarios** - UsuariosPage.vue (pendiente verificar)
-8. **Gestión de Roles** - RolesPage.vue (pendiente verificar)
+5. **Gestión de Sedes** - SedesPage.vue ✅
+6. **Gestión de Carreras** - CarrerasPage.vue ✅
+7. **Gestión de Usuarios** - UsuariosPage.vue ✅
+8. **Gestión de Roles** - RolesPage.vue ✅
+9. **Gestión de Asignaturas** - AsignaturasPage.vue ✅
+10. **Gestión de Grupos** - GruposPage.vue ✅ (reestructurado por materia)
+11. **Gestión de Docentes** - DocentesPage.vue ✅
+12. **Estadísticas** - EstadisticasPage.vue ✅
+13. **Configuración** - ConfiguracionPage.vue ✅
+14. **Campus por Sede** - Store de sedes actualizado ✅
+15. **Evaluaciones** - EvaluacionesPage.vue ✅
+16. **Planificación Semestral** - PlanificacionPage.vue ✅ (con horario y unidades desde documentación)
+17. **Reportes** - ReportesPage.vue ✅ (por docente, carrera, sede + exportación PDF/Excel)
 
-### 🔧 Módulos por Implementar:
+### 🎉 SISTEMA COMPLETO
+Todos los módulos principales han sido implementados.
 
-## 1. MÓDULO DE USUARIOS (Admin)
-- [x] Listado de usuarios con filtros
-- [ ] CRUD completo de usuarios
-- [ ] Asignación de roles a usuarios
-- [ ] Asignación de sede/carrera a usuarios
-- [ ] Estado activo/inactivo
+## Estructura de Datos (Jerarquía)
 
-## 2. MÓDULO DE ROLES (Admin)
-- [x] Listado de roles
-- [ ] Vista de permisos por rol
-- [ ] Edición de permisos (opcional)
+```
+SEDE (Cochabamba, La Paz, El Alto, Ivirgarzama...)
+  └── CAMPUS (Colonial, Juan Pablo II, Florida...) - 1 o más por sede
+       └── CARRERA (Medicina, Sistemas, Derecho...)
+            └── MATERIA (Anatomía I, Cálculo I...) - específica de la carrera
+                 └── GRUPO(s) (1, 2, 3, 4...) - una materia tiene varios grupos
+                      └── DOCENTE asignado
+```
 
-## 3. MÓDULO DE SEDES (Admin)
-- [x] Listado de sedes
-- [ ] CRUD completo de sedes
-- [ ] Estadísticas por sede
-
-## 4. MÓDULO DE CARRERAS (Admin)
-- [x] Listado de carreras por sede
-- [ ] CRUD completo de carreras
-- [ ] Asignación de director
-
-## 5. MÓDULO DE ASIGNATURAS (Admin/Director)
-- [ ] Listado de asignaturas por carrera
-- [ ] CRUD de asignaturas
-- [ ] Asignación de docentes
-- [ ] Plan de estudios
-
-## 6. MÓDULO DE DOCENTES (Admin/Director)
-- [ ] Listado de docentes
-- [ ] Asignación de grupos
-- [ ] Carga horaria
-- [ ] Historial de materias
-
-## 7. MÓDULO DE GRUPOS (Director/Docente)
-- [ ] Listado de grupos por carrera
-- [ ] Asignación docente-grupo-materia
-- [ ] Horarios
-
-## 8. MÓDULO DE EVALUACIONES
-- [ ] Configuración de evaluaciones
-- [ ] Generación de exámenes desde banco de preguntas
-- [ ] Aplicación de evaluaciones
-- [ ] Reportes de resultados
-
-## 9. MÓDULO DE REPORTES
-- [ ] Reportes por docente
-- [ ] Reportes por carrera
-- [ ] Reportes por sede
-- [ ] Exportación PDF/Excel
-
-## 10. MÓDULO DE ESTADÍSTICAS
-- [ ] Gráficos de progreso
-- [ ] Comparativas entre sedes/carreras
-- [ ] Indicadores de rendimiento
+Ver más detalles en: `estructura-datos.md`
 
 ---
 
-## Orden de Implementación Propuesto:
+## Rutas Implementadas:
 
-### Fase 1: Completar CRUD de Administración
-1. UsuariosPage.vue - CRUD completo
-2. RolesPage.vue - Vista de permisos
-3. SedesPage.vue - CRUD completo
-4. CarrerasPage.vue - CRUD completo
+### Admin
+- `/admin/usuarios` - Gestión de usuarios
+- `/admin/roles` - Gestión de roles
+- `/admin/sedes` - Gestión de sedes
+- `/admin/carreras` - Gestión de carreras
+- `/admin/asignaturas` - Gestión de asignaturas
+- `/admin/grupos` - Gestión de grupos por materia
+- `/admin/docentes` - Gestión de docentes
+- `/admin/estadisticas` - Estadísticas del sistema
+- `/admin/configuracion` - Configuración general
 
-### Fase 2: Gestión Académica
-5. AsignaturasPage.vue - Gestión de materias
-6. GruposPage.vue - Gestión de grupos
-7. DocentesPage.vue - Gestión de docentes
+### Documentación
+- `/documentacion` - Vista de asignaturas
+- `/documentacion/asignatura/:id` - Detalle de asignatura con unidades y temas
+- `/documentacion/banco-preguntas/:id` - Banco de preguntas por tema
 
-### Fase 3: Evaluaciones
-8. EvaluacionesPage.vue - Configuración
-9. ExamenesPage.vue - Generación de exámenes
-10. ResultadosPage.vue - Resultados
-
-### Fase 4: Reportes y Análisis
-11. ReportesPage.vue - Exportación
-12. EstadisticasPage.vue - Gráficos
+### Dashboards
+- `/docente/dashboard` - Dashboard de docente
+- `/director-carrera/dashboard` - Dashboard de director de carrera
+- `/direccion-academica/dashboard` - Dashboard de dirección académica
+- `/vicerrector-sede/dashboard` - Dashboard de vicerrector de sede
+- `/vicerrector-nacional/dashboard` - Dashboard de vicerrector nacional
+- `/admin/dashboard` - Dashboard de administrador
 
 ---
 
-## Estructura de Navegación por Rol:
+## Navegación por Rol:
 
 ### DOCENTE
 - Dashboard
@@ -132,16 +103,15 @@
 - Reportes Nacionales
 - Estadísticas Nacionales
 
-### ADMIN
+### ADMIN / SUPER ADMIN
 - Dashboard
 - Usuarios
 - Roles
 - Sedes
 - Carreras
 - Asignaturas
+- Grupos
+- Docentes
+- Documentación
+- Estadísticas
 - Configuración
-
-### SUPER ADMIN
-- Todo lo de Admin
-- Configuración del Sistema
-- Logs de Auditoría

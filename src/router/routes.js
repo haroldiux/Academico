@@ -91,6 +91,30 @@ const routes = [
             name: 'docentes',
             component: () => import('pages/admin/DocentesPage.vue'),
             meta: { title: 'Gestión de Docentes' }
+          },
+          {
+            path: 'estadisticas',
+            name: 'estadisticas',
+            component: () => import('pages/admin/EstadisticasPage.vue'),
+            meta: { title: 'Estadísticas' }
+          },
+          {
+            path: 'configuracion',
+            name: 'configuracion',
+            component: () => import('pages/admin/ConfiguracionPage.vue'),
+            meta: { title: 'Configuración' }
+          },
+          {
+            path: 'evaluaciones',
+            name: 'evaluaciones',
+            component: () => import('pages/admin/EvaluacionesPage.vue'),
+            meta: { title: 'Gestión de Evaluaciones' }
+          },
+          {
+            path: 'reportes',
+            name: 'reportes',
+            component: () => import('pages/admin/ReportesPage.vue'),
+            meta: { title: 'Reportes' }
           }
         ]
       },
@@ -115,6 +139,12 @@ const routes = [
             name: 'tema-edit',
             component: () => import('pages/documentacion/TemaEditPage.vue'),
             meta: { title: 'Documentar Tema' }
+          },
+          {
+            path: ':id/planificacion',
+            name: 'asignatura-planificacion',
+            component: () => import('pages/documentacion/PlanificacionPage.vue'),
+            meta: { title: 'Planificación Semestral' }
           }
         ]
       },

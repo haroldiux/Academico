@@ -226,7 +226,9 @@ export function usePermisos() {
         { label: 'Asignaturas', icon: 'menu_book', to: '/admin/asignaturas' },
         { label: 'Grupos', icon: 'groups', to: '/admin/grupos' },
         { label: 'Docentes', icon: 'person', to: '/admin/docentes' },
+        { label: 'Evaluaciones', icon: 'quiz', to: '/admin/evaluaciones' },
         { label: 'Documentación', icon: 'description', to: '/documentacion' },
+        { label: 'Reportes', icon: 'assessment', to: '/admin/reportes' },
         { label: 'Estadísticas', icon: 'analytics', to: '/admin/estadisticas' },
         { label: 'Configuración', icon: 'settings', to: '/admin/configuracion' }
       ]
