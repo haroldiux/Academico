@@ -134,6 +134,22 @@
                         <div class="col">
                           <q-input v-model="logro.descripcion" dense borderless class="text-body1 text-weight-medium" placeholder="Descripción del logro..." />
                         </div>
+                        <!-- Selector de Parcial -->
+                        <q-btn-toggle
+                          v-model="logro.parcial"
+                          push
+                          glossy
+                          toggle-color="primary"
+                          :options="[
+                            {label: '1°', value: 1},
+                            {label: '2°', value: 2}
+                          ]"
+                          dense
+                          size="sm"
+                          class="q-mr-sm"
+                        >
+                          <q-tooltip>Parcial al que pertenece este logro</q-tooltip>
+                        </q-btn-toggle>
                         <q-btn 
                           flat 
                           round 

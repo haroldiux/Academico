@@ -105,6 +105,18 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
       estado: 'activo',
       fechaCreacion: '2024-01-15',
       
+      // Horarios de clases (vinculados con planificación)
+      horarios: [
+        { dia: 'Lunes', horaInicio: '07:00', horaFin: '09:00', aula: 'Aula 301' },
+        { dia: 'Miércoles', horaInicio: '07:00', horaFin: '09:00', aula: 'Lab. 201' }
+      ],
+      
+      // Grupos asignados
+      grupos: [
+        { id: 1, nombre: 'Grupo 1', turno: 'Mañana', cupo: 40 },
+        { id: 2, nombre: 'Grupo 2', turno: 'Noche', cupo: 35 }
+      ],
+      
       // Bibliografía
       bibliografias: [
         {
@@ -160,6 +172,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
                   id: 1,
                   codigo: 'LE.1',
                   descripcion: 'Define correctamente el concepto de ingeniería de software como disciplina.',
+                  parcial: 1, // 1 = 1er Parcial, 2 = 2do Parcial
                   indicadores: [
                     { id: 1, codigo: 'IND.1.1', descripcion: 'Explica con precisión el concepto de ingeniería de software.' },
                     { id: 2, codigo: 'IND.1.2', descripcion: 'Identifica los objetivos principales de la disciplina.' }
@@ -169,6 +182,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
                   id: 2,
                   codigo: 'LE.2',
                   descripcion: 'Identifica las etapas históricas del desarrollo de software.',
+                  parcial: 1,
                   indicadores: [
                     { id: 3, codigo: 'IND.2.1', descripcion: 'Describe las crisis del software y sus causas.' },
                     { id: 4, codigo: 'IND.2.2', descripcion: 'Relaciona los eventos históricos con la evolución de metodologías.' }
@@ -178,6 +192,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
                   id: 3,
                   codigo: 'LE.3',
                   descripcion: 'Relaciona la crisis del software con la necesidad de metodologías formales.',
+                  parcial: 2,
                   indicadores: [
                     { id: 5, codigo: 'IND.3.1', descripcion: 'Argumenta la importancia de las metodologías en proyectos reales.' }
                   ]
@@ -614,6 +629,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
             id: newId, 
             codigo: `LE.${numero}`,
             descripcion: logro.descripcion,
+            parcial: logro.parcial || 1, // 1 = 1er Parcial, 2 = 2do Parcial
             indicadores: []
           })
         }

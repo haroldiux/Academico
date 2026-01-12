@@ -46,6 +46,24 @@ const routes = [
         component: () => import('pages/dashboards/AdminDashboard.vue'),
         meta: { title: 'Panel Administrativo', rol: 'ADMIN' }
       },
+      // Docente Routes
+      {
+        path: 'docente',
+        children: [
+          {
+            path: 'asistencia',
+            name: 'docente-asistencia',
+            component: () => import('pages/docente/AsistenciaPage.vue'),
+            meta: { title: 'Llamar Lista', rol: 'DOCENTE' }
+          },
+          {
+            path: 'evaluaciones',
+            name: 'docente-evaluaciones',
+            component: () => import('pages/docente/MisEvaluacionesPage.vue'),
+            meta: { title: 'Mis Evaluaciones', rol: 'DOCENTE' }
+          }
+        ]
+      },
       // Admin Routes
       {
         path: 'admin',
