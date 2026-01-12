@@ -31,7 +31,20 @@
           icon="picture_as_pdf"
           label="Generar PDF"
           no-caps
-        />
+        >
+          <q-menu>
+            <q-list style="min-width: 200px">
+              <q-item clickable v-close-popup @click="generarPDF('planClase')">
+                <q-item-section avatar><q-icon name="class" color="blue" /></q-item-section>
+                <q-item-section>Plan de Clase Teórico</q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup @click="generarPDF('programa')">
+                <q-item-section avatar><q-icon name="description" color="green" /></q-item-section>
+                <q-item-section>Programa de Asignatura</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
         <q-btn
           unelevated
           color="primary"
@@ -367,6 +380,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
+import { generarPlanDeClase, generarProgramaAsignatura } from 'src/services/pdfService'
 
 const route = useRoute()
 const router = useRouter()
@@ -468,6 +482,27 @@ function guardarBibliografia() {
 function eliminarBibliografia(biblio) {
   store.deleteBibliografia(asignatura.value.id, biblio.id)
   $q.notify({ type: 'info', message: 'Bibliografía eliminada', position: 'top' })
+}
+
+// Generación de PDFs
+function generarPDF(tipo) {
+  if (!asignatura.value) {
+    $q.notify({ type: 'negative', message: 'No hay asignatura cargada', position: 'top' })
+    return
+  }
+  
+  try {
+    if (tipo === 'planClase') {
+      generarPlanDeClase(asignatura.value)
+      $q.notify({ type: 'positive', message: 'Plan de Clase generado exitosamente', icon: 'picture_as_pdf', position: 'top' })
+    } else if (tipo === 'programa') {
+      generarProgramaAsignatura(asignatura.value)
+      $q.notify({ type: 'positive', message: 'Programa de Asignatura generado exitosamente', icon: 'picture_as_pdf', position: 'top' })
+    }
+  } catch (error) {
+    console.error('Error generando PDF:', error)
+    $q.notify({ type: 'negative', message: 'Error al generar el PDF: ' + error.message, position: 'top' })
+  }
 }
 </script>
 
