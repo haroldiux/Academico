@@ -1,95 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import rolService from 'src/services/rolService'
 
 export const useRolesStore = defineStore('roles', () => {
   // State
-  const roles = ref([
-    {
-      id: 1,
-      nombre: 'SUPER ADMIN',
-      codigo: 'SUPER_ADMIN',
-      descripcion: 'Acceso completo al sistema con todos los permisos administrativos',
-      color: '#dc2626',
-      icono: 'admin_panel_settings',
-      activo: true,
-      permisos: ['*'],
-      fechaCreacion: '2024-01-01',
-      orden: 1
-    },
-    {
-      id: 2,
-      nombre: 'ADMIN',
-      codigo: 'ADMIN',
-      descripcion: 'Administrador del sistema con permisos de gestión general',
-      color: '#ea580c',
-      icono: 'manage_accounts',
-      activo: true,
-      permisos: ['usuarios', 'roles', 'configuracion'],
-      fechaCreacion: '2024-01-01',
-      orden: 2
-    },
-    {
-      id: 3,
-      nombre: 'VICERRECTORADO',
-      codigo: 'VICERRECTORADO',
-      descripcion: 'Autoridad académica superior con visión global institucional',
-      color: '#7c3aed',
-      icono: 'school',
-      activo: true,
-      permisos: ['reportes', 'estadisticas', 'aprobaciones'],
-      fechaCreacion: '2024-01-01',
-      orden: 3
-    },
-    {
-      id: 4,
-      nombre: 'DIRECCIÓN ACADÉMICA',
-      codigo: 'DIRECCION_ACADEMICA',
-      descripcion: 'Gestión y supervisión de procesos académicos institucionales',
-      color: '#2563eb',
-      icono: 'account_balance',
-      activo: true,
-      permisos: ['planificacion', 'seguimiento', 'reportes'],
-      fechaCreacion: '2024-01-01',
-      orden: 4
-    },
-    {
-      id: 5,
-      nombre: 'DIRECTOR DE CARRERA',
-      codigo: 'DIRECTOR_CARRERA',
-      descripcion: 'Responsable de la gestión académica de una carrera específica',
-      color: '#0891b2',
-      icono: 'engineering',
-      activo: true,
-      permisos: ['docentes', 'estudiantes', 'horarios', 'materias'],
-      fechaCreacion: '2024-01-01',
-      orden: 5
-    },
-    {
-      id: 6,
-      nombre: 'DOCENTE',
-      codigo: 'DOCENTE',
-      descripcion: 'Personal académico encargado de la enseñanza',
-      color: '#059669',
-      icono: 'person',
-      activo: true,
-      permisos: ['notas', 'asistencia', 'materiales'],
-      fechaCreacion: '2024-01-01',
-      orden: 6
-    },
-    {
-      id: 7,
-      nombre: 'EVALUACIONES',
-      codigo: 'EVALUACIONES',
-      descripcion: 'Gestión y supervisión del sistema de evaluaciones académicas',
-      color: '#ca8a04',
-      icono: 'quiz',
-      activo: true,
-      permisos: ['evaluaciones', 'examenes', 'resultados'],
-      fechaCreacion: '2024-01-01',
-      orden: 7
-    }
-  ])
-
+  const roles = ref([])
   const loading = ref(false)
   const error = ref(null)
 
@@ -99,45 +14,86 @@ export const useRolesStore = defineStore('roles', () => {
   const rolesOrdenados = computed(() => [...roles.value].sort((a, b) => a.orden - b.orden))
 
   // Actions
+  async function fetchRoles() {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await rolService.getRoles()
+      roles.value = response.data
+    } catch (err) {
+      console.error('Error fetching roles:', err)
+      error.value = 'Error al cargar roles'
+    } finally {
+      loading.value = false
+    }
+  }
+
   function getRolById(id) {
     return roles.value.find(r => r.id === id)
   }
 
-  function addRol(rol) {
-    const nuevoId = Math.max(...roles.value.map(r => r.id)) + 1
-    const nuevoOrden = Math.max(...roles.value.map(r => r.orden)) + 1
-    roles.value.push({
-      ...rol,
-      id: nuevoId,
-      orden: nuevoOrden,
-      fechaCreacion: new Date().toISOString().split('T')[0]
-    })
-    return nuevoId
-  }
-
-  function updateRol(id, datosActualizados) {
-    const index = roles.value.findIndex(r => r.id === id)
-    if (index !== -1) {
-      roles.value[index] = { ...roles.value[index], ...datosActualizados }
-      return true
+  async function addRol(rol) {
+    loading.value = true
+    try {
+      const response = await rolService.createRol(rol)
+      roles.value.push(response.data)
+      return response.data.id
+    } catch (err) {
+      console.error('Error creating rol:', err)
+      throw err
+    } finally {
+      loading.value = false
     }
-    return false
   }
 
-  function deleteRol(id) {
-    const index = roles.value.findIndex(r => r.id === id)
-    if (index !== -1) {
-      roles.value.splice(index, 1)
+  async function updateRol(id, datosActualizados) {
+    loading.value = true
+    try {
+      const response = await rolService.updateRol(id, datosActualizados)
+      const index = roles.value.findIndex(r => r.id === id)
+      if (index !== -1) {
+        roles.value[index] = response.data
+      }
       return true
+    } catch (err) {
+      console.error('Error updating rol:', err)
+      return false
+    } finally {
+      loading.value = false
     }
-    return false
   }
 
-  function toggleRolActivo(id) {
+  async function deleteRol(id) {
+    loading.value = true
+    try {
+      await rolService.deleteRol(id)
+      const index = roles.value.findIndex(r => r.id === id)
+      if (index !== -1) {
+        roles.value.splice(index, 1)
+      }
+      return true
+    } catch (err) {
+      console.error('Error deleting rol:', err)
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function toggleRolActivo(id) {
     const rol = roles.value.find(r => r.id === id)
     if (rol) {
-      rol.activo = !rol.activo
-      return true
+      const nuevoEstado = !rol.activo
+      // Optimistic update
+      rol.activo = nuevoEstado
+      try {
+        await rolService.updateRol(id, { activo: nuevoEstado })
+        return true
+      } catch (err) {
+        console.error('Error toggling rol:', err)
+        rol.activo = !nuevoEstado // Revert
+        return false
+      }
     }
     return false
   }
@@ -152,6 +108,7 @@ export const useRolesStore = defineStore('roles', () => {
     totalRoles,
     rolesOrdenados,
     // Actions
+    fetchRoles,
     getRolById,
     addRol,
     updateRol,

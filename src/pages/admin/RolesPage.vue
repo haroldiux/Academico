@@ -72,8 +72,8 @@
         :key="rol.id"
         class="col-12 col-md-6 col-lg-4"
       >
-        <div 
-          class="role-card animate-in" 
+        <div
+          class="role-card animate-in"
           :style="{ animationDelay: `${0.3 + index * 0.05}s`, opacity: rol.activo ? 1 : 0.6 }"
         >
           <!-- Card Header -->
@@ -395,7 +395,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRolesStore } from 'src/stores/roles'
 import { useUsuariosStore } from 'src/stores/usuarios'
@@ -403,6 +403,13 @@ import { useUsuariosStore } from 'src/stores/usuarios'
 const $q = useQuasar()
 const rolesStore = useRolesStore()
 const usuariosStore = useUsuariosStore()
+
+onMounted(async () => {
+  await Promise.all([
+    rolesStore.fetchRoles(),
+    usuariosStore.fetchUsuarios()
+  ])
+})
 
 // Dialogs state
 const showDialogNuevoRol = ref(false)

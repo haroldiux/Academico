@@ -513,7 +513,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useUsuariosStore } from 'src/stores/usuarios'
 import { useRolesStore } from 'src/stores/roles'
@@ -521,6 +521,13 @@ import { useRolesStore } from 'src/stores/roles'
 const $q = useQuasar()
 const usuariosStore = useUsuariosStore()
 const rolesStore = useRolesStore()
+
+onMounted(async () => {
+  await Promise.all([
+    usuariosStore.fetchUsuarios(),
+    rolesStore.fetchRoles()
+  ])
+})
 
 // Dialogs
 const showDialogUsuario = ref(false)
