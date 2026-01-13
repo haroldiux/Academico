@@ -565,66 +565,585 @@ function generarProgramaAnalitico(doc, { asignatura, carrera, pageWidth, margin 
 }
 
 /**
- * PAC - Programa de Asignatura por Competencias
+ * PAC - Programa de Asignatura por Competencias (COMPLETO)
+ * Formato Excel: 13 secciones
+ * Cumple requisito: Estructura exacta y campos en blanco si no hay datos.
  */
 function generarPAC(doc, { asignatura, pageWidth, margin }) {
-  let y = 20
+  let y = 15
   
-  // Título
+  // ============================================
+  // CABECERA INSTITUCIONAL
+  // ============================================
   doc.setFillColor(...COLORS.morado)
-  doc.rect(margin, y, pageWidth - margin * 2, 10, 'F')
+  doc.rect(0, 8, pageWidth, 8, 'F')
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(12)
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.text('PROGRAMA DE ASIGNATURA POR COMPETENCIAS', pageWidth / 2, y + 7, { align: 'center' })
+  doc.text('UNIVERSIDAD TÉCNICA PRIVADA COSMOS', pageWidth / 2, 14, { align: 'center' })
   
-  y += 18
+  y = 25
+  doc.setTextColor(...COLORS.morado)
+  doc.setFontSize(14)
+  doc.text('UNITEPC', pageWidth / 2, y, { align: 'center' })
   
-  // Datos generales
+  y += 8
+  doc.setFontSize(12)
+  doc.text('PROGRAMA DE ASIGNATURA', pageWidth / 2, y, { align: 'center' })
+  
+  y += 12
+  
+  // ============================================
+  // 1. DATOS GENERALES DE LA ASIGNATURA
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('1. - DATOS GENERALES DE LA ASIGNATURA', margin + 3, y + 5)
+  
+  y += 10
+  
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
     theme: 'grid',
-    styles: { fontSize: 9, cellPadding: 3 },
+    styles: { fontSize: 8, cellPadding: 2, lineColor: COLORS.morado, lineWidth: 0.1 },
     body: [
-      [{ content: 'Asignatura:', styles: { fontStyle: 'bold' } }, asignatura.nombre],
-      [{ content: 'Código:', styles: { fontStyle: 'bold' } }, asignatura.codigo],
-      [{ content: 'Competencia General:', styles: { fontStyle: 'bold' } }, asignatura.objetivo_general || 'Desarrollar competencias profesionales en el área.']
+      [
+        { content: 'Carrera:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.carrera || '', colSpan: 4 }
+      ],
+      [
+        { content: 'Asignatura:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.nombre || '', colSpan: 2 },
+        { content: 'Código:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.codigo || '' }
+      ],
+      [
+        { content: 'Área de Desempeño:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.area_desempeno || '', colSpan: 4 }
+      ],
+      [
+        { content: 'Tipo de Curso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.tipo_curso || '', colSpan: 4 }
+      ],
+      [
+        { content: 'Modalidad:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.modalidad || '', colSpan: 4 }
+      ],
+      [
+        { content: 'Semestre:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.semestre ? `${asignatura.semestre}º Semestre` : '', colSpan: 4 }
+      ],
+      [
+        { content: 'Requisitos:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.requisitos || '', colSpan: 4 }
+      ],
+      [
+        { content: 'Créditos:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.creditos || '', colSpan: 4 }
+      ],
+      [
+        { content: 'Carga Horaria Total:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: asignatura.carga_horaria ? `${asignatura.carga_horaria} horas` : '', colSpan: 4 }
+      ],
+      [
+        { content: 'Horas teóricas y/o prácticas:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: (asignatura.horas_teoricas || asignatura.horas_practicas) ? `${asignatura.horas_teoricas || 0} horas teóricas y ${asignatura.horas_practicas || 0} horas prácticas` : '', colSpan: 4 }
+      ],
+      [
+        { content: 'Nº de Sesiones Semanales:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, 
+        { content: 'Teóricas:', styles: { fontStyle: 'bold' } },
+        { content: asignatura.sesiones_teoricas || '', styles: { halign: 'center' } },
+        { content: 'Prácticas:', styles: { fontStyle: 'bold' } },
+        { content: asignatura.sesiones_practicas || '', styles: { halign: 'center' } }
+      ]
     ],
-    columnStyles: { 0: { cellWidth: 45 } }
+    columnStyles: { 0: { cellWidth: 50 }, 2: { cellWidth: 25 }, 4: { cellWidth: 20 } }
   })
   
-  y = doc.lastAutoTable.finalY + 10
+  y = doc.lastAutoTable.finalY + 5
   
-  // Tabla de competencias por unidad
+  // ============================================
+  // 2. INFORMACIÓN DOCENTE
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('2. - INFORMACION DOCENTE', margin + 3, y + 5)
+  
+  y += 10
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 2, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [
+      [{ content: 'Docente:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, asignatura.docente || ''],
+      [{ content: 'Correo Corporativo:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, asignatura.docente_email || ''],
+      [{ content: 'Fono:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, asignatura.docente_fono || '']
+    ],
+    columnStyles: { 0: { cellWidth: 50 } }
+  })
+  
+  y = doc.lastAutoTable.finalY + 5
+  
+  // ============================================
+  // 3. JUSTIFICACIÓN DE LA ASIGNATURA
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('3. - JUSTIFICACIÓN DE LA ASIGNATURA', margin + 3, y + 5)
+  
+  y += 10
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 4, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [[asignatura.justificacion || '']],
+    columnStyles: { 0: { minCellHeight: 25 } },
+    tableLineColor: COLORS.morado,
+    tableLineWidth: 0.1
+  })
+  
+  y = doc.lastAutoTable.finalY + 5
+  
+  // Nueva página para continuar
+  doc.addPage()
+  y = 15
+  
+  // Cabecera en nueva página
+  doc.setFillColor(...COLORS.morado)
+  doc.rect(0, 8, pageWidth, 8, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text('UNIVERSIDAD TÉCNICA PRIVADA COSMOS', pageWidth / 2, 14, { align: 'center' })
+  
+  y = 25
+  doc.setTextColor(...COLORS.morado)
+  doc.setFontSize(14)
+  doc.text('UNITEPC', pageWidth / 2, y, { align: 'center' })
+  
+  y += 12
+  
+  // ============================================
+  // 4. PROPÓSITO GENERAL DE LA UNIDAD DE FORMACIÓN
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('4. - PROPÓSITO GENERAL DE LA UNIDAD DE FORMACIÓN', margin + 3, y + 5)
+  
+  y += 10
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 4, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [[asignatura.proposito_general || asignatura.objetivo_general || '']],
+    columnStyles: { 0: { minCellHeight: 20 } },
+    tableLineColor: COLORS.morado,
+    tableLineWidth: 0.1
+  })
+  
+  y = doc.lastAutoTable.finalY + 5
+  
+  // ============================================
+  // 5. COMPETENCIAS
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('5. - COMPETENCIAS', margin + 3, y + 5)
+  
+  y += 10
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [
+      [{ content: 'Competencia Global\nEspecífica:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 55, halign: 'center', valign: 'middle' } }, asignatura.competencia_global || ''],
+      [{ content: 'Competencia de la Asignatura:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 55, halign: 'center', valign: 'middle' } }, asignatura.competencia_asignatura || asignatura.objetivo_general || '']
+    ]
+  })
+  
+  y = doc.lastAutoTable.finalY + 5
+  
+  // ============================================
+  // 6. ELEMENTOS DE COMPETENCIA
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('6. - ELEMENTOS DE COMPETENCIA', margin + 3, y + 5)
+  
+  y += 10
+  
   const unidades = asignatura.unidades || []
+  const elementosRows = []
   
-  const rows = []
-  unidades.forEach(unidad => {
-    rows.push([
-      { content: `Unidad ${unidad.numero}: ${unidad.titulo}`, colSpan: 3, styles: { fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }
-    ])
-    rows.push([
-      { content: 'Elemento de Competencia', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } },
-      { content: 'Saberes Esenciales', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } },
-      { content: 'Evidencias', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } }
-    ])
-    rows.push([
-      unidad.elemento_competencia || 'Por definir',
-      unidad.saberes_esenciales || 'Conocimientos teóricos y prácticos',
-      unidad.evidencias || 'Exámenes, trabajos prácticos'
-    ])
-  })
-  
-  if (rows.length > 0) {
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 3 },
-      body: rows
+  if (unidades.length > 0) {
+    unidades.forEach((unidad, idx) => {
+      elementosRows.push([
+        { content: `E.C. ${idx + 1}`, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 15, halign: 'center' } },
+        unidad.elemento_competencia || unidad.competencia || ''
+      ])
+    })
+  } else {
+    // Si no hay unidades, filas vacías de ejemplo
+    ['E.C. 1', 'E.C. 2', 'E.C. 3', 'E.C. 4', 'E.C. 5'].forEach(ec => {
+      elementosRows.push([
+        { content: ec, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 15, halign: 'center' } },
+        ''
+      ])
     })
   }
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: elementosRows
+  })
+  
+  y = doc.lastAutoTable.finalY + 15
+  
+  // ============================================
+  // 8. ESTRUCTURA DE UNIDADES DE APRENDIZAJE
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('8. - ESTRUCTURA DE UNIDADES DE APRENDIZAJE', margin + 3, y + 5)
+  
+  y += 12
+  
+  // Por cada unidad, generar tabla de estructura
+  let semanaActual = 1
+  
+  if (unidades.length === 0) {
+    // Si no hay unidades, mostrar estructura vacía
+    doc.text('Sin unidades definidas.', margin, y)
+  } else {
+    unidades.forEach((unidad) => {
+      if (y > 220) {
+        doc.addPage()
+        y = 20
+      }
+      
+      // Título de la unidad con elemento de competencia
+      doc.setFillColor(...COLORS.morado)
+      doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`UNIDAD ${unidad.numero}: ${(unidad.titulo || '').toUpperCase()}`, pageWidth / 2, y + 5, { align: 'center' })
+      
+      y += 7
+      
+      // Elemento de competencia de la unidad
+      const ecText = `ELEMENTO DE COMPETENCIA ${unidad.numero}: ${unidad.elemento_competencia || unidad.competencia || ''}`
+      
+      // Calcular altura necesaria para el EC
+      doc.setFontSize(8)
+      doc.setTextColor(0, 0, 0)
+      const splitEc = doc.splitTextToSize(ecText, pageWidth - margin * 2 - 4)
+      const ecHeight = splitEc.length * 4 + 4
+      
+      doc.setFillColor(230, 230, 250) // Lavanda claro
+      doc.rect(margin, y, pageWidth - margin * 2, ecHeight, 'F')
+      doc.rect(margin, y, pageWidth - margin * 2, ecHeight, 'S') // Borde
+      doc.text(splitEc, margin + 2, y + 4)
+      
+      y += ecHeight
+      
+      // Tabla de temas con aprendizajes
+      const temas = unidad.temas || []
+      const temasRows = []
+      
+      temas.forEach((tema, temaIdx) => {
+        let contenidoConceptual = ''
+        if (Array.isArray(tema.contenidos_conceptuales)) {
+          contenidoConceptual = tema.contenidos_conceptuales.join('\n- ')
+        } else if (tema.contenidos && typeof tema.contenidos === 'object' && !Array.isArray(tema.contenidos)) {
+          if (Array.isArray(tema.contenidos.conceptual)) {
+            contenidoConceptual = tema.contenidos.conceptual.join('\n- ')
+          }
+        } else if (Array.isArray(tema.contenidos)) {
+          contenidoConceptual = tema.contenidos.map(c => typeof c === 'string' ? c : c.contenido).join('\n- ')
+        }
+        
+        let contenidoProcedimental = ''
+        if (Array.isArray(tema.contenidos_procedimentales)) {
+          contenidoProcedimental = tema.contenidos_procedimentales.join('\n- ')
+        } else if (tema.contenidos && typeof tema.contenidos === 'object' && !Array.isArray(tema.contenidos)) {
+          if (Array.isArray(tema.contenidos.procedimental)) {
+            contenidoProcedimental = tema.contenidos.procedimental.join('\n- ')
+          }
+        } else if (tema.metodologia && Array.isArray(tema.metodologia)) {
+          contenidoProcedimental = tema.metodologia.join('\n- ')
+        }
+        
+        let contenidoActitudinal = ''
+        if (Array.isArray(tema.contenidos_actitudinales)) {
+          contenidoActitudinal = tema.contenidos_actitudinales.join('\n- ')
+        } else if (tema.contenidos && typeof tema.contenidos === 'object' && !Array.isArray(tema.contenidos)) {
+          if (Array.isArray(tema.contenidos.actitudinal)) {
+            contenidoActitudinal = tema.contenidos.actitudinal.join('\n- ')
+          }
+        }
+
+        // Mapeo de Criterios de Desempeño (Indicadores de Logro)
+        let criterios = ''
+        if (tema.logros_esperados && Array.isArray(tema.logros_esperados)) {
+           // Extraer descripciones de indicadores
+           const indicadoresList = tema.logros_esperados.flatMap(l => (l.indicadores || []).map(i => i.descripcion || i.codigo))
+           if (indicadoresList.length > 0) {
+             criterios = '- ' + indicadoresList.join('\n- ')
+           }
+        } else {
+           criterios = tema.criterios_desempeno || ''
+        }
+
+        // Mapeo de Instrumentos de Evaluación
+        let instrumentos = ''
+        if (tema.evaluacion && tema.evaluacion.sumativa && Array.isArray(tema.evaluacion.sumativa.instrumentos)) {
+           instrumentos = tema.evaluacion.sumativa.instrumentos.join(', ')
+        } else {
+           instrumentos = tema.instrumentos_evaluacion || ''
+        }
+        
+        temasRows.push([
+          semanaActual,
+          `Sesión ${temaIdx + 1}`,
+          `Tema ${tema.numero}: ${tema.titulo}`,
+          contenidoConceptual ? `- ${contenidoConceptual}` : '',
+          contenidoProcedimental ? `- ${contenidoProcedimental}` : '',
+          contenidoActitudinal ? `- ${contenidoActitudinal}` : '',
+          criterios,
+          instrumentos
+        ])
+        
+        semanaActual++
+      })
+      
+      if (temasRows.length > 0) {
+        autoTable(doc, {
+          startY: y,
+          margin: { left: margin, right: margin },
+          theme: 'grid',
+          styles: { fontSize: 7, cellPadding: 2, lineColor: COLORS.morado, lineWidth: 0.1 },
+          head: [[
+            { content: 'SEMANAS', styles: { fillColor: COLORS.morado, textColor: 255 } },
+            { content: 'SESIONES', styles: { fillColor: COLORS.morado, textColor: 255 } },
+            { content: 'TEMAS', styles: { fillColor: COLORS.morado, textColor: 255 } },
+            { content: 'APRENDIZAJES', colSpan: 3, styles: { fillColor: COLORS.morado, textColor: 255, halign: 'center' } },
+            { content: 'CRITERIOS DE DESEMPEÑO', styles: { fillColor: COLORS.morado, textColor: 255 } },
+            { content: 'INSTRUMENTOS DE EVALUACION', styles: { fillColor: COLORS.morado, textColor: 255 } }
+          ],
+          [
+            { content: '', colSpan: 3, styles: { fillColor: COLORS.morado } },
+            { content: 'CONCEPTUAL', styles: { fillColor: COLORS.morado, textColor: 255 } },
+            { content: 'PROCEDIMENTAL', styles: { fillColor: COLORS.morado, textColor: 255 } },
+            { content: 'ACTITUDINAL', styles: { fillColor: COLORS.morado, textColor: 255 } },
+            { content: '', colSpan: 2, styles: { fillColor: COLORS.morado } }
+          ]],
+          headStyles: { fontStyle: 'bold', halign: 'center', fontSize: 6 },
+          body: temasRows,
+          columnStyles: {
+            0: { cellWidth: 12, halign: 'center' },
+            1: { cellWidth: 15, halign: 'center' },
+            2: { cellWidth: 25 },
+            3: { cellWidth: 28 },
+            4: { cellWidth: 28 },
+            5: { cellWidth: 20 },
+            6: { cellWidth: 25 },
+            7: { cellWidth: 25 }
+          }
+        })
+        y = doc.lastAutoTable.finalY + 10
+      }
+    })
+  }
+
+  // ============================================
+  // 9. METODOLOGÍA GENERAL
+  // ============================================
+  if (y > 200) {
+    doc.addPage()
+    y = 20
+  }
+  
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('9. - METODOLOGÍA GENERAL DE LA ASIGNATURA', margin + 3, y + 5)
+  
+  y += 10
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 4, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [[asignatura.metodologia_general || '']],
+    columnStyles: { 0: { minCellHeight: 15 } },
+    tableLineColor: COLORS.morado,
+    tableLineWidth: 0.1
+  })
+  
+  y = doc.lastAutoTable.finalY + 5
+  
+  // ============================================
+  // 10. SISTEMA DE EVALUACIÓN
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('10. - SISTEMA DE EVALUACIÓN', margin + 3, y + 5)
+  
+  y += 10
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 4, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [[asignatura.sistema_evaluacion || '']],
+    columnStyles: { 0: { minCellHeight: 15 } },
+    tableLineColor: COLORS.morado,
+    tableLineWidth: 0.1
+  })
+  
+  y = doc.lastAutoTable.finalY + 5
+  
+  // ============================================
+  // 11. REGLAMENTO Y NORMATIVA
+  // ============================================
+  if (y > 200) {
+    doc.addPage()
+    y = 20
+  }
+  
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('11. - REGLAMENTO Y NORMATIVA', margin + 3, y + 5)
+  
+  y += 10
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 4, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [[asignatura.reglamento || '']],
+    columnStyles: { 0: { minCellHeight: 25 } },
+    tableLineColor: COLORS.morado,
+    tableLineWidth: 0.1
+  })
+  
+  y = doc.lastAutoTable.finalY + 5
+  
+  // ============================================
+  // 12. ORGANIZACIÓN Y CALENDARIO
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('12. - ORGANIZACIÓN Y CALENDARIO', margin + 3, y + 5)
+  
+  y += 10
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 4, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [[asignatura.organizacion_calendario || '']],
+    columnStyles: { 0: { minCellHeight: 12 } },
+    tableLineColor: COLORS.morado,
+    tableLineWidth: 0.1
+  })
+  
+  y = doc.lastAutoTable.finalY + 5
+  
+  // ============================================
+  // 14. BIBLIOGRAFÍA BÁSICA
+  // ============================================
+  if (y > 220) {
+    doc.addPage()
+    y = 20
+  }
+  
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('14. - BIBLIOGRAFÍA BÁSICA', margin + 3, y + 5)
+  
+  y += 10
+  
+  const biblioBasica = asignatura.bibliografia_basica || asignatura.bibliografia || ''
+  const biblioBasicaTexto = Array.isArray(biblioBasica) ? biblioBasica.join('\n') : biblioBasica
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 4, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [[biblioBasicaTexto]],
+    columnStyles: { 0: { minCellHeight: 12 } },
+    tableLineColor: COLORS.morado,
+    tableLineWidth: 0.1
+  })
+  
+  y = doc.lastAutoTable.finalY + 5
+  
+  // ============================================
+  // 15. BIBLIOGRAFÍA COMPLEMENTARIA
+  // ============================================
+  doc.setFillColor(...COLORS.morado)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F')
+  doc.text('15. - BIBLIOGRAFÍA COMPLEMENTARIA', margin + 3, y + 5)
+  
+  y += 10
+  
+  const biblioComplementaria = asignatura.bibliografia_complementaria || ''
+  const biblioCompTexto = Array.isArray(biblioComplementaria) ? biblioComplementaria.join('\n') : biblioComplementaria
+  
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 4, lineColor: COLORS.morado, lineWidth: 0.1 },
+    body: [[biblioCompTexto]],
+    columnStyles: { 0: { minCellHeight: 12 } },
+    tableLineColor: COLORS.morado,
+    tableLineWidth: 0.1
+  })
 }
 
 /**

@@ -20,9 +20,12 @@
 15. **Evaluaciones** - EvaluacionesPage.vue ✅
 16. **Planificación Semestral** - PlanificacionPage.vue ✅ (con horario y unidades desde documentación)
 17. **Reportes** - ReportesPage.vue ✅ (por docente, carrera, sede + exportación PDF/Excel)
+18. **Llamar Lista (Asistencia)** - AsistenciaPage.vue ✅
+19. **Reporte de Asistencia Grid** - ReporteAsistenciaPage.vue ✅ (grid estudiantes x clases)
+20. **Carpeta Pedagógica Docente PDF** - carpetaDocenteService.js ✅ (Portada, Índice, MVP, Horarios, PA, PAC, Cronograma, Planes de Clase)
 
-### 🎉 SISTEMA COMPLETO
-Todos los módulos principales han sido implementados.
+### 🎉 SISTEMA COMPLETO + MEJORAS
+Todos los módulos principales implementados. Mejoras recientes en asistencia y generación de PDFs.
 
 ## Estructura de Datos (Jerarquía)
 

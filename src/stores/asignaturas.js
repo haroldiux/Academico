@@ -85,19 +85,56 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
       codigo: 'SIS-301',
       nombre: 'Ingeniería de Software I',
       sigla: 'IS-I',
-      horas_teoricas: 40,
-      horas_practicas: 20,
-      horas_laboratorio: 20,
-      creditos: 4,
-      semestre: 5,
+      
+      // Datos Generales PAC
       carrera: 'Ingeniería de Sistemas',
-      docente: 'Carlos Mendoza Quispe',
+      area_desempeno: 'Desarrollo de Software y Gestión de Proyectos',
+      tipo_curso: 'Obligatorio',
+      modalidad: 'Presencial',
+      semestre: 5,
+      requisitos: 'SIS-201 Programación II',
+      creditos: 18,
+      carga_horaria: 240,
+      horas_teoricas: 4,
+      horas_practicas: 4,
+      horas_laboratorio: 20,
+      sesiones_teoricas: 2,
+      sesiones_practicas: 2,
+      
+      // Info Docente
+      docente: 'Ing. Carlos Mendoza Quispe',
+      docente_email: 'carlos.mendoza@unitepc.edu.bo',
+      docente_fono: '+591 79797979',
+      
+      // PAC Secciones Texto
+      justificacion: 'La asignatura de Ingeniería de Software I es fundamental porque proporciona al estudiante las bases teóricas y prácticas para el desarrollo de software de calidad. En un mercado laboral cada vez más exigente, dominar el ciclo de vida del software, las metodologías ágiles y los estándares de calidad es indispensable para liderar proyectos tecnológicos exitosos.',
+      
+      proposito_general: 'Desarrollar en el estudiante la capacidad de aplicar metodologías, técnicas y herramientas de la ingeniería de software para el análisis, diseño y gestión de proyectos de software, garantizando la calidad del producto final y el trabajo colaborativo eficiente.',
+      
+      competencia_global: 'Diseña y gestiona proyectos de software aplicando metodologías y estándares de calidad para resolver problemas complejos de información en organizaciones, demostrando ética y responsabilidad profesional.',
+      
+      competencia_asignatura: 'Aplica el ciclo de vida del desarrollo de software y metodologías ágiles para analizar y diseñar soluciones informáticas que satisfagan los requerimientos del usuario, trabajando en equipo de manera efectiva.',
+      
+      metodologia_general: 'La asignatura adopta un enfoque teórico-práctico basado en proyectos. Se utilizarán clases magistrales participativas para los fundamentos teóricos, complementadas con talleres de resolución de casos, laboratorios de uso de herramientas CASE y el desarrollo de un proyecto integrador semestral donde los estudiantes aplicarán los conocimientos en un escenario real simulado.',
+      
+      sistema_evaluacion: 'El sistema de evaluación es continuo y procesual. Incluye evaluación formativa (30%) a través de prácticos, laboratorios y participación; y evaluación sumativa (70%) mediante exámenes parciales, defensa de hitos del proyecto y un examen final. Se valora tanto el producto software como la documentación y la defensa oral.',
+      
+      reglamento: '1. Asistencia obligatoria al 80% de clases teóricas y 100% de prácticas.\n2. Puntualidad con tolerancia de 10 minutos.\n3. Uso obligatorio de mandil en laboratorios.\n4. Prohibido el uso de celulares durante las explicaciones.\n5. Los trabajos deben entregarse en la plataforma en la fecha establecida.\n6. El plagio en proyectos o exámenes anula la actividad (nota 0).',
+      
+      organizacion_calendario: 'La asignatura se organiza en 18 semanas académicas, divididas en 3 parciales. Primer parcial: semanas 1-6 (Unidades 1-2). Segundo parcial: semanas 7-12 (Unidades 3-4). Examen final: semanas 13-18 (Defensa de proyecto).',
+      
+      bibliografia: [
+        'Pressman, R. S. (2010). Ingeniería del software: un enfoque práctico. McGraw-Hill.',
+        'Sommerville, I. (2011). Ingeniería de software. Pearson Educación.'
+      ],
+      bibliografia_basica: 'Pressman, R. S. (2010). Ingeniería del software: un enfoque práctico (7a ed.). México: McGraw-Hill Interamericana.',
+      bibliografia_complementaria: 'Sommerville, I. (2011). Ingeniería de software (9a ed.). México: Pearson Educación.\nKendall, K. E., & Kendall, J. E. (2011). Análisis y diseño de sistemas (8a ed.). México: Pearson Educación.',
+
       descripcion: 'Introducción a los principios y prácticas de la ingeniería de software.',
       objetivo_general: 'Desarrollar competencias en el análisis, diseño y desarrollo de sistemas de software.',
-      justificacion: 'La ingeniería de software es fundamental para la formación del ingeniero de sistemas.',
+      
       saberes_previos: 'Programación I, Programación II, Estructuras de Datos',
       contenido_minimo: 'Ciclo de vida del software, metodologías ágiles, UML, patrones de diseño.',
-      metodologia_ensenanza: 'Clases magistrales, trabajos prácticos, proyectos.',
       criterios_evaluacion: 'Exámenes parciales, proyecto final, participación.',
       periodoId: 1,
       carreraId: 1,
