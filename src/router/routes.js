@@ -67,6 +67,12 @@ const routes = [
             name: 'docente-evaluaciones',
             component: () => import('pages/docente/MisEvaluacionesPage.vue'),
             meta: { title: 'Mis Evaluaciones', rol: 'DOCENTE' }
+          },
+          {
+            path: 'reporte-asistencia',
+            name: 'reporte-asistencia',
+            component: () => import('pages/docente/ReporteAsistenciaPage.vue'),
+            meta: { title: 'Reporte de Asistencias', rol: 'DOCENTE' }
           }
         ]
       },
