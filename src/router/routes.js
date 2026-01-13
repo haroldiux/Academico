@@ -57,6 +57,12 @@ const routes = [
             meta: { title: 'Llamar Lista', rol: 'DOCENTE' }
           },
           {
+            path: 'asistencia-general',
+            name: 'asistencia-general',
+            component: () => import('pages/docente/AsistenciaGeneralPage.vue'),
+            meta: { title: 'Vista General Asistencia' }
+          },
+          {
             path: 'evaluaciones',
             name: 'docente-evaluaciones',
             component: () => import('pages/docente/MisEvaluacionesPage.vue'),

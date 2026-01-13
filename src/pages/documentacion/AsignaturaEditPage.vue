@@ -33,7 +33,17 @@
           no-caps
         >
           <q-menu>
-            <q-list style="min-width: 200px">
+            <q-list style="min-width: 220px">
+              <q-item-label header class="text-weight-bold">Generación de PDFs</q-item-label>
+              <q-separator />
+              <q-item clickable v-close-popup @click="generarPDF('carpetaDocente')">
+                <q-item-section avatar><q-icon name="folder" color="purple" /></q-item-section>
+                <q-item-section>
+                  <q-item-label>Carpeta Docente Completa</q-item-label>
+                  <q-item-label caption>Todas las secciones</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-separator spaced />
               <q-item clickable v-close-popup @click="generarPDF('planClase')">
                 <q-item-section avatar><q-icon name="class" color="blue" /></q-item-section>
                 <q-item-section>Plan de Clase Teórico</q-item-section>
@@ -380,12 +390,17 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
+import { useCarrerasStore } from 'src/stores/carreras'
+import { useSedesStore } from 'src/stores/sedes'
 import { generarPlanDeClase, generarProgramaAsignatura } from 'src/services/pdfService'
+import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
 
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
 const store = useAsignaturasStore()
+const carrerasStore = useCarrerasStore()
+const sedesStore = useSedesStore()
 
 // Estado
 const tabActual = ref('unidades')
@@ -492,7 +507,21 @@ function generarPDF(tipo) {
   }
   
   try {
-    if (tipo === 'planClase') {
+    if (tipo === 'carpetaDocente') {
+      // Obtener datos de carrera y sede
+      const carrera = carrerasStore.carreras.find(c => c.nombre === asignatura.value.carrera) || {
+        nombre: asignatura.value.carrera || 'Ingeniería de Sistemas',
+        codigo: 'SIS',
+        area: 'Ciencias Exactas y Tecnología',
+        mision: 'Formar profesionales de excelencia.',
+        vision: 'Ser líderes en formación profesional.',
+        perfil_profesional: 'El profesional está preparado para desempeñarse en su área.'
+      }
+      const sede = sedesStore.sedes.find(s => s.id === 1) || { nombre: 'Cochabamba' }
+      
+      generarCarpetaDocente(asignatura.value, carrera, sede)
+      $q.notify({ type: 'positive', message: 'Carpeta Docente generada exitosamente', icon: 'folder', position: 'top' })
+    } else if (tipo === 'planClase') {
       generarPlanDeClase(asignatura.value)
       $q.notify({ type: 'positive', message: 'Plan de Clase generado exitosamente', icon: 'picture_as_pdf', position: 'top' })
     } else if (tipo === 'programa') {

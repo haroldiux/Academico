@@ -156,6 +156,25 @@
               </q-chip>
             </div>
             <q-space />
+            <!-- Acciones Rápidas -->
+            <div class="acciones-rapidas q-gutter-sm q-mr-md">
+              <q-btn 
+                unelevated 
+                color="green" 
+                icon="check_circle" 
+                label="Todos Presentes" 
+                size="sm"
+                @click="marcarTodosPresentes" 
+              />
+              <q-btn 
+                outline 
+                color="grey" 
+                icon="backspace" 
+                label="Limpiar" 
+                size="sm"
+                @click="limpiarSeleccion" 
+              />
+            </div>
             <q-input v-model="busqueda" placeholder="Buscar estudiante..." dense outlined style="min-width: 200px">
               <template v-slot:prepend><q-icon name="search" /></template>
             </q-input>
@@ -172,18 +191,60 @@
 
         <template v-slot:body-cell-estado="props">
           <q-td :props="props">
-            <q-btn-toggle
-              v-model="props.row.estado"
-              toggle-color="primary"
-              :options="[
-                { icon: 'check', value: 'presente', color: 'green' },
-                { icon: 'close', value: 'ausente', color: 'red' },
-                { icon: 'schedule', value: 'tardanza', color: 'orange' }
-              ]"
-              dense
-              rounded
-              size="sm"
-            />
+            <div class="estado-btns q-gutter-xs">
+              <q-btn 
+                :flat="props.row.estado !== 'presente'"
+                :unelevated="props.row.estado === 'presente'"
+                :color="props.row.estado === 'presente' ? 'green' : 'grey-4'"
+                :text-color="props.row.estado === 'presente' ? 'white' : 'grey-8'"
+                icon="check_circle"
+                size="sm"
+                round
+                dense
+                @click="props.row.estado = 'presente'"
+              >
+                <q-tooltip>Presente</q-tooltip>
+              </q-btn>
+              <q-btn 
+                :flat="props.row.estado !== 'ausente'"
+                :unelevated="props.row.estado === 'ausente'"
+                :color="props.row.estado === 'ausente' ? 'red' : 'grey-4'"
+                :text-color="props.row.estado === 'ausente' ? 'white' : 'grey-8'"
+                icon="cancel"
+                size="sm"
+                round
+                dense
+                @click="props.row.estado = 'ausente'"
+              >
+                <q-tooltip>Ausente</q-tooltip>
+              </q-btn>
+              <q-btn 
+                :flat="props.row.estado !== 'tardanza'"
+                :unelevated="props.row.estado === 'tardanza'"
+                :color="props.row.estado === 'tardanza' ? 'orange' : 'grey-4'"
+                :text-color="props.row.estado === 'tardanza' ? 'white' : 'grey-8'"
+                icon="schedule"
+                size="sm"
+                round
+                dense
+                @click="props.row.estado = 'tardanza'"
+              >
+                <q-tooltip>Tardanza</q-tooltip>
+              </q-btn>
+              <q-btn 
+                :flat="props.row.estado !== 'justificada'"
+                :unelevated="props.row.estado === 'justificada'"
+                :color="props.row.estado === 'justificada' ? 'blue' : 'grey-4'"
+                :text-color="props.row.estado === 'justificada' ? 'white' : 'grey-8'"
+                icon="assignment_late"
+                size="sm"
+                round
+                dense
+                @click="props.row.estado = 'justificada'"
+              >
+                <q-tooltip>Falta Justificada</q-tooltip>
+              </q-btn>
+            </div>
           </q-td>
         </template>
 
@@ -366,6 +427,20 @@ function resetear() {
     e.estado = null
     e.observacion = ''
   })
+}
+
+function marcarTodosPresentes() {
+  estudiantes.value.forEach(e => {
+    e.estado = 'presente'
+  })
+  $q.notify({ type: 'positive', message: 'Todos marcados como presentes', icon: 'check_circle', position: 'top' })
+}
+
+function limpiarSeleccion() {
+  estudiantes.value.forEach(e => {
+    e.estado = null
+  })
+  $q.notify({ type: 'info', message: 'Selección limpiada', icon: 'backspace', position: 'top' })
 }
 
 function guardarAsistencia() {
