@@ -52,8 +52,8 @@
             <span class="stat-label">Progreso</span>
           </div>
         </div>
-        <q-linear-progress 
-          :value="getProgresoSede(sede.id) / 100" 
+        <q-linear-progress
+          :value="getProgresoSede(sede.id) / 100"
           :color="getProgresoSede(sede.id) >= 70 ? 'green' : 'orange'"
           rounded size="6px"
         />
@@ -63,12 +63,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
+
+onMounted(() => {
+  sedesStore.fetchSedes()
+  carrerasStore.fetchCarreras() // Para tener contadores reales si ya existen
+})
 
 const estadisticas = ref([
   { label: 'Total Sedes', value: 9, icon: 'location_city', color: 'purple' },

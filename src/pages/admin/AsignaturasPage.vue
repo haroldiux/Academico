@@ -10,55 +10,21 @@
         <p class="page-subtitle">Administra las materias del plan de estudios</p>
       </div>
       <div class="header-actions">
-        <q-btn outline color="primary" icon="download" label="Exportar" no-caps />
+        <q-btn outline color="primary" icon="download" label="Exportar" no-caps @click="exportTable" />
         <q-btn unelevated color="primary" icon="add" label="Nueva Asignatura" no-caps @click="openDialog()" />
       </div>
     </div>
 
     <!-- Filtros -->
     <div class="filters-section">
-      <q-select
-        v-model="filtros.sede"
-        :options="sedesOptions"
-        outlined
-        dense
-        label="Sede"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 200px;"
-        @update:model-value="onSedeChange"
-      />
-      <q-select
-        v-model="filtros.carrera"
-        :options="carrerasFiltradas"
-        outlined
-        dense
-        label="Carrera"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 250px;"
-        :disable="!filtros.sede"
-      />
-      <q-select
-        v-model="filtros.semestre"
-        :options="semestresOptions"
-        outlined
-        dense
-        label="Semestre"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 150px;"
-      />
-      <q-input
-        v-model="filtros.busqueda"
-        outlined
-        dense
-        placeholder="Buscar asignatura..."
-        class="search-input"
-      >
+      <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
+        clearable style="min-width: 200px;" @update:model-value="onSedeChange" />
+      <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
+        map-options clearable use-input input-debounce="0" @filter="filterCarreras" style="min-width: 300px;"
+        @update:model-value="onCarreraChange" />
+      <q-select v-model="filtros.semestre" :options="semestresOptions" outlined dense label="Semestre" emit-value
+        map-options clearable style="min-width: 150px;" />
+      <q-input v-model="filtros.busqueda" outlined dense placeholder="Buscar asignatura..." class="search-input">
         <template v-slot:prepend>
           <q-icon name="search" />
         </template>
@@ -99,17 +65,23 @@
 
     <!-- Tabla de Asignaturas -->
     <q-card class="table-card">
-      <q-table
-        :rows="asignaturasFiltradas"
-        :columns="columns"
-        row-key="id"
-        :pagination="{ rowsPerPage: 10 }"
-        flat
-        :loading="loading"
-      >
+      <q-table :rows="asignaturasFiltradas" :columns="columns" row-key="id" :pagination="{ rowsPerPage: 10 }" flat
+        :loading="loading">
+        <template v-slot:no-data>
+          <div class="full-width row flex-center text-accent q-gutter-sm" style="padding: 40px">
+            <q-icon size="2em" name="info" />
+            <span v-if="!filtros.sede && !filtros.carrera">
+              Seleccione una <strong>Sede</strong> o <strong>Carrera</strong> para ver más asignaturas.
+            </span>
+            <span v-else>
+              No se encontraron asignaturas para esta selección.
+            </span>
+          </div>
+        </template>
+
         <template v-slot:body-cell-codigo="props">
           <q-td :props="props">
-            <q-chip color="primary" text-color="white" size="sm" dense>
+            <q-chip outline color="primary" text-color="primary" size="sm" class="text-weight-bold">
               {{ props.row.codigo }}
             </q-chip>
           </q-td>
@@ -118,63 +90,45 @@
         <template v-slot:body-cell-nombre="props">
           <q-td :props="props">
             <div class="asignatura-info">
-              <span class="asignatura-nombre">{{ props.row.nombre }}</span>
-              <span class="asignatura-carrera">{{ props.row.carrera_nombre }}</span>
+              <span class="asignatura-nombre text-weight-bold">{{ props.row.nombre }}</span>
+              <span class="asignatura-carrera text-grey-8">{{ props.row.carrera_nombre }}</span>
             </div>
           </q-td>
         </template>
 
         <template v-slot:body-cell-semestre="props">
           <q-td :props="props">
-            <q-chip 
-              :color="getSemestreColor(props.row.semestre)" 
-              text-color="white" 
-              size="sm" 
-              dense
-            >
+            <q-badge :color="getSemestreColor(props.row.semestre)" text-color="white"
+              class="q-px-sm q-py-xs text-weight-medium" rounded>
               {{ props.row.semestre }}° Sem
-            </q-chip>
+            </q-badge>
           </q-td>
         </template>
 
         <template v-slot:body-cell-docentes="props">
           <q-td :props="props">
             <div class="docentes-avatars">
-              <q-avatar 
-                v-for="(docente, idx) in props.row.docentes?.slice(0, 3)" 
-                :key="idx"
-                size="28px"
-                color="grey-4"
-                text-color="grey-8"
-                class="docente-avatar"
-              >
+              <q-avatar v-for="(docente, idx) in props.row.docentes?.slice(0, 3)" :key="idx" size="28px" color="primary"
+                text-color="white" class="docente-avatar" font-size="12px">
                 {{ docente.charAt(0) }}
                 <q-tooltip>{{ docente }}</q-tooltip>
               </q-avatar>
-              <q-avatar 
-                v-if="props.row.docentes?.length > 3" 
-                size="28px" 
-                color="primary" 
-                text-color="white"
-                class="docente-avatar"
-              >
+              <q-avatar v-if="props.row.docentes?.length > 3" size="28px" color="grey-4" text-color="grey-9"
+                class="docente-avatar" font-size="12px">
                 +{{ props.row.docentes.length - 3 }}
               </q-avatar>
-              <span v-if="!props.row.docentes?.length" class="text-grey-5">Sin asignar</span>
+              <span v-if="!props.row.docentes?.length" class="text-grey-7 text-italic" style="font-size: 0.85rem;">
+                Sin asignar
+              </span>
             </div>
           </q-td>
         </template>
 
         <template v-slot:body-cell-estado="props">
           <q-td :props="props">
-            <q-chip 
-              :color="props.row.activa ? 'green' : 'grey'" 
-              text-color="white" 
-              size="sm" 
-              dense
-            >
+            <q-badge :color="props.row.activa ? 'positive' : 'grey-5'" text-color="white" class="q-px-sm" rounded>
               {{ props.row.activa ? 'Activa' : 'Inactiva' }}
-            </q-chip>
+            </q-badge>
           </q-td>
         </template>
 
@@ -219,39 +173,19 @@
 
           <div class="row q-col-gutter-md">
             <div class="col-6">
-              <q-select
-                v-model="form.sede_id"
-                :options="sedesOptions"
-                outlined
-                label="Sede *"
-                emit-value
-                map-options
-                @update:model-value="onFormSedeChange"
-              />
+              <q-select v-model="form.sede_id" :options="sedesOptions" outlined label="Sede *" emit-value map-options
+                @update:model-value="onFormSedeChange" />
             </div>
             <div class="col-6">
-              <q-select
-                v-model="form.carrera_id"
-                :options="carrerasFormOptions"
-                outlined
-                label="Carrera *"
-                emit-value
-                map-options
-                :disable="!form.sede_id"
-              />
+              <q-select v-model="form.carrera_id" :options="carrerasFormOptions" outlined label="Carrera *" emit-value
+                map-options :disable="!form.sede_id" />
             </div>
           </div>
 
           <div class="row q-col-gutter-md">
             <div class="col-4">
-              <q-select
-                v-model="form.semestre"
-                :options="semestresOptions"
-                outlined
-                label="Semestre *"
-                emit-value
-                map-options
-              />
+              <q-select v-model="form.semestre" :options="semestresOptions" outlined label="Semestre *" emit-value
+                map-options />
             </div>
             <div class="col-4">
               <q-input v-model.number="form.horas_teoricas" outlined type="number" label="Horas Teóricas" min="0" />
@@ -266,34 +200,21 @@
               <q-input v-model.number="form.creditos" outlined type="number" label="Créditos" min="0" />
             </div>
             <div class="col-8">
-              <q-select
-                v-model="form.prerequisitos"
-                :options="asignaturasPrerequisito"
-                outlined
-                label="Prerequisitos"
-                emit-value
-                map-options
-                multiple
-                use-chips
-              />
+              <q-select v-model="form.prerequisitos" :options="asignaturasPrerequisito" outlined label="Prerequisitos"
+                emit-value map-options multiple use-chips />
             </div>
           </div>
 
-          <q-input 
-            v-model="form.descripcion" 
-            outlined 
-            type="textarea" 
-            rows="3" 
-            label="Descripción"
-            placeholder="Descripción de la asignatura..."
-          />
+          <q-input v-model="form.descripcion" outlined type="textarea" rows="3" label="Descripción"
+            placeholder="Descripción de la asignatura..." />
 
           <q-toggle v-model="form.activa" label="Asignatura activa" />
         </q-card-section>
 
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="closeDialog" />
-          <q-btn unelevated color="primary" :label="editMode ? 'Guardar Cambios' : 'Crear Asignatura'" @click="guardarAsignatura" />
+          <q-btn unelevated color="primary" :label="editMode ? 'Guardar Cambios' : 'Crear Asignatura'"
+            @click="guardarAsignatura" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -310,28 +231,14 @@
             Asignatura: <strong>{{ asignaturaSeleccionada?.nombre }}</strong>
           </p>
 
-          <q-select
-            v-model="docentesSeleccionados"
-            :options="docentesDisponibles"
-            outlined
-            label="Seleccionar Docentes"
-            emit-value
-            map-options
-            multiple
-            use-chips
-          />
+          <q-select v-model="docentesSeleccionados" :options="docentesDisponibles" outlined label="Seleccionar Docentes"
+            emit-value map-options multiple use-chips />
 
           <div class="q-mt-md">
             <p class="text-caption text-grey-6">Docentes actualmente asignados:</p>
             <div class="docentes-list">
-              <q-chip 
-                v-for="docente in asignaturaSeleccionada?.docentes" 
-                :key="docente"
-                removable
-                @remove="removeDocente(docente)"
-                color="green-2"
-                text-color="green-9"
-              >
+              <q-chip v-for="docente in asignaturaSeleccionada?.docentes" :key="docente" removable
+                @remove="removeDocente(docente)" color="green-2" text-color="green-9">
                 {{ docente }}
               </q-chip>
               <span v-if="!asignaturaSeleccionada?.docentes?.length" class="text-grey-5">
@@ -355,12 +262,43 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
+import { useAsignaturasStore } from 'src/stores/asignaturas'
 
 const router = useRouter()
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
 
-const loading = ref(false)
+const asignaturasStore = useAsignaturasStore()
+
+// Computed proxy for store data
+const asignaturasFiltradas = computed(() => {
+  let resultado = asignaturasStore.asignaturas
+
+  // Filtrar por semestre
+  if (filtros.value.semestre) {
+    resultado = resultado.filter(a => a.semestre === filtros.value.semestre)
+  }
+
+  // Filtrar por búsqueda (nombre o código)
+  if (filtros.value.busqueda) {
+    const normalizeText = (text) => {
+      return text
+        ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+        : ""
+    }
+
+    const term = normalizeText(filtros.value.busqueda)
+    resultado = resultado.filter(a =>
+      normalizeText(a.nombre).includes(term) ||
+      normalizeText(a.codigo).includes(term)
+    )
+  }
+
+  return resultado
+})
+const loading = computed(() => asignaturasStore.loading)
+
+// State
 const showDialog = ref(false)
 const showDocentesDialog = ref(false)
 const editMode = ref(false)
@@ -389,42 +327,34 @@ const form = ref({
   activa: true
 })
 
-// Datos de ejemplo
-const asignaturas = ref([
-  { id: 1, codigo: 'MAT-101', nombre: 'Cálculo I', carrera_id: 1, carrera_nombre: 'Ing. de Sistemas', semestre: 1, horas_teoricas: 4, horas_practicas: 2, creditos: 6, docentes: ['Dr. Juan Pérez', 'Lic. María López'], activa: true },
-  { id: 2, codigo: 'FIS-101', nombre: 'Física I', carrera_id: 1, carrera_nombre: 'Ing. de Sistemas', semestre: 1, horas_teoricas: 3, horas_practicas: 2, creditos: 5, docentes: ['Ing. Carlos Mendoza'], activa: true },
-  { id: 3, codigo: 'PRG-101', nombre: 'Programación I', carrera_id: 1, carrera_nombre: 'Ing. de Sistemas', semestre: 1, horas_teoricas: 2, horas_practicas: 4, creditos: 6, docentes: ['Ing. Pedro García'], activa: true },
-  { id: 4, codigo: 'MAT-201', nombre: 'Cálculo II', carrera_id: 1, carrera_nombre: 'Ing. de Sistemas', semestre: 2, horas_teoricas: 4, horas_practicas: 2, creditos: 6, docentes: [], activa: true },
-  { id: 5, codigo: 'PRG-201', nombre: 'Programación II', carrera_id: 1, carrera_nombre: 'Ing. de Sistemas', semestre: 2, horas_teoricas: 2, horas_practicas: 4, creditos: 6, docentes: ['Ing. Pedro García', 'Lic. Ana Torres'], activa: true },
-  { id: 6, codigo: 'BD-301', nombre: 'Base de Datos I', carrera_id: 1, carrera_nombre: 'Ing. de Sistemas', semestre: 3, horas_teoricas: 3, horas_practicas: 3, creditos: 6, docentes: ['Ing. Roberto Flores'], activa: true },
-  { id: 7, codigo: 'MED-101', nombre: 'Anatomía I', carrera_id: 2, carrera_nombre: 'Medicina', semestre: 1, horas_teoricas: 5, horas_practicas: 3, creditos: 8, docentes: ['Dr. Luis Vargas'], activa: true },
-  { id: 8, codigo: 'DER-101', nombre: 'Derecho Romano', carrera_id: 3, carrera_nombre: 'Derecho', semestre: 1, horas_teoricas: 4, horas_practicas: 0, creditos: 4, docentes: [], activa: false }
-])
-
+// Columns definition
 const columns = [
   { name: 'codigo', label: 'Código', field: 'codigo', align: 'left', sortable: true },
   { name: 'nombre', label: 'Asignatura', field: 'nombre', align: 'left', sortable: true },
+  {
+    name: 'sede',
+    label: 'Sede',
+    field: row => {
+      // Prioridad: 1. Dato de fila, 2. Filtro seleccionado, 3. N/A
+      if (row.sede_nombre && row.sede_nombre !== 'N/A') return row.sede_nombre
+      if (filtros.value.sede) return sedesStore.getSedeById(filtros.value.sede)?.nombre
+      return 'N/A'
+    },
+    align: 'left'
+  },
   { name: 'semestre', label: 'Semestre', field: 'semestre', align: 'center', sortable: true },
   { name: 'horas', label: 'Horas (T/P)', field: row => `${row.horas_teoricas}/${row.horas_practicas}`, align: 'center' },
+  {
+    name: 'carga_total',
+    label: 'Carga Total',
+    field: row => ((row.horas_teoricas || 0) + (row.horas_practicas || 0)) * 20,
+    align: 'center',
+    sortable: true
+  },
   { name: 'creditos', label: 'Créditos', field: 'creditos', align: 'center', sortable: true },
   { name: 'docentes', label: 'Docentes', field: 'docentes', align: 'left' },
-  { name: 'estado', label: 'Estado', field: 'activa', align: 'center' },
   { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
 ]
-
-const sedesOptions = computed(() => 
-  sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
-)
-
-const carrerasFiltradas = computed(() => {
-  if (!filtros.value.sede) return []
-  return carrerasStore.getCarrerasBySede(filtros.value.sede).map(c => ({ label: c.nombre, value: c.id }))
-})
-
-const carrerasFormOptions = computed(() => {
-  if (!form.value.sede_id) return []
-  return carrerasStore.getCarrerasBySede(form.value.sede_id).map(c => ({ label: c.nombre, value: c.id }))
-})
 
 const semestresOptions = [
   { label: '1° Semestre', value: 1 },
@@ -439,12 +369,6 @@ const semestresOptions = [
   { label: '10° Semestre', value: 10 }
 ]
 
-const asignaturasPrerequisito = computed(() => 
-  asignaturas.value
-    .filter(a => a.id !== form.value.id)
-    .map(a => ({ label: `${a.codigo} - ${a.nombre}`, value: a.id }))
-)
-
 const docentesDisponibles = [
   { label: 'Dr. Juan Pérez', value: 'Dr. Juan Pérez' },
   { label: 'Lic. María López', value: 'Lic. María López' },
@@ -455,33 +379,97 @@ const docentesDisponibles = [
   { label: 'Dr. Luis Vargas', value: 'Dr. Luis Vargas' }
 ]
 
-const asignaturasFiltradas = computed(() => {
-  let resultado = asignaturas.value
+const sedesOptions = computed(() =>
+  sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
+)
 
-  if (filtros.value.carrera) {
-    resultado = resultado.filter(a => a.carrera_id === filtros.value.carrera)
+const carrerasFiltradas = computed(() => {
+  if (filtros.value.sede) {
+    return carrerasStore.getCarrerasBySede(filtros.value.sede).map(c => ({ label: c.nombre, value: c.id }))
   }
-
-  if (filtros.value.semestre) {
-    resultado = resultado.filter(a => a.semestre === filtros.value.semestre)
-  }
-
-  if (filtros.value.busqueda) {
-    const busqueda = filtros.value.busqueda.toLowerCase()
-    resultado = resultado.filter(a => 
-      a.nombre.toLowerCase().includes(busqueda) || 
-      a.codigo.toLowerCase().includes(busqueda)
-    )
-  }
-
-  return resultado
+  // Mostrar todas las carreras con la sede entre paréntesis si no hay filtro de sede
+  return carrerasStore.carreras
+    .filter(c => c.activo)
+    .map(c => {
+      const sede = sedesStore.getSedeById(c.sede_id)
+      return {
+        label: `${c.nombre} (${sede?.nombre || 'Sede ?'})`,
+        value: c.id,
+        sede_id: c.sede_id // Extra data for auto-select
+      }
+    })
 })
 
-const totalHoras = computed(() => 
+const carrerasFormOptions = computed(() => {
+  if (!form.value.sede_id) return []
+  return carrerasStore.getCarrerasBySede(form.value.sede_id).map(c => ({ label: c.nombre, value: c.id }))
+})
+
+const asignaturasPrerequisito = computed(() =>
+  asignaturasStore.asignaturas
+    .filter(a => a.id !== form.value.id)
+    .map(a => ({ label: `${a.codigo} - ${a.nombre}`, value: a.id }))
+)
+
+const carrerasOptions = ref([])
+
+function filterCarreras(val, update) {
+  if (val === '') {
+    update(() => {
+      carrerasOptions.value = carrerasFiltradas.value
+    })
+    return
+  }
+
+  update(() => {
+    const needle = val.toLowerCase()
+    carrerasOptions.value = carrerasFiltradas.value.filter(v => v.label.toLowerCase().indexOf(needle) > -1)
+  })
+}
+
+// Watchers / Event Handlers
+async function onSedeChange() {
+  filtros.value.carrera = null
+  // Si se selecciona una sede, cargar sus asignaturas locales
+  if (filtros.value.sede) {
+    const sede = sedesStore.getSedeById(filtros.value.sede)
+    if (sede?.codigo) {
+      // Cargar asignaturas de la sede seleccioanda (sin career_code)
+      await asignaturasStore.fetchAsignaturas(sede.codigo, null)
+    }
+  } else {
+    // Si se limpia la sede, cargar TODO
+    await asignaturasStore.fetchAsignaturas()
+  }
+}
+
+async function onCarreraChange() {
+  // Auto-seleccionar sede si no está seleccionada
+  if (!filtros.value.sede && filtros.value.carrera) {
+    const carrera = carrerasStore.getCarreraById(filtros.value.carrera)
+    if (carrera?.sede_id) {
+      filtros.value.sede = carrera.sede_id
+    }
+  }
+
+  if (filtros.value.sede && filtros.value.carrera) {
+    const sede = sedesStore.getSedeById(filtros.value.sede)
+    const carrera = carrerasStore.getCarreraById(filtros.value.carrera)
+
+    if (sede?.codigo && carrera?.codigo) {
+      await asignaturasStore.fetchAsignaturas(sede.codigo, carrera.codigo)
+    }
+  }
+}
+
+// ... (Rest of options logic remains similar, passing ID) ...
+
+
+const totalHoras = computed(() =>
   asignaturasFiltradas.value.reduce((sum, a) => sum + a.horas_teoricas + a.horas_practicas, 0)
 )
 
-const totalCreditos = computed(() => 
+const totalCreditos = computed(() =>
   asignaturasFiltradas.value.reduce((sum, a) => sum + a.creditos, 0)
 )
 
@@ -496,9 +484,7 @@ function getSemestreColor(semestre) {
   return colors[(semestre - 1) % colors.length]
 }
 
-function onSedeChange() {
-  filtros.value.carrera = null
-}
+
 
 function onFormSedeChange() {
   form.value.carrera_id = null
@@ -534,13 +520,11 @@ function closeDialog() {
 
 function guardarAsignatura() {
   if (editMode.value) {
-    const idx = asignaturas.value.findIndex(a => a.id === form.value.id)
-    if (idx !== -1) {
-      asignaturas.value[idx] = { ...form.value }
-    }
+    // TODO: Implement update via API/Store
+    console.log('Update asignatura:', form.value)
   } else {
-    const newId = Math.max(...asignaturas.value.map(a => a.id), 0) + 1
-    asignaturas.value.push({ ...form.value, id: newId, docentes: [] })
+    // TODO: Implement create via API/Store
+    console.log('Create asignatura:', form.value)
   }
   closeDialog()
 }
@@ -563,23 +547,71 @@ function removeDocente(docente) {
 
 function guardarDocentes() {
   if (asignaturaSeleccionada.value && docentesSeleccionados.value.length > 0) {
-    asignaturaSeleccionada.value.docentes = [
-      ...(asignaturaSeleccionada.value.docentes || []),
-      ...docentesSeleccionados.value.filter(d => !asignaturaSeleccionada.value.docentes?.includes(d))
-    ]
+    // TODO: Implement save docentes
+    console.log('Save docents', docentesSeleccionados.value)
   }
   showDocentesDialog.value = false
 }
 
 function eliminarAsignatura(asignatura) {
   if (confirm(`¿Estás seguro de eliminar la asignatura "${asignatura.nombre}"?`)) {
-    asignaturas.value = asignaturas.value.filter(a => a.id !== asignatura.id)
+    // TODO: Implement delete via API/Store
+    console.log('Delete asignatura:', asignatura.id)
   }
 }
 
 onMounted(() => {
-  // Cargar datos iniciales si es necesario
+  sedesStore.fetchSedes()
+  carrerasStore.fetchCarreras()
+  // Fetch initial "all local" asignaturas
+  asignaturasStore.fetchAsignaturas()
 })
+
+import * as XLSX from 'xlsx'
+
+function exportTable() {
+  // 1. Prepare data
+  const data = asignaturasFiltradas.value.map(row => {
+    // Intentar obtener nombre de sede de la fila, o del filtro de sede seleccionado
+    const sedeNombre = row.sede_nombre && row.sede_nombre !== 'N/A'
+      ? row.sede_nombre
+      : (sedesStore.getSedeById(filtros.value.sede)?.nombre || 'N/A')
+
+    return {
+      'Código': row.codigo,
+      'Asignatura': row.nombre,
+      'Sede': sedeNombre,
+      'Carrera': row.carrera_nombre,
+      'Semestre': `${row.semestre}° Sem/Año`,
+      'Horas Teóricas': row.horas_teoricas || 0,
+      'Horas Prácticas': row.horas_practicas || 0,
+      'Carga Total': ((row.horas_teoricas || 0) + (row.horas_practicas || 0)) * 20,
+      'Créditos': row.creditos
+    }
+  })
+
+  // 2. Create worksheet
+  const ws = XLSX.utils.json_to_sheet(data)
+
+  // 3. Auto-size columns nicely
+  const colWidths = [
+    { wch: 10 }, // Codigo
+    { wch: 40 }, // Asignatura
+    { wch: 20 }, // Sede
+    { wch: 30 }, // Carrera
+    { wch: 12 }, // Semestre
+    { wch: 15 }, // HT
+    { wch: 15 }, // HP
+    { wch: 12 }, // Total
+    { wch: 10 }  // Creditos
+  ]
+  ws['!cols'] = colWidths
+
+  // 4. Create workbook and download
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Asignaturas')
+  XLSX.writeFile(wb, 'Reporte_Asignaturas.xlsx')
+}
 </script>
 
 <style scoped>
@@ -725,11 +757,19 @@ onMounted(() => {
 }
 
 @media (max-width: 1024px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
-  .stats-row { grid-template-columns: 1fr; }
-  .page-header { flex-direction: column; gap: 16px; }
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+  }
 }
 </style>

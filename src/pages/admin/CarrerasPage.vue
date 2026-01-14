@@ -64,12 +64,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
+
+onMounted(() => {
+  sedesStore.fetchSedes()
+  carrerasStore.fetchCarreras()
+})
 
 const sedeSeleccionada = ref(null)
 
