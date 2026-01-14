@@ -33,6 +33,26 @@ export const useSedesStore = defineStore('sedes', () => {
     return sedes.value.find(s => s.nombre.toLowerCase() === nombre.toLowerCase())
   }
 
+  // Mock function until backend provides Campus
+  function getCampusBySede(sedeId) {
+      if (!sedeId) return []
+      // Fake campus generation
+      const sede = sedes.value.find(s => s.id === sedeId)
+      if (!sede) return []
+
+      return [
+          { id: sedeId * 10 + 1, nombre: 'Campus Principal ' + sede.nombre },
+          { id: sedeId * 10 + 2, nombre: 'Campus Secundario ' + sede.nombre }
+      ]
+  }
+
+  function getCampusById(campusId) {
+      // Decode mock ID
+      const sedeId = Math.floor(campusId / 10)
+      const sede = sedes.value.find(s => s.id === sedeId)
+      return { id: campusId, nombre: (campusId % 10 === 1 ? 'Campus Principal ' : 'Campus Secundario ') + (sede ? sede.nombre : '') }
+  }
+
   return {
     sedes,
     campus, // Se mantiene vacío o mock
@@ -41,6 +61,8 @@ export const useSedesStore = defineStore('sedes', () => {
     loading,
     fetchSedes,
     getSedeById,
-    getSedeByNombre
+    getSedeByNombre,
+    getCampusBySede,
+    getCampusById
   }
 })

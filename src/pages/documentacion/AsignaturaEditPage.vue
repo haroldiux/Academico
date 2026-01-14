@@ -13,7 +13,7 @@
           <span class="text-gradient">{{ asignatura?.nombre || 'Cargando...' }}</span>
         </h4>
         <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
-          {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ asignatura?.carrera }}
+          {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ asignatura?.carrera?.nombre || asignatura?.carrera || 'N/A' }}
         </p>
       </div>
       <div class="col-auto row q-gutter-sm">
@@ -505,7 +505,7 @@ function generarPDF(tipo) {
     $q.notify({ type: 'negative', message: 'No hay asignatura cargada', position: 'top' })
     return
   }
-  
+
   try {
     if (tipo === 'carpetaDocente') {
       // Obtener datos de carrera y sede
@@ -518,7 +518,7 @@ function generarPDF(tipo) {
         perfil_profesional: 'El profesional está preparado para desempeñarse en su área.'
       }
       const sede = sedesStore.sedes.find(s => s.id === 1) || { nombre: 'Cochabamba' }
-      
+
       generarCarpetaDocente(asignatura.value, carrera, sede)
       $q.notify({ type: 'positive', message: 'Carpeta Docente generada exitosamente', icon: 'folder', position: 'top' })
     } else if (tipo === 'planClase') {

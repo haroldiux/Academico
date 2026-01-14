@@ -1,5 +1,5 @@
 /**
- * Servicio para generación de PDFs UNITEPC 
+ * Servicio para generación de PDFs UNITEPC
  * Formatos: Plan de Clase Teórico, Programa de Asignatura
  */
 import { jsPDF } from 'jspdf'
@@ -13,7 +13,7 @@ jsPDF.prototype.autoTable = function(options) {
 /**
  * Genera el PDF del Plan de Clase Teórico
  * @param {Object} asignatura - Datos de la asignatura
- * @param {Object} options - Opciones adicionales 
+ * @param {Object} options - Opciones adicionales
  */
 export function generarPlanDeClase(asignatura, options = {}) {
   try {
@@ -34,10 +34,21 @@ export function generarPlanDeClase(asignatura, options = {}) {
     y += 10
 
     // ============= HEADER: DOCENTE, ASIGNATURA, FECHA, CARRERA =============
-    const docente = asignatura.docente || 'Docente por asignar'
+    // ============= HEADER: DOCENTE, ASIGNATURA, FECHA, CARRERA =============
+    // Manejo de docentes (puede ser array o no existir)
+    // Manejo de docentes (puede ser array o no existir)
+    let docenteNombre = 'Por asignar'
+    if (asignatura.docentes && asignatura.docentes.length > 0) {
+      docenteNombre = asignatura.docentes.map(d => d.nombre_completo || `${d.nombre || ''} ${d.apellido || ''}`.trim() || 'Sin nombre').join(', ')
+    } else if (asignatura.docente) { // Fallback por si acaso
+      docenteNombre = typeof asignatura.docente === 'object' ? (asignatura.docente.nombre_completo || 'Sin nombre') : asignatura.docente
+    }
+
     const nombreAsignatura = asignatura.nombre || 'Asignatura'
     const fecha = options.fecha || new Date().toLocaleDateString('es-BO')
-    const carrera = asignatura.carrera || 'Carrera'
+
+    // Manejo de carrera (puede ser objeto o string)
+    const carreraNombre = typeof asignatura.carrera === 'object' ? (asignatura.carrera.nombre || 'Sin Carrera') : (asignatura.carrera || 'Sin Carrera')
 
     autoTable(doc, {
       startY: y,
@@ -50,12 +61,12 @@ export function generarPlanDeClase(asignatura, options = {}) {
       },
       body: [
         [
-          { content: `Nombre del docente: ${docente}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } },
+          { content: `Docente: ${docenteNombre}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } },
           { content: `Asignatura: ${nombreAsignatura}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } }
         ],
         [
           { content: `Fecha: ${fecha}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } },
-          { content: `Carrera: ${carrera}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } }
+          { content: `Carrera: ${carreraNombre}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } }
         ]
       ]
     })
@@ -63,10 +74,10 @@ export function generarPlanDeClase(asignatura, options = {}) {
 
     // ============= ITERAR POR CADA UNIDAD Y TEMA =============
     const unidades = asignatura.unidades || []
-    
+
     unidades.forEach((unidad) => {
       const temas = unidad.temas || []
-      
+
       temas.forEach((tema) => {
         // Verificar si necesitamos nueva página
         if (y > 230) {
@@ -211,7 +222,7 @@ export function generarPlanDeClase(asignatura, options = {}) {
         // --- EVALUACIÓN DE LOS APRENDIZAJES ---
         const evalFormativa = tema.evaluacion?.formativa || {}
         const evalSumativa = tema.evaluacion?.sumativa || {}
-        
+
         autoTable(doc, {
           startY: y,
           margin: { left: margin, right: margin },
@@ -252,12 +263,12 @@ export function generarPlanDeClase(asignatura, options = {}) {
         // --- SECUENCIA DIDÁCTICA ---
         // Convertir el array de secuencia a filas de tabla
         const secuenciaArray = tema.secuencia_didactica || []
-        
+
         // Mapear los momentos del array a filas
         const momentosDefault = ['INTRODUCCION', 'RESULTADOS DE APRENDIZAJE / LOGROS ESPERADOS', 'CONTENIDOS DE LA CLASE', 'CUERPO DE CONTENIDOS', 'CONCLUSION O CIERRE']
-        
+
         // Crear filas dinámicamente desde el array de secuencia
-        const filasSecuencia = secuenciaArray.length > 0 
+        const filasSecuencia = secuenciaArray.length > 0
           ? secuenciaArray.map(s => [
               { content: (s.momento || '').toUpperCase(), styles: { fontStyle: 'bold' } },
               s.actividad || '',
@@ -268,7 +279,7 @@ export function generarPlanDeClase(asignatura, options = {}) {
               '',
               ''
             ])
-        
+
         autoTable(doc, {
           startY: y,
           margin: { left: margin, right: margin },
@@ -292,7 +303,7 @@ export function generarPlanDeClase(asignatura, options = {}) {
     // Guardar PDF con nombre descriptivo
     const nombreArchivo = 'Plan_de_Clase_' + (asignatura.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
     doc.save(nombreArchivo)
-    
+
     return doc
   } catch (error) {
     console.error('Error generando Plan de Clase:', error)
@@ -330,6 +341,14 @@ export function generarProgramaAsignatura(asignatura) {
     y += 10
 
     // ============= DATOS GENERALES =============
+    // Recalcular nombres para este PDF también
+    let docenteNombre = 'Por asignar'
+    if (asignatura.docentes && asignatura.docentes.length > 0) {
+      docenteNombre = asignatura.docentes.map(d => d.nombre_completo || 'Sin nombre').join(', ')
+    }
+
+    const carreraNombre = typeof asignatura.carrera === 'object' ? (asignatura.carrera.nombre || 'Sin Carrera') : (asignatura.carrera || 'Sin Carrera')
+
     autoTable(doc, {
       startY: y,
       margin: { left: margin, right: margin },
@@ -340,11 +359,11 @@ export function generarProgramaAsignatura(asignatura) {
       body: [
         [`Asignatura: ${asignatura.nombre}`],
         [`Codigo: ${asignatura.codigo}`],
-        [`Carrera: ${asignatura.carrera}`],
+        [`Carrera: ${carreraNombre}`],
         [`Semestre: ${asignatura.semestre}`],
         [`Horas Teoricas: ${asignatura.horas_teoricas} | Horas Practicas: ${asignatura.horas_practicas} | Horas Laboratorio: ${asignatura.horas_laboratorio || 0}`],
         [`Creditos: ${asignatura.creditos}`],
-        [`Docente: ${asignatura.docente}`]
+        [`Docente: ${docenteNombre}`]
       ]
     })
     y = doc.lastAutoTable.finalY + 5

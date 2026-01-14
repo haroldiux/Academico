@@ -69,7 +69,7 @@
       <div class="stat-card">
         <q-icon name="school" size="28px" color="green" />
         <div class="stat-info">
-          <span class="stat-value">{{ docentesFiltrados.length }}</span>
+          <span class="stat-value">{{ totalDocentes }}</span>
           <span class="stat-label">Docentes</span>
         </div>
       </div>
@@ -107,10 +107,10 @@
             <h3 class="docente-nombre">{{ docente.titulo }} {{ docente.nombre }}</h3>
             <p class="docente-email">{{ docente.email }}</p>
             <div class="docente-badges">
-              <q-chip 
-                :color="docente.activo ? 'green-2' : 'grey-3'" 
+              <q-chip
+                :color="docente.activo ? 'green-2' : 'grey-3'"
                 :text-color="docente.activo ? 'green-9' : 'grey-7'"
-                size="sm" 
+                size="sm"
                 dense
               >
                 {{ docente.activo ? 'Activo' : 'Inactivo' }}
@@ -167,8 +167,8 @@
         <div class="docente-materias q-mt-md">
           <p class="section-title">Materias Asignadas</p>
           <div class="materias-chips">
-            <q-chip 
-              v-for="materia in docente.materias?.slice(0, 3)" 
+            <q-chip
+              v-for="materia in docente.materias?.slice(0, 3)"
               :key="materia"
               size="sm"
               color="purple-2"
@@ -177,7 +177,7 @@
             >
               {{ materia }}
             </q-chip>
-            <q-chip 
+            <q-chip
               v-if="docente.materias?.length > 3"
               size="sm"
               color="grey-3"
@@ -372,16 +372,24 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
+import { useDocentesStore } from 'src/stores/docentes'
 
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
+const docentesStore = useDocentesStore()
 
 const showDialog = ref(false)
 const editMode = ref(false)
 const formTab = ref('personal')
+
+// Pagination
+const pagination = ref({
+  currentPage: 1,
+  rowsPerPage: 20
+})
 
 const filtros = ref({
   sede: null,
@@ -390,6 +398,47 @@ const filtros = ref({
   busqueda: ''
 })
 
+// Stats Refs
+const stats = ref({
+  total_docentes: 0,
+  activos: 0,
+  total_materias: 0,
+  total_grupos: 0
+})
+
+// Fetch function
+async function fetchData() {
+  const params = {
+    q: filtros.value.busqueda,
+    sede_id: filtros.value.sede,
+    estado: filtros.value.estado,
+    page: pagination.value.currentPage
+  }
+
+  const response = await docentesStore.fetchDocentes(params)
+
+  // Update stats from response if available
+  if (response && response.stats) {
+    stats.value = response.stats
+  }
+}
+
+// Watch filters to reload data
+watch(filtros, () => {
+  pagination.value.currentPage = 1 // Reset to page 1 on filter change
+  fetchData()
+}, { deep: true })
+
+// Load data on mount
+onMounted(async () => {
+  await Promise.all([
+    sedesStore.fetchSedes(),
+    carrerasStore.fetchCarreras(),
+    fetchData()
+  ])
+})
+
+// Form Data with defaults
 const form = ref({
   id: null,
   titulo: 'Lic.',
@@ -412,19 +461,8 @@ const form = ref({
   activo: true
 })
 
-// Datos de ejemplo
-const docentes = ref([
-  { id: 1, titulo: 'Dr.', nombre: 'Juan Pérez Mendoza', iniciales: 'JP', email: 'jperez@unitepc.edu.bo', telefono: '4-4256789', tipo: 'Tiempo Completo', sede_id: 1, sede_nombre: 'Cochabamba', materias: ['Cálculo I', 'Cálculo II', 'Álgebra'], grupos: ['1A', '1B', '2A'], horas_semanales: 40, activo: true },
-  { id: 2, titulo: 'Lic.', nombre: 'María López García', iniciales: 'ML', email: 'mlopez@unitepc.edu.bo', telefono: '4-4256790', tipo: 'Tiempo Completo', sede_id: 1, sede_nombre: 'Cochabamba', materias: ['Cálculo I'], grupos: ['1B'], horas_semanales: 20, activo: true },
-  { id: 3, titulo: 'Ing.', nombre: 'Carlos Mendoza Ríos', iniciales: 'CM', email: 'cmendoza@unitepc.edu.bo', telefono: '4-4256791', tipo: 'Tiempo Completo', sede_id: 1, sede_nombre: 'Cochabamba', materias: ['Física I', 'Física II'], grupos: ['1A', '1B'], horas_semanales: 35, activo: true },
-  { id: 4, titulo: 'Ing.', nombre: 'Pedro García Flores', iniciales: 'PG', email: 'pgarcia@unitepc.edu.bo', telefono: '4-4256792', tipo: 'Tiempo Completo', sede_id: 1, sede_nombre: 'Cochabamba', materias: ['Programación I', 'Programación II', 'Base de Datos'], grupos: ['1A', '2A', '2B'], horas_semanales: 40, activo: true },
-  { id: 5, titulo: 'Lic.', nombre: 'Ana Torres Vargas', iniciales: 'AT', email: 'atorres@unitepc.edu.bo', telefono: '4-4256793', tipo: 'Medio Tiempo', sede_id: 1, sede_nombre: 'Cochabamba', materias: ['Programación II'], grupos: ['2B'], horas_semanales: 20, activo: true },
-  { id: 6, titulo: 'Ing.', nombre: 'Roberto Flores Mamani', iniciales: 'RF', email: 'rflores@unitepc.edu.bo', telefono: '4-4256794', tipo: 'Tiempo Completo', sede_id: 1, sede_nombre: 'Cochabamba', materias: ['Base de Datos I'], grupos: ['3A'], horas_semanales: 30, activo: true },
-  { id: 7, titulo: 'Dr.', nombre: 'Luis Vargas Condori', iniciales: 'LV', email: 'lvargas@unitepc.edu.bo', telefono: '2-2345678', tipo: 'Tiempo Completo', sede_id: 2, sede_nombre: 'La Paz', materias: ['Anatomía I', 'Anatomía II'], grupos: ['1A'], horas_semanales: 40, activo: true },
-  { id: 8, titulo: 'Lic.', nombre: 'Carmen Quispe Huanca', iniciales: 'CQ', email: 'cquispe@unitepc.edu.bo', telefono: '3-3456789', tipo: 'Por Horas', sede_id: 3, sede_nombre: 'Santa Cruz', materias: [], grupos: [], horas_semanales: 0, activo: false }
-])
-
-const sedesOptions = computed(() => 
+// Computed Options
+const sedesOptions = computed(() =>
   sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
 )
 
@@ -433,10 +471,11 @@ const carrerasFiltradas = computed(() => {
   return carrerasStore.getCarrerasBySede(filtros.value.sede).map(c => ({ label: c.nombre, value: c.id }))
 })
 
-const carrerasOptions = computed(() => 
+const carrerasOptions = computed(() =>
   carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id }))
 )
 
+// Options Arrays
 const estadosOptions = [
   { label: 'Activo', value: true },
   { label: 'Inactivo', value: false }
@@ -471,51 +510,53 @@ const tiposDocenteOptions = [
 ]
 
 const gradosAcademicosOptions = [
-  { label: 'Licenciatura', value: 'licenciatura' },
-  { label: 'Maestría', value: 'maestria' },
-  { label: 'Doctorado', value: 'doctorado' },
-  { label: 'Post-Doctorado', value: 'postdoctorado' }
+  { label: 'Licenciatura', value: 'Licenciatura' },
+  { label: 'Maestría', value: 'Maestría' },
+  { label: 'Doctorado', value: 'Doctorado' },
+  { label: 'Post-Doctorado', value: 'Post-Doctorado' }
 ]
 
+// Computed Stats (Now using Backend Data)
+const docentesActivos = computed(() => stats.value.activos)
+const totalMaterias = computed(() => stats.value.total_materias)
+const totalGrupos = computed(() => stats.value.total_grupos)
+const totalDocentes = computed(() => stats.value.total_docentes)
+
+// Mapping store data to component view
 const docentesFiltrados = computed(() => {
-  let resultado = docentes.value
-
-  if (filtros.value.sede) {
-    resultado = resultado.filter(d => d.sede_id === filtros.value.sede)
-  }
-
-  if (filtros.value.estado !== null) {
-    resultado = resultado.filter(d => d.activo === filtros.value.estado)
-  }
-
-  if (filtros.value.busqueda) {
-    const busqueda = filtros.value.busqueda.toLowerCase()
-    resultado = resultado.filter(d => 
-      d.nombre.toLowerCase().includes(busqueda) || 
-      d.email.toLowerCase().includes(busqueda)
-    )
-  }
-
-  return resultado
+  return docentesStore.docentes.map(d => ({
+    id: d.id,
+    titulo: d.grado_academico || 'Lic.',
+    nombre: d.nombre_completo.replace(/^(Lic\.?|Ing\.?|Dr\.?|MSc\.?|PhD\.?)\s+/i, ''),
+    iniciales: d.nombre_completo.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+    email: d.email,
+    telefono: d.celular || d.telefono,
+    tipo: d.tipo_dedicacion,
+    sede_id: d.sede_id,
+    sede_nombre: d.sede?.nombre || 'Sin Sede',
+    materias: d.asignaturas?.map(a => a.nombre) || [],
+    grupos: d.grupos_simulados || [],
+    horas_semanales: 40,
+    activo: d.estado
+  }))
 })
-
-const docentesActivos = computed(() => 
-  docentesFiltrados.value.filter(d => d.activo).length
-)
-
-const totalMaterias = computed(() => 
-  docentesFiltrados.value.reduce((sum, d) => sum + (d.materias?.length || 0), 0)
-)
-
-const totalGrupos = computed(() => 
-  docentesFiltrados.value.reduce((sum, d) => sum + (d.grupos?.length || 0), 0)
-)
 
 function openDialog(docente = null) {
   formTab.value = 'personal'
   if (docente) {
     editMode.value = true
-    form.value = { ...docente }
+    const rawDocente = docentesStore.docentes.find(d => d.id === docente.id)
+    if (rawDocente) {
+      form.value = {
+        ...rawDocente,
+        titulo: rawDocente.grado_academico || 'Lic.',
+        nombre: rawDocente.nombre_completo.replace(/^(Lic\.?|Ing\.?|Dr\.?|MSc\.?|PhD\.?)\s+/i, ''),
+        carreras: [],
+      }
+    } else {
+        // Fallback if not found in store list (unlikely)
+        form.value = { ...docente }
+    }
   } else {
     editMode.value = false
     form.value = {
@@ -547,30 +588,33 @@ function closeDialog() {
   showDialog.value = false
 }
 
-function guardarDocente() {
+async function guardarDocente() {
+  const dataToSave = {
+    ...form.value,
+    nombre_completo: `${form.value.titulo} ${form.value.nombre}`.trim()
+  }
+
   if (editMode.value) {
-    const idx = docentes.value.findIndex(d => d.id === form.value.id)
-    if (idx !== -1) {
-      docentes.value[idx] = { ...docentes.value[idx], ...form.value }
+    if (!form.value.id) return
+    const success = await docentesStore.updateDocente(form.value.id, dataToSave)
+    if (success) {
+      closeDialog()
+      fetchData()
     }
   } else {
-    const newId = Math.max(...docentes.value.map(d => d.id), 0) + 1
-    const sede = sedesStore.sedes.find(s => s.id === form.value.sede_id)
-    const iniciales = form.value.nombre.split(' ').map(n => n.charAt(0)).join('').slice(0, 2).toUpperCase()
-    docentes.value.push({ 
-      ...form.value, 
-      id: newId,
-      iniciales,
-      sede_nombre: sede?.nombre || '',
-      materias: [],
-      grupos: []
-    })
+    const success = await docentesStore.createDocente(dataToSave)
+    if (success) {
+      closeDialog()
+      fetchData()
+    }
   }
-  closeDialog()
 }
 
 function toggleEstado(docente) {
-  docente.activo = !docente.activo
+  const newState = !docente.activo
+  docentesStore.updateDocente(docente.id, { estado: newState }).then(() => {
+    fetchData()
+  })
 }
 
 function verCargaHoraria(docente) {
@@ -609,6 +653,7 @@ function verHistorial(docente) {
   color: var(--text-secondary);
   margin: 4px 0 0 0;
   font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .header-actions {

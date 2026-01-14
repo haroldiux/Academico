@@ -13,6 +13,60 @@
       </div>
     </div>
 
+    <!-- Filters -->
+    <div class="row q-col-gutter-md q-mb-lg">
+      <div class="col-12 col-md-3">
+        <q-select
+          v-model="filtros.sede"
+          :options="sedesOptions"
+          label="Sede"
+          outlined
+          dense
+          bg-color="white"
+          emit-value
+          map-options
+          clearable
+        >
+            <template v-slot:prepend>
+                <q-icon name="apartment" />
+            </template>
+        </q-select>
+      </div>
+      <div class="col-12 col-md-3">
+         <q-select
+          v-model="filtros.carrera"
+          :options="carrerasOptions"
+          label="Carrera"
+          outlined
+          dense
+          bg-color="white"
+          emit-value
+          map-options
+          clearable
+          :disable="!filtros.sede"
+        >
+            <template v-slot:prepend>
+                <q-icon name="school" />
+            </template>
+        </q-select>
+      </div>
+       <div class="col-12 col-md-6">
+        <q-input
+          v-model="filtros.search"
+          label="Buscar materia (Nombre o Código)..."
+          outlined
+          dense
+          bg-color="white"
+          debounce="300"
+          clearable
+        >
+            <template v-slot:prepend>
+                <q-icon name="search" />
+            </template>
+        </q-input>
+      </div>
+    </div>
+
     <!-- Stats Cards -->
     <div class="row q-col-gutter-lg q-mb-lg">
       <div class="col-12 col-sm-6 col-lg-3">
@@ -60,8 +114,8 @@
         :key="asignatura.id"
         class="col-12 col-md-6 col-lg-4"
       >
-        <q-card 
-          class="card-main cursor-pointer animate-in" 
+        <q-card
+          class="card-main cursor-pointer animate-in"
           :style="{ animationDelay: `${0.3 + index * 0.05}s` }"
           @click="irADocumentacion(asignatura.id)"
         >
@@ -143,11 +197,11 @@
           <q-separator />
 
           <q-card-actions>
-            <q-btn 
-              flat 
-              color="primary" 
-              icon="edit_document" 
-              label="Documentar" 
+            <q-btn
+              flat
+              color="primary"
+              icon="edit_document"
+              label="Documentar"
               no-caps
               class="full-width"
               @click.stop="irADocumentacion(asignatura.id)"
@@ -160,12 +214,91 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
+import { useSedesStore } from 'src/stores/sedes'
+import { useCarrerasStore } from 'src/stores/carreras'
 
 const router = useRouter()
 const asignaturasStore = useAsignaturasStore()
+const sedesStore = useSedesStore()
+const carrerasStore = useCarrerasStore()
+
+// State
+const filtros = ref({
+  sede: '',
+  carrera: '',
+  search: ''
+})
+
+// Lifecycle
+import { onMounted } from 'vue'
+
+onMounted(async () => {
+  await Promise.all([
+    sedesStore.fetchSedes(),
+    carrerasStore.fetchCarreras(),
+    fetchData()
+  ])
+})
+
+async function fetchData() {
+    // Si hay sede seleccionada, usamos el código de la sede (ej: 'CBA') si lo tuviera, o el ID
+    // Ojo: El backend espera 'branch_code', que es string (ej 'CBA').
+    // Si nuestro select de sedes devuelve ID, necesitamos buscar el código.
+    // Asumiremos por ahora que el filtro Sede devuelve el objeto o el ID.
+    // Vamos a buscar el código si es un ID.
+
+    let branchCode = null
+    if (filtros.value.sede) {
+        const s = sedesStore.sedes.find(x => x.id === filtros.value.sede)
+        branchCode = s ? s.codigo : null
+    }
+
+    let careerCode = null
+    if (filtros.value.carrera) {
+        const c = carrerasStore.carreras.find(x => x.id === filtros.value.carrera)
+        careerCode = c ? c.codigo : null
+    }
+
+    await asignaturasStore.fetchAsignaturas(
+        branchCode,
+        careerCode,
+        true,
+        filtros.value.search
+    )
+}
+
+// Watchers
+watch(() => filtros.value.sede, () => {
+    filtros.value.carrera = '' // Reset carrera when sede changes
+    fetchData()
+})
+
+watch(() => filtros.value.carrera, () => fetchData())
+
+// Debounce para búsqueda
+let searchTimeout
+watch(() => filtros.value.search, () => {
+    clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(() => {
+        fetchData()
+    }, 500)
+})
+
+// Computed Options
+const sedesOptions = computed(() => {
+    return sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
+})
+
+const carrerasOptions = computed(() => {
+    let list = carrerasStore.carreras
+    if (filtros.value.sede) {
+        list = list.filter(c => c.sede_id === filtros.value.sede)
+    }
+    return list.map(c => ({ label: c.nombre, value: c.id }))
+})
 
 // Computed
 const totalUnidades = computed(() => {

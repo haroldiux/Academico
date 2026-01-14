@@ -111,7 +111,7 @@
       <div v-for="materia in materiasFiltradas" :key="materia.id" class="materia-section">
         <div class="materia-header">
           <div class="materia-info">
-            <q-chip color="primary" text-color="white" size="sm" dense>{{ materia.codigo }}</q-chip>
+            <q-chip color="blue-1" text-color="blue-10" size="sm" dense class="text-weight-bold">{{ materia.codigo }}</q-chip>
             <h3 class="materia-nombre">{{ materia.nombre }}</h3>
             <div class="materia-meta">
               <q-chip size="xs" color="purple-2" text-color="purple-9">{{ materia.carrera_nombre }}</q-chip>
@@ -168,8 +168,8 @@
               </div>
             </div>
 
-            <q-linear-progress 
-              :value="grupo.estudiantes / grupo.capacidad" 
+            <q-linear-progress
+              :value="grupo.estudiantes / grupo.capacidad"
               :color="grupo.estudiantes >= grupo.capacidad ? 'red' : 'green'"
               class="q-mt-sm"
               rounded
@@ -272,12 +272,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
+import { useGruposStore } from 'src/stores/grupos'
+import { useDocentesStore } from 'src/stores/docentes'
 
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
+const gruposStore = useGruposStore()
+const docentesStore = useDocentesStore()
 
 const showDialog = ref(false)
 const editMode = ref(false)
@@ -304,139 +308,8 @@ const form = ref({
   horario: ''
 })
 
-// Datos de ejemplo - Materias con sus grupos
-const materias = ref([
-  // === MEDICINA - COCHABAMBA ===
-  { 
-    id: 101, 
-    codigo: 'MED-101', 
-    nombre: 'Anatomía I', 
-    carrera_id: 2, 
-    carrera_nombre: 'Medicina',
-    sede_id: 1,
-    sede_nombre: 'Cochabamba',
-    semestre: 1,
-    grupos: [
-      { id: 1, numero: 1, campus_id: 1, campus_nombre: 'Campus Colonial', docente_id: 7, docente_nombre: 'Dr. Luis Vargas', estudiantes: 48, capacidad: 50, aula: 'Anfiteatro A', horario: 'Lun-Mie-Vie 7:00-9:00' },
-      { id: 2, numero: 2, campus_id: 1, campus_nombre: 'Campus Colonial', docente_id: 7, docente_nombre: 'Dr. Luis Vargas', estudiantes: 45, capacidad: 50, aula: 'Anfiteatro B', horario: 'Lun-Mie-Vie 9:00-11:00' },
-      { id: 3, numero: 3, campus_id: 1, campus_nombre: 'Campus Colonial', docente_id: 11, docente_nombre: 'Dr. Roberto Flores', estudiantes: 42, capacidad: 50, aula: 'Aula 301', horario: 'Mar-Jue 7:00-10:00' },
-      { id: 4, numero: 4, campus_id: 1, campus_nombre: 'Campus Colonial', docente_id: 11, docente_nombre: 'Dr. Roberto Flores', estudiantes: 40, capacidad: 50, aula: 'Aula 302', horario: 'Mar-Jue 10:00-13:00' }
-    ]
-  },
-  { 
-    id: 102, 
-    codigo: 'MED-102', 
-    nombre: 'Biología Celular', 
-    carrera_id: 2, 
-    carrera_nombre: 'Medicina',
-    sede_id: 1,
-    sede_nombre: 'Cochabamba',
-    semestre: 1,
-    grupos: [
-      { id: 5, numero: 1, campus_id: 1, campus_nombre: 'Campus Colonial', docente_id: 8, docente_nombre: 'Dra. María Sánchez', estudiantes: 48, capacidad: 50, aula: 'Lab. Biología', horario: 'Lun-Mie 14:00-16:00' },
-      { id: 6, numero: 2, campus_id: 1, campus_nombre: 'Campus Colonial', docente_id: 8, docente_nombre: 'Dra. María Sánchez', estudiantes: 45, capacidad: 50, aula: 'Lab. Biología', horario: 'Mar-Jue 14:00-16:00' },
-      { id: 7, numero: 3, campus_id: 1, campus_nombre: 'Campus Colonial', docente_id: 8, docente_nombre: 'Dra. María Sánchez', estudiantes: 42, capacidad: 50, aula: 'Lab. Biología', horario: 'Vie 8:00-12:00' }
-    ]
-  },
-  // === MEDICINA - IVIRGARZAMA ===
-  { 
-    id: 103, 
-    codigo: 'MED-101', 
-    nombre: 'Anatomía I', 
-    carrera_id: 2, 
-    carrera_nombre: 'Medicina',
-    sede_id: 4,
-    sede_nombre: 'Ivirgarzama',
-    semestre: 1,
-    grupos: [
-      { id: 8, numero: 1, campus_id: 8, campus_nombre: 'Campus Principal', docente_id: 12, docente_nombre: 'Dr. Juan Quispe', estudiantes: 35, capacidad: 40, aula: 'Aula Principal', horario: 'Lun-Mie-Vie 8:00-10:00' },
-      { id: 9, numero: 2, campus_id: 8, campus_nombre: 'Campus Principal', docente_id: 12, docente_nombre: 'Dr. Juan Quispe', estudiantes: 32, capacidad: 40, aula: 'Aula 101', horario: 'Lun-Mie-Vie 10:00-12:00' },
-      { id: 10, numero: 3, campus_id: 8, campus_nombre: 'Campus Principal', docente_id: null, docente_nombre: null, estudiantes: 28, capacidad: 40, aula: 'Aula 102', horario: '' }
-    ]
-  },
-  // === MEDICINA - EL ALTO ===
-  { 
-    id: 104, 
-    codigo: 'MED-101', 
-    nombre: 'Anatomía I', 
-    carrera_id: 2, 
-    carrera_nombre: 'Medicina',
-    sede_id: 5,
-    sede_nombre: 'El Alto',
-    semestre: 1,
-    grupos: [
-      { id: 11, numero: 1, campus_id: 9, campus_nombre: 'Campus Ciudad Satélite', docente_id: 14, docente_nombre: 'Dra. Carmen Huanca', estudiantes: 38, capacidad: 45, aula: 'Anfiteatro 1', horario: 'Lun-Mie-Vie 7:00-9:00' }
-    ]
-  },
-  // === ING. SISTEMAS - COCHABAMBA ===
-  { 
-    id: 1, 
-    codigo: 'MAT-101', 
-    nombre: 'Cálculo I', 
-    carrera_id: 1, 
-    carrera_nombre: 'Ing. de Sistemas',
-    sede_id: 1,
-    sede_nombre: 'Cochabamba',
-    semestre: 1,
-    grupos: [
-      { id: 12, numero: 1, campus_id: 2, campus_nombre: 'Campus Juan Pablo II', docente_id: 1, docente_nombre: 'Dr. Juan Pérez', estudiantes: 35, capacidad: 40, aula: 'Aula 101', horario: 'Lun-Mie-Vie 7:00-8:30' },
-      { id: 13, numero: 2, campus_id: 2, campus_nombre: 'Campus Juan Pablo II', docente_id: 2, docente_nombre: 'Lic. María López', estudiantes: 32, capacidad: 40, aula: 'Aula 102', horario: 'Lun-Mie-Vie 8:30-10:00' },
-      { id: 14, numero: 3, campus_id: 2, campus_nombre: 'Campus Juan Pablo II', docente_id: 1, docente_nombre: 'Dr. Juan Pérez', estudiantes: 28, capacidad: 40, aula: 'Aula 201', horario: 'Mar-Jue 7:00-9:00' }
-    ]
-  },
-  { 
-    id: 3, 
-    codigo: 'PRG-101', 
-    nombre: 'Programación I', 
-    carrera_id: 1, 
-    carrera_nombre: 'Ing. de Sistemas',
-    sede_id: 1,
-    sede_nombre: 'Cochabamba',
-    semestre: 1,
-    grupos: [
-      { id: 15, numero: 1, campus_id: 2, campus_nombre: 'Campus Juan Pablo II', docente_id: 4, docente_nombre: 'Ing. Pedro García', estudiantes: 35, capacidad: 40, aula: 'Lab. 101', horario: 'Mar-Jue 9:00-11:00' },
-      { id: 16, numero: 2, campus_id: 2, campus_nombre: 'Campus Juan Pablo II', docente_id: 4, docente_nombre: 'Ing. Pedro García', estudiantes: 32, capacidad: 40, aula: 'Lab. 102', horario: 'Mar-Jue 11:00-13:00' },
-      { id: 17, numero: 3, campus_id: 2, campus_nombre: 'Campus Juan Pablo II', docente_id: 5, docente_nombre: 'Lic. Ana Torres', estudiantes: 28, capacidad: 40, aula: 'Lab. 103', horario: 'Vie 8:00-12:00' }
-    ]
-  },
-  // === ING. SISTEMAS - LA PAZ ===
-  { 
-    id: 5, 
-    codigo: 'MAT-101', 
-    nombre: 'Cálculo I', 
-    carrera_id: 1, 
-    carrera_nombre: 'Ing. de Sistemas',
-    sede_id: 2,
-    sede_nombre: 'La Paz',
-    semestre: 1,
-    grupos: [
-      { id: 18, numero: 1, campus_id: 4, campus_nombre: 'Campus Central', docente_id: 15, docente_nombre: 'Lic. Fernando Choque', estudiantes: 30, capacidad: 35, aula: 'Aula A', horario: 'Lun-Mie-Vie 8:00-9:30' },
-      { id: 19, numero: 2, campus_id: 4, campus_nombre: 'Campus Central', docente_id: 15, docente_nombre: 'Lic. Fernando Choque', estudiantes: 25, capacidad: 35, aula: 'Aula B', horario: 'Lun-Mie-Vie 9:30-11:00' }
-    ]
-  }
-])
-
-// Datos de docentes
-const docentes = ref([
-  { id: 1, nombre: 'Dr. Juan Pérez' },
-  { id: 2, nombre: 'Lic. María López' },
-  { id: 3, nombre: 'Ing. Carlos Mendoza' },
-  { id: 4, nombre: 'Ing. Pedro García' },
-  { id: 5, nombre: 'Lic. Ana Torres' },
-  { id: 6, nombre: 'Ing. Roberto Flores' },
-  { id: 7, nombre: 'Dr. Luis Vargas' },
-  { id: 8, nombre: 'Dra. María Sánchez' },
-  { id: 9, nombre: 'Dr. Carlos Rojas' },
-  { id: 10, nombre: 'Lic. Pedro Mamani' },
-  { id: 11, nombre: 'Dr. Roberto Flores' },
-  { id: 12, nombre: 'Dr. Juan Quispe' },
-  { id: 13, nombre: 'Lic. Rosa Condori' },
-  { id: 14, nombre: 'Dra. Carmen Huanca' },
-  { id: 15, nombre: 'Lic. Fernando Choque' },
-  { id: 16, nombre: 'Ing. Mario Yujra' }
-])
-
-const sedesOptions = computed(() => 
+// Computed Options
+const sedesOptions = computed(() =>
   sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
 )
 
@@ -451,11 +324,17 @@ const campusFormOptions = computed(() => {
 })
 
 const carrerasFiltradas = computed(() => {
-  return carrerasStore.carrerasActivas.map(c => ({ label: c.nombre, value: c.id }))
+    // If sede selected, filter careers by sede
+    if (filtros.value.sede) {
+        return carrerasStore.getCarrerasBySede(filtros.value.sede).map(c => ({ label: c.nombre, value: c.id }))
+    }
+    return carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id }))
 })
 
-const docentesOptions = computed(() => 
-  docentes.value.map(d => ({ label: d.nombre, value: d.id }))
+// Load Docentes for Select (Ideally should be paginated or search-based, but loading 800 is okay for select)
+// To avoid loading 800 at once, we might want to filter by Sede in the dialog.
+const docentesOptions = computed(() =>
+  docentesStore.docentes.map(d => ({ label: d.nombre_completo || d.nombre, value: d.id }))
 )
 
 const semestresOptions = [
@@ -477,44 +356,58 @@ const gestionesOptions = [
   { label: '2024', value: 2024 }
 ]
 
-const materiasFiltradas = computed(() => {
-  let resultado = materias.value
+// Data from Store
+const materiasFiltradas = computed(() => gruposStore.materias)
 
-  if (filtros.value.sede) {
-    resultado = resultado.filter(m => m.sede_id === filtros.value.sede)
-  }
-
-  if (filtros.value.carrera) {
-    resultado = resultado.filter(m => m.carrera_id === filtros.value.carrera)
-  }
-
-  if (filtros.value.semestre) {
-    resultado = resultado.filter(m => m.semestre === filtros.value.semestre)
-  }
-
-  return resultado
-})
-
-const totalGrupos = computed(() => 
+// Stats
+const totalGrupos = computed(() =>
   materiasFiltradas.value.reduce((sum, m) => sum + (m.grupos?.length || 0), 0)
 )
 
-const totalEstudiantes = computed(() => 
-  materiasFiltradas.value.reduce((sum, m) => 
-    sum + (m.grupos?.reduce((gs, g) => gs + g.estudiantes, 0) || 0), 0)
+const totalEstudiantes = computed(() =>
+  materiasFiltradas.value.reduce((sum, m) =>
+    sum + (m.grupos?.reduce((gs, g) => gs + (g.estudiantes || 0), 0) || 0), 0)
 )
 
 const totalDocentes = computed(() => {
   const docentesSet = new Set()
-  materiasFiltradas.value.forEach(m => 
+  materiasFiltradas.value.forEach(m =>
     m.grupos?.forEach(g => g.docente_id && docentesSet.add(g.docente_id))
   )
   return docentesSet.size
 })
 
+// Methods
+async function fetchData() {
+    const params = {
+        sede_id: filtros.value.sede,
+        carrera_id: filtros.value.carrera,
+        semestre: filtros.value.semestre,
+        per_page: 20 // Adjust as needed
+    }
+    await gruposStore.fetchGrupos(params)
+}
+
 function onSedeChange() {
   filtros.value.campus = null
+  fetchData()
 }
+
+// Watch filters
+watch(() => [filtros.value.carrera, filtros.value.semestre], () => {
+    fetchData()
+})
+
+// Lifecycle
+onMounted(async () => {
+    await Promise.all([
+        sedesStore.fetchSedes(),
+        carrerasStore.fetchCarreras(),
+        docentesStore.fetchDocentes({ per_page: 100 }), // Load initial teachers, ideally search
+        fetchData()
+    ])
+})
+
 
 function onFormSedeChange() {
   form.value.campus_id = null
@@ -544,7 +437,7 @@ function agregarGrupoAMateria(materia) {
   form.value = {
     id: null,
     materia_id: materia.id,
-    sede_id: materia.sede_id,
+    sede_id: materia.sede_id, // Ensure backend returns sede_id or map it
     campus_id: null,
     numero: (materia.grupos?.length || 0) + 1,
     docente_id: null,
@@ -558,19 +451,12 @@ function agregarGrupoAMateria(materia) {
 
 function editarGrupo(grupo) {
   editMode.value = true
-  const materia = materias.value.find(m => m.grupos?.some(g => g.id === grupo.id))
+  const materia = materiasFiltradas.value.find(m => m.grupos?.some(g => g.id === grupo.id))
   materiaSeleccionada.value = materia
   form.value = {
-    id: grupo.id,
+    ...grupo,
     materia_id: materia?.id,
     sede_id: materia?.sede_id,
-    campus_id: grupo.campus_id,
-    numero: grupo.numero,
-    docente_id: grupo.docente_id,
-    capacidad: grupo.capacidad,
-    estudiantes: grupo.estudiantes,
-    aula: grupo.aula,
-    horario: grupo.horario
   }
   showDialog.value = true
 }
@@ -580,48 +466,21 @@ function closeDialog() {
   materiaSeleccionada.value = null
 }
 
-function guardarGrupo() {
+async function guardarGrupo() {
   if (materiaSeleccionada.value) {
-    const materia = materias.value.find(m => m.id === materiaSeleccionada.value.id)
-    if (materia) {
-      const campus = sedesStore.getCampusById(form.value.campus_id)
-      const docente = docentes.value.find(d => d.id === form.value.docente_id)
-      
       if (editMode.value) {
-        const grupoIdx = materia.grupos.findIndex(g => g.id === form.value.id)
-        if (grupoIdx !== -1) {
-          materia.grupos[grupoIdx] = {
-            ...materia.grupos[grupoIdx],
-            campus_id: form.value.campus_id,
-            campus_nombre: campus?.nombre,
-            numero: form.value.numero,
-            docente_id: form.value.docente_id,
-            docente_nombre: docente?.nombre,
-            capacidad: form.value.capacidad,
-            estudiantes: form.value.estudiantes,
-            aula: form.value.aula,
-            horario: form.value.horario
-          }
-        }
+          // Update Logic (Call store)
+          // await gruposStore.updateGrupo(...)
       } else {
-        const newId = Math.max(...materias.value.flatMap(m => m.grupos?.map(g => g.id) || [0]), 0) + 1
-        materia.grupos = materia.grupos || []
-        materia.grupos.push({
-          id: newId,
-          numero: form.value.numero,
-          campus_id: form.value.campus_id,
-          campus_nombre: campus?.nombre,
-          docente_id: form.value.docente_id,
-          docente_nombre: docente?.nombre,
-          capacidad: form.value.capacidad,
-          estudiantes: form.value.estudiantes,
-          aula: form.value.aula,
-          horario: form.value.horario
-        })
+          // Create Logic
+          // const success = await gruposStore.createGrupo({ ...form.value, asignatura_id: materiaSeleccionada.value.id })
+          // if (success) closeDialog()
       }
-    }
+      // Since Store update logic isn't fully built for pivot yet, we'll implement full functionality in next step.
+      // For now, let's refresh to show we connected read-only correctly.
+      closeDialog()
+      fetchData()
   }
-  closeDialog()
 }
 
 function verHorario(grupo) {
@@ -630,11 +489,7 @@ function verHorario(grupo) {
 
 function eliminarGrupo(grupo) {
   if (confirm(`¿Estás seguro de eliminar el Grupo ${grupo.numero}?`)) {
-    materias.value.forEach(m => {
-      if (m.grupos) {
-        m.grupos = m.grupos.filter(g => g.id !== grupo.id)
-      }
-    })
+    // Call store delete
   }
 }
 </script>
@@ -728,6 +583,7 @@ function eliminarGrupo(grupo) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: flex-start;
 }
 
 .materia-nombre {
