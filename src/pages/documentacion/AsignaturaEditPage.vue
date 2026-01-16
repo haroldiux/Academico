@@ -77,6 +77,7 @@
         align="left"
       >
         <q-tab name="datos" icon="description" label="Datos de Asignatura" no-caps />
+        <q-tab name="programa" icon="assignment" label="Programa" no-caps />
         <q-tab name="bibliografia" icon="auto_stories" label="Bibliografía" no-caps />
         <q-tab name="unidades" icon="folder_open" label="Unidades de Aprendizaje" no-caps />
       </q-tabs>
@@ -181,6 +182,81 @@
 
             <q-input v-model="formDatos.criterios_evaluacion" label="Criterios de Evaluación" outlined type="textarea" rows="2">
               <template v-slot:prepend><q-icon name="grading" color="red" /></template>
+            </q-input>
+          </q-form>
+        </q-tab-panel>
+
+        <!-- Tab: Programa de Asignatura -->
+        <q-tab-panel name="programa" class="q-pa-lg">
+          <div class="text-h6 text-weight-bold q-mb-lg">
+            <q-icon name="assignment" color="purple" class="q-mr-sm" />
+            Programa de Asignatura
+          </div>
+
+          <q-form class="q-gutter-lg">
+            <!-- Competencias -->
+            <div class="text-subtitle1 text-weight-bold">
+              <q-icon name="emoji_events" color="amber" class="q-mr-sm" />
+              Competencias
+            </div>
+
+            <q-input
+              v-model="formPrograma.competencia_global"
+              label="Competencia Global Específica"
+              outlined
+              type="textarea"
+              rows="4"
+              hint="Describe la competencia global específica de la asignatura"
+            >
+              <template v-slot:prepend><q-icon name="public" color="blue" /></template>
+            </q-input>
+
+            <q-input
+              v-model="formPrograma.competencia_asignatura"
+              label="Competencia de la Asignatura"
+              outlined
+              type="textarea"
+              rows="4"
+              hint="Describe la competencia específica que desarrollará el estudiante"
+            >
+              <template v-slot:prepend><q-icon name="school" color="green" /></template>
+            </q-input>
+
+            <!-- Reglamento -->
+            <div class="text-subtitle1 text-weight-bold q-mt-lg">
+              <q-icon name="gavel" color="red" class="q-mr-sm" />
+              Reglamento y Normativa
+            </div>
+
+            <div class="q-gutter-sm">
+              <div v-for="(regla, index) in formPrograma.reglamento_normativa" :key="index" class="row items-center q-gutter-sm">
+                <q-input
+                  v-model="formPrograma.reglamento_normativa[index]"
+                  outlined
+                  dense
+                  class="col"
+                  :placeholder="'Regla ' + (index + 1)"
+                />
+                <q-btn flat round dense icon="delete" color="red" @click="quitarRegla(index)" />
+              </div>
+              <q-btn flat icon="add" label="Agregar regla" color="primary" no-caps @click="agregarRegla" />
+            </div>
+
+            <!-- Organización y Calendario -->
+            <div class="text-subtitle1 text-weight-bold q-mt-lg">
+              <q-icon name="calendar_month" color="indigo" class="q-mr-sm" />
+              Organización y Calendario
+            </div>
+
+            <q-input
+              v-model="formPrograma.organizacion_calendario"
+              label="Organización y Calendario Académico"
+              outlined
+              type="textarea"
+              rows="4"
+              hint="Describe la organización del calendario académico de la asignatura"
+            >
+              <template v-slot:prepend><q-icon name="event" color="indigo" /></template>
             </q-input>
           </q-form>
         </q-tab-panel>
@@ -408,6 +484,12 @@ const asignatura = computed(() => store.asignaturaActual)
 
 // Forms
 const formDatos = ref({})
+const formPrograma = ref({
+  competencia_global: '',
+  competencia_asignatura: '',
+  reglamento_normativa: [],
+  organizacion_calendario: ''
+})
 const formBiblio = ref({})
 const dialogBibliografia = ref(false)
 const editandoBiblio = ref(false)
@@ -445,10 +527,30 @@ function cargarFormDatos() {
     metodologia_ensenanza: asignatura.value.metodologia_ensenanza,
     criterios_evaluacion: asignatura.value.criterios_evaluacion
   }
+  // Cargar datos del programa
+  formPrograma.value = {
+    competencia_global: asignatura.value.competencia_global || '',
+    competencia_asignatura: asignatura.value.competencia_asignatura || '',
+    reglamento_normativa: asignatura.value.reglamento_normativa || [],
+    organizacion_calendario: asignatura.value.organizacion_calendario || ''
+  }
+}
+
+function agregarRegla() {
+  formPrograma.value.reglamento_normativa.push('')
+}
+
+function quitarRegla(index) {
+  formPrograma.value.reglamento_normativa.splice(index, 1)
 }
 
 function guardarCambios() {
-  store.updateAsignatura(asignatura.value.id, formDatos.value)
+  // Combinar datos de ambos formularios
+  const datosCompletos = {
+    ...formDatos.value,
+    ...formPrograma.value
+  }
+  store.updateAsignatura(asignatura.value.id, datosCompletos)
   $q.notify({ type: 'positive', message: 'Cambios guardados', icon: 'check_circle', position: 'top' })
 }
 
@@ -508,9 +610,13 @@ function generarPDF(tipo) {
 
   try {
     if (tipo === 'carpetaDocente') {
-      // Obtener datos de carrera y sede
-      const carrera = carrerasStore.carreras.find(c => c.nombre === asignatura.value.carrera) || {
-        nombre: asignatura.value.carrera || 'Ingeniería de Sistemas',
+      // Obtener datos de carrera (puede ser objeto o string)
+      const carreraNombreAsig = typeof asignatura.value.carrera === 'object'
+        ? asignatura.value.carrera?.nombre
+        : asignatura.value.carrera
+      
+      const carrera = carrerasStore.carreras.find(c => c.nombre === carreraNombreAsig) || {
+        nombre: carreraNombreAsig || 'Ingeniería de Sistemas',
         codigo: 'SIS',
         area: 'Ciencias Exactas y Tecnología',
         mision: 'Formar profesionales de excelencia.',
