@@ -263,12 +263,15 @@ import { useRouter } from 'vue-router'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
+import { useDocentesStore } from 'src/stores/docentes'
+import { useQuasar } from 'quasar'
 
 const router = useRouter()
+const $q = useQuasar()
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
-
 const asignaturasStore = useAsignaturasStore()
+const docentesStore = useDocentesStore()
 
 // Computed proxy for store data
 const asignaturasFiltradas = computed(() => {
@@ -289,14 +292,14 @@ const asignaturasFiltradas = computed(() => {
 
     const term = normalizeText(filtros.value.busqueda)
     resultado = resultado.filter(a =>
-      normalizeText(a.nombre).includes(term) ||
-      normalizeText(a.codigo).includes(term)
+      normalizeText(a.nombre || '').includes(term) ||
+      normalizeText(a.codigo || '').includes(term)
     )
   }
 
   return resultado
 })
-const loading = computed(() => asignaturasStore.loading)
+const loading = computed(() => asignaturasStore.loading || docentesStore.loading)
 
 // State
 const showDialog = ref(false)
@@ -369,16 +372,14 @@ const semestresOptions = [
   { label: '10° Semestre', value: 10 }
 ]
 
-const docentesDisponibles = [
-  { label: 'Dr. Juan Pérez', value: 'Dr. Juan Pérez' },
-  { label: 'Lic. María López', value: 'Lic. María López' },
-  { label: 'Ing. Carlos Mendoza', value: 'Ing. Carlos Mendoza' },
-  { label: 'Ing. Pedro García', value: 'Ing. Pedro García' },
-  { label: 'Lic. Ana Torres', value: 'Lic. Ana Torres' },
-  { label: 'Ing. Roberto Flores', value: 'Ing. Roberto Flores' },
-  { label: 'Dr. Luis Vargas', value: 'Dr. Luis Vargas' }
-]
+const docentesDisponibles = computed(() =>
+  docentesStore.docentes.map(d => ({
+    label: d.nombre_completo,
+    value: d.id
+  }))
+)
 
+// ... existing computed properties ...
 const sedesOptions = computed(() =>
   sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
 )
@@ -462,20 +463,17 @@ async function onCarreraChange() {
   }
 }
 
-// ... (Rest of options logic remains similar, passing ID) ...
-
-
 const totalHoras = computed(() =>
-  asignaturasFiltradas.value.reduce((sum, a) => sum + a.horas_teoricas + a.horas_practicas, 0)
+  asignaturasFiltradas.value.reduce((sum, a) => sum + (a.horas_teoricas || 0) + (a.horas_practicas || 0), 0)
 )
 
 const totalCreditos = computed(() =>
-  asignaturasFiltradas.value.reduce((sum, a) => sum + a.creditos, 0)
+  asignaturasFiltradas.value.reduce((sum, a) => sum + (a.creditos || 0), 0)
 )
 
 const docentesAsignados = computed(() => {
   const docentes = new Set()
-  asignaturasFiltradas.value.forEach(a => a.docentes?.forEach(d => docentes.add(d)))
+  asignaturasFiltradas.value.forEach(a => a.docentes?.forEach(d => docentes.add(typeof d === 'object'? d.id : d)))
   return docentes.size
 })
 
@@ -484,8 +482,6 @@ function getSemestreColor(semestre) {
   return colors[(semestre - 1) % colors.length]
 }
 
-
-
 function onFormSedeChange() {
   form.value.carrera_id = null
 }
@@ -493,7 +489,15 @@ function onFormSedeChange() {
 function openDialog(asignatura = null) {
   if (asignatura) {
     editMode.value = true
-    form.value = { ...asignatura }
+    // Determinar sede_id basado en registro si tenemos info, o dejarlo
+    // IMPORTANTE: la asignatura local tiene 'carrera_nombre', pero quizas no 'carrera_id' directamente si viene plana.
+    // Deberiamos tenerlo si el backend lo retorna.
+    // Aseguramos estructura:
+    form.value = {
+        ...asignatura,
+        // Si no tenemos sede_id explicito, intentamos deducirlo del filtro o carrera
+        sede_id: asignatura.carrera_id ? carrerasStore.getCarreraById(asignatura.carrera_id)?.sede_id : null
+    }
   } else {
     editMode.value = false
     form.value = {
@@ -518,15 +522,20 @@ function closeDialog() {
   showDialog.value = false
 }
 
-function guardarAsignatura() {
-  if (editMode.value) {
-    // TODO: Implement update via API/Store
-    console.log('Update asignatura:', form.value)
-  } else {
-    // TODO: Implement create via API/Store
-    console.log('Create asignatura:', form.value)
+async function guardarAsignatura() {
+  try {
+      if (editMode.value) {
+        await asignaturasStore.updateAsignatura(form.value.id, form.value)
+        $q.notify({ type: 'positive', message: 'Asignatura actualizada correctamente' })
+      } else {
+        await asignaturasStore.createAsignatura(form.value)
+        $q.notify({ type: 'positive', message: 'Asignatura creada correctamente' })
+      }
+      closeDialog()
+  } catch (error) {
+      console.error(error)
+      $q.notify({ type: 'negative', message: 'Error al guardar asignatura' })
   }
-  closeDialog()
 }
 
 function verAsignatura(asignatura) {
@@ -535,34 +544,47 @@ function verAsignatura(asignatura) {
 
 function asignarDocentes(asignatura) {
   asignaturaSeleccionada.value = asignatura
-  docentesSeleccionados.value = []
+  // Pre-cargar solo IDs
+  docentesSeleccionados.value = asignatura.docentes ? asignatura.docentes.map(d => typeof d === 'object' ? d.id : null).filter(Boolean) : []
   showDocentesDialog.value = true
 }
 
 function removeDocente(docente) {
+  // docente puede ser objeto (cargado) o ID (si ya estaba)
+  // En el dialog usamos docentesSeleccionados que son IDs
+  const idToRemove = typeof docente === 'object' ? docente.id : docente
+  docentesSeleccionados.value = docentesSeleccionados.value.filter(id => id !== idToRemove)
+}
+
+async function guardarDocentes() {
   if (asignaturaSeleccionada.value) {
-    asignaturaSeleccionada.value.docentes = asignaturaSeleccionada.value.docentes.filter(d => d !== docente)
+    try {
+        await asignaturasStore.assignDocentes(asignaturaSeleccionada.value.id, docentesSeleccionados.value)
+        $q.notify({ type: 'positive', message: 'Docentes asignados correctamente' })
+        showDocentesDialog.value = false
+    } catch (error) {
+        console.error(error)
+        $q.notify({ type: 'negative', message: 'Error al asignar docentes' })
+    }
   }
 }
 
-function guardarDocentes() {
-  if (asignaturaSeleccionada.value && docentesSeleccionados.value.length > 0) {
-    // TODO: Implement save docentes
-    console.log('Save docents', docentesSeleccionados.value)
-  }
-  showDocentesDialog.value = false
-}
-
-function eliminarAsignatura(asignatura) {
+async function eliminarAsignatura(asignatura) {
   if (confirm(`¿Estás seguro de eliminar la asignatura "${asignatura.nombre}"?`)) {
-    // TODO: Implement delete via API/Store
-    console.log('Delete asignatura:', asignatura.id)
+    try {
+        await asignaturasStore.deleteAsignatura(asignatura.id)
+        $q.notify({ type: 'positive', message: 'Asignatura eliminada' })
+    } catch (error) {
+        console.error(error)
+        $q.notify({ type: 'negative', message: 'Error al eliminar asignatura' })
+    }
   }
 }
 
 onMounted(() => {
   sedesStore.fetchSedes()
   carrerasStore.fetchCarreras()
+  docentesStore.fetchDocentes() // Cargar docentes reales
   // Fetch initial "all local" asignaturas
   asignaturasStore.fetchAsignaturas()
 })

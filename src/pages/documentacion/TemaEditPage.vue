@@ -18,7 +18,7 @@
         </p>
       </div>
       <div class="col-auto row q-gutter-sm">
-        <q-chip 
+        <q-chip
           :color="progresoTotal >= 80 ? 'green-2' : progresoTotal >= 50 ? 'amber-2' : 'red-2'"
           :text-color="progresoTotal >= 80 ? 'green-9' : progresoTotal >= 50 ? 'amber-9' : 'red-9'"
           size="lg"
@@ -150,13 +150,13 @@
                         >
                           <q-tooltip>Parcial al que pertenece este logro</q-tooltip>
                         </q-btn-toggle>
-                        <q-btn 
-                          flat 
-                          round 
-                          dense 
-                          icon="quiz" 
-                          color="purple" 
-                          size="sm" 
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="quiz"
+                          color="purple"
+                          size="sm"
                           @click="irBancoPreguntas(logro)"
                         >
                           <q-tooltip>Banco de Preguntas</q-tooltip>
@@ -690,25 +690,25 @@ const opcionesBibliografias = computed(() => {
 // Función local para calcular progreso
 function calcularProgresoLocal(seccion) {
   const tema = formTema.value
-  
+
   if (seccion === 'resultados') {
     // Mínimo requerido: 1 resultado + 1 logro + 1 indicador = 3 campos base
     let totalCampos = 3
     let camposLlenos = 0
-    
+
     // 1. Resultado de aprendizaje (requerido)
     if (tema.resultado_aprendizaje?.trim()) camposLlenos++
-    
+
     // 2. Al menos 1 logro requerido
     const logros = tema.logros_esperados || []
     if (logros.length > 0 && logros.some(l => l.descripcion?.trim())) {
       camposLlenos++
     }
-    
+
     // 3. Al menos 1 indicador requerido (en cualquier logro)
     const tieneIndicador = logros.some(l => l.indicadores?.some(i => i.descripcion?.trim()))
     if (tieneIndicador) camposLlenos++
-    
+
     // Campos extra: logros adicionales y sus indicadores
     if (logros.length > 1) {
       logros.slice(1).forEach(logro => {
@@ -726,20 +726,20 @@ function calcularProgresoLocal(seccion) {
         })
       }
     })
-    
+
     return Math.round((camposLlenos / totalCampos) * 100)
   }
-  
+
   if (seccion === 'contenidos') {
     // Siempre esperamos al menos 1 de cada tipo
     const conceptual = tema.contenidos?.conceptual || []
     const procedimental = tema.contenidos?.procedimental || []
     const actitudinal = tema.contenidos?.actitudinal || []
-    
+
     // Mínimo 1 de cada tipo = 3 campos base
     let totalCampos = 3
     let camposLlenos = 0
-    
+
     // Conceptual: al menos 1 requerido
     if (conceptual.length > 0 && conceptual.some(item => item?.trim())) {
       camposLlenos++
@@ -748,7 +748,7 @@ function calcularProgresoLocal(seccion) {
     if (conceptual.length > 1) {
       conceptual.slice(1).forEach(item => { totalCampos++; if (item?.trim()) camposLlenos++ })
     }
-    
+
     // Procedimental: al menos 1 requerido
     if (procedimental.length > 0 && procedimental.some(item => item?.trim())) {
       camposLlenos++
@@ -756,7 +756,7 @@ function calcularProgresoLocal(seccion) {
     if (procedimental.length > 1) {
       procedimental.slice(1).forEach(item => { totalCampos++; if (item?.trim()) camposLlenos++ })
     }
-    
+
     // Actitudinal: al menos 1 requerido
     if (actitudinal.length > 0 && actitudinal.some(item => item?.trim())) {
       camposLlenos++
@@ -764,35 +764,35 @@ function calcularProgresoLocal(seccion) {
     if (actitudinal.length > 1) {
       actitudinal.slice(1).forEach(item => { totalCampos++; if (item?.trim()) camposLlenos++ })
     }
-    
+
     return Math.round((camposLlenos / totalCampos) * 100)
   }
-  
+
   if (seccion === 'estrategias') {
     // Mínimo: metodológicas + aprendizaje + al menos 1 recurso = 3 campos base
     let totalCampos = 3
     let camposLlenos = 0
-    
+
     // 1. Metodológicas (requerido)
     if (tema.estrategias?.metodologicas?.trim()) camposLlenos++
-    
+
     // 2. Aprendizaje (requerido)
     if (tema.estrategias?.aprendizaje?.trim()) camposLlenos++
-    
+
     // 3. Al menos 1 recurso requerido
     const recursos = tema.estrategias?.recursos || []
     if (recursos.length > 0 && recursos.some(r => r?.trim())) {
       camposLlenos++
     }
-    
+
     // Recursos adicionales
     if (recursos.length > 1) {
       recursos.slice(1).forEach(rec => { totalCampos++; if (rec?.trim()) camposLlenos++ })
     }
-    
+
     return Math.round((camposLlenos / totalCampos) * 100)
   }
-  
+
   if (seccion === 'evaluacion') {
     let totalCampos = 6, camposLlenos = 0
     if (tema.evaluacion?.formativa?.actividades?.length > 0) camposLlenos++
@@ -803,38 +803,38 @@ function calcularProgresoLocal(seccion) {
     if (tema.evaluacion?.sumativa?.evidencias?.length > 0) camposLlenos++
     return Math.round((camposLlenos / totalCampos) * 100)
   }
-  
+
   if (seccion === 'secuencia') {
     // Mínimo 3 momentos: Introducción, Desarrollo, Cierre
     const secuencia = tema.secuencia_didactica || []
     let totalCampos = 3 // Mínimo requerido
     let camposLlenos = 0
-    
+
     // Contar momentos con actividad definida
     secuencia.forEach(momento => {
       if (momento.actividad?.trim()) camposLlenos++
     })
-    
+
     // Si hay más de 3 momentos, agregar los extras
     if (secuencia.length > 3) {
       totalCampos = secuencia.length
     }
-    
+
     // Limitar a 100%
     return Math.min(100, Math.round((camposLlenos / totalCampos) * 100))
   }
-  
+
   return 0
 }
 
 onMounted(() => cargarDatos())
 watch(() => route.params, () => cargarDatos())
 
-function cargarDatos() {
+async function cargarDatos() {
   const aId = parseInt(route.params.id)
   const uId = parseInt(route.params.unidadId)
   const tId = parseInt(route.params.temaId)
-  asignatura.value = store.getAsignaturaById(aId)
+  asignatura.value = await store.getAsignaturaById(aId)
   if (asignatura.value) {
     unidad.value = asignatura.value.unidades.find(u => u.id === uId)
     if (unidad.value) {
