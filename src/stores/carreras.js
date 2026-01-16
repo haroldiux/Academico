@@ -48,6 +48,19 @@ export const useCarrerasStore = defineStore('carreras', () => {
     fetchCarreras,
     getCarreraById,
     getCarrerasBySede,
-    getCarrerasByNombre
+    getCarrerasByNombre,
+    // Nuevas funciones para API externa
+    getCarrerasOptions: (sedeId = null) => {
+      const lista = sedeId ? carreras.value.filter(c => c.sede_id == sedeId && c.activo) : carreras.value.filter(c => c.activo)
+      return lista.map(c => ({
+        label: c.nombre,
+        value: c.id,
+        codigo: c.codigo // Código para la API externa
+      }))
+    },
+    getCarreraCodigo: (carreraId) => {
+      const carrera = carreras.value.find(c => c.id === carreraId)
+      return carrera?.codigo?.toLowerCase() || null
+    }
   }
 })
