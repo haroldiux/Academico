@@ -16,19 +16,13 @@
         </div>
       </div>
       <div class="header-actions">
-        <q-select
-          v-model="gestionSeleccionada"
-          :options="gestionesOptions"
-          outlined
-          dense
-          label="Gestión"
-          emit-value
-          map-options
-          style="min-width: 150px;"
-        />
-        <q-btn outline color="primary" icon="content_copy" label="Copiar Gestión" no-caps @click="showCopiarDialog = true" />
+        <q-select v-model="gestionSeleccionada" :options="gestionesOptions" outlined dense label="Gestión" emit-value
+          map-options style="min-width: 150px;" />
+        <q-btn outline color="primary" icon="content_copy" label="Copiar Gestión" no-caps
+          @click="showCopiarDialog = true" />
         <q-btn outline color="green" icon="picture_as_pdf" label="Exportar PDF" no-caps @click="exportarPDF" />
-        <q-btn unelevated color="indigo" icon="save" label="Guardar" no-caps @click="guardarTodo" :loading="guardando" />
+        <q-btn unelevated color="indigo" icon="save" label="Guardar" no-caps @click="guardarTodo"
+          :loading="guardando" />
       </div>
     </div>
 
@@ -36,7 +30,8 @@
     <q-card class="main-card">
       <q-tabs v-model="tabActual" dense class="text-grey" active-color="indigo" indicator-color="indigo" align="left">
         <q-tab name="horario" icon="schedule" label="1. Configurar Horario" no-caps />
-        <q-tab name="planificacion" icon="view_timeline" label="2. Planificación por Unidades" no-caps :disable="!planificacionGenerada" />
+        <q-tab name="planificacion" icon="view_timeline" label="2. Planificación por Unidades" no-caps
+          :disable="!planificacionGenerada" />
         <q-tab name="preview" icon="visibility" label="3. Vista Previa" no-caps :disable="!planificacionGenerada" />
       </q-tabs>
 
@@ -74,10 +69,14 @@
                     Períodos de Exámenes
                   </div>
                   <div class="examenes-grid">
-                    <div class="examen-item"><q-chip color="blue-2" text-color="blue-9" size="sm">1er Parcial</q-chip><span>Sem 7-8</span></div>
-                    <div class="examen-item"><q-chip color="orange-2" text-color="orange-9" size="sm">2do Parcial</q-chip><span>Sem 14-15</span></div>
-                    <div class="examen-item"><q-chip color="purple-2" text-color="purple-9" size="sm">Final</q-chip><span>Sem 18-19</span></div>
-                    <div class="examen-item"><q-chip color="red-2" text-color="red-9" size="sm">2da Inst.</q-chip><span>Sem 20</span></div>
+                    <div class="examen-item"><q-chip color="blue-2" text-color="blue-9" size="sm">1er
+                        Parcial</q-chip><span>Sem 7-8</span></div>
+                    <div class="examen-item"><q-chip color="orange-2" text-color="orange-9" size="sm">2do
+                        Parcial</q-chip><span>Sem 14-15</span></div>
+                    <div class="examen-item"><q-chip color="purple-2" text-color="purple-9"
+                        size="sm">Final</q-chip><span>Sem 18-19</span></div>
+                    <div class="examen-item"><q-chip color="red-2" text-color="red-9" size="sm">2da
+                        Inst.</q-chip><span>Sem 20</span></div>
                   </div>
                 </q-card-section>
               </q-card>
@@ -117,7 +116,8 @@
                       <q-icon name="schedule" color="green" class="q-mr-sm" />
                       Horario de Clases Semanal
                     </div>
-                    <q-btn unelevated color="green" icon="add" label="Agregar Sesión" no-caps size="sm" @click="agregarHorario" />
+                    <q-btn unelevated color="green" icon="add" label="Agregar Sesión" no-caps size="sm"
+                      @click="agregarHorario" />
                   </div>
 
                   <div v-if="!horarios.length" class="text-center q-pa-lg">
@@ -126,12 +126,16 @@
                   </div>
 
                   <div v-else class="horarios-grid">
-                    <div v-for="(horario, idx) in horarios" :key="idx" class="horario-card" :class="{ 'horario-api': horario.desdeAPI }">
-                      <q-chip v-if="horario.desdeAPI" color="blue-2" text-color="blue-9" size="xs" dense class="api-badge">API</q-chip>
+                    <div v-for="(horario, idx) in horarios" :key="idx" class="horario-card"
+                      :class="{ 'horario-api': horario.desdeAPI }">
+                      <q-chip v-if="horario.desdeAPI" color="blue-2" text-color="blue-9" size="xs" dense
+                        class="api-badge">API</q-chip>
                       <div class="horario-dia"><q-icon name="event" class="q-mr-xs" />{{ horario.dia }}</div>
                       <div class="horario-hora">{{ horario.horaInicio }} - {{ horario.horaFin }}</div>
-                      <div class="horario-aula">{{ horario.aula }} <span v-if="horario.grupo">(Grupo {{ horario.grupo }})</span></div>
-                      <q-btn v-if="!horario.desdeAPI" flat round dense icon="close" size="xs" color="red" class="delete-btn" @click="eliminarHorario(idx)" />
+                      <div class="horario-aula">{{ horario.aula }} <span v-if="horario.grupo">(Grupo {{ horario.grupo
+                          }})</span></div>
+                      <q-btn v-if="!horario.desdeAPI" flat round dense icon="close" size="xs" color="red"
+                        class="delete-btn" @click="eliminarHorario(idx)" />
                       <q-icon v-else name="lock" size="14px" color="blue" class="lock-icon">
                         <q-tooltip>Horario de la API (no editable)</q-tooltip>
                       </q-icon>
@@ -143,18 +147,11 @@
 
             <!-- Botón Generar -->
             <div class="col-12 text-center">
-              <q-btn 
-                unelevated 
-                color="indigo" 
-                icon="auto_awesome" 
-                label="Generar Planificación Automática" 
-                size="lg"
-                no-caps
-                :disable="!horarios.length || !unidadesDocumentacion.length"
-                @click="generarPlanificacion"
-              />
+              <q-btn unelevated color="indigo" icon="auto_awesome" label="Generar Planificación Automática" size="lg"
+                no-caps :disable="!horarios.length || !unidadesDocumentacion.length" @click="generarPlanificacion" />
               <p class="text-grey-6 q-mt-sm text-caption">
-                Se distribuirán {{ totalTemasDocumentacion }} temas de {{ unidadesDocumentacion.length }} unidades en {{ totalSemanas }} semanas
+                Se distribuirán {{ totalTemasDocumentacion }} temas de {{ unidadesDocumentacion.length }} unidades en {{
+                totalSemanas }} semanas
               </p>
             </div>
           </div>
@@ -228,11 +225,13 @@
                     <template v-for="sesion in unidad.sesiones" :key="sesion.id">
                       <!-- Fila de EXAMEN -->
                       <tr v-if="sesion.esExamen" class="sesion-examen-row">
-                        <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)" v-if="isFirstSesionOfSemana(unidad, sesion)">
+                        <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)"
+                          v-if="isFirstSesionOfSemana(unidad, sesion)">
                           <div class="semana-content">
                             <span class="semana-numero">{{ sesion.semana }}</span>
                             <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
-                            <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)" text-color="white" size="xs" dense class="q-mt-xs">
+                            <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)"
+                              text-color="white" size="xs" dense class="q-mt-xs">
                               {{ sesion.periodoExamen }}
                             </q-chip>
                           </div>
@@ -258,11 +257,13 @@
                       </tr>
                       <!-- Fila NORMAL -->
                       <tr v-else :class="getSesionRowClass(sesion)">
-                        <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)" v-if="isFirstSesionOfSemana(unidad, sesion)">
+                        <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)"
+                          v-if="isFirstSesionOfSemana(unidad, sesion)">
                           <div class="semana-content">
                             <span class="semana-numero">{{ sesion.semana }}</span>
                             <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
-                            <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)" text-color="white" size="xs" dense class="q-mt-xs">
+                            <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)"
+                              text-color="white" size="xs" dense class="q-mt-xs">
                               {{ sesion.periodoExamen }}
                             </q-chip>
                           </div>
@@ -274,14 +275,26 @@
                             <span class="sesion-fecha">{{ sesion.fecha }}</span>
                           </div>
                         </td>
-                        <td><q-input v-model="sesion.tema" outlined dense autogrow class="cell-input" placeholder="Tema..." @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.conceptual" outlined dense type="textarea" autogrow class="cell-input" placeholder="Contenidos..." @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.procedimental" outlined dense type="textarea" autogrow class="cell-input" placeholder="Habilidades..." @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.actitudinal" outlined dense type="textarea" autogrow class="cell-input" placeholder="Actitudes..." @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.criteriosDesempeno" outlined dense type="textarea" autogrow class="cell-input" placeholder="Criterios..." @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.instrumentosEvaluacion" outlined dense type="textarea" autogrow class="cell-input" placeholder="Instrumentos..." @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.tema" outlined dense autogrow class="cell-input"
+                            placeholder="Tema..." @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.conceptual" outlined dense type="textarea" autogrow
+                            class="cell-input" placeholder="Contenidos..."
+                            @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.procedimental" outlined dense type="textarea" autogrow
+                            class="cell-input" placeholder="Habilidades..."
+                            @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.actitudinal" outlined dense type="textarea" autogrow
+                            class="cell-input" placeholder="Actitudes..."
+                            @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.criteriosDesempeno" outlined dense type="textarea" autogrow
+                            class="cell-input" placeholder="Criterios..."
+                            @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.instrumentosEvaluacion" outlined dense type="textarea" autogrow
+                            class="cell-input" placeholder="Instrumentos..."
+                            @update:model-value="marcarModificado(sesion)" /></td>
                         <td class="cell-actions">
-                          <q-btn flat round dense icon="delete" size="xs" color="red" @click="eliminarSesion(unidad, sesion)" />
+                          <q-btn flat round dense icon="delete" size="xs" color="red"
+                            @click="eliminarSesion(unidad, sesion)" />
                         </td>
                       </tr>
                     </template>
@@ -342,13 +355,25 @@
                 <tbody>
                   <tr v-for="sesion in unidad.sesiones" :key="sesion.id">
                     <td class="text-center">{{ sesion.semana }}<br><small>{{ sesion.semanaFechas }}</small></td>
-                    <td class="text-center">{{ sesion.numeroGlobal }}°<br><small>{{ sesion.dia }}<br>{{ sesion.fecha }}</small></td>
+                    <td class="text-center">{{ sesion.numeroGlobal }}°<br><small>{{ sesion.dia }}<br>{{ sesion.fecha
+                        }}</small>
+                    </td>
                     <td>{{ sesion.tema }}</td>
-                    <td><div class="preview-content">{{ sesion.conceptual }}</div></td>
-                    <td><div class="preview-content">{{ sesion.procedimental }}</div></td>
-                    <td><div class="preview-content">{{ sesion.actitudinal }}</div></td>
-                    <td><div class="preview-content">{{ sesion.criteriosDesempeno }}</div></td>
-                    <td><div class="preview-content">{{ sesion.instrumentosEvaluacion }}</div></td>
+                    <td>
+                      <div class="preview-content">{{ sesion.conceptual }}</div>
+                    </td>
+                    <td>
+                      <div class="preview-content">{{ sesion.procedimental }}</div>
+                    </td>
+                    <td>
+                      <div class="preview-content">{{ sesion.actitudinal }}</div>
+                    </td>
+                    <td>
+                      <div class="preview-content">{{ sesion.criteriosDesempeno }}</div>
+                    </td>
+                    <td>
+                      <div class="preview-content">{{ sesion.instrumentosEvaluacion }}</div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -367,7 +392,8 @@
         <q-card-section class="q-gutter-md">
           <q-select v-model="horarioForm.dia" :options="diasOptions" outlined label="Día" emit-value map-options />
           <div class="row q-col-gutter-md">
-            <div class="col-6"><q-input v-model="horarioForm.horaInicio" outlined label="Hora Inicio" type="time" /></div>
+            <div class="col-6"><q-input v-model="horarioForm.horaInicio" outlined label="Hora Inicio" type="time" />
+            </div>
             <div class="col-6"><q-input v-model="horarioForm.horaFin" outlined label="Hora Fin" type="time" /></div>
           </div>
           <q-input v-model="horarioForm.aula" outlined label="Aula" placeholder="Ej: Aula 301" />
@@ -387,7 +413,9 @@
         </div>
         <q-card-section class="q-gutter-md">
           <q-input v-model="unidadForm.nombre" outlined label="Nombre de la Unidad" />
-          <q-input v-model="unidadForm.elementoCompetencia" outlined type="textarea" rows="4" label="Elemento de Competencia" hint="Describe la competencia que el estudiante desarrollará en esta unidad" />
+          <q-input v-model="unidadForm.elementoCompetencia" outlined type="textarea" rows="4"
+            label="Elemento de Competencia"
+            hint="Describe la competencia que el estudiante desarrollará en esta unidad" />
         </q-card-section>
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="showUnidadDialog = false" />
@@ -404,7 +432,8 @@
         </div>
         <q-card-section>
           <p>Selecciona la gestión de origen:</p>
-          <q-select v-model="gestionACopiar" :options="gestionesAnteriores" outlined label="Gestión origen" emit-value map-options class="q-mb-md" />
+          <q-select v-model="gestionACopiar" :options="gestionesAnteriores" outlined label="Gestión origen" emit-value
+            map-options class="q-mb-md" />
           <q-banner class="bg-orange-1 text-orange-9" rounded dense>
             <q-icon name="warning" class="q-mr-sm" />
             Esto reemplazará la planificación actual.
@@ -506,7 +535,7 @@ async function cargarExamenesRol() {
         })
       }
     }
-  } catch (err) {
+  } catch {
     console.log('[Exámenes] No hay rol de exámenes cargado, usando semanas por defecto')
   }
 }
@@ -654,28 +683,28 @@ function eliminarHorario(idx) {
 function generarPlanificacion() {
   const fechaInicio = new Date(calendario.value.fechaInicio)
   const unidades = unidadesDocumentacion.value
-  
+
   // Semanas de exámenes (dinámico desde rol o por defecto)
   const SEMANAS_EXAMEN = semanasExamen.value
-  
+
   // Generar todas las sesiones primero
   const todasLasSesiones = []
   let sesionGlobal = 1
-  
+
   for (let semana = 1; semana <= totalSemanas.value; semana++) {
     const fechaSemanaInicio = new Date(fechaInicio)
     fechaSemanaInicio.setDate(fechaInicio.getDate() + (semana - 1) * 7)
-    
+
     // Generar sesiones para cada día de la semana según horarios
     horarios.value.forEach((horario, sesionEnSemana) => {
       const diaIndex = diasOptions.findIndex(d => d.value === horario.dia)
       const fechaSesion = new Date(fechaSemanaInicio)
       fechaSesion.setDate(fechaSemanaInicio.getDate() + diaIndex)
-      
+
       // Verificar si es la última sesión de una semana de examen
       const esUltimaSesionSemana = sesionEnSemana === horarios.value.length - 1
       const esExamen = esUltimaSesionSemana && SEMANAS_EXAMEN[semana]
-      
+
       todasLasSesiones.push({
         id: sesionGlobal,
         numeroGlobal: sesionGlobal,
@@ -685,10 +714,10 @@ function generarPlanificacion() {
         fecha: formatDate(fechaSesion),
         esExamen: !!esExamen,
         tipoExamen: esExamen || null,
-        periodoExamen: esExamen || (semana >= 7 && semana <= 8 ? '1er Parcial' : 
-                       semana >= 14 && semana <= 15 ? '2do Parcial' :
-                       semana >= 18 && semana <= 19 ? 'Final' :
-                       semana === 20 ? '2da Instancia' : null),
+        periodoExamen: esExamen || (semana >= 7 && semana <= 8 ? '1er Parcial' :
+          semana >= 14 && semana <= 15 ? '2do Parcial' :
+            semana >= 18 && semana <= 19 ? 'Final' :
+              semana === 20 ? '2da Instancia' : null),
         tema: esExamen ? esExamen : '',
         conceptual: esExamen ? '' : '',
         procedimental: esExamen ? '' : '',
@@ -698,32 +727,32 @@ function generarPlanificacion() {
         modificado: false,
         bloqueado: !!esExamen // Sesiones de examen no editables
       })
-      
+
       sesionGlobal++
     })
   }
-  
+
   // Filtrar sesiones que NO son exámenes para distribuir contenido
   const sesionesParaContenido = todasLasSesiones.filter(s => !s.esExamen)
-  
+
   // Distribuir unidades en las sesiones de contenido
   const sesionesPorUnidad = Math.floor(sesionesParaContenido.length / unidades.length)
   const sesionesExtra = sesionesParaContenido.length % unidades.length
-  
+
   let indiceSesion = 0
-  
+
   planificacion.value = unidades.map((unidad, uIdx) => {
     const cantidadSesiones = sesionesPorUnidad + (uIdx < sesionesExtra ? 1 : 0)
     const temasUnidad = unidad.temas || []
     const sesionesPorTema = temasUnidad.length > 0 ? Math.ceil(cantidadSesiones / temasUnidad.length) : cantidadSesiones
-    
+
     const sesionesUnidad = []
-    
+
     for (let i = 0; i < cantidadSesiones && indiceSesion < sesionesParaContenido.length; i++) {
       const sesionBase = sesionesParaContenido[indiceSesion]
       const temaIdx = Math.floor(i / sesionesPorTema)
       const temaOriginal = temasUnidad[temaIdx]
-      
+
       // Agregar sesión de contenido
       sesionesUnidad.push({
         ...sesionBase,
@@ -734,19 +763,19 @@ function generarPlanificacion() {
         criteriosDesempeno: temaOriginal?.logros_esperados?.map(l => '- ' + l.descripcion).join('\n') || '',
         instrumentosEvaluacion: ''
       })
-      
+
       indiceSesion++
     }
-    
+
     // Agregar sesiones de examen que caen en las semanas de esta unidad
     const semanasUnidad = [...new Set(sesionesUnidad.map(s => s.semana))]
-    const examenesUnidad = todasLasSesiones.filter(s => 
+    const examenesUnidad = todasLasSesiones.filter(s =>
       s.esExamen && semanasUnidad.includes(s.semana)
     )
-    
+
     // Insertar exámenes en orden correcto
     examenesUnidad.forEach(examen => {
-      const insertIdx = sesionesUnidad.findIndex(s => 
+      const insertIdx = sesionesUnidad.findIndex(s =>
         s.semana === examen.semana && s.numeroGlobal > examen.numeroGlobal
       )
       if (insertIdx === -1) {
@@ -755,10 +784,10 @@ function generarPlanificacion() {
         sesionesUnidad.splice(insertIdx, 0, examen)
       }
     })
-    
+
     // Ordenar por número global
     sesionesUnidad.sort((a, b) => a.numeroGlobal - b.numeroGlobal)
-    
+
     return {
       id: unidad.id,
       nombre: unidad.titulo.toUpperCase(),
@@ -767,7 +796,7 @@ function generarPlanificacion() {
       sesiones: sesionesUnidad
     }
   })
-  
+
   planificacionGenerada.value = true
   tabActual.value = 'planificacion'
   $q.notify({ type: 'positive', message: `Planificación generada: ${totalSesionesGeneradas.value} sesiones en ${unidades.length} unidades`, icon: 'check_circle' })
@@ -823,7 +852,7 @@ function guardarUnidad() {
 function agregarSesionManual(unidad) {
   const lastSesion = unidad.sesiones[unidad.sesiones.length - 1]
   const newId = Math.max(...planificacion.value.flatMap(u => u.sesiones.map(s => s.id)), 0) + 1
-  
+
   unidad.sesiones.push({
     id: newId,
     numeroGlobal: newId,
@@ -875,96 +904,484 @@ function exportarPDF() {
 </script>
 
 <style scoped>
-.planificacion-page { padding: 24px; background: var(--bg-primary); min-height: 100vh; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
-.header-left { display: flex; align-items: center; }
-.page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; }
-.page-subtitle { color: var(--text-secondary); margin: 4px 0 0 0; font-size: 0.875rem; display: flex; align-items: center; gap: 8px; }
-.header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.planificacion-page {
+  padding: 24px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
 
-.main-card { background: var(--bg-secondary) !important; border: 1px solid var(--border-color); border-radius: 16px; }
-.config-card { background: var(--bg-tertiary) !important; border-color: var(--border-color) !important; border-radius: 12px; height: 100%; }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
-.examenes-grid { display: flex; flex-direction: column; gap: 8px; }
-.examen-item { display: flex; justify-content: space-between; align-items: center; }
+.header-left {
+  display: flex;
+  align-items: center;
+}
 
-.unidades-preview { display: flex; flex-direction: column; gap: 8px; }
-.unidad-preview-item { display: flex; align-items: center; gap: 10px; padding: 8px; background: var(--bg-hover); border-radius: 8px; }
-.unidad-preview-info { display: flex; flex-direction: column; }
-.unidad-preview-titulo { font-size: 0.8rem; font-weight: 500; color: var(--text-primary); }
-.unidad-preview-temas { font-size: 0.7rem; color: var(--text-muted); }
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
 
-.horarios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-.horario-card { display: flex; flex-direction: column; gap: 4px; padding: 16px; background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 10px; position: relative; }
-.horario-card.horario-api { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
-.horario-card .delete-btn { position: absolute; top: 4px; right: 4px; }
-.horario-card .lock-icon { position: absolute; top: 8px; right: 8px; }
-.horario-card .api-badge { position: absolute; top: -6px; left: 8px; }
-.horario-dia { font-weight: 700; color: var(--text-primary); display: flex; align-items: center; padding-top: 8px; }
-.horario-hora { font-size: 0.9rem; color: var(--primary); }
-.horario-aula { font-size: 0.8rem; color: var(--text-muted); }
+.page-subtitle {
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-.planificacion-resumen { display: flex; gap: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px; flex-wrap: wrap; }
-.resumen-item { display: flex; align-items: center; gap: 12px; }
-.resumen-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-.resumen-label { font-size: 0.8rem; color: var(--text-muted); }
+.header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
-.unidades-container { display: flex; flex-direction: column; gap: 24px; }
-.unidad-section { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; }
-.unidad-header { display: flex; align-items: flex-start; gap: 12px; padding: 20px; background: linear-gradient(135deg, #4338ca, #3730a3); color: white; }
-.unidad-toggle { cursor: pointer; }
-.unidad-info { flex: 1; cursor: pointer; }
-.unidad-titulo { margin: 0; font-size: 1rem; font-weight: 700; }
-.unidad-competencia { margin: 8px 0 0; font-size: 0.8rem; opacity: 0.9; }
-.unidad-actions { display: flex; gap: 4px; }
-.unidad-actions .q-btn { color: white; opacity: 0.8; }
-.unidad-actions .q-btn:hover { opacity: 1; }
+.main-card {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
 
-.sesiones-table-container { padding: 16px; overflow-x: auto; }
-.sesiones-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-.sesiones-table th { background: #4338ca; color: white; padding: 8px 4px; text-align: center; font-size: 0.6rem; text-transform: uppercase; }
-.sesiones-table td { border: 1px solid var(--border-color); padding: 4px; vertical-align: top; }
-.sesion-examen td { background: rgba(251, 191, 36, 0.1); }
-.sesion-modificada td { background: rgba(16, 185, 129, 0.1); }
-.cell-semana { background: var(--bg-hover); text-align: center; min-width: 60px; }
-.semana-content { display: flex; flex-direction: column; gap: 2px; }
-.semana-numero { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
-.semana-fechas { font-size: 0.6rem; color: var(--text-muted); }
-.cell-sesion { background: var(--bg-hover); text-align: center; min-width: 50px; }
-.sesion-content { display: flex; flex-direction: column; gap: 1px; }
-.sesion-numero { font-weight: 700; color: var(--primary); font-size: 0.9rem; }
-.sesion-dia { font-size: 0.65rem; color: var(--text-secondary); }
-.sesion-fecha { font-size: 0.6rem; color: var(--text-muted); }
-.cell-input :deep(.q-field__control) { min-height: 24px; }
-.cell-input :deep(textarea) { font-size: 0.65rem; line-height: 1.2; }
-.cell-actions { text-align: center; vertical-align: middle; }
+.config-card {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+  border-radius: 12px;
+  height: 100%;
+}
+
+.examenes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.examen-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.unidades-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.unidad-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+}
+
+.unidad-preview-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.unidad-preview-titulo {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.unidad-preview-temas {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.horarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.horario-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  position: relative;
+}
+
+.horario-card.horario-api {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.horario-card .delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.horario-card .lock-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.horario-card .api-badge {
+  position: absolute;
+  top: -6px;
+  left: 8px;
+}
+
+.horario-dia {
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.horario-hora {
+  font-size: 0.9rem;
+  color: var(--primary);
+}
+
+.horario-aula {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.planificacion-resumen {
+  display: flex;
+  gap: 24px;
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.resumen-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.resumen-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.resumen-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.unidades-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.unidad-section {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.unidad-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+  background: linear-gradient(135deg, #4338ca, #3730a3);
+  color: white;
+}
+
+.unidad-toggle {
+  cursor: pointer;
+}
+
+.unidad-info {
+  flex: 1;
+  cursor: pointer;
+}
+
+.unidad-titulo {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.unidad-competencia {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.unidad-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.unidad-actions .q-btn {
+  color: white;
+  opacity: 0.8;
+}
+
+.unidad-actions .q-btn:hover {
+  opacity: 1;
+}
+
+.sesiones-table-container {
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.sesiones-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.sesiones-table th {
+  background: #4338ca;
+  color: white;
+  padding: 8px 4px;
+  text-align: center;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+}
+
+.sesiones-table td {
+  border: 1px solid var(--border-color);
+  padding: 4px;
+  vertical-align: top;
+}
+
+.sesion-examen td {
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.sesion-modificada td {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.cell-semana {
+  background: var(--bg-hover);
+  text-align: center;
+  min-width: 60px;
+}
+
+.semana-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.semana-numero {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.semana-fechas {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.cell-sesion {
+  background: var(--bg-hover);
+  text-align: center;
+  min-width: 50px;
+}
+
+.sesion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sesion-numero {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.sesion-dia {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+}
+
+.sesion-fecha {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.cell-input :deep(.q-field__control) {
+  min-height: 24px;
+}
+
+.cell-input :deep(textarea) {
+  font-size: 0.65rem;
+  line-height: 1.2;
+}
+
+.cell-actions {
+  text-align: center;
+  vertical-align: middle;
+}
 
 /* Filas de Examen */
-.sesion-examen-row td { background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1)); }
-.examen-cell { text-align: center; vertical-align: middle; padding: 16px !important; }
-.examen-banner { display: flex; align-items: center; justify-content: center; color: #d97706; font-weight: 700; font-size: 0.9rem; }
-.examen-titulo { text-transform: uppercase; letter-spacing: 1px; }
+.sesion-examen-row td {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1));
+}
+
+.examen-cell {
+  text-align: center;
+  vertical-align: middle;
+  padding: 16px !important;
+}
+
+.examen-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d97706;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.examen-titulo {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 
 /* Preview */
-.preview-container { background: white; color: #333; padding: 40px; border-radius: 8px; max-width: 1200px; margin: 0 auto; }
-.preview-header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #4338ca; padding-bottom: 16px; }
-.preview-header h2 { margin: 0; font-size: 1.25rem; color: #4338ca; }
-.preview-header h3 { margin: 4px 0 0; font-size: 1.5rem; color: #333; }
-.preview-info { background: #f5f5f5; padding: 12px 16px; border-radius: 8px; }
-.info-row { margin: 4px 0; }
-.preview-unidad { margin-bottom: 32px; }
-.preview-unidad-header { background: #4338ca; color: white; padding: 12px 16px; font-weight: bold; }
-.preview-competencia { background: #f5f5f5; padding: 12px 16px; font-size: 0.85rem; border: 1px solid #ddd; }
-.preview-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: -1px; }
-.preview-table th { background: #6366f1; color: white; padding: 8px 4px; border: 1px solid #4338ca; }
-.preview-table td { border: 1px solid #ddd; padding: 8px 4px; vertical-align: top; }
-.preview-content { white-space: pre-wrap; font-size: 0.7rem; }
+.preview-container {
+  background: white;
+  color: #333;
+  padding: 40px;
+  border-radius: 8px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.preview-header {
+  text-align: center;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #4338ca;
+  padding-bottom: 16px;
+}
+
+.preview-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #4338ca;
+}
+
+.preview-header h3 {
+  margin: 4px 0 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.preview-info {
+  background: #f5f5f5;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.info-row {
+  margin: 4px 0;
+}
+
+.preview-unidad {
+  margin-bottom: 32px;
+}
+
+.preview-unidad-header {
+  background: #4338ca;
+  color: white;
+  padding: 12px 16px;
+  font-weight: bold;
+}
+
+.preview-competencia {
+  background: #f5f5f5;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  border: 1px solid #ddd;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  margin-top: -1px;
+}
+
+.preview-table th {
+  background: #6366f1;
+  color: white;
+  padding: 8px 4px;
+  border: 1px solid #4338ca;
+}
+
+.preview-table td {
+  border: 1px solid #ddd;
+  padding: 8px 4px;
+  vertical-align: top;
+}
+
+.preview-content {
+  white-space: pre-wrap;
+  font-size: 0.7rem;
+}
 
 /* Dialog */
-.dialog-card { background: var(--bg-secondary) !important; border-radius: 16px !important; }
-.dialog-header { padding: 20px 24px; background: linear-gradient(135deg, #4338ca, #3730a3); color: white; margin: -16px -16px 16px -16px; border-radius: 16px 16px 0 0; }
-.dialog-header.bg-green { background: linear-gradient(135deg, #10b981, #059669); }
-.dialog-header.bg-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.dialog-header h3 { margin: 0; font-size: 1.25rem; display: flex; align-items: center; }
-.dialog-actions { padding: 16px 24px; border-top: 1px solid var(--border-color); }
+.dialog-card {
+  background: var(--bg-secondary) !important;
+  border-radius: 16px !important;
+}
+
+.dialog-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #4338ca, #3730a3);
+  color: white;
+  margin: -16px -16px 16px -16px;
+  border-radius: 16px 16px 0 0;
+}
+
+.dialog-header.bg-green {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.dialog-header.bg-primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+}
 </style>
