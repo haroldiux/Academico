@@ -63,6 +63,16 @@ export const useSedesStore = defineStore('sedes', () => {
     getSedeById,
     getSedeByNombre,
     getCampusBySede,
-    getCampusById
+    getCampusById,
+    // Nuevas funciones para API externa
+    getSedeApiId: (sedeId) => {
+      const sede = sedes.value.find(s => s.id === sedeId)
+      return sede?.id_api || sedeId
+    },
+    getSedesOptions: () => sedes.value.map(s => ({
+      label: s.nombre,
+      value: s.id,
+      id_api: s.id_api
+    }))
   }
 })

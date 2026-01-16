@@ -21,9 +21,9 @@
         Mis Clases Hoy ({{ diaActual }})
       </h2>
       <div class="horarios-cards">
-        <div 
-          v-for="horario in horariosDelDia" 
-          :key="horario.id" 
+        <div
+          v-for="horario in horariosDelDia"
+          :key="horario.id"
           class="horario-item"
           :class="{ 'horario-activo': horario.esActivo, 'horario-pasado': horario.yaPaso }"
           @click="seleccionarHorario(horario)"
@@ -158,21 +158,21 @@
             <q-space />
             <!-- Acciones Rápidas -->
             <div class="acciones-rapidas q-gutter-sm q-mr-md">
-              <q-btn 
-                unelevated 
-                color="green" 
-                icon="check_circle" 
-                label="Todos Presentes" 
+              <q-btn
+                unelevated
+                color="green"
+                icon="check_circle"
+                label="Todos Presentes"
                 size="sm"
-                @click="marcarTodosPresentes" 
+                @click="marcarTodosPresentes"
               />
-              <q-btn 
-                outline 
-                color="grey" 
-                icon="backspace" 
-                label="Limpiar" 
+              <q-btn
+                outline
+                color="grey"
+                icon="backspace"
+                label="Limpiar"
                 size="sm"
-                @click="limpiarSeleccion" 
+                @click="limpiarSeleccion"
               />
             </div>
             <q-input v-model="busqueda" placeholder="Buscar estudiante..." dense outlined style="min-width: 200px">
@@ -192,7 +192,7 @@
         <template v-slot:body-cell-estado="props">
           <q-td :props="props">
             <div class="estado-btns q-gutter-xs">
-              <q-btn 
+              <q-btn
                 :flat="props.row.estado !== 'presente'"
                 :unelevated="props.row.estado === 'presente'"
                 :color="props.row.estado === 'presente' ? 'green' : 'grey-4'"
@@ -205,7 +205,7 @@
               >
                 <q-tooltip>Presente</q-tooltip>
               </q-btn>
-              <q-btn 
+              <q-btn
                 :flat="props.row.estado !== 'ausente'"
                 :unelevated="props.row.estado === 'ausente'"
                 :color="props.row.estado === 'ausente' ? 'red' : 'grey-4'"
@@ -218,7 +218,7 @@
               >
                 <q-tooltip>Ausente</q-tooltip>
               </q-btn>
-              <q-btn 
+              <q-btn
                 :flat="props.row.estado !== 'tardanza'"
                 :unelevated="props.row.estado === 'tardanza'"
                 :color="props.row.estado === 'tardanza' ? 'orange' : 'grey-4'"
@@ -231,7 +231,7 @@
               >
                 <q-tooltip>Tardanza</q-tooltip>
               </q-btn>
-              <q-btn 
+              <q-btn
                 :flat="props.row.estado !== 'justificada'"
                 :unelevated="props.row.estado === 'justificada'"
                 :color="props.row.estado === 'justificada' ? 'blue' : 'grey-4'"
@@ -270,12 +270,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useAsignaturasStore } from 'src/stores/asignaturas'
+import { useGruposStore } from 'src/stores/grupos'
 
 const $q = useQuasar()
-const asignaturasStore = useAsignaturasStore()
+const gruposStore = useGruposStore()
 
 const filtros = ref({
   materia: null,
@@ -290,27 +290,41 @@ const busqueda = ref('')
 const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const diaActual = computed(() => diasSemana[new Date().getDay()])
 
-// Materias del docente (consumir del store)
+// Materias y horarios del docente desde API externa
 const materias = computed(() => {
-  // Por ahora usamos todas las asignaturas del store
-  // En producción filtrar por docente asignado
-  return asignaturasStore.asignaturas.map(a => ({
-    id: a.id,
-    nombre: a.nombre,
-    codigo: a.codigo,
-    horarios: a.horarios || [],
-    grupos: a.grupos || [
-      { id: 1, nombre: 'Grupo A', turno: 'Mañana' },
-      { id: 2, nombre: 'Grupo B', turno: 'Tarde' }
-    ]
-  }))
+  // Transformar datos de grupos externos a formato compatible
+  return gruposStore.materiasExterno.map((m, idx) => {
+    // Agrupar los horarios por grupo
+    const gruposUnicos = [...new Set(m.grupos?.map(g => g.grupo) || [])]
+    return {
+      id: `ext-${idx}`,
+      nombre: m.nombre,
+      codigo: m.codigo,
+      semestre: m.semestre,
+      horarios: m.grupos?.map(g => ({
+        dia: g.dia,
+        horaInicio: g.hora_inicio,
+        horaFin: g.hora_fin,
+        aula: g.aula,
+        grupo: g.grupo,
+        tipoClase: g.tipo_clase,
+        docente: g.docente,
+        bloque: g.bloque
+      })) || [],
+      grupos: gruposUnicos.map((gNum, gIdx) => ({
+        id: gIdx + 1,
+        nombre: `Grupo ${gNum}`,
+        turno: '-'
+      }))
+    }
+  })
 })
 
 // Horarios del día actual (todas las materias)
 const horariosDelDia = computed(() => {
   const horarios = []
   const horaActual = new Date().getHours() * 60 + new Date().getMinutes()
-  
+
   materias.value.forEach(materia => {
     const horariosMateria = materia.horarios?.filter(h => h.dia === diaActual.value) || []
     horariosMateria.forEach((h, idx) => {
@@ -318,7 +332,7 @@ const horariosDelDia = computed(() => {
       const [hFin, mFin] = h.horaFin.split(':').map(Number)
       const minInicio = hIni * 60 + (mIni || 0)
       const minFin = hFin * 60 + (mFin || 0)
-      
+
       horarios.push({
         id: `${materia.id}-${idx}`,
         materiaId: materia.id,
@@ -333,7 +347,7 @@ const horariosDelDia = computed(() => {
       })
     })
   })
-  
+
   // Ordenar por hora
   return horarios.sort((a, b) => {
     const [hA] = a.horaInicio.split(':').map(Number)
@@ -466,6 +480,18 @@ function ejecutarGuardado() {
 function exportarAsistencia() {
   $q.notify({ type: 'info', message: 'Exportando asistencia...', icon: 'download' })
 }
+
+// Lifecycle - Cargar datos de grupos externos
+onMounted(async () => {
+  // Si no hay datos cargados, cargarlos
+  if (gruposStore.materiasExterno.length === 0) {
+    await gruposStore.fetchGruposExterno({
+      gestion: '1-2026',
+      carrera: 'carsis',
+      sede: 1
+    })
+  }
+})
 </script>
 
 <style scoped>
@@ -479,11 +505,11 @@ function exportarAsistencia() {
 
 .horarios-hoy { padding: 20px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color); }
 .horarios-cards { display: flex; gap: 16px; flex-wrap: wrap; }
-.horario-item { 
-  background: var(--bg-tertiary); 
-  border: 2px solid var(--border-color); 
-  border-radius: 12px; 
-  padding: 16px; 
+.horario-item {
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
   min-width: 180px;
   cursor: pointer;
   transition: all 0.2s;
