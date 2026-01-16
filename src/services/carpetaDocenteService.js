@@ -697,91 +697,215 @@ function generarCronograma(doc, { asignatura, pageWidth, margin }) {
 }
 
 /**
- * PLAN DE CLASE (PCT/PCP)
+ * PLAN DE CLASE TEÓRICO (PCT/PCP)
+ * Formato exacto según documento institucional UNITEPC
  */
-function generarPlanClase(doc, { unidad, tema, pageWidth, margin }) {
+function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) {
   let y = 15
 
-  // Cabecera
-  doc.setFontSize(10)
-  doc.setTextColor(0, 0, 0)
+  // ===== TÍTULO PRINCIPAL =====
+  doc.setFontSize(14)
   doc.setFont('helvetica', 'bold')
-  doc.text('PLAN DE CLASE', pageWidth / 2, y, { align: 'center' })
-
+  doc.setTextColor(0, 0, 0)
+  doc.text('PLAN DE CLASE TEORICO', pageWidth / 2, y, { align: 'center' })
   y += 10
 
-  // Unidad
+  // ===== DATOS GENERALES (Header) =====
+  let docenteNombre = 'Por asignar'
+  if (asignatura?.docentes?.length > 0) {
+    docenteNombre = asignatura.docentes.map(d => d.nombre_completo || `${d.nombre || ''} ${d.apellido || ''}`.trim()).join(', ')
+  }
+  const carreraNombre = typeof asignatura?.carrera === 'object' ? asignatura.carrera.nombre : (asignatura?.carrera || '')
+  const fechaActual = new Date().toLocaleDateString('es-BO')
+
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
     theme: 'grid',
     styles: { fontSize: 9, cellPadding: 3 },
     body: [
-      [{ content: `Unidad # ${unidad.numero}: ${unidad.titulo}`, styles: { fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }]
+      [
+        { content: 'Nombre del docente:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } },
+        docenteNombre,
+        { content: 'Asignatura:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } },
+        asignatura?.nombre || ''
+      ],
+      [
+        { content: 'Fecha:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } },
+        fechaActual,
+        { content: 'Carrera:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } },
+        carreraNombre
+      ]
     ]
   })
   y = doc.lastAutoTable.finalY
 
-  // Tema
+  // ===== UNIDAD =====
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
     theme: 'grid',
     styles: { fontSize: 9, cellPadding: 3 },
     body: [
-      [{ content: `Tema # ${tema.numero}: ${tema.titulo}`, styles: { fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }]
+      [
+        { content: 'Unidad # ' + (unidad.numero || '1') + ':', styles: { fontStyle: 'bold', fillColor: COLORS.gris, cellWidth: 40 } },
+        { content: unidad.titulo || '', styles: { textColor: COLORS.morado } }
+      ]
     ]
   })
   y = doc.lastAutoTable.finalY
 
-  // Contenidos
+  // ===== ELEMENTO DE COMPETENCIA =====
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 3 },
+    body: [
+      [
+        { content: 'Elemento de Competencia # ' + (unidad.numero || '1') + ':', styles: { fontStyle: 'bold', fillColor: COLORS.gris, cellWidth: 60 } },
+        unidad.elemento_competencia || ''
+      ]
+    ]
+  })
+  y = doc.lastAutoTable.finalY
+
+  // ===== TEMA =====
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 3 },
+    body: [
+      [
+        { content: 'Tema # ' + (tema.numero || '1') + ':', styles: { fontStyle: 'bold', fillColor: COLORS.gris, cellWidth: 40 } },
+        { content: tema.titulo || '', styles: { textColor: COLORS.morado } }
+      ]
+    ]
+  })
+  y = doc.lastAutoTable.finalY
+
+  // ===== RESULTADOS DE APRENDIZAJE =====
+  const resultadosAprendizaje = tema.resultados_aprendizaje || tema.resultado_aprendizaje || ''
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3 },
+    body: [
+      [{ content: 'Resultados de Aprendizaje:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
+      [resultadosAprendizaje]
+    ]
+  })
+  y = doc.lastAutoTable.finalY
+
+  // ===== LOGROS ESPERADOS =====
+  const logros = tema.logros_esperados || []
+  const logrosText = logros.map((l, i) => `L.E.${i + 1}. ${l.descripcion || l}`).join('\n')
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3 },
+    body: [
+      [{ content: 'Logros Esperados:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
+      [logrosText || 'Por definir']
+    ]
+  })
+  y = doc.lastAutoTable.finalY
+
+  // ===== INDICADORES DE LOGRO =====
+  const indicadores = logros.flatMap((l, idx) =>
+    (l.indicadores || []).map((ind, i) => `I.D.D.${idx + 1}.${i + 1}. ${typeof ind === 'string' ? ind : ind.descripcion || ''}`)
+  ).join('\n')
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3 },
+    body: [
+      [{ content: 'Indicadores de Logro:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
+      [indicadores || 'El estudiante demuestra el logro cuando: [Por definir]']
+    ]
+  })
+  y = doc.lastAutoTable.finalY
+
+  // Verificar página
+  if (y > 200) {
+    doc.addPage()
+    y = 15
+  }
+
+  // ===== CONTENIDOS =====
+  const contenidos = tema.contenidos || {}
+  const conceptual = Array.isArray(contenidos.conceptual) ? contenidos.conceptual.map(c => '• ' + c).join('\n') : ''
+  const procedimental = Array.isArray(contenidos.procedimental) ? contenidos.procedimental.map(c => '✓ ' + c).join('\n') : ''
+  const actitudinal = Array.isArray(contenidos.actitudinal) ? contenidos.actitudinal.map(c => '• ' + c).join('\n') : ''
+
+  const contenidoTexto = `Contenido Conceptual:\n${conceptual || '- Por definir'}\n\nContenido Procedimental:\n${procedimental || '- Por definir'}\n\nContenido Actitudinal:\n${actitudinal || '- Por definir'}`
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3 },
+    body: [
+      [{ content: 'Contenidos:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
+      [contenidoTexto]
+    ]
+  })
+  y = doc.lastAutoTable.finalY
+
+  // ===== BIBLIOGRAFÍA OBLIGATORIA =====
+  const referencias = tema.referencias_bibliograficas || asignatura?.bibliografias || []
+  const biblioText = referencias.length > 0
+    ? referencias.map((b, i) => `${i + 1}. ${b.autor || ''} (${b.anio || ''}). ${b.titulo || ''}. ${b.editorial || ''}`).join('\n')
+    : 'Bibliografía pendiente de asignar'
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3 },
+    body: [
+      [{ content: 'Bibliografía Obligatoria para las clases:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
+      [biblioText]
+    ]
+  })
+  y = doc.lastAutoTable.finalY
+
+  // Verificar página
+  if (y > 180) {
+    doc.addPage()
+    y = 15
+  }
+
+  // ===== ESTRATEGIAS DIDÁCTICAS =====
+  const estrategias = tema.estrategias || {}
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 3 },
     head: [
-      [{ content: 'CONTENIDOS', colSpan: 2, styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }],
-      [
-        { content: 'Conceptuales', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } },
-        { content: 'Procedimentales', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } }
-      ]
-    ],
-    body: [
-      [
-        (Array.isArray(tema.contenidos) ? tema.contenidos : []).filter(c => c && c.tipo === 'conceptual').map(c => typeof c === 'string' ? c : (c.titulo || '')).join('\n') || 'Por definir',
-        (Array.isArray(tema.contenidos) ? tema.contenidos : []).filter(c => c && c.tipo === 'procedimental').map(c => typeof c === 'string' ? c : (c.titulo || '')).join('\n') || 'Por definir'
-      ]
-    ]
-  })
-  y = doc.lastAutoTable.finalY
-
-  // Estrategias Didácticas
-  const estrategias = tema.estrategias || {}
-  autoTable(doc, {
-    startY: y,
-    margin: { left: margin, right: margin },
-    theme: 'grid',
-    styles: { fontSize: 8, cellPadding: 2, halign: 'center' },
-    head: [
       [{ content: 'ESTRATEGIAS DIDÁCTICAS', colSpan: 3, styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }],
       [
-        { content: 'Metodológicas', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } },
-        { content: 'De Aprendizaje', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } },
-        { content: 'Recursos de Enseñanza', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } }
+        { content: 'Metodológicas (De Enseñanza del Docente)', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
+        { content: 'De Aprendizaje (Estudiantes)', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
+        { content: 'Recursos de Enseñanza', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } }
       ]
     ],
     body: [
       [
-        estrategias.metodologicas || 'Clase magistral',
-        estrategias.aprendizaje || 'Trabajo en equipo',
-        (estrategias.recursos || []).join(', ') || 'Pizarra, proyector'
+        estrategias.metodologicas || '',
+        estrategias.aprendizaje || '',
+        Array.isArray(estrategias.recursos) ? estrategias.recursos.join('\n') : (estrategias.recursos || '')
       ]
     ]
   })
-  y = doc.lastAutoTable.finalY
+  y = doc.lastAutoTable.finalY + 5
 
-  // Evaluación
+  // ===== EVALUACIÓN DE LOS APRENDIZAJES =====
   const evalFormativa = tema.evaluacion?.formativa || {}
   const evalSumativa = tema.evaluacion?.sumativa || {}
 
@@ -796,45 +920,63 @@ function generarPlanClase(doc, { unidad, tema, pageWidth, margin }) {
         { content: 'TIPO DE EVALUACIÓN', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
         { content: 'Actividades y Técnicas', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
         { content: 'Instrumentos', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-        { content: 'Evidencias', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } }
+        { content: 'Evidencias de Evaluación', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } }
       ]
     ],
     body: [
       [
-        { content: 'Formativa', styles: { fontStyle: 'bold' } },
-        (evalFormativa.actividades || []).join(', ') || 'Participación',
-        (evalFormativa.instrumentos || []).join(', ') || 'Rúbrica',
-        (evalFormativa.evidencias || []).join(', ') || 'Registro'
+        { content: 'FORMATIVA', styles: { fontStyle: 'bold', halign: 'center' } },
+        Array.isArray(evalFormativa.actividades) ? evalFormativa.actividades.join('\n') : (evalFormativa.actividades || ''),
+        Array.isArray(evalFormativa.instrumentos) ? evalFormativa.instrumentos.join('\n') : (evalFormativa.instrumentos || ''),
+        Array.isArray(evalFormativa.evidencias) ? evalFormativa.evidencias.join('\n') : (evalFormativa.evidencias || '')
       ],
       [
-        { content: 'Sumativa', styles: { fontStyle: 'bold' } },
-        (evalSumativa.actividades || []).join(', ') || 'Examen',
-        (evalSumativa.instrumentos || []).join(', ') || 'Prueba escrita',
-        (evalSumativa.evidencias || []).join(', ') || 'Examen resuelto'
+        { content: 'SUMATIVA', styles: { fontStyle: 'bold', halign: 'center' } },
+        Array.isArray(evalSumativa.actividades) ? evalSumativa.actividades.join('\n') : (evalSumativa.actividades || ''),
+        Array.isArray(evalSumativa.instrumentos) ? evalSumativa.instrumentos.join('\n') : (evalSumativa.instrumentos || ''),
+        Array.isArray(evalSumativa.evidencias) ? evalSumativa.evidencias.join('\n') : (evalSumativa.evidencias || '')
       ]
     ]
   })
-  y = doc.lastAutoTable.finalY
+  y = doc.lastAutoTable.finalY + 5
 
-  // Secuencia Didáctica
-  const secuencia = tema.secuencia_didactica || []
-  if (secuencia.length > 0) {
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
-      head: [
-        [{ content: 'SECUENCIA DIDÁCTICA', colSpan: 3, styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }],
-        [
-          { content: 'MOMENTOS', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-          { content: 'ACTIVIDAD', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-          { content: 'DURACIÓN', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } }
-        ]
-      ],
-      body: secuencia.map(s => [s.momento || '', s.actividad || '', s.duracion || ''])
-    })
+  // Verificar página
+  if (y > 160) {
+    doc.addPage()
+    y = 15
   }
+
+  // ===== SECUENCIA DIDÁCTICA =====
+  const secuencia = tema.secuencia_didactica || []
+  const secuenciaDefault = [
+    { momento: 'INTRODUCCIÓN', actividad: '', duracion: '' },
+    { momento: 'RESULTADOS DE APRENDIZAJE/LOGROS ESPERADOS', actividad: '', duracion: '' },
+    { momento: 'CONTENIDOS DE LA CLASE', actividad: '', duracion: '' },
+    { momento: 'CUERPO DE CONTENIDOS', actividad: '', duracion: '' },
+    { momento: 'CONCLUSIÓN O CIERRE', actividad: '', duracion: '' }
+  ]
+  const secuenciaData = secuencia.length > 0 ? secuencia : secuenciaDefault
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3 },
+    columnStyles: { 0: { cellWidth: 70 }, 2: { cellWidth: 25 } },
+    head: [
+      [{ content: 'SECUENCIA DIDÁCTICA', colSpan: 3, styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }],
+      [
+        { content: 'MOMENTOS', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
+        { content: 'ACTIVIDAD', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
+        { content: 'DURACIÓN', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } }
+      ]
+    ],
+    body: secuenciaData.map(s => [
+      { content: (s.momento || '').toUpperCase(), styles: { fontStyle: 'bold' } },
+      s.actividad || '',
+      s.duracion ? (typeof s.duracion === 'number' ? `${s.duracion} min` : s.duracion) : ''
+    ])
+  })
 }
 
 export default {
