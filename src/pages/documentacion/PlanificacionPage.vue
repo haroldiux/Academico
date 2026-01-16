@@ -126,11 +126,15 @@
                   </div>
 
                   <div v-else class="horarios-grid">
-                    <div v-for="(horario, idx) in horarios" :key="idx" class="horario-card">
+                    <div v-for="(horario, idx) in horarios" :key="idx" class="horario-card" :class="{ 'horario-api': horario.desdeAPI }">
+                      <q-chip v-if="horario.desdeAPI" color="blue-2" text-color="blue-9" size="xs" dense class="api-badge">API</q-chip>
                       <div class="horario-dia"><q-icon name="event" class="q-mr-xs" />{{ horario.dia }}</div>
                       <div class="horario-hora">{{ horario.horaInicio }} - {{ horario.horaFin }}</div>
-                      <div class="horario-aula">{{ horario.aula }}</div>
-                      <q-btn flat round dense icon="close" size="xs" color="red" class="delete-btn" @click="eliminarHorario(idx)" />
+                      <div class="horario-aula">{{ horario.aula }} <span v-if="horario.grupo">(Grupo {{ horario.grupo }})</span></div>
+                      <q-btn v-if="!horario.desdeAPI" flat round dense icon="close" size="xs" color="red" class="delete-btn" @click="eliminarHorario(idx)" />
+                      <q-icon v-else name="lock" size="14px" color="blue" class="lock-icon">
+                        <q-tooltip>Horario de la API (no editable)</q-tooltip>
+                      </q-icon>
                     </div>
                   </div>
                 </q-card-section>
@@ -221,33 +225,66 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="sesion in unidad.sesiones" :key="sesion.id" :class="getSesionRowClass(sesion)">
-                      <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)" v-if="isFirstSesionOfSemana(unidad, sesion)">
-                        <div class="semana-content">
-                          <span class="semana-numero">{{ sesion.semana }}</span>
-                          <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
-                          <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)" text-color="white" size="xs" dense class="q-mt-xs">
-                            {{ sesion.periodoExamen }}
-                          </q-chip>
-                        </div>
-                      </td>
-                      <td class="cell-sesion">
-                        <div class="sesion-content">
-                          <span class="sesion-numero">{{ sesion.numeroGlobal }}°</span>
-                          <span class="sesion-dia">{{ sesion.dia }}</span>
-                          <span class="sesion-fecha">{{ sesion.fecha }}</span>
-                        </div>
-                      </td>
-                      <td><q-input v-model="sesion.tema" outlined dense autogrow class="cell-input" placeholder="Tema..." @update:model-value="marcarModificado(sesion)" /></td>
-                      <td><q-input v-model="sesion.conceptual" outlined dense type="textarea" autogrow class="cell-input" placeholder="Contenidos..." @update:model-value="marcarModificado(sesion)" /></td>
-                      <td><q-input v-model="sesion.procedimental" outlined dense type="textarea" autogrow class="cell-input" placeholder="Habilidades..." @update:model-value="marcarModificado(sesion)" /></td>
-                      <td><q-input v-model="sesion.actitudinal" outlined dense type="textarea" autogrow class="cell-input" placeholder="Actitudes..." @update:model-value="marcarModificado(sesion)" /></td>
-                      <td><q-input v-model="sesion.criteriosDesempeno" outlined dense type="textarea" autogrow class="cell-input" placeholder="Criterios..." @update:model-value="marcarModificado(sesion)" /></td>
-                      <td><q-input v-model="sesion.instrumentosEvaluacion" outlined dense type="textarea" autogrow class="cell-input" placeholder="Instrumentos..." @update:model-value="marcarModificado(sesion)" /></td>
-                      <td class="cell-actions">
-                        <q-btn flat round dense icon="delete" size="xs" color="red" @click="eliminarSesion(unidad, sesion)" />
-                      </td>
-                    </tr>
+                    <template v-for="sesion in unidad.sesiones" :key="sesion.id">
+                      <!-- Fila de EXAMEN -->
+                      <tr v-if="sesion.esExamen" class="sesion-examen-row">
+                        <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)" v-if="isFirstSesionOfSemana(unidad, sesion)">
+                          <div class="semana-content">
+                            <span class="semana-numero">{{ sesion.semana }}</span>
+                            <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
+                            <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)" text-color="white" size="xs" dense class="q-mt-xs">
+                              {{ sesion.periodoExamen }}
+                            </q-chip>
+                          </div>
+                        </td>
+                        <td class="cell-sesion">
+                          <div class="sesion-content">
+                            <span class="sesion-numero">{{ sesion.numeroGlobal }}°</span>
+                            <span class="sesion-dia">{{ sesion.dia }}</span>
+                            <span class="sesion-fecha">{{ sesion.fecha }}</span>
+                          </div>
+                        </td>
+                        <td colspan="6" class="examen-cell">
+                          <div class="examen-banner">
+                            <q-icon name="assignment" size="24px" class="q-mr-sm" />
+                            <span class="examen-titulo">{{ sesion.tipoExamen }}</span>
+                          </div>
+                        </td>
+                        <td class="cell-actions">
+                          <q-icon name="lock" size="sm" color="grey-5">
+                            <q-tooltip>Sesión reservada para examen</q-tooltip>
+                          </q-icon>
+                        </td>
+                      </tr>
+                      <!-- Fila NORMAL -->
+                      <tr v-else :class="getSesionRowClass(sesion)">
+                        <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)" v-if="isFirstSesionOfSemana(unidad, sesion)">
+                          <div class="semana-content">
+                            <span class="semana-numero">{{ sesion.semana }}</span>
+                            <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
+                            <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)" text-color="white" size="xs" dense class="q-mt-xs">
+                              {{ sesion.periodoExamen }}
+                            </q-chip>
+                          </div>
+                        </td>
+                        <td class="cell-sesion">
+                          <div class="sesion-content">
+                            <span class="sesion-numero">{{ sesion.numeroGlobal }}°</span>
+                            <span class="sesion-dia">{{ sesion.dia }}</span>
+                            <span class="sesion-fecha">{{ sesion.fecha }}</span>
+                          </div>
+                        </td>
+                        <td><q-input v-model="sesion.tema" outlined dense autogrow class="cell-input" placeholder="Tema..." @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.conceptual" outlined dense type="textarea" autogrow class="cell-input" placeholder="Contenidos..." @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.procedimental" outlined dense type="textarea" autogrow class="cell-input" placeholder="Habilidades..." @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.actitudinal" outlined dense type="textarea" autogrow class="cell-input" placeholder="Actitudes..." @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.criteriosDesempeno" outlined dense type="textarea" autogrow class="cell-input" placeholder="Criterios..." @update:model-value="marcarModificado(sesion)" /></td>
+                        <td><q-input v-model="sesion.instrumentosEvaluacion" outlined dense type="textarea" autogrow class="cell-input" placeholder="Instrumentos..." @update:model-value="marcarModificado(sesion)" /></td>
+                        <td class="cell-actions">
+                          <q-btn flat round dense icon="delete" size="xs" color="red" @click="eliminarSesion(unidad, sesion)" />
+                        </td>
+                      </tr>
+                    </template>
                   </tbody>
                 </table>
               </div>
@@ -387,10 +424,14 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
+import { useGruposStore } from 'src/stores/grupos'
+import { useRolExamenesStore } from 'src/stores/rolExamenes'
 
 const route = useRoute()
 const $q = useQuasar()
 const asignaturasStore = useAsignaturasStore()
+const gruposStore = useGruposStore()
+const rolExamenesStore = useRolExamenesStore()
 
 const tabActual = ref('horario')
 const gestionSeleccionada = ref('2026-I')
@@ -424,9 +465,72 @@ const diasOptions = [
 
 const asignatura = computed(() => asignaturasStore.asignaturaActual)
 
-onMounted(() => {
+// Horarios desde API externa
+const horariosAPI = ref([])
+
+// Exámenes cargados del rol (Director de Carrera)
+const examenesRol = ref([])
+
+onMounted(async () => {
   const id = parseInt(route.params.id)
   asignaturasStore.setAsignaturaActual(id)
+
+  // Cargar horarios desde API externa
+  await cargarHorariosDesdeAPI()
+
+  // Cargar rol de exámenes para esta materia
+  await cargarExamenesRol()
+})
+
+/**
+ * Cargar exámenes del rol subido por el Director
+ */
+async function cargarExamenesRol() {
+  try {
+    await rolExamenesStore.cargarExamenes({
+      gestion: gestionSeleccionada.value
+    })
+
+    // Filtrar exámenes de la materia actual
+    const codigoMateria = asignatura.value?.codigo
+    if (codigoMateria) {
+      examenesRol.value = rolExamenesStore.examenes.filter(e =>
+        e.materia_codigo === codigoMateria
+      )
+
+      if (examenesRol.value.length > 0) {
+        $q.notify({
+          type: 'info',
+          message: `Se cargaron ${examenesRol.value.length} exámenes del rol`,
+          icon: 'assignment'
+        })
+      }
+    }
+  } catch (err) {
+    console.log('[Exámenes] No hay rol de exámenes cargado, usando semanas por defecto')
+  }
+}
+
+/**
+ * Computed: Semanas con exámenes (dinámico desde rol o por defecto)
+ */
+const semanasExamen = computed(() => {
+  // Si hay exámenes cargados del rol, usarlos
+  if (examenesRol.value.length > 0) {
+    const map = {}
+    examenesRol.value.forEach(ex => {
+      map[ex.semana] = ex.tipo_examen.toUpperCase()
+    })
+    return map
+  }
+
+  // Semanas por defecto si no hay rol
+  return {
+    8: 'EXAMEN PRIMER PARCIAL',
+    15: 'EXAMEN SEGUNDO PARCIAL',
+    19: 'EXAMEN FINAL',
+    20: '2DA INSTANCIA'
+  }
 })
 
 const unidadesDocumentacion = computed(() => asignatura.value?.unidades || [])
@@ -437,6 +541,76 @@ const totalSemanas = computed(() => 20)
 
 const horarios = ref([])
 const horarioForm = ref({ dia: 'Martes', horaInicio: '07:00', horaFin: '09:00', aula: '' })
+
+/**
+ * Cargar horarios desde API externa (grupos-externo)
+ */
+async function cargarHorariosDesdeAPI() {
+  try {
+    // Esperar a que la asignatura actual esté cargada
+    await new Promise(resolve => {
+      const checkAsignatura = () => {
+        if (asignatura.value) {
+          resolve()
+        } else {
+          setTimeout(checkAsignatura, 100)
+        }
+      }
+      checkAsignatura()
+    })
+
+    console.log('[Horarios] Asignatura actual:', asignatura.value?.codigo, asignatura.value?.nombre)
+
+    // Si no hay datos externos, cargarlos
+    if (!gruposStore.materiasExterno?.length) {
+      console.log('[Horarios] Cargando materias externas...')
+      await gruposStore.fetchGruposExterno()
+    }
+
+    console.log('[Horarios] Total materias externas:', gruposStore.materiasExterno?.length)
+
+    // Buscar la materia por código (más confiable que id)
+    const codigoAsignatura = asignatura.value?.codigo?.toUpperCase().trim()
+    console.log('[Horarios] Buscando código:', codigoAsignatura)
+
+    const materia = gruposStore.materiasExterno?.find(m => {
+      const codigoExterno = m.codigo?.toUpperCase().trim()
+      const nombreExterno = m.nombre?.toUpperCase().trim()
+      const nombreAsig = asignatura.value?.nombre?.toUpperCase().trim()
+
+      return codigoExterno === codigoAsignatura || nombreExterno === nombreAsig
+    })
+
+    console.log('[Horarios] Materia encontrada:', materia?.nombre, 'Grupos:', materia?.grupos?.length)
+
+    if (materia?.grupos?.length) {
+      // Transformar grupos a formato de horarios
+      horariosAPI.value = materia.grupos.map(g => ({
+        dia: g.dia || 'Martes',
+        horaInicio: g.hora_inicio || g.horaInicio || '07:00',
+        horaFin: g.hora_fin || g.horaFin || '09:00',
+        aula: g.aula || '',
+        bloque: g.bloque || '',
+        grupo: g.grupo || g.codigo_grupo || '',
+        tipoClase: g.tipo_clase || 'Teórico',
+        desdeAPI: true
+      }))
+
+      // Actualizar horarios ref para que funcione la lógica existente
+      horarios.value = [...horariosAPI.value]
+
+      $q.notify({
+        type: 'info',
+        message: `Se cargaron ${horariosAPI.value.length} horarios desde el sistema`,
+        icon: 'cloud_download'
+      })
+    } else {
+      console.log('[Horarios] No se encontraron horarios para esta materia')
+    }
+  } catch (err) {
+    console.error('[Horarios] Error cargando horarios desde API:', err)
+  }
+}
 
 const unidadForm = ref({ nombre: '', elementoCompetencia: '' })
 
@@ -461,85 +635,136 @@ function agregarHorario() {
 }
 
 function confirmarHorario() {
-  horarios.value.push({ ...horarioForm.value })
+  const nuevoHorario = { ...horarioForm.value, desdeAPI: false }
+  horarios.value.push(nuevoHorario)
   horarios.value.sort((a, b) => diasOptions.findIndex(d => d.value === a.dia) - diasOptions.findIndex(d => d.value === b.dia))
   showHorarioDialog.value = false
   $q.notify({ type: 'positive', message: 'Sesión agregada', icon: 'check' })
 }
 
 function eliminarHorario(idx) {
+  const horario = horarios.value[idx]
+  if (horario.desdeAPI) {
+    $q.notify({ type: 'warning', message: 'Este horario viene de la API y no puede eliminarse', icon: 'warning' })
+    return
+  }
   horarios.value.splice(idx, 1)
 }
 
 function generarPlanificacion() {
   const fechaInicio = new Date(calendario.value.fechaInicio)
-  const sesionesTotal = horarios.value.length * totalSemanas.value
   const unidades = unidadesDocumentacion.value
   
-  const sesionesPorUnidad = Math.floor(sesionesTotal / unidades.length)
-  const sesionesExtra = sesionesTotal % unidades.length
+  // Semanas de exámenes (dinámico desde rol o por defecto)
+  const SEMANAS_EXAMEN = semanasExamen.value
   
+  // Generar todas las sesiones primero
+  const todasLasSesiones = []
   let sesionGlobal = 1
-  let semanaActual = 1
-  let sesionEnSemana = 0
   
-  planificacion.value = unidades.map((unidad, uIdx) => {
-    const cantidadSesiones = sesionesPorUnidad + (uIdx < sesionesExtra ? 1 : 0)
-    const sesiones = []
-    const temasUnidad = unidad.temas || []
-    const sesionesPorTema = temasUnidad.length > 0 ? Math.ceil(cantidadSesiones / temasUnidad.length) : cantidadSesiones
+  for (let semana = 1; semana <= totalSemanas.value; semana++) {
+    const fechaSemanaInicio = new Date(fechaInicio)
+    fechaSemanaInicio.setDate(fechaInicio.getDate() + (semana - 1) * 7)
     
-    for (let i = 0; i < cantidadSesiones; i++) {
-      const horarioIdx = sesionEnSemana % horarios.value.length
-      const horario = horarios.value[horarioIdx]
-      
-      const fechaSemanaInicio = new Date(fechaInicio)
-      fechaSemanaInicio.setDate(fechaInicio.getDate() + (semanaActual - 1) * 7)
+    // Generar sesiones para cada día de la semana según horarios
+    horarios.value.forEach((horario, sesionEnSemana) => {
       const diaIndex = diasOptions.findIndex(d => d.value === horario.dia)
       const fechaSesion = new Date(fechaSemanaInicio)
       fechaSesion.setDate(fechaSemanaInicio.getDate() + diaIndex)
       
-      let periodoExamen = null
-      if (semanaActual === 7 || semanaActual === 8) periodoExamen = '1er Parcial'
-      else if (semanaActual === 14 || semanaActual === 15) periodoExamen = '2do Parcial'
-      else if (semanaActual === 18 || semanaActual === 19) periodoExamen = 'Final'
-      else if (semanaActual === 20) periodoExamen = '2da Instancia'
+      // Verificar si es la última sesión de una semana de examen
+      const esUltimaSesionSemana = sesionEnSemana === horarios.value.length - 1
+      const esExamen = esUltimaSesionSemana && SEMANAS_EXAMEN[semana]
       
-      const temaIdx = Math.floor(i / sesionesPorTema)
-      const temaOriginal = temasUnidad[temaIdx]
-      
-      sesiones.push({
+      todasLasSesiones.push({
         id: sesionGlobal,
         numeroGlobal: sesionGlobal,
-        semana: semanaActual,
+        semana,
         semanaFechas: formatDate(fechaSemanaInicio),
         dia: horario.dia,
         fecha: formatDate(fechaSesion),
-        periodoExamen,
+        esExamen: !!esExamen,
+        tipoExamen: esExamen || null,
+        periodoExamen: esExamen || (semana >= 7 && semana <= 8 ? '1er Parcial' : 
+                       semana >= 14 && semana <= 15 ? '2do Parcial' :
+                       semana >= 18 && semana <= 19 ? 'Final' :
+                       semana === 20 ? '2da Instancia' : null),
+        tema: esExamen ? esExamen : '',
+        conceptual: esExamen ? '' : '',
+        procedimental: esExamen ? '' : '',
+        actitudinal: esExamen ? '' : '',
+        criteriosDesempeno: esExamen ? '' : '',
+        instrumentosEvaluacion: esExamen ? 'Examen escrito' : '',
+        modificado: false,
+        bloqueado: !!esExamen // Sesiones de examen no editables
+      })
+      
+      sesionGlobal++
+    })
+  }
+  
+  // Filtrar sesiones que NO son exámenes para distribuir contenido
+  const sesionesParaContenido = todasLasSesiones.filter(s => !s.esExamen)
+  
+  // Distribuir unidades en las sesiones de contenido
+  const sesionesPorUnidad = Math.floor(sesionesParaContenido.length / unidades.length)
+  const sesionesExtra = sesionesParaContenido.length % unidades.length
+  
+  let indiceSesion = 0
+  
+  planificacion.value = unidades.map((unidad, uIdx) => {
+    const cantidadSesiones = sesionesPorUnidad + (uIdx < sesionesExtra ? 1 : 0)
+    const temasUnidad = unidad.temas || []
+    const sesionesPorTema = temasUnidad.length > 0 ? Math.ceil(cantidadSesiones / temasUnidad.length) : cantidadSesiones
+    
+    const sesionesUnidad = []
+    
+    for (let i = 0; i < cantidadSesiones && indiceSesion < sesionesParaContenido.length; i++) {
+      const sesionBase = sesionesParaContenido[indiceSesion]
+      const temaIdx = Math.floor(i / sesionesPorTema)
+      const temaOriginal = temasUnidad[temaIdx]
+      
+      // Agregar sesión de contenido
+      sesionesUnidad.push({
+        ...sesionBase,
         tema: temaOriginal?.titulo || '',
         conceptual: temaOriginal?.contenidos?.conceptual?.map(c => '- ' + c).join('\n') || '',
         procedimental: temaOriginal?.contenidos?.procedimental?.map(c => '- ' + c).join('\n') || '',
         actitudinal: temaOriginal?.contenidos?.actitudinal?.map(c => '- ' + c).join('\n') || '',
         criteriosDesempeno: temaOriginal?.logros_esperados?.map(l => '- ' + l.descripcion).join('\n') || '',
-        instrumentosEvaluacion: '',
-        modificado: false
+        instrumentosEvaluacion: ''
       })
       
-      sesionGlobal++
-      sesionEnSemana++
-      
-      if (sesionEnSemana >= horarios.value.length) {
-        semanaActual++
-        sesionEnSemana = 0
-      }
+      indiceSesion++
     }
+    
+    // Agregar sesiones de examen que caen en las semanas de esta unidad
+    const semanasUnidad = [...new Set(sesionesUnidad.map(s => s.semana))]
+    const examenesUnidad = todasLasSesiones.filter(s => 
+      s.esExamen && semanasUnidad.includes(s.semana)
+    )
+    
+    // Insertar exámenes en orden correcto
+    examenesUnidad.forEach(examen => {
+      const insertIdx = sesionesUnidad.findIndex(s => 
+        s.semana === examen.semana && s.numeroGlobal > examen.numeroGlobal
+      )
+      if (insertIdx === -1) {
+        sesionesUnidad.push(examen)
+      } else {
+        sesionesUnidad.splice(insertIdx, 0, examen)
+      }
+    })
+    
+    // Ordenar por número global
+    sesionesUnidad.sort((a, b) => a.numeroGlobal - b.numeroGlobal)
     
     return {
       id: unidad.id,
       nombre: unidad.titulo.toUpperCase(),
       elementoCompetencia: unidad.elemento_competencia || '',
       collapsed: false,
-      sesiones
+      sesiones: sesionesUnidad
     }
   })
   
@@ -671,8 +896,11 @@ function exportarPDF() {
 
 .horarios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
 .horario-card { display: flex; flex-direction: column; gap: 4px; padding: 16px; background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 10px; position: relative; }
+.horario-card.horario-api { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
 .horario-card .delete-btn { position: absolute; top: 4px; right: 4px; }
-.horario-dia { font-weight: 700; color: var(--text-primary); display: flex; align-items: center; }
+.horario-card .lock-icon { position: absolute; top: 8px; right: 8px; }
+.horario-card .api-badge { position: absolute; top: -6px; left: 8px; }
+.horario-dia { font-weight: 700; color: var(--text-primary); display: flex; align-items: center; padding-top: 8px; }
 .horario-hora { font-size: 0.9rem; color: var(--primary); }
 .horario-aula { font-size: 0.8rem; color: var(--text-muted); }
 
@@ -710,6 +938,12 @@ function exportarPDF() {
 .cell-input :deep(.q-field__control) { min-height: 24px; }
 .cell-input :deep(textarea) { font-size: 0.65rem; line-height: 1.2; }
 .cell-actions { text-align: center; vertical-align: middle; }
+
+/* Filas de Examen */
+.sesion-examen-row td { background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1)); }
+.examen-cell { text-align: center; vertical-align: middle; padding: 16px !important; }
+.examen-banner { display: flex; align-items: center; justify-content: center; color: #d97706; font-weight: 700; font-size: 0.9rem; }
+.examen-titulo { text-transform: uppercase; letter-spacing: 1px; }
 
 /* Preview */
 .preview-container { background: white; color: #333; padding: 40px; border-radius: 8px; max-width: 1200px; margin: 0 auto; }

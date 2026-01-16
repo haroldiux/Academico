@@ -39,6 +39,7 @@
               <div class="row items-center q-gutter-sm">
                 <q-icon name="school" />
                 <span>Resultados</span>
+                <q-chip size="xs" color="purple-2" text-color="purple-9" dense class="q-ml-xs">Compartido</q-chip>
                 <q-badge :color="progresoResultados >= 100 ? 'green' : progresoResultados >= 50 ? 'amber' : 'red'" text-color="white">
                   {{ progresoResultados }}%
                 </q-badge>
@@ -48,6 +49,7 @@
               <div class="row items-center q-gutter-sm">
                 <q-icon name="list_alt" />
                 <span>Contenidos</span>
+                <q-chip size="xs" color="purple-2" text-color="purple-9" dense class="q-ml-xs">Compartido</q-chip>
                 <q-badge :color="progresoContenidos >= 100 ? 'green' : progresoContenidos >= 50 ? 'amber' : 'red'" text-color="white">
                   {{ progresoContenidos }}%
                 </q-badge>
@@ -57,6 +59,7 @@
               <div class="row items-center q-gutter-sm">
                 <q-icon name="psychology" />
                 <span>Estrategias</span>
+                <q-chip size="xs" color="teal-2" text-color="teal-9" dense class="q-ml-xs">Personal</q-chip>
                 <q-badge :color="progresoEstrategias >= 100 ? 'green' : progresoEstrategias >= 50 ? 'amber' : 'red'" text-color="white">
                   {{ progresoEstrategias }}%
                 </q-badge>
@@ -66,6 +69,7 @@
               <div class="row items-center q-gutter-sm">
                 <q-icon name="grading" />
                 <span>Evaluación</span>
+                <q-chip size="xs" color="teal-2" text-color="teal-9" dense class="q-ml-xs">Personal</q-chip>
                 <q-badge :color="progresoEvaluacion >= 100 ? 'green' : progresoEvaluacion >= 50 ? 'amber' : 'red'" text-color="white">
                   {{ progresoEvaluacion }}%
                 </q-badge>
@@ -75,6 +79,7 @@
               <div class="row items-center q-gutter-sm">
                 <q-icon name="timeline" />
                 <span>Secuencia</span>
+                <q-chip size="xs" color="teal-2" text-color="teal-9" dense class="q-ml-xs">Personal</q-chip>
                 <q-badge :color="progresoSecuencia >= 100 ? 'green' : progresoSecuencia >= 50 ? 'amber' : 'red'" text-color="white">
                   {{ progresoSecuencia }}%
                 </q-badge>
@@ -87,6 +92,18 @@
           <q-tab-panels v-model="tabActual" animated class="bg-transparent">
             <!-- Tab: Resultados de Aprendizaje -->
             <q-tab-panel name="aprendizaje" class="q-pa-lg">
+              <!-- Banner de campo compartido -->
+              <q-banner class="bg-purple-1 text-purple-9 q-mb-md rounded-borders" dense>
+                <template v-slot:avatar>
+                  <q-icon name="groups" color="purple" />
+                </template>
+                <span class="text-weight-medium">Campo Compartido (Materia)</span>
+                <span class="q-ml-sm text-caption">Estos datos son visibles para todos los docentes de esta materia.</span>
+                <template v-slot:action v-if="esSoloLectura">
+                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                </template>
+              </q-banner>
+
               <!-- Barra de progreso -->
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
@@ -159,7 +176,8 @@
                           size="sm"
                           @click="irBancoPreguntas(logro)"
                         >
-                          <q-tooltip>Banco de Preguntas</q-tooltip>
+                          <q-badge v-if="logro.mis_preguntas_count" floating color="teal" :label="logro.mis_preguntas_count" />
+                          <q-tooltip>Banco de Preguntas ({{ logro.mis_preguntas_count || 0 }} mías)</q-tooltip>
                         </q-btn>
                         <q-btn flat round dense icon="delete" color="red" size="sm" @click="eliminarLogro(logro)" />
                       </div>
@@ -200,6 +218,18 @@
 
             <!-- Tab: Contenidos -->
             <q-tab-panel name="contenidos" class="q-pa-lg">
+              <!-- Banner de campo compartido -->
+              <q-banner class="bg-purple-1 text-purple-9 q-mb-md rounded-borders" dense>
+                <template v-slot:avatar>
+                  <q-icon name="groups" color="purple" />
+                </template>
+                <span class="text-weight-medium">Campo Compartido (Materia)</span>
+                <span class="q-ml-sm text-caption">Los contenidos y bibliografía son comunes para todos los docentes.</span>
+                <template v-slot:action v-if="esSoloLectura">
+                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                </template>
+              </q-banner>
+
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
                   <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta sección</span>
@@ -335,6 +365,18 @@
 
             <!-- Tab: Estrategias -->
             <q-tab-panel name="estrategias" class="q-pa-lg">
+              <!-- Banner de campo personal -->
+              <q-banner class="bg-teal-1 text-teal-9 q-mb-md rounded-borders" dense>
+                <template v-slot:avatar>
+                  <q-icon name="person" color="teal" />
+                </template>
+                <span class="text-weight-medium">Campo Personal (Docente)</span>
+                <span class="q-ml-sm text-caption">Estas estrategias son tu configuración personal para esta materia.</span>
+                <template v-slot:action v-if="esSoloLectura">
+                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                </template>
+              </q-banner>
+
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
                   <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta sección</span>
@@ -389,6 +431,18 @@
 
             <!-- Tab: Evaluación con selección múltiple -->
             <q-tab-panel name="evaluacion" class="q-pa-lg">
+              <!-- Banner de campo personal -->
+              <q-banner class="bg-teal-1 text-teal-9 q-mb-md rounded-borders" dense>
+                <template v-slot:avatar>
+                  <q-icon name="person" color="teal" />
+                </template>
+                <span class="text-weight-medium">Campo Personal (Docente)</span>
+                <span class="q-ml-sm text-caption">Define tu propia metodología de evaluación formativa y sumativa.</span>
+                <template v-slot:action v-if="esSoloLectura">
+                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                </template>
+              </q-banner>
+
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
                   <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta sección</span>
@@ -490,6 +544,18 @@
 
             <!-- Tab: Secuencia Didáctica -->
             <q-tab-panel name="secuencia" class="q-pa-lg">
+              <!-- Banner de campo personal -->
+              <q-banner class="bg-teal-1 text-teal-9 q-mb-md rounded-borders" dense>
+                <template v-slot:avatar>
+                  <q-icon name="person" color="teal" />
+                </template>
+                <span class="text-weight-medium">Campo Personal (Docente)</span>
+                <span class="q-ml-sm text-caption">Organiza los momentos de tu clase según tu metodología.</span>
+                <template v-slot:action v-if="esSoloLectura">
+                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                </template>
+              </q-banner>
+
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
                   <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta sección</span>
@@ -603,16 +669,29 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
+import { useAuthStore } from 'src/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
 const store = useAsignaturasStore()
+const authStore = useAuthStore()
 
 const tabActual = ref('aprendizaje')
 const asignatura = ref(null)
 const unidad = ref(null)
 const tema = ref(null)
+
+// ==========================================
+// PERMISOS
+// ==========================================
+const ROLES_SOLO_LECTURA = ['DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL']
+
+// Verifica si es solo lectura
+const esSoloLectura = computed(() => {
+  const userRol = authStore.rol
+  return ROLES_SOLO_LECTURA.includes(userRol)
+})
 
 const formTema = ref({
   resultado_aprendizaje: '',

@@ -3,8 +3,8 @@ const routes = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { 
-        path: '', 
+      {
+        path: '',
         name: 'dashboard',
         component: () => import('pages/IndexPage.vue'),
         meta: { title: 'Dashboard' }
@@ -73,6 +73,18 @@ const routes = [
             name: 'reporte-asistencia',
             component: () => import('pages/docente/ReporteAsistenciaPage.vue'),
             meta: { title: 'Reporte de Asistencias', rol: 'DOCENTE' }
+          }
+        ]
+      },
+      // Director de Carrera Routes
+      {
+        path: 'director',
+        children: [
+          {
+            path: 'rol-examenes',
+            name: 'rol-examenes',
+            component: () => import('pages/director/RolExamenesPage.vue'),
+            meta: { title: 'Rol de Exámenes', rol: 'DIRECTOR_CARRERA' }
           }
         ]
       },
@@ -175,6 +187,12 @@ const routes = [
             name: 'asignatura-planificacion',
             component: () => import('pages/documentacion/PlanificacionPage.vue'),
             meta: { title: 'Planificación Semestral' }
+          },
+          {
+            path: ':id/programa',
+            name: 'programa-asignatura',
+            component: () => import('pages/documentacion/ProgramaAsignaturaPage.vue'),
+            meta: { title: 'Programa de Asignatura' }
           }
         ]
       },
