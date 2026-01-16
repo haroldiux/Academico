@@ -33,7 +33,7 @@
         emit-value
         map-options
         style="min-width: 180px;"
-        @update:model-value="onFiltroChange"
+        @update:model-value="onSedeChange"
       />
       <q-select
         v-model="filtros.carrera"
@@ -192,15 +192,17 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useGruposStore } from 'src/stores/grupos'
 import { useSedesStore } from 'src/stores/sedes'
+import { useCarrerasStore } from 'src/stores/carreras'
 import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
 const gruposStore = useGruposStore()
 const sedesStore = useSedesStore()
+const carrerasStore = useCarrerasStore()
 
 const filtros = ref({
-  sede: null, // ID interno
-  carrera: 'carsis',
+  sede: null, // ID interno de sede
+  carrera: null, // ID interno de carrera
   gestion: '1-2026',
   semestre: null
 })
@@ -208,15 +210,28 @@ const filtros = ref({
 // Opciones de filtros - Sedes dinámicas del backend
 const sedesOptions = computed(() => sedesStore.getSedesOptions())
 
-const carrerasOptions = [
-  { label: 'Ingeniería de Sistemas', value: 'carsis' },
-  { label: 'Medicina', value: 'med' },
-  { label: 'Derecho', value: 'der' },
-  { label: 'Odontología', value: 'odo' },
-  { label: 'Enfermería', value: 'enf' },
-  { label: 'Contaduría', value: 'cont' },
-  { label: 'Administración', value: 'adm' }
-]
+// Opciones de carreras - Filtradas por sede seleccionada (igual que AsignaturasPage)
+const carrerasOptions = computed(() => {
+  if (filtros.value.sede) {
+    return carrerasStore.getCarrerasBySede(filtros.value.sede).map(c => ({
+      label: c.nombre,
+      value: c.id,
+      codigo: c.codigo
+    }))
+  }
+  // Si no hay sede seleccionada, mostrar todas con sede entre paréntesis
+  return carrerasStore.carreras
+    .filter(c => c.activo)
+    .map(c => {
+      const sede = sedesStore.getSedeById(c.sede_id)
+      return {
+        label: `${c.nombre} (${sede?.nombre || 'Sede ?'})`,
+        value: c.id,
+        codigo: c.codigo,
+        sede_id: c.sede_id
+      }
+    })
+})
 
 const gestionesOptions = [
   { label: '1-2026', value: '1-2026' },
@@ -253,14 +268,18 @@ const totalGrupos = computed(() =>
 
 // Methods
 async function fetchData() {
-  if (!filtros.value.sede) return
+  if (!filtros.value.sede || !filtros.value.carrera) return
 
   // Usar el id_api de la sede para la API externa
   const sedeApiId = sedesStore.getSedeApiId(filtros.value.sede)
+  // Usar el código de la carrera para la API externa
+  const carreraCodigo = carrerasStore.getCarreraCodigo(filtros.value.carrera)
+
+  if (!carreraCodigo) return
 
   await gruposStore.fetchGruposExterno({
     gestion: filtros.value.gestion,
-    carrera: filtros.value.carrera,
+    carrera: carreraCodigo,
     sede: sedeApiId
   })
 }
@@ -269,14 +288,31 @@ function onFiltroChange() {
   fetchData()
 }
 
+// Cuando cambia la sede, resetear carrera y recargar carreras
+function onSedeChange() {
+  filtros.value.carrera = null
+  gruposStore.materiasExterno = []
+  // Seleccionar primera carrera disponible después de un tick
+  setTimeout(() => {
+    const opts = carrerasStore.getCarrerasOptions(filtros.value.sede)
+    if (opts.length > 0) {
+      filtros.value.carrera = opts[0].value
+      fetchData()
+    }
+  }, 100)
+}
+
 async function refrescarDatos() {
-  if (!filtros.value.sede) return
+  if (!filtros.value.sede || !filtros.value.carrera) return
 
   const sedeApiId = sedesStore.getSedeApiId(filtros.value.sede)
+  const carreraCodigo = carrerasStore.getCarreraCodigo(filtros.value.carrera)
+
+  if (!carreraCodigo) return
 
   await gruposStore.refrescarGruposExterno({
     gestion: filtros.value.gestion,
-    carrera: filtros.value.carrera,
+    carrera: carreraCodigo,
     sede: sedeApiId
   })
   $q.notify({ type: 'positive', message: 'Datos actualizados', icon: 'check' })
@@ -289,12 +325,22 @@ watch(() => filtros.value.semestre, () => {
 
 // Lifecycle
 onMounted(async () => {
-  // Cargar sedes del backend
-  await sedesStore.fetchSedes()
+  // Cargar sedes y carreras del backend
+  await Promise.all([
+    sedesStore.fetchSedes(),
+    carrerasStore.fetchCarreras()
+  ])
 
-  // Seleccionar Cochabamba por defecto (id=1)
+  // Seleccionar Cochabamba por defecto
   if (sedesStore.sedes.length > 0) {
-    filtros.value.sede = sedesStore.sedes.find(s => s.codigo === 'CBA')?.id || sedesStore.sedes[0].id
+    const cochabamba = sedesStore.sedes.find(s => s.codigo === 'CBA')
+    filtros.value.sede = cochabamba?.id || sedesStore.sedes[0].id
+  }
+
+  // Seleccionar primera carrera de la sede
+  const carrerasSede = carrerasStore.getCarrerasOptions(filtros.value.sede)
+  if (carrerasSede.length > 0) {
+    filtros.value.carrera = carrerasSede[0].value
   }
 
   fetchData()
