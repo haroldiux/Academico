@@ -133,7 +133,7 @@
                       <div class="horario-dia"><q-icon name="event" class="q-mr-xs" />{{ horario.dia }}</div>
                       <div class="horario-hora">{{ horario.horaInicio }} - {{ horario.horaFin }}</div>
                       <div class="horario-aula">{{ horario.aula }} <span v-if="horario.grupo">(Grupo {{ horario.grupo
-                          }})</span></div>
+                      }})</span></div>
                       <q-btn v-if="!horario.desdeAPI" flat round dense icon="close" size="xs" color="red"
                         class="delete-btn" @click="eliminarHorario(idx)" />
                       <q-icon v-else name="lock" size="14px" color="blue" class="lock-icon">
@@ -151,7 +151,7 @@
                 no-caps :disable="!horarios.length || !unidadesDocumentacion.length" @click="generarPlanificacion" />
               <p class="text-grey-6 q-mt-sm text-caption">
                 Se distribuirán {{ totalTemasDocumentacion }} temas de {{ unidadesDocumentacion.length }} unidades en {{
-                totalSemanas }} semanas
+                  totalSemanas }} semanas
               </p>
             </div>
           </div>
@@ -356,7 +356,7 @@
                   <tr v-for="sesion in unidad.sesiones" :key="sesion.id">
                     <td class="text-center">{{ sesion.semana }}<br><small>{{ sesion.semanaFechas }}</small></td>
                     <td class="text-center">{{ sesion.numeroGlobal }}°<br><small>{{ sesion.dia }}<br>{{ sesion.fecha
-                        }}</small>
+                    }}</small>
                     </td>
                     <td>{{ sesion.tema }}</td>
                     <td>
@@ -453,13 +453,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
-import { useGruposStore } from 'src/stores/grupos'
+// import { useGruposStore } from 'src/stores/grupos'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
 
 const route = useRoute()
 const $q = useQuasar()
 const asignaturasStore = useAsignaturasStore()
-const gruposStore = useGruposStore()
+// const gruposStore = useGruposStore() // Ya no se usa para horarios externos
 const rolExamenesStore = useRolExamenesStore()
 
 const tabActual = ref('horario')
@@ -502,10 +502,11 @@ const examenesRol = ref([])
 
 onMounted(async () => {
   const id = parseInt(route.params.id)
-  asignaturasStore.setAsignaturaActual(id)
+  // IMPORTANTE: Esperar a que se cargue la asignatura antes de buscar horarios
+  await asignaturasStore.setAsignaturaActual(id)
 
-  // Cargar horarios desde API externa
-  await cargarHorariosDesdeAPI()
+  // Cargar horarios desde datos locales
+  await cargarHorariosAsignatura()
 
   // Cargar rol de exámenes para esta materia
   await cargarExamenesRol()
@@ -572,11 +573,11 @@ const horarios = ref([])
 const horarioForm = ref({ dia: 'Martes', horaInicio: '07:00', horaFin: '09:00', aula: '' })
 
 /**
- * Cargar horarios desde API externa (grupos-externo)
+ * Cargar horarios desde los datos locales de la asignatura (pivote docentes)
  */
-async function cargarHorariosDesdeAPI() {
+async function cargarHorariosAsignatura() {
   try {
-    // Esperar a que la asignatura actual esté cargada
+    // Esperar a que la asignatura actual esté cargada (doble check)
     await new Promise(resolve => {
       const checkAsignatura = () => {
         if (asignatura.value) {
@@ -588,56 +589,117 @@ async function cargarHorariosDesdeAPI() {
       checkAsignatura()
     })
 
-    console.log('[Horarios] Asignatura actual:', asignatura.value?.codigo, asignatura.value?.nombre)
+    console.log('[Horarios] Asignatura cargada:', asignatura.value?.nombre)
+    console.log('[Horarios] Docentes raw:', asignatura.value?.docentes)
 
-    // Si no hay datos externos, cargarlos
-    if (!gruposStore.materiasExterno?.length) {
-      console.log('[Horarios] Cargando materias externas...')
-      await gruposStore.fetchGruposExterno()
+    // Verificar si el backend nos manda horarios_data (lista completa plana)
+    if (asignatura.value?.horarios_data?.length) {
+      console.log('[Horarios] Usando lista completa horarios_data (backend)')
+      const nuevosHorarios = asignatura.value.horarios_data.map(h => {
+        if (h.horario) {
+          const partes = h.horario.split(' ')
+          if (partes.length >= 2) {
+            const dia = partes[0]
+            const horas = partes[1].split('-')
+            if (horas.length === 2) {
+              return {
+                dia: dia,
+                horaInicio: horas[0],
+                horaFin: horas[1],
+                aula: h.aula || 'Sin Aula',
+                grupo: h.grupo,
+                tipoClase: 'Teórico',
+                desdeAPI: true,
+                docente: h.docente_nombre
+              }
+            }
+          }
+        }
+        return null
+      }).filter(h => h !== null)
+
+      asignarHorarios(nuevosHorarios)
+      return
     }
 
-    console.log('[Horarios] Total materias externas:', gruposStore.materiasExterno?.length)
+    // Fallback: Verificar si hay docentes con horarios en el pivote (método viejo)
+    if (asignatura.value?.docentes?.length) {
+      const nuevosHorarios = []
 
-    // Buscar la materia por código (más confiable que id)
-    const codigoAsignatura = asignatura.value?.codigo?.toUpperCase().trim()
-    console.log('[Horarios] Buscando código:', codigoAsignatura)
+      asignatura.value.docentes.forEach(docente => {
+        const pivot = docente.pivot
+        console.log(`[Horarios] Procesando docente: ${docente.nombre_completo}`, pivot)
 
-    const materia = gruposStore.materiasExterno?.find(m => {
-      const codigoExterno = m.codigo?.toUpperCase().trim()
-      const nombreExterno = m.nombre?.toUpperCase().trim()
-      const nombreAsig = asignatura.value?.nombre?.toUpperCase().trim()
+        if (pivot && pivot.horario && pivot.grupo) {
+          // Parsear string formato "Martes 07:00-09:00"
+          // Puede venir "Lunes 10:00-12:00" o similar
+          const partes = pivot.horario.split(' ')
+          if (partes.length >= 2) {
+            const dia = partes[0]
+            const horas = partes[1].split('-') // ["07:00", "09:00"]
 
-      return codigoExterno === codigoAsignatura || nombreExterno === nombreAsig
-    })
+            if (horas.length === 2) {
+              nuevosHorarios.push({
+                dia: dia,
+                horaInicio: horas[0],
+                horaFin: horas[1],
+                aula: pivot.aula || 'Sin Aula',
+                bloque: '', // No tenemos bloque en pivote aun
+                grupo: pivot.grupo,
+                tipoClase: 'Teórico', // Default
+                desdeAPI: true, // Para bloquear edición
+                docente: docente.nombre_completo // Extra info
+              })
+            }
+          }
+        } else {
+          console.warn('[Horarios] Docente sin datos completos de horario/grupo en pivote')
+        }
+      })
 
-    console.log('[Horarios] Materia encontrada:', materia?.nombre, 'Grupos:', materia?.grupos?.length)
+      console.log('[Horarios] Nuevos horarios generados:', nuevosHorarios)
 
-    if (materia?.grupos?.length) {
-      // Transformar grupos a formato de horarios
-      horariosAPI.value = materia.grupos.map(g => ({
-        dia: g.dia || 'Martes',
-        horaInicio: g.hora_inicio || g.horaInicio || '07:00',
-        horaFin: g.hora_fin || g.horaFin || '09:00',
-        aula: g.aula || '',
-        bloque: g.bloque || '',
-        grupo: g.grupo || g.codigo_grupo || '',
-        tipoClase: g.tipo_clase || 'Teórico',
-        desdeAPI: true
-      }))
+      // Deduplicar horarios si es necesario o mostrarlos todos
+      // Mostraremos todos para que se vea cada grupo
+      horariosAPI.value = nuevosHorarios
 
-      // Actualizar horarios ref para que funcione la lógica existente
+      // Actualizar vista
       horarios.value = [...horariosAPI.value]
 
-      $q.notify({
-        type: 'info',
-        message: `Se cargaron ${horariosAPI.value.length} horarios desde el sistema`,
-        icon: 'cloud_download'
-      })
+      if (horarios.value.length > 0) {
+        $q.notify({
+          type: 'info',
+          message: `Se cargaron ${horarios.value.length} grupos/horarios asignados`,
+          icon: 'schedule'
+        })
+      } else {
+        console.log('[Horarios] No se encontraron horarios válidos en los docentes asignados')
+      }
+
     } else {
-      console.log('[Horarios] No se encontraron horarios para esta materia')
+      console.log('[Horarios] La asignatura no tiene docentes asignados (length=0 o undefined)')
     }
+
   } catch (err) {
-    console.error('[Horarios] Error cargando horarios desde API:', err)
+    console.error('[Horarios] Error procesando horarios locales:', err)
+  }
+}
+
+function asignarHorarios(nuevosHorarios) {
+  // Deduplicar horarios si es necesario o mostrarlos todos
+  horariosAPI.value = nuevosHorarios
+
+  // Actualizar vista
+  horarios.value = [...horariosAPI.value]
+
+  if (horarios.value.length > 0) {
+    $q.notify({
+      type: 'info',
+      message: `Se cargaron ${horarios.value.length} grupos/horarios asignados`,
+      icon: 'schedule'
+    })
+  } else {
+    console.log('[Horarios] Lista de horarios procesada pero vacía')
   }
 }
 

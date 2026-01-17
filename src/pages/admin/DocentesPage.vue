@@ -17,47 +17,13 @@
 
     <!-- Filtros -->
     <div class="filters-section">
-      <q-select
-        v-model="filtros.sede"
-        :options="sedesOptions"
-        outlined
-        dense
-        label="Sede"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 200px;"
-      />
-      <q-select
-        v-model="filtros.carrera"
-        :options="carrerasFiltradas"
-        outlined
-        dense
-        label="Carrera"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 250px;"
-        :disable="!filtros.sede"
-      />
-      <q-select
-        v-model="filtros.estado"
-        :options="estadosOptions"
-        outlined
-        dense
-        label="Estado"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 150px;"
-      />
-      <q-input
-        v-model="filtros.busqueda"
-        outlined
-        dense
-        placeholder="Buscar docente..."
-        class="search-input"
-      >
+      <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
+        clearable style="min-width: 200px;" />
+      <q-select v-model="filtros.carrera" :options="carrerasFiltradas" outlined dense label="Carrera" emit-value
+        map-options clearable style="min-width: 250px;" :disable="!filtros.sede" />
+      <q-select v-model="filtros.estado" :options="estadosOptions" outlined dense label="Estado" emit-value map-options
+        clearable style="min-width: 150px;" />
+      <q-input v-model="filtros.busqueda" outlined dense placeholder="Buscar docente..." class="search-input">
         <template v-slot:prepend>
           <q-icon name="search" />
         </template>
@@ -107,12 +73,8 @@
             <h3 class="docente-nombre">{{ docente.titulo }} {{ docente.nombre }}</h3>
             <p class="docente-email">{{ docente.email }}</p>
             <div class="docente-badges">
-              <q-chip
-                :color="docente.activo ? 'green-2' : 'grey-3'"
-                :text-color="docente.activo ? 'green-9' : 'grey-7'"
-                size="sm"
-                dense
-              >
+              <q-chip :color="docente.activo ? 'green-2' : 'grey-3'" :text-color="docente.activo ? 'green-9' : 'grey-7'"
+                size="sm" dense>
                 {{ docente.activo ? 'Activo' : 'Inactivo' }}
               </q-chip>
               <q-chip color="blue-2" text-color="blue-9" size="sm" dense>
@@ -138,7 +100,8 @@
                 <q-separator />
                 <q-item clickable v-close-popup @click="toggleEstado(docente)">
                   <q-item-section avatar>
-                    <q-icon :name="docente.activo ? 'block' : 'check_circle'" size="sm" :color="docente.activo ? 'orange' : 'green'" />
+                    <q-icon :name="docente.activo ? 'block' : 'check_circle'" size="sm"
+                      :color="docente.activo ? 'orange' : 'green'" />
                   </q-item-section>
                   <q-item-section>{{ docente.activo ? 'Desactivar' : 'Activar' }}</q-item-section>
                 </q-item>
@@ -167,23 +130,11 @@
         <div class="docente-materias q-mt-md">
           <p class="section-title">Materias Asignadas</p>
           <div class="materias-chips">
-            <q-chip
-              v-for="materia in docente.materias?.slice(0, 3)"
-              :key="materia"
-              size="sm"
-              color="purple-2"
-              text-color="purple-9"
-              dense
-            >
+            <q-chip v-for="materia in docente.materias?.slice(0, 3)" :key="materia" size="sm" color="purple-2"
+              text-color="purple-9" dense>
               {{ materia }}
             </q-chip>
-            <q-chip
-              v-if="docente.materias?.length > 3"
-              size="sm"
-              color="grey-3"
-              text-color="grey-7"
-              dense
-            >
+            <q-chip v-if="docente.materias?.length > 3" size="sm" color="grey-3" text-color="grey-7" dense>
               +{{ docente.materias.length - 3 }} más
             </q-chip>
             <span v-if="!docente.materias?.length" class="text-grey-5 text-caption">
@@ -223,7 +174,8 @@
         </div>
 
         <q-card-section>
-          <q-tabs v-model="formTab" dense class="text-grey" active-color="primary" indicator-color="primary" align="left">
+          <q-tabs v-model="formTab" dense class="text-grey" active-color="primary" indicator-color="primary"
+            align="left">
             <q-tab name="personal" label="Datos Personales" no-caps />
             <q-tab name="academico" label="Información Académica" no-caps />
             <q-tab name="contacto" label="Contacto" no-caps />
@@ -235,14 +187,8 @@
             <q-tab-panel name="personal" class="q-gutter-md q-pa-none q-pt-md">
               <div class="row q-col-gutter-md">
                 <div class="col-3">
-                  <q-select
-                    v-model="form.titulo"
-                    :options="titulosOptions"
-                    outlined
-                    label="Título"
-                    emit-value
-                    map-options
-                  />
+                  <q-select v-model="form.titulo" :options="titulosOptions" outlined label="Título" emit-value
+                    map-options />
                 </div>
                 <div class="col-9">
                   <q-input v-model="form.nombre" outlined label="Nombre Completo *" />
@@ -260,24 +206,12 @@
 
               <div class="row q-col-gutter-md">
                 <div class="col-6">
-                  <q-select
-                    v-model="form.genero"
-                    :options="generosOptions"
-                    outlined
-                    label="Género"
-                    emit-value
-                    map-options
-                  />
+                  <q-select v-model="form.genero" :options="generosOptions" outlined label="Género" emit-value
+                    map-options />
                 </div>
                 <div class="col-6">
-                  <q-select
-                    v-model="form.estado_civil"
-                    :options="estadoCivilOptions"
-                    outlined
-                    label="Estado Civil"
-                    emit-value
-                    map-options
-                  />
+                  <q-select v-model="form.estado_civil" :options="estadoCivilOptions" outlined label="Estado Civil"
+                    emit-value map-options />
                 </div>
               </div>
             </q-tab-panel>
@@ -285,60 +219,36 @@
             <q-tab-panel name="academico" class="q-gutter-md q-pa-none q-pt-md">
               <div class="row q-col-gutter-md">
                 <div class="col-6">
-                  <q-select
-                    v-model="form.tipo"
-                    :options="tiposDocenteOptions"
-                    outlined
-                    label="Tipo de Contrato *"
-                    emit-value
-                    map-options
-                  />
+                  <q-select v-model="form.tipo" :options="tiposDocenteOptions" outlined label="Tipo de Contrato *"
+                    emit-value map-options />
                 </div>
                 <div class="col-6">
-                  <q-select
-                    v-model="form.grado_academico"
-                    :options="gradosAcademicosOptions"
-                    outlined
-                    label="Grado Académico"
-                    emit-value
-                    map-options
-                  />
+                  <q-select v-model="form.grado_academico" :options="gradosAcademicosOptions" outlined
+                    label="Grado Académico" emit-value map-options />
                 </div>
               </div>
 
               <div class="row q-col-gutter-md">
                 <div class="col-6">
-                  <q-select
-                    v-model="form.sede_id"
-                    :options="sedesOptions"
-                    outlined
-                    label="Sede *"
-                    emit-value
-                    map-options
-                  />
+                  <q-select v-model="form.sede_id" :options="sedesOptions" outlined label="Sede *" emit-value
+                    map-options />
                 </div>
                 <div class="col-6">
-                  <q-select
-                    v-model="form.carreras"
-                    :options="carrerasOptions"
-                    outlined
-                    label="Carreras"
-                    emit-value
-                    map-options
-                    multiple
-                    use-chips
-                  />
+                  <q-select v-model="form.carreras" :options="carrerasOptions" outlined label="Carreras" emit-value
+                    map-options multiple use-chips />
                 </div>
               </div>
 
-              <q-input v-model="form.especialidad" outlined label="Especialidad" placeholder="Ej: Inteligencia Artificial, Bases de Datos" />
+              <q-input v-model="form.especialidad" outlined label="Especialidad"
+                placeholder="Ej: Inteligencia Artificial, Bases de Datos" />
 
               <div class="row q-col-gutter-md">
                 <div class="col-6">
                   <q-input v-model="form.fecha_ingreso" outlined type="date" label="Fecha de Ingreso" />
                 </div>
                 <div class="col-6">
-                  <q-input v-model.number="form.horas_semanales" outlined type="number" label="Horas Semanales Máx." min="0" />
+                  <q-input v-model.number="form.horas_semanales" outlined type="number" label="Horas Semanales Máx."
+                    min="0" />
                 </div>
               </div>
             </q-tab-panel>
@@ -364,7 +274,8 @@
 
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="closeDialog" />
-          <q-btn unelevated color="green" :label="editMode ? 'Guardar Cambios' : 'Registrar Docente'" @click="guardarDocente" />
+          <q-btn unelevated color="green" :label="editMode ? 'Guardar Cambios' : 'Registrar Docente'"
+            @click="guardarDocente" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -441,7 +352,7 @@ onMounted(async () => {
 // Form Data with defaults
 const form = ref({
   id: null,
-  titulo: 'Lic.',
+  titulo: '',
   nombre: '',
   ci: '',
   fecha_nacimiento: '',
@@ -526,7 +437,7 @@ const totalDocentes = computed(() => stats.value.total_docentes)
 const docentesFiltrados = computed(() => {
   return docentesStore.docentes.map(d => ({
     id: d.id,
-    titulo: d.grado_academico || 'Lic.',
+    titulo: d.grado_academico || '',
     nombre: d.nombre_completo.replace(/^(Lic\.?|Ing\.?|Dr\.?|MSc\.?|PhD\.?)\s+/i, ''),
     iniciales: d.nombre_completo.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
     email: d.email,
@@ -534,8 +445,8 @@ const docentesFiltrados = computed(() => {
     tipo: d.tipo_dedicacion,
     sede_id: d.sede_id,
     sede_nombre: d.sede?.nombre || 'Sin Sede',
-    materias: d.asignaturas?.map(a => a.nombre) || [],
-    grupos: d.grupos_simulados || [],
+    materias: [...new Set(d.asignaturas?.map(a => a.nombre) || [])],
+    grupos: d.asignaturas?.map(a => a.pivot?.grupo).filter(g => g) || [],
     horas_semanales: 40,
     activo: d.estado
   }))
@@ -549,19 +460,19 @@ function openDialog(docente = null) {
     if (rawDocente) {
       form.value = {
         ...rawDocente,
-        titulo: rawDocente.grado_academico || 'Lic.',
+        titulo: rawDocente.grado_academico || '',
         nombre: rawDocente.nombre_completo.replace(/^(Lic\.?|Ing\.?|Dr\.?|MSc\.?|PhD\.?)\s+/i, ''),
         carreras: [],
       }
     } else {
-        // Fallback if not found in store list (unlikely)
-        form.value = { ...docente }
+      // Fallback if not found in store list (unlikely)
+      form.value = { ...docente }
     }
   } else {
     editMode.value = false
     form.value = {
       id: null,
-      titulo: 'Lic.',
+      titulo: '',
       nombre: '',
       ci: '',
       fecha_nacimiento: '',
@@ -848,11 +759,18 @@ function verHistorial(docente) {
 }
 
 @media (max-width: 1024px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
-  .stats-row { grid-template-columns: 1fr; }
-  .docentes-grid { grid-template-columns: 1fr; }
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .docentes-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

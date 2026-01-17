@@ -16,53 +16,27 @@
     <!-- Filters -->
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-3">
-        <q-select
-          v-model="filtros.sede"
-          :options="sedesOptions"
-          label="Sede"
-          outlined
-          dense
-          bg-color="white"
-          emit-value
-          map-options
-          clearable
-        >
-            <template v-slot:prepend>
-                <q-icon name="apartment" />
-            </template>
+        <q-select v-model="filtros.sede" :options="sedesOptions" label="Sede" outlined dense bg-color="white" emit-value
+          map-options clearable>
+          <template v-slot:prepend>
+            <q-icon name="apartment" />
+          </template>
         </q-select>
       </div>
       <div class="col-12 col-md-3">
-         <q-select
-          v-model="filtros.carrera"
-          :options="carrerasOptions"
-          label="Carrera"
-          outlined
-          dense
-          bg-color="white"
-          emit-value
-          map-options
-          clearable
-          :disable="!filtros.sede"
-        >
-            <template v-slot:prepend>
-                <q-icon name="school" />
-            </template>
+        <q-select v-model="filtros.carrera" :options="carrerasOptions" label="Carrera" outlined dense bg-color="white"
+          emit-value map-options clearable :disable="!filtros.sede">
+          <template v-slot:prepend>
+            <q-icon name="school" />
+          </template>
         </q-select>
       </div>
-       <div class="col-12 col-md-6">
-        <q-input
-          v-model="filtros.search"
-          label="Buscar materia (Nombre o Código)..."
-          outlined
-          dense
-          bg-color="white"
-          debounce="300"
-          clearable
-        >
-            <template v-slot:prepend>
-                <q-icon name="search" />
-            </template>
+      <div class="col-12 col-md-6">
+        <q-input v-model="filtros.search" label="Buscar materia (Nombre o Código)..." outlined dense bg-color="white"
+          debounce="300" clearable>
+          <template v-slot:prepend>
+            <q-icon name="search" />
+          </template>
         </q-input>
       </div>
     </div>
@@ -109,16 +83,10 @@
 
     <!-- Asignaturas Grid -->
     <div class="row q-col-gutter-lg">
-      <div
-        v-for="(asignatura, index) in asignaturasStore.asignaturas"
-        :key="asignatura.id"
-        class="col-12 col-md-6 col-lg-4"
-      >
-        <q-card
-          class="card-main cursor-pointer animate-in"
-          :style="{ animationDelay: `${0.3 + index * 0.05}s` }"
-          @click="irADocumentacion(asignatura.id)"
-        >
+      <div v-for="(asignatura, index) in asignaturasStore.asignaturas" :key="asignatura.id"
+        class="col-12 col-md-6 col-lg-4">
+        <q-card class="card-main cursor-pointer animate-in" :style="{ animationDelay: `${0.3 + index * 0.05}s` }"
+          @click="irADocumentacion(asignatura.id)">
           <q-card-section>
             <!-- Header -->
             <div class="row items-start no-wrap q-mb-md">
@@ -133,9 +101,18 @@
                   <q-chip size="sm" color="blue-1" text-color="blue-9" dense class="q-mr-xs">
                     {{ asignatura.codigo }}
                   </q-chip>
-                  <q-chip size="sm" color="grey-3" text-color="grey-8" dense>
+                  <q-chip size="sm" color="grey-3" text-color="grey-8" dense class="q-mr-xs">
                     {{ asignatura.semestre }}° Semestre
                   </q-chip>
+                  <q-chip size="sm" color="purple-1" text-color="purple-9" dense v-if="asignatura.sede_nombre">
+                    <q-icon name="place" size="12px" class="q-mr-xs" />
+                    {{ asignatura.sede_nombre }}
+                  </q-chip>
+                </div>
+                <!-- Docente -->
+                <div class="text-caption text-weight-medium text-grey-8 q-mt-xs">
+                    <q-icon name="person" size="14px" class="q-mr-xs text-primary" />
+                    {{ asignatura.docente_nombre }}
                 </div>
               </div>
             </div>
@@ -185,27 +162,15 @@
                   {{ calcularProgreso(asignatura) }}%
                 </span>
               </div>
-              <q-linear-progress
-                :value="calcularProgreso(asignatura) / 100"
-                color="primary"
-                rounded
-                size="8px"
-              />
+              <q-linear-progress :value="calcularProgreso(asignatura) / 100" color="primary" rounded size="8px" />
             </div>
           </q-card-section>
 
           <q-separator />
 
           <q-card-actions>
-            <q-btn
-              flat
-              color="primary"
-              icon="edit_document"
-              label="Documentar"
-              no-caps
-              class="full-width"
-              @click.stop="irADocumentacion(asignatura.id)"
-            />
+            <q-btn flat color="primary" icon="edit_document" label="Documentar" no-caps class="full-width"
+              @click.stop="irADocumentacion(asignatura.id)" />
           </q-card-actions>
         </q-card>
       </div>
@@ -244,36 +209,36 @@ onMounted(async () => {
 })
 
 async function fetchData() {
-    // Si hay sede seleccionada, usamos el código de la sede (ej: 'CBA') si lo tuviera, o el ID
-    // Ojo: El backend espera 'branch_code', que es string (ej 'CBA').
-    // Si nuestro select de sedes devuelve ID, necesitamos buscar el código.
-    // Asumiremos por ahora que el filtro Sede devuelve el objeto o el ID.
-    // Vamos a buscar el código si es un ID.
+  // Si hay sede seleccionada, usamos el código de la sede (ej: 'CBA') si lo tuviera, o el ID
+  // Ojo: El backend espera 'branch_code', que es string (ej 'CBA').
+  // Si nuestro select de sedes devuelve ID, necesitamos buscar el código.
+  // Asumiremos por ahora que el filtro Sede devuelve el objeto o el ID.
+  // Vamos a buscar el código si es un ID.
 
-    let branchCode = null
-    if (filtros.value.sede) {
-        const s = sedesStore.sedes.find(x => x.id === filtros.value.sede)
-        branchCode = s ? s.codigo : null
-    }
+  let branchCode = null
+  if (filtros.value.sede) {
+    const s = sedesStore.sedes.find(x => x.id === filtros.value.sede)
+    branchCode = s ? s.codigo : null
+  }
 
-    let careerCode = null
-    if (filtros.value.carrera) {
-        const c = carrerasStore.carreras.find(x => x.id === filtros.value.carrera)
-        careerCode = c ? c.codigo : null
-    }
+  let careerCode = null
+  if (filtros.value.carrera) {
+    const c = carrerasStore.carreras.find(x => x.id === filtros.value.carrera)
+    careerCode = c ? c.codigo : null
+  }
 
-    await asignaturasStore.fetchAsignaturas(
-        branchCode,
-        careerCode,
-        true,
-        filtros.value.search
-    )
+  await asignaturasStore.fetchAsignaturas(
+    branchCode,
+    careerCode,
+    true,
+    filtros.value.search
+  )
 }
 
 // Watchers
 watch(() => filtros.value.sede, () => {
-    filtros.value.carrera = '' // Reset carrera when sede changes
-    fetchData()
+  filtros.value.carrera = '' // Reset carrera when sede changes
+  fetchData()
 })
 
 watch(() => filtros.value.carrera, () => fetchData())
@@ -281,23 +246,23 @@ watch(() => filtros.value.carrera, () => fetchData())
 // Debounce para búsqueda
 let searchTimeout
 watch(() => filtros.value.search, () => {
-    clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(() => {
-        fetchData()
-    }, 500)
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    fetchData()
+  }, 500)
 })
 
 // Computed Options
 const sedesOptions = computed(() => {
-    return sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
+  return sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
 })
 
 const carrerasOptions = computed(() => {
-    let list = carrerasStore.carreras
-    if (filtros.value.sede) {
-        list = list.filter(c => c.sede_id === filtros.value.sede)
-    }
-    return list.map(c => ({ label: c.nombre, value: c.id }))
+  let list = carrerasStore.carreras
+  if (filtros.value.sede) {
+    list = list.filter(c => c.sede_id === filtros.value.sede)
+  }
+  return list.map(c => ({ label: c.nombre, value: c.id }))
 })
 
 // Computed
@@ -398,10 +363,25 @@ function irADocumentacion(id) {
   justify-content: center;
 }
 
-.stat-icon.primary { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
-.stat-icon.success { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.stat-icon.warning { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.stat-icon.info { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.stat-icon.primary {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary-light);
+}
+
+.stat-icon.success {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+
+.stat-icon.warning {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+
+.stat-icon.info {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
 
 .stat-value {
   color: var(--text-primary);
@@ -462,7 +442,14 @@ function irADocumentacion(id) {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
