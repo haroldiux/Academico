@@ -15,6 +15,14 @@
         <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
           {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ asignatura?.carrera?.nombre || asignatura?.carrera || 'N/A' }}
         </p>
+        <div class="row items-center q-gutter-sm q-mt-sm">
+          <q-chip v-if="nombreSede" outline color="orange" icon="business" dense>
+            Sede: {{ nombreSede }}
+          </q-chip>
+          <q-chip v-if="nombreDocenteCarpeta" outline color="primary" icon="person" dense>
+            Docente: {{ nombreDocenteCarpeta }}
+          </q-chip>
+        </div>
       </div>
       <div class="col-auto row q-gutter-sm">
         <q-btn
@@ -95,29 +103,24 @@
           <q-form class="q-gutter-lg">
             <!-- Datos Básicos -->
             <div class="row q-col-gutter-lg">
-              <div class="col-12 col-md-3">
+              <div class="col-12 col-md-4">
                 <q-input v-model="formDatos.codigo" label="Código" outlined dense readonly>
                   <template v-slot:prepend><q-icon name="tag" color="primary" /></template>
                 </q-input>
               </div>
-              <div class="col-12 col-md-3">
-                <q-input v-model="formDatos.sigla" label="Sigla" outlined dense>
-                  <template v-slot:prepend><q-icon name="label" color="primary" /></template>
-                </q-input>
-              </div>
-              <div class="col-12 col-md-3">
-                <q-input v-model.number="formDatos.semestre" label="Semestre" type="number" outlined dense>
+              <div class="col-12 col-md-4">
+                <q-input v-model.number="formDatos.semestre" label="Semestre" type="number" outlined dense readonly>
                   <template v-slot:prepend><q-icon name="calendar_month" color="primary" /></template>
                 </q-input>
               </div>
-              <div class="col-12 col-md-3">
-                <q-input v-model.number="formDatos.creditos" label="Créditos" type="number" outlined dense>
+              <div class="col-12 col-md-4">
+                <q-input v-model.number="formDatos.creditos" label="Créditos" type="number" outlined dense readonly>
                   <template v-slot:prepend><q-icon name="star" color="primary" /></template>
                 </q-input>
               </div>
             </div>
 
-            <q-input v-model="formDatos.nombre" label="Nombre de la Asignatura" outlined dense>
+            <q-input v-model="formDatos.nombre" label="Nombre de la Asignatura" outlined dense readonly>
               <template v-slot:prepend><q-icon name="menu_book" color="primary" /></template>
             </q-input>
 
@@ -127,19 +130,14 @@
               Carga Horaria
             </div>
             <div class="row q-col-gutter-lg">
-              <div class="col-12 col-md-4">
-                <q-input v-model.number="formDatos.horas_teoricas" label="Horas Teóricas" type="number" outlined dense>
+              <div class="col-12 col-md-6">
+                <q-input v-model.number="formDatos.horas_teoricas" label="Horas Teóricas" type="number" outlined dense readonly>
                   <template v-slot:prepend><q-icon name="school" color="blue" /></template>
                 </q-input>
               </div>
-              <div class="col-12 col-md-4">
-                <q-input v-model.number="formDatos.horas_practicas" label="Horas Prácticas" type="number" outlined dense>
+              <div class="col-12 col-md-6">
+                <q-input v-model.number="formDatos.horas_practicas" label="Horas Prácticas" type="number" outlined dense readonly>
                   <template v-slot:prepend><q-icon name="build" color="green" /></template>
-                </q-input>
-              </div>
-              <div class="col-12 col-md-4">
-                <q-input v-model.number="formDatos.horas_laboratorio" label="Horas de Laboratorio" type="number" outlined dense>
-                  <template v-slot:prepend><q-icon name="science" color="purple" /></template>
                 </q-input>
               </div>
             </div>
@@ -150,15 +148,39 @@
               Descripción y Objetivos
             </div>
 
-            <q-input v-model="formDatos.descripcion" label="Descripción" outlined type="textarea" rows="3">
+            <q-input
+              v-model="formDatos.descripcion"
+              label="Descripción"
+              outlined
+              type="textarea"
+              rows="3"
+              :readonly="!puedeEditarCampo(formDatos.descripcion)"
+              :hint="!puedeEditarCampo(formDatos.descripcion) ? 'Solo lectura (Guardado o Permiso insuficiente)' : ''"
+            >
               <template v-slot:prepend><q-icon name="notes" color="primary" /></template>
             </q-input>
 
-            <q-input v-model="formDatos.objetivo_general" label="Objetivo General" outlined type="textarea" rows="3">
+            <q-input
+              v-model="formDatos.objetivo_general"
+              label="Objetivo General"
+              outlined
+              type="textarea"
+              rows="3"
+              :readonly="!puedeEditarCampo(formDatos.objetivo_general)"
+              :hint="!puedeEditarCampo(formDatos.objetivo_general) ? 'Solo lectura' : ''"
+            >
               <template v-slot:prepend><q-icon name="flag" color="green" /></template>
             </q-input>
 
-            <q-input v-model="formDatos.justificacion" label="Justificación" outlined type="textarea" rows="3">
+            <q-input
+              v-model="formDatos.justificacion"
+              label="Justificación"
+              outlined
+              type="textarea"
+              rows="3"
+              :readonly="!puedeEditarCampo(formDatos.justificacion)"
+              :hint="!puedeEditarCampo(formDatos.justificacion) ? 'Solo lectura' : ''"
+            >
               <template v-slot:prepend><q-icon name="lightbulb" color="amber" /></template>
             </q-input>
 
@@ -168,19 +190,46 @@
               Metodología y Evaluación
             </div>
 
-            <q-input v-model="formDatos.saberes_previos" label="Saberes Previos" outlined hint="Conocimientos previos necesarios">
+            <q-input
+              v-model="formDatos.saberes_previos"
+              label="Saberes Previos"
+              outlined
+              hint="Conocimientos previos necesarios"
+              :readonly="!puedeEditarCampo(formDatos.saberes_previos)"
+            >
               <template v-slot:prepend><q-icon name="psychology" color="orange" /></template>
             </q-input>
 
-            <q-input v-model="formDatos.contenido_minimo" label="Contenido Mínimo" outlined type="textarea" rows="2">
+            <q-input
+              v-model="formDatos.contenido_minimo"
+              label="Contenido Mínimo"
+              outlined
+              type="textarea"
+              rows="2"
+              :readonly="!puedeEditarCampo(formDatos.contenido_minimo)"
+            >
               <template v-slot:prepend><q-icon name="list" color="primary" /></template>
             </q-input>
 
-            <q-input v-model="formDatos.metodologia_ensenanza" label="Metodología de Enseñanza" outlined type="textarea" rows="2">
+            <q-input
+              v-model="formDatos.metodologia_ensenanza"
+              label="Metodología de Enseñanza"
+              outlined
+              type="textarea"
+              rows="2"
+              :readonly="!puedeEditarCampo(formDatos.metodologia_ensenanza)"
+            >
               <template v-slot:prepend><q-icon name="school" color="purple" /></template>
             </q-input>
 
-            <q-input v-model="formDatos.criterios_evaluacion" label="Criterios de Evaluación" outlined type="textarea" rows="2">
+            <q-input
+              v-model="formDatos.criterios_evaluacion"
+              label="Criterios de Evaluación"
+              outlined
+              type="textarea"
+              rows="2"
+              :readonly="!puedeEditarCampo(formDatos.criterios_evaluacion)"
+            >
               <template v-slot:prepend><q-icon name="grading" color="red" /></template>
             </q-input>
           </q-form>
@@ -468,6 +517,7 @@ import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useSedesStore } from 'src/stores/sedes'
+import { useAuthStore } from 'src/stores/auth'
 import { generarPlanDeClase, generarProgramaAsignatura } from 'src/services/pdfService'
 import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
 
@@ -477,10 +527,82 @@ const $q = useQuasar()
 const store = useAsignaturasStore()
 const carrerasStore = useCarrerasStore()
 const sedesStore = useSedesStore()
+const authStore = useAuthStore()
 
 // Estado
-const tabActual = ref('unidades')
+const tabActual = ref('datos')
 const asignatura = computed(() => store.asignaturaActual)
+
+// Reglas de Negocio para Edición
+const esDirectorOAdmin = computed(() => {
+  // CORRECCIÓN CRÍTICA: La propiedad del store es 'usuarioActual', no 'usuario'
+  const rol = authStore.usuarioActual?.rol
+  // Lista blanca de roles con permisos de edición TOTAL (siempre pueden editar)
+  const rolesPermitidos = [
+    'SUPER ADMIN', 'SUPER_ADMIN', // ID 1
+    'ADMIN', // ID 2
+    'DIRECTOR_CARRERA', 'DIRECTOR CARRERA', // ID 5
+    'VICERRECTOR_SEDE', 'VICERRECTOR SEDE', // ID 4
+    'VICERRECTOR_NACIONAL', 'VICERRECTOR NACIONAL' // ID 3
+  ]
+  return rolesPermitidos.includes(rol)
+})
+
+const esDocenteCochabamba = computed(() => {
+  if (esDirectorOAdmin.value) return false
+  // Asumimos ID 1 para cochabamba como verificado en BD
+  return authStore.usuarioActual?.sede_id === 1
+})
+
+function puedeEditarCampo(valorActual) {
+  // 1. Director/Admin SIEMPRE puede editar (override total)
+  if (esDirectorOAdmin.value) return true
+
+  // 2. Si no es Cochabamba y no es admin, es SOLO LECTURA siempre
+  if (!esDocenteCochabamba.value) return false
+
+  // 3. Es Docente Cochabamba: Puede editar SOLO si NO está completo
+  const estaCompleto = valorActual && valorActual.trim().length > 0
+  return !estaCompleto
+}
+
+const nombreDocenteCarpeta = computed(() => {
+  if (!asignatura.value || !asignatura.value.docentes) return null
+
+  // 1. Si hay un ID en la URL (seleccionado previamente)
+  const docenteIdParam = route.query.docente_id
+  if (docenteIdParam) {
+    const docente = asignatura.value.docentes.find(d => d.id == docenteIdParam)
+    return docente ? docente.nombre_completo : null
+  }
+
+  // 2. Si solo hay un docente asignado
+  if (asignatura.value.docentes.length === 1) {
+    return asignatura.value.docentes[0].nombre_completo
+  }
+
+  // 3. Si soy docente (rol), mostrar mi nombre
+  // (Opcional, pero cubierto por el filtro previo normalmente)
+
+  return null
+})
+
+const nombreSede = computed(() => {
+  if (!asignatura.value) return null
+  // 1. Relación profunda a través de Carrera
+  if (asignatura.value.carrera?.sede?.nombre) return asignatura.value.carrera.sede.nombre
+
+  // 2. Si la carrera es un objeto pero no trajo sede, intentar por store de Carreras -> Sede (fallback)
+  if (asignatura.value.carrera?.sede_id) {
+    const s = sedesStore.sedes.find(x => x.id === asignatura.value.carrera.sede_id)
+    return s ? s.nombre : null
+  }
+
+  // 3. Relación directa (legacy o si fuera el caso)
+  if (asignatura.value.sede?.nombre) return asignatura.value.sede.nombre
+
+  return null
+})
 
 // Forms
 const formDatos = ref({})
@@ -501,6 +623,11 @@ onMounted(() => {
   store.setAsignaturaActual(id)
   if (asignatura.value) {
     cargarFormDatos()
+  }
+
+  // Garantizar que existen sedes cargadas para resolver IDs si es necesario
+  if (sedesStore.sedes.length === 0) {
+    sedesStore.fetchSedes()
   }
 })
 
@@ -614,7 +741,7 @@ function generarPDF(tipo) {
       const carreraNombreAsig = typeof asignatura.value.carrera === 'object'
         ? asignatura.value.carrera?.nombre
         : asignatura.value.carrera
-      
+
       const carrera = carrerasStore.carreras.find(c => c.nombre === carreraNombreAsig) || {
         nombre: carreraNombreAsig || 'Ingeniería de Sistemas',
         codigo: 'SIS',

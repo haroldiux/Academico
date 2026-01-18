@@ -175,6 +175,42 @@
         </q-card>
       </div>
     </div>
+    <!-- Diálogo de Selección de Docente -->
+    <q-dialog v-model="showDocenteDialog">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Seleccionar Docente</div>
+          <div class="text-caption">Esta materia tiene múltiples grupos asignados. Elige qué carpeta deseas ver.</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <q-list bordered separator>
+            <q-item
+                v-for="docente in asignaturaSeleccionada?.docentes_data"
+                :key="docente.id"
+                clickable
+                v-ripple
+                @click="seleccionarDocente(docente.id)"
+            >
+              <q-item-section avatar>
+                <q-avatar color="primary" text-color="white" icon="person" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ docente.nombre }}</q-item-label>
+                <q-item-label caption>{{ docente.descripcion_grupos }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-icon name="chevron_right" color="grey" />
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -184,11 +220,16 @@ import { useRouter } from 'vue-router'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
+import { useAuthStore, ROLES } from 'src/stores/auth'
 
 const router = useRouter()
 const asignaturasStore = useAsignaturasStore()
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
+const authStore = useAuthStore()
+
+const asignaturaSeleccionada = ref(null)
+const showDocenteDialog = ref(false)
 
 // State
 const filtros = ref({
@@ -323,9 +364,62 @@ function calcularProgreso(asignatura) {
 }
 
 function irADocumentacion(id) {
-  router.push(`/documentacion/${id}`)
+  // Buscar asignatura
+  const asignatura = asignaturasStore.asignaturas.find(a => a.id === id)
+  if (!asignatura) return
+
+  const rolActual = authStore.rol
+
+  // CASO 1: Es DOCENTE -> Navega directo a su propia "carpeta"
+  if (rolActual === ROLES.DOCENTE) {
+    // Verificar si está asignado (aunque el filtro visual ya lo hace)
+    // Pasamos su propio ID para filtrar en la vista destino
+    // Ojo: authStore.usuarioActual.id es el ID de usuario, necesitamos el ID de DOCENTE asociado.
+    // Usualmente el ID de usuario se mapea a docente.
+    // Si la estructura del store tiene 'id' como id de usuario, necesitamos saber cual es el id de docente.
+    // Asumiremos por ahora que authStore.usuarioActual.id se puede usar para filtrar
+    // o que el backend lo maneja.
+    // Dado que la vista PlanificacionPage no filtra por docenteID en la URL,
+    // tal vez necesitemos pasarlo.
+    // EN este requerimiento: "EL DOCENTE UNICAMENTE VA A VER SU CARPETRA"
+
+     router.push(`/documentacion/${id}`)
+     return
+  }
+
+  // CASO 2: DIRECTORES/ADMIN -> Lógica de Selección
+  const docentes = asignatura.docentes_data || []
+
+  if (docentes.length === 0) {
+      // Sin docente asignado -> Entrar modo genérico (o mostrar alerta)
+      router.push(`/documentacion/${id}`)
+  } else if (docentes.length === 1) {
+      // Un solo docente -> Entrar directo seleccionando a ese docente
+      // Pasamos query param para que la siguiente vista sepa a quien filtrar
+      // O bien, la siguiente vista muestra todo si no se filtra.
+      // El usuario pidió: "SI LA AMTERIA TIENE SOLO UNN DOCENTE QUE ACCEDA DIRECTAMENTE"
+      // Asumiremos que quiere ver la carpeta DE ESE docente.
+      router.push({ path: `/documentacion/${id}`, query: { docente_id: docentes[0].id } })
+  } else {
+      // Múltiples docentes -> Mostrar diálogo
+      asignaturaSeleccionada.value = asignatura
+      showDocenteDialog.value = true
+  }
+}
+
+function seleccionarDocente(docenteId) {
+    if (asignaturaSeleccionada.value) {
+        router.push({
+            path: `/documentacion/${asignaturaSeleccionada.value.id}`,
+            query: { docente_id: docenteId }
+        })
+        showDocenteDialog.value = false
+        asignaturaSeleccionada.value = null
+    }
 }
 </script>
+
+
 
 <style scoped>
 .q-page {
