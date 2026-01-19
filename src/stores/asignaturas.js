@@ -115,10 +115,82 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     }
   }
 
+  async function importarWord(id, file) {
+    loading.value = true
+    try {
+      const response = await asignaturaService.importWord(id, file)
+      // Actualizar asignatura actual con los nuevos datos
+      // Podríamos hacer un merge manual, pero lo más seguro es recargar o usar la data retornada si es completa.
+      // El backend retorna { message: '...', data: { justificacion, ... } }
+      // Combinamos con lo actual
+      if (asignaturaActual.value && asignaturaActual.value.id === id) {
+          // Actualización parcial reactiva
+          Object.assign(asignaturaActual.value, response.data.data)
+          // Recargar bibliografias si vinieron nuevas (el backend las guardó en BD, pero aquí no las tenemos en response.data.data como objetos completos con ID)
+          // Mejor recargar la asignatura completa para traer bibliografías con IDs generados.
+          await setAsignaturaActual(id)
+      }
+      return response.data
+    } catch (err) {
+      console.error('Error importing word:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   function updateElementoCompetencia(asigId, unidadId, data) { console.log('updateElemento', asigId, unidadId, data) }
-  function addBibliografia(asigId, data) { console.log('addBiblio', asigId, data) }
-  function updateBibliografia(asigId, biblioId, data) { console.log('updateBiblio', asigId, biblioId, data) }
-  function deleteBibliografia(asigId, biblioId) { console.log('deleteBiblio', asigId, biblioId) }
+  async function addBibliografia(asigId, data) {
+    loading.value = true
+    try {
+      const payload = { ...data, asignatura_id: asigId }
+      const response = await asignaturaService.addBibliografia(payload)
+      if (asignaturaActual.value && asignaturaActual.value.id === asigId) {
+        if (!asignaturaActual.value.bibliografias) asignaturaActual.value.bibliografias = []
+        asignaturaActual.value.bibliografias.push(response.data)
+      }
+      return response.data
+    } catch (err) {
+      console.error('Error adding biblio:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateBibliografia(asigId, biblioId, data) {
+    loading.value = true
+    try {
+      const response = await asignaturaService.updateBibliografia(biblioId, data)
+      if (asignaturaActual.value && asignaturaActual.value.id === asigId) {
+        const index = asignaturaActual.value.bibliografias.findIndex(b => b.id === biblioId)
+        if (index !== -1) {
+          asignaturaActual.value.bibliografias[index] = response.data
+        }
+      }
+      return response.data
+    } catch (err) {
+      console.error('Error updating biblio:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteBibliografia(asigId, biblioId) {
+    loading.value = true
+    try {
+      await asignaturaService.deleteBibliografia(biblioId)
+      if (asignaturaActual.value && asignaturaActual.value.id === asigId) {
+        asignaturaActual.value.bibliografias = asignaturaActual.value.bibliografias.filter(b => b.id !== biblioId)
+      }
+    } catch (err) {
+      console.error('Error deleting biblio:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
   function calcularProgresoTema() { return 0 } // Dummy
 
   // Getter para buscar asignatura por ID (usa asignaturaActual o busca en lista)
@@ -154,6 +226,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     addBibliografia,
     updateBibliografia,
     deleteBibliografia,
-    calcularProgresoTema
+    calcularProgresoTema,
+    importarWord
   }
 })

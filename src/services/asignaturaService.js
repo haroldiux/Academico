@@ -25,5 +25,28 @@ export default {
   assignDocentes(id, docentesIds) {
     // docentesIds expects array of integers
     return api.post(`/asignaturas/${id}/docentes`, { docentes: docentesIds })
+  },
+
+  importWord(id, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post(`/asignaturas/${id}/import-word`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+  },
+
+  // Bibliografias
+  addBibliografia(data) {
+    return api.post('/bibliografias', data)
+  },
+
+  updateBibliografia(id, data) {
+    return api.put(`/bibliografias/${id}`, data)
+  },
+
+  deleteBibliografia(id) {
+    return api.delete(`/bibliografias/${id}`)
   }
 }

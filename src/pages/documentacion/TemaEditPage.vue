@@ -7,7 +7,7 @@
           <q-breadcrumbs-el icon="home" to="/" />
           <q-breadcrumbs-el label="Documentación" to="/documentacion" />
           <q-breadcrumbs-el :label="asignatura?.codigo" :to="`/documentacion/${asignatura?.id}`" />
-          <q-breadcrumbs-el :label="`Tema ${temaInfo}`" />
+          <q-breadcrumbs-el :label="tema?.titulo || 'Tema'" />
         </q-breadcrumbs>
         <h4 class="q-ma-none text-weight-bold">
           <q-icon name="topic" size="36px" color="orange" class="q-mr-sm" />
@@ -723,7 +723,7 @@ const opcionesMomento = [
   { label: 'Cierre', value: 'CIERRE' }
 ]
 
-const temaInfo = computed(() => unidad.value && tema.value ? `${unidad.value.numero}.${tema.value.numero}` : '')
+
 
 // Computed que fuerzan reactividad usando JSON.stringify
 const progresoResultados = computed(() => {
