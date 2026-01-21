@@ -75,7 +75,7 @@ export function usePermisos() {
       return carrerasStore.getCarrerasBySede(sedeId.value)
     }
     if (esDirectorCarrera.value && carreraId.value) {
-      return carrerasStore.carrerasActivas.filter(c => 
+      return carrerasStore.carrerasActivas.filter(c =>
         c.id === carreraId.value && c.sede_id === sedeId.value
       )
     }
@@ -98,7 +98,7 @@ export function usePermisos() {
 
     // Director de Carrera - ve todo de su carrera y sede
     if (esDirectorCarrera.value) {
-      return todasAsignaturas.filter(a => 
+      return todasAsignaturas.filter(a =>
         a.carrera_id === carreraId.value && a.sede_id === sedeId.value
       )
     }
@@ -120,8 +120,8 @@ export function usePermisos() {
   function puedeVerAsignatura(asignatura) {
     if (!asignatura) return false
     return authStore.tieneAccesoMateria(
-      asignatura.id, 
-      asignatura.carrera_id, 
+      asignatura.id,
+      asignatura.carrera_id,
       asignatura.sede_id
     )
   }
@@ -132,8 +132,8 @@ export function usePermisos() {
   function puedeEditarAsignatura(asignatura) {
     if (!asignatura) return false
     return authStore.puedeEditarMateria(
-      asignatura.id, 
-      asignatura.carrera_id, 
+      asignatura.id,
+      asignatura.carrera_id,
       asignatura.sede_id
     )
   }
@@ -184,7 +184,7 @@ export function usePermisos() {
       return [
         ...itemsBase,
         { label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' },
-        { label: 'Llamar Lista', icon: 'fact_check', to: '/docente/asistencia' },
+        { label: 'Control de Clase', icon: 'class', to: '/docente/clase' },
         { label: 'Reporte Asistencia', icon: 'assessment', to: '/docente/reporte-asistencia' },
         { label: 'Mis Evaluaciones', icon: 'quiz', to: '/docente/evaluaciones' },
         { label: 'Mi Perfil', icon: 'person', to: '/perfil' }

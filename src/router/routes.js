@@ -51,10 +51,10 @@ const routes = [
         path: 'docente',
         children: [
           {
-            path: 'asistencia',
-            name: 'docente-asistencia',
-            component: () => import('pages/docente/AsistenciaPage.vue'),
-            meta: { title: 'Llamar Lista', rol: 'DOCENTE' }
+            path: 'clase',
+            name: 'docente-clase',
+            component: () => import('pages/docente/ClasePage.vue'),
+            meta: { title: 'Control de Clase', rol: 'DOCENTE' }
           },
           {
             path: 'asistencia-general',
