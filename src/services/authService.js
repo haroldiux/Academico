@@ -5,4 +5,16 @@ export const login = async (credenciales) => {
   return response.data
 }
 
-// ... other auth services if needed, but mostly managed by useAuthStore
+export const changePassword = async (currentPassword, newPassword) => {
+  const response = await api.post('/change-password', {
+    current_password: currentPassword,
+    new_password: newPassword,
+    new_password_confirmation: newPassword
+  })
+  return response.data
+}
+
+export const getMe = async () => {
+  const response = await api.get('/me')
+  return response.data
+}

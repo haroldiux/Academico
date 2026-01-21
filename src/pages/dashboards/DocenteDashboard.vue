@@ -93,10 +93,10 @@
         </div>
 
         <div v-else class="items-list">
-          <div 
-            v-for="asig in asignaturasFiltradas.slice(0, 5)" 
-            :key="asig.id" 
-            class="list-item" 
+          <div
+            v-for="asig in asignaturasFiltradas.slice(0, 5)"
+            :key="asig.id"
+            class="list-item"
             @click="$router.push(`/documentacion/${asig.id}`)"
           >
             <div class="item-icon" style="background: rgba(124, 58, 237, 0.15); color: var(--primary);">
@@ -192,10 +192,10 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useAuthStore } from 'src/stores/auth'
-import { usePermisos } from 'src/composables/usePermisos'
+import { useSedesStore } from 'src/stores/sedes'
 
 const authStore = useAuthStore()
-const { asignaturasFiltradas, sedeActual, usuario } = usePermisos()
+const sedesStore = useSedesStore()
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -204,13 +204,32 @@ const greeting = computed(() => {
   return 'Buenas noches'
 })
 
-const materiasAsignadas = computed(() => usuario.value?.materias_asignadas?.length || 0)
-const grupos = computed(() => usuario.value?.grupos || [])
+// Datos directamente del usuario logueado
+const misAsignaturas = computed(() => authStore.usuarioActual?.materias_asignadas || [])
+const misGrupos = computed(() => authStore.usuarioActual?.grupos || [])
+
+// Sede del docente
+const sedeActual = computed(() => {
+  const sedeId = authStore.usuarioActual?.sede_id
+  if (!sedeId) return null
+  return sedesStore.sedes.find(s => s.id === sedeId)
+})
+
+// Estadísticas
+const materiasAsignadas = computed(() => misAsignaturas.value.length)
+const grupos = computed(() => misGrupos.value)
 const notificaciones = ref(2)
-const documentacionPendiente = ref(3)
-const progresoGeneral = ref(72)
+const documentacionPendiente = computed(() => misAsignaturas.value.filter(a => (a.progreso || 0) < 100).length)
+const progresoGeneral = computed(() => {
+  if (misAsignaturas.value.length === 0) return 0
+  const total = misAsignaturas.value.reduce((sum, a) => sum + (a.progreso || 0), 0)
+  return Math.round(total / misAsignaturas.value.length)
+})
 const temasCompletados = ref(12)
 const temasPendientes = ref(5)
+
+// Para el listado (usamos directamente las del authStore)
+const asignaturasFiltradas = misAsignaturas
 
 function generarPDF() {
   // TODO: Implementar generación de PDF

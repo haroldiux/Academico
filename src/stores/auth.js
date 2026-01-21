@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { api } from 'boot/axios'
 
 // Constantes de roles
 export const ROLES = {
@@ -78,86 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
   const usuarioActual = ref(null)
   const isAuthenticated = ref(false)
   const token = ref(null)
-
-  // Usuarios de prueba para desarrollo
-  const usuariosPrueba = [
-    {
-      id: 1,
-      nombre: 'Super Administrador',
-      email: 'superadmin@unitepc.edu.bo',
-      rol: ROLES.SUPER_ADMIN,
-      sede_id: null,
-      carrera_id: null,
-      avatar: 'SA'
-    },
-    {
-      id: 2,
-      nombre: 'Administrador General',
-      email: 'admin@unitepc.edu.bo',
-      rol: ROLES.ADMIN,
-      sede_id: null,
-      carrera_id: null,
-      avatar: 'AD'
-    },
-    {
-      id: 3,
-      nombre: 'Dr. Carlos Mendoza',
-      email: 'vicerrector.nacional@unitepc.edu.bo',
-      rol: ROLES.VICERRECTOR_NACIONAL,
-      sede_id: null,
-      carrera_id: null,
-      avatar: 'CM'
-    },
-    {
-      id: 4,
-      nombre: 'Lic. María Fernández',
-      email: 'vicerrector.cbba@unitepc.edu.bo',
-      rol: ROLES.VICERRECTOR_SEDE,
-      sede_id: 1, // Cochabamba
-      carrera_id: null,
-      avatar: 'MF'
-    },
-    {
-      id: 5,
-      nombre: 'Ing. Roberto Paz',
-      email: 'direccion.academica@unitepc.edu.bo',
-      rol: ROLES.DIRECCION_ACADEMICA,
-      sede_id: 1, // Cochabamba
-      carrera_id: null,
-      avatar: 'RP'
-    },
-    {
-      id: 6,
-      nombre: 'Ing. Laura Sánchez',
-      email: 'director.sistemas@unitepc.edu.bo',
-      rol: ROLES.DIRECTOR_CARRERA,
-      sede_id: 1, // Cochabamba
-      carrera_id: 1, // Ingeniería de Sistemas
-      avatar: 'LS'
-    },
-    {
-      id: 7,
-      nombre: 'Ing. Pedro García',
-      email: 'docente.garcia@unitepc.edu.bo',
-      rol: ROLES.DOCENTE,
-      sede_id: 1,
-      carrera_id: 1,
-      grupos: ['A', 'B'],
-      materias_asignadas: [1, 2, 3], // IDs de materias
-      avatar: 'PG'
-    },
-    {
-      id: 8,
-      nombre: 'Lic. Ana Torres',
-      email: 'docente.torres@unitepc.edu.bo',
-      rol: ROLES.DOCENTE,
-      sede_id: 1,
-      carrera_id: 1,
-      grupos: ['C'],
-      materias_asignadas: [4, 5],
-      avatar: 'AT'
-    }
-  ]
+  const passwordChangeRequired = ref(false)
 
   // Computed
   const rol = computed(() => usuarioActual.value?.rol || null)
@@ -170,40 +92,75 @@ export const useAuthStore = defineStore('auth', () => {
   const nombreCompleto = computed(() => usuarioActual.value?.nombre || 'Usuario')
   const avatar = computed(() => usuarioActual.value?.avatar || 'U')
 
-  // Métodos
-  // eslint-disable-next-line no-unused-vars
-  function login(email, password) {
-    // Simulación de login - en producción validar password con API
-    const usuario = usuariosPrueba.find(u => u.email === email)
-    if (usuario) {
-      usuarioActual.value = usuario
+  // Login real con API
+  async function login(username, password) {
+    try {
+      const response = await api.post('/login', { username, password })
+      const { token: authToken, user, password_change_required } = response.data
+
+      // Guardar token
+      token.value = authToken
+      localStorage.setItem('auth_token', authToken)
+      api.defaults.headers.common['Authorization'] = 'Bearer ' + authToken
+
+      // Configurar usuario
+      const rolNombre = user.rol?.nombre || 'DOCENTE'
+      usuarioActual.value = {
+        id: user.id,
+        nombre: `${user.nombre || ''} ${user.apellido || ''}`.trim() || user.username,
+        email: user.email,
+        ci: user.ci,
+        rol: rolNombre,
+        sede_id: user.docente?.sede_id || null,
+        carrera_id: null,
+        avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
+        materias_asignadas: user.docente?.asignaturas?.map(a => ({
+          id: a.id,
+          nombre: a.nombre,
+          codigo: a.codigo,
+          semestre: a.semestre,
+          progreso: 0,
+          pivot: a.pivot ? {
+            grupo: a.pivot.grupo,
+            aula: a.pivot.aula,
+            horario: a.pivot.horario
+          } : null
+        })) || [],
+        grupos: user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || []
+      }
+
       isAuthenticated.value = true
-      token.value = 'token_simulado_' + Date.now()
-      localStorage.setItem('auth_user', JSON.stringify(usuario))
-      localStorage.setItem('auth_token', token.value)
-      return { success: true, usuario }
+      passwordChangeRequired.value = password_change_required
+      localStorage.setItem('auth_user', JSON.stringify(usuarioActual.value))
+
+      return { success: true, usuario: usuarioActual.value, passwordChangeRequired: password_change_required }
+    } catch (error) {
+      const mensaje = error.response?.data?.message || error.response?.data?.errors?.username?.[0] || 'Error de autenticación'
+      return { success: false, error: mensaje }
     }
-    return { success: false, error: 'Credenciales inválidas' }
   }
 
-  function loginAs(rolKey) {
-    // Login rápido como un rol específico (solo desarrollo)
-    const usuario = usuariosPrueba.find(u => u.rol === rolKey)
-    if (usuario) {
-      usuarioActual.value = usuario
-      isAuthenticated.value = true
-      token.value = 'token_dev_' + Date.now()
-      localStorage.setItem('auth_user', JSON.stringify(usuario))
-      localStorage.setItem('auth_token', token.value)
-      return { success: true, usuario }
+  // Cambiar contraseña
+  async function changePassword(currentPassword, newPassword) {
+    try {
+      await api.post('/change-password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirmation: newPassword
+      })
+      passwordChangeRequired.value = false
+      return { success: true }
+    } catch (error) {
+      const mensaje = error.response?.data?.message || error.response?.data?.errors?.current_password?.[0] || 'Error al cambiar contraseña'
+      return { success: false, error: mensaje }
     }
-    return { success: false, error: 'Rol no encontrado' }
   }
 
   function logout() {
     usuarioActual.value = null
     isAuthenticated.value = false
     token.value = null
+    passwordChangeRequired.value = false
     localStorage.removeItem('auth_user')
     localStorage.removeItem('auth_token')
   }
@@ -215,6 +172,8 @@ export const useAuthStore = defineStore('auth', () => {
       usuarioActual.value = JSON.parse(storedUser)
       isAuthenticated.value = true
       token.value = storedToken
+      // Restaurar header para Axios
+      api.defaults.headers.common['Authorization'] = 'Bearer ' + storedToken
       return true
     }
     return false
@@ -224,7 +183,7 @@ export const useAuthStore = defineStore('auth', () => {
   function tieneAccesoSede(sedeIdObjetivo) {
     if (!usuarioActual.value) return false
     const alcanceActual = permisos.value?.alcance
-    
+
     if (alcanceActual === 'global') return true
     if (alcanceActual === 'sede' || alcanceActual === 'carrera' || alcanceActual === 'asignado') {
       return usuarioActual.value.sede_id === sedeIdObjetivo
@@ -236,13 +195,13 @@ export const useAuthStore = defineStore('auth', () => {
   function tieneAccesoCarrera(carreraIdObjetivo, sedeIdObjetivo) {
     if (!usuarioActual.value) return false
     const alcanceActual = permisos.value?.alcance
-    
+
     if (alcanceActual === 'global') return true
     if (alcanceActual === 'sede') {
       return usuarioActual.value.sede_id === sedeIdObjetivo
     }
     if (alcanceActual === 'carrera') {
-      return usuarioActual.value.carrera_id === carreraIdObjetivo && 
+      return usuarioActual.value.carrera_id === carreraIdObjetivo &&
              usuarioActual.value.sede_id === sedeIdObjetivo
     }
     return false
@@ -252,7 +211,7 @@ export const useAuthStore = defineStore('auth', () => {
   function tieneAccesoMateria(materiaId, carreraIdMateria, sedeIdMateria) {
     if (!usuarioActual.value) return false
     const alcanceActual = permisos.value?.alcance
-    
+
     if (alcanceActual === 'global') return true
     if (alcanceActual === 'sede') {
       return usuarioActual.value.sede_id === sedeIdMateria
@@ -278,8 +237,8 @@ export const useAuthStore = defineStore('auth', () => {
     usuarioActual,
     isAuthenticated,
     token,
-    usuariosPrueba,
-    
+    passwordChangeRequired,
+
     // Computed
     rol,
     sedeId,
@@ -290,10 +249,10 @@ export const useAuthStore = defineStore('auth', () => {
     dashboard,
     nombreCompleto,
     avatar,
-    
+
     // Métodos
     login,
-    loginAs,
+    changePassword,
     logout,
     checkAuth,
     tieneAccesoSede,

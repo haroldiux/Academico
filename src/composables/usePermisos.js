@@ -106,7 +106,9 @@ export function usePermisos() {
     // Docente - solo sus materias asignadas
     if (esDocente.value) {
       const materiasAsignadas = usuario.value?.materias_asignadas || []
-      return todasAsignaturas.filter(a => materiasAsignadas.includes(a.id))
+      // Manejar tanto IDs directos como objetos {id, nombre, ...}
+      const idsAsignados = materiasAsignadas.map(m => typeof m === 'object' ? m.id : m)
+      return todasAsignaturas.filter(a => idsAsignados.includes(a.id))
     }
 
     return []

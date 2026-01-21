@@ -13,8 +13,8 @@
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="row q-col-gutter-md q-mb-lg">
+    <!-- Filters (Solo para roles Admin/Directores) -->
+    <div v-if="authStore.rol !== 'DOCENTE'" class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-3">
         <q-select v-model="filtros.sede" :options="sedesOptions" label="Sede" outlined dense bg-color="white" emit-value
           map-options clearable>
@@ -43,47 +43,51 @@
 
     <!-- Stats Cards -->
     <div class="row q-col-gutter-lg q-mb-lg">
-      <div class="col-12 col-sm-6 col-lg-3">
+      <!-- Stat: Mis Asignaturas (Siempre visible) -->
+      <div :class="authStore.rol === 'DOCENTE' ? 'col-12' : 'col-12 col-sm-6 col-lg-3'">
         <div class="stat-card animate-in" style="animation-delay: 0.1s">
           <div class="stat-icon primary q-mb-md">
             <q-icon name="menu_book" size="28px" />
           </div>
-          <div class="stat-value">{{ asignaturasStore.totalAsignaturas }}</div>
-          <div class="stat-label">Total Asignaturas</div>
+          <div class="stat-value">{{ asignaturasVisibles.length }}</div>
+          <div class="stat-label">{{ authStore.rol === 'DOCENTE' ? 'Mis Asignaturas' : 'Total Asignaturas' }}</div>
         </div>
       </div>
-      <div class="col-12 col-sm-6 col-lg-3">
-        <div class="stat-card animate-in" style="animation-delay: 0.15s">
-          <div class="stat-icon success q-mb-md">
-            <q-icon name="folder_open" size="28px" />
+      <!-- Stats adicionales (Solo para Admin/Directores) -->
+      <template v-if="authStore.rol !== 'DOCENTE'">
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="stat-card animate-in" style="animation-delay: 0.15s">
+            <div class="stat-icon success q-mb-md">
+              <q-icon name="folder_open" size="28px" />
+            </div>
+            <div class="stat-value">{{ totalUnidades }}</div>
+            <div class="stat-label">Unidades Registradas</div>
           </div>
-          <div class="stat-value">{{ totalUnidades }}</div>
-          <div class="stat-label">Unidades Registradas</div>
         </div>
-      </div>
-      <div class="col-12 col-sm-6 col-lg-3">
-        <div class="stat-card animate-in" style="animation-delay: 0.2s">
-          <div class="stat-icon warning q-mb-md">
-            <q-icon name="topic" size="28px" />
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="stat-card animate-in" style="animation-delay: 0.2s">
+            <div class="stat-icon warning q-mb-md">
+              <q-icon name="topic" size="28px" />
+            </div>
+            <div class="stat-value">{{ totalTemas }}</div>
+            <div class="stat-label">Temas Definidos</div>
           </div>
-          <div class="stat-value">{{ totalTemas }}</div>
-          <div class="stat-label">Temas Definidos</div>
         </div>
-      </div>
-      <div class="col-12 col-sm-6 col-lg-3">
-        <div class="stat-card animate-in" style="animation-delay: 0.25s">
-          <div class="stat-icon info q-mb-md">
-            <q-icon name="auto_stories" size="28px" />
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="stat-card animate-in" style="animation-delay: 0.25s">
+            <div class="stat-icon info q-mb-md">
+              <q-icon name="auto_stories" size="28px" />
+            </div>
+            <div class="stat-value">{{ totalBibliografias }}</div>
+            <div class="stat-label">Referencias Bibliográficas</div>
           </div>
-          <div class="stat-value">{{ totalBibliografias }}</div>
-          <div class="stat-label">Referencias Bibliográficas</div>
         </div>
-      </div>
+      </template>
     </div>
 
     <!-- Asignaturas Grid -->
     <div class="row q-col-gutter-lg">
-      <div v-for="(asignatura, index) in asignaturasStore.asignaturas" :key="asignatura.id"
+      <div v-for="(asignatura, index) in asignaturasVisibles" :key="asignatura.id"
         class="col-12 col-md-6 col-lg-4">
         <q-card class="card-main cursor-pointer animate-in" :style="{ animationDelay: `${0.3 + index * 0.05}s` }"
           @click="irADocumentacion(asignatura.id)">
@@ -108,11 +112,31 @@
                     <q-icon name="place" size="12px" class="q-mr-xs" />
                     {{ asignatura.sede_nombre }}
                   </q-chip>
+                  <!-- Grupos asignados (para docentes) -->
+                  <q-chip
+                    v-if="authStore.rol === 'DOCENTE' && asignatura.pivot?.grupo"
+                    size="sm"
+                    color="orange-2"
+                    text-color="orange-9"
+                    dense
+                    icon="groups"
+                  >
+                    Grupo {{ asignatura.pivot.grupo }}
+                  </q-chip>
                 </div>
                 <!-- Docente -->
                 <div class="text-caption text-weight-medium text-grey-8 q-mt-xs">
                     <q-icon name="person" size="14px" class="q-mr-xs text-primary" />
-                    {{ asignatura.docente_nombre }}
+                    {{ asignatura.docente_nombre || (authStore.rol === 'DOCENTE' ? 'Tú' : 'Sin asignar') }}
+                </div>
+                <!-- Aula/Horario (para docentes) -->
+                <div v-if="authStore.rol === 'DOCENTE' && asignatura.pivot?.aula" class="text-caption text-grey-6 q-mt-xs">
+                    <q-icon name="room" size="12px" class="q-mr-xs" />
+                    {{ asignatura.pivot.aula }}
+                    <span v-if="asignatura.pivot?.horario" class="q-ml-sm">
+                      <q-icon name="schedule" size="12px" class="q-mr-xs" />
+                      {{ asignatura.pivot.horario }}
+                    </span>
                 </div>
               </div>
             </div>
@@ -139,8 +163,8 @@
               </div>
             </div>
 
-            <!-- Horas -->
-            <div class="row q-gutter-sm q-mb-md">
+            <!-- Horas (Solo para Admin/Directores) -->
+            <div v-if="authStore.rol !== 'DOCENTE'" class="row q-gutter-sm q-mb-md">
               <q-chip size="sm" icon="schedule" dense outline color="blue-grey">
                 {{ asignatura.horas_teoricas }}h Teoría
               </q-chip>
@@ -250,12 +274,38 @@ onMounted(async () => {
 })
 
 async function fetchData() {
-  // Si hay sede seleccionada, usamos el código de la sede (ej: 'CBA') si lo tuviera, o el ID
-  // Ojo: El backend espera 'branch_code', que es string (ej 'CBA').
-  // Si nuestro select de sedes devuelve ID, necesitamos buscar el código.
-  // Asumiremos por ahora que el filtro Sede devuelve el objeto o el ID.
-  // Vamos a buscar el código si es un ID.
+  // Si es DOCENTE, cargar detalles completos solo de sus materias asignadas
+  if (authStore.rol === 'DOCENTE') {
+    const misMateriasBasicas = authStore.usuarioActual?.materias_asignadas || []
+    if (misMateriasBasicas.length === 0) {
+      asignaturasStore.asignaturas = []
+      return
+    }
 
+    // Cargar detalles completos desde el servidor para cada materia
+    // Preservamos los datos del pivote (grupo, aula, horario) del login
+    const materiasConDetalles = []
+    for (const materiaBase of misMateriasBasicas) {
+      const id = typeof materiaBase === 'object' ? materiaBase.id : materiaBase
+      try {
+        await asignaturasStore.setAsignaturaActual(id)
+        if (asignaturasStore.asignaturaActual) {
+          // Combinar detalles del servidor + datos del pivote del login
+          materiasConDetalles.push({
+            ...asignaturasStore.asignaturaActual,
+            pivot: materiaBase.pivot || null  // Preservar grupo, aula, horario
+          })
+        }
+      } catch (e) {
+        console.error('Error cargando asignatura', id, e)
+      }
+    }
+
+    asignaturasStore.asignaturas = materiasConDetalles
+    return
+  }
+
+  // Para otros roles, carga normal desde API
   let branchCode = null
   if (filtros.value.sede) {
     const s = sedesStore.sedes.find(x => x.id === filtros.value.sede)
@@ -306,19 +356,31 @@ const carrerasOptions = computed(() => {
   return list.map(c => ({ label: c.nombre, value: c.id }))
 })
 
-// Computed
+// Computed Asignaturas Visibles (Filtered by Role)
+const asignaturasVisibles = computed(() => {
+    // Si es DOCENTE, solo mostramos las que tiene asignadas
+    if (authStore.rol === ROLES.DOCENTE) {
+        if (!authStore.usuarioActual?.materias_asignadas?.length) return []
+        const misIds = authStore.usuarioActual.materias_asignadas.map(m => m.id)
+        return asignaturasStore.asignaturas.filter(a => misIds.includes(a.id))
+    }
+    // Si no, mostramos todas (Admin, Directores, etc.)
+    return asignaturasStore.asignaturas
+})
+
+// Computed Stats (based on visibles)
 const totalUnidades = computed(() => {
-  return asignaturasStore.asignaturas.reduce((sum, a) => sum + (a.unidades?.length || 0), 0)
+  return asignaturasVisibles.value.reduce((sum, a) => sum + (a.unidades?.length || 0), 0)
 })
 
 const totalTemas = computed(() => {
-  return asignaturasStore.asignaturas.reduce((sum, a) => {
+  return asignaturasVisibles.value.reduce((sum, a) => {
     return sum + (a.unidades?.reduce((s, u) => s + (u.temas?.length || 0), 0) || 0)
   }, 0)
 })
 
 const totalBibliografias = computed(() => {
-  return asignaturasStore.asignaturas.reduce((sum, a) => sum + (a.bibliografias?.length || 0), 0)
+  return asignaturasVisibles.value.reduce((sum, a) => sum + (a.bibliografias?.length || 0), 0)
 })
 
 // Methods

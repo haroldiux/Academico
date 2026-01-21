@@ -4,7 +4,7 @@
     <q-header class="header-dark">
       <q-toolbar class="toolbar-content">
         <q-btn flat dense round icon="chevron_left" class="toggle-btn" @click="toggleLeftDrawer" />
-        
+
         <!-- Logo -->
         <div class="logo-container">
           <div class="logo-icon">
@@ -12,7 +12,7 @@
           </div>
           <span class="logo-text">UNITEPC</span>
         </div>
-        
+
         <q-space />
 
         <!-- Search -->
@@ -25,8 +25,7 @@
           </div>
         </div>
 
-        <!-- Rol Switcher (Dev) -->
-        <RolSwitcher class="q-mr-md" />
+
 
         <!-- Connected Badge -->
         <div class="connected-badge">
@@ -88,11 +87,11 @@
         <!-- Navigation Dinámico -->
         <q-scroll-area class="sidebar-nav-area">
           <nav class="sidebar-nav">
-            <router-link 
-              v-for="item in menuItems" 
-              :key="item.to" 
-              :to="item.to" 
-              custom 
+            <router-link
+              v-for="item in menuItems"
+              :key="item.to"
+              :to="item.to"
+              custom
               v-slot="{ isActive, navigate }"
             >
               <div @click="navigate" :class="['nav-item', { 'active': isActive }]">
@@ -145,23 +144,22 @@ import { useRouter } from 'vue-router'
 import { useThemeStore } from 'src/stores/theme'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { usePermisos } from 'src/composables/usePermisos'
-import RolSwitcher from 'src/components/RolSwitcher.vue'
+
+import { useQuasar } from 'quasar'
 
 const router = useRouter()
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
+const $q = useQuasar()
 const { getMenuItems, sedeActual } = usePermisos()
 
 const leftDrawerOpen = ref(true)
 const searchQuery = ref('')
 
 // Verificar autenticación al montar
+// Verificar autenticación al montar
 onMounted(() => {
   authStore.checkAuth()
-  // Si no hay usuario, loguear como Admin por defecto (desarrollo)
-  if (!authStore.isAuthenticated) {
-    authStore.loginAs(ROLES.ADMIN)
-  }
 })
 
 const rolLabel = computed(() => {
@@ -185,8 +183,24 @@ function toggleLeftDrawer() {
 }
 
 function handleLogout() {
-  authStore.logout()
-  router.push('/')
+  $q.dialog({
+    title: 'Cerrar Sesión',
+    message: '¿Estás seguro de que deseas salir del sistema?',
+    persistent: true,
+    ok: {
+      label: 'Sí, Salir',
+      color: 'primary',
+      unelevated: true
+    },
+    cancel: {
+      label: 'Cancelar',
+      color: 'negative',
+      flat: true
+    }
+  }).onOk(() => {
+    authStore.logout()
+    router.push('/login')
+  })
 }
 </script>
 

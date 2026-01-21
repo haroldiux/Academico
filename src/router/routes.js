@@ -1,4 +1,11 @@
 const routes = [
+  // Login (fuera del MainLayout)
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('pages/LoginPage.vue'),
+    meta: { title: 'Iniciar Sesión', public: true }
+  },
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
