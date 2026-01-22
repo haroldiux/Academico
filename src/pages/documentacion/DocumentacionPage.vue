@@ -87,8 +87,7 @@
 
     <!-- Asignaturas Grid -->
     <div class="row q-col-gutter-lg">
-      <div v-for="(asignatura, index) in asignaturasVisibles" :key="asignatura.id"
-        class="col-12 col-md-6 col-lg-4">
+      <div v-for="(asignatura, index) in asignaturasVisibles" :key="asignatura.id" class="col-12 col-md-6 col-lg-4">
         <q-card class="card-main cursor-pointer animate-in" :style="{ animationDelay: `${0.3 + index * 0.05}s` }"
           @click="irADocumentacion(asignatura.id)">
           <q-card-section>
@@ -113,30 +112,25 @@
                     {{ asignatura.sede_nombre }}
                   </q-chip>
                   <!-- Grupos asignados (para docentes) -->
-                  <q-chip
-                    v-if="authStore.rol === 'DOCENTE'"
-                    size="sm"
-                    color="orange-2"
-                    text-color="orange-9"
-                    dense
-                    icon="groups"
-                  >
+                  <q-chip v-if="authStore.rol === 'DOCENTE'" size="sm" color="orange-2" text-color="orange-9" dense
+                    icon="groups">
                     {{ asignatura.pivot?.grupo || 'Sin Grupo' }}
                   </q-chip>
                 </div>
                 <!-- Docente -->
                 <div class="text-caption text-weight-medium text-grey-8 q-mt-xs">
-                    <q-icon name="person" size="14px" class="q-mr-xs text-primary" />
-                    {{ asignatura.docente_nombre || (authStore.rol === 'DOCENTE' ? 'Tú' : 'Sin asignar') }}
+                  <q-icon name="person" size="14px" class="q-mr-xs text-primary" />
+                  {{ asignatura.docente_nombre || (authStore.rol === 'DOCENTE' ? 'Tú' : 'Sin asignar') }}
                 </div>
                 <!-- Aula/Horario (para docentes) -->
-                <div v-if="authStore.rol === 'DOCENTE' && asignatura.pivot?.aula" class="text-caption text-grey-6 q-mt-xs">
-                    <q-icon name="room" size="12px" class="q-mr-xs" />
-                    {{ asignatura.pivot.aula }}
-                    <span v-if="asignatura.pivot?.horario" class="q-ml-sm">
-                      <q-icon name="schedule" size="12px" class="q-mr-xs" />
-                      {{ asignatura.pivot.horario }}
-                    </span>
+                <div v-if="authStore.rol === 'DOCENTE' && asignatura.pivot?.aula"
+                  class="text-caption text-grey-6 q-mt-xs">
+                  <q-icon name="room" size="12px" class="q-mr-xs" />
+                  {{ asignatura.pivot.aula }}
+                  <span v-if="asignatura.pivot?.horario" class="q-ml-sm">
+                    <q-icon name="schedule" size="12px" class="q-mr-xs" />
+                    {{ asignatura.pivot.horario }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -209,13 +203,8 @@
 
         <q-card-section class="q-pt-none">
           <q-list bordered separator>
-            <q-item
-                v-for="docente in asignaturaSeleccionada?.docentes_data"
-                :key="docente.id"
-                clickable
-                v-ripple
-                @click="seleccionarDocente(docente.id)"
-            >
+            <q-item v-for="docente in asignaturaSeleccionada?.docentes_data" :key="docente.id" clickable v-ripple
+              @click="seleccionarDocente(docente.id)">
               <q-item-section avatar>
                 <q-avatar color="primary" text-color="white" icon="person" />
               </q-item-section>
@@ -305,23 +294,11 @@ async function fetchData() {
     return
   }
 
-  // Para otros roles, carga normal desde API
-  let branchCode = null
-  if (filtros.value.sede) {
-    const s = sedesStore.sedes.find(x => x.id === filtros.value.sede)
-    branchCode = s ? s.codigo : null
-  }
-
-  let careerCode = null
-  if (filtros.value.carrera) {
-    const c = carrerasStore.carreras.find(x => x.id === filtros.value.carrera)
-    careerCode = c ? c.codigo : null
-  }
-
+  // Para otros roles, carga normal desde API (usando IDs locales)
   await asignaturasStore.fetchAsignaturas(
-    branchCode,
-    careerCode,
-    true,
+    filtros.value.sede,
+    filtros.value.carrera,
+    null, // Fix: semestre param should be null
     filtros.value.search
   )
 }
@@ -358,14 +335,14 @@ const carrerasOptions = computed(() => {
 
 // Computed Asignaturas Visibles (Filtered by Role)
 const asignaturasVisibles = computed(() => {
-    // Si es DOCENTE, solo mostramos las que tiene asignadas
-    if (authStore.rol === ROLES.DOCENTE) {
-        if (!authStore.usuarioActual?.materias_asignadas?.length) return []
-        const misIds = authStore.usuarioActual.materias_asignadas.map(m => m.id)
-        return asignaturasStore.asignaturas.filter(a => misIds.includes(a.id))
-    }
-    // Si no, mostramos todas (Admin, Directores, etc.)
-    return asignaturasStore.asignaturas
+  // Si es DOCENTE, solo mostramos las que tiene asignadas
+  if (authStore.rol === ROLES.DOCENTE) {
+    if (!authStore.usuarioActual?.materias_asignadas?.length) return []
+    const misIds = authStore.usuarioActual.materias_asignadas.map(m => m.id)
+    return asignaturasStore.asignaturas.filter(a => misIds.includes(a.id))
+  }
+  // Si no, mostramos todas (Admin, Directores, etc.)
+  return asignaturasStore.asignaturas
 })
 
 // Computed Stats (based on visibles)
@@ -445,39 +422,39 @@ function irADocumentacion(id) {
     // tal vez necesitemos pasarlo.
     // EN este requerimiento: "EL DOCENTE UNICAMENTE VA A VER SU CARPETRA"
 
-     router.push(`/documentacion/${id}`)
-     return
+    router.push(`/documentacion/${id}`)
+    return
   }
 
   // CASO 2: DIRECTORES/ADMIN -> Lógica de Selección
   const docentes = asignatura.docentes_data || []
 
   if (docentes.length === 0) {
-      // Sin docente asignado -> Entrar modo genérico (o mostrar alerta)
-      router.push(`/documentacion/${id}`)
+    // Sin docente asignado -> Entrar modo genérico (o mostrar alerta)
+    router.push(`/documentacion/${id}`)
   } else if (docentes.length === 1) {
-      // Un solo docente -> Entrar directo seleccionando a ese docente
-      // Pasamos query param para que la siguiente vista sepa a quien filtrar
-      // O bien, la siguiente vista muestra todo si no se filtra.
-      // El usuario pidió: "SI LA AMTERIA TIENE SOLO UNN DOCENTE QUE ACCEDA DIRECTAMENTE"
-      // Asumiremos que quiere ver la carpeta DE ESE docente.
-      router.push({ path: `/documentacion/${id}`, query: { docente_id: docentes[0].id } })
+    // Un solo docente -> Entrar directo seleccionando a ese docente
+    // Pasamos query param para que la siguiente vista sepa a quien filtrar
+    // O bien, la siguiente vista muestra todo si no se filtra.
+    // El usuario pidió: "SI LA AMTERIA TIENE SOLO UNN DOCENTE QUE ACCEDA DIRECTAMENTE"
+    // Asumiremos que quiere ver la carpeta DE ESE docente.
+    router.push({ path: `/documentacion/${id}`, query: { docente_id: docentes[0].id } })
   } else {
-      // Múltiples docentes -> Mostrar diálogo
-      asignaturaSeleccionada.value = asignatura
-      showDocenteDialog.value = true
+    // Múltiples docentes -> Mostrar diálogo
+    asignaturaSeleccionada.value = asignatura
+    showDocenteDialog.value = true
   }
 }
 
 function seleccionarDocente(docenteId) {
-    if (asignaturaSeleccionada.value) {
-        router.push({
-            path: `/documentacion/${asignaturaSeleccionada.value.id}`,
-            query: { docente_id: docenteId }
-        })
-        showDocenteDialog.value = false
-        asignaturaSeleccionada.value = null
-    }
+  if (asignaturaSeleccionada.value) {
+    router.push({
+      path: `/documentacion/${asignaturaSeleccionada.value.id}`,
+      query: { docente_id: docenteId }
+    })
+    showDocenteDialog.value = false
+    asignaturaSeleccionada.value = null
+  }
 }
 </script>
 

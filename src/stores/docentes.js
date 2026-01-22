@@ -6,13 +6,23 @@ export const useDocentesStore = defineStore('docentes', () => {
   const docentes = ref([])
   const loading = ref(false)
 
-  async function fetchDocentes() {
+  async function fetchDocentes(params = {}) {
     loading.value = true
     try {
-      const response = await api.get('/docentes')
-      docentes.value = response.data
+      // Params: { q, sede_id, estado, page }
+      const response = await api.get('/docentes', { params })
+
+      // Determine if response is array (legacy) or object { data, stats }
+      if (Array.isArray(response.data)) {
+          docentes.value = response.data
+          return { data: response.data, stats: null }
+      } else {
+          docentes.value = response.data.data
+          return response.data // Returns { data, stats }
+      }
     } catch (error) {
       console.error('Error fetching docentes:', error)
+      return null
     } finally {
       loading.value = false
     }

@@ -11,14 +11,8 @@
         </p>
       </div>
       <div class="col-auto">
-        <q-select
-          v-model="sedeSeleccionada"
-          :options="opcionesSedes"
-          label="Filtrar por Sede"
-          outlined
-          dense
-          style="min-width: 200px;"
-        />
+        <q-select v-model="sedeSeleccionada" :options="opcionesSedes" label="Filtrar por Sede" outlined dense
+          style="min-width: 200px;" />
       </div>
     </div>
 
@@ -39,10 +33,12 @@
     <div class="carreras-grid">
       <div v-for="carrera in carrerasFiltradas" :key="carrera.id" class="carrera-card">
         <div class="carrera-header">
-          <div class="carrera-icon" :style="{ background: getCarreraColor(carrera.id) + '20', color: getCarreraColor(carrera.id) }">
+          <div class="carrera-icon"
+            :style="{ background: getCarreraColor(carrera.id) + '20', color: getCarreraColor(carrera.id) }">
             <q-icon name="menu_book" size="24px" />
           </div>
-          <q-chip :color="carrera.activo ? 'green' : 'grey'" text-color="white" size="sm">
+          <q-chip :color="carrera.activo ? 'green-2' : 'grey-2'" :text-color="carrera.activo ? 'green-9' : 'grey-9'"
+            size="sm">
             {{ carrera.activo ? 'Activa' : 'Inactiva' }}
           </q-chip>
         </div>
@@ -133,13 +129,38 @@ function getSedeName(sedeId) {
   margin-bottom: 12px;
 }
 
-.stat-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary); }
-.stat-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.stat-icon.purple {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary);
+}
 
-.stat-label { color: var(--text-secondary); font-size: 0.875rem; margin: 0; }
-.stat-value { color: var(--text-primary); font-size: 1.75rem; font-weight: 700; margin: 4px 0 0 0; }
+.stat-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+
+.stat-icon.orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+
+.stat-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.stat-value {
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 4px 0 0 0;
+}
 
 .carreras-grid {
   display: grid;
@@ -147,9 +168,23 @@ function getSedeName(sedeId) {
   gap: 16px;
 }
 
-@media (max-width: 1400px) { .carreras-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 1000px) { .carreras-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px) { .carreras-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1400px) {
+  .carreras-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1000px) {
+  .carreras-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .carreras-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 .carrera-card {
   background: var(--bg-secondary);
@@ -159,12 +194,51 @@ function getSedeName(sedeId) {
   transition: all 0.2s ease;
 }
 
-.carrera-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+.carrera-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
 
-.carrera-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-.carrera-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-.carrera-nombre { color: var(--text-primary); font-size: 1rem; font-weight: 600; margin: 0 0 4px 0; }
-.carrera-codigo { color: var(--text-muted); font-size: 0.75rem; margin: 0 0 16px 0; }
-.carrera-stats { display: flex; flex-direction: column; gap: 8px; }
-.carrera-stat { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 0.875rem; }
+.carrera-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.carrera-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carrera-nombre {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.carrera-codigo {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin: 0 0 16px 0;
+}
+
+.carrera-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.carrera-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
 </style>

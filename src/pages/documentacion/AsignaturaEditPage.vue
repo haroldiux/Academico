@@ -13,8 +13,7 @@
           <span class="text-gradient">{{ asignatura?.nombre || 'Cargando...' }}</span>
         </h4>
         <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
-          {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ asignatura?.carrera?.nombre ||
-            asignatura?.carrera || 'N/A' }}
+          {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ nombreCarrera }}
         </p>
         <div class="row items-center q-gutter-sm q-mt-sm">
           <q-chip v-if="nombreSede" outline color="orange" icon="business" dense>
@@ -543,7 +542,7 @@
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6 text-weight-bold row items-center">
             <q-icon name="upload_file" color="teal" class="q-mr-sm" size="28px" />
-            Importar Programa Analítico
+            Importar Programa Analítico (Formato Oficial Sede Central)
           </div>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
@@ -554,17 +553,16 @@
             <template v-slot:avatar>
               <q-icon name="warning" color="warning" />
             </template>
-            <div class="text-weight-bold">¡Atención!</div>
+            <div class="text-weight-bold">¡Atención! Utilice la Plantilla Oficial</div>
             <div>
-              Esta acción extraerá datos del archivo Word y completará los campos vacíos.
+              Esta función requiere estrictamente el <strong>Documento Word Oficial de Programa de Asignatura</strong> proporcionado por Sede Central.
               <br />
-              <strong>Nota:</strong> Si ya existen datos, no se sobrescribirán a menos que estén vacíos.
               <br />
-              Una vez importado, los campos se bloquearán y solo podrán ser editados por el Director de Carrera.
+              <strong>Nota:</strong> Otros formatos o documentos modificados estructuralmente no serán procesados correctamente.
             </div>
           </q-banner>
 
-          <q-file v-model="archivoImportar" label="Seleccionar archivo Word (.docx)" outlined dense accept=".docx, .doc"
+          <q-file v-model="archivoImportar" label="Seleccionar Plantilla Oficial Word (.docx)" outlined dense accept=".docx, .doc"
             counter>
             <template v-slot:prepend>
               <q-icon name="attach_file" />
@@ -663,19 +661,37 @@ const nombreDocenteCarpeta = computed(() => {
 
 const nombreSede = computed(() => {
   if (!asignatura.value) return null
-  // 1. Relación profunda a través de Carrera
-  if (asignatura.value.carrera?.sede?.nombre) return asignatura.value.carrera.sede.nombre
 
-  // 2. Si la carrera es un objeto pero no trajo sede, intentar por store de Carreras -> Sede (fallback)
-  if (asignatura.value.carrera?.sede_id) {
-    const s = sedesStore.sedes.find(x => x.id === asignatura.value.carrera.sede_id)
-    return s ? s.nombre : null
+  // 1. Relación correcta: Array de Carreras (Sync)
+  if (asignatura.value.carreras?.length > 0) {
+    const c = asignatura.value.carreras[0]
+    if (c.sede?.nombre) return c.sede.nombre
+    if (c.sede_id) {
+       const s = sedesStore.sedes.find(x => x.id == c.sede_id)
+       return s ? s.nombre : null
+    }
   }
 
-  // 3. Relación directa (legacy o si fuera el caso)
+  // 2. Legacy fallback
+  if (asignatura.value.carrera?.sede?.nombre) return asignatura.value.carrera.sede.nombre
   if (asignatura.value.sede?.nombre) return asignatura.value.sede.nombre
 
   return null
+})
+
+const nombreCarrera = computed(() => {
+  if (!asignatura.value) return 'N/A'
+
+  // 1. Relación correcta: Array de Carreras (Sync)
+  if (asignatura.value.carreras?.length > 0) {
+    return asignatura.value.carreras[0].nombre
+  }
+
+  // 2. Legacy fallback
+  if (asignatura.value.carrera?.nombre) return asignatura.value.carrera.nombre
+  if (typeof asignatura.value.carrera === 'string') return asignatura.value.carrera
+
+  return 'N/A'
 })
 
 // Computed para bibliografías separadas por tipo
@@ -833,6 +849,11 @@ onMounted(() => {
   // Garantizar que existen sedes cargadas para resolver IDs si es necesario
   if (sedesStore.sedes.length === 0) {
     sedesStore.fetchSedes()
+  }
+
+  // Garantizar que existen carreras cargadas para resolver IDs (Fix N/A)
+  if (carrerasStore.carreras.length === 0) {
+    carrerasStore.fetchCarreras()
   }
 })
 

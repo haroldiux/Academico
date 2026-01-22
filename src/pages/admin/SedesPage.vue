@@ -34,7 +34,8 @@
             <h3 class="sede-nombre">{{ sede.nombre }}</h3>
             <span class="sede-codigo">Código: {{ sede.codigo }}</span>
           </div>
-          <q-chip :color="sede.activo ? 'green' : 'grey'" text-color="white" size="sm">
+          <q-chip :color="sede.activo ? 'green-2' : 'grey-2'" :text-color="sede.activo ? 'green-9' : 'grey-9'"
+            size="sm">
             {{ sede.activo ? 'Activo' : 'Inactivo' }}
           </q-chip>
         </div>
@@ -52,18 +53,15 @@
             <span class="stat-label">Progreso</span>
           </div>
         </div>
-        <q-linear-progress
-          :value="getProgresoSede(sede.id) / 100"
-          :color="getProgresoSede(sede.id) >= 70 ? 'green' : 'orange'"
-          rounded size="6px"
-        />
+        <q-linear-progress :value="getProgresoSede(sede.id) / 100"
+          :color="getProgresoSede(sede.id) >= 70 ? 'green' : 'orange'" rounded size="6px" />
       </div>
     </div>
   </q-page>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 
@@ -75,11 +73,11 @@ onMounted(() => {
   carrerasStore.fetchCarreras() // Para tener contadores reales si ya existen
 })
 
-const estadisticas = ref([
-  { label: 'Total Sedes', value: 9, icon: 'location_city', color: 'purple' },
-  { label: 'Sedes Activas', value: 9, icon: 'check_circle', color: 'green' },
-  { label: 'Total Carreras', value: 72, icon: 'school', color: 'orange' },
-  { label: 'Total Docentes', value: 890, icon: 'people', color: 'blue' }
+const estadisticas = computed(() => [
+  { label: 'Total Sedes', value: sedesStore.stats.total_sedes, icon: 'location_city', color: 'purple' },
+  { label: 'Sedes Activas', value: sedesStore.stats.sedes_activas, icon: 'check_circle', color: 'green' },
+  { label: 'Total Carreras', value: sedesStore.stats.total_carreras, icon: 'school', color: 'orange' },
+  { label: 'Total Docentes', value: sedesStore.stats.total_docentes, icon: 'people', color: 'blue' }
 ])
 
 function getCarrerasSede(sede) {
@@ -120,13 +118,38 @@ function getProgresoSede(sedeId) {
   margin-bottom: 12px;
 }
 
-.stat-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary); }
-.stat-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.stat-icon.purple {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary);
+}
 
-.stat-label { color: var(--text-secondary); font-size: 0.875rem; margin: 0; }
-.stat-value { color: var(--text-primary); font-size: 1.75rem; font-weight: 700; margin: 4px 0 0 0; }
+.stat-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+
+.stat-icon.orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+
+.stat-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.stat-value {
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 4px 0 0 0;
+}
 
 .sedes-grid {
   display: grid;
@@ -134,8 +157,17 @@ function getProgresoSede(sedeId) {
   gap: 20px;
 }
 
-@media (max-width: 1200px) { .sedes-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px) { .sedes-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1200px) {
+  .sedes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .sedes-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 .sede-card {
   background: var(--bg-secondary);
@@ -145,9 +177,17 @@ function getProgresoSede(sedeId) {
   transition: all 0.2s ease;
 }
 
-.sede-card:hover { border-color: var(--primary); }
+.sede-card:hover {
+  border-color: var(--primary);
+}
 
-.sede-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.sede-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
 .sede-avatar {
   width: 48px;
   height: 48px;
@@ -160,12 +200,42 @@ function getProgresoSede(sedeId) {
   font-weight: 700;
   font-size: 0.875rem;
 }
-.sede-info { flex: 1; }
-.sede-nombre { color: var(--text-primary); font-size: 1.125rem; font-weight: 600; margin: 0; }
-.sede-codigo { color: var(--text-muted); font-size: 0.75rem; }
 
-.sede-stats { display: flex; justify-content: space-around; margin-bottom: 16px; }
-.sede-stat { text-align: center; }
-.sede-stat .stat-num { display: block; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
-.sede-stat .stat-label { font-size: 0.75rem; color: var(--text-muted); }
+.sede-info {
+  flex: 1;
+}
+
+.sede-nombre {
+  color: var(--text-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.sede-codigo {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.sede-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 16px;
+}
+
+.sede-stat {
+  text-align: center;
+}
+
+.sede-stat .stat-num {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sede-stat .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
 </style>

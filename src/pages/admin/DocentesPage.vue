@@ -73,7 +73,7 @@
             <h3 class="docente-nombre">{{ docente.titulo }} {{ docente.nombre }}</h3>
             <p class="docente-email">{{ docente.email }}</p>
             <div class="docente-badges">
-              <q-chip :color="docente.activo ? 'green-2' : 'grey-3'" :text-color="docente.activo ? 'green-9' : 'grey-7'"
+              <q-chip :color="docente.activo ? 'green-2' : 'grey-2'" :text-color="docente.activo ? 'green-9' : 'grey-9'"
                 size="sm" dense>
                 {{ docente.activo ? 'Activo' : 'Inactivo' }}
               </q-chip>
@@ -145,8 +145,8 @@
 
         <div class="docente-contact q-mt-md">
           <div class="contact-item">
-            <q-icon name="phone" size="14px" color="grey-6" />
-            <span>{{ docente.telefono || 'No registrado' }}</span>
+            <q-icon name="badge" size="14px" color="grey-6" />
+            <span>{{ docente.ci || 'No registrado' }}</span>
           </div>
           <div class="contact-item">
             <q-icon name="location_on" size="14px" color="grey-6" />
@@ -322,6 +322,7 @@ async function fetchData() {
   const params = {
     q: filtros.value.busqueda,
     sede_id: filtros.value.sede,
+    carrera_id: filtros.value.carrera, // Add carrera filter
     estado: filtros.value.estado,
     page: pagination.value.currentPage
   }
@@ -441,6 +442,7 @@ const docentesFiltrados = computed(() => {
     nombre: d.nombre_completo.replace(/^(Lic\.?|Ing\.?|Dr\.?|MSc\.?|PhD\.?)\s+/i, ''),
     iniciales: d.nombre_completo.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
     email: d.email,
+    ci: d.ci, // Add CI mapping
     telefono: d.celular || d.telefono,
     tipo: d.tipo_dedicacion,
     sede_id: d.sede_id,

@@ -2,7 +2,6 @@
    SISTEMA ACADÉMICO UNITEPC - TEMA DUAL
    ============================================= */
 
-
 /* CSS Variables - Light Mode (Default) */
 :root {
   --bg-primary: #f8fafc;
@@ -14,20 +13,21 @@
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
   --shadow-color: rgba(0, 0, 0, 0.1);
-  
+
   /* Brand colors */
-  --primary: #7C3AED;
-  --primary-light: #A78BFA;
-  --primary-dark: #5B21B6;
-  --secondary: #14B8A6;
-  --accent-orange: #F97316;
-  --accent-green: #22C55E;
-  --accent-blue: #3B82F6;
-  --accent-red: #EF4444;
+  --primary: #7c3aed;
+  --primary-light: #a78bfa;
+  --primary-dark: #5b21b6;
+  --secondary: #14b8a6;
+  --accent-orange: #f97316;
+  --accent-green: #22c55e;
+  --accent-blue: #3b82f6;
+  --accent-red: #ef4444;
 }
 
 /* CSS Variables - Dark Mode */
-.dark, .body--dark {
+.dark,
+.body--dark {
   --bg-primary: #0a0a0b;
   --bg-secondary: #111113;
   --bg-tertiary: #18181b;
@@ -43,8 +43,14 @@
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* =============================================
@@ -194,10 +200,22 @@ body {
   justify-content: center;
 }
 
-.stat-icon.primary { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
-.stat-icon.success { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.stat-icon.warning { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.stat-icon.info { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.stat-icon.primary {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary-light);
+}
+.stat-icon.success {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+.stat-icon.warning {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+.stat-icon.info {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
 
 .stat-value {
   color: var(--text-primary);
@@ -253,8 +271,13 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Theme Toggle Button */
@@ -298,20 +321,21 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Light mode specific adjustments */
-:root:not(.dark) .q-chip {
-  background: var(--bg-tertiary) !important;
-}
+/* Chips now use component props */
 
 /* Dark mode specific adjustments */
-.dark .q-chip,
-.body--dark .q-chip {
-  background: rgba(39, 39, 42, 0.8) !important;
-}
+/* Chips now use component props */
 
 /* Quick Access Cards */
 .quick-access-card {
@@ -335,9 +359,27 @@ body {
   justify-content: center;
 }
 
-.quick-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
-.quick-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.quick-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.quick-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
-.quick-icon.red { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
-.quick-icon.cyan { background: rgba(20, 184, 166, 0.15); color: var(--secondary); }
+.quick-icon.purple {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary-light);
+}
+.quick-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+.quick-icon.orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+.quick-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
+.quick-icon.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+}
+.quick-icon.cyan {
+  background: rgba(20, 184, 166, 0.15);
+  color: var(--secondary);
+}

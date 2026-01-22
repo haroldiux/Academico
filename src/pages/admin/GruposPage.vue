@@ -10,64 +10,21 @@
         <p class="page-subtitle">Visualiza los grupos/paralelos organizados por materia, docente y horario</p>
       </div>
       <div class="header-actions">
-        <q-btn
-          flat
-          color="teal"
-          icon="refresh"
-          label="Actualizar"
-          no-caps
-          :loading="gruposStore.loading"
-          @click="refrescarDatos"
-        />
+        <q-btn flat color="teal" icon="refresh" label="Actualizar" no-caps :loading="gruposStore.loading"
+          @click="refrescarDatos" />
       </div>
     </div>
 
     <!-- Filtros -->
     <div class="filters-section">
-      <q-select
-        v-model="filtros.sede"
-        :options="sedesOptions"
-        outlined
-        dense
-        label="Sede"
-        emit-value
-        map-options
-        style="min-width: 180px;"
-        @update:model-value="onSedeChange"
-      />
-      <q-select
-        v-model="filtros.carrera"
-        :options="carrerasOptions"
-        outlined
-        dense
-        label="Carrera"
-        emit-value
-        map-options
-        style="min-width: 220px;"
-        @update:model-value="onFiltroChange"
-      />
-      <q-select
-        v-model="filtros.gestion"
-        :options="gestionesOptions"
-        outlined
-        dense
-        label="Gestión"
-        emit-value
-        map-options
-        style="min-width: 130px;"
-        @update:model-value="onFiltroChange"
-      />
-      <q-select
-        v-model="filtros.semestre"
-        :options="semestresOptions"
-        outlined
-        dense
-        label="Semestre"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 150px;"
-      />
+      <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
+        style="min-width: 180px;" @update:model-value="onSedeChange" />
+      <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
+        map-options style="min-width: 220px;" @update:model-value="onFiltroChange" />
+      <q-select v-model="filtros.gestion" :options="gestionesOptions" outlined dense label="Gestión" emit-value
+        map-options style="min-width: 130px;" @update:model-value="onFiltroChange" />
+      <q-select v-model="filtros.semestre" :options="semestresOptions" outlined dense label="Semestre" emit-value
+        map-options clearable style="min-width: 150px;" />
     </div>
 
     <!-- Estadísticas -->
@@ -82,21 +39,21 @@
       <div class="stat-card">
         <q-icon name="groups" size="28px" color="teal" />
         <div class="stat-info">
-          <span class="stat-value">{{ gruposStore.metaExterno.total_grupos || totalGrupos }}</span>
+          <span class="stat-value">{{ totalGrupos }}</span>
           <span class="stat-label">Horarios/Grupos</span>
         </div>
       </div>
       <div class="stat-card">
         <q-icon name="person" size="28px" color="green" />
         <div class="stat-info">
-          <span class="stat-value">{{ gruposStore.metaExterno.total_docentes || 0 }}</span>
+          <span class="stat-value">{{ totalDocentes }}</span>
           <span class="stat-label">Docentes</span>
         </div>
       </div>
       <div class="stat-card">
         <q-icon name="location_city" size="28px" color="indigo" />
         <div class="stat-info">
-          <span class="stat-value">{{ gruposStore.metaExterno.carrera || '-' }}</span>
+          <span class="stat-value">{{ carreraNombre }}</span>
           <span class="stat-label">Carrera</span>
         </div>
       </div>
@@ -105,7 +62,7 @@
     <!-- Loading State -->
     <div v-if="gruposStore.loading" class="loading-state">
       <q-spinner-dots size="50px" color="teal" />
-      <p>Cargando datos desde el sistema académico...</p>
+      <p>Cargando datos...</p>
     </div>
 
     <!-- Vista por Materias con sus Grupos -->
@@ -113,7 +70,8 @@
       <div v-for="materia in materiasFiltradas" :key="materia.codigo + '-' + materia.semestre" class="materia-section">
         <div class="materia-header">
           <div class="materia-info">
-            <q-chip color="blue-1" text-color="blue-10" size="sm" dense class="text-weight-bold">{{ materia.codigo }}</q-chip>
+            <q-chip color="blue-1" text-color="blue-10" size="sm" dense class="text-weight-bold">{{ materia.codigo
+              }}</q-chip>
             <h3 class="materia-nombre">{{ materia.nombre }}</h3>
             <div class="materia-meta">
               <q-chip size="xs" color="purple-2" text-color="purple-9">{{ materia.carrera }}</q-chip>
@@ -137,12 +95,8 @@
                 <span class="grupo-title">Grupo {{ grupo.grupo }} - {{ grupo.tipo_clase }}</span>
                 <span class="grupo-dia">{{ grupo.dia }}</span>
               </div>
-              <q-chip
-                :color="grupo.tipo_clase === 'Teorico' ? 'blue-2' : 'orange-2'"
-                :text-color="grupo.tipo_clase === 'Teorico' ? 'blue-9' : 'orange-9'"
-                size="xs"
-                dense
-              >
+              <q-chip :color="grupo.tipo_clase === 'Teorico' ? 'blue-2' : 'orange-2'"
+                :text-color="grupo.tipo_clase === 'Teorico' ? 'blue-9' : 'orange-9'" size="xs" dense>
                 {{ grupo.tipo_clase }}
               </q-chip>
             </div>
@@ -256,9 +210,23 @@ const semestresOptions = [
 
 // Materias filtradas por semestre (del frontend)
 const materiasFiltradas = computed(() => {
-  const materias = gruposStore.materiasExterno || []
-  if (!filtros.value.semestre) return materias
-  return materias.filter(m => m.semestre === filtros.value.semestre)
+  const data = gruposStore.materias || []
+  if (!filtros.value.semestre) return data
+  return data.filter(m => m.semestre === filtros.value.semestre)
+})
+
+// Computed: Stats desde datos locales
+const totalDocentes = computed(() => {
+  const docentes = new Set()
+  materiasFiltradas.value.forEach(m => m.grupos?.forEach(g => {
+    if (g.docente && g.docente !== 'Sin Asignar') docentes.add(g.docente)
+  }))
+  return docentes.size
+})
+
+const carreraNombre = computed(() => {
+  const carrera = carrerasStore.getCarreraById(filtros.value.carrera)
+  return carrera?.nombre || '-'
 })
 
 // Stats
@@ -270,8 +238,8 @@ const totalGrupos = computed(() =>
 async function fetchData() {
   if (!filtros.value.sede || !filtros.value.carrera) return
 
-  // Usar IDs locales directamente (Integración Synced DB)
-  await gruposStore.fetchGruposExterno({
+  // Usar base de datos local (más rápido y confiable)
+  await gruposStore.fetchGrupos({
     gestion: filtros.value.gestion,
     carrera_id: filtros.value.carrera,
     sede_id: filtros.value.sede
@@ -285,7 +253,7 @@ function onFiltroChange() {
 // Cuando cambia la sede, resetear carrera y recargar carreras
 function onSedeChange() {
   filtros.value.carrera = null
-  gruposStore.materiasExterno = []
+  gruposStore.materias = []
   // Seleccionar primera carrera disponible después de un tick
   setTimeout(() => {
     const opts = carrerasStore.getCarrerasOptions(filtros.value.sede)
@@ -299,12 +267,12 @@ function onSedeChange() {
 async function refrescarDatos() {
   if (!filtros.value.sede || !filtros.value.carrera) return
 
-  await gruposStore.refrescarGruposExterno({
+  await gruposStore.fetchGrupos({
     gestion: filtros.value.gestion,
     carrera_id: filtros.value.carrera,
     sede_id: filtros.value.sede
   })
-  $q.notify({ type: 'positive', message: 'Datos actualizados', icon: 'check' })
+  $q.notify({ type: 'positive', message: 'Datos actualizados desde base de datos local', icon: 'check' })
 }
 
 // Watch semestre filter (client-side only)
@@ -466,7 +434,7 @@ onMounted(async () => {
 
 .grupo-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .grupo-header {
@@ -572,11 +540,18 @@ onMounted(async () => {
 }
 
 @media (max-width: 1024px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
-  .stats-row { grid-template-columns: 1fr; }
-  .grupos-grid { grid-template-columns: 1fr; }
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .grupos-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
