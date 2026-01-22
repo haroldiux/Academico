@@ -270,17 +270,11 @@ const totalGrupos = computed(() =>
 async function fetchData() {
   if (!filtros.value.sede || !filtros.value.carrera) return
 
-  // Usar el id_api de la sede para la API externa
-  const sedeApiId = sedesStore.getSedeApiId(filtros.value.sede)
-  // Usar el código de la carrera para la API externa
-  const carreraCodigo = carrerasStore.getCarreraCodigo(filtros.value.carrera)
-
-  if (!carreraCodigo) return
-
+  // Usar IDs locales directamente (Integración Synced DB)
   await gruposStore.fetchGruposExterno({
     gestion: filtros.value.gestion,
-    carrera: carreraCodigo,
-    sede: sedeApiId
+    carrera_id: filtros.value.carrera,
+    sede_id: filtros.value.sede
   })
 }
 
@@ -305,15 +299,10 @@ function onSedeChange() {
 async function refrescarDatos() {
   if (!filtros.value.sede || !filtros.value.carrera) return
 
-  const sedeApiId = sedesStore.getSedeApiId(filtros.value.sede)
-  const carreraCodigo = carrerasStore.getCarreraCodigo(filtros.value.carrera)
-
-  if (!carreraCodigo) return
-
   await gruposStore.refrescarGruposExterno({
     gestion: filtros.value.gestion,
-    carrera: carreraCodigo,
-    sede: sedeApiId
+    carrera_id: filtros.value.carrera,
+    sede_id: filtros.value.sede
   })
   $q.notify({ type: 'positive', message: 'Datos actualizados', icon: 'check' })
 }

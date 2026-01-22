@@ -9,14 +9,14 @@ export default {
    * @param {number} params.sede - ID de la sede
    */
   listarGrupos(params = {}) {
-    return api.get('/grupos-externo', { params })
+    return api.get('/grupos', { params })
   },
 
   /**
-   * Refrescar cache y recargar datos
+   * Recargar datos (alias de listar para consistencia)
    * @param {Object} params - Parámetros de consulta
    */
   refrescarGrupos(params = {}) {
-    return api.post('/grupos-externo/refresh', null, { params })
+    return api.get('/grupos', { params })
   }
 }

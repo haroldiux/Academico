@@ -104,7 +104,9 @@ export const useAuthStore = defineStore('auth', () => {
       api.defaults.headers.common['Authorization'] = 'Bearer ' + authToken
 
       // Configurar usuario
-      const rolNombre = user.rol?.nombre || 'DOCENTE'
+      // Usamos codigo (SUPER_ADMIN) si existe, sino el nombre
+      const rolNombre = user.rol?.codigo || user.rol?.nombre || 'DOCENTE'
+
       usuarioActual.value = {
         id: user.id,
         nombre: `${user.nombre || ''} ${user.apellido || ''}`.trim() || user.username,

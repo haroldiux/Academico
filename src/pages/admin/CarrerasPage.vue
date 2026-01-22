@@ -51,11 +51,11 @@
         <div class="carrera-stats">
           <div class="carrera-stat">
             <q-icon name="menu_book" size="16px" />
-            <span>{{ getAsignaturasCarrera(carrera.id) }} asignaturas</span>
+            <span>{{ carrera.asignaturas_count || 0 }} asignaturas</span>
           </div>
           <div class="carrera-stat">
             <q-icon name="people" size="16px" />
-            <span>{{ getDocentesCarrera(carrera.id) }} docentes</span>
+            <span>{{ carrera.docentes_count || 0 }} docentes</span>
           </div>
         </div>
       </div>
@@ -93,8 +93,8 @@ const carrerasFiltradas = computed(() => {
 const estadisticas = computed(() => [
   { label: 'Total Carreras', value: carrerasFiltradas.value.length, icon: 'school', color: 'purple' },
   { label: 'Carreras Activas', value: carrerasFiltradas.value.filter(c => c.activo).length, icon: 'check_circle', color: 'green' },
-  { label: 'Total Asignaturas', value: carrerasFiltradas.value.length * 45, icon: 'menu_book', color: 'orange' },
-  { label: 'Docentes Asignados', value: carrerasFiltradas.value.length * 12, icon: 'people', color: 'blue' }
+  { label: 'Total Asignaturas', value: carrerasFiltradas.value.reduce((s, c) => s + (c.asignaturas_count || 0), 0), icon: 'menu_book', color: 'orange' },
+  { label: 'Docentes Asignados', value: carrerasFiltradas.value.reduce((s, c) => s + (c.docentes_count || 0), 0), icon: 'people', color: 'blue' }
 ])
 
 const colores = ['#7C3AED', '#14B8A6', '#F97316', '#3B82F6', '#22C55E', '#EF4444', '#8B5CF6', '#EC4899']
@@ -106,14 +106,6 @@ function getCarreraColor(id) {
 function getSedeName(sedeId) {
   const sede = sedesStore.getSedeById(sedeId)
   return sede?.nombre || 'Sin sede'
-}
-
-function getAsignaturasCarrera() {
-  return Math.floor(Math.random() * 20) + 35
-}
-
-function getDocentesCarrera() {
-  return Math.floor(Math.random() * 10) + 8
 }
 </script>
 

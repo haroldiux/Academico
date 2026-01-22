@@ -40,11 +40,11 @@
         </div>
         <div class="sede-stats">
           <div class="sede-stat">
-            <span class="stat-num">{{ getCarrerasSede(sede.id) }}</span>
+            <span class="stat-num">{{ getCarrerasSede(sede) }}</span>
             <span class="stat-label">Carreras</span>
           </div>
           <div class="sede-stat">
-            <span class="stat-num">{{ getDocentesSede(sede.id) }}</span>
+            <span class="stat-num">{{ getDocentesSede(sede) }}</span>
             <span class="stat-label">Docentes</span>
           </div>
           <div class="sede-stat">
@@ -82,13 +82,12 @@ const estadisticas = ref([
   { label: 'Total Docentes', value: 890, icon: 'people', color: 'blue' }
 ])
 
-function getCarrerasSede(sedeId) {
-  return carrerasStore.getCarrerasBySede(sedeId).length
+function getCarrerasSede(sede) {
+  return sede.carreras_count || 0
 }
 
-function getDocentesSede(sedeId) {
-  const docentes = { 1: 180, 2: 150, 3: 165, 4: 95, 5: 110, 6: 70, 7: 80, 8: 55, 9: 45 }
-  return docentes[sedeId] || 0
+function getDocentesSede(sede) {
+  return sede.docentes_count || 0
 }
 
 function getProgresoSede(sedeId) {

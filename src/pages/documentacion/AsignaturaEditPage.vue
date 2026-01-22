@@ -136,7 +136,7 @@
                 <span class="field-card__title">Descripción</span>
               </div>
               <q-input v-model="formDatos.descripcion" outlined type="textarea" rows="3" class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.descripcion)" />
+                :readonly="!puedeEditarCampo('descripcion')" />
             </div>
 
             <!-- Campo: Objetivo General -->
@@ -146,7 +146,7 @@
                 <span class="field-card__title">Objetivo General</span>
               </div>
               <q-input v-model="formDatos.objetivo_general" outlined type="textarea" autogrow class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.objetivo_general)" />
+                :readonly="!puedeEditarCampo('objetivo_general')" />
             </div>
 
             <!-- Campo: Justificación -->
@@ -156,7 +156,7 @@
                 <span class="field-card__title">Justificación</span>
               </div>
               <q-input v-model="formDatos.justificacion" outlined type="textarea" autogrow class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.justificacion)" />
+                :readonly="!puedeEditarCampo('justificacion')" />
             </div>
 
             <!-- Metodología -->
@@ -173,7 +173,7 @@
                 <span class="field-card__hint">Conocimientos previos necesarios</span>
               </div>
               <q-input v-model="formDatos.saberes_previos" outlined class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.saberes_previos)" />
+                :readonly="!puedeEditarCampo('saberes_previos')" />
             </div>
 
             <!-- Campo: Contenido Mínimo -->
@@ -183,7 +183,7 @@
                 <span class="field-card__title">Contenido Mínimo</span>
               </div>
               <q-input v-model="formDatos.contenido_minimo" outlined type="textarea" autogrow class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.contenido_minimo)" />
+                :readonly="!puedeEditarCampo('contenido_minimo')" />
             </div>
 
             <!-- Campo: Metodología de Enseñanza -->
@@ -193,7 +193,7 @@
                 <span class="field-card__title">Metodología de Enseñanza</span>
               </div>
               <q-input v-model="formDatos.metodologia_ensenanza" outlined type="textarea" autogrow
-                class="field-card__input" :readonly="!puedeEditarCampo(formDatos.metodologia_ensenanza)" />
+                class="field-card__input" :readonly="!puedeEditarCampo('metodologia_ensenanza')" />
             </div>
 
             <!-- Campo: Criterios de Evaluación -->
@@ -203,7 +203,7 @@
                 <span class="field-card__title">Criterios de Evaluación</span>
               </div>
               <q-input v-model="formDatos.criterios_evaluacion" outlined type="textarea" autogrow
-                class="field-card__input" :readonly="!puedeEditarCampo(formDatos.criterios_evaluacion)" />
+                class="field-card__input" :readonly="!puedeEditarCampo('criterios_evaluacion')" />
             </div>
           </q-form>
         </q-tab-panel>
@@ -626,16 +626,18 @@ const esDocenteCochabamba = computed(() => {
   return authStore.usuarioActual?.sede_id === 1
 })
 
-function puedeEditarCampo(valorActual) {
+function puedeEditarCampo(nombreCampo) {
   // 1. Director/Admin SIEMPRE puede editar (override total)
   if (esDirectorOAdmin.value) return true
 
   // 2. Si no es Cochabamba y no es admin, es SOLO LECTURA siempre
   if (!esDocenteCochabamba.value) return false
 
-  // 3. Es Docente Cochabamba: Puede editar SOLO si NO está completo
-  const estaCompleto = valorActual && valorActual.trim().length > 0
-  return !estaCompleto
+  // 3. Es Docente Cochabamba: Puede editar SOLO si NO estaba completo ORIGINALMENTE
+  // Usamos los datos originales cargados del servidor, no el valur actual que se está escribiendo
+  const valorOriginal = datosOriginales.value[nombreCampo]
+  const estabaCompleto = valorOriginal && valorOriginal.trim().length > 0
+  return !estabaCompleto
 }
 
 const nombreDocenteCarpeta = computed(() => {
@@ -707,6 +709,7 @@ const bibliografiasProgramaAnalitico = computed(() => {
 })
 
 // Forms
+const datosOriginales = ref({})
 const formDatos = ref({})
 const formPrograma = ref({
   competencia_global: '',
@@ -856,6 +859,8 @@ function cargarFormDatos() {
     metodologia_ensenanza: asignatura.value.metodologia_ensenanza,
     criterios_evaluacion: asignatura.value.criterios_evaluacion
   }
+  // Guardar copia de datos originales para validar permisos de edición
+  datosOriginales.value = JSON.parse(JSON.stringify(formDatos.value))
   // Cargar datos del programa
   // Convertir reglamento_normativa de string a array de reglas
   let reglamentoArray = []

@@ -114,14 +114,14 @@
                   </q-chip>
                   <!-- Grupos asignados (para docentes) -->
                   <q-chip
-                    v-if="authStore.rol === 'DOCENTE' && asignatura.pivot?.grupo"
+                    v-if="authStore.rol === 'DOCENTE'"
                     size="sm"
                     color="orange-2"
                     text-color="orange-9"
                     dense
                     icon="groups"
                   >
-                    Grupo {{ asignatura.pivot.grupo }}
+                    {{ asignatura.pivot?.grupo || 'Sin Grupo' }}
                   </q-chip>
                 </div>
                 <!-- Docente -->

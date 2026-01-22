@@ -431,13 +431,9 @@ function filterCarreras(val, update) {
 // Watchers / Event Handlers
 async function onSedeChange() {
   filtros.value.carrera = null
-  // Si se selecciona una sede, cargar sus asignaturas locales
+  // Si se selecciona una sede, cargar sus asignaturas
   if (filtros.value.sede) {
-    const sede = sedesStore.getSedeById(filtros.value.sede)
-    if (sede?.codigo) {
-      // Cargar asignaturas de la sede seleccioanda (sin career_code)
-      await asignaturasStore.fetchAsignaturas(sede.codigo, null)
-    }
+    await asignaturasStore.fetchAsignaturas(filtros.value.sede, null, filtros.value.semestre)
   } else {
     // Si se limpia la sede, cargar TODO
     await asignaturasStore.fetchAsignaturas()
@@ -453,14 +449,12 @@ async function onCarreraChange() {
     }
   }
 
-  if (filtros.value.sede && filtros.value.carrera) {
-    const sede = sedesStore.getSedeById(filtros.value.sede)
-    const carrera = carrerasStore.getCarreraById(filtros.value.carrera)
-
-    if (sede?.codigo && carrera?.codigo) {
-      await asignaturasStore.fetchAsignaturas(sede.codigo, carrera.codigo)
-    }
-  }
+  // Cargar asignaturas con filtros actuales
+  await asignaturasStore.fetchAsignaturas(
+    filtros.value.sede,
+    filtros.value.carrera,
+    filtros.value.semestre
+  )
 }
 
 const totalHoras = computed(() =>
@@ -604,11 +598,11 @@ function exportTable() {
       'Asignatura': row.nombre,
       'Sede': sedeNombre,
       'Carrera': row.carrera_nombre,
-      'Semestre': `${row.semestre}° Sem/Año`,
+      'Semestre': `${row.semestre || 0}° Sem/Año`,
       'Horas Teóricas': row.horas_teoricas || 0,
       'Horas Prácticas': row.horas_practicas || 0,
       'Carga Total': ((row.horas_teoricas || 0) + (row.horas_practicas || 0)) * 20,
-      'Créditos': row.creditos
+      'Créditos': row.creditos || 0
     }
   })
 

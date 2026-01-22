@@ -445,8 +445,8 @@ const docentesFiltrados = computed(() => {
     tipo: d.tipo_dedicacion,
     sede_id: d.sede_id,
     sede_nombre: d.sede?.nombre || 'Sin Sede',
-    materias: [...new Set(d.asignaturas?.map(a => a.nombre) || [])],
-    grupos: d.asignaturas?.map(a => a.pivot?.grupo).filter(g => g) || [],
+    materias: [...new Set(d.grupos?.map(g => g.asignatura?.nombre).filter(n => n) || [])],
+    grupos: d.grupos?.map(g => g.nombre).filter(n => n) || [],
     horas_semanales: 40,
     activo: d.estado
   }))
