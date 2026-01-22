@@ -196,9 +196,10 @@ export function usePermisos() {
     if (esDirectorCarrera.value) {
       return [
         ...itemsBase,
-        { label: 'Asignaturas', icon: 'menu_book', to: '/documentacion' },
-        { label: 'Docentes', icon: 'people', to: '/docentes' },
-        { label: 'Reportes', icon: 'assessment', to: '/reportes' }
+        { label: 'Asignaturas', icon: 'menu_book', to: '/director/asignaturas' },
+        { label: 'Docentes', icon: 'people', to: '/director/docentes' },
+        { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
+        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' }
       ]
     }
 
@@ -206,18 +207,20 @@ export function usePermisos() {
       return [
         ...itemsBase,
         { label: 'Carreras', icon: 'school', to: '/carreras' },
-        { label: 'Asignaturas', icon: 'menu_book', to: '/documentacion' },
-        { label: 'Reportes', icon: 'assessment', to: '/reportes' }
+        { label: 'Asignaturas', icon: 'menu_book', to: '/director/asignaturas' },
+        { label: 'Docentes', icon: 'people', to: '/director/docentes' },
+        { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
+        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' }
       ]
     }
 
     if (esVicerrectorNacional.value) {
       return [
         ...itemsBase,
-        { label: 'Sedes', icon: 'location_city', to: '/sedes' },
+        { label: 'Sedes', icon: 'apartment', to: '/admin/sedes' },
         { label: 'Carreras', icon: 'school', to: '/carreras' },
-        { label: 'Asignaturas', icon: 'menu_book', to: '/documentacion' },
-        { label: 'Reportes Nacionales', icon: 'analytics', to: '/reportes' }
+        { label: 'Asignaturas', icon: 'menu_book', to: '/director/asignaturas' },
+        { label: 'Reportes Nacionales', icon: 'analytics', to: '/vicerrector/reportes' }
       ]
     }
 

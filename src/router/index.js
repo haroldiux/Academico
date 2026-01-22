@@ -55,11 +55,13 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     // 3. Verificación de Roles (Autorización)
     if (to.meta?.rol && user) {
       const requiredRol = to.meta.rol
-      // Si el rol no coincide (y no es Super Admin, que suele poder todo)
-      if (user.rol !== requiredRol && user.rol !== 'SUPER_ADMIN') {
-        // Redirigir a 'unauthorized' o al dashboard con notificación
-        // Por ahora, redirigimos al home/dashboard básico
-        console.warn(`Acceso denegado: Se requiere ${requiredRol} pero usuario es ${user.rol}`)
+
+      // Normalizar requiredRol a un array
+      const rolesPermitidos = Array.isArray(requiredRol) ? requiredRol : [requiredRol]
+
+      // Si el rol no coincide (y no es Super Admin)
+      if (!rolesPermitidos.includes(user.rol) && user.rol !== 'SUPER_ADMIN') {
+        console.warn(`Acceso denegado: Se requiere ${rolesPermitidos.join(' o ')} pero usuario es ${user.rol}`)
         return next({ name: 'dashboard' })
       }
     }

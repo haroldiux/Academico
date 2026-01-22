@@ -15,7 +15,8 @@
 
     <!-- Filters (Solo para roles Admin/Directores) -->
     <div v-if="authStore.rol !== 'DOCENTE'" class="row q-col-gutter-md q-mb-lg">
-      <div class="col-12 col-md-3">
+      <!-- Filtro de Sede - Solo para roles con acceso global -->
+      <div v-if="!esDirectorCarrera" class="col-12 col-md-3">
         <q-select v-model="filtros.sede" :options="sedesOptions" label="Sede" outlined dense bg-color="white" emit-value
           map-options clearable>
           <template v-slot:prepend>
@@ -23,15 +24,16 @@
           </template>
         </q-select>
       </div>
-      <div class="col-12 col-md-3">
+      <!-- Filtro de Carrera -->
+      <div :class="esDirectorCarrera ? 'col-12 col-md-4' : 'col-12 col-md-3'">
         <q-select v-model="filtros.carrera" :options="carrerasOptions" label="Carrera" outlined dense bg-color="white"
-          emit-value map-options clearable :disable="!filtros.sede">
+          emit-value map-options clearable :disable="!esDirectorCarrera && !filtros.sede">
           <template v-slot:prepend>
             <q-icon name="school" />
           </template>
         </q-select>
       </div>
-      <div class="col-12 col-md-6">
+      <div :class="esDirectorCarrera ? 'col-12 col-md-8' : 'col-12 col-md-6'">
         <q-input v-model="filtros.search" label="Buscar materia (Nombre o Código)..." outlined dense bg-color="white"
           debounce="300" clearable>
           <template v-slot:prepend>
@@ -255,6 +257,9 @@ const authStore = useAuthStore()
 const asignaturaSeleccionada = ref(null)
 const showDocenteDialog = ref(false)
 
+// Computed - Verificar si es Director de Carrera
+const esDirectorCarrera = computed(() => authStore.rol === ROLES.DIRECTOR_CARRERA)
+
 // State
 const filtros = ref({
   sede: '',
@@ -268,9 +273,18 @@ import { onMounted } from 'vue'
 onMounted(async () => {
   await Promise.all([
     sedesStore.fetchSedes(),
-    carrerasStore.fetchCarreras(),
-    fetchData()
+    carrerasStore.fetchCarreras()
   ])
+  
+  // Si es Director de Carrera, auto-configurar su sede y carrera
+  if (esDirectorCarrera.value) {
+    // La sede del director viene del usuario
+    filtros.value.sede = authStore.sedeId || authStore.usuarioActual?.sede_id || ''
+    // La carrera del director viene del usuario
+    filtros.value.carrera = authStore.carreraId || authStore.usuarioActual?.carrera_id || ''
+  }
+  
+  await fetchData()
 })
 
 async function fetchData() {

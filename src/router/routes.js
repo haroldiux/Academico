@@ -83,15 +83,52 @@ const routes = [
           }
         ]
       },
+      // Shared Routes
+      {
+        path: 'carreras',
+        name: 'carreras-list',
+        component: () => import('pages/admin/CarrerasPage.vue'),
+        meta: { title: 'Carreras', rol: ['DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+      },
+      // Vicerrector Nacional Routes
+      {
+        path: 'vicerrector',
+        children: [
+          {
+            path: 'reportes',
+            name: 'reportes-nacionales',
+            component: () => import('pages/vicerrector/ReportesNacionalesPage.vue'),
+            meta: { title: 'Reportes Nacionales', rol: 'VICERRECTOR_NACIONAL' }
+          }
+        ]
+      },
       // Director de Carrera Routes
       {
         path: 'director',
         children: [
           {
+            path: 'docentes',
+            name: 'director-docentes',
+            component: () => import('pages/director/DocentesPage.vue'),
+            meta: { title: 'Gestión de Docentes', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+          },
+          {
             path: 'rol-examenes',
             name: 'rol-examenes',
             component: () => import('pages/director/RolExamenesPage.vue'),
-            meta: { title: 'Rol de Exámenes', rol: 'DIRECTOR_CARRERA' }
+            meta: { title: 'Rol de Exámenes', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+          },
+          {
+            path: 'reportes',
+            name: 'director-reportes',
+            component: () => import('pages/director/ReportesPage.vue'),
+            meta: { title: 'Centro de Reportes', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+          },
+          {
+            path: 'asignaturas',
+            name: 'director-asignaturas',
+            component: () => import('pages/director/AsignaturasDirectorPage.vue'),
+            meta: { title: 'Plan de Estudios', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
           }
         ]
       },

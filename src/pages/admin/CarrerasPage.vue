@@ -12,6 +12,7 @@
       </div>
       <div class="col-auto">
         <q-select
+          v-if="authStore.rol === 'SUPER_ADMIN' || authStore.rol === 'ADMIN' || authStore.rol === 'VICERRECTOR_NACIONAL'"
           v-model="sedeSeleccionada"
           :options="opcionesSedes"
           label="Filtrar por Sede"
@@ -67,13 +68,22 @@
 import { ref, computed, onMounted } from 'vue'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
+import { useAuthStore } from 'src/stores/auth'
 
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
+const authStore = useAuthStore()
 
 onMounted(() => {
   sedesStore.fetchSedes()
   carrerasStore.fetchCarreras()
+  
+  // Si es Director Académico o Vicerrector, filtrar por su sede automáticamente
+  if (['DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE'].includes(authStore.rol)) {
+    // Mock: Asumimos sede ID 1 (Cochabamba) si no está en store
+    const sedeId = authStore.sedeId || 1 
+    sedeSeleccionada.value = { value: sedeId }
+  }
 })
 
 const sedeSeleccionada = ref(null)
@@ -121,6 +131,7 @@ function getDocentesCarrera() {
 .text-gradient {
   background: linear-gradient(135deg, var(--secondary), var(--primary));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
