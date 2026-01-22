@@ -301,16 +301,19 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useSedesStore } from 'src/stores/sedes'
 
 const $q = useQuasar()
+const route = useRoute()
 const sedesStore = useSedesStore()
 
 // State
 const tabActivo = ref('sedes')
 const dialogDetalle = ref(false)
 const detalleSeleccionado = ref(null)
+const sedeSeleccionadaNombre = ref(null)
 
 // Filtros
 const filtros = ref({
@@ -403,6 +406,18 @@ const reportesAcademicos = ref([
 // Functions
 onMounted(async () => {
   await sedesStore.fetchSedes()
+  
+  // Leer query params para preseleccionar sede
+  if (route.query.sedeId) {
+    filtros.value.sede = parseInt(route.query.sedeId)
+    sedeSeleccionadaNombre.value = route.query.sedeName || null
+    
+    $q.notify({
+      type: 'info',
+      message: `Mostrando reportes de: ${sedeSeleccionadaNombre.value || 'Sede seleccionada'}`,
+      icon: 'apartment'
+    })
+  }
 })
 
 const getColorProgreso = (progreso) => {

@@ -14,6 +14,26 @@ export const ROLES = {
   EVALUACIONES: 'EVALUACIONES'
 }
 
+// Mapeo de nombres de rol de BD a constantes del frontend
+// Solo incluye los códigos que la BD realmente envía
+const ROLE_NAME_MAP = {
+  'SUPER_ADMIN': ROLES.SUPER_ADMIN,
+  'ADMIN': ROLES.ADMIN,
+  'VICERRECTORADO': ROLES.VICERRECTOR_NACIONAL,
+  'VICERRECTOR_SEDE': ROLES.VICERRECTOR_SEDE,
+  'DIRECCION_ACADEMICA': ROLES.DIRECCION_ACADEMICA,
+  'DIRECTOR_CARRERA': ROLES.DIRECTOR_CARRERA,
+  'DOCENTE': ROLES.DOCENTE,
+  'EVALUACIONES': ROLES.EVALUACIONES
+}
+
+// Función para normalizar nombre de rol
+export function normalizeRoleName(roleName) {
+  if (!roleName) return ROLES.DOCENTE
+  const normalized = ROLE_NAME_MAP[roleName.toUpperCase().trim()]
+  return normalized || ROLES.DOCENTE
+}
+
 // Permisos por rol
 export const PERMISOS_ROL = {
   [ROLES.SUPER_ADMIN]: {
@@ -104,8 +124,9 @@ export const useAuthStore = defineStore('auth', () => {
       api.defaults.headers.common['Authorization'] = 'Bearer ' + authToken
 
       // Configurar usuario
-      // Usamos codigo (SUPER_ADMIN) si existe, sino el nombre
-      const rolNombre = user.rol?.codigo || user.rol?.nombre || 'DOCENTE'
+      // Normalizar rol: BD puede enviar 'VICERRECTORADO', frontend usa 'VICERRECTOR_NACIONAL'
+      const rolRaw = user.rol?.codigo || user.rol?.nombre || 'DOCENTE'
+      const rolNombre = normalizeRoleName(rolRaw)
 
       usuarioActual.value = {
         id: user.id,
@@ -204,7 +225,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     if (alcanceActual === 'carrera') {
       return usuarioActual.value.carrera_id === carreraIdObjetivo &&
-             usuarioActual.value.sede_id === sedeIdObjetivo
+        usuarioActual.value.sede_id === sedeIdObjetivo
     }
     return false
   }
@@ -220,7 +241,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     if (alcanceActual === 'carrera') {
       return usuarioActual.value.carrera_id === carreraIdMateria &&
-             usuarioActual.value.sede_id === sedeIdMateria
+        usuarioActual.value.sede_id === sedeIdMateria
     }
     if (alcanceActual === 'asignado') {
       return usuarioActual.value.materias_asignadas?.includes(materiaId)
