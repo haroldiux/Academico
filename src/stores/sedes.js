@@ -12,12 +12,27 @@ export const useSedesStore = defineStore('sedes', () => {
   const sedesActivas = computed(() => sedes.value.filter(s => s.activo))
   const totalSedes = computed(() => sedes.value.length)
 
+  const stats = ref({
+    total_sedes: 0,
+    sedes_activas: 0,
+    total_carreras: 0,
+    total_docentes: 0
+  })
+
   // Actions
   async function fetchSedes() {
     loading.value = true
     try {
       const response = await sedeService.getSedes()
-      sedes.value = response.data
+      // Handle both legacy (array) and new (object) response formats
+      if (Array.isArray(response.data)) {
+        sedes.value = response.data
+      } else if (response.data && response.data.data) {
+         sedes.value = response.data.data
+         if (response.data.stats) {
+             stats.value = response.data.stats
+         }
+      }
     } catch (error) {
       console.error('Error fetching sedes:', error)
     } finally {
@@ -55,6 +70,7 @@ export const useSedesStore = defineStore('sedes', () => {
 
   return {
     sedes,
+    stats,
     campus, // Se mantiene vacío o mock
     sedesActivas,
     totalSedes,

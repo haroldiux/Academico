@@ -13,8 +13,7 @@
           <span class="text-gradient">{{ asignatura?.nombre || 'Cargando...' }}</span>
         </h4>
         <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
-          {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ asignatura?.carrera?.nombre ||
-            asignatura?.carrera || 'N/A' }}
+          {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ nombreCarrera }}
         </p>
         <div class="row items-center q-gutter-sm q-mt-sm">
           <q-chip v-if="nombreSede" outline color="orange" icon="business" dense>
@@ -136,7 +135,7 @@
                 <span class="field-card__title">Descripción</span>
               </div>
               <q-input v-model="formDatos.descripcion" outlined type="textarea" rows="3" class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.descripcion)" />
+                :readonly="!puedeEditarCampo('descripcion')" />
             </div>
 
             <!-- Campo: Objetivo General -->
@@ -146,7 +145,7 @@
                 <span class="field-card__title">Objetivo General</span>
               </div>
               <q-input v-model="formDatos.objetivo_general" outlined type="textarea" autogrow class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.objetivo_general)" />
+                :readonly="!puedeEditarCampo('objetivo_general')" />
             </div>
 
             <!-- Campo: Justificación -->
@@ -156,7 +155,7 @@
                 <span class="field-card__title">Justificación</span>
               </div>
               <q-input v-model="formDatos.justificacion" outlined type="textarea" autogrow class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.justificacion)" />
+                :readonly="!puedeEditarCampo('justificacion')" />
             </div>
 
             <!-- Metodología -->
@@ -173,7 +172,7 @@
                 <span class="field-card__hint">Conocimientos previos necesarios</span>
               </div>
               <q-input v-model="formDatos.saberes_previos" outlined class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.saberes_previos)" />
+                :readonly="!puedeEditarCampo('saberes_previos')" />
             </div>
 
             <!-- Campo: Contenido Mínimo -->
@@ -183,7 +182,7 @@
                 <span class="field-card__title">Contenido Mínimo</span>
               </div>
               <q-input v-model="formDatos.contenido_minimo" outlined type="textarea" autogrow class="field-card__input"
-                :readonly="!puedeEditarCampo(formDatos.contenido_minimo)" />
+                :readonly="!puedeEditarCampo('contenido_minimo')" />
             </div>
 
             <!-- Campo: Metodología de Enseñanza -->
@@ -193,7 +192,7 @@
                 <span class="field-card__title">Metodología de Enseñanza</span>
               </div>
               <q-input v-model="formDatos.metodologia_ensenanza" outlined type="textarea" autogrow
-                class="field-card__input" :readonly="!puedeEditarCampo(formDatos.metodologia_ensenanza)" />
+                class="field-card__input" :readonly="!puedeEditarCampo('metodologia_ensenanza')" />
             </div>
 
             <!-- Campo: Criterios de Evaluación -->
@@ -203,7 +202,7 @@
                 <span class="field-card__title">Criterios de Evaluación</span>
               </div>
               <q-input v-model="formDatos.criterios_evaluacion" outlined type="textarea" autogrow
-                class="field-card__input" :readonly="!puedeEditarCampo(formDatos.criterios_evaluacion)" />
+                class="field-card__input" :readonly="!puedeEditarCampo('criterios_evaluacion')" />
             </div>
           </q-form>
         </q-tab-panel>
@@ -543,7 +542,7 @@
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6 text-weight-bold row items-center">
             <q-icon name="upload_file" color="teal" class="q-mr-sm" size="28px" />
-            Importar Programa Analítico
+            Importar Programa Analítico (Formato Oficial Sede Central)
           </div>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
@@ -554,17 +553,16 @@
             <template v-slot:avatar>
               <q-icon name="warning" color="warning" />
             </template>
-            <div class="text-weight-bold">¡Atención!</div>
+            <div class="text-weight-bold">¡Atención! Utilice la Plantilla Oficial</div>
             <div>
-              Esta acción extraerá datos del archivo Word y completará los campos vacíos.
+              Esta función requiere estrictamente el <strong>Documento Word Oficial de Programa de Asignatura</strong> proporcionado por Sede Central.
               <br />
-              <strong>Nota:</strong> Si ya existen datos, no se sobrescribirán a menos que estén vacíos.
               <br />
-              Una vez importado, los campos se bloquearán y solo podrán ser editados por el Director de Carrera.
+              <strong>Nota:</strong> Otros formatos o documentos modificados estructuralmente no serán procesados correctamente.
             </div>
           </q-banner>
 
-          <q-file v-model="archivoImportar" label="Seleccionar archivo Word (.docx)" outlined dense accept=".docx, .doc"
+          <q-file v-model="archivoImportar" label="Seleccionar Plantilla Oficial Word (.docx)" outlined dense accept=".docx, .doc"
             counter>
             <template v-slot:prepend>
               <q-icon name="attach_file" />
@@ -626,16 +624,18 @@ const esDocenteCochabamba = computed(() => {
   return authStore.usuarioActual?.sede_id === 1
 })
 
-function puedeEditarCampo(valorActual) {
+function puedeEditarCampo(nombreCampo) {
   // 1. Director/Admin SIEMPRE puede editar (override total)
   if (esDirectorOAdmin.value) return true
 
   // 2. Si no es Cochabamba y no es admin, es SOLO LECTURA siempre
   if (!esDocenteCochabamba.value) return false
 
-  // 3. Es Docente Cochabamba: Puede editar SOLO si NO está completo
-  const estaCompleto = valorActual && valorActual.trim().length > 0
-  return !estaCompleto
+  // 3. Es Docente Cochabamba: Puede editar SOLO si NO estaba completo ORIGINALMENTE
+  // Usamos los datos originales cargados del servidor, no el valur actual que se está escribiendo
+  const valorOriginal = datosOriginales.value[nombreCampo]
+  const estabaCompleto = valorOriginal && valorOriginal.trim().length > 0
+  return !estabaCompleto
 }
 
 const nombreDocenteCarpeta = computed(() => {
@@ -661,19 +661,37 @@ const nombreDocenteCarpeta = computed(() => {
 
 const nombreSede = computed(() => {
   if (!asignatura.value) return null
-  // 1. Relación profunda a través de Carrera
-  if (asignatura.value.carrera?.sede?.nombre) return asignatura.value.carrera.sede.nombre
 
-  // 2. Si la carrera es un objeto pero no trajo sede, intentar por store de Carreras -> Sede (fallback)
-  if (asignatura.value.carrera?.sede_id) {
-    const s = sedesStore.sedes.find(x => x.id === asignatura.value.carrera.sede_id)
-    return s ? s.nombre : null
+  // 1. Relación correcta: Array de Carreras (Sync)
+  if (asignatura.value.carreras?.length > 0) {
+    const c = asignatura.value.carreras[0]
+    if (c.sede?.nombre) return c.sede.nombre
+    if (c.sede_id) {
+       const s = sedesStore.sedes.find(x => x.id == c.sede_id)
+       return s ? s.nombre : null
+    }
   }
 
-  // 3. Relación directa (legacy o si fuera el caso)
+  // 2. Legacy fallback
+  if (asignatura.value.carrera?.sede?.nombre) return asignatura.value.carrera.sede.nombre
   if (asignatura.value.sede?.nombre) return asignatura.value.sede.nombre
 
   return null
+})
+
+const nombreCarrera = computed(() => {
+  if (!asignatura.value) return 'N/A'
+
+  // 1. Relación correcta: Array de Carreras (Sync)
+  if (asignatura.value.carreras?.length > 0) {
+    return asignatura.value.carreras[0].nombre
+  }
+
+  // 2. Legacy fallback
+  if (asignatura.value.carrera?.nombre) return asignatura.value.carrera.nombre
+  if (typeof asignatura.value.carrera === 'string') return asignatura.value.carrera
+
+  return 'N/A'
 })
 
 // Computed para bibliografías separadas por tipo
@@ -707,6 +725,7 @@ const bibliografiasProgramaAnalitico = computed(() => {
 })
 
 // Forms
+const datosOriginales = ref({})
 const formDatos = ref({})
 const formPrograma = ref({
   competencia_global: '',
@@ -831,6 +850,11 @@ onMounted(() => {
   if (sedesStore.sedes.length === 0) {
     sedesStore.fetchSedes()
   }
+
+  // Garantizar que existen carreras cargadas para resolver IDs (Fix N/A)
+  if (carrerasStore.carreras.length === 0) {
+    carrerasStore.fetchCarreras()
+  }
 })
 
 watch(asignatura, (newVal) => {
@@ -856,6 +880,8 @@ function cargarFormDatos() {
     metodologia_ensenanza: asignatura.value.metodologia_ensenanza,
     criterios_evaluacion: asignatura.value.criterios_evaluacion
   }
+  // Guardar copia de datos originales para validar permisos de edición
+  datosOriginales.value = JSON.parse(JSON.stringify(formDatos.value))
   // Cargar datos del programa
   // Convertir reglamento_normativa de string a array de reglas
   let reglamentoArray = []

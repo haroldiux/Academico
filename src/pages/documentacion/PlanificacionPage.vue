@@ -16,6 +16,10 @@
         </div>
       </div>
       <div class="header-actions">
+        <q-select v-model="grupoSeleccionado" :options="gruposOptions" outlined dense label="Grupo/Materia"
+          class="q-mr-sm" style="min-width: 200px;" option-label="label" option-value="value"
+          @update:model-value="cargarPlanificacion" />
+
         <q-select v-model="gestionSeleccionada" :options="gestionesOptions" outlined dense label="Gestión" emit-value
           map-options style="min-width: 150px;" />
         <q-btn outline color="primary" icon="content_copy" label="Copiar Gestión" no-caps
@@ -453,13 +457,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
-// import { useGruposStore } from 'src/stores/grupos'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
+import planificacionSemestralService from 'src/services/planificacionSemestralService'
 
 const route = useRoute()
 const $q = useQuasar()
 const asignaturasStore = useAsignaturasStore()
-// const gruposStore = useGruposStore() // Ya no se usa para horarios externos
 const rolExamenesStore = useRolExamenesStore()
 
 const tabActual = ref('horario')
@@ -471,12 +474,24 @@ const planificacionGenerada = ref(false)
 const guardando = ref(false)
 const gestionACopiar = ref(null)
 const unidadEditando = ref(null)
+const grupoSeleccionado = ref(null) // { label, value, tipo }
 
 const gestionesOptions = [
   { label: 'Gestión 2026-I', value: '2026-I' },
   { label: 'Gestión 2025-II', value: '2025-II' },
   { label: 'Gestión 2025-I', value: '2025-I' }
 ]
+
+const gruposOptions = computed(() => {
+  if (!asignatura.value?.horarios_data) return []
+  // Mapear horarios_data (que ya trae info agrupada por grupo)
+  return asignatura.value.horarios_data.map(g => ({
+    label: `Grupo ${g.grupo} (${g.tipo})`,
+    value: g.id, // ID REAL DEL GRUPO
+    tipo: g.tipo,
+    nombre: g.grupo
+  }))
+})
 
 const gestionesAnteriores = [
   { label: 'Gestión 2025-II', value: '2025-II' },
@@ -505,12 +520,91 @@ onMounted(async () => {
   // IMPORTANTE: Esperar a que se cargue la asignatura antes de buscar horarios
   await asignaturasStore.setAsignaturaActual(id)
 
+  // Auto-seleccionar primer grupo si existe
+  if (gruposOptions.value.length > 0) {
+    grupoSeleccionado.value = gruposOptions.value[0]
+  }
+
+  // Cargar planificación
+  await cargarPlanificacion()
+
+
+
   // Cargar horarios desde datos locales
   await cargarHorariosAsignatura()
 
   // Cargar rol de exámenes para esta materia
   await cargarExamenesRol()
 })
+
+async function cargarPlanificacion() {
+  if (!grupoSeleccionado.value) return
+
+  try {
+    const response = await planificacionSemestralService.getPlanificacion(route.params.id, {
+        grupo_id: grupoSeleccionado.value.value
+    })
+
+    // Si viene planificacion, mapearla
+    if (response.data.planificacion && response.data.planificacion.length > 0) {
+        // Necesitamos reconstruir la estructura de unidades -> sesiones
+        // Esto es complejo porque la API devuelve lista plana de cronogramas
+        // Pero la vista espera "Unidades" con "Sesiones" dentro.
+        // Reutilizaremos la lógica de "generar" pero poblando con datos existentes?
+        // O mejor: mapear lo que llega a la estructura de la vista.
+
+        // Estrategia:
+        // 1. Obtener unidades base (documentacion)
+        // 2. Mapear sesiones por numero_sesion
+        const cronogramasDB = response.data.planificacion
+
+
+        // Agrupar sesiones por semana/unidad para reconstruir la vista?
+        // La vista actual agrupa por UNIDAD.
+        // Pero el cronograma es plano.
+        // ¿Cómo sabe qué sesión pertenece a qué unidad?
+        // El cronograma no tiene unidad_id guardado (tiene tema_id, pero no unidad_id directo, aunque se puede inferir).
+        // En `generarPlanificacion`, asignamos sesiones a unidades secuencialmente.
+        // Si no guardamos esa relación, es difícil reconstruirla EXACTAMENTE igual.
+        // PERO, `savePlanificacion` guarda TODO el array.
+        // Si guardamos, el backend lo guarda plano.
+
+        // Revisando `generarPlanificacion`:
+        // Asigna sesiones a `planificacion.value` que es un array de UNIDADES.
+
+        // Si el backend solo devuelve cronogramas planos, PERDEMOS la agrupación por unidad visualmente
+        // a menos que la recalculemos o guardemos metadatos.
+
+        // SOLUCIÓN RAPIDA: Recalcular distribución basada en temas (igual que generar) pero usando los datos de DB.
+        // Ojo: Si el usuario editó las sesiones, queremos mantener sus cambios.
+
+        generarPlanificacion(false) // Generar estructura base sin notificar
+
+        // Ahora inyectar datos reales
+        planificacion.value.forEach(unidad => {
+            unidad.sesiones.forEach(sesionView => {
+                const encontrada = cronogramasDB.find(db => db.numero_sesion === sesionView.numeroGlobal)
+                if (encontrada) {
+                    sesionView.tema = encontrada.tema_id ? (encontrada.tema?.titulo || '') : (sesionView.tema || '') // TODO: Tema relation
+                    // Mapear campos de texto
+                    sesionView.conceptual = encontrada.contenido_conceptual
+                    sesionView.procedimental = encontrada.contenido_procedimental
+                    sesionView.actitudinal = encontrada.contenido_actitudinal
+                    sesionView.criteriosDesempeno = encontrada.criterios_desempeno
+                    sesionView.instrumentosEvaluacion = encontrada.instrumentos_evaluacion
+                    // ID real para updates futuros?
+                    // sesionView.id = encontrada.id
+                }
+            })
+        })
+
+        planificacionGenerada.value = true
+        $q.notify({ type: 'info', message: 'Planificación cargada', icon: 'cloud_download' })
+    }
+  } catch (err) {
+    console.error('Error cargando planificación', err)
+  }
+}
 
 /**
  * Cargar exámenes del rol subido por el Director
@@ -753,6 +847,11 @@ function generarPlanificacion() {
   const todasLasSesiones = []
   let sesionGlobal = 1
 
+  // Validar grupo seleccionado
+  if (!grupoSeleccionado.value) {
+    {$q.notify({ type: 'warning', message: 'Seleccione un grupo para generar la planificación', icon: 'warning' }); return}
+  }
+
   for (let semana = 1; semana <= totalSemanas.value; semana++) {
     const fechaSemanaInicio = new Date(fechaInicio)
     fechaSemanaInicio.setDate(fechaInicio.getDate() + (semana - 1) * 7)
@@ -780,6 +879,52 @@ function generarPlanificacion() {
           semana >= 14 && semana <= 15 ? '2do Parcial' :
             semana >= 18 && semana <= 19 ? 'Final' :
               semana === 20 ? '2da Instancia' : null),
+        grupo_id: grupoSeleccionado.value.value, // CORE: Vincular a grupo
+        tema: esExamen ? esExamen : '',
+        conceptual: esExamen ? '' : '',
+        procedimental: esExamen ? '' : '',
+        actitudinal: esExamen ? '' : '',
+        criteriosDesempeno: esExamen ? '' : '',
+        instrumentosEvaluacion: esExamen ? 'Examen escrito' : '',
+        modificado: false,
+        bloqueado: !!esExamen // Sesiones de examen no editables
+      })
+
+      sesionGlobal++
+    })
+  }
+  if (!grupoSeleccionado.value) {
+    {$q.notify({ type: 'warning', message: 'Seleccione un grupo para generar la planificación', icon: 'warning' }); return}
+  }
+
+  for (let semana = 1; semana <= totalSemanas.value; semana++) {
+    const fechaSemanaInicio = new Date(fechaInicio)
+    fechaSemanaInicio.setDate(fechaInicio.getDate() + (semana - 1) * 7)
+
+    // Generar sesiones para cada día de la semana según horarios
+    horarios.value.forEach((horario, sesionEnSemana) => {
+      const diaIndex = diasOptions.findIndex(d => d.value === horario.dia)
+      const fechaSesion = new Date(fechaSemanaInicio)
+      fechaSesion.setDate(fechaSemanaInicio.getDate() + diaIndex)
+
+      // Verificar si es la última sesión de una semana de examen
+      const esUltimaSesionSemana = sesionEnSemana === horarios.value.length - 1
+      const esExamen = esUltimaSesionSemana && SEMANAS_EXAMEN[semana]
+
+      todasLasSesiones.push({
+        id: sesionGlobal,
+        numeroGlobal: sesionGlobal,
+        semana,
+        semanaFechas: formatDate(fechaSemanaInicio),
+        dia: horario.dia,
+        fecha: formatDate(fechaSesion),
+        esExamen: !!esExamen,
+        tipoExamen: esExamen || null,
+        periodoExamen: esExamen || (semana >= 7 && semana <= 8 ? '1er Parcial' :
+          semana >= 14 && semana <= 15 ? '2do Parcial' :
+            semana >= 18 && semana <= 19 ? 'Final' :
+              semana === 20 ? '2da Instancia' : null),
+        grupo_id: grupoSeleccionado.value.value, // CORE: Vincular a grupo
         tema: esExamen ? esExamen : '',
         conceptual: esExamen ? '' : '',
         procedimental: esExamen ? '' : '',
@@ -949,12 +1094,33 @@ function ejecutarCopia() {
   $q.notify({ type: 'positive', message: `Planificación copiada de ${gestionACopiar.value}`, icon: 'content_copy' })
 }
 
-function guardarTodo() {
+async function guardarTodo() {
   guardando.value = true
-  setTimeout(() => {
-    guardando.value = false
+  try {
+    if (!grupoSeleccionado.value) {
+      $q.notify({ type: 'warning', message: 'Seleccione un grupo', icon: 'warning' })
+      return
+    }
+
+    const sesiones = []
+    planificacion.value.forEach(unidad => {
+      unidad.sesiones.forEach(sesion => {
+        sesiones.push(sesion)
+      })
+    })
+
+    await planificacionSemestralService.savePlanificacion(route.params.id, {
+      sesiones,
+      grupo_id: grupoSeleccionado.value.value
+    })
+
     $q.notify({ type: 'positive', message: 'Planificación guardada exitosamente', icon: 'save' })
-  }, 1000)
+  } catch (err) {
+    console.error('Error guardando:', err)
+    $q.notify({ type: 'negative', message: 'Error guardando planificación', icon: 'error' })
+  } finally {
+    guardando.value = false
+  }
 }
 
 function exportarPDF() {

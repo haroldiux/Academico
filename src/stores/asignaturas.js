@@ -13,16 +13,15 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
   const totalAsignaturas = computed(() => asignaturas.value.length)
 
   // Actions
-  async function fetchAsignaturas(sedeCode, careerCode, includeDetails = false, search = '') {
-    // Permite cargar sin filtros (carga "todas" las locales)
+  async function fetchAsignaturas(sedeId = null, carreraId = null, semestre = null, search = '') {
     loading.value = true
     error.value = null
     try {
-      // El backend espera branch_code y career_code
+      // Nuevos parámetros: sede_id, carrera_id, semestre
       const params = {}
-      if (sedeCode) params.branch_code = sedeCode
-      if (careerCode) params.career_code = careerCode
-      if (includeDetails) params.include_details = 1
+      if (sedeId) params.sede_id = sedeId
+      if (carreraId) params.carrera_id = carreraId
+      if (semestre) params.semestre = semestre
       if (search) params.search = search
       const response = await asignaturaService.getAsignaturas(params)
       asignaturas.value = response.data

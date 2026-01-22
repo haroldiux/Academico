@@ -14,32 +14,6 @@ export const ROLES = {
   EVALUACIONES: 'EVALUACIONES'
 }
 
-// Mapeo de nombres de rol de BD a constantes del frontend
-const ROLE_NAME_MAP = {
-  'SUPER ADMIN': ROLES.SUPER_ADMIN,
-  'SUPER_ADMIN': ROLES.SUPER_ADMIN,
-  'ADMIN': ROLES.ADMIN,
-  'VICERRECTORADO': ROLES.VICERRECTOR_NACIONAL,
-  'VICERRECTOR_NACIONAL': ROLES.VICERRECTOR_NACIONAL,
-  'VICERRECTOR NACIONAL': ROLES.VICERRECTOR_NACIONAL,
-  'VICERRECTOR_SEDE': ROLES.VICERRECTOR_SEDE,
-  'VICERRECTOR SEDE': ROLES.VICERRECTOR_SEDE,
-  'DIRECCION ACADEMICA': ROLES.DIRECCION_ACADEMICA,
-  'DIRECCION_ACADEMICA': ROLES.DIRECCION_ACADEMICA,
-  'DIRECCIÓN ACADÉMICA': ROLES.DIRECCION_ACADEMICA,
-  'DIRECTOR DE CARRERA': ROLES.DIRECTOR_CARRERA,
-  'DIRECTOR_CARRERA': ROLES.DIRECTOR_CARRERA,
-  'DOCENTE': ROLES.DOCENTE,
-  'EVALUACIONES': ROLES.EVALUACIONES
-}
-
-// Función para normalizar nombre de rol
-export function normalizeRoleName(roleName) {
-  if (!roleName) return ROLES.DOCENTE
-  const normalized = ROLE_NAME_MAP[roleName.toUpperCase().trim()]
-  return normalized || ROLES.DOCENTE
-}
-
 // Permisos por rol
 export const PERMISOS_ROL = {
   [ROLES.SUPER_ADMIN]: {
@@ -129,16 +103,18 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('auth_token', authToken)
       api.defaults.headers.common['Authorization'] = 'Bearer ' + authToken
 
-      // Configurar usuario - normalizar nombre de rol
-      const rolNombre = normalizeRoleName(user.rol?.nombre)
+      // Configurar usuario
+      // Usamos codigo (SUPER_ADMIN) si existe, sino el nombre
+      const rolNombre = user.rol?.codigo || user.rol?.nombre || 'DOCENTE'
+
       usuarioActual.value = {
         id: user.id,
         nombre: `${user.nombre || ''} ${user.apellido || ''}`.trim() || user.username,
         email: user.email,
         ci: user.ci,
         rol: rolNombre,
-        sede_id: user.docente?.sede_id || user.director?.sede_id || null,
-        carrera_id: user.director?.carrera_id || null,
+        sede_id: user.docente?.sede_id || null,
+        carrera_id: null,
         avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
         materias_asignadas: user.docente?.asignaturas?.map(a => ({
           id: a.id,
@@ -228,7 +204,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     if (alcanceActual === 'carrera') {
       return usuarioActual.value.carrera_id === carreraIdObjetivo &&
-        usuarioActual.value.sede_id === sedeIdObjetivo
+             usuarioActual.value.sede_id === sedeIdObjetivo
     }
     return false
   }
@@ -244,7 +220,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     if (alcanceActual === 'carrera') {
       return usuarioActual.value.carrera_id === carreraIdMateria &&
-        usuarioActual.value.sede_id === sedeIdMateria
+             usuarioActual.value.sede_id === sedeIdMateria
     }
     if (alcanceActual === 'asignado') {
       return usuarioActual.value.materias_asignadas?.includes(materiaId)

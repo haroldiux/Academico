@@ -126,7 +126,8 @@
 
         <template v-slot:body-cell-estado="props">
           <q-td :props="props">
-            <q-badge :color="props.row.activa ? 'positive' : 'grey-5'" text-color="white" class="q-px-sm" rounded>
+            <q-badge :color="props.row.activa ? 'green-2' : 'grey-2'"
+              :text-color="props.row.activa ? 'green-9' : 'grey-9'" class="q-px-sm" rounded>
               {{ props.row.activa ? 'Activa' : 'Inactiva' }}
             </q-badge>
           </q-td>
@@ -431,13 +432,9 @@ function filterCarreras(val, update) {
 // Watchers / Event Handlers
 async function onSedeChange() {
   filtros.value.carrera = null
-  // Si se selecciona una sede, cargar sus asignaturas locales
+  // Si se selecciona una sede, cargar sus asignaturas
   if (filtros.value.sede) {
-    const sede = sedesStore.getSedeById(filtros.value.sede)
-    if (sede?.codigo) {
-      // Cargar asignaturas de la sede seleccioanda (sin career_code)
-      await asignaturasStore.fetchAsignaturas(sede.codigo, null)
-    }
+    await asignaturasStore.fetchAsignaturas(filtros.value.sede, null, filtros.value.semestre)
   } else {
     // Si se limpia la sede, cargar TODO
     await asignaturasStore.fetchAsignaturas()
@@ -453,14 +450,12 @@ async function onCarreraChange() {
     }
   }
 
-  if (filtros.value.sede && filtros.value.carrera) {
-    const sede = sedesStore.getSedeById(filtros.value.sede)
-    const carrera = carrerasStore.getCarreraById(filtros.value.carrera)
-
-    if (sede?.codigo && carrera?.codigo) {
-      await asignaturasStore.fetchAsignaturas(sede.codigo, carrera.codigo)
-    }
-  }
+  // Cargar asignaturas con filtros actuales
+  await asignaturasStore.fetchAsignaturas(
+    filtros.value.sede,
+    filtros.value.carrera,
+    filtros.value.semestre
+  )
 }
 
 const totalHoras = computed(() =>
@@ -473,7 +468,7 @@ const totalCreditos = computed(() =>
 
 const docentesAsignados = computed(() => {
   const docentes = new Set()
-  asignaturasFiltradas.value.forEach(a => a.docentes?.forEach(d => docentes.add(typeof d === 'object'? d.id : d)))
+  asignaturasFiltradas.value.forEach(a => a.docentes?.forEach(d => docentes.add(typeof d === 'object' ? d.id : d)))
   return docentes.size
 })
 
@@ -494,9 +489,9 @@ function openDialog(asignatura = null) {
     // Deberiamos tenerlo si el backend lo retorna.
     // Aseguramos estructura:
     form.value = {
-        ...asignatura,
-        // Si no tenemos sede_id explicito, intentamos deducirlo del filtro o carrera
-        sede_id: asignatura.carrera_id ? carrerasStore.getCarreraById(asignatura.carrera_id)?.sede_id : null
+      ...asignatura,
+      // Si no tenemos sede_id explicito, intentamos deducirlo del filtro o carrera
+      sede_id: asignatura.carrera_id ? carrerasStore.getCarreraById(asignatura.carrera_id)?.sede_id : null
     }
   } else {
     editMode.value = false
@@ -524,17 +519,17 @@ function closeDialog() {
 
 async function guardarAsignatura() {
   try {
-      if (editMode.value) {
-        await asignaturasStore.updateAsignatura(form.value.id, form.value)
-        $q.notify({ type: 'positive', message: 'Asignatura actualizada correctamente' })
-      } else {
-        await asignaturasStore.createAsignatura(form.value)
-        $q.notify({ type: 'positive', message: 'Asignatura creada correctamente' })
-      }
-      closeDialog()
+    if (editMode.value) {
+      await asignaturasStore.updateAsignatura(form.value.id, form.value)
+      $q.notify({ type: 'positive', message: 'Asignatura actualizada correctamente' })
+    } else {
+      await asignaturasStore.createAsignatura(form.value)
+      $q.notify({ type: 'positive', message: 'Asignatura creada correctamente' })
+    }
+    closeDialog()
   } catch (error) {
-      console.error(error)
-      $q.notify({ type: 'negative', message: 'Error al guardar asignatura' })
+    console.error(error)
+    $q.notify({ type: 'negative', message: 'Error al guardar asignatura' })
   }
 }
 
@@ -559,12 +554,12 @@ function removeDocente(docente) {
 async function guardarDocentes() {
   if (asignaturaSeleccionada.value) {
     try {
-        await asignaturasStore.assignDocentes(asignaturaSeleccionada.value.id, docentesSeleccionados.value)
-        $q.notify({ type: 'positive', message: 'Docentes asignados correctamente' })
-        showDocentesDialog.value = false
+      await asignaturasStore.assignDocentes(asignaturaSeleccionada.value.id, docentesSeleccionados.value)
+      $q.notify({ type: 'positive', message: 'Docentes asignados correctamente' })
+      showDocentesDialog.value = false
     } catch (error) {
-        console.error(error)
-        $q.notify({ type: 'negative', message: 'Error al asignar docentes' })
+      console.error(error)
+      $q.notify({ type: 'negative', message: 'Error al asignar docentes' })
     }
   }
 }
@@ -572,11 +567,11 @@ async function guardarDocentes() {
 async function eliminarAsignatura(asignatura) {
   if (confirm(`¿Estás seguro de eliminar la asignatura "${asignatura.nombre}"?`)) {
     try {
-        await asignaturasStore.deleteAsignatura(asignatura.id)
-        $q.notify({ type: 'positive', message: 'Asignatura eliminada' })
+      await asignaturasStore.deleteAsignatura(asignatura.id)
+      $q.notify({ type: 'positive', message: 'Asignatura eliminada' })
     } catch (error) {
-        console.error(error)
-        $q.notify({ type: 'negative', message: 'Error al eliminar asignatura' })
+      console.error(error)
+      $q.notify({ type: 'negative', message: 'Error al eliminar asignatura' })
     }
   }
 }
@@ -604,11 +599,11 @@ function exportTable() {
       'Asignatura': row.nombre,
       'Sede': sedeNombre,
       'Carrera': row.carrera_nombre,
-      'Semestre': `${row.semestre}° Sem/Año`,
+      'Semestre': `${row.semestre || 0}° Sem/Año`,
       'Horas Teóricas': row.horas_teoricas || 0,
       'Horas Prácticas': row.horas_practicas || 0,
       'Carga Total': ((row.horas_teoricas || 0) + (row.horas_practicas || 0)) * 20,
-      'Créditos': row.creditos
+      'Créditos': row.creditos || 0
     }
   })
 
