@@ -38,7 +38,6 @@
         <p class="stat-label">Grupos a Cargo</p>
         <div class="stat-value-row">
           <span class="stat-value">{{ grupos.length }}</span>
-          <span class="stat-trend neutral">{{ grupos.join(', ') }}</span>
         </div>
       </div>
 
@@ -205,11 +204,28 @@ const greeting = computed(() => {
 })
 
 // Datos directamente del usuario logueado
-const misAsignaturas = computed(() => authStore.usuarioActual?.materias_asignadas || [])
-const misGrupos = computed(() => authStore.usuarioActual?.grupos || [])
+const misAsignaturas = computed(() => {
+    // Check nested first
+    if (authStore.usuarioActual?.docente?.asignaturas) return authStore.usuarioActual.docente.asignaturas;
+    // Fallback?
+    return authStore.usuarioActual?.materias_asignadas || [];
+})
+
+const misGrupos = computed(() => {
+    // Check nested first
+    if (authStore.usuarioActual?.docente?.grupos) return authStore.usuarioActual.docente.grupos;
+    // Fallback
+    return authStore.usuarioActual?.grupos || [];
+})
 
 // Sede del docente
 const sedeActual = computed(() => {
+  // First try nested object from backend (fixed in AuthController)
+  if (authStore.usuarioActual?.docente?.sede) {
+    return authStore.usuarioActual.docente.sede
+  }
+
+  // Fallback to store logic
   const sedeId = authStore.usuarioActual?.sede_id
   if (!sedeId) return null
   return sedesStore.sedes.find(s => s.id === sedeId)
@@ -225,8 +241,12 @@ const progresoGeneral = computed(() => {
   const total = misAsignaturas.value.reduce((sum, a) => sum + (a.progreso || 0), 0)
   return Math.round(total / misAsignaturas.value.length)
 })
-const temasCompletados = ref(12)
-const temasPendientes = ref(5)
+const temasCompletados = computed(() => {
+  return misAsignaturas.value.reduce((sum, a) => sum + (a.estadisticas?.completados || 0), 0)
+})
+const temasPendientes = computed(() => {
+  return misAsignaturas.value.reduce((sum, a) => sum + (a.estadisticas?.pendientes || 0), 0)
+})
 
 // Para el listado (usamos directamente las del authStore)
 const asignaturasFiltradas = misAsignaturas

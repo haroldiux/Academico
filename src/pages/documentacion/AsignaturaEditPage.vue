@@ -413,10 +413,13 @@
               <q-icon name="folder_open" color="primary" class="q-mr-sm" />
               Unidades de Aprendizaje
             </div>
-            <q-chip color="amber-2" text-color="amber-9">
-              <q-icon name="cloud_sync" class="q-mr-xs" />
-              Datos desde API externa
-            </q-chip>
+            <div class="row q-gutter-sm">
+                <q-btn unelevated color="primary" icon="add" label="Nueva Unidad" no-caps @click="abrirDialogoUnidad()" />
+                <q-chip color="amber-2" text-color="amber-9">
+                  <q-icon name="cloud_sync" class="q-mr-xs" />
+                  Datos desde API externa
+                </q-chip>
+            </div>
           </div>
 
           <q-list separator class="unidades-list">
@@ -439,6 +442,15 @@
                     :color="calcularProgresoUnidad(unidad) >= 80 ? 'green' : calcularProgresoUnidad(unidad) >= 50 ? 'amber' : 'red'"
                     rounded size="8px" style="width: 100px;" />
                   <span class="text-caption q-mt-xs">{{ calcularProgresoUnidad(unidad) }}% documentado</span>
+
+                  <div class="row q-gutter-xs q-mt-sm">
+                    <q-btn flat round dense icon="edit" color="orange" size="sm" @click.stop="abrirDialogoUnidad(unidad)">
+                        <q-tooltip>Editar Unidad</q-tooltip>
+                    </q-btn>
+                    <q-btn flat round dense icon="delete" color="red" size="sm" @click.stop="confirmarEliminarUnidad(unidad)">
+                         <q-tooltip>Eliminar Unidad</q-tooltip>
+                    </q-btn>
+                  </div>
                 </q-item-section>
               </template>
 
@@ -458,7 +470,7 @@
 
               <!-- Lista de Temas -->
               <q-list separator class="q-mx-lg q-mb-md">
-                <q-item v-for="tema in unidad.temas" :key="tema.id" clickable @click="irATema(unidad, tema)"
+                <q-item v-for="(tema, index) in unidad.temas" :key="tema.id" clickable @click="irATema(unidad, tema)"
                   class="rounded-borders q-mb-xs tema-item">
                   <q-item-section avatar>
                     <q-avatar color="orange-2" text-color="orange-9" size="36px">
@@ -481,12 +493,30 @@
                         dense>
                         {{ calcularProgresoTema(tema) }}%
                       </q-chip>
-                      <q-btn flat round dense icon="edit" color="primary" size="sm" @click.stop="irATema(unidad, tema)">
-                        <q-tooltip>Documentar Tema</q-tooltip>
+
+                      <!-- Reordering Buttons -->
+                      <q-btn flat round dense icon="arrow_upward" color="grey-7" size="sm"
+                             @click.stop="moverTema(unidad, tema, 'up')" :disable="index === 0">
+                        <q-tooltip>Subir</q-tooltip>
+                      </q-btn>
+                      <q-btn flat round dense icon="arrow_downward" color="grey-7" size="sm"
+                             @click.stop="moverTema(unidad, tema, 'down')" :disable="index === unidad.temas.length - 1">
+                        <q-tooltip>Bajar</q-tooltip>
+                      </q-btn>
+
+                      <q-btn flat round dense icon="edit" color="primary" size="sm" @click.stop="abrirDialogoTema(unidad, tema)">
+                        <q-tooltip>Editar Título</q-tooltip>
+                      </q-btn>
+                      <q-btn flat round dense icon="delete" color="red" size="sm" @click.stop="confirmarEliminarTema(tema)">
+                        <q-tooltip>Eliminar Tema</q-tooltip>
                       </q-btn>
                     </div>
                   </q-item-section>
                 </q-item>
+
+                <div class="row justify-center q-mt-sm">
+                    <q-btn outline color="primary" icon="add" label="Nuevo Tema" size="sm" no-caps @click="abrirDialogoTema(unidad)" />
+                </div>
               </q-list>
             </q-expansion-item>
           </q-list>
@@ -568,6 +598,17 @@
               <q-icon name="attach_file" />
             </template>
           </q-file>
+
+          <div class="q-mt-md q-gutter-sm bg-grey-1 q-pa-sm rounded-borders">
+            <div class="text-subtitle2 text-weight-bold q-mb-xs">¿Qué desea importar?</div>
+            <div class="row">
+               <q-checkbox class="col-12" v-model="importOpciones.datos" label="Plan de Clases (Justificación, Objetivos, Metodología)" dense color="teal" />
+               <q-checkbox class="col-12" v-model="importOpciones.unidades" label="Plan Analítico (Unidades, Temas y Contenidos)" dense color="teal" />
+            </div>
+            <div class="text-caption text-grey-7 q-pl-sm">
+              * La bibliografía se actualizará automáticamente con el Plan de Clases.
+            </div>
+          </div>
         </q-card-section>
 
         <q-card-actions align="right" class="q-pt-none q-pb-md q-pr-md">
@@ -576,6 +617,58 @@
             :disable="!archivoImportar" @click="procesarImportacion" no-caps />
         </q-card-actions>
       </q-card>
+    </q-dialog>
+    <!-- Dialog Unidad -->
+    <q-dialog v-model="dialogUnidad" persistent>
+        <q-card style="width: 400px; max-width: 95vw;">
+            <q-card-section>
+                <div class="text-h6">{{ editandoUnidad ? 'Editar Unidad' : 'Nueva Unidad' }}</div>
+            </q-card-section>
+
+            <q-card-section>
+                <q-form @submit="guardarUnidad" class="q-gutter-md">
+                    <q-input v-model.number="formUnidad.numero" label="Número" type="number" outlined dense :readonly="editandoUnidad" />
+                    <q-input v-model="formUnidad.titulo" label="Título" outlined dense autofocus />
+                    <q-input v-model.number="formUnidad.horas" label="Horas (Referencial)" type="number" outlined dense />
+
+                    <div class="row justify-end q-gutter-sm q-mt-md">
+                        <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
+                        <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps />
+                    </div>
+                </q-form>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
+
+    <!-- Dialog Tema -->
+    <q-dialog v-model="dialogTema" persistent>
+        <q-card style="width: 500px; max-width: 95vw;">
+            <q-card-section>
+                <div class="text-h6">{{ editandoTema ? 'Editar Tema' : 'Nuevo Tema' }}</div>
+                <div class="text-caption text-grey" v-if="unidadSeleccionada">
+                    Unidad {{ unidadSeleccionada.numero }}: {{ unidadSeleccionada.titulo }}
+                </div>
+            </q-card-section>
+
+            <q-card-section>
+                <q-form @submit="guardarTema" class="q-gutter-md">
+                    <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus />
+                    <div class="row q-col-gutter-sm">
+                         <div class="col-6">
+                            <q-input v-model.number="formTema.horas_teoricas" label="Horas Teóricas" type="number" outlined dense />
+                         </div>
+                         <div class="col-6">
+                            <q-input v-model.number="formTema.horas_practicas" label="Horas Prácticas" type="number" outlined dense />
+                         </div>
+                    </div>
+
+                    <div class="row justify-end q-gutter-sm q-mt-md">
+                        <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
+                        <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps />
+                    </div>
+                </q-form>
+            </q-card-section>
+        </q-card>
     </q-dialog>
   </q-page>
 </template>
@@ -602,6 +695,130 @@ const authStore = useAuthStore()
 // Estado
 const tabActual = ref('datos')
 const asignatura = computed(() => store.asignaturaActual)
+
+
+// Opciones de Importación
+const importOpciones = ref({
+  datos: true,
+  unidades: true
+})
+
+// --- CRUD Unidades & Temas ---
+const dialogUnidad = ref(false)
+const editandoUnidad = ref(false)
+const formUnidad = ref({ id: null, titulo: '', numero: 1, horas: 0 })
+
+const dialogTema = ref(false)
+const editandoTema = ref(false)
+const unidadSeleccionada = ref(null)
+const formTema = ref({ id: null, titulo: '', horas_teoricas: 0, horas_practicas: 0 })
+
+// Unidades
+function abrirDialogoUnidad(unidad = null) {
+    editandoUnidad.value = !!unidad
+    if (unidad) {
+        formUnidad.value = { ...unidad }
+    } else {
+        // Calcular siguiente numero
+        const nextNum = (asignatura.value?.unidades?.length || 0) + 1
+        formUnidad.value = { id: null, titulo: '', numero: nextNum, horas: 0 }
+    }
+    dialogUnidad.value = true
+}
+
+async function guardarUnidad() {
+    try {
+        if (editandoUnidad.value) {
+            await store.updateUnidad(formUnidad.value.id, formUnidad.value)
+            $q.notify({ type: 'positive', message: 'Unidad actualizada' })
+        } else {
+            await store.createUnidad(asignatura.value.id, formUnidad.value)
+            $q.notify({ type: 'positive', message: 'Unidad creada' })
+        }
+        dialogUnidad.value = false
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Error al guardar unidad' })
+    }
+}
+
+function confirmarEliminarUnidad(unidad) {
+    $q.dialog({
+        title: 'Eliminar Unidad',
+        message: `¿Estás seguro de eliminar la Unidad ${unidad.numero}: ${unidad.titulo}? Se eliminarán también sus temas.`,
+        cancel: true,
+        persistent: true
+    }).onOk(async () => {
+        try {
+            await store.deleteUnidad(unidad.id)
+            $q.notify({ type: 'positive', message: 'Unidad eliminada' })
+        } catch (e) {
+            console.error(e)
+            $q.notify({ type: 'negative', message: 'Error al eliminar unidad' })
+        }
+    })
+}
+
+// Temas
+function abrirDialogoTema(unidad, tema = null) {
+    unidadSeleccionada.value = unidad
+    editandoTema.value = !!tema
+    if (tema) {
+        formTema.value = { ...tema }
+    } else {
+        formTema.value = { id: null, titulo: '', horas_teoricas: 0, horas_practicas: 0 }
+    }
+    dialogTema.value = true
+}
+
+async function guardarTema() {
+    try {
+        if (editandoTema.value) {
+            // Nota: updateTema en store actualiza titulo y horas
+            await store.updateTema(formTema.value.id, formTema.value)
+            $q.notify({ type: 'positive', message: 'Tema actualizado' })
+        } else {
+            await store.createTema(unidadSeleccionada.value.id, formTema.value)
+            $q.notify({ type: 'positive', message: 'Tema creado' })
+        }
+        dialogTema.value = false
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Error al guardar tema' })
+    }
+}
+
+function confirmarEliminarTema(tema) {
+    if (!tema || !tema.id) {
+        console.error("Tema inválido para eliminar:", tema)
+        return
+    }
+    $q.dialog({
+        title: 'Eliminar Tema',
+        message: `¿Estás seguro de eliminar el tema "${tema.titulo}"?`,
+        cancel: true,
+        persistent: true
+    }).onOk(async () => {
+        try {
+            await store.deleteTema(tema.id)
+            $q.notify({ type: 'positive', message: 'Tema eliminado' })
+        } catch (e) {
+            console.error(e)
+            $q.notify({ type: 'negative', message: 'Error al eliminar tema' })
+        }
+    })
+}
+
+async function moverTema(unidad, tema, direction) {
+    try {
+        await store.moveTema(unidad.id, tema.id, direction)
+        // Optimistic update is handled in store, but success notification is nice
+        // $q.notify({ type: 'positive', message: 'Orden actualizado', timeout: 500 })
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Error al mover tema' })
+    }
+}
 
 // Reglas de Negocio para Edición
 const esDirectorOAdmin = computed(() => {
@@ -803,10 +1020,27 @@ const dialogImportar = ref(false)
 const archivoImportar = ref(null)
 
 const puedeImportar = computed(() => {
-  // Solo Sede Cochabamba (ID 1) y (Docente Titular o Director/Admin) via whitelist existente
-  // Segun regla: "unicamente para los docentes de la sede cochabamba" y "Director"
-  // Reutilizamos esDocenteCochabamba o esDirectorOAdmin
-  return esDirectorOAdmin.value || esDocenteCochabamba.value
+  // 1. Debe ser Cochabamba (Sede 1)
+  // Verificamos la asignatura actual
+  let esSedeCochabamba = false
+
+  // Check main 'carrera' object
+  if (asignatura.value?.carrera?.sede_id == 1) esSedeCochabamba = true
+
+  // Check 'carreras' array
+  if (asignatura.value?.carreras?.some(c => c.sede_id == 1)) esSedeCochabamba = true
+
+  // Check direct prop
+  if (asignatura.value?.sede_id == 1) esSedeCochabamba = true
+
+  if (!esSedeCochabamba) return false
+
+  // 2. Roles permitidos: Director/Admin o Docente de Cochabamba
+  // Convert auth sede_id to number for comparison
+  const authSede = Number(authStore.usuarioActual?.sede_id)
+  const esDocenteCochabamba = authSede === 1
+
+  return esDirectorOAdmin.value || esDocenteCochabamba
 })
 
 function abrirDialogoImportar() {
@@ -818,7 +1052,14 @@ async function procesarImportacion() {
   if (!archivoImportar.value) return
 
   try {
-    await store.importarWord(asignatura.value.id, archivoImportar.value)
+    // Vincular bibliografía al Plan de Clases (datos) O al Plan Analítico (unidades)
+    // El usuario indicó que la bibliografía está en ambos y debe importarse.
+    const opcionesEnvio = {
+      ...importOpciones.value,
+      bibliografia: importOpciones.value.datos || importOpciones.value.unidades
+    }
+
+    await store.importarWord(asignatura.value.id, archivoImportar.value, opcionesEnvio)
     // El store ya actualiza el estado local y recarga si es necesario
     $q.notify({
       type: 'positive',
