@@ -488,9 +488,8 @@
                   <q-item-section>
                     <q-item-label class="text-weight-medium">{{ tema.titulo }}</q-item-label>
                     <q-item-label caption>
-                      {{ tema.horas }}h •
-                      {{ tema.logros_esperados?.length || 0 }} logros •
-                      {{ tema.indicadores_logro?.length || 0 }} indicadores
+                      {{ countLogros(tema) }} logros •
+                      {{ countIndicadores(tema) }} indicadores
                     </q-item-label>
                   </q-item-section>
                   <q-item-section side>
@@ -664,14 +663,7 @@
             <q-card-section>
                 <q-form @submit="guardarTema" class="q-gutter-md">
                     <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus />
-                    <div class="row q-col-gutter-sm">
-                         <div class="col-6">
-                            <q-input v-model.number="formTema.horas_teoricas" label="Horas Teóricas" type="number" outlined dense />
-                         </div>
-                         <div class="col-6">
-                            <q-input v-model.number="formTema.horas_practicas" label="Horas Prácticas" type="number" outlined dense />
-                         </div>
-                    </div>
+                    <!-- Horas removed as per request -->
 
                     <div class="row justify-end q-gutter-sm q-mt-md">
                         <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
@@ -694,6 +686,21 @@ import { useSedesStore } from 'src/stores/sedes'
 import { useAuthStore } from 'src/stores/auth'
 import { generarPlanDeClase, generarProgramaAsignatura } from 'src/services/pdfService'
 import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
+
+// Helpers para contar logros e indicadores (consistente con backend/store)
+function countLogros(tema) {
+  const logros = tema.logros_esperados || tema.logros || []
+  return logros.length
+}
+
+function countIndicadores(tema) {
+  // Si existe array plano
+  if (tema.indicadores_logro?.length) return tema.indicadores_logro.length
+
+  // Si no, contar anidados en logros
+  const logros = tema.logros_esperados || tema.logros || []
+  return logros.reduce((acc, logro) => acc + (logro.indicadores?.length || 0), 0)
+}
 
 const route = useRoute()
 const router = useRouter()

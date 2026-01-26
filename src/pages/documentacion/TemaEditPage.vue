@@ -14,7 +14,7 @@
           <span class="text-gradient">{{ tema?.titulo || 'Cargando...' }}</span>
         </h4>
         <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
-          Unidad {{ unidad?.numero }}: {{ unidad?.titulo }} • {{ tema?.horas }} horas
+          Unidad {{ unidad?.numero }}: {{ unidad?.titulo }}
         </p>
       </div>
       <div class="col-auto row q-gutter-sm">
@@ -470,34 +470,40 @@
                     <q-card-section class="q-gutter-md">
                       <q-select
                         v-model="formTema.evaluacion.formativa.actividades"
-                        :options="store.opcionesEvaluacionFormativa"
+                        :options="optsEvalFormativaActividades"
+                        @update:model-value="val => checkOtros(val, 'formativa', 'actividades')"
                         label="Actividades y Técnicas"
                         outlined
                         dense
                         multiple
                         use-chips
                         emit-value
+                        map-options
                         hint="Seleccione una o más actividades"
                       />
                       <q-select
                         v-model="formTema.evaluacion.formativa.instrumentos"
-                        :options="store.opcionesInstrumentosFormativa"
+                        :options="optsEvalFormativaInstrumentos"
+                        @update:model-value="val => checkOtros(val, 'formativa', 'instrumentos')"
                         label="Instrumentos"
                         outlined
                         dense
                         multiple
                         use-chips
                         emit-value
+                        map-options
                       />
                       <q-select
                         v-model="formTema.evaluacion.formativa.evidencias"
-                        :options="store.opcionesEvidenciasFormativa"
+                        :options="optsEvalFormativaEvidencias"
+                        @update:model-value="val => checkOtros(val, 'formativa', 'evidencias')"
                         label="Evidencias"
                         outlined
                         dense
                         multiple
                         use-chips
                         emit-value
+                        map-options
                       />
                     </q-card-section>
                   </q-card>
@@ -514,34 +520,40 @@
                     <q-card-section class="q-gutter-md">
                       <q-select
                         v-model="formTema.evaluacion.sumativa.actividades"
-                        :options="store.opcionesEvaluacionSumativa"
+                        :options="optsEvalSumativaActividades"
+                        @update:model-value="val => checkOtros(val, 'sumativa', 'actividades')"
                         label="Actividades y Técnicas"
                         outlined
                         dense
                         multiple
                         use-chips
                         emit-value
+                        map-options
                         hint="Seleccione una o más actividades"
                       />
                       <q-select
                         v-model="formTema.evaluacion.sumativa.instrumentos"
-                        :options="store.opcionesInstrumentosSumativa"
+                        :options="optsEvalSumativaInstrumentos"
+                        @update:model-value="val => checkOtros(val, 'sumativa', 'instrumentos')"
                         label="Instrumentos"
                         outlined
                         dense
                         multiple
                         use-chips
                         emit-value
+                        map-options
                       />
                       <q-select
                         v-model="formTema.evaluacion.sumativa.evidencias"
-                        :options="store.opcionesEvidenciasSumativa"
+                        :options="optsEvalSumativaEvidencias"
+                        @update:model-value="val => checkOtros(val, 'sumativa', 'evidencias')"
                         label="Evidencias"
                         outlined
                         dense
                         multiple
                         use-chips
                         emit-value
+                        map-options
                       />
                     </q-card-section>
                   </q-card>
@@ -677,6 +689,22 @@
         </div>
       </q-card>
     </q-dialog>
+
+    <!-- Dialog: Especificar "Otros" -->
+    <q-dialog v-model="dialogOtros" persistent>
+      <q-card style="width: 500px; max-width: 95vw; border-radius: 16px;">
+        <div class="dialog-header" style="background: linear-gradient(135deg, #7e57c2, #9575cd);">
+          <div class="dialog-header-title"><q-icon name="edit_note" size="28px" />Especificar Otra Opción</div>
+        </div>
+        <q-card-section class="q-pt-lg">
+          <q-input v-model="textoOtros" outlined label="Descripción" placeholder="Escribe aquí el valor personalizado..." autofocus @keyup.enter="guardarOtros" />
+        </q-card-section>
+        <div class="dialog-actions">
+          <q-btn flat label="Cancelar" color="grey" @click="cancelarOtros" no-caps />
+          <q-btn unelevated label="Agregar" color="deep-purple" @click="guardarOtros" no-caps />
+        </div>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -800,6 +828,78 @@ const opcionesBibliografias = computed(() => {
     value: b.id
   }))
 })
+
+// ==========================================
+// LÓGICA "OTROS" (EVALUACIÓN)
+// ==========================================
+const dialogOtros = ref(false)
+const textoOtros = ref('')
+const contextoOtros = ref({ seccion: '', campo: '' })
+
+// Helpers para opciones que incluyen "Otros" y valores personalizados ya guardados
+function getOpcionesConOtros(listaBase, valoresActuales) {
+  const base = listaBase.map(o => ({ label: o, value: o }))
+  const otrosOption = { label: 'Otros (Especificar)', value: 'OTROS' }
+
+  // Incluir valores que ya están en el modelo pero no están en la lista base (son "otros" guardados previamente)
+  const personalizados = (valoresActuales || [])
+    .filter(val => val !== 'OTROS' && !listaBase.includes(val))
+    .map(val => ({ label: val, value: val }))
+
+  // Unir todo: Base + Personalizados únicos + Opción "Otros"
+  // Usamos Map para evitar duplicados visuales si por error existen
+  const map = new Map()
+  base.forEach(o => map.set(o.value, o))
+  personalizados.forEach(p => map.set(p.value, p))
+
+  return [...Array.from(map.values()), otrosOption]
+}
+
+// Computed Options para cada selector
+const optsEvalFormativaActividades = computed(() => getOpcionesConOtros(store.opcionesEvaluacionFormativa, formTema.value.evaluacion.formativa.actividades))
+const optsEvalFormativaInstrumentos = computed(() => getOpcionesConOtros(store.opcionesInstrumentosFormativa, formTema.value.evaluacion.formativa.instrumentos))
+const optsEvalFormativaEvidencias = computed(() => getOpcionesConOtros(store.opcionesEvidenciasFormativa, formTema.value.evaluacion.formativa.evidencias))
+
+const optsEvalSumativaActividades = computed(() => getOpcionesConOtros(store.opcionesEvaluacionSumativa, formTema.value.evaluacion.sumativa.actividades))
+const optsEvalSumativaInstrumentos = computed(() => getOpcionesConOtros(store.opcionesInstrumentosSumativa, formTema.value.evaluacion.sumativa.instrumentos))
+const optsEvalSumativaEvidencias = computed(() => getOpcionesConOtros(store.opcionesEvidenciasSumativa, formTema.value.evaluacion.sumativa.evidencias))
+
+function checkOtros(val, tipo, campo) {
+  if (val && val.includes('OTROS')) {
+    contextoOtros.value = { seccion: tipo, campo: campo }
+    textoOtros.value = ''
+    dialogOtros.value = true
+  }
+}
+
+function guardarOtros() {
+  if (!textoOtros.value.trim()) {
+    cancelarOtros()
+    return
+  }
+
+  const { seccion, campo } = contextoOtros.value
+  const array = formTema.value.evaluacion[seccion][campo]
+
+  // Remover 'OTROS' y agregar el texto nuevo
+  const newArray = array.filter(v => v !== 'OTROS')
+  newArray.push(textoOtros.value.trim())
+
+  formTema.value.evaluacion[seccion][campo] = newArray
+
+  dialogOtros.value = false
+  textoOtros.value = ''
+}
+
+function cancelarOtros() {
+  const { seccion, campo } = contextoOtros.value
+  if (seccion && campo) {
+    const array = formTema.value.evaluacion[seccion][campo]
+    formTema.value.evaluacion[seccion][campo] = array.filter(v => v !== 'OTROS')
+  }
+  dialogOtros.value = false
+  textoOtros.value = ''
+}
 
 // Función local para calcular progreso
 function calcularProgresoLocal(seccion) {
