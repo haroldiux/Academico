@@ -134,7 +134,13 @@ export const useAuthStore = defineStore('auth', () => {
         email: user.email,
         ci: user.ci,
         rol: rolNombre,
-        sede_id: user.docente?.sede_id || null,
+        // Fix: prioritize docente.sede_id, then user.sede_id (if any), then null
+        sede_id: user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || null,
+        // Persist full sede object for UI use if available
+        docente: {
+            ...user.docente,
+            sede: user.docente?.sede || null
+        },
         carrera_id: null,
         avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
         materias_asignadas: user.docente?.asignaturas?.map(a => ({
@@ -142,14 +148,17 @@ export const useAuthStore = defineStore('auth', () => {
           nombre: a.nombre,
           codigo: a.codigo,
           semestre: a.semestre,
-          progreso: 0,
+          // Map real progress from backend accessor
+          progreso: a.progreso || 0,
+          estadisticas: a.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
           pivot: a.pivot ? {
             grupo: a.pivot.grupo,
             aula: a.pivot.aula,
             horario: a.pivot.horario
           } : null
         })) || [],
-        grupos: user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || []
+        // Fix: Load groups from docente.grupos relation, fallback to legacy
+        grupos: user.docente?.grupos || (user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || [])
       }
 
       isAuthenticated.value = true

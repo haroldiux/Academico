@@ -114,9 +114,10 @@
                     {{ asignatura.sede_nombre }}
                   </q-chip>
                   <!-- Grupos asignados (para docentes) -->
-                  <q-chip v-if="authStore.rol === 'DOCENTE'" size="sm" color="orange-2" text-color="orange-9" dense
-                    icon="groups">
-                    {{ asignatura.pivot?.grupo || 'Sin Grupo' }}
+                  <!-- Grupos asignados (para docentes) -->
+                  <q-chip v-if="authStore.rol === 'DOCENTE' && getGruposCount(asignatura.id) > 0"
+                    size="sm" color="orange-2" text-color="orange-9" dense icon="groups">
+                     {{ getGruposCount(asignatura.id) }} Grupo{{ getGruposCount(asignatura.id) > 1 ? 's' : '' }}
                   </q-chip>
                 </div>
                 <!-- Docente -->
@@ -264,7 +265,7 @@ onMounted(async () => {
     sedesStore.fetchSedes(),
     carrerasStore.fetchCarreras()
   ])
-  
+
   // Si es Director de Carrera, auto-configurar su sede y carrera
   if (esDirectorCarrera.value) {
     // La sede del director viene del usuario
@@ -272,7 +273,7 @@ onMounted(async () => {
     // La carrera del director viene del usuario
     filtros.value.carrera = authStore.carreraId || authStore.usuarioActual?.carrera_id || ''
   }
-  
+
   await fetchData()
 })
 
@@ -413,7 +414,14 @@ function calcularProgreso(asignatura) {
   if (logros >= 5) completado += 20
   else if (logros >= 2) completado += 10
 
-  return Math.round((completado / total) * 100)
+    return Math.round((completado / total) * 100)
+}
+
+function getGruposCount(asignaturaId) {
+  // Access groups from auth store directly
+  const grupos = authStore.usuarioActual?.grupos || []
+  // Filter by asignatura_id
+  return grupos.filter(g => g.asignatura_id == asignaturaId).length
 }
 
 function irADocumentacion(id) {

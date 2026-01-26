@@ -30,7 +30,10 @@ export const useCarrerasStore = defineStore('carreras', () => {
   function getCarrerasBySede(sedeId) {
     if (!sedeId) return carreras.value // Retornar todo si no hay sede
     // Usar == para comparar string/number indistintamente
-    return carreras.value.filter(c => c.sede_id == sedeId && c.activo)
+    return carreras.value.filter(c => {
+      const match = (c.sede_id == sedeId) || (c.sedes_ids && c.sedes_ids.includes(Number(sedeId)))
+      return match && c.activo
+    })
   }
 
   function getCarrerasByNombre(nombre) {
@@ -51,7 +54,13 @@ export const useCarrerasStore = defineStore('carreras', () => {
     getCarrerasByNombre,
     // Nuevas funciones para API externa
     getCarrerasOptions: (sedeId = null) => {
-      const lista = sedeId ? carreras.value.filter(c => c.sede_id == sedeId && c.activo) : carreras.value.filter(c => c.activo)
+      const lista = sedeId
+        ? carreras.value.filter(c => {
+            const match = (c.sede_id == sedeId) || (c.sedes_ids && c.sedes_ids.includes(Number(sedeId)))
+            return match && c.activo
+          })
+        : carreras.value.filter(c => c.activo)
+
       return lista.map(c => ({
         label: c.nombre,
         value: c.id,
