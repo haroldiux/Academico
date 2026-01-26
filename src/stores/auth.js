@@ -158,7 +158,13 @@ export const useAuthStore = defineStore('auth', () => {
           } : null
         })) || [],
         // Fix: Load groups from docente.grupos relation, fallback to legacy
-        grupos: user.docente?.grupos || (user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || [])
+        grupos: user.docente?.grupos || (user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || []),
+        // Director data
+        director: user.director ? {
+            ...user.director,
+            carrera: user.director.carrera,
+            carreras: user.director.carreras // If multiple
+        } : null
       }
 
       isAuthenticated.value = true

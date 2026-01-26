@@ -129,6 +129,12 @@ const routes = [
             name: 'director-asignaturas',
             component: () => import('pages/director/AsignaturasDirectorPage.vue'),
             meta: { title: 'Plan de Estudios', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+          },
+          {
+            path: 'materias-comunes',
+            name: 'director-materias-comunes',
+            component: () => import('pages/director/MateriasComunesPage.vue'),
+            meta: { title: 'Materias Comunes', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
           }
         ]
       },

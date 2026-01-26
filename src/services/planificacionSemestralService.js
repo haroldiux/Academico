@@ -22,5 +22,13 @@ export default {
    */
   saveConfig(asignaturaId, data) {
     return api.post(`/planificacion-semestral/${asignaturaId}/config`, data)
+  },
+
+  /**
+   * Copia la planificación de una gestión anterior.
+   * data: { gestion_origen: '2025-II' }
+   */
+  copiarPlanificacion(asignaturaId, data) {
+    return api.post(`/planificacion-semestral/${asignaturaId}/copiar`, data)
   }
 }

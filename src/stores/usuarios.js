@@ -38,7 +38,10 @@ export const useUsuariosStore = defineStore('usuarios', () => {
         rolNombre: u.rol ? u.rol.nombre : '',
         rolId: u.rol_id,
         // Adapt status boolean to logic if needed (frontend uses 'activo'/'inactivo' strings in mock?)
-        estado: u.estado ? 'activo' : 'inactivo'
+        estado: u.estado ? 'activo' : 'inactivo',
+        // Map Resolved Names
+        carrera: u.carrera_nombre || u.carrera,
+        sedeNombre: u.sede_nombre || (u.sede ? u.sede.nombre : 'N/A')
       }))
     } catch (err) {
       console.error(err)
@@ -62,6 +65,8 @@ export const useUsuariosStore = defineStore('usuarios', () => {
       const payload = {
         ...usuario,
         rol_id: usuario.rolId,
+        sede_id: usuario.sedeId,
+        carrera: Array.isArray(usuario.carrera) ? usuario.carrera.join(', ') : usuario.carrera,
         estado: usuario.estado === 'activo'
       }
       const response = await userService.createUsuario(payload)
@@ -76,6 +81,10 @@ export const useUsuariosStore = defineStore('usuarios', () => {
     try {
        const payload = { ...datosActualizados }
        if (payload.rolId) payload.rol_id = payload.rolId;
+       if (payload.sedeId) payload.sede_id = payload.sedeId;
+       if (payload.carrera && Array.isArray(payload.carrera)) {
+           payload.carrera = payload.carrera.join(', ');
+       }
        if (payload.estado) payload.estado = payload.estado === 'activo';
 
        await userService.updateUsuario(id, payload)

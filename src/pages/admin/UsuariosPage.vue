@@ -200,91 +200,171 @@
 
     <!-- Dialog Nuevo/Editar Usuario -->
     <q-dialog v-model="showDialogUsuario" persistent>
-      <q-card style="width: 650px; max-width: 95vw; border-radius: 16px;">
-        <div class="dialog-header">
-          <div class="dialog-header-title">
-            <q-icon :name="editando ? 'edit' : 'person_add'" size="28px" />
+        <q-card style="width: 700px; max-width: 95vw; border-radius: 20px; overflow: hidden;">
+        <div class="dialog-header row items-center justify-between q-py-md q-px-lg">
+          <div class="text-h6 text-white text-weight-bold row items-center">
+            <q-icon :name="editando ? 'edit' : 'person_add'" size="28px" class="q-mr-sm" />
             {{ editando ? 'Editar Usuario' : 'Nuevo Usuario' }}
           </div>
+          <q-btn flat round dense icon="close" color="white" v-close-popup />
         </div>
 
-        <q-card-section class="q-pt-lg">
-          <q-form @submit.prevent="guardarUsuario" class="q-gutter-md">
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-6">
-                <q-input v-model="formUsuario.nombre" label="Nombre" outlined dense
-                  :rules="[val => !!val || 'El nombre es requerido']">
-                  <template v-slot:prepend>
-                    <q-icon name="person" color="primary" />
-                  </template>
-                </q-input>
+        <q-separator />
+
+        <q-card-section class="q-pa-lg scroll" style="max-height: 70vh;">
+          <q-form @submit.prevent="guardarUsuario" class="q-gutter-y-lg">
+
+            <!-- Sección: Información Personal -->
+            <div>
+              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase" style="letter-spacing: 0.5px;">
+                <q-icon name="badge" class="q-mr-xs" /> Información Personal
               </div>
-              <div class="col-12 col-md-6">
-                <q-input v-model="formUsuario.apellido" label="Apellido" outlined dense
-                  :rules="[val => !!val || 'El apellido es requerido']">
-                  <template v-slot:prepend>
-                    <q-icon name="person" color="primary" />
-                  </template>
-                </q-input>
+              <div class="row q-col-gutter-md">
+                <div class="col-12 col-md-6">
+                  <q-input v-model="formUsuario.nombre" label="Nombre" outlined dense
+                    :rules="[val => !!val || 'El nombre es requerido']" class="input-rounded">
+                    <template v-slot:prepend>
+                      <q-icon name="person_outline" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
+                <div class="col-12 col-md-6">
+                  <q-input v-model="formUsuario.apellido" label="Apellido" outlined dense
+                    :rules="[val => !!val || 'El apellido es requerido']" class="input-rounded">
+                    <template v-slot:prepend>
+                      <q-icon name="person_outline" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
+                <div class="col-12 col-md-6">
+                  <q-input v-model="formUsuario.ci" label="Cédula de Identidad" outlined dense
+                    :rules="[val => !!val || 'El CI es requerido']" class="input-rounded">
+                    <template v-slot:prepend>
+                      <q-icon name="subtitles" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
+                <div class="col-12 col-md-6">
+                  <q-input v-model="formUsuario.telefono" label="Teléfono / Celular" outlined dense class="input-rounded">
+                    <template v-slot:prepend>
+                      <q-icon name="phone_iphone" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
             </div>
 
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-6">
-                <q-input v-model="formUsuario.ci" label="Cédula de Identidad" outlined dense
-                  :rules="[val => !!val || 'El CI es requerido']">
-                  <template v-slot:prepend>
-                    <q-icon name="badge" color="primary" />
-                  </template>
-                </q-input>
+            <!-- Sección: Cuenta y Contacto -->
+            <div>
+              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase" style="letter-spacing: 0.5px;">
+                <q-icon name="contact_mail" class="q-mr-xs" /> Cuenta
               </div>
-              <div class="col-12 col-md-6">
-                <q-input v-model="formUsuario.telefono" label="Teléfono" outlined dense>
-                  <template v-slot:prepend>
-                    <q-icon name="phone" color="primary" />
-                  </template>
-                </q-input>
+              <q-input v-model="formUsuario.email" label="Correo Electrónico Institucional" outlined dense type="email"
+                :rules="[
+                  val => !!val || 'El email es requerido',
+                  val => /.+@.+\..+/.test(val) || 'Email inválido'
+                ]" class="input-rounded">
+                <template v-slot:prepend>
+                  <q-icon name="email" color="grey-6" />
+                </template>
+              </q-input>
+            </div>
+
+            <!-- Sección: Roles y Permisos -->
+            <div class="bg-grey-1 q-pa-md rounded-borders">
+               <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase" style="letter-spacing: 0.5px;">
+                <q-icon name="admin_panel_settings" class="q-mr-xs" /> Asignación de Rol
+              </div>
+
+              <div class="row q-col-gutter-md">
+                <!-- Rol Selector -->
+                <div class="col-12">
+                  <q-select v-model="formUsuario.rolId" label="Seleccionar Rol" outlined dense :options="opcionesRolesForm" emit-value
+                    map-options :rules="[val => !!val || 'Seleccione un rol']" @update:model-value="onRolChange"
+                    class="input-rounded bg-white">
+                    <template v-slot:prepend>
+                      <q-icon name="groups" color="primary" />
+                    </template>
+                    <template v-slot:option="scope">
+                      <q-item v-bind="scope.itemProps">
+                        <q-item-section avatar>
+                          <q-icon :name="getIconoRol(scope.opt.value)" :style="{ color: getColorRol(scope.opt.value) }" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-medium">{{ scope.opt.label }}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
+                </div>
+
+                <!-- Sede Selector (Condicional o siempre visible) -->
+                <div class="col-12 col-md-6 animate-fade" v-if="requiereSede">
+                  <q-select v-model="formUsuario.sedeId" label="Sede Académica" outlined dense
+                    :options="opcionesSedes" emit-value map-options clearable
+                    :rules="[val => !requiereSede || !!val || 'La Sede es requerida']"
+                    class="input-rounded bg-white">
+                    <template v-slot:prepend>
+                      <q-icon name="apartment" color="indigo" />
+                    </template>
+                  </q-select>
+                </div>
+
+                <!-- Carrera Selector (Condicional) -->
+                <div class="col-12 col-md-6 animate-fade" v-if="requiereCarrera">
+                  <q-select v-model="formUsuario.carrera" label="Carrera(s) Asignada(s)" outlined dense
+                    :options="opcionesCarrerasFiltradas" emit-value map-options clearable multiple use-chips
+                    use-input input-debounce="0" @filter="filtrarCarreras"
+                    :rules="[val => !requiereCarrera || (val && val.length > 0) || 'Seleccione al menos una carrera']"
+                    class="input-rounded bg-white">
+                    <template v-slot:prepend>
+                      <q-icon name="school" color="indigo" />
+                    </template>
+                    <template v-slot:option="{ itemProps, opt, selected, toggleOption }">
+                      <q-item v-bind="itemProps">
+                        <q-item-section>
+                          <q-item-label>{{ opt.label }}</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                          <q-checkbox :model-value="selected" @update:model-value="toggleOption(opt)" />
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                    <template v-slot:no-option>
+                      <q-item>
+                        <q-item-section class="text-grey">
+                          No se encontraron resultados
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
+                </div>
               </div>
             </div>
 
-            <q-input v-model="formUsuario.email" label="Correo Electrónico" outlined dense type="email" :rules="[
-              val => !!val || 'El email es requerido',
-              val => /.+@.+\..+/.test(val) || 'Email inválido'
-            ]">
-              <template v-slot:prepend>
-                <q-icon name="email" color="primary" />
-              </template>
-            </q-input>
-
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-6">
-                <q-select v-model="formUsuario.rolId" label="Rol" outlined dense :options="opcionesRolesForm" emit-value
-                  map-options :rules="[val => !!val || 'Seleccione un rol']" @update:model-value="onRolChange">
-                  <template v-slot:prepend>
-                    <q-icon name="admin_panel_settings" color="primary" />
-                  </template>
-                </q-select>
-              </div>
-              <div class="col-12 col-md-6">
-                <q-select v-model="formUsuario.carrera" label="Carrera (opcional)" outlined dense
-                  :options="opcionesCarreras" emit-value map-options clearable :disable="!requiereCarrera"
-                  :hint="requiereCarrera ? 'Requerido para este rol' : ''">
-                  <template v-slot:prepend>
-                    <q-icon name="school" color="primary" />
-                  </template>
-                </q-select>
-              </div>
+            <!-- Toggle Estado -->
+            <div class="row items-center justify-between q-mt-md q-pa-sm rounded-borders border-dashed">
+               <div class="row items-center">
+                  <q-icon :name="formUsuario.estado === 'activo' ? 'check_circle' : 'cancel'"
+                    :color="formUsuario.estado === 'activo' ? 'green' : 'grey'" size="24px" class="q-mr-sm" />
+                  <div class="text-body2">
+                    <div class="text-weight-bold">Estado del Usuario</div>
+                    <div class="text-caption text-grey">Determina si el usuario puede acceder al sistema</div>
+                  </div>
+               </div>
+               <q-toggle v-model="formUsuario.estado"
+                :color="formUsuario.estado === 'activo' ? 'green' : 'grey'" true-value="activo" false-value="inactivo" />
             </div>
 
-            <q-toggle v-model="formUsuario.estado"
-              :label="formUsuario.estado === 'activo' ? 'Usuario Activo' : 'Usuario Inactivo'"
-              :color="formUsuario.estado === 'activo' ? 'green' : 'grey'" true-value="activo" false-value="inactivo" />
           </q-form>
         </q-card-section>
 
-        <div class="dialog-actions">
-          <q-btn flat label="Cancelar" color="grey" @click="cerrarDialog" no-caps />
-          <q-btn unelevated label="Guardar" color="primary" @click="guardarUsuario" no-caps />
+        <q-separator />
+
+        <div class="dialog-actions q-pa-md row justify-end items-center bg-grey-1">
+          <q-btn flat label="Cancelar" color="grey-7" class="q-mr-sm" @click="cerrarDialog" no-caps />
+          <q-btn unelevated :label="editando ? 'Guardar Cambios' : 'Crear Usuario'" color="primary" icon="save"
+            @click="guardarUsuario" no-caps class="q-px-lg btn-rounded" />
         </div>
       </q-card>
     </q-dialog>
@@ -394,20 +474,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useUsuariosStore } from 'src/stores/usuarios'
 import { useRolesStore } from 'src/stores/roles'
+import { useSedesStore } from 'src/stores/sedes'
+import { useCarrerasStore } from 'src/stores/carreras'
 
 const $q = useQuasar()
 const usuariosStore = useUsuariosStore()
 const rolesStore = useRolesStore()
+const sedesStore = useSedesStore()
+const carrerasStore = useCarrerasStore()
 
 onMounted(async () => {
   await Promise.all([
     usuariosStore.fetchUsuarios(),
-    rolesStore.fetchRoles()
+    rolesStore.fetchRoles(),
+    sedesStore.fetchSedes(),
+    carrerasStore.fetchCarreras()
   ])
+  // Inicializar opciones filtradas
+  opcionesCarrerasFiltradas.value = opcionesCarreras.value
 })
 
 // Dialogs
@@ -443,21 +531,12 @@ const formUsuarioInicial = {
   rolId: null,
   rolNombre: '',
   estado: 'activo',
-  carrera: null
+  carrera: [],
+  sedeId: null
 }
 
 const formUsuario = ref({ ...formUsuarioInicial })
-
-// Table columns
-const columnas = [
-  { name: 'nombre', label: 'Usuario', field: 'nombre', align: 'left', sortable: true },
-  { name: 'email', label: 'Contacto', field: 'email', align: 'left', sortable: true },
-  { name: 'rol', label: 'Rol', field: 'rolNombre', align: 'left', sortable: true },
-  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left', sortable: true },
-  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
-  { name: 'ultimoAcceso', label: 'Último Acceso', field: 'ultimoAcceso', align: 'left', sortable: true },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
-]
+const opcionesCarrerasFiltradas = ref([])
 
 // Options
 const opcionesEstado = [
@@ -465,16 +544,62 @@ const opcionesEstado = [
   { label: 'Inactivo', value: 'inactivo' }
 ]
 
-const opcionesCarreras = [
-  { label: 'Ingeniería de Sistemas', value: 'Ingeniería de Sistemas' },
-  { label: 'Administración de Empresas', value: 'Administración de Empresas' },
-  { label: 'Contaduría Pública', value: 'Contaduría Pública' },
-  { label: 'Derecho', value: 'Derecho' },
-  { label: 'Medicina', value: 'Medicina' },
-  { label: 'Enfermería', value: 'Enfermería' },
-  { label: 'Arquitectura', value: 'Arquitectura' },
-  { label: 'Ingeniería Civil', value: 'Ingeniería Civil' }
+// Watchers
+watch(() => formUsuario.value.sedeId, (val) => {
+    // Si cambia de sede, recargar opciones de carrera válidas para esa sede
+    if (val) actualizarOpcionesCarreras()
+})
+
+// Table columns
+const columnas = [
+  { name: 'nombre', label: 'Usuario', field: 'nombre', align: 'left', sortable: true },
+  { name: 'email', label: 'Contacto', field: 'email', align: 'left', sortable: true },
+  { name: 'rol', label: 'Rol', field: 'rolNombre', align: 'left', sortable: true },
+  { name: 'carrera', label: 'Carrera(s)', field: 'carrera', align: 'left', sortable: true },
+  { name: 'sede', label: 'Sede', field: 'sedeNombre', align: 'left', sortable: true },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
+  { name: 'ultimoAcceso', label: 'Último Acceso', field: 'ultimoAcceso', align: 'left', sortable: true },
+  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
 ]
+
+// Opciones de Sede desde el store
+const opcionesSedes = computed(() => {
+  return sedesStore.sedes.map(s => ({
+    label: s.nombre,
+    value: s.id
+  }))
+})
+
+// Opciones base de carreras (reactivas al store y sede seleccionada)
+const opcionesCarreras = computed(() => {
+    // Si hay sede seleccionada, filtrar por ella (usando el helper del store si existe, o filtrando aquí)
+    const sedeId = formUsuario.value.sedeId
+    if (sedeId) {
+        return carrerasStore.getCarrerasOptions(sedeId)
+    }
+    // Si no, todas
+    return carrerasStore.getCarrerasOptions()
+})
+
+function actualizarOpcionesCarreras() {
+    opcionesCarrerasFiltradas.value = opcionesCarreras.value
+}
+
+function filtrarCarreras (val, update) {
+    if (val === '') {
+        update(() => {
+            opcionesCarrerasFiltradas.value = opcionesCarreras.value
+        })
+        return
+    }
+
+    update(() => {
+        const needle = val.toLowerCase()
+        opcionesCarrerasFiltradas.value = opcionesCarreras.value.filter(v =>
+            v.label.toLowerCase().indexOf(needle) > -1
+        )
+    })
+}
 
 // Computed
 const opcionesRoles = computed(() => {
@@ -495,6 +620,11 @@ const requiereCarrera = computed(() => {
   const rolesConCarrera = ['DIRECTOR_CARRERA', 'DOCENTE']
   const rol = rolesStore.getRolById(formUsuario.value.rolId)
   return rol && rolesConCarrera.includes(rol.codigo)
+})
+
+// Verificar si requiere sede (casi todos menos Admin Global tal vez, pero asumiremos todos para director)
+const requiereSede = computed(() => {
+    return true
 })
 
 const usuariosFiltrados = computed(() => {
@@ -566,11 +696,23 @@ function abrirDialogNuevo() {
   editando.value = false
   formUsuario.value = { ...formUsuarioInicial }
   showDialogUsuario.value = true
+  actualizarOpcionesCarreras()
 }
 
 function editarUsuario(usuario) {
   editando.value = true
   usuarioSeleccionado.value = usuario
+
+  // Transformar carrera string a array si es necesario para el q-select multiple
+  let carrerasVal = []
+  if (Array.isArray(usuario.carrera)) {
+      carrerasVal = usuario.carrera
+  } else if (usuario.carrera) {
+      // Si viene separado por comas o es solo uno
+      // INTENTO DE SPLIT SI ES STRING CSV? A veces guardan 'SIS, MED'
+      carrerasVal = [usuario.carrera] // Asumimos string simple por ahora o array
+  }
+
   formUsuario.value = {
     nombre: usuario.nombre,
     apellido: usuario.apellido,
@@ -580,9 +722,11 @@ function editarUsuario(usuario) {
     rolId: usuario.rolId,
     rolNombre: usuario.rolNombre,
     estado: usuario.estado,
-    carrera: usuario.carrera
+    carrera: carrerasVal,
+    sedeId: usuario.sedeId
   }
   showDialogUsuario.value = true
+  actualizarOpcionesCarreras()
 }
 
 function verUsuario(usuario) {
@@ -620,8 +764,20 @@ function guardarUsuario() {
     return
   }
 
+  if (requiereCarrera.value && (!formUsuario.value.carrera || formUsuario.value.carrera.length === 0)) {
+     $q.notify({ type: 'warning', message: 'Seleccione al menos una carrera para este rol', icon: 'warning' })
+     return
+  }
+
+  if (requiereSede.value && !formUsuario.value.sedeId) {
+     $q.notify({ type: 'warning', message: 'Seleccione la Sede', icon: 'warning' })
+     return
+  }
+
+  const payload = { ...formUsuario.value }
+
   if (editando.value && usuarioSeleccionado.value) {
-    usuariosStore.updateUsuario(usuarioSeleccionado.value.id, formUsuario.value)
+    usuariosStore.updateUsuario(usuarioSeleccionado.value.id, payload)
     $q.notify({
       type: 'positive',
       message: 'Usuario actualizado exitosamente',
@@ -629,7 +785,7 @@ function guardarUsuario() {
       position: 'top'
     })
   } else {
-    usuariosStore.addUsuario(formUsuario.value)
+    usuariosStore.addUsuario(payload)
     $q.notify({
       type: 'positive',
       message: 'Usuario creado exitosamente',

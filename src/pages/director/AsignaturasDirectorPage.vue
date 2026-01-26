@@ -11,7 +11,7 @@
           <p class="q-ma-none" style="color: var(--text-secondary);">
             Vista general de asignaturas por semestre
           </p>
-          <q-chip v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol === 'VICERRECTOR_SEDE'" 
+          <q-chip v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol === 'VICERRECTOR_SEDE'"
                   color="primary" text-color="white" size="sm" icon="apartment">
             Sede: Cochabamba
           </q-chip>
@@ -26,7 +26,7 @@
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-4">
         <q-select
-          v-model="filtros.carrera"
+          v-model="filtros.carreraId"
           :options="carrerasOptions"
           label="Carrera"
           outlined
@@ -34,7 +34,7 @@
           bg-color="white"
           emit-value
           map-options
-          :disable="authStore.rol === 'DIRECTOR_CARRERA'"
+          :disable="carrerasOptions.length <= 1"
         >
           <template v-slot:prepend>
             <q-icon name="school" />
@@ -64,7 +64,7 @@
           <q-card-section>
             <div class="row items-center no-wrap">
               <div class="col">
-                <div class="text-h4 text-weight-bold text-primary">54</div>
+                <div class="text-h4 text-weight-bold text-primary">{{ totalAsignaturas }}</div>
                 <div class="text-caption text-grey-7">Total Asignaturas</div>
               </div>
               <q-icon name="library_books" size="40px" color="primary" opacity="0.2" />
@@ -77,7 +77,7 @@
           <q-card-section>
             <div class="row items-center no-wrap">
               <div class="col">
-                <div class="text-h4 text-weight-bold text-positive">48</div>
+                <div class="text-h4 text-weight-bold text-positive">{{ asignadasCount }}</div>
                 <div class="text-caption text-grey-7">Asignadas con Docente</div>
               </div>
               <q-icon name="person_add" size="40px" color="positive" />
@@ -90,7 +90,7 @@
           <q-card-section>
             <div class="row items-center no-wrap">
               <div class="col">
-                <div class="text-h4 text-weight-bold text-warning">6</div>
+                <div class="text-h4 text-weight-bold text-warning">{{ vacantesCount }}</div>
                 <div class="text-caption text-grey-7">Vacantes / Por Designar</div>
               </div>
               <q-icon name="person_off" size="40px" color="warning" />
@@ -133,15 +133,25 @@
                 hide-bottom
                 :pagination="{ rowsPerPage: 0 }"
               >
+                <!-- Columna Asignatura con Indicadores -->
+                <template v-slot:body-cell-asignatura="props">
+                  <q-td :props="props">
+                    <div>{{ props.row.nombre }}</div>
+                    <div v-if="props.row.comun_token" class="q-mt-xs">
+                      <q-chip size="xs" color="indigo-1" text-color="indigo" icon="merge_type" dense>
+                        Materia Común
+                        <q-tooltip>Esta asignatura se comparte con otras carreras.</q-tooltip>
+                      </q-chip>
+                    </div>
+                  </q-td>
+                </template>
                 <!-- Columna Docente -->
                 <template v-slot:body-cell-docente="props">
                   <q-td :props="props">
-                    <div v-if="props.row.docente" class="row items-center no-wrap">
-                      <q-avatar size="28px" color="blue-grey-1" text-color="primary" class="q-mr-sm">
-                        {{ props.row.docente.iniciales }}
-                      </q-avatar>
+                    <div v-if="props.row.docente_nombre" class="row items-center no-wrap">
+                      <q-avatar size="28px" color="blue-grey-1" text-color="primary" class="q-mr-sm" icon="person" />
                       <div>
-                        <div class="text-weight-medium text-body2">{{ props.row.docente.nombre }}</div>
+                        <div class="text-weight-medium text-body2">{{ props.row.docente_nombre }}</div>
                       </div>
                     </div>
                     <div v-else class="text-grey-5 text-italic">
@@ -155,11 +165,11 @@
                 <template v-slot:body-cell-estado="props">
                   <q-td :props="props">
                     <q-chip
-                      :color="props.row.docente ? 'positive' : 'warning'"
-                      :text-color="props.row.docente ? 'white' : 'black'"
+                      :color="props.row.docente_nombre ? 'positive' : 'warning'"
+                      :text-color="props.row.docente_nombre ? 'white' : 'black'"
                       size="sm"
                     >
-                      {{ props.row.docente ? 'Asignada' : 'Vacante' }}
+                      {{ props.row.docente_nombre ? 'Asignada' : 'Vacante' }}
                     </q-chip>
                   </q-td>
                 </template>
@@ -185,103 +195,124 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from 'src/stores/auth'
+import { useAsignaturasStore } from 'src/stores/asignaturas'
 
 const authStore = useAuthStore()
+const asignaturasStore = useAsignaturasStore()
 
 // Filtros
 const filtros = ref({
-  carrera: 'todas',
+  carreraId: null, // ID real
   buscar: ''
 })
 
-const carrerasOptions = [
-  { label: 'Todas las carreras', value: 'todas' },
-  { label: 'Medicina', value: 'medicina' },
-  { label: 'Odontología', value: 'odontologia' }
-]
+// Opciones de Carreras (Dinámicas)
+const carrerasOptions = computed(() => {
+  const director = authStore.usuarioActual?.director
+  if (!director) return []
 
+  // Opción 1: Director de una sola carrera (relación belongsTo)
+  if (director.carrera) {
+    return [{ label: director.carrera.nombre, value: director.carrera.id }]
+  }
+
+  // Opción 2: Director de múltiples carreras (si implementaste hasMany 'carreras')
+  // Por ahora asumiendo que el backend podría mandarlo, o fallback a lo básico
+  return []
+})
+
+// Cargar datos
+async function cargarAsignaturas() {
+  if (!filtros.value.carreraId) return
+
+  // Usar la sede del director (o del usuario actual)
+  const sedeId = authStore.usuarioActual?.director?.sede_id || authStore.sedeId
+
+  await asignaturasStore.fetchAsignaturas(
+    sedeId,
+    filtros.value.carreraId,
+    null, // Todos los semestres
+    filtros.value.buscar // Búsqueda backend (opcional, o filtrar en frontend)
+  )
+}
+
+// Inicialización
 onMounted(() => {
-  if (authStore.rol === 'DIRECTOR_CARRERA') {
-    filtros.value.carrera = 'medicina' // Mock: En producción usar authStore.carreraId
+  // Pre-seleccionar la primera carrera disponible
+  if (carrerasOptions.value.length > 0) {
+    filtros.value.carreraId = carrerasOptions.value[0].value
+    cargarAsignaturas()
   }
 })
+
+// Watchers
+watch(() => filtros.value.carreraId, () => {
+    cargarAsignaturas()
+})
+
+// Debounce para búsqueda si queremos búsqueda backend,
+// pero como la lista no es gigante, el filtrado frontend computed es más fluido para UX.
+// Mantenemos búsqueda Frontend sobre los datos cargados.
 
 // Columnas
 const columnasAsignaturas = [
   { name: 'codigo', label: 'Código', field: 'codigo', align: 'left', sortable: true, style: 'width: 100px' },
   { name: 'asignatura', label: 'Asignatura', field: 'nombre', align: 'left', sortable: true },
-  { name: 'horas', label: 'Horas', field: 'horas', align: 'center', style: 'width: 80px' },
-  { name: 'docente', label: 'Docente Principal', field: 'docente', align: 'left' },
+  { name: 'horas', label: 'Horas', field: 'horas_teoricas', align: 'center', format: (val, row) => ((row.horas_teoricas || 0) * 20) + ((row.horas_practicas || 0) * 20), style: 'width: 80px' }, // Suma x20
+  { name: 'docente', label: 'Docente Principal', field: 'docente_nombre', align: 'left' },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 100px' },
   { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center', style: 'width: 100px' }
 ]
 
-// Datos Mock
-const semestresData = ref([
-  {
-    id: 1,
-    numero: 1,
-    nombre: 'Primer Semestre',
-    horasTotales: 120, // Suma ficticia
-    asignaturas: [
-      { id: 101, codigo: 'MED-111', nombre: 'Anatomía Humana I', horas: 80, docente: { nombre: 'Andrea Sonia Salinas Gil', iniciales: 'AS' } },
-      { id: 102, codigo: 'MED-112', nombre: 'Histología Humana I', horas: 60, docente: { nombre: 'Carmen Daniela Davalos Zelada', iniciales: 'CD' } },
-      { id: 103, codigo: 'MED-113', nombre: 'Genética y Embriología', horas: 60, docente: { nombre: 'Carlos René Seleme Trigo', iniciales: 'CS' } },
-      { id: 104, codigo: 'MED-114', nombre: 'Bioestadística', horas: 40, docente: { nombre: 'María Elena Fernández López', iniciales: 'MF' } },
-      { id: 105, codigo: 'MED-115', nombre: 'Inglés Médico I', horas: 40, docente: null } // Vacante
-    ]
-  },
-  {
-    id: 2,
-    numero: 2,
-    nombre: 'Segundo Semestre',
-    horasTotales: 140,
-    asignaturas: [
-      { id: 201, codigo: 'MED-121', nombre: 'Anatomía Humana II', horas: 80, docente: { nombre: 'Andrea Sonia Salinas Gil', iniciales: 'AS' } },
-      { id: 202, codigo: 'MED-122', nombre: 'Histología Humana II', horas: 60, docente: { nombre: 'Carmen Daniela Davalos Zelada', iniciales: 'CD' } },
-      { id: 203, codigo: 'MED-123', nombre: 'Salud Pública I', horas: 40, docente: null }
-    ]
-  },
-  {
-    id: 3,
-    numero: 3,
-    nombre: 'Tercer Semestre',
-    horasTotales: 100,
-    asignaturas: [
-      { id: 301, codigo: 'MED-213', nombre: 'Fisiología', horas: 80, docente: { nombre: 'Pamela Katherine Gutierrez', iniciales: 'PG' } },
-      { id: 302, codigo: 'MED-214', nombre: 'Parasitología', horas: 60, docente: { nombre: 'Roberto Ángel Martínez', iniciales: 'RM' } }
-    ]
-  }
-])
+// Computed: Estadísticas
+const totalAsignaturas = computed(() => asignaturasStore.asignaturas.length)
+const asignadasCount = computed(() => asignaturasStore.asignaturas.filter(a => a.docentes && a.docentes.length > 0).length)
+const vacantesCount = computed(() => totalAsignaturas.value - asignadasCount.value)
 
-// Computed para filtrado
+// ComputedPrincipal: Semestres Agrupados
 const semestresFiltrados = computed(() => {
   const busqueda = filtros.value.buscar.toLowerCase()
-  
-  if (!busqueda) return semestresData.value
+  let lista = asignaturasStore.asignaturas
 
-  // Filtrar semestres que contengan asignaturas que coincidan con la búsqueda
-  return semestresData.value.map(semestre => {
-    const asignaturasFiltradas = semestre.asignaturas.filter(a => 
-      a.nombre.toLowerCase().includes(busqueda) || 
+  // 1. Filtrado por búsqueda
+  if (busqueda) {
+    lista = lista.filter(a =>
+      a.nombre.toLowerCase().includes(busqueda) ||
       a.codigo.toLowerCase().includes(busqueda) ||
-      (a.docente && a.docente.nombre.toLowerCase().includes(busqueda))
+      (a.docente_nombre && a.docente_nombre.toLowerCase().includes(busqueda))
     )
-    
-    // Devolvemos el semestre con SOLO las asignaturas filtradas, si tiene alguna
-    if (asignaturasFiltradas.length > 0) {
-      return {
-        ...semestre,
-        asignaturas: asignaturasFiltradas
+  }
+
+  // 2. Agrupación por Semestre
+  // Estructura deseada: [{ id: 1, nombre: 'Primer Semestre', asignaturas: [...] }, ...]
+  const grupos = {}
+
+  lista.forEach(asig => {
+    const sem = asig.semestre || 0
+    if (!grupos[sem]) {
+      grupos[sem] = {
+        id: sem,
+        numero: sem,
+        nombre: getNemotecnicoSemestre(sem),
+        horasTotales: 0,
+        asignaturas: []
       }
     }
-    return null
-  }).filter(s => s !== null) // Eliminar semestres vacíos
+    grupos[sem].asignaturas.push(asig)
+    grupos[sem].horasTotales += ((asig.horas_teoricas || 0) * 20) + ((asig.horas_practicas || 0) * 20)
+  })
+
+  // Convertir objeto a array y ordenar
+  return Object.values(grupos).sort((a, b) => a.numero - b.numero)
 })
 
+// Helper para nombres de semestre
+function getNemotecnicoSemestre(n) {
+  const maps = ['Cero', 'Primer', 'Segundo', 'Tercer', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo', 'Noveno', 'Décimo']
+  return (maps[n] || n) + ' Semestre'
+}
 </script>
 
 <style scoped>

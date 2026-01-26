@@ -11,7 +11,7 @@
           </h1>
           <p class="page-subtitle">
             <q-chip size="sm" color="primary" text-color="white">{{ asignatura?.codigo }}</q-chip>
-            {{ asignatura?.nombre }} | {{ asignatura?.carrera || 'Carrera' }}
+            {{ asignatura?.nombre }} | {{ asignatura?.carrera?.nombre || asignatura?.carrera || 'Carrera' }}
           </p>
         </div>
       </div>
@@ -152,7 +152,7 @@
             <!-- Botón Generar -->
             <div class="col-12 text-center">
               <q-btn unelevated color="indigo" icon="auto_awesome" label="Generar Planificación Automática" size="lg"
-                no-caps :disable="!horarios.length || !unidadesDocumentacion.length" @click="generarPlanificacion" />
+                no-caps @click="generarPlanificacion" />
               <p class="text-grey-6 q-mt-sm text-caption">
                 Se distribuirán {{ totalTemasDocumentacion }} temas de {{ unidadesDocumentacion.length }} unidades en {{
                   totalSemanas }} semanas
@@ -453,7 +453,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
@@ -669,113 +669,59 @@ const horarioForm = ref({ dia: 'Martes', horaInicio: '07:00', horaFin: '09:00', 
 /**
  * Cargar horarios desde los datos locales de la asignatura (pivote docentes)
  */
+// Watch para actualizar horarios al cambiar de grupo
+watch(grupoSeleccionado, (val) => {
+  if (val) {
+    actualizarHorariosDesdeGrupo()
+  } else {
+    horarios.value = []
+  }
+})
+
+/**
+ * Actualizar horarios basados en el grupo seleccionado
+ */
+function actualizarHorariosDesdeGrupo() {
+  if (!grupoSeleccionado.value || !asignatura.value?.horarios_data) return
+
+  const grupoId = grupoSeleccionado.value.value
+  const grupoData = asignatura.value.horarios_data.find(g => g.id === grupoId)
+
+  if (grupoData && grupoData.horarios) {
+    console.log('[Horarios] Cargando horarios del grupo:', grupoData.grupo)
+
+    const nuevosHorarios = grupoData.horarios.map(h => ({
+      dia: h.dia,
+      horaInicio: h.hora_inicio?.substring(0, 5), // "07:00:00" -> "07:00"
+      horaFin: h.hora_fin?.substring(0, 5),
+      aula: h.aula || 'Sin Aula',
+      grupo: grupoData.grupo,
+      tipoClase: grupoData.tipo,
+      desdeAPI: true,
+      docente: grupoData.docente_nombre
+    }))
+
+    asignarHorarios(nuevosHorarios)
+  } else {
+    // Si no encuentra en horarios_data, intentar fallback o limpiar
+    horarios.value = []
+
+    // Fallback legacy (si existiese) lo dejamos opcional,
+    // pero idealmente horarios_data es la fuente de verdad.
+    console.log('[Horarios] No se encontraron horarios para este grupo en la BD.')
+  }
+}
+
+/**
+ * Cargar horarios iniciales (wrapper para compatibilidad con onMounted)
+ */
 async function cargarHorariosAsignatura() {
-  try {
-    // Esperar a que la asignatura actual esté cargada (doble check)
-    await new Promise(resolve => {
-      const checkAsignatura = () => {
-        if (asignatura.value) {
-          resolve()
-        } else {
-          setTimeout(checkAsignatura, 100)
-        }
-      }
-      checkAsignatura()
-    })
+  // Esperar a asignatura
+  if (!asignatura.value) return
 
-    console.log('[Horarios] Asignatura cargada:', asignatura.value?.nombre)
-    console.log('[Horarios] Docentes raw:', asignatura.value?.docentes)
-
-    // Verificar si el backend nos manda horarios_data (lista completa plana)
-    if (asignatura.value?.horarios_data?.length) {
-      console.log('[Horarios] Usando lista completa horarios_data (backend)')
-      const nuevosHorarios = asignatura.value.horarios_data.map(h => {
-        if (h.horario) {
-          const partes = h.horario.split(' ')
-          if (partes.length >= 2) {
-            const dia = partes[0]
-            const horas = partes[1].split('-')
-            if (horas.length === 2) {
-              return {
-                dia: dia,
-                horaInicio: horas[0],
-                horaFin: horas[1],
-                aula: h.aula || 'Sin Aula',
-                grupo: h.grupo,
-                tipoClase: 'Teórico',
-                desdeAPI: true,
-                docente: h.docente_nombre
-              }
-            }
-          }
-        }
-        return null
-      }).filter(h => h !== null)
-
-      asignarHorarios(nuevosHorarios)
-      return
-    }
-
-    // Fallback: Verificar si hay docentes con horarios en el pivote (método viejo)
-    if (asignatura.value?.docentes?.length) {
-      const nuevosHorarios = []
-
-      asignatura.value.docentes.forEach(docente => {
-        const pivot = docente.pivot
-        console.log(`[Horarios] Procesando docente: ${docente.nombre_completo}`, pivot)
-
-        if (pivot && pivot.horario && pivot.grupo) {
-          // Parsear string formato "Martes 07:00-09:00"
-          // Puede venir "Lunes 10:00-12:00" o similar
-          const partes = pivot.horario.split(' ')
-          if (partes.length >= 2) {
-            const dia = partes[0]
-            const horas = partes[1].split('-') // ["07:00", "09:00"]
-
-            if (horas.length === 2) {
-              nuevosHorarios.push({
-                dia: dia,
-                horaInicio: horas[0],
-                horaFin: horas[1],
-                aula: pivot.aula || 'Sin Aula',
-                bloque: '', // No tenemos bloque en pivote aun
-                grupo: pivot.grupo,
-                tipoClase: 'Teórico', // Default
-                desdeAPI: true, // Para bloquear edición
-                docente: docente.nombre_completo // Extra info
-              })
-            }
-          }
-        } else {
-          console.warn('[Horarios] Docente sin datos completos de horario/grupo en pivote')
-        }
-      })
-
-      console.log('[Horarios] Nuevos horarios generados:', nuevosHorarios)
-
-      // Deduplicar horarios si es necesario o mostrarlos todos
-      // Mostraremos todos para que se vea cada grupo
-      horariosAPI.value = nuevosHorarios
-
-      // Actualizar vista
-      horarios.value = [...horariosAPI.value]
-
-      if (horarios.value.length > 0) {
-        $q.notify({
-          type: 'info',
-          message: `Se cargaron ${horarios.value.length} grupos/horarios asignados`,
-          icon: 'schedule'
-        })
-      } else {
-        console.log('[Horarios] No se encontraron horarios válidos en los docentes asignados')
-      }
-
-    } else {
-      console.log('[Horarios] La asignatura no tiene docentes asignados (length=0 o undefined)')
-    }
-
-  } catch (err) {
-    console.error('[Horarios] Error procesando horarios locales:', err)
+  // Si hay grupo seleccionado, actualizar
+  if (grupoSeleccionado.value) {
+    actualizarHorariosDesdeGrupo()
   }
 }
 
@@ -789,11 +735,9 @@ function asignarHorarios(nuevosHorarios) {
   if (horarios.value.length > 0) {
     $q.notify({
       type: 'info',
-      message: `Se cargaron ${horarios.value.length} grupos/horarios asignados`,
+      message: `Se cargaron ${horarios.value.length} sesiones de clase`,
       icon: 'schedule'
     })
-  } else {
-    console.log('[Horarios] Lista de horarios procesada pero vacía')
   }
 }
 
@@ -850,6 +794,23 @@ function generarPlanificacion() {
   // Validar grupo seleccionado
   if (!grupoSeleccionado.value) {
     {$q.notify({ type: 'warning', message: 'Seleccione un grupo para generar la planificación', icon: 'warning' }); return}
+  }
+
+  // Validar horarios
+  if (horarios.value.length === 0) {
+    $q.dialog({
+      title: 'Faltan Horarios',
+      message: 'Para generar la planificación automática, primero debes definir tu horario de clases (ej: Lunes 08:00) en la sección "Horario de Clases Semanal". El sistema necesita esto para distribuir los temas.',
+      icon: 'schedule',
+      ok: { label: 'Entendido', color: 'primary' }
+    })
+    return
+  }
+
+  // Validar unidades
+  if (unidades.length === 0) {
+    $q.notify({ type: 'warning', message: 'No hay unidades con temas para planificar', icon: 'warning' })
+    return
   }
 
   for (let semana = 1; semana <= totalSemanas.value; semana++) {
@@ -1079,6 +1040,8 @@ function agregarSesionManual(unidad) {
   $q.notify({ type: 'positive', message: 'Sesión agregada', icon: 'add' })
 }
 
+import pdfService from 'src/services/pdfService'
+
 function eliminarSesion(unidad, sesion) {
   $q.dialog({
     title: 'Confirmar',
@@ -1089,9 +1052,28 @@ function eliminarSesion(unidad, sesion) {
   })
 }
 
-function ejecutarCopia() {
-  showCopiarDialog.value = false
-  $q.notify({ type: 'positive', message: `Planificación copiada de ${gestionACopiar.value}`, icon: 'content_copy' })
+async function ejecutarCopia() {
+  if (!gestionACopiar.value) {
+     $q.notify({ type: 'warning', message: 'Seleccione una gestión de origen', icon: 'warning' })
+     return
+  }
+
+  $q.loading.show({ message: 'Copiando planificación...' })
+  try {
+    const response = await planificacionSemestralService.copiarPlanificacion(route.params.id, {
+        gestion_origen: gestionACopiar.value
+    })
+
+    // Recargar todo
+    await cargarPlanificacion()
+    showCopiarDialog.value = false
+    $q.notify({ type: 'positive', message: response.data.message || 'Planificación copiada con éxito', icon: 'content_copy' })
+  } catch (err) {
+    console.error('Error copiando:', err)
+    $q.notify({ type: 'negative', message: 'Error al copiar planificación', icon: 'error' })
+  } finally {
+    $q.loading.hide()
+  }
 }
 
 async function guardarTodo() {
@@ -1114,6 +1096,13 @@ async function guardarTodo() {
       grupo_id: grupoSeleccionado.value.value
     })
 
+    // También guardar configuración de fechas
+    await planificacionSemestralService.saveConfig(route.params.id, {
+        fecha_inicio: calendario.value.fechaInicio,
+        fecha_fin: calendario.value.fechaFin,
+        gestion: gestionSeleccionada.value
+    })
+
     $q.notify({ type: 'positive', message: 'Planificación guardada exitosamente', icon: 'save' })
   } catch (err) {
     console.error('Error guardando:', err)
@@ -1124,10 +1113,56 @@ async function guardarTodo() {
 }
 
 function exportarPDF() {
-  $q.notify({ type: 'positive', message: 'Generando PDF...', icon: 'picture_as_pdf', timeout: 2000 })
-  setTimeout(() => {
-    $q.notify({ type: 'positive', message: 'PDF generado exitosamente', icon: 'check_circle' })
-  }, 2000)
+  if (!planificacionGenerada.value) {
+      $q.notify({ type: 'warning', message: 'Primero genere la planificación', icon: 'warning' })
+      return
+  }
+
+  $q.loading.show({ message: 'Generando PDF...' })
+  try {
+      // Preparar objeto asignatura enriquecido con la planificación actual para el PDF
+      // El servicio pdfService espera 'unidades' con 'temas', pero nuestra planificación
+      // tiene una estructura ligeramente diferente (unidades con sesiones).
+      // Debemos adaptar los datos para que el reporte salga bonito, o crear un reporte específico.
+      // USaremos generarPlanDeClase pero le pasaremos los datos "reales" de la planificación grid.
+
+      const asignaturaParaPDF = {
+          ...asignatura.value,
+          // Sobreescribimos unidades con la info de la planificación actual (sesiones distribuidas)
+          unidades: planificacion.value.map(p => ({
+              numero: p.id, // Ojo: id puede no ser numero secuencial
+              titulo: p.nombre,
+              elemento_competencia: p.elementoCompetencia,
+              temas: p.sesiones.filter(s => !s.esExamen).map((s, idx) => ({
+                  numero: idx + 1,
+                  titulo: s.tema,
+                  resultados_aprendizaje: s.criteriosDesempeno, // Mapeo aproximado
+                  contenidos: {
+                      conceptual: s.conceptual ? s.conceptual.split('\n') : [],
+                      procedimental: s.procedimental ? s.procedimental.split('\n') : [],
+                      actitudinal: s.actitudinal ? s.actitudinal.split('\n') : []
+                  },
+                  estrategias: {
+                      metodologicas: '', // No está en grid explícito
+                      aprendizaje: '',
+                      recursos: []
+                  },
+                  evaluacion: {
+                      formativa: { actividades: [], instrumentos: [s.instrumentosEvaluacion || ''] },
+                      sumativa: { actividades: [], instrumentos: [] }
+                  }
+              }))
+          }))
+      }
+
+      pdfService.generarPlanDeClase(asignaturaParaPDF, { fecha: new Date().toLocaleDateString() })
+      $q.notify({ type: 'positive', message: 'PDF generado', icon: 'download' })
+  } catch (e) {
+      console.error(e)
+      $q.notify({ type: 'negative', message: 'Error generando PDF', icon: 'error' })
+  } finally {
+      $q.loading.hide()
+  }
 }
 </script>
 
