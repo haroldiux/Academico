@@ -18,6 +18,10 @@ export default {
     return api.put(`/asignaturas/${id}`, data)
   },
 
+  cambiarEstado(id, estado) {
+    return api.put(`/asignaturas/${id}/estado`, { estado })
+  },
+
   deleteAsignatura(id) {
     return api.delete(`/asignaturas/${id}`)
   },

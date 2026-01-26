@@ -310,6 +310,27 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
       }
   }
 
+  async function cambiarEstado(id, estado) {
+      if (!id) return
+      loading.value = true
+      try {
+          const response = await asignaturaService.cambiarEstado(id, estado)
+          if (asignaturaActual.value && asignaturaActual.value.id === id) {
+              asignaturaActual.value.estado = response.data.estado
+          }
+           // Update list if present
+           const index = asignaturas.value.findIndex(a => a.id === id)
+           if (index !== -1) {
+               asignaturas.value[index].estado = response.data.estado
+           }
+      } catch (err) {
+          console.error('Error changing state:', err)
+          throw err
+      } finally {
+          loading.value = false
+      }
+  }
+
   async function addBibliografia(asigId, data) {
     loading.value = true
     try {
@@ -404,6 +425,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     createTema,
     updateTema,
     deleteTema,
-    moveTema
+    moveTema,
+    cambiarEstado
   }
 })

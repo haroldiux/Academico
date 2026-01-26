@@ -99,8 +99,8 @@
                 </template>
                 <span class="text-weight-medium">Campo Compartido (Materia)</span>
                 <span class="q-ml-sm text-caption">Estos datos son visibles para todos los docentes de esta materia.</span>
-                <template v-slot:action v-if="esSoloLectura">
-                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                <template v-slot:action v-if="!puedeEditarCompartido">
+                  <q-chip color="orange" text-color="white" size="sm" icon="lock">Solo lectura (Sede)</q-chip>
                 </template>
               </q-banner>
 
@@ -119,7 +119,10 @@
                   <q-icon name="emoji_events" color="amber" size="28px" class="q-mr-sm" />
                   <span class="text-h6 text-weight-bold">Resultado de Aprendizaje</span>
                 </div>
-                <q-input v-model="formTema.resultado_aprendizaje" outlined type="textarea" rows="3" placeholder="Describe el resultado de aprendizaje esperado..." hint="El estudiante al finalizar este tema será capaz de..." />
+                <q-input v-model="formTema.resultado_aprendizaje" outlined type="textarea" rows="3"
+                  placeholder="Describe el resultado de aprendizaje esperado..."
+                  hint="El estudiante al finalizar este tema será capaz de..."
+                  :readonly="!puedeEditarCompartido" />
               </div>
 
               <!-- Logros Esperados con Indicadores anidados -->
@@ -129,7 +132,7 @@
                     <q-icon name="flag" color="green" size="28px" class="q-mr-sm" />
                     <span class="text-h6 text-weight-bold">Logros Esperados e Indicadores</span>
                   </div>
-                  <q-btn unelevated color="green" icon="add" label="Agregar Logro" size="sm" no-caps @click="dialogLogro = true" />
+                  <q-btn v-if="puedeEditarCompartido" unelevated color="green" icon="add" label="Agregar Logro" size="sm" no-caps @click="dialogLogro = true" />
                 </div>
                 <p class="text-body2 q-mb-md" style="color: var(--text-secondary);">
                   Cada logro esperado puede tener múltiples indicadores que evidencian su cumplimiento.
@@ -149,7 +152,8 @@
                           <span class="text-weight-bold text-caption">{{ logro.codigo }}</span>
                         </q-avatar>
                         <div class="col">
-                          <q-input v-model="logro.descripcion" dense borderless class="text-body1 text-weight-medium" placeholder="Descripción del logro..." />
+                          <q-input v-model="logro.descripcion" dense borderless class="text-body1 text-weight-medium"
+                            placeholder="Descripción del logro..." :readonly="!puedeEditarCompartido" />
                         </div>
                         <!-- Selector de Parcial -->
                         <q-btn-toggle
@@ -179,7 +183,7 @@
                           <q-badge v-if="logro.mis_preguntas_count" floating color="teal" :label="logro.mis_preguntas_count" />
                           <q-tooltip>Banco de Preguntas ({{ logro.mis_preguntas_count || 0 }} mías)</q-tooltip>
                         </q-btn>
-                        <q-btn flat round dense icon="delete" color="red" size="sm" @click="eliminarLogro(logro)" />
+                        <q-btn v-if="puedeEditarCompartido" flat round dense icon="delete" color="red" size="sm" @click="eliminarLogro(logro)" />
                       </div>
                     </q-card-section>
 
@@ -190,7 +194,7 @@
                           <q-icon name="check_circle" color="blue" class="q-mr-xs" />
                           Indicadores de este logro
                         </span>
-                        <q-btn flat dense color="blue" icon="add" label="Indicador" size="sm" no-caps @click="abrirDialogIndicador(logro)" />
+                        <q-btn v-if="puedeEditarCompartido" flat dense color="blue" icon="add" label="Indicador" size="sm" no-caps @click="abrirDialogIndicador(logro)" />
                       </div>
 
                       <div v-if="!logro.indicadores?.length" class="text-center q-pa-sm bg-grey-1 rounded-borders">
@@ -203,10 +207,10 @@
                             <q-chip size="sm" color="blue-2" text-color="blue-9" dense>{{ indicador.codigo }}</q-chip>
                           </q-item-section>
                           <q-item-section>
-                            <q-input v-model="indicador.descripcion" dense borderless placeholder="El estudiante demuestra el logro cuando..." />
+                            <q-input v-model="indicador.descripcion" dense borderless placeholder="El estudiante demuestra el logro cuando..." :readonly="!puedeEditarCompartido" />
                           </q-item-section>
                           <q-item-section side>
-                            <q-btn flat round dense icon="close" size="xs" color="red" @click="eliminarIndicador(logro, indicador)" />
+                            <q-btn v-if="puedeEditarCompartido" flat round dense icon="close" size="xs" color="red" @click="eliminarIndicador(logro, indicador)" />
                           </q-item-section>
                         </q-item>
                       </q-list>
@@ -225,8 +229,8 @@
                 </template>
                 <span class="text-weight-medium">Campo Compartido (Materia)</span>
                 <span class="q-ml-sm text-caption">Los contenidos y bibliografía son comunes para todos los docentes.</span>
-                <template v-slot:action v-if="esSoloLectura">
-                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                <template v-slot:action v-if="!puedeEditarCompartido">
+                  <q-chip color="orange" text-color="white" size="sm" icon="lock">Solo lectura (Sede)</q-chip>
                 </template>
               </q-banner>
 
@@ -250,11 +254,11 @@
                       <q-list dense>
                         <q-item v-for="(item, idx) in formTema.contenidos.conceptual" :key="idx" class="q-pa-xs">
                           <q-item-section avatar><q-icon name="circle" size="8px" color="blue" /></q-item-section>
-                          <q-item-section><q-input v-model="formTema.contenidos.conceptual[idx]" dense borderless /></q-item-section>
-                          <q-item-section side><q-btn flat round dense icon="close" size="xs" color="red" @click="formTema.contenidos.conceptual.splice(idx, 1)" /></q-item-section>
+                          <q-item-section><q-input v-model="formTema.contenidos.conceptual[idx]" dense borderless :readonly="!puedeEditarCompartido" /></q-item-section>
+                          <q-item-section side><q-btn v-if="puedeEditarCompartido" flat round dense icon="close" size="xs" color="red" @click="formTema.contenidos.conceptual.splice(idx, 1)" /></q-item-section>
                         </q-item>
                       </q-list>
-                      <q-btn flat color="blue" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.contenidos.conceptual.push('')" no-caps />
+                      <q-btn v-if="puedeEditarCompartido" flat color="blue" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.contenidos.conceptual.push('')" no-caps />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -269,11 +273,11 @@
                       <q-list dense>
                         <q-item v-for="(item, idx) in formTema.contenidos.procedimental" :key="idx" class="q-pa-xs">
                           <q-item-section avatar><q-icon name="circle" size="8px" color="green" /></q-item-section>
-                          <q-item-section><q-input v-model="formTema.contenidos.procedimental[idx]" dense borderless /></q-item-section>
-                          <q-item-section side><q-btn flat round dense icon="close" size="xs" color="red" @click="formTema.contenidos.procedimental.splice(idx, 1)" /></q-item-section>
+                          <q-item-section><q-input v-model="formTema.contenidos.procedimental[idx]" dense borderless :readonly="!puedeEditarCompartido" /></q-item-section>
+                          <q-item-section side><q-btn v-if="puedeEditarCompartido" flat round dense icon="close" size="xs" color="red" @click="formTema.contenidos.procedimental.splice(idx, 1)" /></q-item-section>
                         </q-item>
                       </q-list>
-                      <q-btn flat color="green" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.contenidos.procedimental.push('')" no-caps />
+                      <q-btn v-if="puedeEditarCompartido" flat color="green" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.contenidos.procedimental.push('')" no-caps />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -288,11 +292,11 @@
                       <q-list dense>
                         <q-item v-for="(item, idx) in formTema.contenidos.actitudinal" :key="idx" class="q-pa-xs">
                           <q-item-section avatar><q-icon name="circle" size="8px" color="purple" /></q-item-section>
-                          <q-item-section><q-input v-model="formTema.contenidos.actitudinal[idx]" dense borderless /></q-item-section>
-                          <q-item-section side><q-btn flat round dense icon="close" size="xs" color="red" @click="formTema.contenidos.actitudinal.splice(idx, 1)" /></q-item-section>
+                          <q-item-section><q-input v-model="formTema.contenidos.actitudinal[idx]" dense borderless :readonly="!puedeEditarCompartido" /></q-item-section>
+                          <q-item-section side><q-btn v-if="puedeEditarCompartido" flat round dense icon="close" size="xs" color="red" @click="formTema.contenidos.actitudinal.splice(idx, 1)" /></q-item-section>
                         </q-item>
                       </q-list>
-                      <q-btn flat color="purple" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.contenidos.actitudinal.push('')" no-caps />
+                      <q-btn v-if="puedeEditarCompartido" flat color="purple" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.contenidos.actitudinal.push('')" no-caps />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -305,7 +309,7 @@
                     <q-icon name="menu_book" color="primary" size="28px" class="q-mr-sm" />
                     <span class="text-h6 text-weight-bold">Referencias Bibliográficas</span>
                   </div>
-                  <q-btn unelevated color="primary" icon="add" label="Agregar Referencia" size="sm" no-caps @click="agregarReferenciaBiblio" />
+                  <q-btn v-if="puedeEditarCompartido" unelevated color="primary" icon="add" label="Agregar Referencia" size="sm" no-caps @click="agregarReferenciaBiblio" />
                 </div>
                 <p class="text-body2 q-mb-md" style="color: var(--text-secondary);">
                   Selecciona las bibliografías y las páginas donde se encuentra el contenido de este tema.
@@ -333,6 +337,7 @@
                             emit-value
                             map-options
                             class="q-mb-xs"
+                            :readonly="!puedeEditarCompartido"
                           />
                           <div class="row q-gutter-sm">
                             <q-input
@@ -343,6 +348,7 @@
                               type="number"
                               class="col"
                               style="max-width: 100px;"
+                              :readonly="!puedeEditarCompartido"
                             />
                             <q-input
                               v-model="ref.pagina_hasta"
@@ -352,10 +358,11 @@
                               type="number"
                               class="col"
                               style="max-width: 100px;"
+                              :readonly="!puedeEditarCompartido"
                             />
                           </div>
                         </div>
-                        <q-btn flat round dense icon="delete" color="red" size="sm" @click="formTema.referencias_bibliograficas.splice(idx, 1)" />
+                        <q-btn v-if="puedeEditarCompartido" flat round dense icon="delete" color="red" size="sm" @click="formTema.referencias_bibliograficas.splice(idx, 1)" />
                       </div>
                     </q-card>
                   </div>
@@ -691,6 +698,24 @@ const ROLES_SOLO_LECTURA = ['DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERREC
 const esSoloLectura = computed(() => {
   const userRol = authStore.rol
   return ROLES_SOLO_LECTURA.includes(userRol)
+
+})
+
+const puedeEditarCompartido = computed(() => {
+  if (esSoloLectura.value) return false
+  const user = authStore.usuarioActual
+  if (!user) return false
+
+  // Global Admins
+  if (['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'VICERRECTOR_NACIONAL'].includes(user.rol)) return true
+
+  // Cocha Only (Sede ID 1)
+  // Directores y Docentes de Cocha pueden editar
+  if (user.sede_id === 1) {
+      return ['DIRECTOR_CARRERA', 'DIRECTOR CARRERA', 'DOCENTE'].includes(user.rol)
+  }
+
+  return false
 })
 
 const formTema = ref({
@@ -921,31 +946,50 @@ async function cargarDatos() {
       if (tema.value) {
         formTema.value = {
           resultado_aprendizaje: tema.value.resultado_aprendizaje || '',
-          logros_esperados: tema.value.logros_esperados ? JSON.parse(JSON.stringify(tema.value.logros_esperados)) : [],
+          logros_esperados: (tema.value.logros_esperados || tema.value.logros || []).map((l, index) => ({
+            ...l,
+            codigo: l.codigo || `LE.${index + 1}`, // Generate UI code if missing
+            // Map indicadores with codes too
+            indicadores: (l.indicadores || []).map((ind, iIdx) => ({
+                ...ind,
+                codigo: ind.codigo || `IND.${index + 1}.${iIdx + 1}`
+            })),
+            parcial: l.periodo === '2do Parcial' ? 2 : (parseInt(l.periodo) || 1) // Map backend period to frontend partial ID
+          })),
           contenidos: {
-            conceptual: tema.value.contenidos?.conceptual ? [...tema.value.contenidos.conceptual] : [],
-            procedimental: tema.value.contenidos?.procedimental ? [...tema.value.contenidos.procedimental] : [],
-            actitudinal: tema.value.contenidos?.actitudinal ? [...tema.value.contenidos.actitudinal] : []
+            conceptual: [...(tema.value.contenidos?.conceptual || tema.value.contenido_conceptual || [])],
+            procedimental: [...(tema.value.contenidos?.procedimental || tema.value.contenido_procedimental || [])],
+            actitudinal: [...(tema.value.contenidos?.actitudinal || tema.value.contenido_actitudinal || [])]
           },
           estrategias: {
-            metodologicas: tema.value.estrategias?.metodologicas || '',
-            aprendizaje: tema.value.estrategias?.aprendizaje || '',
-            recursos: tema.value.estrategias?.recursos ? [...tema.value.estrategias.recursos] : []
+            metodologicas: tema.value.planificacion_personal?.estrategias_metodologicas || tema.value.estrategias?.metodologicas || tema.value.estrategias_metodologicas || '',
+            aprendizaje: tema.value.planificacion_personal?.estrategias_aprendizaje || tema.value.estrategias?.aprendizaje || tema.value.estrategias_aprendizaje || '',
+            recursos: [...(tema.value.planificacion_personal?.estrategias_recursos || tema.value.estrategias?.recursos || tema.value.estrategias_recursos || [])]
           },
           evaluacion: {
             formativa: {
-              actividades: tema.value.evaluacion?.formativa?.actividades ? [...tema.value.evaluacion.formativa.actividades] : [],
-              instrumentos: tema.value.evaluacion?.formativa?.instrumentos ? [...tema.value.evaluacion.formativa.instrumentos] : [],
-              evidencias: tema.value.evaluacion?.formativa?.evidencias ? [...tema.value.evaluacion.formativa.evidencias] : []
+              actividades: [...(tema.value.planificacion_personal?.evaluacion_formativa?.actividades || tema.value.evaluacion?.formativa?.actividades || tema.value.evaluacion_formativa?.actividades || [])],
+              instrumentos: [...(tema.value.planificacion_personal?.evaluacion_formativa?.instrumentos || tema.value.evaluacion?.formativa?.instrumentos || tema.value.evaluacion_formativa?.instrumentos || [])],
+              evidencias: [...(tema.value.planificacion_personal?.evaluacion_formativa?.evidencias || tema.value.evaluacion?.formativa?.evidencias || tema.value.evaluacion_formativa?.evidencias || [])]
             },
             sumativa: {
-              actividades: tema.value.evaluacion?.sumativa?.actividades ? [...tema.value.evaluacion.sumativa.actividades] : [],
-              instrumentos: tema.value.evaluacion?.sumativa?.instrumentos ? [...tema.value.evaluacion.sumativa.instrumentos] : [],
-              evidencias: tema.value.evaluacion?.sumativa?.evidencias ? [...tema.value.evaluacion.sumativa.evidencias] : []
+              actividades: [...(tema.value.planificacion_personal?.evaluacion_sumativa?.actividades || tema.value.evaluacion?.sumativa?.actividades || tema.value.evaluacion_sumativa?.actividades || [])],
+              instrumentos: [...(tema.value.planificacion_personal?.evaluacion_sumativa?.instrumentos || tema.value.evaluacion?.sumativa?.instrumentos || tema.value.evaluacion_sumativa?.instrumentos || [])],
+              evidencias: [...(tema.value.planificacion_personal?.evaluacion_sumativa?.evidencias || tema.value.evaluacion?.sumativa?.evidencias || tema.value.evaluacion_sumativa?.evidencias || [])]
             }
           },
-          secuencia_didactica: tema.value.secuencia_didactica ? JSON.parse(JSON.stringify(tema.value.secuencia_didactica)) : [],
-          referencias_bibliograficas: tema.value.referencias_bibliograficas ? JSON.parse(JSON.stringify(tema.value.referencias_bibliograficas)) : []
+          secuencia_didactica: tema.value.planificacion_personal?.secuencia_didactica ? JSON.parse(JSON.stringify(tema.value.planificacion_personal.secuencia_didactica)) : (tema.value.secuencia_didactica ? JSON.parse(JSON.stringify(tema.value.secuencia_didactica)) : []),
+
+          referencias_bibliograficas: tema.value.referencias_bibliograficas
+             ? JSON.parse(JSON.stringify(tema.value.referencias_bibliograficas))
+             : (tema.value.bibliografias ? tema.value.bibliografias.map(b => ({
+                 bibliografia_id: b.id,
+                 pagina_desde: b.pivot?.pagina_desde || '',
+                 pagina_hasta: b.pivot?.pagina_hasta || '',
+                 // Optional: keep title/author for display if needed
+                 titulo: b.titulo,
+                 autor: b.autor
+             })) : [])
         }
       }
     }
@@ -954,7 +998,7 @@ async function cargarDatos() {
 
 function guardarCambios() {
   if (!asignatura.value || !unidad.value || !tema.value) return
-  store.updateTema(asignatura.value.id, unidad.value.id, tema.value.id, formTema.value)
+  store.updateTema(tema.value.id, formTema.value)
   $q.notify({ type: 'positive', message: 'Cambios guardados exitosamente', icon: 'check_circle', position: 'top' })
 }
 
@@ -996,7 +1040,9 @@ function abrirDialogIndicador(logro) {
 
 function agregarIndicador() {
   if (!nuevoIndicador.value.trim() || !logroSeleccionado.value) return
-  const logroNum = logroSeleccionado.value.codigo.replace('LE.', '')
+  // Safety check for codigo, defaulting to just index if missing
+  const codigoLogro = logroSeleccionado.value.codigo || 'LE.1'
+  const logroNum = codigoLogro.replace('LE.', '')
   const indNum = (logroSeleccionado.value.indicadores?.length || 0) + 1
   if (!logroSeleccionado.value.indicadores) logroSeleccionado.value.indicadores = []
   logroSeleccionado.value.indicadores.push({ id: Date.now(), codigo: `IND.${logroNum}.${indNum}`, descripcion: nuevoIndicador.value })

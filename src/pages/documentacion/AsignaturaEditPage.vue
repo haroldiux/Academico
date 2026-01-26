@@ -11,6 +11,11 @@
         <h4 class="q-ma-none text-weight-bold">
           <q-icon name="menu_book" size="36px" color="primary" class="q-mr-sm" />
           <span class="text-gradient">{{ asignatura?.nombre || 'Cargando...' }}</span>
+          <q-chip v-if="asignatura?.estado" :color="asignatura.estado === 'APROBADO' ? 'green-2' : 'orange-2'"
+            :text-color="asignatura.estado === 'APROBADO' ? 'green-9' : 'orange-9'" class="q-ml-sm text-weight-bold"
+            dense>
+            {{ asignatura.estado === 'APROBADO' ? 'APROBADO' : 'EN PROCESO' }}
+          </q-chip>
         </h4>
         <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
           {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ nombreCarrera }}
@@ -25,6 +30,12 @@
         </div>
       </div>
       <div class="col-auto row q-gutter-sm">
+        <q-btn v-if="puedeAprobarCarpeta"
+          :label="asignatura?.estado === 'APROBADO' ? 'Reabrir Carpeta' : 'Aprobar Carpeta'"
+          :color="asignatura?.estado === 'APROBADO' ? 'orange' : 'green'"
+          :icon="asignatura?.estado === 'APROBADO' ? 'lock_open' : 'check_circle'"
+          no-caps unelevated @click="toggleEstadoCarpeta" />
+
         <q-btn outline color="indigo" icon="calendar_month" label="Planificación Semestral" no-caps
           :to="`/documentacion/${route.params.id}/planificacion`" />
         <q-btn v-if="puedeImportar" outline color="teal" icon="upload_file" label="Importar Word" no-caps
@@ -414,11 +425,7 @@
               Unidades de Aprendizaje
             </div>
             <div class="row q-gutter-sm">
-                <q-btn unelevated color="primary" icon="add" label="Nueva Unidad" no-caps @click="abrirDialogoUnidad()" />
-                <q-chip color="amber-2" text-color="amber-9">
-                  <q-icon name="cloud_sync" class="q-mr-xs" />
-                  Datos desde API externa
-                </q-chip>
+                <q-btn v-if="puedeEditarPlanificacion" unelevated color="primary" icon="add" label="Nueva Unidad" no-caps @click="abrirDialogoUnidad()" />
             </div>
           </div>
 
@@ -443,12 +450,12 @@
                     rounded size="8px" style="width: 100px;" />
                   <span class="text-caption q-mt-xs">{{ calcularProgresoUnidad(unidad) }}% documentado</span>
 
-                  <div class="row q-gutter-xs q-mt-sm">
-                    <q-btn flat round dense icon="edit" color="orange" size="sm" @click.stop="abrirDialogoUnidad(unidad)">
-                        <q-tooltip>Editar Unidad</q-tooltip>
+                  <div class="row items-center">
+                    <q-btn v-if="puedeEditarPlanificacion" flat round dense icon="edit" color="primary" @click.stop="abrirDialogoUnidad(unidad)">
+                      <q-tooltip>Editar Unidad</q-tooltip>
                     </q-btn>
-                    <q-btn flat round dense icon="delete" color="red" size="sm" @click.stop="confirmarEliminarUnidad(unidad)">
-                         <q-tooltip>Eliminar Unidad</q-tooltip>
+                    <q-btn v-if="puedeEditarPlanificacion" flat round dense icon="delete" color="red" @click.stop="confirmarEliminarUnidad(unidad)">
+                      <q-tooltip>Eliminar Unidad</q-tooltip>
                     </q-btn>
                   </div>
                 </q-item-section>
@@ -464,7 +471,8 @@
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
-                    @blur="guardarElementoCompetencia(unidad)" />
+                    @blur="guardarElementoCompetencia(unidad)"
+                    :readonly="!puedeEditarPlanificacion" />
                 </q-card-section>
               </q-card>
 
@@ -495,28 +503,31 @@
                       </q-chip>
 
                       <!-- Reordering Buttons -->
-                      <q-btn flat round dense icon="arrow_upward" color="grey-7" size="sm"
-                             @click.stop="moverTema(unidad, tema, 'up')" :disable="index === 0">
-                        <q-tooltip>Subir</q-tooltip>
-                      </q-btn>
-                      <q-btn flat round dense icon="arrow_downward" color="grey-7" size="sm"
-                             @click.stop="moverTema(unidad, tema, 'down')" :disable="index === unidad.temas.length - 1">
-                        <q-tooltip>Bajar</q-tooltip>
-                      </q-btn>
+                      <template v-if="puedeEditarPlanificacion">
+                        <q-btn flat round dense icon="arrow_upward" color="grey-7" size="sm"
+                               @click.stop="moverTema(unidad, tema, 'up')" :disable="index === 0">
+                          <q-tooltip>Subir</q-tooltip>
+                        </q-btn>
+                        <q-btn flat round dense icon="arrow_downward" color="grey-7" size="sm"
+                               @click.stop="moverTema(unidad, tema, 'down')" :disable="index === unidad.temas.length - 1">
+                          <q-tooltip>Bajar</q-tooltip>
+                        </q-btn>
 
-                      <q-btn flat round dense icon="edit" color="primary" size="sm" @click.stop="abrirDialogoTema(unidad, tema)">
-                        <q-tooltip>Editar Título</q-tooltip>
-                      </q-btn>
-                      <q-btn flat round dense icon="delete" color="red" size="sm" @click.stop="confirmarEliminarTema(tema)">
-                        <q-tooltip>Eliminar Tema</q-tooltip>
-                      </q-btn>
+                        <q-btn flat round dense icon="edit" color="primary" size="sm" @click.stop="abrirDialogoTema(unidad, tema)">
+                          <q-tooltip>Editar Título</q-tooltip>
+                        </q-btn>
+                        <q-btn flat round dense icon="delete" color="red" size="sm" @click.stop="confirmarEliminarTema(tema)">
+                          <q-tooltip>Eliminar Tema</q-tooltip>
+                        </q-btn>
+                      </template>
                     </div>
                   </q-item-section>
                 </q-item>
 
-                <div class="row justify-center q-mt-sm">
-                    <q-btn outline color="primary" icon="add" label="Nuevo Tema" size="sm" no-caps @click="abrirDialogoTema(unidad)" />
-                </div>
+              <div class="row justify-center q-mb-md" v-if="puedeEditarPlanificacion">
+                <q-btn outline color="primary" icon="add" label="Nuevo Tema" size="sm"
+                  @click.stop="abrirDialogoTema(unidad)" />
+              </div>
               </q-list>
             </q-expansion-item>
           </q-list>
@@ -835,24 +846,69 @@ const esDirectorOAdmin = computed(() => {
   return rolesPermitidos.includes(rol)
 })
 
-const esDocenteCochabamba = computed(() => {
-  if (esDirectorOAdmin.value) return false
-  // Asumimos ID 1 para cochabamba como verificado en BD
-  return authStore.usuarioActual?.sede_id === 1
+const puedeAprobarCarpeta = computed(() => {
+    // Solo Directores y Admins pueden aprobar/reabrir
+    return esDirectorOAdmin.value
 })
 
-function puedeEditarCampo(nombreCampo) {
-  // 1. Director/Admin SIEMPRE puede editar (override total)
-  if (esDirectorOAdmin.value) return true
+const puedeEditarPlanificacion = computed(() => {
+  const usuario = authStore.usuarioActual
+  const rol = usuario?.rol
+  const esCocha = usuario?.sede_id === 1
 
-  // 2. Si no es Cochabamba y no es admin, es SOLO LECTURA siempre
-  if (!esDocenteCochabamba.value) return false
+  // 1. Si está APROBADO, nadie edita (salvo que sea admin y quiera desbloquear primero, pero la UI de edición se bloquea)
+  // OJO: Si queremos que el Director pueda editar AUNQUE este aprobado, habría que cambiar esto.
+  // Pero el usuario dijo "editar hasta que... lo de por aprobado". Implica BLOQUEO.
+  if (asignatura.value?.estado === 'APROBADO') return false
 
-  // 3. Es Docente Cochabamba: Puede editar SOLO si NO estaba completo ORIGINALMENTE
-  // Usamos los datos originales cargados del servidor, no el valur actual que se está escribiendo
-  const valorOriginal = datosOriginales.value[nombreCampo]
-  const estabaCompleto = valorOriginal && valorOriginal.trim().length > 0
-  return !estabaCompleto
+  // 2. Global Admins
+  if (['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'VICERRECTOR_NACIONAL', 'VICERRECTOR NACIONAL'].includes(rol)) {
+      return true
+  }
+  // 3. Cocha Roles (Director/Docente/VicerrectorSede)
+  if (esCocha) {
+      if (['DIRECTOR_CARRERA', 'DIRECTOR CARRERA', 'VICERRECTOR_SEDE', 'VICERRECTOR SEDE', 'DOCENTE'].includes(rol)) {
+          return true
+      }
+  }
+  return false
+})
+
+function puedeEditarCampo() {
+  // 1. Si está APROBADO, bloqueo total (salvo que se reabra)
+  if (asignatura.value?.estado === 'APROBADO') return false
+
+  const usuario = authStore.usuarioActual
+  const rol = usuario?.rol
+  const esCocha = usuario?.sede_id === 1
+
+  // 2. Super Admins / Vicerrectores Nacionales: SIEMPRE pueden editar (Globales)
+  if (['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'VICERRECTOR_NACIONAL', 'VICERRECTOR NACIONAL'].includes(rol)) {
+      return true
+  }
+
+  // 3. Directores de Carrera / Vicerrectores de Sede
+  if (['DIRECTOR_CARRERA', 'DIRECTOR CARRERA', 'VICERRECTOR_SEDE', 'VICERRECTOR SEDE'].includes(rol)) {
+      // Solo si son de Cochabamba
+      return esCocha
+  }
+
+  // 4. Docentes: Solo si son de Cochabamba
+  if (esCocha) return true
+
+  return false
+}
+
+async function toggleEstadoCarpeta() {
+    if (!asignatura.value) return
+    const nuevoEstado = asignatura.value.estado === 'APROBADO' ? 'EN_PROCESO' : 'APROBADO'
+    try {
+        await store.cambiarEstado(asignatura.value.id, nuevoEstado)
+        $q.notify({ type: 'positive', message: `Carpeta ${nuevoEstado === 'APROBADO' ? 'Aprobada' : 'Reabierta'}` })
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Error al cambiar estado' })
+    }
 }
 
 const nombreDocenteCarpeta = computed(() => {
