@@ -585,11 +585,20 @@
               <div v-else class="q-gutter-md">
                 <q-card v-for="(momento, idx) in formTema.secuencia_didactica" :key="momento.id" flat bordered class="momento-card">
                   <q-card-section horizontal :class="getMomentoClass(momento.momento)">
-                    <q-card-section class="col-auto flex flex-center" style="min-width: 160px;">
-                      <div class="text-center">
+                    <q-card-section class="col-auto flex flex-center" style="min-width: 250px; max-width: 250px;">
+                      <div class="text-center full-width q-px-sm">
                         <q-icon :name="getMomentoIcon(momento.momento)" size="32px" />
-                        <div class="text-subtitle1 text-weight-bold q-mt-xs">{{ momento.momento }}</div>
-                        <q-chip :color="getMomentoColor(momento.momento)" text-color="white" dense>{{ momento.duracion }} min</q-chip>
+                        <div class="text-weight-bold q-mt-xs" :class="momento.momento.length > 30 ? 'text-caption' : 'text-subtitle1'" style="line-height: 1.2;">{{ momento.momento }}</div>
+                        <q-chip clickable ripple :color="getMomentoColor(momento.momento)" text-color="white" dense size="sm" class="q-mt-sm">
+                          <q-icon name="schedule" size="10px" class="q-mr-xs" />
+                          {{ momento.duracion }} min
+                          <q-icon name="edit" size="10px" class="q-ml-xs" style="opacity: 0.7;" />
+
+                          <q-tooltip>Clic para cambiar duración</q-tooltip>
+                          <q-popup-edit v-model.number="momento.duracion" auto-save v-slot="scope" anchor="top middle" self="bottom middle">
+                            <q-input v-model.number="scope.value" dense autofocus borderless type="number" style="width: 60px" @keyup.enter="scope.set" />
+                          </q-popup-edit>
+                        </q-chip>
                       </div>
                     </q-card-section>
                     <q-separator vertical />
@@ -742,10 +751,11 @@ const nuevoIndicador = ref('')
 const formSecuencia = ref({ momento: 'INTRODUCCIÓN', actividad: '', duracion: 10 })
 
 const opcionesMomento = [
-  { label: 'Introducción', value: 'INTRODUCCIÓN' },
-  { label: 'Desarrollo', value: 'DESARROLLO' },
-  { label: 'Contenidos', value: 'CONTENIDOS' },
-  { label: 'Cierre', value: 'CIERRE' }
+  { label: 'INTRODUCCION', value: 'INTRODUCCION' },
+  { label: 'RESULTADOS DE APRENDIZAJE/LOGROS ESPERADOS', value: 'RESULTADOS DE APRENDIZAJE/LOGROS ESPERADOS' },
+  { label: 'CONTENIDOS DE LA CLASE', value: 'CONTENIDOS DE LA CLASE' },
+  { label: 'CUERPO DE CONTENIDOS', value: 'CUERPO DE CONTENIDOS' },
+  { label: 'CONCLUSION O CIERRE', value: 'CONCLUSION O CIERRE' }
 ]
 
 
@@ -978,7 +988,11 @@ async function cargarDatos() {
               evidencias: [...(tema.value.planificacion_personal?.evaluacion_sumativa?.evidencias || tema.value.evaluacion?.sumativa?.evidencias || tema.value.evaluacion_sumativa?.evidencias || [])]
             }
           },
-          secuencia_didactica: tema.value.planificacion_personal?.secuencia_didactica ? JSON.parse(JSON.stringify(tema.value.planificacion_personal.secuencia_didactica)) : (tema.value.secuencia_didactica ? JSON.parse(JSON.stringify(tema.value.secuencia_didactica)) : []),
+          secuencia_didactica: tema.value.planificacion_personal?.secuencia_didactica
+            ? JSON.parse(JSON.stringify(tema.value.planificacion_personal.secuencia_didactica))
+            : (tema.value.secuencia_didactica && tema.value.secuencia_didactica.length > 0
+                ? JSON.parse(JSON.stringify(tema.value.secuencia_didactica))
+                : []),
 
           referencias_bibliograficas: tema.value.referencias_bibliograficas
              ? JSON.parse(JSON.stringify(tema.value.referencias_bibliograficas))
@@ -990,6 +1004,23 @@ async function cargarDatos() {
                  titulo: b.titulo,
                  autor: b.autor
              })) : [])
+        }
+
+        // Pre-populate sequence if empty
+        if (formTema.value.secuencia_didactica.length === 0) {
+          const defaults = [
+            { momento: 'INTRODUCCION', duracion: 10 },
+            { momento: 'RESULTADOS DE APRENDIZAJE/LOGROS ESPERADOS', duracion: 10 },
+            { momento: 'CONTENIDOS DE LA CLASE', duracion: 10 },
+            { momento: 'CUERPO DE CONTENIDOS', duracion: 40 },
+            { momento: 'CONCLUSION O CIERRE', duracion: 10 }
+          ]
+          formTema.value.secuencia_didactica = defaults.map((d, i) => ({
+            id: Date.now() + i,
+            momento: d.momento,
+            actividad: '',
+            duracion: d.duracion
+          }))
         }
       }
     }
@@ -1091,13 +1122,34 @@ function moverSecuencia(idx, dir) {
 }
 
 function getMomentoClass(m) {
-  return { 'INTRODUCCIÓN': 'bg-green-1', 'DESARROLLO': 'bg-blue-1', 'CONTENIDOS': 'bg-orange-1', 'CIERRE': 'bg-red-1' }[m] || 'bg-grey-1'
+  const map = {
+    'INTRODUCCION': 'bg-green-1',
+    'RESULTADOS DE APRENDIZAJE/LOGROS ESPERADOS': 'bg-purple-1',
+    'CONTENIDOS DE LA CLASE': 'bg-orange-1',
+    'CUERPO DE CONTENIDOS': 'bg-blue-1',
+    'CONCLUSION O CIERRE': 'bg-red-1'
+  }
+  return map[m] || 'bg-grey-1'
 }
 function getMomentoIcon(m) {
-  return { 'INTRODUCCIÓN': 'play_circle', 'DESARROLLO': 'school', 'CONTENIDOS': 'list_alt', 'CIERRE': 'check_circle' }[m] || 'circle'
+  const map = {
+    'INTRODUCCION': 'play_circle',
+    'RESULTADOS DE APRENDIZAJE/LOGROS ESPERADOS': 'emoji_events',
+    'CONTENIDOS DE LA CLASE': 'list_alt',
+    'CUERPO DE CONTENIDOS': 'school',
+    'CONCLUSION O CIERRE': 'check_circle'
+  }
+  return map[m] || 'circle'
 }
 function getMomentoColor(m) {
-  return { 'INTRODUCCIÓN': 'green', 'DESARROLLO': 'blue', 'CONTENIDOS': 'orange', 'CIERRE': 'red' }[m] || 'grey'
+  const map = {
+    'INTRODUCCION': 'green',
+    'RESULTADOS DE APRENDIZAJE/LOGROS ESPERADOS': 'purple',
+    'CONTENIDOS DE LA CLASE': 'orange',
+    'CUERPO DE CONTENIDOS': 'blue',
+    'CONCLUSION O CIERRE': 'red'
+  }
+  return map[m] || 'grey'
 }
 </script>
 
