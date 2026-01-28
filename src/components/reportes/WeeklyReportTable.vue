@@ -41,18 +41,15 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { date } from 'quasar'
 
-const props = defineProps({
+defineProps({
   rows: {
     type: Array,
     default: () => []
   },
   loading: Boolean
 })
-
-const emit = defineEmits(['create'])
 
 const columns = [
   { name: 'asignatura', label: 'Asignatura', field: row => row.asignatura?.nombre || 'N/A', align: 'left', sortable: true },
