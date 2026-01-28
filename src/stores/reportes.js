@@ -37,6 +37,45 @@ export const useReportesStore = defineStore('reportes', () => {
         }
     }
 
+    async function fetchSeguimientoSemanal(params = {}) {
+        loading.value = true
+        try {
+            const response = await api.get('/seguimiento-semanal', { params })
+            return response.data
+        } catch (error) {
+            console.error('Error fetching seguimiento semanal:', error)
+            return []
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function createSeguimientoSemanal(data) {
+        loading.value = true
+        try {
+            const response = await api.post('/seguimiento-semanal', data)
+            return response.data
+        } catch (error) {
+            console.error('Error creating seguimiento semanal:', error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function updateSeguimientoSemanal(id, data) {
+        loading.value = true
+        try {
+            const response = await api.put(`/seguimiento-semanal/${id}`, data)
+            return response.data
+        } catch (error) {
+            console.error('Error updating seguimiento semanal:', error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
     return {
         // State
         reporteMaterias,
@@ -44,6 +83,9 @@ export const useReportesStore = defineStore('reportes', () => {
         loading,
 
         // Actions
-        fetchReportes
+        fetchReportes,
+        fetchSeguimientoSemanal,
+        createSeguimientoSemanal,
+        updateSeguimientoSemanal
     }
 })

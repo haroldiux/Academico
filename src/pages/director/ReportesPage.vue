@@ -143,6 +143,7 @@
     <q-card flat bordered>
       <q-tabs v-model="tabActivo" class="text-primary" active-color="primary" indicator-color="primary" align="left">
         <q-tab name="materias" icon="menu_book" label="Por Materia" />
+        <q-tab name="semanal" icon="assignment" label="Cumplimiento Semanal" />
         <q-tab name="asistencias" icon="event_available" label="Asistencias" />
         <q-tab name="seguimiento" icon="playlist_add_check" label="Seguimiento de Clase" />
         <q-tab name="documentacion" icon="folder_open" label="Documentación" />
@@ -260,6 +261,26 @@
           </div>
         </q-tab-panel>
 
+        <!-- NUEVO: Reporte Semanal -->
+        <q-tab-panel name="semanal">
+          <div class="row items-center justify-between q-mb-md">
+            <div class="text-h6">Reportes de Cumplimiento Semanal</div>
+            <div class="row q-gutter-sm">
+                <q-btn 
+                   color="secondary" 
+                   icon="auto_awesome" 
+                   label="Generar Reportes de la Semana" 
+                   @click="generateWeeklyReports"
+                   :disable="!filtros.carrera || !filtros.fechaDesde"
+                >
+                   <q-tooltip>Seleccione Carrera y Fecha Desde para activar la generación automática</q-tooltip>
+                </q-btn>
+               <q-btn color="primary" icon="add" label="Nuevo Reporte Manual" @click="dialogWeekly = true" />
+            </div>
+          </div>
+          <weekly-report-table :rows="weeklyReports" :loading="loadingWeekly" @refresh="cargarSeguimientoSemanal" @create="dialogWeekly = true" @edit="editWeeklyReport" />
+        </q-tab-panel>
+
         <!-- Reporte de Asistencias -->
         <q-tab-panel name="asistencias">
           <div class="text-h6 q-mb-md">Reporte de Asistencias por Materia</div>
@@ -348,6 +369,11 @@
       </q-tab-panels>
     </q-card>
 
+    <!-- Dialog de Nuevo/Editar Reporte Semanal -->
+    <q-dialog v-model="dialogWeekly">
+      <weekly-report-form :reportData="reporteSeleccionado" @saved="onWeeklySaved" />
+    </q-dialog>
+
     <!-- Dialog de Detalle -->
     <q-dialog v-model="dialogDetalle" persistent maximized>
       <q-card>
@@ -377,6 +403,8 @@ import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { useReportesStore } from 'src/stores/reportes'
+import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
+import WeeklyReportForm from 'src/components/reportes/WeeklyReportForm.vue'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
@@ -539,12 +567,35 @@ onMounted(async () => {
   if (authStore.rol === 'DIRECTOR_CARRERA') {
     filtros.value.carrera = authStore.usuarioActual?.director?.carrera_id
   }
+  
+  // Pre-fill with Monday of current week for easy reporting
+  const today = new Date()
+  const day = today.getDay()
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1) // adjustments for Sunday
+  const monday = new Date(today.setDate(diff))
+  filtros.value.fechaDesde = monday.toISOString().split('T')[0]
 
   cargarReportes()
 })
 
-watch(() => filtros.value.carrera, () => cargarReportes())
-watch(() => filtros.value.sede, () => cargarReportes())
+watch(() => filtros.value.carrera, () => {
+    cargarReportes()
+    if (tabActivo.value === 'semanal') loadWeeklyReports()
+})
+watch(() => filtros.value.sede, () => {
+    cargarReportes()
+    if (tabActivo.value === 'semanal') loadWeeklyReports()
+})
+watch(() => filtros.value.fechaDesde, () => {
+    if (tabActivo.value === 'semanal') loadWeeklyReports()
+})
+
+// Watch for tab change to load data
+watch(tabActivo, (val) => {
+  if (val === 'semanal') {
+    loadWeeklyReports()
+  }
+})
 
 // Opciones de filtros static
 const tiposReporte = [
@@ -590,7 +641,45 @@ const generarReporte = () => {
     message: 'Generando reporte...',
     icon: 'sync'
   })
-  // Aquí se aplicarían los filtros
+}
+
+// WEEKLY REPORT LOGIC
+const dialogWeekly = ref(false)
+const weeklyReports = ref([])
+const loadingWeekly = ref(false)
+const reporteSeleccionado = ref(null)
+
+const loadWeeklyReports = async () => {
+  loadingWeekly.value = true
+  const params = {
+    carrera_id: filtros.value.carrera,
+    sede_id: filtros.value.sede,
+    docente_id: filtros.value.docente,
+    semana_inicio: filtros.value.fechaDesde
+  }
+  try {
+     weeklyReports.value = await reportesStore.fetchSeguimientoSemanal(params)
+  } catch (e) {
+     console.error(e)
+  } finally {
+     loadingWeekly.value = false
+  }
+}
+
+const editWeeklyReport = (reporte) => {
+    reporteSeleccionado.value = reporte
+    dialogWeekly.value = true
+}
+
+const onWeeklySaved = async () => {
+    dialogWeekly.value = false
+    reporteSeleccionado.value = null
+    await loadWeeklyReports()
+    $q.notify({
+        type: 'positive',
+        message: 'Reporte semanal guardado exitosamente',
+        icon: 'check_circle'
+    })
 }
 
 const exportarReporte = () => {
@@ -646,6 +735,57 @@ const descargarReporteDocenteMateria = (materia, docente) => {
     icon: 'download'
   })
 }
+const generateWeeklyReports = async () => {
+    if (!filtros.value.carrera || !filtros.value.fechaDesde) {
+        $q.notify({ type: 'warning', message: 'Seleccione Carrera y Fecha Desde para generar reportes' })
+        return
+    }
+
+    $q.loading.show({ message: 'Escaneando Control de Clase del Docente...' })
+    
+    // Simulate prototype behavior
+    await new Promise(r => setTimeout(r, 1500))
+
+    try {
+        const mockData = [
+            { 
+                id: Math.random(), 
+                asignatura: { nombre: 'Álgebra I', codigo: 'MAT-101' },
+                carrera: { nombre: 'Ingeniería de Sistemas' },
+                docente: { nombre: 'KARINA PAOLA LOPEZ' },
+                semana_inicio: filtros.value.fechaDesde,
+                alerta: 'VERDE',
+                criterios: { temaImpartido: true, actividadesFormativas: true, secuenciaDidactica: true, plataformaVirtual: true, evidencias: true, evaluaciones: true, integracionTransversal: true },
+                observaciones_generales: 'Sin observaciones. Cumplimiento total.'
+            },
+            { 
+                id: Math.random(), 
+                asignatura: { nombre: 'Programación I', codigo: 'SIS-121' },
+                carrera: { nombre: 'Ingeniería de Sistemas' },
+                docente: { nombre: 'HAROLD MARCO ANTONIO ROJAS' },
+                semana_inicio: filtros.value.fechaDesde,
+                alerta: 'ROJO',
+                criterios: { temaImpartido: false, actividadesFormativas: true, secuenciaDidactica: false, plataformaVirtual: true, evidencias: false, evaluaciones: true, integracionTransversal: false },
+                observaciones_generales: 'Generado automáticamente: Se detectó falta de registro de temas y evidencias en 2 de 3 sesiones.'
+            }
+        ]
+
+        weeklyReports.value = [...mockData, ...weeklyReports.value]
+        
+        $q.notify({ 
+            type: 'positive', 
+            message: 'Se han generado 2 reportes basados en la actividad docente de la semana.',
+            caption: '1 en VERDE, 1 en ROJO',
+            icon: 'auto_awesome'
+        })
+    } catch (error) {
+        console.error(error)
+        $q.notify({ type: 'negative', message: 'Error al generar reportes' })
+    } finally {
+        $q.loading.hide()
+    }
+}
+
 </script>
 
 <style scoped>

@@ -146,18 +146,43 @@
              </div>
 
              <div v-if="claseSeleccionada" class="seguimiento-content">
+                <q-card flat bordered class="q-pa-md bg-grey-1 q-mb-md">
+                   <div class="text-subtitle1 text-weight-bold q-mb-md">Planificación de Unidad y Tema</div>
+                   <div class="row q-col-gutter-sm">
+                      <div class="col-12 col-md-6">
+                         <q-select 
+                            v-model="unidadSeleccionada" 
+                            :options="unidadesMock" 
+                            label="Unidad de Aprendizaje" 
+                            outlined dense 
+                            option-label="nombre"
+                         />
+                      </div>
+                      <div class="col-12 col-md-6">
+                         <q-select 
+                            v-model="temaSeleccionado" 
+                            :options="unidadSeleccionada?.temas || []" 
+                            label="Tema de la Sesión" 
+                            outlined dense 
+                            option-label="titulo"
+                            :disable="!unidadSeleccionada"
+                         />
+                      </div>
+                   </div>
+                </q-card>
+
                 <q-card flat bordered class="q-pa-md bg-grey-1">
                    <div class="text-subtitle1 text-weight-bold q-mb-md">Planificación del Día</div>
                    
                    <div class="row q-col-gutter-lg">
                       <div class="col-12 col-md-6">
-                         <q-input v-model="temaPlanificado" label="Tema Planificado (Según Plan de Clase)" outlined />
+                         <q-input v-model="temaPlanificado" label="Tema Planificado (Autocompletado)" outlined readonly bg-color="white" />
                       </div>
                       <div class="col-12 col-md-6 flex items-center">
-                         <q-checkbox v-model="temaCumplido" label="Tema Cumplido" color="green" size="lg" />
+                         <q-checkbox v-model="temaCumplido" label="Tema Cumplido en esta sesión" color="green" size="lg" keep-color />
                       </div>
                       <div class="col-12">
-                         <q-input v-model="observacionesClase" label="Observaciones Generales" type="textarea" outlined rows="3" />
+                         <q-input v-model="observacionesClase" label="Observaciones Generales" type="textarea" outlined rows="3" bg-color="white" />
                       </div>
                    </div>
                 </q-card>
@@ -293,74 +318,79 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import { api } from 'boot/axios'
 
 const $q = useQuasar()
 const tab = ref('asistencia')
 const claseSeleccionada = ref(null)
 const fechaSeguimiento = ref(new Date().toISOString().split('T')[0])
 
-// Mock Data para Clases Unificadas
-const clasesUnificadas = ref([
-  {
-    id: 1,
-    nombreComun: 'Inglés I (Grupo A)',
-    horario: '08:00 - 10:15',
-    nombreDisplay: 'Inglés I (Grupo A) - 08:00',
-    carreras: [
-      {
-        id: 'sis',
-        nombreCarrera: 'Ingeniería de Sistemas',
-        materia: 'Inglés Técnico 1',
-        estudiantes: [
-          { id: 1, nombre: 'Juan', apellido: 'Pérez', estado: 'P', observacion: '' },
-          { id: 2, nombre: 'Maria', apellido: 'Gomez', estado: 'P', observacion: '' },
-          { id: 3, nombre: 'Carlos', apellido: 'Lopez', estado: 'P', observacion: '' },
-        ]
-      },
-      {
-        id: 'elec',
-        nombreCarrera: 'Ingeniería Electrónica',
-        materia: 'Inglés 1',
-        estudiantes: [
-           { id: 4, nombre: 'Ana', apellido: 'Torres', estado: 'P', observacion: '' },
-           { id: 5, nombre: 'Pedro', apellido: 'Ruiz', estado: 'P', observacion: '' },
-        ]
-      },
-      {
-        id: 'bio',
-        nombreCarrera: 'Ingeniería Biomédica',
-        materia: 'Inglés Gramatical',
-        estudiantes: [
-           { id: 6, nombre: 'Sofia', apellido: 'Mendez', estado: 'P', observacion: '' },
-           { id: 7, nombre: 'Luis', apellido: 'Vargas', estado: 'P', observacion: '' },
-           { id: 8, nombre: 'Elena', apellido: 'Rios', estado: 'P', observacion: '' },
-        ]
-      }
-    ]
-  },
-  {
-     id: 2,
-     nombreComun: 'Programación I (Lab)',
-     horario: '10:30 - 12:45',
-     nombreDisplay: 'Programación I (Lab) - 10:30',
-     carreras: [
-        {
-           id: 'sis',
-           nombreCarrera: 'Ingeniería de Sistemas',
-           materia: 'Programación I',
-           estudiantes: [
+// Data for Unified Classes (Fetched from API)
+const clasesUnificadas = ref([])
+
+onMounted(async () => {
+  try {
+    const res = await api.get('/my-subjects')
+    
+    // Format response to match the UI expectation
+    // API returns: [{ id, nombre, codigo, grupo, carreras: [{id, nombreCarrera, materia}] }]
+    // UI expects specific structure. 
+    // Let's adapt API response to 'clasesUnificadas' structure.
+    
+    clasesUnificadas.value = res.data.map(subj => ({
+       id: subj.id,
+       nombreComun: `${subj.nombre} (${subj.grupo})`,
+       horario: subj.horario, // Placeholder from backend
+       nombreDisplay: `${subj.nombre} (${subj.grupo}) - ${subj.horario || 'N/A'}`,
+       carreras: subj.carreras.map(c => ({
+           id: c.id,
+           nombreCarrera: c.nombreCarrera,
+           materia: c.materia,
+           estudiantes: [ // Mock students for now, or fetch real ones if endpoint available.
               { id: 1, nombre: 'Juan', apellido: 'Pérez', estado: 'P', observacion: '' },
-              { id: 3, nombre: 'Carlos', apellido: 'Lopez', estado: 'P', observacion: '' },
+              { id: 2, nombre: 'Maria', apellido: 'Gomez', estado: 'P', observacion: '' }
            ]
-        }
-     ]
+       }))
+    }))
+    
+  } catch (e) {
+    console.error('Error loading subjects', e)
+    $q.notify({ type: 'negative', message: 'Error cargando clases' })
   }
-])
+})
 
 const claseSeleccionadaObj = computed(() => {
   return clasesUnificadas.value.find(c => c.id === claseSeleccionada.value)
+})
+
+// Mocks for prototype structure
+const unidadSeleccionada = ref(null)
+const temaSeleccionado = ref(null)
+
+const unidadesMock = [
+  { 
+    id: 1, 
+    nombre: 'Unidad I: Fundamentos de Programación',
+    temas: [
+      { id: 101, titulo: 'Introducción a la Algoritmia' },
+      { id: 102, titulo: 'Variables y Tipos de Datos' },
+      { id: 103, titulo: 'Estructuras de Control' }
+    ]
+  },
+  { 
+    id: 2, 
+    nombre: 'Unidad II: Programación Orientada a Objetos',
+    temas: [
+      { id: 201, titulo: 'Clases y Objetos' },
+      { id: 202, titulo: 'Herencia y Polimorfismo' }
+    ]
+  }
+]
+
+watch(temaSeleccionado, (val) => {
+    if (val) temaPlanificado.value = val.titulo
 })
 
 // Asistencia
@@ -419,12 +449,45 @@ const agregarLink = () => {
    }
 }
 
-const guardarSeguimiento = () => {
-   $q.notify({
-      type: 'positive',
-      message: 'Seguimiento de clase actualizado',
-      icon: 'save'
-   })
+const guardarSeguimiento = async () => {
+   if (!claseSeleccionada.value) return
+
+   try {
+       const fecha = fechaSeguimiento.value
+       
+       const payload = {
+           asignatura_id: claseSeleccionada.value,
+           fecha: fechaSeguimiento.value,
+           temaCumplido: temaCumplido.value,
+           observacionesClase: observacionesClase.value,
+           estrategias: pedagogico.value.estrategias,
+           evaluacion: pedagogico.value.evaluacion,
+           secuencia: pedagogico.value.secuencia
+       }
+
+       const cronogramaRes = await api.post('/cronogramas/find-or-create', {
+           asignatura_id: claseSeleccionada.value, 
+           fecha: fechaSeguimiento.value
+       })
+       
+       const cronogramaId = cronogramaRes.data.id
+       
+       await api.put(`/cronogramas/${cronogramaId}/seguimiento`, payload)
+
+       $q.notify({
+          type: 'positive',
+          message: 'Seguimiento de clase actualizado correctamente',
+          icon: 'save'
+       })
+
+   } catch (error) {
+       console.error(error)
+       $q.notify({
+          type: 'negative',
+          message: 'Error al guardar seguimiento',
+          icon: 'error'
+       })
+   }
 }
 
 </script>
