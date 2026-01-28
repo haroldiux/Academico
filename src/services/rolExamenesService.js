@@ -61,5 +61,12 @@ export default {
         return api.get('/rol-examenes/template', {
             responseType: 'blob'
         })
+    },
+
+    /**
+     * Eliminar todos los exámenes de una gestión/carrera
+     */
+    deleteAll(gestion, carrera_id) {
+        return api.post('/rol-examenes/bulk-delete', { gestion, carrera_id })
     }
 }

@@ -6,8 +6,8 @@ export default {
     return api.get('/asignaturas', { params })
   },
 
-  getAsignatura(id) {
-    return api.get(`/asignaturas/${id}`)
+  getAsignatura(id, params = {}) {
+    return api.get(`/asignaturas/${id}`, { params })
   },
 
   createAsignatura(data) {

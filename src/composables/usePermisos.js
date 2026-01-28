@@ -223,6 +223,9 @@ export function usePermisos() {
         { label: 'Carreras', icon: 'school', to: '/carreras' },
         { label: 'Asignaturas', icon: 'menu_book', to: '/director/asignaturas' },
         { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
+        { label: 'Docentes', icon: 'people', to: '/director/docentes' },
+        { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
+        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
         { label: 'Reportes Nacionales', icon: 'analytics', to: '/vicerrector/reportes' }
       ]
     }

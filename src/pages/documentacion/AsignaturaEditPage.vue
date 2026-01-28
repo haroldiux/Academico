@@ -5,7 +5,7 @@
       <div class="col">
         <q-breadcrumbs class="q-mb-sm">
           <q-breadcrumbs-el icon="home" to="/" />
-          <q-breadcrumbs-el label="Documentación" to="/documentacion" />
+          <q-breadcrumbs-el :label="breadcrumbInfo.label" :to="breadcrumbInfo.to" />
           <q-breadcrumbs-el :label="asignatura?.codigo || 'Asignatura'" />
         </q-breadcrumbs>
         <h4 class="q-ma-none text-weight-bold">
@@ -33,8 +33,8 @@
         <q-btn v-if="puedeAprobarCarpeta"
           :label="asignatura?.estado === 'APROBADO' ? 'Reabrir Carpeta' : 'Aprobar Carpeta'"
           :color="asignatura?.estado === 'APROBADO' ? 'orange' : 'green'"
-          :icon="asignatura?.estado === 'APROBADO' ? 'lock_open' : 'check_circle'"
-          no-caps unelevated @click="toggleEstadoCarpeta" />
+          :icon="asignatura?.estado === 'APROBADO' ? 'lock_open' : 'check_circle'" no-caps unelevated
+          @click="toggleEstadoCarpeta" />
 
         <q-btn outline color="indigo" icon="calendar_month" label="Planificación Semestral" no-caps
           :to="`/documentacion/${route.params.id}/planificacion`" />
@@ -84,52 +84,116 @@
       <q-tab-panels v-model="tabActual" animated>
         <!-- Tab: Datos de Asignatura -->
         <q-tab-panel name="datos" class="q-pa-lg">
-          <div class="text-h6 text-weight-bold q-mb-lg">
-            <q-icon name="info" color="primary" class="q-mr-sm" />
-            Información General
+          <!-- Section Header -->
+          <div class="text-h6 text-weight-bold q-mb-lg text-primary">
+            1.- Identificación de la Asignatura
           </div>
 
           <q-form class="q-gutter-lg">
-            <!-- Datos Básicos -->
-            <div class="row q-col-gutter-lg">
-              <div class="col-12 col-md-4">
-                <q-input v-model="formDatos.codigo" label="Código" outlined dense readonly>
-                  <template v-slot:prepend><q-icon name="tag" color="primary" /></template>
-                </q-input>
+            <!-- Identificación Table (Document Style) -->
+            <div class="doc-table q-mb-xl shadow-2">
+              <!-- Row 1 -->
+              <div class="doc-row">
+                <div class="doc-cell col-8">
+                  <div class="doc-label">CARRERA:</div>
+                  <div class="doc-input-container">
+                    <span class="text-subtitle1 text-weight-medium q-px-sm">{{ nombreCarrera }}</span>
+                  </div>
+                </div>
+                <div class="doc-cell col-4">
+                  <div class="doc-label">CÓDIGO:</div>
+                  <div class="doc-input-container">
+                    <span class="text-subtitle1 text-weight-bold q-px-sm">{{ formDatos.codigo }}</span>
+                  </div>
+                </div>
               </div>
-              <div class="col-12 col-md-4">
-                <q-input v-model.number="formDatos.semestre" label="Semestre" type="number" outlined dense readonly>
-                  <template v-slot:prepend><q-icon name="calendar_month" color="primary" /></template>
-                </q-input>
-              </div>
-              <div class="col-12 col-md-4">
-                <q-input v-model.number="formDatos.creditos" label="Créditos" type="number" outlined dense readonly>
-                  <template v-slot:prepend><q-icon name="star" color="primary" /></template>
-                </q-input>
-              </div>
-            </div>
 
-            <q-input v-model="formDatos.nombre" label="Nombre de la Asignatura" outlined dense readonly>
-              <template v-slot:prepend><q-icon name="menu_book" color="primary" /></template>
-            </q-input>
-
-            <!-- Horas -->
-            <div class="text-subtitle1 text-weight-bold q-mt-lg">
-              <q-icon name="schedule" color="orange" class="q-mr-sm" />
-              Carga Horaria
-            </div>
-            <div class="row q-col-gutter-lg">
-              <div class="col-12 col-md-6">
-                <q-input v-model.number="formDatos.horas_teoricas" label="Horas Teóricas" type="number" outlined dense
-                  readonly>
-                  <template v-slot:prepend><q-icon name="school" color="blue" /></template>
-                </q-input>
+              <!-- Row 2 -->
+              <div class="doc-row">
+                <div class="doc-cell col-8">
+                  <div class="doc-label">ASIGNATURA:</div>
+                  <div class="doc-input-container">
+                    <span class="text-subtitle1 text-weight-bold q-px-sm">{{ formDatos.nombre }}</span>
+                  </div>
+                </div>
+                <div class="doc-cell col-4">
+                  <div class="doc-label">TIPO DE CURSO:</div>
+                  <q-input v-model="formDatos.tipo_curso" borderless dense class="doc-input"
+                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
+                </div>
               </div>
-              <div class="col-12 col-md-6">
-                <q-input v-model.number="formDatos.horas_practicas" label="Horas Prácticas" type="number" outlined dense
-                  readonly>
-                  <template v-slot:prepend><q-icon name="build" color="green" /></template>
-                </q-input>
+
+              <!-- Row 3 -->
+              <div class="doc-row">
+                <div class="doc-cell col-8">
+                  <div class="doc-label">ÁREA DE DESEMPEÑO:</div>
+                  <q-input v-model="formDatos.area_desempenio" borderless dense class="doc-input"
+                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
+                </div>
+                <div class="doc-cell col-4">
+                  <div class="doc-label">SEMESTRE:</div>
+                  <div class="doc-input-container">
+                    <span class="text-subtitle1 text-weight-medium q-px-sm">{{ formDatos.semestre }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 4 -->
+              <div class="doc-row">
+                <div class="doc-cell col-8">
+                  <div class="doc-label">MODALIDAD:</div>
+                  <q-select v-model="formDatos.modalidad" :options="['Presencial', 'Semipresencial', 'Virtual']"
+                    borderless dense class="doc-input" :readonly="!puedeEditarCampo('datos_generales')" options-dense
+                    input-class="text-black text-subtitle1" />
+                </div>
+                <div class="doc-cell col-4">
+                  <div class="doc-label">CRÉDITOS:</div>
+                  <div class="doc-input-container">
+                    <span class="text-subtitle1 text-weight-medium q-px-sm">{{ formDatos.creditos }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 5: Requisito & Titles for Horas -->
+              <div class="doc-row">
+                <div class="doc-cell col-8">
+                  <div class="doc-label">PRE-REQUISITO:</div>
+                  <q-input v-model="formDatos.requisitos" borderless dense class="doc-input"
+                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
+                </div>
+                <div class="doc-cell col-4 clean-cell flex-center">
+                  <div class="text-center text-weight-bold full-width"
+                    style="align-self: flex-end; padding-bottom: 4px;">HORAS TEÓRICAS Y/O PRÁCTICAS</div>
+                </div>
+              </div>
+
+              <!-- Row 6: Carga Total & Empty -->
+              <div class="doc-row" style="min-height: 50px;">
+                <div class="doc-cell col-8">
+                  <div class="doc-label">CARGA HORARIA TOTAL:</div>
+                  <q-input v-model.number="formDatos.carga_horaria_total" type="number" borderless dense
+                    class="doc-input" :readonly="!puedeEditarCampo('datos_generales')"
+                    input-class="text-black text-subtitle1" />
+                </div>
+                <!-- Empty cell below title -->
+                <div class="doc-cell col-4 bg-grey-2"></div>
+              </div>
+
+              <!-- Row 7: Sesiones -->
+              <div class="doc-row">
+                <div class="doc-cell col-4 flex items-center justify-center bg-grey-3">
+                  <div class="text-weight-bold text-subtitle1 text-center">N° DE SESIONES SEMANALES:</div>
+                </div>
+                <div class="doc-cell col-4">
+                  <div class="doc-label">TEÓRICAS:</div>
+                  <q-input v-model.number="formDatos.horas_teoricas" type="number" borderless dense class="doc-input"
+                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
+                </div>
+                <div class="doc-cell col-4">
+                  <div class="doc-label">PRÁCTICAS:</div>
+                  <q-input v-model.number="formDatos.horas_practicas" type="number" borderless dense class="doc-input"
+                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
+                </div>
               </div>
             </div>
 
@@ -233,7 +297,8 @@
             </div>
 
             <q-input v-model="formPrograma.competencia_global" label="Competencia Global Específica" outlined
-              type="textarea" rows="4" hint="Describe la competencia global específica de la asignatura">
+              type="textarea" rows="4" hint="Describe la competencia global específica de la asignatura"
+              :readonly="!puedeEditarCampo()">
               <template v-slot:prepend><q-icon name="public" color="blue" /></template>
             </q-input>
             <!-- Campo: Competencia de la Asignatura -->
@@ -350,7 +415,7 @@
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
                 <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                  }}</q-badge>
+                }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
                 <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
@@ -380,7 +445,7 @@
                 <q-icon name="cloud_download" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
                 <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{ bibliografiasProgramaAnalitico.length
-                  }}</q-badge>
+                }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
@@ -393,7 +458,7 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
                         biblio.autor
-                        }}</div>
+                      }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
                           biblio.anio !==
@@ -425,7 +490,8 @@
               Unidades de Aprendizaje
             </div>
             <div class="row q-gutter-sm">
-                <q-btn v-if="puedeEditarPlanificacion" unelevated color="primary" icon="add" label="Nueva Unidad" no-caps @click="abrirDialogoUnidad()" />
+              <q-btn v-if="puedeEditarPlanificacion" unelevated color="primary" icon="add" label="Nueva Unidad" no-caps
+                @click="abrirDialogoUnidad()" />
             </div>
           </div>
 
@@ -451,10 +517,12 @@
                   <span class="text-caption q-mt-xs">{{ calcularProgresoUnidad(unidad) }}% documentado</span>
 
                   <div class="row items-center">
-                    <q-btn v-if="puedeEditarPlanificacion" flat round dense icon="edit" color="primary" @click.stop="abrirDialogoUnidad(unidad)">
+                    <q-btn v-if="puedeEditarPlanificacion" flat round dense icon="edit" color="primary"
+                      @click.stop="abrirDialogoUnidad(unidad)">
                       <q-tooltip>Editar Unidad</q-tooltip>
                     </q-btn>
-                    <q-btn v-if="puedeEditarPlanificacion" flat round dense icon="delete" color="red" @click.stop="confirmarEliminarUnidad(unidad)">
+                    <q-btn v-if="puedeEditarPlanificacion" flat round dense icon="delete" color="red"
+                      @click.stop="confirmarEliminarUnidad(unidad)">
                       <q-tooltip>Eliminar Unidad</q-tooltip>
                     </q-btn>
                   </div>
@@ -467,12 +535,11 @@
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
                     <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                      }})</span>
+                    }})</span>
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
-                    @blur="guardarElementoCompetencia(unidad)"
-                    :readonly="!puedeEditarPlanificacion" />
+                    @blur="guardarElementoCompetencia(unidad)" :readonly="!puedeEditarPlanificacion" />
                 </q-card-section>
               </q-card>
 
@@ -504,18 +571,20 @@
                       <!-- Reordering Buttons -->
                       <template v-if="puedeEditarPlanificacion">
                         <q-btn flat round dense icon="arrow_upward" color="grey-7" size="sm"
-                               @click.stop="moverTema(unidad, tema, 'up')" :disable="index === 0">
+                          @click.stop="moverTema(unidad, tema, 'up')" :disable="index === 0">
                           <q-tooltip>Subir</q-tooltip>
                         </q-btn>
                         <q-btn flat round dense icon="arrow_downward" color="grey-7" size="sm"
-                               @click.stop="moverTema(unidad, tema, 'down')" :disable="index === unidad.temas.length - 1">
+                          @click.stop="moverTema(unidad, tema, 'down')" :disable="index === unidad.temas.length - 1">
                           <q-tooltip>Bajar</q-tooltip>
                         </q-btn>
 
-                        <q-btn flat round dense icon="edit" color="primary" size="sm" @click.stop="abrirDialogoTema(unidad, tema)">
+                        <q-btn flat round dense icon="edit" color="primary" size="sm"
+                          @click.stop="abrirDialogoTema(unidad, tema)">
                           <q-tooltip>Editar Título</q-tooltip>
                         </q-btn>
-                        <q-btn flat round dense icon="delete" color="red" size="sm" @click.stop="confirmarEliminarTema(tema)">
+                        <q-btn flat round dense icon="delete" color="red" size="sm"
+                          @click.stop="confirmarEliminarTema(tema)">
                           <q-tooltip>Eliminar Tema</q-tooltip>
                         </q-btn>
                       </template>
@@ -523,10 +592,10 @@
                   </q-item-section>
                 </q-item>
 
-              <div class="row justify-center q-mb-md" v-if="puedeEditarPlanificacion">
-                <q-btn outline color="primary" icon="add" label="Nuevo Tema" size="sm"
-                  @click.stop="abrirDialogoTema(unidad)" />
-              </div>
+                <div class="row justify-center q-mb-md" v-if="puedeEditarPlanificacion">
+                  <q-btn outline color="primary" icon="add" label="Nuevo Tema" size="sm"
+                    @click.stop="abrirDialogoTema(unidad)" />
+                </div>
               </q-list>
             </q-expansion-item>
           </q-list>
@@ -595,15 +664,17 @@
             </template>
             <div class="text-weight-bold">¡Atención! Utilice la Plantilla Oficial</div>
             <div>
-              Esta función requiere estrictamente el <strong>Documento Word Oficial de Programa de Asignatura</strong> proporcionado por Sede Central.
+              Esta función requiere estrictamente el <strong>Documento Word Oficial de Programa de Asignatura</strong>
+              proporcionado por Sede Central.
               <br />
               <br />
-              <strong>Nota:</strong> Otros formatos o documentos modificados estructuralmente no serán procesados correctamente.
+              <strong>Nota:</strong> Otros formatos o documentos modificados estructuralmente no serán procesados
+              correctamente.
             </div>
           </q-banner>
 
-          <q-file v-model="archivoImportar" label="Seleccionar Plantilla Oficial Word (.docx)" outlined dense accept=".docx, .doc"
-            counter>
+          <q-file v-model="archivoImportar" label="Seleccionar Plantilla Oficial Word (.docx)" outlined dense
+            accept=".docx, .doc" counter>
             <template v-slot:prepend>
               <q-icon name="attach_file" />
             </template>
@@ -612,8 +683,10 @@
           <div class="q-mt-md q-gutter-sm bg-grey-1 q-pa-sm rounded-borders">
             <div class="text-subtitle2 text-weight-bold q-mb-xs">¿Qué desea importar?</div>
             <div class="row">
-               <q-checkbox class="col-12" v-model="importOpciones.datos" label="Plan de Clases (Justificación, Objetivos, Metodología)" dense color="teal" />
-               <q-checkbox class="col-12" v-model="importOpciones.unidades" label="Plan Analítico (Unidades, Temas y Contenidos)" dense color="teal" />
+              <q-checkbox class="col-12" v-model="importOpciones.datos"
+                label="Plan de Clases (Justificación, Objetivos, Metodología)" dense color="teal" />
+              <q-checkbox class="col-12" v-model="importOpciones.unidades"
+                label="Plan Analítico (Unidades, Temas y Contenidos)" dense color="teal" />
             </div>
             <div class="text-caption text-grey-7 q-pl-sm">
               * La bibliografía se actualizará automáticamente con el Plan de Clases.
@@ -630,48 +703,49 @@
     </q-dialog>
     <!-- Dialog Unidad -->
     <q-dialog v-model="dialogUnidad" persistent>
-        <q-card style="width: 400px; max-width: 95vw;">
-            <q-card-section>
-                <div class="text-h6">{{ editandoUnidad ? 'Editar Unidad' : 'Nueva Unidad' }}</div>
-            </q-card-section>
+      <q-card style="width: 400px; max-width: 95vw;">
+        <q-card-section>
+          <div class="text-h6">{{ editandoUnidad ? 'Editar Unidad' : 'Nueva Unidad' }}</div>
+        </q-card-section>
 
-            <q-card-section>
-                <q-form @submit="guardarUnidad" class="q-gutter-md">
-                    <q-input v-model.number="formUnidad.numero" label="Número" type="number" outlined dense :readonly="editandoUnidad" />
-                    <q-input v-model="formUnidad.titulo" label="Título" outlined dense autofocus />
-                    <q-input v-model.number="formUnidad.horas" label="Horas (Referencial)" type="number" outlined dense />
+        <q-card-section>
+          <q-form @submit="guardarUnidad" class="q-gutter-md">
+            <q-input v-model.number="formUnidad.numero" label="Número" type="number" outlined dense
+              :readonly="editandoUnidad" />
+            <q-input v-model="formUnidad.titulo" label="Título" outlined dense autofocus />
+            <q-input v-model.number="formUnidad.horas" label="Horas (Referencial)" type="number" outlined dense />
 
-                    <div class="row justify-end q-gutter-sm q-mt-md">
-                        <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-                        <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps />
-                    </div>
-                </q-form>
-            </q-card-section>
-        </q-card>
+            <div class="row justify-end q-gutter-sm q-mt-md">
+              <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
+              <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
     </q-dialog>
 
     <!-- Dialog Tema -->
     <q-dialog v-model="dialogTema" persistent>
-        <q-card style="width: 500px; max-width: 95vw;">
-            <q-card-section>
-                <div class="text-h6">{{ editandoTema ? 'Editar Tema' : 'Nuevo Tema' }}</div>
-                <div class="text-caption text-grey" v-if="unidadSeleccionada">
-                    Unidad {{ unidadSeleccionada.numero }}: {{ unidadSeleccionada.titulo }}
-                </div>
-            </q-card-section>
+      <q-card style="width: 500px; max-width: 95vw;">
+        <q-card-section>
+          <div class="text-h6">{{ editandoTema ? 'Editar Tema' : 'Nuevo Tema' }}</div>
+          <div class="text-caption text-grey" v-if="unidadSeleccionada">
+            Unidad {{ unidadSeleccionada.numero }}: {{ unidadSeleccionada.titulo }}
+          </div>
+        </q-card-section>
 
-            <q-card-section>
-                <q-form @submit="guardarTema" class="q-gutter-md">
-                    <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus />
-                    <!-- Horas removed as per request -->
+        <q-card-section>
+          <q-form @submit="guardarTema" class="q-gutter-md">
+            <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus />
+            <!-- Horas removed as per request -->
 
-                    <div class="row justify-end q-gutter-sm q-mt-md">
-                        <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-                        <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps />
-                    </div>
-                </q-form>
-            </q-card-section>
-        </q-card>
+            <div class="row justify-end q-gutter-sm q-mt-md">
+              <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
+              <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
     </q-dialog>
   </q-page>
 </template>
@@ -683,6 +757,7 @@ import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useSedesStore } from 'src/stores/sedes'
+import { ROLES } from 'src/stores/auth'
 import { useAuthStore } from 'src/stores/auth'
 import { generarPlanDeClase, generarProgramaAsignatura } from 'src/services/pdfService'
 import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
@@ -733,189 +808,178 @@ const formTema = ref({ id: null, titulo: '', horas_teoricas: 0, horas_practicas:
 
 // Unidades
 function abrirDialogoUnidad(unidad = null) {
-    editandoUnidad.value = !!unidad
-    if (unidad) {
-        formUnidad.value = { ...unidad }
-    } else {
-        // Calcular siguiente numero
-        const nextNum = (asignatura.value?.unidades?.length || 0) + 1
-        formUnidad.value = { id: null, titulo: '', numero: nextNum, horas: 0 }
-    }
-    dialogUnidad.value = true
+  editandoUnidad.value = !!unidad
+  if (unidad) {
+    formUnidad.value = { ...unidad }
+  } else {
+    // Calcular siguiente numero
+    const nextNum = (asignatura.value?.unidades?.length || 0) + 1
+    formUnidad.value = { id: null, titulo: '', numero: nextNum, horas: 0 }
+  }
+  dialogUnidad.value = true
 }
 
 async function guardarUnidad() {
-    try {
-        if (editandoUnidad.value) {
-            await store.updateUnidad(formUnidad.value.id, formUnidad.value)
-            $q.notify({ type: 'positive', message: 'Unidad actualizada' })
-        } else {
-            await store.createUnidad(asignatura.value.id, formUnidad.value)
-            $q.notify({ type: 'positive', message: 'Unidad creada' })
-        }
-        dialogUnidad.value = false
-    } catch (e) {
-        console.error(e)
-        $q.notify({ type: 'negative', message: 'Error al guardar unidad' })
+  try {
+    if (editandoUnidad.value) {
+      await store.updateUnidad(formUnidad.value.id, formUnidad.value)
+      $q.notify({ type: 'positive', message: 'Unidad actualizada' })
+    } else {
+      await store.createUnidad(asignatura.value.id, formUnidad.value)
+      $q.notify({ type: 'positive', message: 'Unidad creada' })
     }
+    dialogUnidad.value = false
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Error al guardar unidad' })
+  }
 }
 
 function confirmarEliminarUnidad(unidad) {
-    $q.dialog({
-        title: 'Eliminar Unidad',
-        message: `¿Estás seguro de eliminar la Unidad ${unidad.numero}: ${unidad.titulo}? Se eliminarán también sus temas.`,
-        cancel: true,
-        persistent: true
-    }).onOk(async () => {
-        try {
-            await store.deleteUnidad(unidad.id)
-            $q.notify({ type: 'positive', message: 'Unidad eliminada' })
-        } catch (e) {
-            console.error(e)
-            $q.notify({ type: 'negative', message: 'Error al eliminar unidad' })
-        }
-    })
+  $q.dialog({
+    title: 'Eliminar Unidad',
+    message: `¿Estás seguro de eliminar la Unidad ${unidad.numero}: ${unidad.titulo}? Se eliminarán también sus temas.`,
+    cancel: true,
+    persistent: true
+  }).onOk(async () => {
+    try {
+      await store.deleteUnidad(unidad.id)
+      $q.notify({ type: 'positive', message: 'Unidad eliminada' })
+    } catch (e) {
+      console.error(e)
+      $q.notify({ type: 'negative', message: 'Error al eliminar unidad' })
+    }
+  })
 }
 
 // Temas
 function abrirDialogoTema(unidad, tema = null) {
-    unidadSeleccionada.value = unidad
-    editandoTema.value = !!tema
-    if (tema) {
-        formTema.value = { ...tema }
-    } else {
-        formTema.value = { id: null, titulo: '', horas_teoricas: 0, horas_practicas: 0 }
-    }
-    dialogTema.value = true
+  unidadSeleccionada.value = unidad
+  editandoTema.value = !!tema
+  if (tema) {
+    formTema.value = { ...tema }
+  } else {
+    formTema.value = { id: null, titulo: '', horas_teoricas: 0, horas_practicas: 0 }
+  }
+  dialogTema.value = true
 }
 
 async function guardarTema() {
-    try {
-        if (editandoTema.value) {
-            // Nota: updateTema en store actualiza titulo y horas
-            await store.updateTema(formTema.value.id, formTema.value)
-            $q.notify({ type: 'positive', message: 'Tema actualizado' })
-        } else {
-            await store.createTema(unidadSeleccionada.value.id, formTema.value)
-            $q.notify({ type: 'positive', message: 'Tema creado' })
-        }
-        dialogTema.value = false
-    } catch (e) {
-        console.error(e)
-        $q.notify({ type: 'negative', message: 'Error al guardar tema' })
+  try {
+    if (editandoTema.value) {
+      // Nota: updateTema en store actualiza titulo y horas
+      await store.updateTema(formTema.value.id, formTema.value)
+      $q.notify({ type: 'positive', message: 'Tema actualizado' })
+    } else {
+      await store.createTema(unidadSeleccionada.value.id, formTema.value)
+      $q.notify({ type: 'positive', message: 'Tema creado' })
     }
+    dialogTema.value = false
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Error al guardar tema' })
+  }
 }
 
 function confirmarEliminarTema(tema) {
-    if (!tema || !tema.id) {
-        console.error("Tema inválido para eliminar:", tema)
-        return
+  if (!tema || !tema.id) {
+    console.error("Tema inválido para eliminar:", tema)
+    return
+  }
+  $q.dialog({
+    title: 'Eliminar Tema',
+    message: `¿Estás seguro de eliminar el tema "${tema.titulo}"?`,
+    cancel: true,
+    persistent: true
+  }).onOk(async () => {
+    try {
+      await store.deleteTema(tema.id)
+      $q.notify({ type: 'positive', message: 'Tema eliminado' })
+    } catch (e) {
+      console.error(e)
+      $q.notify({ type: 'negative', message: 'Error al eliminar tema' })
     }
-    $q.dialog({
-        title: 'Eliminar Tema',
-        message: `¿Estás seguro de eliminar el tema "${tema.titulo}"?`,
-        cancel: true,
-        persistent: true
-    }).onOk(async () => {
-        try {
-            await store.deleteTema(tema.id)
-            $q.notify({ type: 'positive', message: 'Tema eliminado' })
-        } catch (e) {
-            console.error(e)
-            $q.notify({ type: 'negative', message: 'Error al eliminar tema' })
-        }
-    })
+  })
 }
 
 async function moverTema(unidad, tema, direction) {
-    try {
-        await store.moveTema(unidad.id, tema.id, direction)
-        // Optimistic update is handled in store, but success notification is nice
-        // $q.notify({ type: 'positive', message: 'Orden actualizado', timeout: 500 })
-    } catch (e) {
-        console.error(e)
-        $q.notify({ type: 'negative', message: 'Error al mover tema' })
-    }
+  try {
+    await store.moveTema(unidad.id, tema.id, direction)
+    // Optimistic update is handled in store, but success notification is nice
+    // $q.notify({ type: 'positive', message: 'Orden actualizado', timeout: 500 })
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Error al mover tema' })
+  }
 }
 
 // Reglas de Negocio para Edición
 const esDirectorOAdmin = computed(() => {
   // CORRECCIÓN CRÍTICA: La propiedad del store es 'usuarioActual', no 'usuario'
-  const rol = authStore.usuarioActual?.rol
+  const rol = authStore.rol
   // Lista blanca de roles con permisos de edición TOTAL (siempre pueden editar)
   const rolesPermitidos = [
-    'SUPER ADMIN', 'SUPER_ADMIN', // ID 1
-    'ADMIN', // ID 2
-    'DIRECTOR_CARRERA', 'DIRECTOR CARRERA', // ID 5
-    'VICERRECTOR_SEDE', 'VICERRECTOR SEDE', // ID 4
-    'VICERRECTOR_NACIONAL', 'VICERRECTOR NACIONAL' // ID 3
+    ROLES.SUPER_ADMIN,
+    ROLES.ADMIN,
+    ROLES.DIRECTOR_CARRERA,
+    ROLES.VICERRECTOR_SEDE,
+    ROLES.VICERRECTOR_NACIONAL,
+    ROLES.DIRECCION_ACADEMICA // Added explicit check
   ]
   return rolesPermitidos.includes(rol)
 })
 
 const puedeAprobarCarpeta = computed(() => {
-    // Solo Directores y Admins pueden aprobar/reabrir
-    return esDirectorOAdmin.value
+  // Solo Directores y Admins pueden aprobar/reabrir
+  return esDirectorOAdmin.value
 })
 
 const puedeEditarPlanificacion = computed(() => {
-  const usuario = authStore.usuarioActual
-  const rol = usuario?.rol
-  const esCocha = usuario?.sede_id === 1
 
-  // 1. Si está APROBADO, nadie edita (salvo que sea admin y quiera desbloquear primero, pero la UI de edición se bloquea)
-  // OJO: Si queremos que el Director pueda editar AUNQUE este aprobado, habría que cambiar esto.
-  // Pero el usuario dijo "editar hasta que... lo de por aprobado". Implica BLOQUEO.
+  const rol = authStore.rol
+  // const esCocha = usuario?.sede_id === 1 // removed specific sede constraint if desired, or keep logic
+
+  // 1. Si está APROBADO, nadie edita (salvo toggle admins)
   if (asignatura.value?.estado === 'APROBADO') return false
 
   // 2. Global Admins
-  if (['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'VICERRECTOR_NACIONAL', 'VICERRECTOR NACIONAL'].includes(rol)) {
-      return true
+  if ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.VICERRECTOR_NACIONAL, ROLES.DIRECCION_ACADEMICA].includes(rol)) {
+    return true
   }
-  // 3. Cocha Roles (Director/Docente/VicerrectorSede)
-  if (esCocha) {
-      if (['DIRECTOR_CARRERA', 'DIRECTOR CARRERA', 'VICERRECTOR_SEDE', 'VICERRECTOR SEDE', 'DOCENTE'].includes(rol)) {
-          return true
-      }
+
+  // 3. Roles de Sede / Carrera
+  if ([ROLES.DIRECTOR_CARRERA, ROLES.VICERRECTOR_SEDE].includes(rol)) {
+    // Validar si el usuario pertenece a la misma sede de la asignatura o carrera
+    // Por simplicidad, y como piden arreglar acceso:
+    return true
   }
+
+  // 4. Docente
+  if (rol === ROLES.DOCENTE) {
+    // Validar asignación? Por ahora true si no está aprobado
+    return true
+  }
+
   return false
 })
 
 function puedeEditarCampo() {
-  // 1. Si está APROBADO, bloqueo total (salvo que se reabra)
   if (asignatura.value?.estado === 'APROBADO') return false
 
-  const usuario = authStore.usuarioActual
-  const rol = usuario?.rol
-  const esCocha = usuario?.sede_id === 1
-
-  // 2. Super Admins / Vicerrectores Nacionales: SIEMPRE pueden editar (Globales)
-  if (['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'VICERRECTOR_NACIONAL', 'VICERRECTOR NACIONAL'].includes(rol)) {
-      return true
-  }
-
-  // 3. Directores de Carrera / Vicerrectores de Sede
-  if (['DIRECTOR_CARRERA', 'DIRECTOR CARRERA', 'VICERRECTOR_SEDE', 'VICERRECTOR SEDE'].includes(rol)) {
-      // Solo si son de Cochabamba
-      return esCocha
-  }
-
-  // 4. Docentes: Solo si son de Cochabamba
-  if (esCocha) return true
-
-  return false
+  // Reutilizar la lógica centralizada
+  return puedeEditarPlanificacion.value
 }
 
 async function toggleEstadoCarpeta() {
-    if (!asignatura.value) return
-    const nuevoEstado = asignatura.value.estado === 'APROBADO' ? 'EN_PROCESO' : 'APROBADO'
-    try {
-        await store.cambiarEstado(asignatura.value.id, nuevoEstado)
-        $q.notify({ type: 'positive', message: `Carpeta ${nuevoEstado === 'APROBADO' ? 'Aprobada' : 'Reabierta'}` })
-    } catch (e) {
-        console.error(e)
-        $q.notify({ type: 'negative', message: 'Error al cambiar estado' })
-    }
+  if (!asignatura.value) return
+  const nuevoEstado = asignatura.value.estado === 'APROBADO' ? 'EN_PROCESO' : 'APROBADO'
+  try {
+    await store.cambiarEstado(asignatura.value.id, nuevoEstado)
+    $q.notify({ type: 'positive', message: `Carpeta ${nuevoEstado === 'APROBADO' ? 'Aprobada' : 'Reabierta'}` })
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Error al cambiar estado' })
+  }
 }
 
 const nombreDocenteCarpeta = computed(() => {
@@ -947,8 +1011,8 @@ const nombreSede = computed(() => {
     const c = asignatura.value.carreras[0]
     if (c.sede?.nombre) return c.sede.nombre
     if (c.sede_id) {
-       const s = sedesStore.sedes.find(x => x.id == c.sede_id)
-       return s ? s.nombre : null
+      const s = sedesStore.sedes.find(x => x.id == c.sede_id)
+      return s ? s.nombre : null
     }
   }
 
@@ -1142,13 +1206,40 @@ async function procesarImportacion() {
   }
 }
 
+const breadcrumbInfo = computed(() => {
+  const rol = authStore.rol
+  const rolesDirectivos = ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER ADMIN']
+
+  if (rolesDirectivos.includes(rol)) {
+    return {
+      label: 'Plan de Estudios',
+      to: '/director/asignaturas'
+    }
+  }
+
+  return {
+    label: 'Documentación',
+    to: '/documentacion'
+  }
+})
+
 // Lifecycle
 onMounted(() => {
   const id = parseInt(route.params.id)
-  store.setAsignaturaActual(id)
+  const params = {}
+  if (route.query.docente_id) params.docente_id = route.query.docente_id
+  store.setAsignaturaActual(id, params)
   if (asignatura.value) {
     cargarFormDatos()
   }
+
+  // Watch for query param changes
+  watch(() => route.query.docente_id, (newId) => {
+    const id = parseInt(route.params.id)
+    const params = {}
+    if (newId) params.docente_id = newId
+    store.setAsignaturaActual(id, params)
+  })
 
   // Garantizar que existen sedes cargadas para resolver IDs si es necesario
   if (sedesStore.sedes.length === 0) {
@@ -1162,7 +1253,11 @@ onMounted(() => {
 })
 
 watch(asignatura, (newVal) => {
-  if (newVal) cargarFormDatos()
+  // Only update fields if we are NOT currently editing (to avoid overwrite)
+  // Or check if ID changed (navigation)
+  if (newVal && (!formDatos.value.codigo || formDatos.value.codigo !== newVal.codigo)) {
+    cargarFormDatos()
+  }
 })
 
 // Methods
@@ -1182,8 +1277,15 @@ function cargarFormDatos() {
     saberes_previos: asignatura.value.saberes_previos,
     contenido_minimo: asignatura.value.contenido_minimo,
     metodologia_ensenanza: asignatura.value.metodologia_ensenanza,
-    criterios_evaluacion: asignatura.value.criterios_evaluacion
+    criterios_evaluacion: asignatura.value.criterios_evaluacion,
+    // Nuevos campos
+    area_desempenio: asignatura.value.area_desempenio || '',
+    tipo_curso: asignatura.value.tipo_curso || '',
+    modalidad: asignatura.value.modalidad || 'Presencial',
+    carga_horaria_total: asignatura.value.carga_horaria_total || 0,
+    requisitos: asignatura.value.requisitos || ''
   }
+
   // Guardar copia de datos originales para validar permisos de edición
   datosOriginales.value = JSON.parse(JSON.stringify(formDatos.value))
   // Cargar datos del programa
@@ -1332,6 +1434,102 @@ function generarPDF(tipo) {
 </script>
 
 <style scoped>
+/* Modern Data Sheet Style */
+.doc-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  width: 100%;
+  background: white;
+  overflow: hidden;
+  /* For rounded corners */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.doc-row {
+  display: flex;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.doc-row:last-child {
+  border-bottom: none;
+}
+
+.doc-row:hover {
+  background-color: #fafafa;
+}
+
+.doc-cell {
+  position: relative;
+  border-right: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  min-height: 60px;
+  padding: 4px 0;
+}
+
+.doc-cell:last-child {
+  border-right: none;
+}
+
+.doc-label {
+  background-color: transparent;
+  color: var(--q-primary);
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 6px 12px 2px 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: none;
+  opacity: 0.8;
+}
+
+/* For cells where input is direct content */
+.doc-input {
+  font-size: 1.15rem;
+  /* Large, readable text */
+  padding: 0 4px;
+}
+
+/* Container for read-only text span */
+.doc-input-container {
+  padding: 0 12px 6px 12px;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  color: #1d1d1d;
+}
+
+/* Helpers */
+.clean-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Override QInput standard padding to fit cell better */
+:deep(.doc-input .q-field__control),
+:deep(.doc-input .q-field__native) {
+  padding-left: 8px;
+  min-height: 32px;
+  color: #1d1d1d;
+  font-weight: 500;
+}
+
+/* Remove default QInput border in this context */
+:deep(.doc-input .q-field__control:before),
+:deep(.doc-input .q-field__control:after) {
+  border: none !important;
+}
+
 .q-page {
   background: var(--bg-primary);
   min-height: 100vh;

@@ -12,8 +12,11 @@
         </p>
       </div>
       <div class="col-auto row q-gutter-sm">
+        <q-btn v-if="examenesFiltrados.length > 0" outline color="red" icon="delete_forever" label="Eliminar Todo"
+          no-caps @click="eliminarTodo" />
         <q-btn outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" />
-        <q-btn unelevated color="green" icon="upload_file" label="Subir Excel" no-caps @click="showUploadDialog = true" />
+        <q-btn unelevated color="green" icon="upload_file" label="Subir Excel" no-caps
+          @click="showUploadDialog = true" />
       </div>
     </div>
 
@@ -22,27 +25,20 @@
       <q-card-section>
         <div class="row q-col-gutter-md items-end">
           <div class="col-12 col-md-3">
-            <q-select
-              v-model="filtros.gestion"
-              :options="gestionesOptions"
-              outlined
-              dense
-              label="Gestión"
-              emit-value
-              map-options
-            />
+            <q-select v-model="filtros.gestion" :options="gestionesOptions" outlined dense label="Gestión" emit-value
+              map-options />
           </div>
           <div class="col-12 col-md-4">
-            <q-select
-              v-model="filtros.carrera_id"
-              :options="carrerasOptions"
-              outlined
-              dense
-              label="Carrera"
-              emit-value
-              map-options
-              clearable
-            />
+            <q-select v-model="filtros.carrera_id" :options="carrerasOptions" outlined dense label="Carrera" emit-value
+              map-options clearable />
+          </div>
+          <div class="col-12 col-md-2">
+            <q-select v-model="filtroSemestre" :options="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]" outlined dense
+              label="Semestre" clearable />
+          </div>
+          <div class="col-12 col-md-2">
+            <q-select v-model="filtroTipo" :options="tiposExamenOptions" outlined dense label="Tipo" emit-value
+              map-options clearable />
           </div>
           <div class="col-12 col-md-3">
             <q-input v-model="busqueda" outlined dense label="Buscar materia..." clearable>
@@ -52,7 +48,8 @@
             </q-input>
           </div>
           <div class="col-auto">
-            <q-btn unelevated color="primary" icon="refresh" label="Cargar" no-caps @click="cargarExamenes" :loading="loading" />
+            <q-btn unelevated color="primary" icon="refresh" label="Cargar" no-caps @click="cargarExamenes"
+              :loading="loading" />
           </div>
         </div>
       </q-card-section>
@@ -61,23 +58,18 @@
     <!-- Tabla de Exámenes -->
     <q-card>
       <q-card-section class="q-pa-none">
-        <q-table
-          :rows="examenesFiltrados"
-          :columns="columns"
-          row-key="id"
-          :loading="loading"
-          flat
-          bordered
-          :pagination="{ rowsPerPage: 20 }"
-        >
+        <q-table :rows="examenesFiltrados" :columns="columns" row-key="id" :loading="loading" flat bordered
+          :pagination="{ rowsPerPage: 20 }">
+          <template v-slot:body-cell-semestre="props">
+            <q-td :props="props" class="text-center">
+              <q-badge color="teal" :label="props.row.semestre" v-if="props.row.semestre" />
+              <span v-else>-</span>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-tipo_examen="props">
             <q-td :props="props">
-              <q-chip
-                :color="getExamenColor(props.row.tipo_examen)"
-                text-color="white"
-                size="sm"
-                dense
-              >
+              <q-chip :color="getExamenColor(props.row.tipo_examen)" text-color="white" size="sm" dense>
                 {{ props.row.tipo_examen }}
               </q-chip>
             </q-td>
@@ -112,7 +104,8 @@
             <div class="text-center q-pa-xl">
               <q-icon name="event_busy" size="64px" color="grey-4" />
               <p class="text-grey-6 q-mt-md">No hay exámenes cargados para esta gestión</p>
-              <q-btn unelevated color="green" icon="upload_file" label="Subir Excel" no-caps @click="showUploadDialog = true" />
+              <q-btn unelevated color="green" icon="upload_file" label="Subir Excel" no-caps
+                @click="showUploadDialog = true" />
             </div>
           </template>
         </q-table>
@@ -136,16 +129,18 @@
               <li>Columna A: Código Materia</li>
               <li>Columna B: Nombre Materia</li>
               <li>Columna C: Tipo Examen (1er Parcial, 2do Parcial, Final, 2da Instancia)</li>
-              <li>Columna D: Semana (número)</li>
-              <li>Columna E: Fecha (YYYY-MM-DD)</li>
-              <li>Columna F: Hora Inicio (HH:MM)</li>
-              <li>Columna G: Hora Fin (HH:MM)</li>
+              <li>Columna D: Grupo (Opcional, para validar días de clase)</li>
+              <li>Columna E: Semana (número)</li>
+              <li>Columna F: Fecha (YYYY-MM-DD)</li>
+              <li>Columna G: Hora Inicio (HH:MM)</li>
+              <li>Columna H: Hora Fin (HH:MM)</li>
+              <li>Columna I: Aula (opcional)</li>
             </ul>
           </q-banner>
 
           <div class="text-center q-pa-lg upload-zone" @dragover.prevent @drop.prevent="onDrop">
             <input type="file" ref="fileInput" @change="onFileSelected" accept=".xlsx,.xls" style="display: none" />
-            
+
             <div v-if="!selectedFile">
               <q-icon name="cloud_upload" size="64px" color="grey-4" />
               <p class="text-grey-6 q-mt-md">Arrastra un archivo Excel aquí o</p>
@@ -163,16 +158,8 @@
 
         <q-card-actions align="right" class="q-pa-md">
           <q-btn flat label="Cancelar" @click="showUploadDialog = false" />
-          <q-btn
-            unelevated
-            color="green"
-            label="Subir"
-            icon="upload"
-            no-caps
-            :disable="!selectedFile"
-            :loading="uploading"
-            @click="subirExcel"
-          />
+          <q-btn unelevated color="green" label="Subir" icon="upload" no-caps :disable="!selectedFile"
+            :loading="uploading" @click="subirExcel" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -186,15 +173,8 @@
 
         <q-card-section class="q-gutter-md">
           <q-input v-model="examenForm.materia_nombre" outlined dense label="Materia" readonly />
-          <q-select
-            v-model="examenForm.tipo_examen"
-            :options="tiposExamenOptions"
-            outlined
-            dense
-            label="Tipo de Examen"
-            emit-value
-            map-options
-          />
+          <q-select v-model="examenForm.tipo_examen" :options="tiposExamenOptions" outlined dense label="Tipo de Examen"
+            emit-value map-options />
           <div class="row q-col-gutter-md">
             <div class="col-6">
               <q-input v-model="examenForm.semana" outlined dense label="Semana" type="number" />
@@ -226,6 +206,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
+import { useAuthStore } from 'src/stores/auth'
 
 const $q = useQuasar()
 const store = useRolExamenesStore()
@@ -235,6 +216,8 @@ const showUploadDialog = ref(false)
 const showEditDialog = ref(false)
 const selectedFile = ref(null)
 const busqueda = ref('')
+const filtroSemestre = ref(null)
+const filtroTipo = ref(null)
 
 const filtros = ref({
   gestion: '2026-I',
@@ -259,14 +242,18 @@ const gestionesOptions = [
   { label: 'Gestión 2025-I', value: '2025-I' }
 ]
 
+const authStore = useAuthStore()
+
 const carrerasOptions = computed(() => {
-  // En producción, esto vendría de un store de carreras
-  return [
-    { label: 'Medicina', value: 1 },
-    { label: 'Odontología', value: 2 },
-    { label: 'Enfermería', value: 3 },
-    { label: 'Ingeniería de Sistemas', value: 4 }
-  ]
+  const user = authStore.usuarioActual
+  if (!user || !user.director) return []
+
+  const carreras = user.director.carreras || (user.director.carrera ? [user.director.carrera] : [])
+
+  return carreras.map(c => ({
+    label: c.nombre,
+    value: c.id
+  }))
 })
 
 const tiposExamenOptions = [
@@ -279,7 +266,9 @@ const tiposExamenOptions = [
 const columns = [
   { name: 'materia_codigo', label: 'Código', field: 'materia_codigo', align: 'left', sortable: true },
   { name: 'materia_nombre', label: 'Materia', field: 'materia_nombre', align: 'left', sortable: true },
-  { name: 'tipo_examen', label: 'Tipo', field: 'tipo_examen', align: 'center' },
+  { name: 'semestre', label: 'Sem.', field: 'semestre', align: 'center', sortable: true },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center', sortable: true },
+  { name: 'tipo_examen', label: 'Tipo', field: 'tipo_examen', align: 'center', sortable: true },
   { name: 'semana', label: 'Semana', field: 'semana', align: 'center', sortable: true },
   { name: 'fecha', label: 'Fecha', field: 'fecha', align: 'center', sortable: true },
   { name: 'horario', label: 'Horario', align: 'center' },
@@ -292,6 +281,15 @@ const uploading = computed(() => store.uploading)
 
 const examenesFiltrados = computed(() => {
   let lista = store.examenes
+
+  if (filtroSemestre.value) {
+    lista = lista.filter(e => e.semestre == filtroSemestre.value)
+  }
+
+  if (filtroTipo.value) {
+    lista = lista.filter(e => e.tipo_examen === filtroTipo.value)
+  }
+
   if (busqueda.value) {
     const term = busqueda.value.toLowerCase()
     lista = lista.filter(e =>
@@ -343,13 +341,61 @@ function onDrop(event) {
 async function subirExcel() {
   if (!selectedFile.value) return
 
-  try {
-    await store.uploadExcel(selectedFile.value, filtros.value.gestion, filtros.value.carrera_id)
+  if (!filtros.value.carrera_id) {
     $q.notify({
-      type: 'positive',
-      message: 'Rol de exámenes cargado correctamente',
-      icon: 'check_circle'
+      type: 'warning',
+      message: 'Debe seleccionar una carrera antes de subir el archivo.',
+      icon: 'warning'
     })
+    return
+  }
+
+  try {
+    const response = await store.uploadExcel(selectedFile.value, filtros.value.gestion, filtros.value.carrera_id)
+
+    // Show warnings/errors if any
+
+
+    if ((response.errors && response.errors.length > 0) || (response.warnings && response.warnings.length > 0)) {
+      let html = '<div class="text-left">'
+
+      if (response.imported > 0) {
+        html += `<div class="text-positive q-mb-sm"><b>✔ Se importaron ${response.imported} registros correctamente.</b></div>`
+      } else {
+        html += `<div class="text-grey-8 q-mb-sm">No se importaron registros.</div>`
+      }
+
+      if (response.errors && response.errors.length > 0) {
+        html += `<div class="text-red text-weight-bold q-mt-md">Errores (Registros no importados):</div>`
+        html += `<ul class="q-pl-md text-red-9">`
+        response.errors.forEach(e => html += `<li>${e}</li>`)
+        html += `</ul>`
+        html += `</ul>`
+      }
+
+      if (response.warnings && response.warnings.length > 0) {
+        html += `<div class="text-orange-9 text-weight-bold q-mt-md">Advertencias (Registros importados):</div>`
+        html += `<ul class="q-pl-md text-orange-10">`
+        response.warnings.forEach(w => html += `<li>${w}</li>`)
+        html += `</ul>`
+      }
+
+      html += '</div>'
+
+      $q.dialog({
+        title: 'Resultado de la Importación',
+        message: html,
+        html: true,
+        ok: 'Entendido'
+      })
+    } else {
+      $q.notify({
+        type: 'positive',
+        message: `Se importaron ${response.imported} registros correctamente.`,
+        icon: 'check_circle'
+      })
+    }
+
     showUploadDialog.value = false
     selectedFile.value = null
   } catch (error) {
@@ -362,8 +408,21 @@ async function subirExcel() {
 }
 
 async function descargarPlantilla() {
-  $q.notify({ type: 'info', message: 'Descargando plantilla...', icon: 'download' })
-  // En producción, esto descargaría el archivo real
+  console.log('Store:', store)
+  console.log('downloadTemplate:', store.downloadTemplate)
+
+  if (typeof store.downloadTemplate !== 'function') {
+    $q.notify({ type: 'negative', message: 'Error crítico: La acción no se encuentra en el store. Recarga la página.', icon: 'warning' })
+    return
+  }
+
+  $q.notify({ type: 'info', message: 'Descargando plantilla...', icon: 'cloud_download', timeout: 1000 })
+  try {
+    await store.downloadTemplate()
+    $q.notify({ type: 'positive', message: 'Plantilla descargada', icon: 'check_circle' })
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al descargar: ' + error.message, icon: 'error' })
+  }
 }
 
 function editarExamen(examen) {
@@ -413,8 +472,41 @@ function eliminarExamen(examen) {
   })
 }
 
-onMounted(() => {
-  cargarExamenes()
+function eliminarTodo() {
+  if (!filtros.value.carrera_id) return
+
+  $q.dialog({
+    title: '⚠️ Peligro: Eliminar Todo',
+    message: `¿Estás seguro de que quieres ELIMINAR TODOS los exámenes de esta carrera para la gestión ${filtros.value.gestion}? Esta acción no se puede deshacer.`,
+    persistent: true,
+    ok: { label: 'Eliminar Todo', color: 'negative', flat: true },
+    cancel: { label: 'Cancelar', color: 'primary' }
+  }).onOk(async () => {
+    try {
+      const res = await store.deleteAll(filtros.value.gestion, filtros.value.carrera_id)
+      $q.notify({
+        type: 'positive',
+        message: res.message || 'Se eliminaron los exámenes correctamente',
+        icon: 'delete_forever'
+      })
+      await cargarExamenes()
+    } catch (error) {
+      $q.notify({
+        type: 'negative',
+        message: 'Error al eliminar todo: ' + error.message,
+        icon: 'error'
+      })
+    }
+  })
+}
+
+onMounted(async () => {
+  // Auto-seleccionar si solo hay una carrera
+  if (carrerasOptions.value.length === 1) {
+    filtros.value.carrera_id = carrerasOptions.value[0].value
+  }
+
+  await cargarExamenes()
 })
 </script>
 

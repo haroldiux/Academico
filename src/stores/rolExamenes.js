@@ -181,6 +181,56 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
         }
     }
 
+    // ==========================================
+    // TEMPLATE DOWNLOAD
+    // ==========================================
+
+    /**
+     * Descargar plantilla Excel
+     */
+    async function downloadTemplate() {
+        try {
+            const response = await rolExamenesService.downloadTemplate()
+            const url = window.URL.createObjectURL(new Blob([response.data]))
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', 'plantilla_rol_examenes.xlsx')
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+            return true
+        } catch (err) {
+            console.error('Error descargando plantilla:', err)
+            throw err
+        }
+    }
+
+    /**
+     * Eliminar todos los exámenes (Bulk Delete)
+     */
+    async function deleteAll(gestion, carreraId) {
+        uploading.value = true // Reuse upload loading state or general loading
+        try {
+           // We need direct axios access or service.
+           // Service is imported as rolExamenesService.
+           // However rolExamenesService likely doesn't have deleteAll yet.
+           // Let's assume we update service or do distinct call.
+           // Checking file content: 'rolExamenesService' is used.
+           // Better add to service first? Or use ax directly if available?
+           // 'ax' is not visible in snippet.
+           // I will use rolExamenesService.deleteAll
+           const response = await rolExamenesService.deleteAll(gestion, carreraId)
+           examenes.value = [] // Clear list
+           return response.data
+        } catch (err) {
+            console.error('Error eliminando todo:', err)
+            throw err
+        } finally {
+            uploading.value = false
+        }
+    }
+
     /**
      * Limpiar estado
      */
@@ -209,6 +259,8 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
         actualizarExamen,
         eliminarExamen,
         crearExamen,
+        downloadTemplate,
+        deleteAll,
         limpiar
     }
 })

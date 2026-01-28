@@ -11,8 +11,8 @@
           <p class="q-ma-none" style="color: var(--text-secondary);">
             Vista general de asignaturas por semestre
           </p>
-          <q-chip v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol === 'VICERRECTOR_SEDE'"
-                  color="primary" text-color="white" size="sm" icon="apartment">
+          <q-chip v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol === 'VICERRECTOR_SEDE'" color="primary"
+            text-color="white" size="sm" icon="apartment">
             Sede: Cochabamba
           </q-chip>
         </div>
@@ -25,31 +25,15 @@
     <!-- Filters -->
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-4">
-        <q-select
-          v-model="filtros.carreraId"
-          :options="carrerasOptions"
-          label="Carrera"
-          outlined
-          dense
-          bg-color="white"
-          emit-value
-          map-options
-          :disable="carrerasOptions.length <= 1"
-        >
+        <q-select v-model="filtros.carreraId" :options="carrerasOptions" label="Carrera" outlined dense bg-color="white"
+          emit-value map-options :disable="carrerasOptions.length <= 1">
           <template v-slot:prepend>
             <q-icon name="school" />
           </template>
         </q-select>
       </div>
       <div class="col-12 col-md-8">
-        <q-input
-          v-model="filtros.buscar"
-          label="Buscar asignatura..."
-          outlined
-          dense
-          bg-color="white"
-          clearable
-        >
+        <q-input v-model="filtros.buscar" label="Buscar asignatura..." outlined dense bg-color="white" clearable>
           <template v-slot:prepend>
             <q-icon name="search" />
           </template>
@@ -103,11 +87,8 @@
     <!-- Semesters List -->
     <div class="q-gutter-md">
       <div v-for="semestre in semestresFiltrados" :key="semestre.id">
-        <q-expansion-item
-          header-class="bg-white text-primary text-weight-bold shadow-1"
-          style="border-radius: 8px; overflow: hidden;"
-          default-opened
-        >
+        <q-expansion-item header-class="bg-white text-primary text-weight-bold shadow-1"
+          style="border-radius: 8px; overflow: hidden;" default-opened>
           <template v-slot:header>
             <q-item-section avatar>
               <q-avatar color="primary" text-color="white" size="32px" font-size="14px">
@@ -116,23 +97,15 @@
             </q-item-section>
             <q-item-section>
               <q-item-label class="text-h6">{{ semestre.nombre }}</q-item-label>
-              <q-item-label caption>{{ semestre.asignaturas.length }} asignaturas - {{ semestre.horasTotales }} horas</q-item-label>
+              <q-item-label caption>{{ semestre.asignaturas.length }} asignaturas - {{ semestre.horasTotales }}
+                horas</q-item-label>
             </q-item-section>
           </template>
 
           <q-card>
             <q-card-section class="q-pa-md bg-grey-1">
-              <q-table
-                :rows="semestre.asignaturas"
-                :columns="columnasAsignaturas"
-                row-key="codigo"
-                flat
-                bordered
-                separator="cell"
-                class="bg-white rounded-borders"
-                hide-bottom
-                :pagination="{ rowsPerPage: 0 }"
-              >
+              <q-table :rows="semestre.asignaturas" :columns="columnasAsignaturas" row-key="codigo" flat bordered
+                separator="cell" class="bg-white rounded-borders" hide-bottom :pagination="{ rowsPerPage: 0 }">
                 <!-- Columna Asignatura con Indicadores -->
                 <template v-slot:body-cell-asignatura="props">
                   <q-td :props="props">
@@ -164,11 +137,8 @@
                 <!-- Columna Estado -->
                 <template v-slot:body-cell-estado="props">
                   <q-td :props="props">
-                    <q-chip
-                      :color="props.row.docente_nombre ? 'positive' : 'warning'"
-                      :text-color="props.row.docente_nombre ? 'white' : 'black'"
-                      size="sm"
-                    >
+                    <q-chip :color="props.row.docente_nombre ? 'positive' : 'warning'"
+                      :text-color="props.row.docente_nombre ? 'white' : 'black'" size="sm">
                       {{ props.row.docente_nombre ? 'Asignada' : 'Vacante' }}
                     </q-chip>
                   </q-td>
@@ -177,11 +147,13 @@
                 <!-- Columna Acciones -->
                 <template v-slot:body-cell-acciones="props">
                   <q-td :props="props">
-                    <q-btn flat round dense icon="visibility" color="primary" size="sm" :to="`/documentacion?materia=${props.row.id}`">
+                    <q-btn flat round dense icon="visibility" color="primary" size="sm"
+                      :to="`/documentacion/${props.row.id}${(props.row.docentes_data && props.row.docentes_data.length === 1) ? '?docente_id=' + props.row.docentes_data[0].id : ''}`">
                       <q-tooltip>Ver Documentación</q-tooltip>
                     </q-btn>
-                    <q-btn flat round dense icon="assignment" color="secondary" size="sm">
-                      <q-tooltip>Ver Sílabo</q-tooltip>
+                    <q-btn flat round dense icon="picture_as_pdf" color="secondary" size="sm"
+                      @click="generarCarpeta(props.row)">
+                      <q-tooltip>Generar Carpeta Docente</q-tooltip>
                     </q-btn>
                   </q-td>
                 </template>
@@ -191,16 +163,143 @@
         </q-expansion-item>
       </div>
     </div>
+    <q-dialog v-model="showDocenteDialog">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Seleccionar Docente</div>
+          <div class="text-caption">Esta asignatura tiene múltiples docentes. Seleccione uno para generar la carpeta.
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <q-list bordered separator>
+            <q-item v-for="docente in docentesDialogOptions" :key="docente.id" clickable v-ripple
+              @click="seleccionarDocente(docente.id)">
+              <q-item-section avatar>
+                <q-avatar icon="person" color="primary" text-color="white" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ docente.nombre }}</q-item-label>
+                <q-item-label caption>{{ docente.descripcion_grupos }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script setup>
+import { useQuasar } from 'quasar'
+import asignaturaService from 'src/services/asignaturaService'
+import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from 'src/stores/auth'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 
 const authStore = useAuthStore()
 const asignaturasStore = useAsignaturasStore()
+const $q = useQuasar()
+
+// State for interaction
+const showDocenteDialog = ref(false)
+const docentesDialogOptions = ref([])
+const asignaturaSeleccionada = ref(null)
+
+// Action function
+async function generarCarpeta(row) {
+  // 1. Check if we have multiple docents
+  const docentes = row.docentes_data || []
+
+  if (docentes.length === 0) {
+    // If no docent, try to generate generic (might fail if service requires docent linked data)
+    // Warning the user
+    $q.notify({
+      type: 'warning',
+      message: 'Esta asignatura no tiene docentes asignados. Se generará una carpeta vacía.'
+    })
+    await processGenerarPDF(row, null)
+    return
+  }
+
+  if (docentes.length === 1) {
+    // Single docent, proceed directly
+    await processGenerarPDF(row, docentes[0].id)
+    return
+  }
+
+  // Multiple docents: Show dialog
+  asignaturaSeleccionada.value = row
+  docentesDialogOptions.value = docentes
+  showDocenteDialog.value = true
+}
+
+async function seleccionarDocente(docenteId) {
+  showDocenteDialog.value = false
+  if (asignaturaSeleccionada.value) {
+    await processGenerarPDF(asignaturaSeleccionada.value, docenteId)
+    asignaturaSeleccionada.value = null
+  }
+}
+
+async function processGenerarPDF(rowSummary, docenteId) {
+  console.log('Iniciando generación de PDF', rowSummary.id, docenteId)
+  $q.loading.show({
+    message: 'Generando Carpeta Docente...',
+    boxClass: 'bg-grey-2 text-grey-9',
+    spinnerColor: 'primary'
+  })
+
+  try {
+    // 1. Fetch FULL data from backend (bypassing local summary)
+    // We reuse asignaturaService directly to avoid state side-effects in store if possible,
+    // or just use store but be aware. Let's use service directly.
+    const params = {}
+    if (docenteId) params.docente_id = docenteId
+
+    // Fetch full detail
+    const response = await asignaturaService.getAsignatura(rowSummary.id, params)
+    const asignaturaFull = response.data
+
+    // 2. Construct context objects (Carrera, Sede) similar to AsignaturaEditPage
+    // The full response usually has 'carrera' object injected or we use row data.
+    // AsignaturaController returns 'carrera' object with 'sede' inside.
+    const carrera = asignaturaFull.carrera || {
+      nombre: rowSummary.carrera_nombre || 'Desconocida',
+      id: rowSummary.carrera_id
+    }
+
+    // Ensure sede exists
+    const sede = carrera.sede || {
+      nombre: rowSummary.sede_nombre || 'Sede Central',
+      id: rowSummary.sede_id
+    }
+
+    if (!carrera.sede) carrera.sede = sede // Link them if missing
+
+    // 3. Generate PDF
+    generarCarpetaDocente(asignaturaFull, carrera, sede)
+
+    $q.notify({
+      type: 'positive',
+      message: 'Carpeta generada exitosamente'
+    })
+
+  } catch (error) {
+    console.error('Error generando PDF:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Error al generar la carpeta docente.'
+    })
+  } finally {
+    $q.loading.hide()
+  }
+}
 
 // Filtros
 const filtros = ref({
@@ -249,7 +348,7 @@ onMounted(() => {
 
 // Watchers
 watch(() => filtros.value.carreraId, () => {
-    cargarAsignaturas()
+  cargarAsignaturas()
 })
 
 // Debounce para búsqueda si queremos búsqueda backend,
@@ -322,9 +421,11 @@ function getNemotecnicoSemestre(n) {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
 .metric-card {
   transition: transform 0.2s;
 }
+
 .metric-card:hover {
   transform: translateY(-2px);
 }

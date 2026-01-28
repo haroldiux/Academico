@@ -34,12 +34,12 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     }
   }
 
-  async function setAsignaturaActual(id) {
+  async function setAsignaturaActual(id, params = {}) {
     loading.value = true
     error.value = null
     asignaturaActual.value = null
     try {
-        const response = await asignaturaService.getAsignatura(id)
+        const response = await asignaturaService.getAsignatura(id, params)
         asignaturaActual.value = response.data
     } catch (err) {
         console.error('Error getting asignatura:', err)
