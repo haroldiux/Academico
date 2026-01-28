@@ -83,284 +83,324 @@
 
       <q-tab-panels v-model="tabActual" animated>
         <!-- Tab: Datos de Asignatura -->
+        <!-- Tab: Datos de Asignatura -->
         <q-tab-panel name="datos" class="q-pa-lg">
           <!-- Section Header -->
-          <div class="text-h6 text-weight-bold q-mb-lg text-primary">
-            1.- Identificación de la Asignatura
+          <div class="premium-section-title q-mb-md">
+            <div class="icon-box">
+              <q-icon name="assignment" size="24px" />
+            </div>
+            <div class="text-h6">1.- Identificación de la Asignatura</div>
           </div>
 
-          <q-form class="q-gutter-lg">
-            <!-- Identificación Table (Document Style) -->
-            <div class="doc-table q-mb-xl shadow-2">
-              <!-- Row 1 -->
+          <q-form class="q-gutter-y-lg">
+            <!-- Identificación Table (Clean Professional Style) -->
+            <div class="doc-table q-mb-xl border-all">
+              <!-- Row 1: Carrera & Código -->
               <div class="doc-row">
-                <div class="doc-cell col-8">
+                <div class="doc-cell col-9">
                   <div class="doc-label">CARRERA:</div>
                   <div class="doc-input-container">
-                    <span class="text-subtitle1 text-weight-medium q-px-sm">{{ nombreCarrera }}</span>
+                    <span class="text-subtitle1 text-weight-medium q-px-md">{{ nombreCarrera }}</span>
                   </div>
                 </div>
-                <div class="doc-cell col-4">
+                <div class="doc-cell col-3">
                   <div class="doc-label">CÓDIGO:</div>
                   <div class="doc-input-container">
-                    <span class="text-subtitle1 text-weight-bold q-px-sm">{{ formDatos.codigo }}</span>
+                    <span class="text-subtitle1 text-weight-bold q-px-md text-primary">{{ formDatos.codigo }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Row 2 -->
+              <!-- Row 2: Asignatura (Full Width) -->
               <div class="doc-row">
-                <div class="doc-cell col-8">
+                <div class="doc-cell col-12">
                   <div class="doc-label">ASIGNATURA:</div>
                   <div class="doc-input-container">
-                    <span class="text-subtitle1 text-weight-bold q-px-sm">{{ formDatos.nombre }}</span>
+                    <span class="text-subtitle1 text-weight-bold q-px-md">{{ formDatos.nombre }}</span>
                   </div>
-                </div>
-                <div class="doc-cell col-4">
-                  <div class="doc-label">TIPO DE CURSO:</div>
-                  <q-input v-model="formDatos.tipo_curso" borderless dense class="doc-input"
-                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
                 </div>
               </div>
 
-              <!-- Row 3 -->
+              <!-- Row 3: Secondary Context (3 Columns) -->
               <div class="doc-row">
-                <div class="doc-cell col-8">
+                <div class="doc-cell col-4">
+                  <div class="doc-label">TIPO DE CURSO:</div>
+                  <q-input v-model="formDatos.tipo_curso" borderless dense class="q-px-md"
+                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
+                </div>
+                <div class="doc-cell col-4">
                   <div class="doc-label">ÁREA DE DESEMPEÑO:</div>
-                  <q-input v-model="formDatos.area_desempenio" borderless dense class="doc-input"
+                  <q-input v-model="formDatos.area_desempenio" borderless dense class="q-px-md"
                     :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
                 </div>
                 <div class="doc-cell col-4">
                   <div class="doc-label">SEMESTRE:</div>
                   <div class="doc-input-container">
-                    <span class="text-subtitle1 text-weight-medium q-px-sm">{{ formDatos.semestre }}</span>
+                    <span class="text-subtitle1 text-weight-medium q-px-md">{{ formDatos.semestre }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Row 4 -->
+              <!-- Row 4: Modality, Credits & Requisites (3 Columns) -->
               <div class="doc-row">
-                <div class="doc-cell col-8">
+                <div class="doc-cell col-4">
                   <div class="doc-label">MODALIDAD:</div>
                   <q-select v-model="formDatos.modalidad" :options="['Presencial', 'Semipresencial', 'Virtual']"
-                    borderless dense class="doc-input" :readonly="!puedeEditarCampo('datos_generales')" options-dense
+                    borderless dense class="q-px-md" :readonly="!puedeEditarCampo('datos_generales')" options-dense
                     input-class="text-black text-subtitle1" />
                 </div>
                 <div class="doc-cell col-4">
                   <div class="doc-label">CRÉDITOS:</div>
                   <div class="doc-input-container">
-                    <span class="text-subtitle1 text-weight-medium q-px-sm">{{ formDatos.creditos }}</span>
+                    <span class="text-subtitle1 text-weight-medium q-px-md">{{ formDatos.creditos }}</span>
+                  </div>
+                </div>
+                <div class="doc-cell col-4">
+                  <div class="doc-label">PRE-REQUISITO:</div>
+                  <q-input v-model="formDatos.requisitos" borderless dense class="q-px-md"
+                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
+                </div>
+              </div>
+
+              <!-- Row 5: Workload & Detail -->
+              <div class="doc-row row q-col-gutter-none" style="border-bottom: 0;">
+                <div class="doc-cell col-6" style="padding: 10px;">
+                  <div class="doc-label">CARGA HORARIA TOTAL:</div>
+                  <div class="q-px-md">
+                    <q-input v-model.number="formDatos.carga_horaria_total" type="number" outlined dense
+                      bg-color="grey-1" :readonly="!puedeEditarCampo('datos_generales')"
+                      input-class="text-black text-subtitle2" style="max-width: 100px;" />
+                  </div>
+                </div>
+
+                <div class="doc-cell col-6" style="padding: 10px;">
+                  <div class="doc-label">HORAS TEÓRICAS Y/O PRÁCTICAS:</div>
+                  <div class="q-px-md">
+                    <div class="rounded-borders q-px-md flex flex-center bg-grey-2 text-weight-bold"
+                      style="border: 1px solid #cbd5e1; height: 40px; width: fit-content; min-width: 100px; color: #334155;">
+                      {{ formDatos.horas_detalle }}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Row 5: Requisito & Titles for Horas -->
-              <div class="doc-row">
-                <div class="doc-cell col-8">
-                  <div class="doc-label">PRE-REQUISITO:</div>
-                  <q-input v-model="formDatos.requisitos" borderless dense class="doc-input"
-                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
+              <!-- Row 6: Weekly Sessions -->
+              <div class="doc-row column q-pa-none" style="border-top: 1px solid #e2e8f0;">
+                <div class="col-12 q-px-md q-py-sm bg-grey-1">
+                  <div class="text-weight-bold text-caption text-uppercase text-grey-7" style="font-size: 0.65rem;">
+                    N° DE SESIONES SEMANALES (Ingreso Manual)
+                  </div>
                 </div>
-                <div class="doc-cell col-4 clean-cell flex-center">
-                  <div class="text-center text-weight-bold full-width"
-                    style="align-self: flex-end; padding-bottom: 4px;">HORAS TEÓRICAS Y/O PRÁCTICAS</div>
-                </div>
-              </div>
 
-              <!-- Row 6: Carga Total & Empty -->
-              <div class="doc-row" style="min-height: 50px;">
-                <div class="doc-cell col-8">
-                  <div class="doc-label">CARGA HORARIA TOTAL:</div>
-                  <q-input v-model.number="formDatos.carga_horaria_total" type="number" borderless dense
-                    class="doc-input" :readonly="!puedeEditarCampo('datos_generales')"
-                    input-class="text-black text-subtitle1" />
-                </div>
-                <!-- Empty cell below title -->
-                <div class="doc-cell col-4 bg-grey-2"></div>
-              </div>
+                <div class="row col-12 q-col-gutter-none">
+                  <div class="doc-cell col-6" style="padding: 10px; border-right: 1px solid #edf2f7;">
+                    <div class="doc-label">TEÓRICAS:</div>
+                    <div class="q-px-md">
+                      <q-input v-model.number="formDatos.sesiones_semanales_teoricas" type="number" outlined dense
+                        bg-color="white" :readonly="!puedeEditarCampo('datos_generales')"
+                        input-class="text-black text-subtitle1" placeholder="0" style="max-width: 100px;" />
+                    </div>
+                  </div>
 
-              <!-- Row 7: Sesiones -->
-              <div class="doc-row">
-                <div class="doc-cell col-4 flex items-center justify-center bg-grey-3">
-                  <div class="text-weight-bold text-subtitle1 text-center">N° DE SESIONES SEMANALES:</div>
-                </div>
-                <div class="doc-cell col-4">
-                  <div class="doc-label">TEÓRICAS:</div>
-                  <q-input v-model.number="formDatos.horas_teoricas" type="number" borderless dense class="doc-input"
-                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
-                </div>
-                <div class="doc-cell col-4">
-                  <div class="doc-label">PRÁCTICAS:</div>
-                  <q-input v-model.number="formDatos.horas_practicas" type="number" borderless dense class="doc-input"
-                    :readonly="!puedeEditarCampo('datos_generales')" input-class="text-black text-subtitle1" />
+                  <div class="doc-cell col-6" style="padding: 10px;">
+                    <div class="doc-label">PRÁCTICAS:</div>
+                    <div class="q-px-md">
+                      <q-input v-model.number="formDatos.sesiones_semanales_practicas" type="number" outlined dense
+                        bg-color="white" :readonly="!puedeEditarCampo('datos_generales')"
+                        input-class="text-black text-subtitle1" placeholder="0" style="max-width: 100px;" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Descripción y Objetivos -->
-            <div class="text-subtitle1 text-weight-bold q-mt-lg q-mb-md">
-              <q-icon name="description" color="cyan" class="q-mr-sm" />
-              Descripción y Objetivos
-            </div>
-
-            <!-- Campo: Descripción -->
-            <div class="field-card field-card--blue q-mb-md">
-              <div class="field-card__header">
-                <q-icon name="notes" size="20px" />
-                <span class="field-card__title">Descripción</span>
+            <!-- 3.- Justificación de la Asignatura -->
+            <div class="premium-section-title">
+              <div class="icon-box">
+                <q-icon name="lightbulb" size="24px" />
               </div>
-              <q-input v-model="formDatos.descripcion" outlined type="textarea" rows="3" class="field-card__input"
-                :readonly="!puedeEditarCampo('descripcion')" />
+              <div class="text-h6">3.- Justificación de la Asignatura</div>
             </div>
-
-            <!-- Campo: Objetivo General -->
-            <div class="field-card field-card--green q-mb-md">
-              <div class="field-card__header">
-                <q-icon name="flag" size="20px" />
-                <span class="field-card__title">Objetivo General</span>
+            <div class="field-card q-mb-xl">
+              <div class="q-pa-md">
+                <q-input v-model="formDatos.justificacion" type="textarea" rows="8" borderless
+                  class="text-subtitle1 text-black full-width" :readonly="!puedeEditarCampo('justificacion')"
+                  placeholder="Describa la relevancia de esta asignatura en el plan de estudios..." />
               </div>
-              <q-input v-model="formDatos.objetivo_general" outlined type="textarea" autogrow class="field-card__input"
-                :readonly="!puedeEditarCampo('objetivo_general')" />
             </div>
 
-            <!-- Campo: Justificación -->
-            <div class="field-card field-card--amber q-mb-md">
-              <div class="field-card__header">
-                <q-icon name="lightbulb" size="20px" />
-                <span class="field-card__title">Justificación</span>
+            <!-- 4.- Propósito General de la Unidad de Formación -->
+            <div class="premium-section-title">
+              <div class="icon-box">
+                <q-icon name="flag" size="24px" />
               </div>
-              <q-input v-model="formDatos.justificacion" outlined type="textarea" autogrow class="field-card__input"
-                :readonly="!puedeEditarCampo('justificacion')" />
+              <div class="text-h6">4.- Propósito General de la Unidad de Formación</div>
             </div>
-
-            <!-- Metodología -->
-            <div class="text-subtitle1 text-weight-bold q-mt-xl q-mb-md">
-              <q-icon name="settings" color="indigo" class="q-mr-sm" />
-              Metodología y Evaluación
-            </div>
-
-            <!-- Campo: Saberes Previos -->
-            <div class="field-card field-card--orange q-mb-md">
-              <div class="field-card__header">
-                <q-icon name="psychology" size="20px" />
-                <span class="field-card__title">Saberes Previos</span>
-                <span class="field-card__hint">Conocimientos previos necesarios</span>
+            <div class="field-card q-mb-xl">
+              <div class="q-pa-md">
+                <q-input v-model="formDatos.objetivo_general" type="textarea" rows="8" borderless
+                  class="text-subtitle1 text-black full-width" :readonly="!puedeEditarCampo('objetivo_general')"
+                  placeholder="Defina el propósito central y las metas de formación..." />
               </div>
-              <q-input v-model="formDatos.saberes_previos" outlined class="field-card__input"
-                :readonly="!puedeEditarCampo('saberes_previos')" />
-            </div>
-
-            <!-- Campo: Contenido Mínimo -->
-            <div class="field-card field-card--purple q-mb-md">
-              <div class="field-card__header">
-                <q-icon name="list" size="20px" />
-                <span class="field-card__title">Contenido Mínimo</span>
-              </div>
-              <q-input v-model="formDatos.contenido_minimo" outlined type="textarea" autogrow class="field-card__input"
-                :readonly="!puedeEditarCampo('contenido_minimo')" />
-            </div>
-
-            <!-- Campo: Metodología de Enseñanza -->
-            <div class="field-card field-card--teal q-mb-md">
-              <div class="field-card__header">
-                <q-icon name="school" size="20px" />
-                <span class="field-card__title">Metodología de Enseñanza</span>
-              </div>
-              <q-input v-model="formDatos.metodologia_ensenanza" outlined type="textarea" autogrow
-                class="field-card__input" :readonly="!puedeEditarCampo('metodologia_ensenanza')" />
-            </div>
-
-            <!-- Campo: Criterios de Evaluación -->
-            <div class="field-card field-card--red q-mb-md">
-              <div class="field-card__header">
-                <q-icon name="grading" size="20px" />
-                <span class="field-card__title">Criterios de Evaluación</span>
-              </div>
-              <q-input v-model="formDatos.criterios_evaluacion" outlined type="textarea" autogrow
-                class="field-card__input" :readonly="!puedeEditarCampo('criterios_evaluacion')" />
             </div>
           </q-form>
         </q-tab-panel>
-
         <!-- Tab: Programa de Asignatura -->
         <q-tab-panel name="programa" class="q-pa-lg">
-          <div class="text-h6 text-weight-bold q-mb-lg">
-            <q-icon name="assignment" color="purple" class="q-mr-sm" />
-            Programa de Asignatura
-          </div>
-
-          <q-form class="q-gutter-lg">
-            <!-- Competencias -->
-            <div class="text-subtitle1 text-weight-bold">
-              <q-icon name="emoji_events" color="amber" class="q-mr-sm" />
-              Competencias
+          <q-form class="q-gutter-y-xl">
+            <!-- 5.- Competencias -->
+            <div class="premium-section-title">
+              <div class="icon-box">
+                <q-icon name="emoji_events" size="24px" />
+              </div>
+              <div class="text-h6">5.- Competencias</div>
             </div>
 
-            <q-input v-model="formPrograma.competencia_global" label="Competencia Global Específica" outlined
-              type="textarea" rows="4" hint="Describe la competencia global específica de la asignatura"
-              :readonly="!puedeEditarCampo()">
-              <template v-slot:prepend><q-icon name="public" color="blue" /></template>
-            </q-input>
-            <!-- Campo: Competencia de la Asignatura -->
-            <div class="field-card field-card--green q-mb-md">
-              <div class="field-card__header">
-                <q-icon name="school" size="20px" />
-                <span class="field-card__title">Competencia de la Asignatura</span>
-                <span class="field-card__hint">Describe la competencia específica</span>
-              </div>
-              <div class="field-card__body" v-if="formPrograma.competencia_asignatura && !editandoCompetencia">
-                <div class="formatted-text" v-html="formatearTextoMultilinea(formPrograma.competencia_asignatura)">
+            <div class="row q-col-gutter-lg">
+              <div class="col-12">
+                <div class="field-card">
+                  <div class="q-pa-md">
+                    <div class="text-caption text-weight-bold text-grey-7 q-mb-xs">Competencia Global Específica</div>
+                    <q-input v-model="formPrograma.competencia_global" type="textarea" rows="4" borderless
+                      class="text-subtitle1 text-black full-width" :readonly="!puedeEditarCampo()"
+                      placeholder="Describa la competencia global..." />
+                  </div>
                 </div>
-                <q-btn flat dense icon="edit" size="sm" color="orange" class="edit-btn"
-                  @click="editandoCompetencia = true" v-if="puedeEditarCampo('')" />
               </div>
-              <q-input v-else v-model="formPrograma.competencia_asignatura" outlined type="textarea" rows="4"
-                class="field-card__input" @blur="editandoCompetencia = false" />
-            </div>
-
-            <!-- Campo: Elementos de Competencia -->
-            <div class="field-card field-card--teal q-mb-md">
-              <div class="field-card__header">
-                <q-icon name="list_alt" size="20px" />
-                <span class="field-card__title">Elementos de Competencia</span>
-                <span class="field-card__hint">Lista de elementos extraídos</span>
-              </div>
-              <div class="field-card__body" v-if="formPrograma.elementos_competencia && !editandoElementos">
-                <div class="formatted-list" v-html="formatearElementosCompetencia(formPrograma.elementos_competencia)">
+              <div class="col-12">
+                <div class="field-card">
+                  <div class="q-pa-md">
+                    <div class="text-caption text-weight-bold text-grey-7 q-mb-xs">Unidad de Competencia Específica
+                    </div>
+                    <q-input v-model="formPrograma.competencia_unidad" type="textarea" rows="4" borderless
+                      class="text-subtitle1 text-black full-width" :readonly="!puedeEditarCampo()"
+                      placeholder="Describa la unidad de competencia..." />
+                  </div>
                 </div>
-                <q-btn flat dense icon="edit" size="sm" color="orange" class="edit-btn"
-                  @click="editandoElementos = true" v-if="puedeEditarCampo('')" />
               </div>
-              <q-input v-else v-model="formPrograma.elementos_competencia" outlined type="textarea" rows="6"
-                class="field-card__input" @blur="editandoElementos = false" />
             </div>
 
-            <!-- Reglamento -->
-            <div class="text-subtitle1 text-weight-bold q-mt-lg">
-              <q-icon name="gavel" color="red" class="q-mr-sm" />
-              Reglamento y Normativa
+            <!-- 6.- Elementos de Competencia -->
+            <div class="premium-section-title">
+              <div class="icon-box">
+                <q-icon name="list_alt" size="24px" />
+              </div>
+              <div class="text-h6">6.- Elementos de Competencia</div>
             </div>
 
-            <div class="q-gutter-sm">
+            <div class="q-gutter-y-md">
+              <div v-for="(elemento, index) in formPrograma.elementos_competencia" :key="index"
+                class="field-card relative-position">
+                <div class="q-pa-md">
+                  <div class="text-caption text-weight-bold text-grey-7 q-mb-xs">Elemento de competencia {{ index + 1 }}
+                  </div>
+                  <q-input v-model="formPrograma.elementos_competencia[index]" type="textarea" rows="2" borderless
+                    class="text-subtitle1 text-black full-width" :readonly="!puedeEditarCampo()"
+                    placeholder="Describa el elemento de competencia..." />
+                  <div class="absolute-top-right q-pa-sm" v-if="puedeEditarCampo()">
+                    <q-btn flat round dense icon="close" color="red-4" size="sm" @click="quitarElemento(index)"
+                      v-if="formPrograma.elementos_competencia.length > 1" />
+                  </div>
+                </div>
+              </div>
+              <div class="row justify-center q-mt-md" v-if="puedeEditarCampo()">
+                <q-btn flat icon="add_circle_outline" label="Agregar elemento de competencia" color="primary" no-caps
+                  @click="agregarElemento" class="text-weight-bold" />
+              </div>
+            </div>
+
+            <!-- 8.- Metodología General de la Asignatura -->
+            <div class="premium-section-title">
+              <div class="icon-box">
+                <q-icon name="psychology" size="24px" />
+              </div>
+              <div class="text-h6">8.- Metodología General</div>
+            </div>
+
+            <div class="row q-col-gutter-lg">
+              <div class="col-12">
+                <div class="field-card">
+                  <div class="q-pa-md">
+                    <div class="row items-center q-mb-xs">
+                      <div class="text-caption text-weight-bold text-grey-7">En el Aula</div>
+                      <div class="text-caption text-grey-5 q-ml-sm">(Si corresponde)</div>
+                    </div>
+                    <q-input v-model="formPrograma.metodologia_aula" type="textarea" rows="3" borderless
+                      class="text-subtitle1 text-black full-width" :readonly="!puedeEditarCampo()"
+                      placeholder="Describa la metodología en aula..." />
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="field-card">
+                  <div class="q-pa-md">
+                    <div class="row items-center q-mb-xs">
+                      <div class="text-caption text-weight-bold text-grey-7">Centro de Simulación</div>
+                      <div class="text-caption text-grey-5 q-ml-sm">(Si corresponde)</div>
+                    </div>
+                    <q-input v-model="formPrograma.metodologia_simulacion" type="textarea" rows="3" borderless
+                      class="text-subtitle1 text-black full-width" :readonly="!puedeEditarCampo()"
+                      placeholder="Describa la metodología en simulación..." />
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="field-card">
+                  <div class="q-pa-md">
+                    <div class="row items-center q-mb-xs">
+                      <div class="text-caption text-weight-bold text-grey-7">Hospital y Centros de Salud</div>
+                      <div class="text-caption text-grey-5 q-ml-sm">(Si corresponde)</div>
+                    </div>
+                    <q-input v-model="formPrograma.metodologia_hospital" type="textarea" rows="3" borderless
+                      class="text-subtitle1 text-black full-width" :readonly="!puedeEditarCampo()"
+                      placeholder="Describa la metodología en centros de salud..." />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 9.- Sistema de Evaluación -->
+            <div class="premium-section-title">
+              <div class="icon-box">
+                <q-icon name="assignment_turned_in" size="24px" />
+              </div>
+              <div class="text-h6">9.- Sistema de Evaluación</div>
+            </div>
+            <div class="field-card">
+              <div class="q-pa-md">
+                <div class="text-caption text-weight-bold text-grey-7 q-mb-xs">Criterios de Evaluación</div>
+                <q-input v-model="formPrograma.sistema_evaluacion" type="textarea" rows="8" borderless
+                  class="text-subtitle1 text-black full-width" :readonly="!puedeEditarCampo()"
+                  placeholder="Describa el sistema y criterios de evaluación..." />
+              </div>
+            </div>
+
+            <!-- 12.- Criterios y Normativa -->
+            <div class="premium-section-title">
+              <div class="icon-box">
+                <q-icon name="gavel" size="24px" />
+              </div>
+              <div class="text-h6">12.- Criterios y Normativa</div>
+            </div>
+
+            <div class="q-gutter-y-md">
               <div v-for="(regla, index) in formPrograma.reglamento_normativa" :key="index"
-                class="row items-center q-gutter-sm">
-                <q-input v-model="formPrograma.reglamento_normativa[index]" outlined dense class="col"
-                  :placeholder="'Regla ' + (index + 1)" />
-                <q-btn flat round dense icon="delete" color="red" @click="quitarRegla(index)" />
+                class="field-card relative-position">
+                <div class="q-pa-md row items-center no-wrap">
+                  <div class="text-weight-bold text-grey-7 q-mr-md" style="min-width: 80px;">Regla {{ index + 1 }}</div>
+                  <q-input v-model="formPrograma.reglamento_normativa[index]" borderless dense
+                    class="col text-subtitle1 text-black" :readonly="!puedeEditarCampo()"
+                    placeholder="Escriba la regla..." />
+                  <q-btn flat round dense icon="close" color="red-4" size="sm" @click="quitarRegla(index)"
+                    v-if="puedeEditarCampo()" />
+                </div>
               </div>
-              <q-btn flat icon="add" label="Agregar regla" color="primary" no-caps @click="agregarRegla" />
+              <div class="row justify-center q-mt-md" v-if="puedeEditarCampo()">
+                <q-btn flat icon="add_circle_outline" label="Agregar regla" color="primary" no-caps
+                  @click="agregarRegla" class="text-weight-bold" />
+              </div>
             </div>
-
-            <!-- Organización y Calendario -->
-            <div class="text-subtitle1 text-weight-bold q-mt-lg">
-              <q-icon name="calendar_month" color="indigo" class="q-mr-sm" />
-              Organización y Calendario
-            </div>
-
-            <q-input v-model="formPrograma.organizacion_calendario" label="Organización y Calendario Académico" outlined
-              type="textarea" rows="4" hint="Describe la organización del calendario académico de la asignatura">
-              <template v-slot:prepend><q-icon name="event" color="indigo" /></template>
-            </q-input>
           </q-form>
         </q-tab-panel>
 
@@ -394,7 +434,8 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor">{{ biblio.autor }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
-                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio ? ' (' +
+                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio ? ' ('
+                          +
                           biblio.anio + ')' : '' }}
                       </div>
                     </div>
@@ -415,7 +456,7 @@
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
                 <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                }}</q-badge>
+                  }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
                 <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
@@ -424,7 +465,8 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor">{{ biblio.autor }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
-                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio ? ' (' +
+                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio ? ' ('
+                          +
                           biblio.anio + ')' : '' }}
                       </div>
                     </div>
@@ -444,8 +486,9 @@
               <div class="biblio-section__header biblio-section__header--api q-mb-md">
                 <q-icon name="cloud_download" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
-                <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{ bibliografiasProgramaAnalitico.length
-                }}</q-badge>
+                <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
+                  bibliografiasProgramaAnalitico.length
+                  }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
@@ -458,7 +501,7 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
                         biblio.autor
-                      }}</div>
+                        }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
                           biblio.anio !==
@@ -535,7 +578,7 @@
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
                     <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                    }})</span>
+                      }})</span>
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
@@ -613,29 +656,42 @@
           </div>
         </div>
         <q-card-section class="q-pt-lg">
-          <q-form class="q-gutter-md">
-            <q-input v-model="formBiblio.titulo" label="Título" outlined dense />
-            <q-input v-model="formBiblio.autor" label="Autor(es)" outlined dense />
+          <q-form class="q-gutter-y-md">
+            <q-input v-model="formBiblio.titulo" label="Título" outlined dense class="full-width" />
+            <q-input v-model="formBiblio.autor" label="Autor(es)" outlined dense class="full-width" />
+
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <q-input v-model="formBiblio.editorial" label="Editorial" outlined dense />
+                <q-input v-model="formBiblio.editorial" label="Editorial" outlined dense class="full-width" />
               </div>
               <div class="col-6">
-                <q-input v-model="formBiblio.edicion" label="Edición" outlined dense />
+                <q-input v-model="formBiblio.edicion" label="Edición" outlined dense class="full-width" />
               </div>
             </div>
+
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <q-input v-model.number="formBiblio.anio" label="Año" type="number" outlined dense />
+                <q-input v-model.number="formBiblio.anio" label="Año" type="number" outlined dense class="full-width" />
               </div>
               <div class="col-6">
                 <q-select v-model="formBiblio.tipo" label="Tipo"
                   :options="[{ label: 'Principal', value: 'principal' }, { label: 'Complementario', value: 'complementario' }]"
-                  emit-value map-options outlined dense />
+                  emit-value map-options outlined dense class="full-width" />
               </div>
             </div>
-            <q-input v-model="formBiblio.isbn" label="ISBN" outlined dense />
-            <q-input v-model="formBiblio.paginas" label="Páginas (ej: 100-150)" outlined dense />
+
+            <div class="row q-col-gutter-md">
+              <div class="col-12">
+                <q-input v-model="formBiblio.isbn" label="ISBN (Opcional)" outlined dense class="full-width" />
+              </div>
+            </div>
+
+            <div class="row q-col-gutter-md">
+              <div class="col-12">
+                <q-input v-model="formBiblio.paginas" label="Páginas (ej: 100-150) (Opcional)" outlined dense
+                  class="full-width" />
+              </div>
+            </div>
           </q-form>
         </q-card-section>
         <div class="dialog-actions">
@@ -795,6 +851,8 @@ const importOpciones = ref({
   datos: true,
   unidades: true
 })
+
+
 
 // --- CRUD Unidades & Temas ---
 const dialogUnidad = ref(false)
@@ -1071,76 +1129,58 @@ const bibliografiasProgramaAnalitico = computed(() => {
 // Forms
 const datosOriginales = ref({})
 const formDatos = ref({})
+
+// --- Cálculo Automático Reactivado (Basado en Sesiones) ---
+// --- Cálculo Automático Reactivado (Basado en Sesiones) ---
+watch(() => [formDatos.value.sesiones_semanales_teoricas, formDatos.value.sesiones_semanales_practicas], ([teoricasSem, practicasSem]) => {
+  const t = Number(teoricasSem) || 0
+  const p = Number(practicasSem) || 0
+
+  // 1. Calculate Total Weekly Sessions (Just for the field itself)
+  const totalSesiones = t + p
+  formDatos.value.sesiones_semanales = totalSesiones
+
+  // USER REQUEST: Sessions are independent. Do NOT update Hours or Total Load based on sessions.
+  // Keeping hours static from DB payload.
+
+  // 3. Update Carga Horaria Total?
+  // If independent, maybe Carga Total should just be Sum of Hours (which are static?)
+  // Let's ensure Carga Horaria Total reflects the Hours text.
+  const hTeo = Number(formDatos.value.horas_teoricas) || 0
+  const hPrac = Number(formDatos.value.horas_practicas) || 0
+
+  if (formDatos.value.carga_horaria_total === 0 && (hTeo + hPrac) > 0) {
+    formDatos.value.carga_horaria_total = hTeo + hPrac
+  }
+
+  // 4. Format visual detail (Green Box)
+  // This depends on horas_teoricas/practicas. Since we don't update them, this stays stable.
+  let detalle = ''
+  if (hTeo > 0) detalle += `${hTeo} T`
+  if (hPrac > 0) {
+    if (detalle) detalle += ' / '
+    detalle += `${hPrac} P`
+  }
+  formDatos.value.horas_detalle = detalle
+}, { immediate: true })
 const formPrograma = ref({
   competencia_global: '',
-  competencia_asignatura: '',
-  elementos_competencia: '',
+  competencia_unidad: '',
+  elementos_competencia: [],
+  metodologia_aula: '',
+  metodologia_simulacion: '',
+  metodologia_hospital: '',
   reglamento_normativa: [],
-  organizacion_calendario: ''
+  sistema_evaluacion: ''
 })
 const formBiblio = ref({})
 const dialogBibliografia = ref(false)
 const editandoBiblio = ref(false)
 const biblioSeleccionada = ref(null)
 
-// Estados de edición para campos formateados
-const editandoCompetencia = ref(false)
-const editandoElementos = ref(false)
 
-// Funciones de formateo de texto
-function formatearTextoMultilinea(texto) {
-  if (!texto) return ''
-  // Dividir por saltos de línea y crear párrafos
-  const lineas = texto.split('\n').filter(l => l.trim())
-  if (lineas.length <= 1) {
-    return `<p class="formatted-paragraph">${escapeHtml(texto)}</p>`
-  }
-  return lineas.map(l => `<p class="formatted-paragraph">${escapeHtml(l.trim())}</p>`).join('')
-}
 
-function formatearElementosCompetencia(texto) {
-  if (!texto) return ''
 
-  // Detectar patrones como "E.C. 1", "E.C.1", "EC 1", "EC1", etc.
-  const patronEC = /(?:E\.?C\.?\s*\d+|ELEMENTO\s*(?:DE\s*)?COMPETENCIA\s*\d+)/gi
-
-  // Dividir el texto por estos patrones
-  let items = texto.split(patronEC).filter(item => item.trim())
-
-  // También buscar por saltos de línea si no hay patrones EC
-  if (items.length <= 1) {
-    items = texto.split('\n').filter(l => l.trim())
-  }
-
-  if (items.length <= 1) {
-    return `<div class="ec-item"><span class="ec-content">${escapeHtml(texto)}</span></div>`
-  }
-
-  // Generar lista formateada
-  let html = '<div class="ec-list">'
-  items.forEach((item, index) => {
-    const cleanItem = item.trim()
-    if (cleanItem) {
-      html += `
-        <div class="ec-item">
-          <span class="ec-number">E.C. ${index + 1}</span>
-          <span class="ec-content">${escapeHtml(cleanItem)}</span>
-        </div>`
-    }
-  })
-  html += '</div>'
-  return html
-}
-
-function escapeHtml(text) {
-  if (!text) return ''
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
 
 // Importación
 const dialogImportar = ref(false)
@@ -1262,6 +1302,17 @@ watch(asignatura, (newVal) => {
 
 // Methods
 function cargarFormDatos() {
+  // USER REQUEST REVERT: Sessions are independent and manual.
+  // We initialize them strictly from DB or 0.
+  let sTeoricas = Number(asignatura.value.sesiones_semanales_teoricas) || 0
+  let sPracticas = Number(asignatura.value.sesiones_semanales_practicas) || 0
+
+  // No inference from hours/credits.
+
+  // Values from DB/API
+  // hTeoricas and hPracticas removed as they are no longer used for inference
+
+
   formDatos.value = {
     codigo: asignatura.value.codigo,
     sigla: asignatura.value.sigla,
@@ -1283,8 +1334,30 @@ function cargarFormDatos() {
     tipo_curso: asignatura.value.tipo_curso || '',
     modalidad: asignatura.value.modalidad || 'Presencial',
     carga_horaria_total: asignatura.value.carga_horaria_total || 0,
-    requisitos: asignatura.value.requisitos || ''
+    requisitos: asignatura.value.requisitos || '',
+    horas_detalle: '', // Se autocalcula o carga abajo
+    sesiones_semanales: (sTeoricas + sPracticas),
+    sesiones_semanales_teoricas: sTeoricas,
+    sesiones_semanales_practicas: sPracticas
   }
+
+  // Initial calculation of Carga Horaria Total and Detail to ensure visually correct state immediately
+  // even before the watcher kicks in (although watcher is immediate, this ensures no 0-flash)
+  const totalT_calc = sTeoricas * 20
+  const totalP_calc = sPracticas * 20
+
+  if (formDatos.value.carga_horaria_total === 0 && (totalT_calc + totalP_calc) > 0) {
+    formDatos.value.carga_horaria_total = totalT_calc + totalP_calc
+  }
+
+  // Inicializar horas_detalle
+  let detalle = ''
+  if (totalT_calc > 0) detalle += `${totalT_calc} T`
+  if (totalP_calc > 0) {
+    if (detalle) detalle += ' / '
+    detalle += `${totalP_calc} P`
+  }
+  formDatos.value.horas_detalle = detalle
 
   // Guardar copia de datos originales para validar permisos de edición
   datosOriginales.value = JSON.parse(JSON.stringify(formDatos.value))
@@ -1303,12 +1376,33 @@ function cargarFormDatos() {
     }
   }
 
+  // Cargar metodología estructurada
+  const met = asignatura.value.metodologia_general || {}
+
+  // Cargar elementos de competencia estructurados
+  let elementosArray = []
+  const elementosRaw = asignatura.value.elementos_competencia
+  if (elementosRaw) {
+    if (Array.isArray(elementosRaw)) {
+      elementosArray = elementosRaw
+    } else if (typeof elementosRaw === 'string') {
+      elementosArray = elementosRaw.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+    }
+  }
+  // Si no hay elementos, inicializar con uno vacío para la UI
+  if (elementosArray.length === 0) elementosArray = ['']
+
   formPrograma.value = {
-    competencia_global: asignatura.value.competencia_global_especifica || '', // CGE del backend
-    competencia_asignatura: asignatura.value.competencia_asignatura || '',
-    elementos_competencia: asignatura.value.elementos_competencia || '',
+    competencia_global: asignatura.value.competencia_global_especifica || '',
+    competencia_unidad: asignatura.value.competencia_asignatura || '',
+    elementos_competencia: elementosArray,
+    metodologia_aula: met.aula || '',
+    metodologia_simulacion: met.simulacion || '',
+    metodologia_hospital: met.hospital || '',
     reglamento_normativa: reglamentoArray,
-    organizacion_calendario: asignatura.value.organizacion_calendario || ''
+    sistema_evaluacion: asignatura.value.sistema_evaluacion || ''
   }
 }
 
@@ -1320,12 +1414,36 @@ function quitarRegla(index) {
   formPrograma.value.reglamento_normativa.splice(index, 1)
 }
 
+function agregarElemento() {
+  formPrograma.value.elementos_competencia.push('')
+}
+
+function quitarElemento(index) {
+  formPrograma.value.elementos_competencia.splice(index, 1)
+  if (formPrograma.value.elementos_competencia.length === 0) {
+    formPrograma.value.elementos_competencia.push('')
+  }
+}
+
 function guardarCambios() {
+  // Estructurar la metodología para el backend
+  const metodologia_general = {
+    aula: formPrograma.value.metodologia_aula,
+    simulacion: formPrograma.value.metodologia_simulacion,
+    hospital: formPrograma.value.metodologia_hospital
+  }
+
   // Combinar datos de ambos formularios
   const datosCompletos = {
     ...formDatos.value,
-    ...formPrograma.value
+    ...formPrograma.value,
+    metodologia_general,
+    // Mapeo inverso para campos heredados
+    metodologia_ensenanza: metodologia_general, // Alias para el backend
+    competencia_asignatura: formPrograma.value.competencia_unidad,
+    criterios_evaluacion: formPrograma.value.sistema_evaluacion
   }
+
   store.updateAsignatura(asignatura.value.id, datosCompletos)
   $q.notify({ type: 'positive', message: 'Cambios guardados', icon: 'check_circle', position: 'top' })
 }
@@ -1438,36 +1556,29 @@ function generarPDF(tipo) {
 .doc-table {
   display: flex;
   flex-direction: column;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   width: 100%;
   background: white;
   overflow: hidden;
-  /* For rounded corners */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .doc-row {
   display: flex;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s;
+  border-bottom: 1px solid #edf2f7;
 }
 
 .doc-row:last-child {
   border-bottom: none;
 }
 
-.doc-row:hover {
-  background-color: #fafafa;
-}
-
 .doc-cell {
   position: relative;
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid #edf2f7;
   display: flex;
   flex-direction: column;
-  min-height: 60px;
-  padding: 4px 0;
+  min-height: 70px;
+  padding: 0;
 }
 
 .doc-cell:last-child {
@@ -1475,31 +1586,65 @@ function generarPDF(tipo) {
 }
 
 .doc-label {
-  background-color: transparent;
-  color: var(--q-primary);
+  color: #64748b;
   font-weight: 700;
-  font-size: 0.75rem;
-  padding: 6px 12px 2px 12px;
+  font-size: 0.65rem;
+  padding: 10px 14px 2px 14px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: none;
-  opacity: 0.8;
+  letter-spacing: 0.8px;
 }
 
-/* For cells where input is direct content */
+/* INPUT STYLING: The "Modern Border" Box */
 .doc-input {
-  font-size: 1.15rem;
-  /* Large, readable text */
-  padding: 0 4px;
+  font-size: 1.1rem;
+  margin: 4px 12px 8px 12px;
+  /* Pull away from edges */
 }
 
-/* Container for read-only text span */
+/* Create the "Field Box" */
+:deep(.doc-input .q-field__control) {
+  background: #f5f7fa;
+  /* Light grey fill area */
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  /* Modern rounded corners */
+  transition: all 0.3s ease;
+  min-height: 40px;
+  /* Touch friendly height */
+  padding: 0 12px;
+  /* Internal padding */
+}
+
+/* Highlight interaction */
+:deep(.doc-input .q-field__control:hover) {
+  background: #ffffff;
+  border-color: var(--q-primary);
+  transform: translateY(-1px);
+  /* Subtle lift */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+:deep(.doc-input.q-field--focused .q-field__control) {
+  background: #ffffff;
+  border-color: var(--q-primary);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+  /* Focus Ring */
+}
+
+/* Remove default material underline so we use the box instead */
+:deep(.doc-input .q-field__control:before),
+:deep(.doc-input .q-field__control:after) {
+  display: none;
+}
+
+/* Container for read-only text span (like Code, Semester) */
 .doc-input-container {
-  padding: 0 12px 6px 12px;
+  padding: 0 14px 6px 14px;
   display: flex;
   align-items: center;
   height: 100%;
   color: #1d1d1d;
+  font-size: 1.1rem;
 }
 
 /* Helpers */
@@ -1516,18 +1661,13 @@ function generarPDF(tipo) {
 }
 
 /* Override QInput standard padding to fit cell better */
-:deep(.doc-input .q-field__control),
-:deep(.doc-input .q-field__native) {
-  padding-left: 8px;
+:deep(.doc-input .q-field__native),
+:deep(.doc-input .q-field__input) {
+  padding-left: 0px;
+  /* Adjusted for new box padding */
   min-height: 32px;
   color: #1d1d1d;
   font-weight: 500;
-}
-
-/* Remove default QInput border in this context */
-:deep(.doc-input .q-field__control:before),
-:deep(.doc-input .q-field__control:after) {
-  border: none !important;
 }
 
 .q-page {
@@ -1734,18 +1874,58 @@ function generarPDF(tipo) {
 
 /* Field Cards - Modern styled input containers */
 .field-card {
-  background: var(--bg-tertiary);
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
   padding: 0;
   overflow: hidden;
-  border-left: 4px solid var(--primary);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .field-card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: #7b1fa2;
+}
+
+.premium-header {
+  background: linear-gradient(135deg, #7b1fa2 0%, #4a148c 100%);
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.premium-title {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-size: 1rem;
+}
+
+.premium-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 40px 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.premium-section-title .text-h6 {
+  color: #1e293b;
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
+}
+
+.premium-section-title .icon-box {
+  background: #f1f5f9;
+  padding: 8px;
+  border-radius: 10px;
+  color: #7b1fa2;
 }
 
 .field-card__header {
