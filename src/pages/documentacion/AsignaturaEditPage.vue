@@ -456,7 +456,7 @@
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
                 <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                }}</q-badge>
+                  }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
                 <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
@@ -488,7 +488,7 @@
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
                 <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
                   bibliografiasProgramaAnalitico.length
-                }}</q-badge>
+                  }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
@@ -501,7 +501,7 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
                         biblio.autor
-                      }}</div>
+                        }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
                           biblio.anio !==
@@ -578,7 +578,7 @@
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
                     <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                    }})</span>
+                      }})</span>
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
@@ -656,29 +656,42 @@
           </div>
         </div>
         <q-card-section class="q-pt-lg">
-          <q-form class="q-gutter-md">
-            <q-input v-model="formBiblio.titulo" label="Título" outlined dense />
-            <q-input v-model="formBiblio.autor" label="Autor(es)" outlined dense />
+          <q-form class="q-gutter-y-md">
+            <q-input v-model="formBiblio.titulo" label="Título" outlined dense class="full-width" />
+            <q-input v-model="formBiblio.autor" label="Autor(es)" outlined dense class="full-width" />
+
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <q-input v-model="formBiblio.editorial" label="Editorial" outlined dense />
+                <q-input v-model="formBiblio.editorial" label="Editorial" outlined dense class="full-width" />
               </div>
               <div class="col-6">
-                <q-input v-model="formBiblio.edicion" label="Edición" outlined dense />
+                <q-input v-model="formBiblio.edicion" label="Edición" outlined dense class="full-width" />
               </div>
             </div>
+
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <q-input v-model.number="formBiblio.anio" label="Año" type="number" outlined dense />
+                <q-input v-model.number="formBiblio.anio" label="Año" type="number" outlined dense class="full-width" />
               </div>
               <div class="col-6">
                 <q-select v-model="formBiblio.tipo" label="Tipo"
                   :options="[{ label: 'Principal', value: 'principal' }, { label: 'Complementario', value: 'complementario' }]"
-                  emit-value map-options outlined dense />
+                  emit-value map-options outlined dense class="full-width" />
               </div>
             </div>
-            <q-input v-model="formBiblio.isbn" label="ISBN" outlined dense />
-            <q-input v-model="formBiblio.paginas" label="Páginas (ej: 100-150)" outlined dense />
+
+            <div class="row q-col-gutter-md">
+              <div class="col-12">
+                <q-input v-model="formBiblio.isbn" label="ISBN (Opcional)" outlined dense class="full-width" />
+              </div>
+            </div>
+
+            <div class="row q-col-gutter-md">
+              <div class="col-12">
+                <q-input v-model="formBiblio.paginas" label="Páginas (ej: 100-150) (Opcional)" outlined dense
+                  class="full-width" />
+              </div>
+            </div>
           </q-form>
         </q-card-section>
         <div class="dialog-actions">

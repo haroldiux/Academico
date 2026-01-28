@@ -30,5 +30,10 @@ export default {
    */
   copiarPlanificacion(asignaturaId, data) {
     return api.post(`/planificacion-semestral/${asignaturaId}/copiar`, data)
+  },
+
+  // Seguimiento de Clase (Control de Clase)
+  saveSeguimiento(sesionId, data) {
+    return api.post(`/planificacion-semestral/sesion/${sesionId}/seguimiento`, data)
   }
 }
