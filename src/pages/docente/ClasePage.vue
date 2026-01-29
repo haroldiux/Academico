@@ -517,31 +517,10 @@ const claseSeleccionadaObj = computed(() => {
 })
 
 // Mocks for prototype structure
-const unidadSeleccionada = ref(null)
 const temaSeleccionado = ref(null)
 
-const unidadesMock = [
-  { 
-    id: 1, 
-    nombre: 'Unidad I: Fundamentos de Programación',
-    temas: [
-      { id: 101, titulo: 'Introducción a la Algoritmia' },
-      { id: 102, titulo: 'Variables y Tipos de Datos' },
-      { id: 103, titulo: 'Estructuras de Control' }
-    ]
-  },
-  { 
-    id: 2, 
-    nombre: 'Unidad II: Programación Orientada a Objetos',
-    temas: [
-      { id: 201, titulo: 'Clases y Objetos' },
-      { id: 202, titulo: 'Herencia y Polimorfismo' }
-    ]
-  }
-]
-
 watch(temaSeleccionado, (val) => {
-    if (val) temaPlanificado.value = val.titulo
+   if (val) temaPlanificado.value = val.titulo
 })
 
 // Asistencia
@@ -596,14 +575,6 @@ const evidencias = ref({
    diapositivas: null,
    material_plataforma: false
 })
-const nuevoLink = ref('')
-
-const agregarLink = () => {
-   if (nuevoLink.value && nuevoLink.value.trim()) {
-      evidencias.value.links.push(nuevoLink.value.trim())
-      nuevoLink.value = ''
-   }
-}
 
 const guardarSeguimiento = async () => {
    if (!sesionActual.value) {

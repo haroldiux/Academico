@@ -237,6 +237,7 @@ import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useAuthStore, ROLES } from 'src/stores/auth'
+import asignaturaService from 'src/services/asignaturaService'
 
 const router = useRouter()
 const asignaturasStore = useAsignaturasStore()
@@ -292,11 +293,12 @@ async function fetchData() {
     for (const materiaBase of misMateriasBasicas) {
       const id = typeof materiaBase === 'object' ? materiaBase.id : materiaBase
       try {
-        await asignaturasStore.setAsignaturaActual(id)
-        if (asignaturasStore.asignaturaActual) {
+        // CORRECCIÓN: Usar servicio directo para NO afectar el estado global `asignaturaActual`
+        const response = await asignaturaService.getAsignatura(id)
+        if (response.data) {
           // Combinar detalles del servidor + datos del pivote del login
           materiasConDetalles.push({
-            ...asignaturasStore.asignaturaActual,
+            ...response.data,
             pivot: materiaBase.pivot || null  // Preservar grupo, aula, horario
           })
         }

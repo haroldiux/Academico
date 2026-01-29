@@ -46,7 +46,7 @@
         <q-tab-panel name="horario" class="q-pa-lg">
           <div class="row q-col-gutter-lg">
             <!-- Calendario Académico -->
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <q-card flat bordered class="config-card">
                 <q-card-section>
                   <div class="text-h6 q-mb-md">
@@ -65,7 +65,7 @@
             </div>
 
             <!-- Períodos de Exámenes -->
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <q-card flat bordered class="config-card">
                 <q-card-section>
                   <div class="text-h6 q-mb-md">
@@ -87,7 +87,7 @@
             </div>
 
             <!-- Unidades de Aprendizaje -->
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <q-card flat bordered class="config-card">
                 <q-card-section>
                   <div class="text-h6 q-mb-md">
@@ -107,6 +107,28 @@
                     <q-icon name="warning" class="q-mr-sm" />
                     No hay unidades en Documentación
                   </q-banner>
+                </q-card-section>
+              </q-card>
+            </div>
+
+            <!-- Exámenes Programados -->
+            <div class="col-12 col-md-3">
+              <q-card flat bordered class="config-card">
+                <q-card-section>
+                  <div class="text-h6 q-mb-md">
+                    <q-icon name="event_available" color="red" class="q-mr-sm" />
+                    Exámenes
+                  </div>
+                  <div v-if="fechasExamenes.length" class="q-gutter-y-xs">
+                    <div v-for="examen in fechasExamenes" :key="examen.id" class="row items-center justify-between q-pa-xs bg-grey-1 rounded-borders">
+                       <div class="text-caption text-weight-bold">{{ examen.tipoExamen }}</div>
+                       <q-chip size="xs" color="indigo" text-color="white" icon="event">{{ examen.fecha }}</q-chip>
+                    </div>
+                  </div>
+                  <div v-else class="text-caption text-grey-6 q-pa-sm text-center">
+                    <q-icon name="info" class="q-mr-xs"/>
+                    Sin fechas generadas
+                  </div>
                 </q-card-section>
               </q-card>
             </div>
@@ -216,7 +238,8 @@
                     <tr>
                       <th style="width:70px">SEM</th>
                       <th style="width:70px">SESIÓN</th>
-                      <th style="width:150px">TEMAS</th>
+                      <th style="width:140px" class="bg-grey-1 text-grey-8">FECHAS / GRUPOS</th>
+                      <th style="width:250px">TEMAS</th>
                       <th>CONCEPTUAL</th>
                       <th>PROCEDIMENTAL</th>
                       <th>ACTITUDINAL</th>
@@ -242,9 +265,15 @@
                         </td>
                         <td class="cell-sesion">
                           <div class="sesion-content">
-                            <span class="sesion-numero">{{ sesion.numeroGlobal }}°</span>
-                            <span class="sesion-dia">{{ sesion.dia }}</span>
-                            <span class="sesion-fecha">{{ sesion.fecha }}</span>
+                            <span class="sesion-numero">SESIÓN {{ sesion.numeroGlobal }}</span>
+                            <!-- <span class="sesion-dia">{{ sesion.dia }}</span> -->
+                            <span class="sesion-fecha">{{ sesion.tipoClase || 'Clase' }}</span>
+                          </div>
+                        </td>
+                        <td class="cell-fechas bg-grey-1">
+                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
+                             <div class="fg-grupo">{{ fg.grupo }}</div>
+                             <div class="fg-fecha">{{ fg.fecha }}</div>
                           </div>
                         </td>
                         <td colspan="6" class="examen-cell">
@@ -274,28 +303,57 @@
                         </td>
                         <td class="cell-sesion">
                           <div class="sesion-content">
-                            <span class="sesion-numero">{{ sesion.numeroGlobal }}°</span>
-                            <span class="sesion-dia">{{ sesion.dia }}</span>
-                            <span class="sesion-fecha">{{ sesion.fecha }}</span>
+                            <span class="sesion-numero">SESIÓN {{ sesion.numeroGlobal }}</span>
+                            <!-- <span class="sesion-dia">{{ sesion.dia }}</span> -->
+                            <span class="sesion-fecha">{{ sesion.tipoClase || 'Clase' }}</span>
                           </div>
                         </td>
-                        <td><q-input v-model="sesion.tema" outlined dense autogrow class="cell-input"
-                            placeholder="Tema..." @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.conceptual" outlined dense type="textarea" autogrow
+                        <td class="cell-fechas bg-grey-1">
+                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
+                             <div class="fg-grupo">{{ fg.grupo }}</div>
+                             <div class="fg-fecha">{{ fg.fecha }}</div>
+                          </div>
+                        </td>
+                        <td>
+                            <div v-if="sesion.semana <= 17">
+                                <q-select v-model="sesion.temasSeleccionados" 
+                                    :options="(unidad.temas || []).map(t => typeof t === 'string' ? t : (t.titulo || t.nombre || ''))" 
+                                    multiple use-chips use-input new-value-mode="add-unique"
+                                    emit-value map-options
+                                    dense outlined class="cell-input"
+                                    label="Temas"
+                                    @update:model-value="(val) => { sesion.tema = (val || []).join(', '); marcarModificado(sesion) }"
+                                />
+                            </div>
+                            <div v-else class="text-caption text-grey text-center">
+                                --
+                            </div>
+                        </td>
+                        <td><q-input v-if="sesion.semana <= 17" v-model="sesion.conceptual" outlined dense type="textarea" autogrow
                             class="cell-input" placeholder="Contenidos..."
                             @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.procedimental" outlined dense type="textarea" autogrow
+                        <td><q-input v-if="sesion.semana <= 17" v-model="sesion.procedimental" outlined dense type="textarea" autogrow
                             class="cell-input" placeholder="Habilidades..."
                             @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.actitudinal" outlined dense type="textarea" autogrow
+                        <td><q-input v-if="sesion.semana <= 17" v-model="sesion.actitudinal" outlined dense type="textarea" autogrow
                             class="cell-input" placeholder="Actitudes..."
                             @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.criteriosDesempeno" outlined dense type="textarea" autogrow
-                            class="cell-input" placeholder="Criterios..."
-                            @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-model="sesion.instrumentosEvaluacion" outlined dense type="textarea" autogrow
-                            class="cell-input" placeholder="Instrumentos..."
-                            @update:model-value="marcarModificado(sesion)" /></td>
+                        <td>
+                            <q-select v-if="sesion.semana <= 17" v-model="sesion.criteriosSeleccionados" 
+                                multiple use-chips use-input new-value-mode="add-unique"
+                                :options="criteriosOptions"
+                                outlined dense class="cell-input" placeholder="Criterios..."
+                                @update:model-value="marcarModificado(sesion)" 
+                            />
+                        </td>
+                        <td>
+                            <q-select v-if="sesion.semana <= 17" v-model="sesion.instrumentosSeleccionados" 
+                                multiple use-chips use-input new-value-mode="add-unique"
+                                :options="instrumentosOptions"
+                                outlined dense class="cell-input" placeholder="Instrumentos..."
+                                @update:model-value="marcarModificado(sesion)" 
+                            />
+                        </td>
                         <td class="cell-actions">
                           <q-btn flat round dense icon="delete" size="xs" color="red"
                             @click="eliminarSesion(unidad, sesion)" />
@@ -345,6 +403,7 @@
                   <tr>
                     <th rowspan="2">SEMANAS</th>
                     <th rowspan="2">SESIONES</th>
+                    <th rowspan="2" style="width:140px">FECHAS / GRUPOS</th>
                     <th rowspan="2">TEMAS</th>
                     <th colspan="3">APRENDIZAJES</th>
                     <th rowspan="2">CRITERIOS DE DESEMPEÑO</th>
@@ -359,8 +418,14 @@
                 <tbody>
                   <tr v-for="sesion in unidad.sesiones" :key="sesion.id">
                     <td class="text-center">{{ sesion.semana }}<br><small>{{ sesion.semanaFechas }}</small></td>
-                    <td class="text-center">{{ sesion.numeroGlobal }}°<br><small>{{ sesion.dia }}<br>{{ sesion.fecha
-                    }}</small>
+                    <td class="text-center">SESIÓN {{ sesion.numeroGlobal }}<br><small>{{ sesion.tipoClase || 'Clase'
+                        }}</small>
+                    </td>
+                    <td class="cell-fechas bg-grey-1">
+                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
+                             <div class="fg-grupo">{{ fg.grupo }}</div>
+                             <div class="fg-fecha">{{ fg.fecha }}</div>
+                          </div>
                     </td>
                     <td>{{ sesion.tema }}</td>
                     <td>
@@ -476,6 +541,58 @@ const gestionACopiar = ref(null)
 const unidadEditando = ref(null)
 const grupoSeleccionado = ref(null) // { label, value, tipo }
 
+// Computed para extraer fechas de exámenes de la planificación generada o del rol oficial
+const fechasExamenes = computed(() => {
+  // 1. Prioridad: Rol de Exámenes Oficial (cargado desde Admin)
+  if (examenesRol.value.length > 0) {
+      let oficiales = examenesRol.value
+
+      // Filtrar por grupo si no es "ALL" y si el objeto tiene propiedad 'grupo'
+      // Ojo: el string de grupo puede variar ("1", "Grupo 1"). Haremos un match simple.
+      if (grupoSeleccionado.value && grupoSeleccionado.value.value !== 'ALL') {
+          // Intentar filtrar. Si no hay propiedad grupo, mostramos todo.
+          // Asumimos que `experiencia` nos dirá si existe campo grupo.
+          // En la captura se ve columna "Grupo".
+          oficiales = oficiales.filter(e => e.grupo == grupoSeleccionado.value.nombre || e.grupo == grupoSeleccionado.value.value)
+      }
+
+      // Si después del filtro nos quedamos sin nada (quizás por mismatch de string),
+      // podríamos optar por mostrar todos o nada. Mostremos todos los de la materia como fallback o nada.
+      // Mejor mostrar los filtrados si match, si no hubo match exacto quizas el user quiere ver algo.
+      // Pero "Grupo 1" vs "1".
+      // Vamos a mapear y retornar.
+
+      // Ordenar por fecha antes de formatear
+      oficiales.sort((a, b) => new Date(a.fecha_examen || a.fecha) - new Date(b.fecha_examen || b.fecha))
+
+      // Map to display format
+      return oficiales.map(e => {
+          const rawDate = e.fecha_examen || e.fecha
+          let formattedDate = 'Sin fecha'
+          if (rawDate && typeof rawDate === 'string') {
+              // Asegurar que solo tomamos la parte de la fecha (YYYY-MM-DD)
+              // manejando formatos ISO como "2026-03-24T00:00:00.000Z"
+              const datePart = rawDate.split('T')[0]
+              const parts = datePart.split('-')
+
+              if (parts.length === 3) {
+                  formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`
+              } else {
+                  formattedDate = datePart
+              }
+          }
+          return {
+              id: e.id,
+              tipoExamen: e.tipo_examen || e.tipo,
+              fecha: formattedDate
+          }
+      })
+  }
+
+  // 2. Si no hay rol oficial, NO MOSTRAR NADA (A pedido del usuario)
+  return []
+})
+
 const gestionesOptions = [
   { label: 'Gestión 2026-I', value: '2026-I' },
   { label: 'Gestión 2025-II', value: '2025-II' },
@@ -483,14 +600,12 @@ const gestionesOptions = [
 ]
 
 const gruposOptions = computed(() => {
-  if (!asignatura.value?.horarios_data) return []
-  // Mapear horarios_data (que ya trae info agrupada por grupo)
-  return asignatura.value.horarios_data.map(g => ({
-    label: `Grupo ${g.grupo} (${g.tipo})`,
-    value: g.id, // ID REAL DEL GRUPO
-    tipo: g.tipo,
-    nombre: g.grupo
-  }))
+  // Solo mostramos una opción general, no por grupos individuales
+  return [{
+    label: 'PLANIFICACIÓN GENERAL',
+    value: 'ALL',
+    tipo: 'TEORICO-PRACTICO'
+  }]
 })
 
 const gestionesAnteriores = [
@@ -520,7 +635,7 @@ onMounted(async () => {
   // IMPORTANTE: Esperar a que se cargue la asignatura antes de buscar horarios
   await asignaturasStore.setAsignaturaActual(id)
 
-  // Auto-seleccionar primer grupo si existe
+  // Auto-seleccionar primer grupo si existe (o la opción GENERAL por defecto)
   if (gruposOptions.value.length > 0) {
     grupoSeleccionado.value = gruposOptions.value[0]
   }
@@ -528,9 +643,9 @@ onMounted(async () => {
   // Cargar planificación
   await cargarPlanificacion()
 
-
-
   // Cargar horarios desde datos locales
+  // Nota: Al setear grupoSeleccionado arriba, el watcher ya disparó actualizarHorariosDesdeGrupo
+  // Pero por seguridad lo llamamos si hiciera falta, aunque podría ser redundante.
   await cargarHorariosAsignatura()
 
   // Cargar rol de exámenes para esta materia
@@ -540,9 +655,18 @@ onMounted(async () => {
 async function cargarPlanificacion() {
   if (!grupoSeleccionado.value) return
 
+  let targetGrupoId = grupoSeleccionado.value.value
+  if (targetGrupoId === 'ALL') {
+      if (asignatura.value?.horarios_data?.length > 0) {
+          targetGrupoId = asignatura.value.horarios_data[0].id
+      } else {
+        return // No hay grupos, nada que cargar
+      }
+  }
+
   try {
     const response = await planificacionSemestralService.getPlanificacion(route.params.id, {
-        grupo_id: grupoSeleccionado.value.value
+        grupo_id: targetGrupoId
     })
 
     // Si viene planificacion, mapearla
@@ -585,15 +709,23 @@ async function cargarPlanificacion() {
             unidad.sesiones.forEach(sesionView => {
                 const encontrada = cronogramasDB.find(db => db.numero_sesion === sesionView.numeroGlobal)
                 if (encontrada) {
-                    sesionView.tema = encontrada.tema_id ? (encontrada.tema?.titulo || '') : (sesionView.tema || '') // TODO: Tema relation
-                    // Mapear campos de texto
-                    sesionView.conceptual = encontrada.contenido_conceptual
+                    // Prioridad 1: Título del tema relacionado. Prioridad 2: Texto guardado en campo tema.
+                    const temaTitulo = encontrada.tema?.titulo || encontrada.tema?.nombre || encontrada.tema || encontrada.tema_id || ''
+                    sesionView.tema = temaTitulo || encontrada.tema_texto || encontrada.tema || ''
+                    
+                    // Asegurar que temasSeleccionados sea un array
+                    const temaStr = String(sesionView.tema || '')
+                    sesionView.temasSeleccionados = temaStr ? temaStr.split(',').map(s => s.trim()).filter(s => s) : []
+                    
+                    sesionView.conceptual = encontrada.contenido_conceptual || encontrada.contenido_conceptual_texto || ''
                     sesionView.procedimental = encontrada.contenido_procedimental
                     sesionView.actitudinal = encontrada.contenido_actitudinal
+                    
                     sesionView.criteriosDesempeno = encontrada.criterios_desempeno
+                    sesionView.criteriosSeleccionados = encontrada.criterios_desempeno ? encontrada.criterios_desempeno.split(', ') : []
+                    
                     sesionView.instrumentosEvaluacion = encontrada.instrumentos_evaluacion
-                    // ID real para updates futuros?
-                    // sesionView.id = encontrada.id
+                    sesionView.instrumentosSeleccionados = encontrada.instrumentos_evaluacion ? encontrada.instrumentos_evaluacion.split(', ') : []
                 }
             })
         })
@@ -682,34 +814,42 @@ watch(grupoSeleccionado, (val) => {
  * Actualizar horarios basados en el grupo seleccionado
  */
 function actualizarHorariosDesdeGrupo() {
-  if (!grupoSeleccionado.value || !asignatura.value?.horarios_data) return
-
-  const grupoId = grupoSeleccionado.value.value
-  const grupoData = asignatura.value.horarios_data.find(g => g.id === grupoId)
-
-  if (grupoData && grupoData.horarios) {
-    console.log('[Horarios] Cargando horarios del grupo:', grupoData.grupo)
-
-    const nuevosHorarios = grupoData.horarios.map(h => ({
-      dia: h.dia,
-      horaInicio: h.hora_inicio?.substring(0, 5), // "07:00:00" -> "07:00"
-      horaFin: h.hora_fin?.substring(0, 5),
-      aula: h.aula || 'Sin Aula',
-      grupo: grupoData.grupo,
-      tipoClase: grupoData.tipo,
-      desdeAPI: true,
-      docente: grupoData.docente_nombre
-    }))
-
-    asignarHorarios(nuevosHorarios)
-  } else {
-    // Si no encuentra en horarios_data, intentar fallback o limpiar
-    horarios.value = []
-
-    // Fallback legacy (si existiese) lo dejamos opcional,
-    // pero idealmente horarios_data es la fuente de verdad.
-    console.log('[Horarios] No se encontraron horarios para este grupo en la BD.')
+  if (!asignatura.value?.horarios_data) {
+      horarios.value = []
+      return
   }
+
+  // Cargar TODOS los horarios de TODOS los grupos (Vista Agregada)
+  const todosLosHorarios = []
+
+  asignatura.value.horarios_data.forEach(grupoData => {
+    if (grupoData.horarios && grupoData.horarios.length > 0) {
+        const horariosGrupo = grupoData.horarios.map(h => ({
+            dia: h.dia,
+            horaInicio: h.hora_inicio?.substring(0, 5),
+            horaFin: h.hora_fin?.substring(0, 5),
+            // Mostrar nombre del grupo en el aula si es necesario
+            aula: h.aula || 'Sin Aula',
+            grupo: grupoData.grupo, // Para mostrar "Grupo 1" en la tarjeta
+            tipoClase: grupoData.tipo,
+            desdeAPI: true,
+            docente: grupoData.docente_nombre
+        }))
+        todosLosHorarios.push(...horariosGrupo)
+    }
+  })
+
+  // Ordenar por día y hora
+  const diasOrder = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5, 'Domingo': 6 }
+  
+  todosLosHorarios.sort((a, b) => {
+    const diaA = diasOrder[a.dia] || 99
+    const diaB = diasOrder[b.dia] || 99
+    if (diaA !== diaB) return diaA - diaB
+    return a.horaInicio.localeCompare(b.horaInicio)
+  })
+
+  asignarHorarios(todosLosHorarios)
 }
 
 /**
@@ -780,8 +920,40 @@ function eliminarHorario(idx) {
   horarios.value.splice(idx, 1)
 }
 
+// Helper para normalizar días (API sin tildes vs App con tildes)
+const getNroDia = (diaStr) => {
+    if (!diaStr) return 99
+    // Normalizar: minúsculas y sin tildes (miercoles, sabado)
+    const d = diaStr.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    const map = {
+        'lunes': 1, 'martes': 2, 'miercoles': 3, 'jueves': 4, 
+        'viernes': 5, 'sabado': 6, 'domingo': 7
+    }
+    return map[d] || 99
+}
+
 function generarPlanificacion() {
-  const fechaInicio = new Date(calendario.value.fechaInicio)
+  // Ajustar fecha de inicio al Lunes de esa semana para que los índices de día (0-6) coincidan
+  // Ajustar fecha de inicio. Usamos T12:00:00 para evitar problemas de timezone que retrasen al día anterior
+  const inputFecha = new Date(calendario.value.fechaInicio + 'T12:00:00')
+  // getDay(): 0=Sun, 1=Mon...
+  const day = inputFecha.getDay() || 7 // 1=Mon ... 7=Sun
+  const mondayOfFirstWeek = new Date(inputFecha)
+  
+  // Establecer al Lunes de esa semana
+  if (day !== 1) {
+      mondayOfFirstWeek.setDate(inputFecha.getDate() - day + 1)
+  }
+  mondayOfFirstWeek.setHours(0,0,0,0)
+
+  // Ordenar horarios cronológicamente antes de generar
+  horarios.value.sort((a, b) => {
+      const da = getNroDia(a.dia)
+      const db = getNroDia(b.dia)
+      if (da !== db) return da - db
+      return a.horaInicio.localeCompare(b.horaInicio)
+  })
+  
   const unidades = unidadesDocumentacion.value
 
   // Semanas de exámenes (dinámico desde rol o por defecto)
@@ -813,64 +985,80 @@ function generarPlanificacion() {
     return
   }
 
-  for (let semana = 1; semana <= totalSemanas.value; semana++) {
-    const fechaSemanaInicio = new Date(fechaInicio)
-    fechaSemanaInicio.setDate(fechaInicio.getDate() + (semana - 1) * 7)
 
-    // Generar sesiones para cada día de la semana según horarios
-    horarios.value.forEach((horario, sesionEnSemana) => {
-      const diaIndex = diasOptions.findIndex(d => d.value === horario.dia)
-      const fechaSesion = new Date(fechaSemanaInicio)
-      fechaSesion.setDate(fechaSemanaInicio.getDate() + diaIndex)
+  // Determinar ID de grupo para las sesiones (usar el primero disponible si es GLOBAL)
+  let targetGrupoId = grupoSeleccionado.value?.value
+  if (targetGrupoId === 'ALL') {
+      if (asignatura.value?.horarios_data?.length > 0) {
+          targetGrupoId = asignatura.value.horarios_data[0].id
+      }
+  }
 
-      // Verificar si es la última sesión de una semana de examen
-      const esUltimaSesionSemana = sesionEnSemana === horarios.value.length - 1
-      const esExamen = esUltimaSesionSemana && SEMANAS_EXAMEN[semana]
+  // Validaciones...
+  if (!targetGrupoId) {
+      {$q.notify({ type: 'warning', message: 'No hay grupos para asignar', icon: 'warning' }); return}
+  }
 
-      todasLasSesiones.push({
-        id: sesionGlobal,
-        numeroGlobal: sesionGlobal,
-        semana,
-        semanaFechas: formatDate(fechaSemanaInicio),
-        dia: horario.dia,
-        fecha: formatDate(fechaSesion),
-        esExamen: !!esExamen,
-        tipoExamen: esExamen || null,
-        periodoExamen: esExamen || (semana >= 7 && semana <= 8 ? '1er Parcial' :
-          semana >= 14 && semana <= 15 ? '2do Parcial' :
-            semana >= 18 && semana <= 19 ? 'Final' :
-              semana === 20 ? '2da Instancia' : null),
-        grupo_id: grupoSeleccionado.value.value, // CORE: Vincular a grupo
-        tema: esExamen ? esExamen : '',
-        conceptual: esExamen ? '' : '',
-        procedimental: esExamen ? '' : '',
-        actitudinal: esExamen ? '' : '',
-        criteriosDesempeno: esExamen ? '' : '',
-        instrumentosEvaluacion: esExamen ? 'Examen escrito' : '',
-        modificado: false,
-        bloqueado: !!esExamen // Sesiones de examen no editables
+  // Preparar mapa de fechas de exámenes oficiales (Optimización)
+  const fechasExamenMap = {}
+  if (examenesRol.value.length > 0) {
+      let examenesRelevantes = examenesRol.value
+      // Filtrar por grupo si aplica
+      if (grupoSeleccionado.value && grupoSeleccionado.value.value !== 'ALL') {
+          examenesRelevantes = examenesRelevantes.filter(e => 
+            e.grupo == grupoSeleccionado.value.nombre || e.grupo == grupoSeleccionado.value.value
+          )
+      }
+      examenesRelevantes.forEach(ex => {
+          const raw = ex.fecha_examen || ex.fecha
+          if (raw) {
+              const f = raw.split('T')[0]
+              fechasExamenMap[f] = ex.tipo_examen || ex.tipo
+          }
       })
-
-      sesionGlobal++
-    })
-  }
-  if (!grupoSeleccionado.value) {
-    {$q.notify({ type: 'warning', message: 'Seleccione un grupo para generar la planificación', icon: 'warning' }); return}
   }
 
+  // Bucle de generación (20 semanas)
   for (let semana = 1; semana <= totalSemanas.value; semana++) {
-    const fechaSemanaInicio = new Date(fechaInicio)
-    fechaSemanaInicio.setDate(fechaInicio.getDate() + (semana - 1) * 7)
+    // Calcular Lunes de la semana actual
+    const fechaSemanaInicio = new Date(mondayOfFirstWeek)
+    fechaSemanaInicio.setDate(mondayOfFirstWeek.getDate() + (semana - 1) * 7)
 
-    // Generar sesiones para cada día de la semana según horarios
     horarios.value.forEach((horario, sesionEnSemana) => {
-      const diaIndex = diasOptions.findIndex(d => d.value === horario.dia)
+      // Calcular índice basado en día normalizado (1=Lun -> 0, 3=Mie -> 2)
+      const diaNum = getNroDia(horario.dia)
+      const diaIndex = (diaNum >= 1 && diaNum <= 7) ? diaNum - 1 : 0 // Fallback Lunes
+      
       const fechaSesion = new Date(fechaSemanaInicio)
       fechaSesion.setDate(fechaSemanaInicio.getDate() + diaIndex)
 
-      // Verificar si es la última sesión de una semana de examen
-      const esUltimaSesionSemana = sesionEnSemana === horarios.value.length - 1
-      const esExamen = esUltimaSesionSemana && SEMANAS_EXAMEN[semana]
+      // Verificar si es sesión de examen (Por Fecha Exacta O Heurística)
+      const y = fechaSesion.getFullYear()
+      const m = String(fechaSesion.getMonth() + 1).padStart(2, '0')
+      const d = String(fechaSesion.getDate()).padStart(2, '0')
+      const fechaSesionIso = `${y}-${m}-${d}`
+
+      let esExamen = false
+      let nombreExamen = null
+
+      // A) Match Exacto por Fecha (Prioridad)
+      if (fechasExamenMap[fechaSesionIso]) {
+          esExamen = true
+          nombreExamen = fechasExamenMap[fechaSesionIso]
+      } 
+      // B) Fallback Heurístico (Solo si no hay rol oficial)
+      else if (Object.keys(fechasExamenMap).length === 0) {
+          const esUltimaSesionSemana = sesionEnSemana === horarios.value.length - 1
+          if (esUltimaSesionSemana && SEMANAS_EXAMEN[semana]) {
+              esExamen = true
+              nombreExamen = SEMANAS_EXAMEN[semana]
+          }
+      }
+
+      // C) Forzar semanas 18-20 como Finales/Instancia ELIMINADO
+      // REGLA: A partir de la semana 18, solo marcar si es examen oficial. Las demás quedan en blanco.
+      // if (!esExamen && semana >= 18) ... (Removed)
+
 
       todasLasSesiones.push({
         id: sesionGlobal,
@@ -879,21 +1067,24 @@ function generarPlanificacion() {
         semanaFechas: formatDate(fechaSemanaInicio),
         dia: horario.dia,
         fecha: formatDate(fechaSesion),
-        esExamen: !!esExamen,
-        tipoExamen: esExamen || null,
-        periodoExamen: esExamen || (semana >= 7 && semana <= 8 ? '1er Parcial' :
-          semana >= 14 && semana <= 15 ? '2do Parcial' :
-            semana >= 18 && semana <= 19 ? 'Final' :
-              semana === 20 ? '2da Instancia' : null),
-        grupo_id: grupoSeleccionado.value.value, // CORE: Vincular a grupo
-        tema: esExamen ? esExamen : '',
-        conceptual: esExamen ? '' : '',
-        procedimental: esExamen ? '' : '',
-        actitudinal: esExamen ? '' : '',
-        criteriosDesempeno: esExamen ? '' : '',
+        // Inferencia de Tipo de Clase: Número -> Teórica, Letra/Otros -> Práctica
+        // Ignoramos el tipoClase previo para forzar la regla pedida por el usuario
+        tipoClase: ((!isNaN(horario.grupo) && horario.grupo.toString().trim() !== '') ? 'Teórica' : 'Práctica'),
+        esExamen: esExamen,
+        tipoExamen: nombreExamen,
+        periodoExamen: nombreExamen || (esExamen ? 'Examen' : null),
+        grupo_id: targetGrupoId, // CORE: Vincular al grupo principal o único
+        tema: esExamen ? nombreExamen : '',
+        conceptual: '',
+        procedimental: '',
+        actitudinal: '',
+        criteriosDesempeno: '',
         instrumentosEvaluacion: esExamen ? 'Examen escrito' : '',
+        temasSeleccionados: [],
+        criteriosSeleccionados: [],
+        instrumentosSeleccionados: esExamen ? ['Examen escrito'] : [],
         modificado: false,
-        bloqueado: !!esExamen // Sesiones de examen no editables
+        bloqueado: (esExamen || semana >= 18) // Bloquear también semanas 18+ (en blanco)
       })
 
       sesionGlobal++
@@ -901,7 +1092,8 @@ function generarPlanificacion() {
   }
 
   // Filtrar sesiones que NO son exámenes para distribuir contenido
-  const sesionesParaContenido = todasLasSesiones.filter(s => !s.esExamen)
+  // REGLA DE NEGOCIO: Solo distribuir contenido hasta la semana 17 inclusive.
+  const sesionesParaContenido = todasLasSesiones.filter(s => !s.esExamen && s.semana <= 17)
 
   // Distribuir unidades en las sesiones de contenido
   const sesionesPorUnidad = Math.floor(sesionesParaContenido.length / unidades.length)
@@ -922,14 +1114,22 @@ function generarPlanificacion() {
       const temaOriginal = temasUnidad[temaIdx]
 
       // Agregar sesión de contenido
+      const conceptual = temaOriginal?.contenidos?.conceptual?.map(c => '- ' + c).join('\n') || ''
+      const procedimental = temaOriginal?.contenidos?.procedimental?.map(c => '- ' + c).join('\n') || ''
+      const actitudinal = temaOriginal?.contenidos?.actitudinal?.map(c => '- ' + c).join('\n') || ''
+      const criteriosText = temaOriginal?.logros_esperados?.map(l => '- ' + l.descripcion).join('\n') || ''
+
       sesionesUnidad.push({
         ...sesionBase,
         tema: temaOriginal?.titulo || '',
-        conceptual: temaOriginal?.contenidos?.conceptual?.map(c => '- ' + c).join('\n') || '',
-        procedimental: temaOriginal?.contenidos?.procedimental?.map(c => '- ' + c).join('\n') || '',
-        actitudinal: temaOriginal?.contenidos?.actitudinal?.map(c => '- ' + c).join('\n') || '',
-        criteriosDesempeno: temaOriginal?.logros_esperados?.map(l => '- ' + l.descripcion).join('\n') || '',
-        instrumentosEvaluacion: ''
+        temasSeleccionados: temaOriginal?.titulo ? [temaOriginal.titulo] : [],
+        conceptual,
+        procedimental,
+        actitudinal,
+        criteriosDesempeno: criteriosText,
+        criteriosSeleccionados: temaOriginal?.logros_esperados?.map(l => l.descripcion) || [],
+        instrumentosEvaluacion: '',
+        instrumentosSeleccionados: []
       })
 
       indiceSesion++
@@ -960,10 +1160,28 @@ function generarPlanificacion() {
       id: unidad.id,
       nombre: unidad.titulo.toUpperCase(),
       elementoCompetencia: unidad.elemento_competencia || '',
+      temas: unidad.temas || [],
       collapsed: false,
       sesiones: sesionesUnidad
     }
   })
+
+  // CERRAR LA BRECHA: Asegurar que todas las sesiones (hasta semana 20) sean visibles
+  const sesionesAsignadasIds = new Set()
+  planificacion.value.forEach(u => u.sesiones.forEach(s => sesionesAsignadasIds.add(s.numeroGlobal)))
+
+  const sesionesRestantes = todasLasSesiones.filter(s => !sesionesAsignadasIds.has(s.numeroGlobal))
+  
+  if (sesionesRestantes.length > 0) {
+      planificacion.value.push({
+          id: 'finales',
+          nombre: 'EXÁMENES FINALES Y SEGUNDA INSTANCIA',
+          elementoCompetencia: 'Evaluación de resultados de aprendizaje.',
+          temas: [],
+          collapsed: false,
+          sesiones: sesionesRestantes.sort((a, b) => a.numeroGlobal - b.numeroGlobal)
+      })
+  }
 
   planificacionGenerada.value = true
   tabActual.value = 'planificacion'
@@ -1030,11 +1248,14 @@ function agregarSesionManual(unidad) {
     fecha: lastSesion?.fecha || '',
     periodoExamen: null,
     tema: '',
+    temasSeleccionados: [],
     conceptual: '',
     procedimental: '',
     actitudinal: '',
     criteriosDesempeno: '',
+    criteriosSeleccionados: [],
     instrumentosEvaluacion: '',
+    instrumentosSeleccionados: [],
     modificado: true
   })
   $q.notify({ type: 'positive', message: 'Sesión agregada', icon: 'add' })
@@ -1079,7 +1300,22 @@ async function ejecutarCopia() {
 async function guardarTodo() {
   guardando.value = true
   try {
-    if (!grupoSeleccionado.value) {
+    // Si estamos en modo 'ALL', buscamos un ID de grupo válido para asociar (provisorio)
+    // O idealmente el backend debería aceptar null para "Planificación Global".
+    // Por ahora usaremos el primer grupo disponible como ancla.
+    let targetGrupoId = grupoSeleccionado.value?.value
+
+    if (targetGrupoId === 'ALL') {
+         if (asignatura.value?.horarios_data?.length > 0) {
+             targetGrupoId = asignatura.value.horarios_data[0].id
+         } else {
+             $q.notify({ type: 'warning', message: 'No hay grupos asociados para guardar la planificación', icon: 'warning' })
+             guardando.value = false
+             return
+         }
+    }
+
+    if (!targetGrupoId) {
       $q.notify({ type: 'warning', message: 'Seleccione un grupo', icon: 'warning' })
       return
     }
@@ -1087,13 +1323,30 @@ async function guardarTodo() {
     const sesiones = []
     planificacion.value.forEach(unidad => {
       unidad.sesiones.forEach(sesion => {
-        sesiones.push(sesion)
+        // Sincronizar arrays a strings antes de guardar
+        if (Array.isArray(sesion.temasSeleccionados)) sesion.tema = sesion.temasSeleccionados.join(', ')
+        if (Array.isArray(sesion.criteriosSeleccionados)) sesion.criterios_desempeno = sesion.criteriosSeleccionados.join(', ')
+        if (Array.isArray(sesion.instrumentosSeleccionados)) sesion.instrumentos_evaluacion = sesion.instrumentosSeleccionados.join(', ')
+        
+        // Mapear para el backend (snake_case)
+        const sDB = {
+            ...sesion,
+            contenido_conceptual: sesion.conceptual,
+            contenido_procedimental: sesion.procedimental,
+            contenido_actitudinal: sesion.actitudinal,
+            criterios_desempeno: sesion.criterios_desempeno,
+            instrumentos_evaluacion: sesion.instrumentos_evaluacion,
+            numero_sesion: sesion.numeroGlobal
+        }
+        
+        sDB.grupo_id = targetGrupoId
+        sesiones.push(sDB)
       })
     })
 
     await planificacionSemestralService.savePlanificacion(route.params.id, {
       sesiones,
-      grupo_id: grupoSeleccionado.value.value
+      grupo_id: targetGrupoId
     })
 
     // También guardar configuración de fechas
@@ -1111,6 +1364,66 @@ async function guardarTodo() {
     guardando.value = false
   }
 }
+
+// Opciones recomendadas
+const criteriosOptions = [
+  'Analiza componentes', 'Diseña soluciones', 'Implementa servicios', 'Evalúa rendimiento', 'Documenta procesos'
+]
+const instrumentosOptions = [
+  'Lista de cotejo', 'Rúbrica de evaluación', 'Prueba escrita', 'Defensa oral', 'Informe de laboratorio'
+]
+
+// Calculo de fechas para todos los grupos
+const fechasGlobales = ref({})
+
+function calcularFechasTodosLosGrupos() {
+    const map = {}
+    if (!horarios.value || horarios.value.length === 0) return
+
+    // Usamos el mismo lunes de inicio
+    const fechaInicioStr = calendario.value.fechaInicio + 'T12:00:00'
+    const inputFecha = new Date(fechaInicioStr)
+    const day = inputFecha.getDay() || 7
+    const mondayOfFirstWeek = new Date(inputFecha)
+    if (day !== 1) mondayOfFirstWeek.setDate(inputFecha.getDate() - day + 1)
+    mondayOfFirstWeek.setHours(0,0,0,0)
+
+    // El mapa DEBE coincidir con el bucle de generarPlanificacion
+    let sesionIdx = 1
+    for (let sem = 1; sem <= 20; sem++) {
+        const inicioSem = new Date(mondayOfFirstWeek)
+        inicioSem.setDate(mondayOfFirstWeek.getDate() + (sem - 1) * 7)
+
+        horarios.value.forEach(h => {
+             const diaNum = getNroDia(h.dia)
+             const dIndex = (diaNum >= 1 && diaNum <= 7) ? diaNum - 1 : 0
+             const fSesion = new Date(inicioSem)
+             fSesion.setDate(inicioSem.getDate() + dIndex)
+             
+             // En la vista general, cada sesión global corresponde a UN horario específico
+             // pero queremos mostrar la fecha para ese horario.
+             map[sesionIdx] = [{
+                 grupo: h.grupo || 'G',
+                 fecha: formatDate(fSesion)
+             }]
+             sesionIdx++
+        })
+    }
+    fechasGlobales.value = map
+}
+
+function getFechasGrupos(nroSesion) {
+   return fechasGlobales.value[nroSesion] || []
+}
+
+// Recalcular al montar o cambiar
+watch([() => asignatura.value, horarios], () => {
+    calcularFechasTodosLosGrupos()
+}, { deep: true })
+
+onMounted(() => {
+    calcularFechasTodosLosGrupos()
+})
 
 function exportarPDF() {
   if (!planificacionGenerada.value) {
@@ -1505,6 +1818,25 @@ function exportarPDF() {
 .cell-actions {
   text-align: center;
   vertical-align: middle;
+}
+
+.fecha-grupo-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  border-bottom: 1px dashed #e0e0e0;
+  padding: 2px 4px;
+}
+.fecha-grupo-row:last-child {
+  border-bottom: none;
+}
+.fg-grupo { 
+  font-weight: 700; 
+  color: var(--primary); 
+  margin-right: 6px; 
+}
+.fg-fecha { 
+  color: var(--text-secondary); 
 }
 
 /* Filas de Examen */
