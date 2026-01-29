@@ -269,6 +269,28 @@
           </q-card-section>
         </q-card>
       </div>
+
+      <!-- Reporte de Cumplimiento Semanal (Nuevo) -->
+      <div v-if="filtros.tipoReporte === 'cumplimiento_semanal'">
+        <div class="reporte-header q-mb-md">
+          <h2 class="reporte-titulo">Auditoría de Cumplimiento Semanal</h2>
+          <div class="row q-gutter-sm">
+             <q-btn color="secondary" icon="auto_awesome" label="Generar Reportes" @click="prototypeGenerate" />
+             <p class="reporte-fecha q-ml-md flex items-center">Generado: {{ fechaReporte }}</p>
+          </div>
+        </div>
+
+        <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md rounded-borders">
+          <template v-slot:avatar><q-icon name="info" /></template>
+          Vista global de auditoría para todas las sedes y carreras. Los reportes se basan en el Control de Clase docente.
+        </q-banner>
+
+        <q-card class="data-card">
+           <q-card-section>
+              <weekly-report-table :rows="mockWeeklyReports" :loading="loadingMock" />
+           </q-card-section>
+        </q-card>
+      </div>
     </div>
 
     <!-- Estado Inicial -->
@@ -281,10 +303,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
+import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
 
 const $q = useQuasar()
 const sedesStore = useSedesStore()
@@ -292,6 +315,8 @@ const carrerasStore = useCarrerasStore()
 
 const reporteGenerado = ref(false)
 const fechaReporte = ref('')
+const loadingMock = ref(false)
+const mockWeeklyReports = ref([])
 
 const filtros = ref({
   tipoReporte: 'docentes',
@@ -304,7 +329,8 @@ const filtros = ref({
 const tiposReporte = [
   { label: 'Por Docentes', value: 'docentes' },
   { label: 'Por Carreras', value: 'carreras' },
-  { label: 'Por Sedes', value: 'sedes' }
+  { label: 'Por Sedes', value: 'sedes' },
+  { label: 'Cumplimiento Semanal', value: 'cumplimiento_semanal' }
 ]
 
 const gestionesOptions = [
@@ -397,6 +423,34 @@ const columnasSedes = [
   { name: 'docentes', label: 'Docentes', field: 'docentes', align: 'center' },
   { name: 'documentacion', label: 'Doc. %', field: 'documentacion', align: 'center' }
 ]
+
+function prototypeGenerate() {
+  loadingMock.value = true
+  setTimeout(() => {
+    mockWeeklyReports.value = [
+      { 
+        id: 1, 
+        asignatura: { nombre: 'Álgebra I', codigo: 'MAT-101' },
+        carrera: { nombre: 'Ingeniería de Sistemas' },
+        docente: { nombre: 'KARINA PAOLA LOPEZ' },
+        semana_inicio: '2026-01-26',
+        alerta: 'VERDE',
+        criterios: { temaImpartido: true, actividadesFormativas: true, secuenciaDidactica: true, plataformaVirtual: true, evidencias: true, evaluaciones: true, integracionTransversal: true }
+      },
+      { 
+        id: 2, 
+        asignatura: { nombre: 'Programación I', codigo: 'SIS-121' },
+        carrera: { nombre: 'Ingeniería de Sistemas' },
+        docente: { nombre: 'HAROLD MARCO ANTONIO ROJAS' },
+        semana_inicio: '2026-01-26',
+        alerta: 'ROJO',
+        criterios: { temaImpartido: false, actividadesFormativas: true, secuenciaDidactica: false, plataformaVirtual: true, evidencias: false, evaluaciones: true, integracionTransversal: false }
+      }
+    ]
+    loadingMock.value = false
+    $q.notify({ type: 'positive', message: 'Reportes de auditoría generados (Modo Prototipo)' })
+  }, 1000)
+}
 
 function generarReporte() {
   fechaReporte.value = new Date().toLocaleString('es-BO')

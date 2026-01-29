@@ -136,16 +136,23 @@
             </table>
         </div>
         
-        <!-- Live Alert Status -->
-        <div class="row items-center justify-end q-mb-md q-gutter-sm">
-             <div class="text-subtitle2">Estado Actual:</div>
-             <q-chip 
-                :color="alertaColor" 
-                text-color="white" 
-                :icon="alertaIcon"
-                :label="computedAlerta" 
-                size="lg"
-             />
+        <!-- Live Alert Status & Scale Legend -->
+        <div class="row items-center justify-between q-mb-md q-gutter-sm">
+             <div class="scale-legend">
+                 <q-badge color="negative" class="q-mr-xs">Rojo: 0-69%</q-badge>
+                 <q-badge color="warning" text-color="black" class="q-mr-xs">Amarillo: 70-89%</q-badge>
+                 <q-badge color="positive">Verde: 90-100%</q-badge>
+             </div>
+             <div class="row items-center q-gutter-sm">
+                <div class="text-subtitle2">Estado Actual:</div>
+                <q-chip 
+                    :color="alertaColor" 
+                    text-color="white" 
+                    :icon="alertaIcon"
+                    :label="computedAlerta + ' (' + Math.round(porcentajeCumplimiento) + '%)'" 
+                    size="lg"
+                />
+             </div>
         </div>
 
         <q-separator class="q-mb-md" />
@@ -212,13 +219,13 @@ const asignaturasOptions = ref([])
 const sesionesAuditoria = ref([])
 
 const criteriosMap = {
-  temaImpartido: 'Tema impartido coincide con lo micro-curricular',
-  actividadesFormativas: 'Actividades Formativas (Aula / Casa)',
-  secuenciaDidactica: 'Secuencia Didáctica (Inicio, Desarrollo, Cierre)',
-  plataformaVirtual: 'Uso de Plataforma Virtual Moodle',
-  evidencias: 'Evidencias (reales y verificables)',
-  evaluaciones: 'Evaluaciones (coherencia con banco de preguntas)',
-  integracionTransversal: 'Integración transversal / investigación / interacción'
+  temaImpartido: 'Tema impartido (Debe coincidir con la microcurrícula)',
+  actividadesFormativas: 'Actividades formativas (Alineación enfoque competencias)',
+  secuenciaDidactica: 'Secuencia didáctica (Inicio, desarrollo, cierre)',
+  plataformaVirtual: 'Plataforma virtual (Revisión actividades en plataforma)',
+  evidencias: 'Evidencias (Deben ser reales y verificables)',
+  evaluaciones: 'Evaluaciones (Coherencia banco preguntas/evaluación)',
+  integracionTransversal: 'Integración transversal (Investigación/Interact./Social)'
 }
 
 const form = ref({
@@ -345,12 +352,16 @@ watch(
   }
 )
 
-const computedAlerta = computed(() => {
+const porcentajeCumplimiento = computed(() => {
   const total = Object.keys(criteriosMap).length
   const checked = Object.values(form.value.criterios).filter(v => v).length
-  
-  if (checked === total) return 'VERDE'
-  if (checked >= total - 2) return 'AMARILLO'
+  return (checked / total) * 100
+})
+
+const computedAlerta = computed(() => {
+  const p = porcentajeCumplimiento.value
+  if (p >= 90) return 'VERDE'
+  if (p >= 70) return 'AMARILLO'
   return 'ROJO'
 })
 

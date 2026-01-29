@@ -9,7 +9,7 @@
             <p class="text-grey-7 q-mb-none">Genera reportes de seguimiento académico de tu carrera</p>
             <q-chip v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol === 'VICERRECTOR_SEDE'"
               color="primary" text-color="white" size="sm" icon="apartment">
-              Sede: Cochabamba
+              Sede: {{ nombreSedeUsuario }}
             </q-chip>
           </div>
         </div>
@@ -144,9 +144,15 @@
       <q-tabs v-model="tabActivo" class="text-primary" active-color="primary" indicator-color="primary" align="left">
         <q-tab name="materias" icon="menu_book" label="Por Materia" />
         <q-tab name="semanal" icon="assignment" label="Cumplimiento Semanal" />
-        <q-tab name="asistencias" icon="event_available" label="Asistencias" />
-        <q-tab name="seguimiento" icon="playlist_add_check" label="Seguimiento de Clase" />
-        <q-tab name="documentacion" icon="folder_open" label="Documentación" />
+        <q-tab v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'" 
+          name="auditoria" icon="rule" label="Auditoría 25%" />
+        <q-tab v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'" 
+          name="matriz" icon="grid_view" label="Matriz Institucional" />
+        <q-tab v-if="authStore.rol.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'" 
+          name="noconformidad" icon="gavel" label="No Conformidades" />
+        <q-tab v-if="authStore.rol !== 'VICERRECTOR_NACIONAL'" name="asistencias" icon="event_available" label="Asistencias" />
+        <q-tab v-if="authStore.rol !== 'VICERRECTOR_NACIONAL'" name="seguimiento" icon="playlist_add_check" label="Seguimiento de Clase" />
+        <q-tab v-if="authStore.rol !== 'VICERRECTOR_NACIONAL'" name="documentacion" icon="folder_open" label="Documentación" />
       </q-tabs>
 
       <q-separator />
@@ -333,37 +339,93 @@
           </q-table>
         </q-tab-panel>
 
-        <!-- Reporte de Documentación -->
-        <q-tab-panel name="documentacion">
-          <div class="text-h6 q-mb-md">Estado de Documentación por Materia</div>
-          <q-table :rows="reporteDocumentacion" :columns="columnasDocumentacion" row-key="id" flat bordered
-            :pagination="{ rowsPerPage: 10 }">
-            <template v-slot:body-cell-pac="props">
-              <q-td :props="props">
-                <q-icon :name="props.row.pac ? 'check_circle' : 'cancel'"
-                  :color="props.row.pac ? 'positive' : 'negative'" size="20px" />
-              </q-td>
-            </template>
-            <template v-slot:body-cell-planClase="props">
-              <q-td :props="props">
-                <q-icon :name="props.row.planClase ? 'check_circle' : 'cancel'"
-                  :color="props.row.planClase ? 'positive' : 'negative'" size="20px" />
-              </q-td>
-            </template>
-            <template v-slot:body-cell-syllabus="props">
-              <q-td :props="props">
-                <q-icon :name="props.row.syllabus ? 'check_circle' : 'cancel'"
-                  :color="props.row.syllabus ? 'positive' : 'negative'" size="20px" />
-              </q-td>
-            </template>
-            <template v-slot:body-cell-avance="props">
-              <q-td :props="props">
-                <q-chip :color="getColorPorcentaje(props.row.avance)"
-                  :text-color="getTextColor(getColorPorcentaje(props.row.avance))" size="sm">
-                  {{ props.row.avance }}%
-                </q-chip>
-              </q-td>
-            </template>
+        <!-- NIVEL 3: Auditoría 25% (Herramienta Activa) -->
+        <q-tab-panel name="auditoria">
+          <div class="row items-center justify-between q-mb-md">
+            <div>
+               <div class="text-h6">Gestión de Auditorías In Situ</div>
+               <div class="text-caption">Revisión aleatoria de un 25% de las asignaturas por carrera cada semana.</div>
+            </div>
+            <div class="row q-gutter-sm">
+               <q-btn color="indigo" icon="add" label="Nueva Auditoría de Clase" @click="dialogAcademica = true" />
+               <q-btn color="teal" icon="science" label="Auditoría Laboratorio/Práctica" @click="dialogLab = true" />
+            </div>
+          </div>
+          
+          <q-banner class="bg-blue-1 text-blue-9 q-mb-md">
+             <template v-slot:avatar><q-icon name="shuffle" /></template>
+             <b>Priorización Académica:</b> Se han resaltado asignaturas con historial de incumplimiento o alertas rojas previas.
+          </q-banner>
+
+          <q-table :rows="auditoria25" :columns="columnasAuditoria25" row-key="id" flat bordered>
+             <template v-slot:body-cell-cumplimiento="props">
+                <q-td :props="props">
+                   <div class="row q-gutter-xs">
+                      <q-chip size="sm" :color="props.row.inicioPuntual ? 'positive' : 'negative'" text-color="white">Puntual</q-chip>
+                      <q-chip size="sm" :color="props.row.secuencialidad ? 'positive' : 'negative'" text-color="white">Secuencia</q-chip>
+                      <q-chip size="sm" :color="props.row.metodologias ? 'positive' : 'negative'" text-color="white">Metodología</q-chip>
+                   </div>
+                </q-td>
+             </template>
+             <template v-slot:body-cell-acciones="props">
+                <q-td :props="props">
+                   <q-btn flat round dense icon="print" color="grey" size="sm" />
+                   <q-btn flat round dense icon="visibility" color="primary" size="sm" />
+                </q-td>
+             </template>
+          </q-table>
+        </q-tab-panel>
+
+        <!-- NIVEL 3: Matriz Institucional (CONSOLIDADA) -->
+        <q-tab-panel name="matriz">
+          <div class="row items-center justify-between q-mb-md">
+             <div class="text-h6">C. Matriz de Control Institucional</div>
+             <q-btn outline color="green" icon="file_download" label="Consolidar y Emitir Alertas" />
+          </div>
+          
+          <q-table :rows="matrizControl" :columns="columnasMatriz" row-key="id" flat bordered separator="cell">
+             <template v-slot:body-cell-evidencias="props">
+                <q-td :props="props" class="text-center">
+                   <div class="row items-center justify-center q-gutter-xs">
+                      <q-icon name="photo" color="grey-7" size="16px"><q-tooltip>Fotos</q-tooltip></q-icon>
+                      <q-icon name="link" color="grey-7" size="16px"><q-tooltip>Plataforma</q-tooltip></q-icon>
+                      <q-icon name="picture_as_pdf" color="grey-7" size="16px"><q-tooltip>Documentos</q-tooltip></q-icon>
+                   </div>
+                </q-td>
+             </template>
+             <template v-slot:body-cell-semaforo="props">
+                <q-td :props="props" class="text-center">
+                   <q-icon name="circle" :color="props.value === 'positive' ? 'positive' : (props.value === 'warning' ? 'warning' : 'negative')" size="32px" />
+                </q-td>
+             </template>
+             <template v-slot:body-cell-alertas="props">
+                <q-td :props="props">
+                   <q-badge :color="props.row.semaforo" class="full-width text-center q-pa-xs">{{ props.row.alertaLabel }}</q-badge>
+                </q-td>
+             </template>
+             <template v-slot:body-cell-avanceReal="props">
+                <q-td :props="props" class="text-center text-weight-bold">
+                   {{ props.value }}
+                </q-td>
+             </template>
+          </q-table>
+        </q-tab-panel>
+
+        <!-- NIVEL 4: No Conformidades -->
+        <q-tab-panel name="noconformidad">
+          <div class="row items-center q-mb-md">
+             <div class="text-h6">Registro de No Conformidad (Vicerrectores)</div>
+             <q-space />
+             <q-banner dense inline-actions class="bg-red-1 text-red rounded-borders">
+                Se activan medidas si una asignatura tiene 2 semanas consecutivas en Rojo.
+             </q-banner>
+          </div>
+          <q-table :rows="noConformidades" :columns="columnasNC" row-key="id" flat bordered>
+             <template v-slot:body-cell-acciones="props">
+                <q-td :props="props">
+                   <q-btn color="red" flat icon="report_problem" label="Registrar No Conformidad" size="sm" @click="openNCForm(props.row)" />
+                </q-td>
+             </template>
           </q-table>
         </q-tab-panel>
       </q-tab-panels>
@@ -390,6 +452,19 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+    <!-- Dialogs Nivel 3 -->
+    <q-dialog v-model="dialogAcademica" persistent>
+      <academic-audit-form @saved="onAuditSaved" />
+    </q-dialog>
+
+    <q-dialog v-model="dialogLab" persistent>
+      <laboratory-audit-form @saved="onAuditSaved" />
+    </q-dialog>
+
+    <q-dialog v-model="dialogNC" persistent>
+      <no-conformity-form :ncData="ncSeleccionado" @saved="onNCSaved" />
+    </q-dialog>
+
     <!-- Loading -->
     <q-inner-loading :showing="loading">
       <q-spinner-gears size="50px" color="primary" />
@@ -402,18 +477,23 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
+import { useCarrerasStore } from 'src/stores/carreras'
 import { useReportesStore } from 'src/stores/reportes'
 import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
 import WeeklyReportForm from 'src/components/reportes/WeeklyReportForm.vue'
+import AcademicAuditForm from 'src/components/reportes/AcademicAuditForm.vue'
+import LaboratoryAuditForm from 'src/components/reportes/LaboratoryAuditForm.vue'
+import NoConformityForm from 'src/components/reportes/NoConformityForm.vue'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
 const sedesStore = useSedesStore()
+const carrerasStore = useCarrerasStore()
 const reportesStore = useReportesStore()
 
 // Filtros
 const filtros = ref({
-  sede: null,
+  sede: authStore.rol === 'VICERRECTOR_NACIONAL' || authStore.rol === 'SUPER_ADMIN' ? null : authStore.usuarioActual?.sede_id,
   carrera: null,
   tipoReporte: 'todos',
   docente: null,
@@ -431,6 +511,12 @@ const opcionesSedes = computed(() => [
   { label: 'Todas las sedes', value: null },
   ...sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
 ])
+
+const nombreSedeUsuario = computed(() => {
+    if (!authStore.usuarioActual?.sede_id) return 'No asignada'
+    const sede = sedesStore.sedes.find(s => s.id === authStore.usuarioActual.sede_id)
+    return sede ? sede.nombre : 'Sede ' + authStore.usuarioActual.sede_id
+})
 
 // Computed options based on loaded data
 const docentesOptions = computed(() => {
@@ -454,18 +540,67 @@ const materiasOptions = computed(() => {
 })
 
 const carrerasOptions = computed(() => {
-  if (authStore.rol === 'DIRECTOR_CARRERA' && authStore.usuarioActual?.director?.carrera) {
+  const currentSedeId = filtros.value.sede || authStore.usuarioActual?.sede_id
+  
+  if (authStore.rol === 'DIRECTOR_CARRERA' && authStore.usuarioActual?.director?.carrera_id) {
+    const car = carrerasStore.getCarreraById(authStore.usuarioActual.director.carrera_id)
     return [{
-      label: authStore.usuarioActual.director.carrera.nombre,
-      value: authStore.usuarioActual.director.carrera.id
+      label: car?.nombre || 'Mi Carrera',
+      value: authStore.usuarioActual.director.carrera_id
     }]
   }
-  return [{ label: 'Mi Carrera', value: authStore.usuarioActual?.director?.carrera_id }]
+  
+  return carrerasStore.getCarrerasOptions(currentSedeId)
 })
 
 // Data from Store
 const metricas = computed(() => reportesStore.metricas)
 const reporteMaterias = computed(() => reportesStore.reporteMaterias)
+
+// Columnas Nivel 3 y 4
+const columnasAuditoria25 = [
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'docente', label: 'Docente', field: 'docente', align: 'left' },
+  { name: 'semana', label: 'Semana', field: 'semana', align: 'center' },
+  { name: 'cumplimiento', label: 'Cumplimiento Criteria', field: 'id', align: 'center' }
+]
+
+const columnasMatriz = [
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'avancePlaneado', label: 'Avance Planeado', field: 'avancePlaneado', align: 'center' },
+  { name: 'avanceReal', label: 'Avance Real', field: 'avanceReal', align: 'center' },
+  { name: 'evidencias', label: 'Evidencias', field: 'id', align: 'center' },
+  { name: 'alertas', label: 'Alertas', field: 'id', align: 'center' },
+  { name: 'semaforo', label: 'Semáforo', field: 'semaforo', align: 'center' },
+  { name: 'acciones', label: 'Acciones Correctivas', field: 'acciones', align: 'left' }
+]
+
+const columnasNC = [
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left' },
+  { name: 'descripcion', label: 'Descripción de No Conformidad', field: 'descripcion', align: 'left' },
+  { name: 'plan', label: 'Plan de Acción', field: 'plan', align: 'left' },
+  { name: 'acciones', label: 'Medidas', field: 'id', align: 'center' }
+]
+
+// Mock Data N3/N4
+const auditoria25 = ref([
+  { id: 1, asignatura: 'Anatomía I', docente: 'Dr. Roberto Fernández', semana: 'S-4', inicioPuntual: true, secuencialidad: true, metodologias: false },
+  { id: 2, asignatura: 'Derecho Civil', docente: 'Lic. Ana Martínez', semana: 'S-4', inicioPuntual: false, secuencialidad: true, metodologias: true }
+])
+
+const matrizControl = ref([
+  { id: 1, asignatura: 'Álgebra I', avancePlaneado: '60%', avanceReal: '58%', semaforo: 'positive', alertaLabel: 'Normal', acciones: 'Ninguna' },
+  { id: 2, asignatura: 'Programación I', avancePlaneado: '65%', avanceReal: '40%', semaforo: 'negative', alertaLabel: 'Muy Bajo', acciones: 'Llamado de atención 1' }
+])
+
+const noConformidades = ref([
+  { id: 1, asignatura: 'Programación I', carrera: 'Ingeniería de Sistemas', descripcion: 'Incumplimiento reincidente de secuencia didáctica (2 semanas en Rojo)', plan: 'Capacitación obligatoria en planificación' }
+])
+
+const shuffleAudit = () => {
+    $q.notify({ type: 'info', message: 'Seleccionando 25% aleatorio de la carrera...', icon: 'shuffle' })
+}
 
 // Columnas para tabla de docentes dentro de materia
 const columnasDocentesMateria = [
@@ -474,7 +609,6 @@ const columnasDocentesMateria = [
   { name: 'asistencia', label: 'Asistencia', field: 'asistencia', align: 'center' },
   { name: 'documentacion', label: 'Documentación', field: 'documentacion', align: 'center' },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center' }
-  // Removed actions/acciones as they might not be needed or were part of mock actions
 ]
 
 // Derived lists for other tabs
@@ -563,9 +697,13 @@ const cargarReportes = async () => {
 
 onMounted(async () => {
   await sedesStore.fetchSedes()
+  await carrerasStore.fetchCarreras()
 
   if (authStore.rol === 'DIRECTOR_CARRERA') {
     filtros.value.carrera = authStore.usuarioActual?.director?.carrera_id
+    filtros.value.sede = authStore.usuarioActual?.sede_id
+  } else if (authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol === 'VICERRECTOR_SEDE') {
+    filtros.value.sede = authStore.usuarioActual?.sede_id
   }
   
   // Pre-fill with Monday of current week for easy reporting
@@ -627,6 +765,7 @@ const getTextColor = (color) => {
 // Acciones
 const limpiarFiltros = () => {
   filtros.value = {
+    sede: authStore.rol === 'VICERRECTOR_NACIONAL' || authStore.rol === 'SUPER_ADMIN' ? null : authStore.usuarioActual?.sede_id,
     tipoReporte: 'todos',
     docente: null,
     materia: null,
@@ -645,9 +784,44 @@ const generarReporte = () => {
 
 // WEEKLY REPORT LOGIC
 const dialogWeekly = ref(false)
+const dialogAcademica = ref(false)
+const dialogLab = ref(false)
+const dialogNC = ref(false)
 const weeklyReports = ref([])
 const loadingWeekly = ref(false)
 const reporteSeleccionado = ref(null)
+const ncSeleccionado = ref(null)
+
+const openNCForm = (row) => {
+    ncSeleccionado.value = row
+    dialogNC.value = true
+}
+
+const onNCSaved = () => {
+    dialogNC.value = false
+    ncSeleccionado.value = null
+    // Update local state if needed
+}
+
+const onAuditSaved = (data) => {
+    dialogAcademica.value = false
+    dialogLab.value = false
+    $q.notify({
+        type: 'positive',
+        message: 'Auditoría registrada y sincronizada con la Matriz de Control',
+        icon: 'sync'
+    })
+    // Simulate updating matrix
+    matrizControl.value.push({
+        id: Math.random(),
+        asignatura: data.asignatura || 'Nueva Materia',
+        avancePlaneado: '80%',
+        avanceReal: '75%',
+        semaforo: 'warning',
+        alertaLabel: 'Consolidación Pendiente',
+        acciones: 'Verificar seguimiento semanal'
+    })
+}
 
 const loadWeeklyReports = async () => {
   loadingWeekly.value = true
