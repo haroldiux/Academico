@@ -38,28 +38,10 @@
 
     <!-- Filtros -->
     <div class="filters-section q-mb-lg">
-      <q-select
-        v-model="filtros.materia"
-        :options="materiasOptions"
-        label="Materia"
-        outlined
-        dense
-        emit-value
-        map-options
-        clearable
-        style="min-width: 200px"
-      />
-      <q-select
-        v-model="filtros.parcial"
-        :options="parcialOptions"
-        label="Parcial"
-        outlined
-        dense
-        emit-value
-        map-options
-        clearable
-        style="min-width: 150px"
-      />
+      <q-select v-model="filtros.materia" :options="materiasOptions" label="Materia" outlined dense emit-value
+        map-options clearable style="min-width: 200px" />
+      <q-select v-model="filtros.parcial" :options="parcialOptions" label="Parcial" outlined dense emit-value
+        map-options clearable style="min-width: 150px" />
     </div>
 
     <!-- Lista de Evaluaciones -->
@@ -70,14 +52,15 @@
             <q-chip :color="getParcialColor(evaluacion.parcial)" text-color="white" size="sm">
               {{ getParcialLabel(evaluacion.parcial) }}
             </q-chip>
-            <q-chip :color="getEstadoColor(evaluacion.estado)" text-color="white" size="sm" :icon="getEstadoIcon(evaluacion.estado)">
+            <q-chip :color="getEstadoColor(evaluacion.estado)" text-color="white" size="sm"
+              :icon="getEstadoIcon(evaluacion.estado)">
               {{ evaluacion.estado }}
             </q-chip>
           </div>
-          
+
           <h3 class="eval-materia">{{ evaluacion.materia }}</h3>
           <p class="eval-grupo">{{ evaluacion.grupo }}</p>
-          
+
           <div class="eval-info">
             <div class="info-item">
               <q-icon name="event" size="16px" color="grey-6" />
@@ -92,19 +75,20 @@
               <span>{{ evaluacion.aula }}</span>
             </div>
           </div>
-          
+
           <div class="eval-preguntas">
             <q-icon name="help_outline" size="16px" color="primary" />
             <span>{{ evaluacion.preguntas }} preguntas</span>
           </div>
         </q-card-section>
-        
+
         <q-separator />
-        
+
         <q-card-actions>
           <q-btn flat color="primary" icon="visibility" label="Ver Detalles" @click="verDetalles(evaluacion)" />
           <q-space />
-          <q-btn v-if="evaluacion.estado === 'Completada'" flat color="green" icon="fact_check" @click="verPatron(evaluacion)">
+          <q-btn v-if="evaluacion.estado === 'Completada'" flat color="green" icon="fact_check"
+            @click="verPatron(evaluacion)">
             <q-tooltip>Ver Patrón</q-tooltip>
           </q-btn>
         </q-card-actions>
@@ -127,7 +111,7 @@
             Detalles del Examen
           </div>
         </q-card-section>
-        
+
         <q-card-section v-if="evaluacionSeleccionada">
           <div class="detalles-grid">
             <div class="detalle-item">
@@ -159,13 +143,13 @@
               <span class="detalle-value">{{ evaluacionSeleccionada.duracion }} minutos</span>
             </div>
           </div>
-          
+
           <q-banner class="bg-blue-1 text-blue-9 q-mt-md" rounded>
             <q-icon name="info" class="q-mr-sm" />
             Recuerda llegar 15 minutos antes para preparar el aula
           </q-banner>
         </q-card-section>
-        
+
         <q-card-actions align="right">
           <q-btn flat label="Cerrar" v-close-popup />
         </q-card-actions>
@@ -175,23 +159,39 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
+import { api } from 'src/boot/axios'
 
 const $q = useQuasar()
 
 const filtros = ref({ materia: null, parcial: null })
 const showDetalles = ref(false)
 const evaluacionSeleccionada = ref(null)
+const loading = ref(false)
 
-// Mock data
-const evaluaciones = ref([
-  { id: 1, materia: 'Anatomía I', grupo: 'Grupo A - Mañana', parcial: 1, fecha: '2026-01-15', hora: '08:00', aula: 'Aula 101', preguntas: 50, duracion: 90, estado: 'Programada' },
-  { id: 2, materia: 'Anatomía I', grupo: 'Grupo B - Tarde', parcial: 1, fecha: '2026-01-15', hora: '14:00', aula: 'Aula 102', preguntas: 50, duracion: 90, estado: 'Programada' },
-  { id: 3, materia: 'Fisiología', grupo: 'Grupo A - Mañana', parcial: 2, fecha: '2026-01-20', hora: '09:00', aula: 'Aula 201', preguntas: 40, duracion: 60, estado: 'Programada' },
-  { id: 4, materia: 'Ingeniería de Software I', grupo: 'Grupo 1 - Noche', parcial: 1, fecha: '2025-12-10', hora: '19:00', aula: 'Lab 301', preguntas: 30, duracion: 60, estado: 'Completada' },
-  { id: 5, materia: 'Ingeniería de Software I', grupo: 'Grupo 2 - Noche', parcial: 1, fecha: '2025-12-10', hora: '19:00', aula: 'Lab 302', preguntas: 30, duracion: 60, estado: 'Completada' }
-])
+// Data real
+const evaluaciones = ref([])
+
+onMounted(() => {
+  cargarEvaluaciones()
+})
+
+async function cargarEvaluaciones() {
+  loading.value = true
+  try {
+    const { data } = await api.get('/mis-evaluaciones')
+    evaluaciones.value = data
+  } catch (error) {
+    console.error('Error cargando evaluaciones:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Error al cargar las evaluaciones programadas'
+    })
+  } finally {
+    loading.value = false
+  }
+}
 
 const materiasOptions = computed(() => {
   const materias = [...new Set(evaluaciones.value.map(e => e.materia))]
@@ -199,10 +199,10 @@ const materiasOptions = computed(() => {
 })
 
 const parcialOptions = [
-  { label: '1° Parcial', value: 1 },
-  { label: '2° Parcial', value: 2 },
-  { label: 'Final', value: 3 },
-  { label: '2da Instancia', value: 4 }
+  { label: '1° Parcial', value: '1° Parcial' }, // Adjusted to match backend string
+  { label: '2° Parcial', value: '2° Parcial' },
+  { label: 'Final', value: 'Final' },
+  { label: '2da Instancia', value: '2da Instancia' }
 ]
 
 const evaluacionesFiltradas = computed(() => {
@@ -218,13 +218,17 @@ const evaluacionesEnCurso = computed(() => evaluaciones.value.filter(e => e.esta
 const evaluacionesCompletadas = computed(() => evaluaciones.value.filter(e => e.estado === 'Completada').length)
 
 function getParcialColor(parcial) {
-  const colors = { 1: 'blue', 2: 'orange', 3: 'purple', 4: 'red' }
+  const colors = {
+    '1° Parcial': 'blue', '2° Parcial': 'orange',
+    '1er Parcial': 'blue', '2do Parcial': 'orange',
+    'Final': 'purple', '2da Instancia': 'red'
+  }
   return colors[parcial] || 'grey'
 }
 
 function getParcialLabel(parcial) {
-  const labels = { 1: '1° Parcial', 2: '2° Parcial', 3: 'Final', 4: '2da Inst.' }
-  return labels[parcial] || ''
+  // If backend returns the label directly, we can just return it or map if shorter needed
+  return parcial || 'Examen'
 }
 
 function getEstadoColor(estado) {
@@ -248,37 +252,163 @@ function verPatron(eval_) {
 </script>
 
 <style scoped>
-.evaluaciones-docente { padding: 24px; background: var(--bg-primary); min-height: 100vh; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.page-title { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; }
-.page-subtitle { color: var(--text-secondary); margin: 4px 0 0 0; }
+.evaluaciones-docente {
+  padding: 24px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
 
-.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
-.stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px; }
-.stat-info { display: flex; flex-direction: column; }
-.stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-.stat-label { font-size: 0.8rem; color: var(--text-muted); }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
 
-.filters-section { display: flex; gap: 12px; flex-wrap: wrap; }
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
 
-.evaluaciones-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+.page-subtitle {
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+}
 
-.eval-card { background: var(--bg-secondary) !important; border: 1px solid var(--border-color); border-radius: 16px; transition: transform 0.2s, box-shadow 0.2s; }
-.eval-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
 
-.eval-header { display: flex; gap: 8px; margin-bottom: 12px; }
-.eval-materia { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 4px 0; }
-.eval-grupo { font-size: 0.9rem; color: var(--text-secondary); margin: 0 0 12px 0; }
+.stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-.eval-info { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
-.info-item { display: flex; align-items: center; gap: 4px; font-size: 0.85rem; color: var(--text-secondary); }
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
 
-.eval-preguntas { display: flex; align-items: center; gap: 4px; font-size: 0.85rem; color: var(--text-primary); font-weight: 500; }
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
 
-.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color); }
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
 
-.detalles-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-.detalle-item { display: flex; flex-direction: column; }
-.detalle-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-.detalle-value { font-size: 1rem; color: var(--text-primary); font-weight: 500; }
+.filters-section {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.evaluaciones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.eval-card {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.eval-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.eval-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.eval-materia {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.eval-grupo {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.eval-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.eval-preguntas {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.detalles-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.detalle-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detalle-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.detalle-value {
+  font-size: 1rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
 </style>
