@@ -24,192 +24,150 @@
       <q-tab-panel name="asistencia" class="q-pa-none">
         <!-- Filtros -->
         <q-card class="card-filtros q-mb-lg">
-      <q-card-section>
-        <div class="row q-col-gutter-md items-end">
-          <div class="col-12 col-md-5">
-            <q-select
-              v-model="asignaturaSeleccionada"
-              :options="asignaturas"
-              option-value="id"
-              option-label="nombre"
-              label="Asignatura"
-              outlined
-              dense
-              emit-value
-              map-options
-              class="select-dark"
-            >
-              <template v-slot:prepend>
-                <q-icon name="menu_book" color="primary" />
-              </template>
-            </q-select>
+          <q-card-section>
+            <div class="row q-col-gutter-md items-end">
+              <div class="col-12 col-md-5">
+                <q-select v-model="asignaturaSeleccionada" :options="asignaturas" option-value="id"
+                  option-label="nombre" label="Asignatura" outlined dense emit-value map-options class="select-dark">
+                  <template v-slot:prepend>
+                    <q-icon name="menu_book" color="primary" />
+                  </template>
+                </q-select>
+              </div>
+              <div class="col-12 col-md-3">
+                <q-select v-model="grupoSeleccionado" :options="grupos" option-value="id" option-label="nombre"
+                  label="Grupo" outlined dense emit-value map-options class="select-dark">
+                  <template v-slot:prepend>
+                    <q-icon name="groups" color="teal" />
+                  </template>
+                </q-select>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="row q-gutter-sm">
+                  <q-btn unelevated color="primary" icon="search" label="Generar Reporte" no-caps
+                    @click="generarReporte" />
+                  <q-btn outline color="green" icon="picture_as_pdf" label="Exportar PDF" no-caps
+                    @click="exportarPDF" />
+                </div>
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+
+        <!-- Leyenda -->
+        <div class="row q-mb-md q-gutter-md leyenda">
+          <div class="leyenda-item">
+            <span class="estado-badge estado-p">P</span>
+            <span>Presente</span>
+          </div>
+          <div class="leyenda-item">
+            <span class="estado-badge estado-t">T</span>
+            <span>Tardanza</span>
+          </div>
+          <div class="leyenda-item">
+            <span class="estado-badge estado-f">F</span>
+            <span>Falta</span>
+          </div>
+          <div class="leyenda-item">
+            <span class="estado-badge estado-fj">Fj</span>
+            <span>Falta Justificada</span>
+          </div>
+        </div>
+
+        <!-- Tabla Grid de Asistencia -->
+        <q-card class="card-tabla">
+          <q-card-section class="q-pa-none">
+            <div class="tabla-scroll">
+              <table class="tabla-asistencia">
+                <thead>
+                  <tr>
+                    <th class="col-estudiante sticky-col">Estudiante</th>
+                    <th v-for="clase in clases" :key="clase.id" class="col-clase">
+                      <div class="clase-header">
+                        <span class="clase-num">Clase {{ clase.numero }}</span>
+                        <span class="clase-fecha">{{ clase.fecha }}</span>
+                      </div>
+                    </th>
+                    <th class="col-stats">% Asist.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="estudiante in estudiantes" :key="estudiante.id">
+                    <td class="col-estudiante sticky-col">
+                      <div class="estudiante-info">
+                        <q-avatar size="32px" color="primary" text-color="white">
+                          {{ estudiante.iniciales }}
+                        </q-avatar>
+                        <span class="estudiante-nombre">{{ estudiante.apellidos }} {{ estudiante.nombres }}</span>
+                      </div>
+                    </td>
+                    <td v-for="clase in clases" :key="clase.id" class="col-clase"
+                      @click="cambiarEstado(estudiante.id, clase.id)">
+                      <span :class="['estado-badge', `estado-${getEstado(estudiante.id, clase.id).toLowerCase()}`]">
+                        {{ getEstado(estudiante.id, clase.id) }}
+                      </span>
+                    </td>
+                    <td class="col-stats">
+                      <q-badge :color="getPorcentajeColor(calcularPorcentaje(estudiante.id))"
+                        :label="`${calcularPorcentaje(estudiante.id)}%`" />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </q-card-section>
+        </q-card>
+
+        <!-- Estadísticas Resumen -->
+        <div class="row q-col-gutter-md q-mt-lg">
+          <div class="col-12 col-md-3">
+            <q-card class="stat-card stat-total">
+              <q-card-section class="text-center">
+                <div class="stat-value">{{ estadisticas.totalClases }}</div>
+                <div class="stat-label">Clases Registradas</div>
+              </q-card-section>
+            </q-card>
           </div>
           <div class="col-12 col-md-3">
-            <q-select
-              v-model="grupoSeleccionado"
-              :options="grupos"
-              option-value="id"
-              option-label="nombre"
-              label="Grupo"
-              outlined
-              dense
-              emit-value
-              map-options
-              class="select-dark"
-            >
-              <template v-slot:prepend>
-                <q-icon name="groups" color="teal" />
-              </template>
-            </q-select>
+            <q-card class="stat-card stat-presentes">
+              <q-card-section class="text-center">
+                <div class="stat-value">{{ estadisticas.promedioAsistencia }}%</div>
+                <div class="stat-label">Promedio Asistencia</div>
+              </q-card-section>
+            </q-card>
           </div>
-          <div class="col-12 col-md-4">
-            <div class="row q-gutter-sm">
-              <q-btn
-                unelevated
-                color="primary"
-                icon="search"
-                label="Generar Reporte"
-                no-caps
-                @click="generarReporte"
-              />
-              <q-btn
-                outline
-                color="green"
-                icon="picture_as_pdf"
-                label="Exportar PDF"
-                no-caps
-                @click="exportarPDF"
-              />
-            </div>
+          <div class="col-12 col-md-3">
+            <q-card class="stat-card stat-estudiantes">
+              <q-card-section class="text-center">
+                <div class="stat-value">{{ estadisticas.totalEstudiantes }}</div>
+                <div class="stat-label">Total Estudiantes</div>
+              </q-card-section>
+            </q-card>
+          </div>
+          <div class="col-12 col-md-3">
+            <q-card class="stat-card stat-riesgo">
+              <q-card-section class="text-center">
+                <div class="stat-value">{{ estadisticas.estudiantesRiesgo }}</div>
+                <div class="stat-label">En Riesgo (&lt;70%)</div>
+              </q-card-section>
+            </q-card>
           </div>
         </div>
-      </q-card-section>
-    </q-card>
-
-    <!-- Leyenda -->
-    <div class="row q-mb-md q-gutter-md leyenda">
-      <div class="leyenda-item">
-        <span class="estado-badge estado-p">P</span>
-        <span>Presente</span>
-      </div>
-      <div class="leyenda-item">
-        <span class="estado-badge estado-t">T</span>
-        <span>Tardanza</span>
-      </div>
-      <div class="leyenda-item">
-        <span class="estado-badge estado-f">F</span>
-        <span>Falta</span>
-      </div>
-      <div class="leyenda-item">
-        <span class="estado-badge estado-fj">Fj</span>
-        <span>Falta Justificada</span>
-      </div>
-    </div>
-
-    <!-- Tabla Grid de Asistencia -->
-    <q-card class="card-tabla">
-      <q-card-section class="q-pa-none">
-        <div class="tabla-scroll">
-          <table class="tabla-asistencia">
-            <thead>
-              <tr>
-                <th class="col-estudiante sticky-col">Estudiante</th>
-                <th 
-                  v-for="clase in clases" 
-                  :key="clase.id"
-                  class="col-clase"
-                >
-                  <div class="clase-header">
-                    <span class="clase-num">Clase {{ clase.numero }}</span>
-                    <span class="clase-fecha">{{ clase.fecha }}</span>
-                  </div>
-                </th>
-                <th class="col-stats">% Asist.</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="estudiante in estudiantes" :key="estudiante.id">
-                <td class="col-estudiante sticky-col">
-                  <div class="estudiante-info">
-                    <q-avatar size="32px" color="primary" text-color="white">
-                      {{ estudiante.iniciales }}
-                    </q-avatar>
-                    <span class="estudiante-nombre">{{ estudiante.apellidos }} {{ estudiante.nombres }}</span>
-                  </div>
-                </td>
-                <td 
-                  v-for="clase in clases" 
-                  :key="clase.id"
-                  class="col-clase"
-                  @click="cambiarEstado(estudiante.id, clase.id)"
-                >
-                  <span 
-                    :class="['estado-badge', `estado-${getEstado(estudiante.id, clase.id).toLowerCase()}`]"
-                  >
-                    {{ getEstado(estudiante.id, clase.id) }}
-                  </span>
-                </td>
-                <td class="col-stats">
-                  <q-badge 
-                    :color="getPorcentajeColor(calcularPorcentaje(estudiante.id))"
-                    :label="`${calcularPorcentaje(estudiante.id)}%`"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </q-card-section>
-    </q-card>
-
-    <!-- Estadísticas Resumen -->
-    <div class="row q-col-gutter-md q-mt-lg">
-      <div class="col-12 col-md-3">
-        <q-card class="stat-card stat-total">
-          <q-card-section class="text-center">
-            <div class="stat-value">{{ estadisticas.totalClases }}</div>
-            <div class="stat-label">Clases Registradas</div>
-          </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-12 col-md-3">
-        <q-card class="stat-card stat-presentes">
-          <q-card-section class="text-center">
-            <div class="stat-value">{{ estadisticas.promedioAsistencia }}%</div>
-            <div class="stat-label">Promedio Asistencia</div>
-          </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-12 col-md-3">
-        <q-card class="stat-card stat-estudiantes">
-          <q-card-section class="text-center">
-            <div class="stat-value">{{ estadisticas.totalEstudiantes }}</div>
-            <div class="stat-label">Total Estudiantes</div>
-          </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-12 col-md-3">
-        <q-card class="stat-card stat-riesgo">
-          <q-card-section class="text-center">
-            <div class="stat-value">{{ estadisticas.estudiantesRiesgo }}</div>
-            <div class="stat-label">En Riesgo (&lt;70%)</div>
-          </q-card-section>
-        </q-card>
-      </div>
-    </div>
       </q-tab-panel>
       <!-- Panel 2: Mi Cumplimiento -->
       <q-tab-panel name="cumplimiento" class="q-pa-none">
         <div class="row items-center justify-between q-mb-md">
           <div class="text-h6">Mi Seguimiento Semanal de Clases</div>
           <div class="row q-gutter-sm">
-             <q-input v-model="fechaFiltroSemana" label="Semana (Lunes)" type="date" outlined dense bg-color="white" @update:model-value="loadMiCumplimiento" />
+            <q-input v-model="fechaFiltroSemana" label="Semana (Lunes)" type="date" outlined dense bg-color="white"
+              @update:model-value="loadMiCumplimiento" />
           </div>
         </div>
-        
+
         <q-banner class="bg-indigo-1 text-indigo-9 q-mb-lg rounded-borders">
           <template v-slot:avatar><q-icon name="info" /></template>
-          Esta sección muestra el estado de cumplimiento de tus clases según los registros de temas, estrategias y evaluaciones realizados en el <b>Control de Clase</b>.
+          Esta sección muestra el estado de cumplimiento de tus clases según los registros de temas, estrategias y
+          evaluaciones realizados en el <b>Control de Clase</b>.
         </q-banner>
 
         <weekly-report-table :rows="misReportes" :loading="loadingCumplimiento" />
@@ -222,11 +180,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
-import { useReportesStore } from 'src/stores/reportes'
+
 import { useAuthStore } from 'src/stores/auth'
 
 const $q = useQuasar()
-const reportesStore = useReportesStore()
+
 const authStore = useAuthStore()
 
 const tabActivo = ref('asistencia')
@@ -302,7 +260,7 @@ function cambiarEstado(estudianteId, claseId) {
   const estadoActual = getEstado(estudianteId, claseId)
   const indexActual = estados.indexOf(estadoActual)
   const nuevoIndex = (indexActual + 1) % estados.length
-  
+
   if (!asistencias.value[estudianteId]) {
     asistencias.value[estudianteId] = {}
   }
@@ -313,11 +271,11 @@ function calcularPorcentaje(estudianteId) {
   const registro = asistencias.value[estudianteId] || {}
   const totalClases = clases.value.length
   let presentes = 0
-  
+
   Object.values(registro).forEach(estado => {
     if (estado === 'P' || estado === 'T') presentes++
   })
-  
+
   return Math.round((presentes / totalClases) * 100)
 }
 
@@ -331,16 +289,16 @@ function getPorcentajeColor(porcentaje) {
 const estadisticas = computed(() => {
   const totalEstudiantes = estudiantes.value.length
   const totalClases = clases.value.length
-  
+
   let sumaPorc = 0
   let enRiesgo = 0
-  
+
   estudiantes.value.forEach(est => {
     const porc = calcularPorcentaje(est.id)
     sumaPorc += porc
     if (porc < 70) enRiesgo++
   })
-  
+
   return {
     totalClases,
     totalEstudiantes,
@@ -363,8 +321,8 @@ async function loadMiCumplimiento() {
   try {
     // Simulated load for docent (only their data)
     misReportes.value = [
-      { 
-        id: 1, 
+      {
+        id: 1,
         asignatura: { nombre: 'CÁLCULO I' },
         carrera: { nombre: 'Ingeniería de Sistemas' },
         docente: { nombre: authStore.usuarioActual?.nombre || 'Docente' },
@@ -586,8 +544,19 @@ function exportarPDF() {
   margin-top: 4px;
 }
 
-.stat-total .stat-value { color: var(--primary-light); }
-.stat-presentes .stat-value { color: #22c55e; }
-.stat-estudiantes .stat-value { color: #14b8a6; }
-.stat-riesgo .stat-value { color: #ef4444; }
+.stat-total .stat-value {
+  color: var(--primary-light);
+}
+
+.stat-presentes .stat-value {
+  color: #22c55e;
+}
+
+.stat-estudiantes .stat-value {
+  color: #14b8a6;
+}
+
+.stat-riesgo .stat-value {
+  color: #ef4444;
+}
 </style>
