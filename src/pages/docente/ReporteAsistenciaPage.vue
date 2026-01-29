@@ -13,8 +13,17 @@
       </div>
     </div>
 
-    <!-- Filtros -->
-    <q-card class="card-filtros q-mb-lg">
+    <!-- Tabs -->
+    <q-tabs v-model="tabActivo" class="text-primary q-mb-md" align="left" dense>
+      <q-tab name="asistencia" icon="event_available" label="Asistencia Estudiantes" />
+      <q-tab name="cumplimiento" icon="assignment_turned_in" label="Mi Cumplimiento Semanal" />
+    </q-tabs>
+
+    <q-tab-panels v-model="tabActivo" animated class="bg-transparent">
+      <!-- Panel 1: Asistencia Estudiantes -->
+      <q-tab-panel name="asistencia" class="q-pa-none">
+        <!-- Filtros -->
+        <q-card class="card-filtros q-mb-lg">
       <q-card-section>
         <div class="row q-col-gutter-md items-end">
           <div class="col-12 col-md-5">
@@ -188,14 +197,42 @@
         </q-card>
       </div>
     </div>
+      </q-tab-panel>
+      <!-- Panel 2: Mi Cumplimiento -->
+      <q-tab-panel name="cumplimiento" class="q-pa-none">
+        <div class="row items-center justify-between q-mb-md">
+          <div class="text-h6">Mi Seguimiento Semanal de Clases</div>
+          <div class="row q-gutter-sm">
+             <q-input v-model="fechaFiltroSemana" label="Semana (Lunes)" type="date" outlined dense bg-color="white" @update:model-value="loadMiCumplimiento" />
+          </div>
+        </div>
+        
+        <q-banner class="bg-indigo-1 text-indigo-9 q-mb-lg rounded-borders">
+          <template v-slot:avatar><q-icon name="info" /></template>
+          Esta sección muestra el estado de cumplimiento de tus clases según los registros de temas, estrategias y evaluaciones realizados en el <b>Control de Clase</b>.
+        </q-banner>
+
+        <weekly-report-table :rows="misReportes" :loading="loadingCumplimiento" />
+      </q-tab-panel>
+    </q-tab-panels>
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
+import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
+import { useReportesStore } from 'src/stores/reportes'
+import { useAuthStore } from 'src/stores/auth'
 
 const $q = useQuasar()
+const reportesStore = useReportesStore()
+const authStore = useAuthStore()
+
+const tabActivo = ref('asistencia')
+const misReportes = ref([])
+const loadingCumplimiento = ref(false)
+const fechaFiltroSemana = ref('')
 
 // Datos
 const asignaturaSeleccionada = ref(1)
@@ -311,6 +348,35 @@ const estadisticas = computed(() => {
     estudiantesRiesgo: enRiesgo
   }
 })
+
+onMounted(() => {
+  // Pre-fill with current Monday
+  const today = new Date()
+  const day = today.getDay()
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1)
+  const monday = new Date(today.setDate(diff))
+  fechaFiltroSemana.value = monday.toISOString().split('T')[0]
+})
+
+async function loadMiCumplimiento() {
+  loadingCumplimiento.value = true
+  try {
+    // Simulated load for docent (only their data)
+    misReportes.value = [
+      { 
+        id: 1, 
+        asignatura: { nombre: 'CÁLCULO I' },
+        carrera: { nombre: 'Ingeniería de Sistemas' },
+        docente: { nombre: authStore.usuarioActual?.nombre || 'Docente' },
+        semana_inicio: fechaFiltroSemana.value,
+        alerta: 'VERDE',
+        criterios: { temaImpartido: true, actividadesFormativas: true, secuenciaDidactica: true, plataformaVirtual: true, evidencias: true, evaluaciones: true, integracionTransversal: true }
+      }
+    ]
+  } finally {
+    loadingCumplimiento.value = false
+  }
+}
 
 function generarReporte() {
   $q.notify({
