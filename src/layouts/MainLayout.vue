@@ -52,10 +52,10 @@
                 </div>
               </div>
               <q-separator class="menu-separator" />
-              <q-item clickable v-ripple class="menu-item">
+              <!-- <q-item clickable v-ripple class="menu-item">
                 <q-item-section avatar><q-icon name="person" size="18px" /></q-item-section>
                 <q-item-section>Mi Perfil</q-item-section>
-              </q-item>
+              </q-item> -->
               <q-item clickable v-ripple class="menu-item">
                 <q-item-section avatar><q-icon name="settings" size="18px" /></q-item-section>
                 <q-item-section>Configuración</q-item-section>
@@ -87,13 +87,7 @@
         <!-- Navigation Dinámico -->
         <q-scroll-area class="sidebar-nav-area">
           <nav class="sidebar-nav">
-            <router-link
-              v-for="item in menuItems"
-              :key="item.to"
-              :to="item.to"
-              custom
-              v-slot="{ isActive, navigate }"
-            >
+            <router-link v-for="item in menuItems" :key="item.to" :to="item.to" custom v-slot="{ isActive, navigate }">
               <div @click="navigate" :class="['nav-item', { 'active': isActive }]">
                 <q-icon :name="item.icon" size="20px" />
                 <span>{{ item.label }}</span>
@@ -307,8 +301,15 @@ function handleLogout() {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Theme Toggle */

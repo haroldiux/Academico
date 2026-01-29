@@ -20,62 +20,24 @@
       <q-card-section>
         <div class="row q-col-gutter-md items-end">
           <div class="col-12 col-md-2">
-            <q-select
-              v-model="filtros.tipoReporte"
-              :options="tiposReporte"
-              outlined
-              dense
-              label="Tipo de Reporte"
-              emit-value
-              map-options
-            />
+            <q-select v-model="filtros.tipoReporte" :options="tiposReporte" outlined dense label="Tipo de Reporte"
+              emit-value map-options />
           </div>
           <div class="col-12 col-md-2">
-            <q-select
-              v-model="filtros.sede"
-              :options="sedesOptions"
-              outlined
-              dense
-              label="Sede"
-              emit-value
-              map-options
-              clearable
-            />
+            <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
+              clearable />
           </div>
           <div class="col-12 col-md-2" v-if="filtros.tipoReporte !== 'sedes'">
-            <q-select
-              v-model="filtros.carrera"
-              :options="carrerasOptions"
-              outlined
-              dense
-              label="Carrera"
-              emit-value
-              map-options
-              clearable
-            />
+            <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
+              map-options clearable />
           </div>
           <div class="col-12 col-md-2" v-if="filtros.tipoReporte === 'docentes'">
-            <q-select
-              v-model="filtros.docente"
-              :options="docentesOptions"
-              outlined
-              dense
-              label="Docente"
-              emit-value
-              map-options
-              clearable
-            />
+            <q-select v-model="filtros.docente" :options="docentesOptions" outlined dense label="Docente" emit-value
+              map-options clearable />
           </div>
           <div class="col-12 col-md-2">
-            <q-select
-              v-model="filtros.gestion"
-              :options="gestionesOptions"
-              outlined
-              dense
-              label="Gestión"
-              emit-value
-              map-options
-            />
+            <q-select v-model="filtros.gestion" :options="gestionesOptions" outlined dense label="Gestión" emit-value
+              map-options />
           </div>
           <div class="col-auto">
             <q-btn unelevated color="indigo" icon="search" label="Generar" no-caps @click="generarReporte" />
@@ -134,16 +96,11 @@
 
         <q-card class="data-card">
           <q-card-section>
-            <q-table
-              :rows="reporteDocentes.detalle"
-              :columns="columnasDocentes"
-              row-key="id"
-              flat
-              bordered
-            >
+            <q-table :rows="reporteDocentes.detalle" :columns="columnasDocentes" row-key="id" flat bordered>
               <template v-slot:body-cell-progreso="props">
                 <q-td :props="props">
-                  <q-linear-progress :value="props.value / 100" :color="props.value >= 80 ? 'green' : props.value >= 50 ? 'orange' : 'red'" rounded size="8px" />
+                  <q-linear-progress :value="props.value / 100"
+                    :color="props.value >= 80 ? 'green' : props.value >= 50 ? 'orange' : 'red'" rounded size="8px" />
                   <span class="text-caption">{{ props.value }}%</span>
                 </q-td>
               </template>
@@ -200,13 +157,7 @@
 
         <q-card class="data-card">
           <q-card-section>
-            <q-table
-              :rows="reporteCarreras.detalle"
-              :columns="columnasCarreras"
-              row-key="id"
-              flat
-              bordered
-            />
+            <q-table :rows="reporteCarreras.detalle" :columns="columnasCarreras" row-key="id" flat bordered />
           </q-card-section>
         </q-card>
       </div>
@@ -259,13 +210,30 @@
 
         <q-card class="data-card">
           <q-card-section>
-            <q-table
-              :rows="reporteSedes.detalle"
-              :columns="columnasSedes"
-              row-key="id"
-              flat
-              bordered
-            />
+            <q-table :rows="reporteSedes.detalle" :columns="columnasSedes" row-key="id" flat bordered />
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <!-- Reporte de Cumplimiento Semanal (Nuevo) -->
+      <div v-if="filtros.tipoReporte === 'cumplimiento_semanal'">
+        <div class="reporte-header q-mb-md">
+          <h2 class="reporte-titulo">Auditoría de Cumplimiento Semanal</h2>
+          <div class="row q-gutter-sm">
+            <q-btn color="secondary" icon="auto_awesome" label="Generar Reportes" @click="prototypeGenerate" />
+            <p class="reporte-fecha q-ml-md flex items-center">Generado: {{ fechaReporte }}</p>
+          </div>
+        </div>
+
+        <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md rounded-borders">
+          <template v-slot:avatar><q-icon name="info" /></template>
+          Vista global de auditoría para todas las sedes y carreras. Los reportes se basan en el Control de Clase
+          docente.
+        </q-banner>
+
+        <q-card class="data-card">
+          <q-card-section>
+            <weekly-report-table :rows="mockWeeklyReports" :loading="loadingMock" />
           </q-card-section>
         </q-card>
       </div>
@@ -285,6 +253,7 @@ import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
+import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
 
 const $q = useQuasar()
 const sedesStore = useSedesStore()
@@ -292,6 +261,8 @@ const carrerasStore = useCarrerasStore()
 
 const reporteGenerado = ref(false)
 const fechaReporte = ref('')
+const loadingMock = ref(false)
+const mockWeeklyReports = ref([])
 
 const filtros = ref({
   tipoReporte: 'docentes',
@@ -304,7 +275,8 @@ const filtros = ref({
 const tiposReporte = [
   { label: 'Por Docentes', value: 'docentes' },
   { label: 'Por Carreras', value: 'carreras' },
-  { label: 'Por Sedes', value: 'sedes' }
+  { label: 'Por Sedes', value: 'sedes' },
+  { label: 'Cumplimiento Semanal', value: 'cumplimiento_semanal' }
 ]
 
 const gestionesOptions = [
@@ -313,11 +285,11 @@ const gestionesOptions = [
   { label: 'Gestión 2025-I', value: '2025-I' }
 ]
 
-const sedesOptions = computed(() => 
+const sedesOptions = computed(() =>
   sedesStore.sedesActivas.map(s => ({ label: s.nombre, value: s.id }))
 )
 
-const carrerasOptions = computed(() => 
+const carrerasOptions = computed(() =>
   carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id }))
 )
 
@@ -398,6 +370,34 @@ const columnasSedes = [
   { name: 'documentacion', label: 'Doc. %', field: 'documentacion', align: 'center' }
 ]
 
+function prototypeGenerate() {
+  loadingMock.value = true
+  setTimeout(() => {
+    mockWeeklyReports.value = [
+      {
+        id: 1,
+        asignatura: { nombre: 'Álgebra I', codigo: 'MAT-101' },
+        carrera: { nombre: 'Ingeniería de Sistemas' },
+        docente: { nombre: 'KARINA PAOLA LOPEZ' },
+        semana_inicio: '2026-01-26',
+        alerta: 'VERDE',
+        criterios: { temaImpartido: true, actividadesFormativas: true, secuenciaDidactica: true, plataformaVirtual: true, evidencias: true, evaluaciones: true, integracionTransversal: true }
+      },
+      {
+        id: 2,
+        asignatura: { nombre: 'Programación I', codigo: 'SIS-121' },
+        carrera: { nombre: 'Ingeniería de Sistemas' },
+        docente: { nombre: 'HAROLD MARCO ANTONIO ROJAS' },
+        semana_inicio: '2026-01-26',
+        alerta: 'ROJO',
+        criterios: { temaImpartido: false, actividadesFormativas: true, secuenciaDidactica: false, plataformaVirtual: true, evidencias: false, evaluaciones: true, integracionTransversal: false }
+      }
+    ]
+    loadingMock.value = false
+    $q.notify({ type: 'positive', message: 'Reportes de auditoría generados (Modo Prototipo)' })
+  }, 1000)
+}
+
 function generarReporte() {
   fechaReporte.value = new Date().toLocaleString('es-BO')
   reporteGenerado.value = true
@@ -427,8 +427,15 @@ function exportarExcel() {
   margin-bottom: 24px;
 }
 
-.header-left { display: flex; flex-direction: column; }
-.header-actions { display: flex; gap: 12px; }
+.header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
 
 .page-title {
   font-size: 1.75rem;
@@ -480,10 +487,21 @@ function exportarExcel() {
   padding: 20px;
 }
 
-.stat-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); }
-.stat-success { background: linear-gradient(135deg, #10b981, #059669); }
-.stat-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.stat-info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.stat-primary {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+.stat-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.stat-warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.stat-info {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
 
 .stat-value {
   font-size: 2rem;

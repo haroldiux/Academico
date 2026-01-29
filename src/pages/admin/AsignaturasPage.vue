@@ -110,8 +110,8 @@
             <div class="docentes-avatars">
               <q-avatar v-for="(docente, idx) in props.row.docentes?.slice(0, 3)" :key="idx" size="28px" color="primary"
                 text-color="white" class="docente-avatar" font-size="12px">
-                {{ docente.charAt(0) }}
-                <q-tooltip>{{ docente }}</q-tooltip>
+                {{ getDocenteNombre(docente).charAt(0) }}
+                <q-tooltip>{{ getDocenteNombre(docente) }}</q-tooltip>
               </q-avatar>
               <q-avatar v-if="props.row.docentes?.length > 3" size="28px" color="grey-4" text-color="grey-9"
                 class="docente-avatar" font-size="12px">
@@ -628,6 +628,12 @@ function exportTable() {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Asignaturas')
   XLSX.writeFile(wb, 'Reporte_Asignaturas.xlsx')
+}
+
+function getDocenteNombre(docente) {
+  if (!docente) return ''
+  if (typeof docente === 'string') return docente
+  return docente.nombre_completo || docente.nombre || 'Docente'
 }
 </script>
 

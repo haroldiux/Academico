@@ -1,14 +1,15 @@
 <template>
   <q-page class="q-pa-lg">
     <!-- Breadcrumb & Header -->
-    <div class="row items-center q-mb-lg animate-in">
-      <div class="col">
+    <!-- Breadcrumb & Header -->
+    <div class="row items-center q-mb-lg animate-in q-col-gutter-y-md">
+      <div class="col-12 col-md">
         <q-breadcrumbs class="q-mb-sm">
           <q-breadcrumbs-el icon="home" to="/" />
           <q-breadcrumbs-el :label="breadcrumbInfo.label" :to="breadcrumbInfo.to" />
           <q-breadcrumbs-el :label="asignatura?.codigo || 'Asignatura'" />
         </q-breadcrumbs>
-        <h4 class="q-ma-none text-weight-bold">
+        <h4 class="q-ma-none text-weight-bold" style="line-height: 1.2;">
           <q-icon name="menu_book" size="36px" color="primary" class="q-mr-sm" />
           <span class="text-gradient">{{ asignatura?.nombre || 'Cargando...' }}</span>
           <q-chip v-if="asignatura?.estado" :color="asignatura.estado === 'APROBADO' ? 'green-2' : 'orange-2'"
@@ -29,44 +30,36 @@
           </q-chip>
         </div>
       </div>
-      <div class="col-auto row q-gutter-sm">
+      <div class="col-12 col-md-auto row q-gutter-sm justify-end">
         <q-btn v-if="puedeAprobarCarpeta"
           :label="asignatura?.estado === 'APROBADO' ? 'Reabrir Carpeta' : 'Aprobar Carpeta'"
           :color="asignatura?.estado === 'APROBADO' ? 'orange' : 'green'"
           :icon="asignatura?.estado === 'APROBADO' ? 'lock_open' : 'check_circle'" no-caps unelevated
           @click="toggleEstadoCarpeta" />
 
-        <q-btn outline color="indigo" icon="calendar_month" label="Planificación Semestral" no-caps
-          :to="`/documentacion/${route.params.id}/planificacion`" />
-        <q-btn v-if="puedeImportar" outline color="teal" icon="upload_file" label="Importar Word" no-caps
-          @click="abrirDialogoImportar">
-          <q-tooltip>Importar contenido desde Documento Word (Sede Central)</q-tooltip>
-        </q-btn>
-        <q-btn outline color="green" icon="picture_as_pdf" label="Generar PDF" no-caps>
-          <q-menu>
-            <q-list style="min-width: 220px">
-              <q-item-label header class="text-weight-bold">Generación de PDFs</q-item-label>
-              <q-separator />
-              <q-item clickable v-close-popup @click="generarPDF('carpetaDocente')">
-                <q-item-section avatar><q-icon name="folder" color="purple" /></q-item-section>
-                <q-item-section>
-                  <q-item-label>Carpeta Docente Completa</q-item-label>
-                  <q-item-label caption>Todas las secciones</q-item-label>
-                </q-item-section>
-              </q-item>
-              <q-separator spaced />
-              <q-item clickable v-close-popup @click="generarPDF('planClase')">
-                <q-item-section avatar><q-icon name="class" color="blue" /></q-item-section>
-                <q-item-section>Plan de Clase Teórico</q-item-section>
-              </q-item>
-              <q-item clickable v-close-popup @click="generarPDF('programa')">
-                <q-item-section avatar><q-icon name="description" color="green" /></q-item-section>
-                <q-item-section>Programa de Asignatura</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
-        <q-btn unelevated color="primary" icon="save" label="Guardar Cambios" no-caps @click="guardarCambios" />
+        <!-- Herramientas Dropdown -->
+        <q-btn-dropdown outline color="indigo" icon="settings" label="Gestión" no-caps>
+          <q-list>
+            <q-item clickable v-close-popup :to="`/documentacion/${route.params.id}/planificacion`">
+              <q-item-section avatar><q-icon name="calendar_month" color="indigo" /></q-item-section>
+              <q-item-section>Planificación Semestral</q-item-section>
+            </q-item>
+
+            <q-separator />
+
+            <q-item v-if="puedeImportar" clickable v-close-popup @click="abrirDialogoImportar">
+              <q-item-section avatar><q-icon name="upload_file" color="teal" /></q-item-section>
+              <q-item-section>Importar Word (Sede Central)</q-item-section>
+            </q-item>
+
+            <q-item clickable v-close-popup @click="generarCarpetaHtml">
+              <q-item-section avatar><q-icon name="auto_stories" color="green" /></q-item-section>
+              <q-item-section>Ver Carpeta (HTML)</q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+
+        <q-btn unelevated color="primary" icon="save" label="Guardar" no-caps @click="guardarCambios" />
       </div>
     </div>
 
@@ -395,7 +388,7 @@
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
                 <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                }}</q-badge>
+                  }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
                 <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
@@ -427,7 +420,7 @@
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
                 <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
                   bibliografiasProgramaAnalitico.length
-                }}</q-badge>
+                  }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
@@ -440,7 +433,7 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
                         biblio.autor
-                      }}</div>
+                        }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
                           biblio.anio !==
@@ -517,7 +510,7 @@
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
                     <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                    }})</span>
+                      }})</span>
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
@@ -539,6 +532,9 @@
                     <q-item-label caption>
                       {{ countLogros(tema) }} logros •
                       {{ countIndicadores(tema) }} indicadores
+                      <q-icon v-if="!tema.descripcion" name="warning" color="orange" size="xs" class="q-ml-sm">
+                        <q-tooltip>Falta Contenido/Descripción</q-tooltip>
+                      </q-icon>
                     </q-item-label>
                   </q-item-section>
                   <q-item-section side>
@@ -708,7 +704,6 @@
             <q-input v-model.number="formUnidad.numero" label="Número" type="number" outlined dense
               :readonly="editandoUnidad" />
             <q-input v-model="formUnidad.titulo" label="Título" outlined dense autofocus />
-            <q-input v-model.number="formUnidad.horas" label="Horas (Referencial)" type="number" outlined dense />
 
             <div class="row justify-end q-gutter-sm q-mt-md">
               <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
@@ -732,6 +727,14 @@
         <q-card-section>
           <q-form @submit="guardarTema" class="q-gutter-md">
             <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus />
+            <q-input v-model="formTema.descripcion" label="Contenido / Descripción *" type="textarea" rows="4" outlined
+              dense placeholder="Ej: Principios básicos, definiciones, clasificación..."
+              hint="Describa los puntos clave o subtemas que se abordarán."
+              :rules="[val => !!val || 'El contenido es obligatorio']">
+              <template v-slot:prepend>
+                <q-icon name="article" />
+              </template>
+            </q-input>
             <!-- Horas removed as per request -->
 
             <div class="row justify-end q-gutter-sm q-mt-md">
@@ -754,8 +757,6 @@ import { useCarrerasStore } from 'src/stores/carreras'
 import { useSedesStore } from 'src/stores/sedes'
 import { ROLES } from 'src/stores/auth'
 import { useAuthStore } from 'src/stores/auth'
-import { generarPlanDeClase, generarProgramaAsignatura } from 'src/services/pdfService'
-import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
 
 // Helpers para contar logros e indicadores (consistente con backend/store)
 function countLogros(tema) {
@@ -801,7 +802,7 @@ const formUnidad = ref({ id: null, titulo: '', numero: 1, horas: 0 })
 const dialogTema = ref(false)
 const editandoTema = ref(false)
 const unidadSeleccionada = ref(null)
-const formTema = ref({ id: null, titulo: '', horas_teoricas: 0, horas_practicas: 0 })
+const formTema = ref({ id: null, titulo: '', descripcion: '', horas_teoricas: 0, horas_practicas: 0 })
 
 // Unidades
 function abrirDialogoUnidad(unidad = null) {
@@ -856,7 +857,7 @@ function abrirDialogoTema(unidad, tema = null) {
   if (tema) {
     formTema.value = { ...tema }
   } else {
-    formTema.value = { id: null, titulo: '', horas_teoricas: 0, horas_practicas: 0 }
+    formTema.value = { id: null, titulo: '', descripcion: '', horas_teoricas: 0, horas_practicas: 0 }
   }
   dialogTema.value = true
 }
@@ -1447,44 +1448,60 @@ function eliminarBibliografia(biblio) {
   $q.notify({ type: 'info', message: 'Bibliografía eliminada', position: 'top' })
 }
 
-// Generación de PDFs
-function generarPDF(tipo) {
-  if (!asignatura.value) {
-    $q.notify({ type: 'negative', message: 'No hay asignatura cargada', position: 'top' })
+// Generación de PDFs (Legacy/Otros)
+function generarCarpetaHtml() {
+  const asig = asignatura.value // Access ref value
+  if (!asig) {
+    $q.notify({ type: 'warning', message: 'No hay datos de asignatura cargados.' })
     return
   }
 
-  try {
-    if (tipo === 'carpetaDocente') {
-      // Obtener datos de carrera (puede ser objeto o string)
-      const carreraNombreAsig = typeof asignatura.value.carrera === 'object'
-        ? asignatura.value.carrera?.nombre
-        : asignatura.value.carrera
+  console.log('Generando Carpeta HTML. Datos:', asig)
 
-      const carrera = carrerasStore.carreras.find(c => c.nombre === carreraNombreAsig) || {
-        nombre: carreraNombreAsig || 'Ingeniería de Sistemas',
-        codigo: 'SIS',
-        area: 'Ciencias Exactas y Tecnología',
-        mision: 'Formar profesionales de excelencia.',
-        vision: 'Ser líderes en formación profesional.',
-        perfil_profesional: 'El profesional está preparado para desempeñarse en su área.'
-      }
-      const sede = sedesStore.sedes.find(s => s.id === 1) || { nombre: 'Cochabamba' }
+  let grupoId = null
 
-      generarCarpetaDocente(asignatura.value, carrera, sede)
-      $q.notify({ type: 'positive', message: 'Carpeta Docente generada exitosamente', icon: 'folder', position: 'top' })
-    } else if (tipo === 'planClase') {
-      generarPlanDeClase(asignatura.value)
-      $q.notify({ type: 'positive', message: 'Plan de Clase generado exitosamente', icon: 'picture_as_pdf', position: 'top' })
-    } else if (tipo === 'programa') {
-      generarProgramaAsignatura(asignatura.value)
-      $q.notify({ type: 'positive', message: 'Programa de Asignatura generado exitosamente', icon: 'picture_as_pdf', position: 'top' })
+  // ESTRATEGIA DE BÚSQUEDA DE GRUPO
+
+  // 1. Si hay docentes asignados, suelen tener el grupo en el pivot o estructura
+  if (asig.docentes && asig.docentes.length > 0) {
+    // Intentar buscar el primer docente con grupo_id en pivot
+    const docConGrupo = asig.docentes.find(d => d.pivot && d.pivot.grupo_id)
+    if (docConGrupo) {
+      grupoId = docConGrupo.pivot.grupo_id
     }
-  } catch (error) {
-    console.error('Error generando PDF:', error)
-    $q.notify({ type: 'negative', message: 'Error al generar el PDF: ' + error.message, position: 'top' })
+    // Si no hay pivot, probar si el objeto docente tiene array 'grupos'
+    else if (asig.docentes[0].grupos && asig.docentes[0].grupos.length > 0) {
+      grupoId = asig.docentes[0].grupos[0].id
+    }
+  }
+
+  // 2. Si no, buscar en array directo de grupos de la asignatura (si existiera)
+  if (!grupoId && asig.grupos && asig.grupos.length > 0) {
+    grupoId = asig.grupos[0].id
+  }
+
+  // 3. FALLBACK: Buscar en horarios_data (Estructura calculada por Controller)
+  if (!grupoId && asig.horarios_data && asig.horarios_data.length > 0) {
+    grupoId = asig.horarios_data[0].id
+  }
+
+  if (grupoId) {
+    const routeData = router.resolve({
+      name: 'docente-carpeta',
+      params: { id: grupoId }
+    })
+    window.open(routeData.href, '_blank')
+  } else {
+    $q.notify({
+      type: 'warning',
+      message: 'No se encontró un grupo asociado para esta asignatura/docente.',
+      caption: 'Verifique que la asignatura tenga un grupo y docente asignado.',
+      timeout: 5000
+    })
   }
 }
+
+
 </script>
 
 <style scoped>

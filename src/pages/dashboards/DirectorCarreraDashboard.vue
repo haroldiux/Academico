@@ -105,17 +105,14 @@
                 <span class="stat-desc">Materias</span>
               </div>
               <div class="semestre-stat">
-                <span class="stat-num" :class="sem.progreso >= 80 ? 'text-green' : 'text-orange'">{{ sem.progreso }}%</span>
+                <span class="stat-num" :class="sem.progreso >= 80 ? 'text-green' : 'text-orange'">{{ sem.progreso
+                }}%</span>
                 <span class="stat-desc">Progreso</span>
               </div>
             </div>
-            <q-linear-progress 
-              :value="sem.progreso / 100" 
-              :color="sem.progreso >= 80 ? 'green' : sem.progreso >= 50 ? 'orange' : 'red'" 
-              rounded 
-              size="6px" 
-              class="q-mt-sm"
-            />
+            <q-linear-progress :value="sem.progreso / 100"
+              :color="sem.progreso >= 80 ? 'green' : sem.progreso >= 50 ? 'orange' : 'red'" rounded size="6px"
+              class="q-mt-sm" />
           </div>
         </div>
       </div>
@@ -138,13 +135,9 @@
               <span class="docente-nombre">{{ docente.nombre }}</span>
               <span class="docente-materias">{{ docente.materias }} materias</span>
             </div>
-            <q-circular-progress
-              :value="docente.progreso"
-              size="32px"
-              :thickness="0.2"
+            <q-circular-progress :value="docente.progreso" size="32px" :thickness="0.2"
               :color="docente.progreso >= 80 ? 'green' : docente.progreso >= 50 ? 'orange' : 'red'"
-              track-color="grey-8"
-            />
+              track-color="grey-8" />
           </div>
         </div>
 
@@ -186,6 +179,13 @@
           </div>
           <span class="quick-label">Exportar PDFs</span>
         </div>
+
+        <router-link to="/director/contexto" class="quick-access-card">
+          <div class="quick-icon teal">
+            <q-icon name="business" size="28px" />
+          </div>
+          <span class="quick-label">Información de Carrera</span>
+        </router-link>
       </div>
     </div>
   </q-page>
@@ -299,7 +299,9 @@ function exportarPDFs() {
 }
 
 @media (max-width: 1200px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .stat-card {
@@ -325,10 +327,25 @@ function exportarPDFs() {
   margin-bottom: 16px;
 }
 
-.stat-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
-.stat-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.stat-icon.purple {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary-light);
+}
+
+.stat-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+
+.stat-icon.orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+
+.stat-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
 
 .stat-label {
   color: var(--text-secondary);
@@ -354,9 +371,17 @@ function exportarPDFs() {
   font-weight: 500;
 }
 
-.stat-trend.positive { color: var(--accent-green); }
-.stat-trend.negative { color: var(--accent-red); }
-.stat-trend.neutral { color: var(--text-secondary); }
+.stat-trend.positive {
+  color: var(--accent-green);
+}
+
+.stat-trend.negative {
+  color: var(--accent-red);
+}
+
+.stat-trend.neutral {
+  color: var(--text-secondary);
+}
 
 /* Content Grid */
 .content-grid {
@@ -367,10 +392,13 @@ function exportarPDFs() {
 }
 
 @media (max-width: 1024px) {
-  .content-grid { grid-template-columns: 1fr; }
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.main-card, .side-card {
+.main-card,
+.side-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 16px;
@@ -411,11 +439,15 @@ function exportarPDFs() {
 }
 
 @media (max-width: 1200px) {
-  .semestres-grid { grid-template-columns: repeat(3, 1fr); }
+  .semestres-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
-  .semestres-grid { grid-template-columns: repeat(2, 1fr); }
+  .semestres-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .semestre-card {
@@ -459,8 +491,13 @@ function exportarPDFs() {
   color: var(--text-primary);
 }
 
-.stat-num.text-green { color: var(--accent-green); }
-.stat-num.text-orange { color: var(--accent-orange); }
+.stat-num.text-green {
+  color: var(--accent-green);
+}
+
+.stat-num.text-orange {
+  color: var(--accent-orange);
+}
 
 .stat-desc {
   font-size: 0.625rem;
@@ -519,7 +556,9 @@ function exportarPDFs() {
 }
 
 @media (max-width: 900px) {
-  .quick-access-grid { grid-template-columns: repeat(2, 1fr); }
+  .quick-access-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .quick-access-card {
@@ -550,10 +589,30 @@ function exportarPDFs() {
   margin-bottom: 12px;
 }
 
-.quick-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
-.quick-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.quick-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.quick-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.quick-icon.purple {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary-light);
+}
+
+.quick-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+
+.quick-icon.orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+
+.quick-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
+
+.quick-icon.teal {
+  background: rgba(20, 184, 166, 0.15);
+  color: #0d9488;
+}
 
 .quick-label {
   color: var(--text-secondary);

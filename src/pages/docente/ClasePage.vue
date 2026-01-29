@@ -190,72 +190,68 @@
                               <q-icon name="folder_open" class="q-mr-xs" />
                               Evidencias de la Clase
                            </div>
-                           <q-card flat bordered class="q-pa-md">
-                              <div class="row q-col-gutter-md">
-                                 <!-- Subir Fotos -->
-                                 <div class="col-12 col-md-4">
-                                    <div class="text-caption text-grey-7 q-mb-sm">Fotografías</div>
+                            <q-card flat bordered class="q-pa-md">
+                               <div class="row q-col-gutter-md">
+                                 <!-- Nivel 1: Evidencias Específicas -->
+                                 <div class="col-12">
+                                     <div class="row q-col-gutter-md">
+                                         <!-- Aprendizaje Activo -->
+                                         <div class="col-12 col-md-6">
+                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Evidencia Aprendizaje Activo (Foto/Video)</div>
+                                             <q-file v-model="evidencias.aprendizaje_activo" label="Subir evidencia" outlined dense accept="image/*,video/*">
+                                                 <template v-slot:prepend><q-icon name="stars" color="indigo" /></template>
+                                             </q-file>
+                                         </div>
+                                         <!-- Evaluación Formativa -->
+                                         <div class="col-12 col-md-6">
+                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Evaluación Formativa (Link/Evidencia)</div>
+                                             <q-input v-model="evidencias.evaluacion_formativa" placeholder="Link a actividad en plataforma" outlined dense>
+                                                 <template v-slot:prepend><q-icon name="assignment_turned_in" color="indigo" /></template>
+                                             </q-input>
+                                         </div>
+                                         <!-- Banco de Preguntas -->
+                                         <div class="col-12 col-md-4">
+                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Banco de Preguntas (Link)</div>
+                                             <q-input v-model="evidencias.banco_preguntas" placeholder="Link al repositorio" outlined dense>
+                                                 <template v-slot:prepend><q-icon name="help_center" color="indigo" /></template>
+                                             </q-input>
+                                         </div>
+                                         <!-- Secuencia Didáctica (Diapositivas) -->
+                                         <div class="col-12 col-md-4">
+                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Secuencia Didáctica (Diapositivas)</div>
+                                             <q-file v-model="evidencias.diapositivas" label="Subir Diapositivas" outlined dense accept=".ppt,.pptx,.pdf">
+                                                 <template v-slot:prepend><q-icon name="presentation_chart_bar" color="indigo" /></template>
+                                             </q-file>
+                                         </div>
+                                         <!-- Material Plataforma -->
+                                         <div class="col-12 col-md-4">
+                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Subida de Material (Evidencia)</div>
+                                             <q-checkbox v-model="evidencias.material_plataforma" label="Material subido a Moodle" color="indigo" dense />
+                                         </div>
+                                     </div>
+                                 </div>
+
+                                 <!-- Otros Documentos/Fotos (Genérico) -->
+                                 <div class="col-12 col-md-6 q-mt-md">
+                                    <div class="text-caption text-grey-7 q-mb-sm">Otras Fotografías</div>
                                     <q-file v-model="evidencias.fotos" label="Subir fotos" outlined dense multiple
                                        accept="image/*" max-files="5">
                                        <template v-slot:prepend>
                                           <q-icon name="photo_camera" color="primary" />
                                        </template>
                                     </q-file>
-                                    <div v-if="evidencias.fotos.length" class="q-mt-sm">
-                                       <q-chip v-for="(foto, idx) in evidencias.fotos" :key="idx" removable
-                                          @remove="evidencias.fotos.splice(idx, 1)" size="sm" color="blue-1"
-                                          text-color="primary">
-                                          {{ foto.name }}
-                                       </q-chip>
-                                    </div>
                                  </div>
-
-                                 <!-- Links -->
-                                 <div class="col-12 col-md-4">
-                                    <div class="text-caption text-grey-7 q-mb-sm">Enlaces / Links</div>
-                                    <div class="row q-col-gutter-sm">
-                                       <div class="col-9">
-                                          <q-input v-model="nuevoLink" placeholder="https://..." outlined dense>
-                                             <template v-slot:prepend>
-                                                <q-icon name="link" color="primary" />
-                                             </template>
-                                          </q-input>
-                                       </div>
-                                       <div class="col-3">
-                                          <q-btn color="primary" icon="add" unelevated dense class="full-width"
-                                             style="height: 40px" @click="agregarLink" />
-                                       </div>
-                                    </div>
-                                    <div v-if="evidencias.links.length" class="q-mt-sm">
-                                       <q-chip v-for="(link, idx) in evidencias.links" :key="idx" removable
-                                          @remove="evidencias.links.splice(idx, 1)" size="sm" color="green-1"
-                                          text-color="green-8" clickable @click="window.open(link, '_blank')">
-                                          <q-icon name="link" size="xs" class="q-mr-xs" />
-                                          {{ link.substring(0, 30) }}...
-                                       </q-chip>
-                                    </div>
-                                 </div>
-
-                                 <!-- Documentos -->
-                                 <div class="col-12 col-md-4">
-                                    <div class="text-caption text-grey-7 q-mb-sm">Documentos</div>
+                                 <div class="col-12 col-md-6 q-mt-md">
+                                    <div class="text-caption text-grey-7 q-mb-sm">Otros Documentos</div>
                                     <q-file v-model="evidencias.documentos" label="Subir documentos" outlined dense
-                                       multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" max-files="5">
+                                       multiple accept=".pdf,.doc,.docx,.xls,.xlsx" max-files="5">
                                        <template v-slot:prepend>
                                           <q-icon name="description" color="primary" />
                                        </template>
                                     </q-file>
-                                    <div v-if="evidencias.documentos.length" class="q-mt-sm">
-                                       <q-chip v-for="(doc, idx) in evidencias.documentos" :key="idx" removable
-                                          @remove="evidencias.documentos.splice(idx, 1)" size="sm" color="orange-1"
-                                          text-color="orange-8">
-                                          <q-icon name="insert_drive_file" size="xs" class="q-mr-xs" />
-                                          {{ doc.name }}
-                                       </q-chip>
-                                    </div>
                                  </div>
-                              </div>
-                           </q-card>
+                               </div>
+                            </q-card>
                         </div>
 
                         <div class="flex justify-end q-mt-lg">
@@ -572,16 +568,13 @@ const pedagogico = ref({
 const evidencias = ref({
    fotos: [],
    links: [],
-   documentos: []
+   documentos: [],
+   aprendizaje_activo: null,
+   evaluacion_formativa: '',
+   banco_preguntas: '',
+   diapositivas: null,
+   material_plataforma: false
 })
-const nuevoLink = ref('')
-
-const agregarLink = () => {
-   if (nuevoLink.value && nuevoLink.value.trim()) {
-      evidencias.value.links.push(nuevoLink.value.trim())
-      nuevoLink.value = ''
-   }
-}
 
 const guardarSeguimiento = async () => {
    if (!sesionActual.value) {

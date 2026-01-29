@@ -80,6 +80,12 @@ const routes = [
             name: 'reporte-asistencia',
             component: () => import('pages/docente/ReporteAsistenciaPage.vue'),
             meta: { title: 'Reporte de Asistencias', rol: 'DOCENTE' }
+          },
+          {
+            path: 'carpeta/:id',
+            name: 'docente-carpeta',
+            component: () => import('pages/docente/CarpetaPagina.vue'),
+            meta: { title: 'Carpeta Docente', rol: 'DOCENTE' }
           }
         ]
       },
@@ -135,6 +141,12 @@ const routes = [
             name: 'director-materias-comunes',
             component: () => import('pages/director/MateriasComunesPage.vue'),
             meta: { title: 'Materias Comunes', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+          },
+          {
+            path: 'contexto',
+            name: 'director-contexto',
+            component: () => import('pages/director/CarreraContextoPage.vue'),
+            meta: { title: 'Información de la Carrera', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
           }
         ]
       },

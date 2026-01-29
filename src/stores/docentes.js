@@ -28,9 +28,25 @@ export const useDocentesStore = defineStore('docentes', () => {
     }
   }
 
+  async function syncDocentes() {
+    loading.value = true
+    try {
+      await api.post('/docentes/sync')
+      return true
+    } catch (error) {
+      console.error('Error syncing docentes:', error)
+      return false
+    } finally {
+      // Refresh list after sync attempt
+      await fetchDocentes()
+      loading.value = false
+    }
+  }
+
   return {
     docentes,
     loading,
-    fetchDocentes
+    fetchDocentes,
+    syncDocentes
   }
 })
