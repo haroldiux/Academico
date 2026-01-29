@@ -487,7 +487,13 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     if (secuencia.length > 3) totalCamposSec = secuencia.length
     pSecuencia = Math.min(100, Math.round((camposLlenosSec / totalCamposSec) * 100))
 
-    return Math.round((pResultados + pContenidos + pEstrategias + pEvaluacion + pSecuencia) / 5)
+    // 6. Descripción General (Nuevo Campo)
+    let pDescripcion = 0
+    if (tema.descripcion && tema.descripcion.trim().length > 0) {
+        pDescripcion = 100
+    }
+
+    return Math.round((pResultados + pContenidos + pEstrategias + pEvaluacion + pSecuencia + pDescripcion) / 6)
   }
 
   // Getter para buscar asignatura por ID (usa asignaturaActual o busca en lista)

@@ -115,9 +115,9 @@
                   </q-chip>
                   <!-- Grupos asignados (para docentes) -->
                   <!-- Grupos asignados (para docentes) -->
-                  <q-chip v-if="authStore.rol === 'DOCENTE' && getGruposCount(asignatura.id) > 0"
-                    size="sm" color="orange-2" text-color="orange-9" dense icon="groups">
-                     {{ getGruposCount(asignatura.id) }} Grupo{{ getGruposCount(asignatura.id) > 1 ? 's' : '' }}
+                  <q-chip v-if="authStore.rol === 'DOCENTE' && getGruposCount(asignatura.id) > 0" size="sm"
+                    color="orange-2" text-color="orange-9" dense icon="groups">
+                    {{ getGruposCount(asignatura.id) }} Grupo{{ getGruposCount(asignatura.id) > 1 ? 's' : '' }}
                   </q-chip>
                 </div>
                 <!-- Docente -->
@@ -294,7 +294,12 @@ async function fetchData() {
       const id = typeof materiaBase === 'object' ? materiaBase.id : materiaBase
       try {
         // CORRECCIÓN: Usar servicio directo para NO afectar el estado global `asignaturaActual`
-        const response = await asignaturaService.getAsignatura(id)
+        // Pass sede_id from pivot if available to help backend select correct context
+        const params = {}
+        if (materiaBase.pivot && materiaBase.pivot.sede_id) {
+          params.sede_id = materiaBase.pivot.sede_id
+        }
+        const response = await asignaturaService.getAsignatura(id, params)
         if (response.data) {
           // Combinar detalles del servidor + datos del pivote del login
           materiasConDetalles.push({
@@ -416,7 +421,7 @@ function calcularProgreso(asignatura) {
   if (logros >= 5) completado += 20
   else if (logros >= 2) completado += 10
 
-    return Math.round((completado / total) * 100)
+  return Math.round((completado / total) * 100)
 }
 
 function getGruposCount(asignaturaId) {

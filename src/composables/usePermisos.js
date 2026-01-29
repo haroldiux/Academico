@@ -200,7 +200,8 @@ export function usePermisos() {
         { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
-        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' }
+        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Información Carrera', icon: 'business', to: '/director/contexto' }
       ]
     }
 

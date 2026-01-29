@@ -1,4 +1,4 @@
-<template>
+º <template>
   <q-page class="docentes-page">
     <!-- Header -->
     <div class="page-header">
@@ -343,11 +343,24 @@ watch(filtros, () => {
 
 // Load data on mount
 onMounted(async () => {
+  // Load initial data
   await Promise.all([
     sedesStore.fetchSedes(),
     carrerasStore.fetchCarreras(),
     fetchData()
   ])
+
+  // Attempt background sync to get new records
+  // We do not await this block to block UI, letting it run in background
+  // and refresh if needed.
+  try {
+    // Check if sync function exists (avoid HMR errors)
+    if (typeof docentesStore.syncDocentes === 'function') {
+      docentesStore.syncDocentes()
+    }
+  } catch (e) {
+    console.error('Auto-sync failed', e)
+  }
 })
 
 // Form Data with defaults
@@ -436,22 +449,26 @@ const totalDocentes = computed(() => stats.value.total_docentes)
 
 // Mapping store data to component view
 const docentesFiltrados = computed(() => {
-  return docentesStore.docentes.map(d => ({
-    id: d.id,
-    titulo: d.grado_academico || '',
-    nombre: d.nombre_completo.replace(/^(Lic\.?|Ing\.?|Dr\.?|MSc\.?|PhD\.?)\s+/i, ''),
-    iniciales: d.nombre_completo.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
-    email: d.email,
-    ci: d.ci, // Add CI mapping
-    telefono: d.celular || d.telefono,
-    tipo: d.tipo_dedicacion,
-    sede_id: d.sede_id,
-    sede_nombre: d.sede?.nombre || 'Sin Sede',
-    materias: [...new Set(d.grupos?.map(g => g.asignatura?.nombre).filter(n => n) || [])],
-    grupos: d.grupos?.map(g => g.nombre).filter(n => n) || [],
-    horas_semanales: 40,
-    activo: d.estado
-  }))
+  return docentesStore.docentes.map(d => {
+    const nombreCompleto = d.nombre_completo || 'Sin Nombre';
+
+    return {
+      id: d.id,
+      titulo: d.grado_academico || '',
+      nombre: nombreCompleto.split(' ').filter(p => !['Lic.', 'Ing.', 'Dr.', 'MSc.', 'PhD.', 'Lic', 'Ing', 'Dr'].includes(p)).join(' '),
+      iniciales: nombreCompleto.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+      email: d.email || '',
+      ci: d.ci || '',
+      telefono: d.celular || d.telefono || '',
+      tipo: d.tipo_dedicacion || 'Desconocido',
+      sede_id: d.sede_id,
+      sede_nombre: d.sede?.nombre || 'Sin Sede',
+      materias: [...new Set(d.grupos?.map(g => g.asignatura?.nombre).filter(n => n) || [])],
+      grupos: d.grupos?.map(g => g.nombre).filter(n => n) || [],
+      horas_semanales: 40,
+      activo: !!d.estado
+    }
+  })
 })
 
 function openDialog(docente = null) {
@@ -463,7 +480,7 @@ function openDialog(docente = null) {
       form.value = {
         ...rawDocente,
         titulo: rawDocente.grado_academico || '',
-        nombre: rawDocente.nombre_completo.replace(/^(Lic\.?|Ing\.?|Dr\.?|MSc\.?|PhD\.?)\s+/i, ''),
+        nombre: rawDocente.nombre_completo.split(' ').filter(p => !['Lic.', 'Ing.', 'Dr.', 'MSc.', 'PhD.', 'Lic', 'Ing', 'Dr'].includes(p)).join(' '),
         carreras: [],
       }
     } else {
