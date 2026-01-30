@@ -155,12 +155,15 @@ export const useAuthStore = defineStore('auth', () => {
           // Map real progress from backend accessor
           progreso: a.progreso || 0,
           estadisticas: a.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
+          carreras: a.carreras?.map(c => c.nombre) || [],
           pivot: a.pivot ? {
             grupo: a.pivot.grupo,
             aula: a.pivot.aula,
             horario: a.pivot.horario
           } : null
         })) || [],
+        // Flat list of all unique career names this teacher belongs to
+        carreras: [...new Set(user.docente?.asignaturas?.flatMap(a => a.carreras?.map(c => c.nombre)) || [])],
         // Fix: Load groups from docente.grupos relation, fallback to legacy
         grupos: user.docente?.grupos || (user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || []),
         // Director data
@@ -198,6 +201,32 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Actualizar Perfil
+  async function updateProfile(profileData) {
+    try {
+      const response = await api.post('/update-profile', profileData)
+      const { user } = response.data
+
+      // Actualizar estado local
+      if (usuarioActual.value) {
+        usuarioActual.value = {
+          ...usuarioActual.value,
+          nombre: `${user.nombre || ''} ${user.apellido || ''}`.trim(),
+          email: user.email,
+          ci: user.ci,
+          telefono: user.telefono,
+          avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || '')
+        }
+        localStorage.setItem('auth_user', JSON.stringify(usuarioActual.value))
+      }
+
+      return { success: true, message: response.data.message }
+    } catch (error) {
+      const mensaje = error.response?.data?.message || 'Error al actualizar el perfil'
+      return { success: false, error: mensaje }
+    }
+  }
+
   function logout() {
     usuarioActual.value = null
     isAuthenticated.value = false
@@ -205,6 +234,59 @@ export const useAuthStore = defineStore('auth', () => {
     passwordChangeRequired.value = false
     localStorage.removeItem('auth_user')
     localStorage.removeItem('auth_token')
+  }
+
+  async function fetchUser() {
+    try {
+      const response = await api.get('/me')
+      const user = response.data
+
+      // Re-utilizar lógica de normalización de login
+      const rolRaw = user.rol?.codigo || user.rol?.nombre || 'DOCENTE'
+      const rolNombre = normalizeRoleName(rolRaw)
+
+      usuarioActual.value = {
+        ...usuarioActual.value,
+        id: user.id,
+        nombre: `${user.nombre || ''} ${user.apellido || ''}`.trim() || user.username,
+        email: user.email,
+        ci: user.ci,
+        rol: rolNombre,
+        sede_id: user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || null,
+        docente: {
+            ...user.docente,
+            sede: user.docente?.sede || null
+        },
+        avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
+        materias_asignadas: user.docente?.asignaturas?.map(a => ({
+          id: a.id,
+          nombre: a.nombre,
+          codigo: a.codigo,
+          semestre: a.semestre,
+          progreso: a.progreso || 0,
+          estadisticas: a.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
+          carreras: a.carreras?.map(c => c.nombre) || [],
+          pivot: a.pivot ? {
+            grupo: a.pivot.grupo,
+            aula: a.pivot.aula,
+            horario: a.pivot.horario
+          } : null
+        })) || [],
+        carreras: [...new Set(user.docente?.asignaturas?.flatMap(a => a.carreras?.map(c => c.nombre)) || [])],
+        grupos: user.docente?.grupos || (user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || []),
+        director: user.director ? {
+            ...user.director,
+            carrera: user.director.carrera,
+            carreras: user.director.carreras
+        } : null
+      }
+
+      localStorage.setItem('auth_user', JSON.stringify(usuarioActual.value))
+      return { success: true }
+    } catch (error) {
+      console.error('Error fetching user:', error)
+      return { success: false }
+    }
   }
 
   function checkAuth() {
@@ -295,6 +377,8 @@ export const useAuthStore = defineStore('auth', () => {
     // Métodos
     login,
     changePassword,
+    updateProfile,
+    fetchUser,
     logout,
     checkAuth,
     tieneAccesoSede,

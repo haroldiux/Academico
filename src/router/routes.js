@@ -16,6 +16,12 @@ const routes = [
         component: () => import('pages/IndexPage.vue'),
         meta: { title: 'Dashboard' }
       },
+      {
+        path: 'perfil',
+        name: 'perfil',
+        component: () => import('pages/perfil/PerfilPage.vue'),
+        meta: { title: 'Mi Perfil' }
+      },
       // Dashboards por Rol
       {
         path: 'docente/dashboard',

@@ -52,10 +52,10 @@
                 </div>
               </div>
               <q-separator class="menu-separator" />
-              <!-- <q-item clickable v-ripple class="menu-item">
+              <q-item clickable v-ripple class="menu-item" to="/perfil">
                 <q-item-section avatar><q-icon name="person" size="18px" /></q-item-section>
                 <q-item-section>Mi Perfil</q-item-section>
-              </q-item> -->
+              </q-item>
               <q-item clickable v-ripple class="menu-item">
                 <q-item-section avatar><q-icon name="settings" size="18px" /></q-item-section>
                 <q-item-section>Configuración</q-item-section>
