@@ -14,7 +14,7 @@ export default {
    * data: { sesiones: [], grupo_id: ... }
    */
   savePlanificacion(asignaturaId, data) {
-    return api.post(`/planificacion-semestral/${asignaturaId}/planificacion`, data)
+    return api.post(`/planificacion-semestral/${asignaturaId}/sesiones`, data)
   },
 
   /**
