@@ -33,15 +33,19 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
 
   // Normalizar docente
   let docenteNombre = 'Por Asignar'
-  if (asignatura.docentes && asignatura.docentes.length > 0) {
+  if (asignatura.docente_nombre) {
+    docenteNombre = asignatura.docente_nombre
+  } else if (asignatura.nombre_docente) {
+    docenteNombre = asignatura.nombre_docente
+  } else if (asignatura.docentes && asignatura.docentes.length > 0) {
     docenteNombre = asignatura.docentes.map(d => d.nombre_completo || 'Sin nombre').join(', ')
   } else if (asignatura.docente) {
-    docenteNombre = typeof asignatura.docente === 'object' ? asignatura.docente.nombre_completo : asignatura.docente
+    docenteNombre = typeof asignatura.docente === 'object' ? (asignatura.docente.nombre_completo || asignatura.docente.nombre) : asignatura.docente
   }
 
   const docente = {
-    nombre: docenteNombre,
-    titulo: 'Lic.'
+    nombre: (docenteNombre || 'Por Asignar').toUpperCase(),
+    titulo: '' // Ya viene incluido en el nombre generalmente o no es necesario
   }
 
   // Gestión actual
@@ -51,7 +55,20 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   // ==========================================
   // PORTADA (PORT)
   // ==========================================
-  generarPortada(doc, { asignatura, carrera: carreraObj, carreraNombre, sede: sedeObj, sedeNombre, docente, gestion, grupo, pageWidth, pageHeight, margin })
+  generarPortada(doc, {
+    asignatura,
+    carrera: carreraObj,
+    carreraNombre,
+    sede: sedeObj,
+    sedeNombre,
+    docente,
+    gestion,
+    grupo,
+    logo: opciones.logo,
+    pageWidth,
+    pageHeight,
+    margin
+  })
 
   // ==========================================
   // ÍNDICE (INDICE)
@@ -66,38 +83,32 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   generarMVP(doc, { carrera: carreraObj, pageWidth, margin })
 
   // ==========================================
-  // HORARIOS (HR)
+  // HR (HORARIOS Y EXÁMENES)
   // ==========================================
   doc.addPage()
-  generarHorarios(doc, { asignatura, pageWidth, margin })
+  generarHorariosExamenes(doc, { data: asignatura, pageWidth, margin })
 
   // ==========================================
   // PROGRAMA ANALÍTICO (PA)
   // ==========================================
   doc.addPage()
-  generarProgramaAnalitico(doc, { asignatura, carrera: carreraObj, carreraNombre, pageWidth, margin })
+  generarProgramaAnalitico(doc, { asignatura: asignatura.asignatura_obj, carrera: carreraObj, carreraNombre, pageWidth, margin })
 
   // ==========================================
   // PROGRAMA POR COMPETENCIAS (PAC)
   // ==========================================
   doc.addPage()
-  generarPAC(doc, { asignatura, pageWidth, margin })
-
-  // ==========================================
-  // CRONOGRAMA TEÓRICO-PRÁCTICO (CT-P)
-  // ==========================================
-  doc.addPage()
-  generarCronograma(doc, { asignatura, pageWidth, margin })
+  generarPAC(doc, { asignatura: asignatura.asignatura_obj, pageWidth, margin })
 
   // ==========================================
   // PLANES DE CLASE (PCT/PCP)
   // ==========================================
-  const unidades = asignatura.unidades || []
+  const unidades = asignatura.asignatura_obj.unidades || []
   unidades.forEach(unidad => {
     const temas = unidad.temas || []
     temas.forEach(tema => {
       doc.addPage()
-      generarPlanClase(doc, { asignatura, unidad, tema, pageWidth, margin })
+      generarPlanClase(doc, { asignatura: asignatura.asignatura_obj, unidad, tema, pageWidth, margin })
     })
   })
 
@@ -111,88 +122,100 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
 /**
  * PORTADA - Carátula institucional
  */
-function generarPortada(doc, { asignatura, carrera, carreraNombre, sedeNombre, docente, gestion, grupo, pageWidth }) {
+function generarPortada(doc, { asignatura, carrera, carreraNombre, sedeNombre, docente, gestion, grupo, logo, pageWidth, margin }) {
   let y = 30
 
   // Área y Carrera
+  let areaLimpia = (carrera.area || 'CIENCIAS EXACTAS Y TECNOLOGÍA').toUpperCase().trim()
+  areaLimpia = areaLimpia.replace(/^(ÁREA DE\s*|AREA DE\s*)+/i, '')
+
   doc.setFontSize(14)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont('times', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text(`ÁREA DE ${(carrera.area || 'CIENCIAS EXACTAS Y TECNOLOGÍA').toUpperCase()}`, pageWidth / 2, y, { align: 'center' })
+  doc.text(`ÁREA DE ${areaLimpia}`, pageWidth / 2, y, { align: 'center' })
 
   y += 8
-  doc.setFontSize(12)
+  doc.setFontSize(14)
   doc.text(`CARRERA DE ${(carreraNombre || 'SIN CARRERA').toUpperCase()}`, pageWidth / 2, y, { align: 'center' })
 
   // Título Carpeta
   y += 15
-  doc.setFontSize(20)
-  doc.setTextColor(...COLORS.morado)
+  doc.setFontSize(22)
+  doc.setTextColor(0, 0, 0)
   doc.text('CARPETA PEDAGÓGICA DOCENTE', pageWidth / 2, y, { align: 'center' })
 
   // Sede
   y += 10
   doc.setFontSize(14)
-  doc.setTextColor(...COLORS.turquesa)
+  doc.setTextColor(0, 0, 0)
   doc.text(`SEDE ${(sedeNombre || 'COCHABAMBA').toUpperCase()}`, pageWidth / 2, y, { align: 'center' })
 
-  // Logo UNITEPC (placeholder - texto)
-  y += 30
-  doc.setFontSize(32)
-  doc.setTextColor(...COLORS.morado)
-  doc.setFont('helvetica', 'bold')
-  doc.text('UNITEPC', pageWidth / 2, y, { align: 'center' })
+  // Logo UNITEPC (Imagen o Texto fallback)
+  y += 5
+  if (logo) {
+    const imgWidth = 95 // Ancho base para mantener equilibrio
+    const imgHeight = 60 // Alto calculado para el ratio 2.38:1 (1125x473)
+    doc.addImage(logo, 'PNG', pageWidth / 2 - (imgWidth / 2), y, imgWidth, imgHeight)
+    y += imgHeight + 10
+  } else {
+    y += 20
+    doc.setFontSize(32)
+    doc.setTextColor(...COLORS.morado)
+    doc.setFont('times', 'bold')
+    doc.text('UNITEPC', pageWidth / 2, y, { align: 'center' })
 
-  y += 8
-  doc.setFontSize(12)
-  doc.setTextColor(...COLORS.turquesa)
-  doc.text('UNIVERSIDAD PRIVADA', pageWidth / 2, y, { align: 'center' })
+    y += 8
+    doc.setFontSize(12)
+    doc.setTextColor(...COLORS.turquesa)
+    doc.text('UNIVERSIDAD PRIVADA', pageWidth / 2, y, { align: 'center' })
+  }
 
   // Cuadro de información
-  y += 30
-  const boxX = pageWidth / 2 - 70
-  const boxWidth = 140
-  const boxHeight = 80
+  y += 10
+  const boxX = margin + 10
+  const boxWidth = pageWidth - (margin + 10) * 2
+  const boxHeight = 100 // Más espacioso
 
-  doc.setDrawColor(...COLORS.turquesa)
-  doc.setLineWidth(1)
+  doc.setDrawColor(...COLORS.morado) // Purple border
+  doc.setLineWidth(1.5) // Borde un poco más grueso
   doc.rect(boxX, y, boxWidth, boxHeight)
 
   // Contenido del cuadro
-  doc.setFontSize(10)
+  doc.setFontSize(11.5)
   doc.setTextColor(0, 0, 0)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont('times', 'bold')
 
-  const infoX = boxX + 5
-  let infoY = y + 12
+  const infoX = boxX + 10 // Reducido margen interno para dar más espacio
+  let infoY = y + 15
   const lineHeight = 10
+  const labelWidth = 55 // Ajustado para centrar mejor el conjunto
 
   const campos = [
-    ['Carrera:', carrera.nombre],
-    ['Asignatura:', asignatura.nombre],
-    ['Código de la asignatura:', asignatura.codigo],
-    ['Nombre del Docente:', `${docente.titulo} ${docente.nombre}`],
-    ['Semestre', `${asignatura.semestre}vo`],
-    ['Grupo:', grupo],
+    ['Nombre del Docente:', docente.nombre],
+    ['Carrera:', carreraNombre],
+    ['Asignatura:', asignatura.asignatura || 'Sin Asignatura'],
+    ['Codigo de la asignatura:', asignatura.codigo_asignatura || 'N/A'],
+    ['Semestre:', `${asignatura.semestre || 'N/A'}`],
+    ['Grupo:', `${grupo || ''}`],
     ['Gestión:', gestion]
   ]
 
   campos.forEach(([label, value]) => {
-    doc.setFont('helvetica', 'bold')
-    doc.text(label, infoX, infoY)
-    doc.setFont('helvetica', 'normal')
-    doc.text(value || '', infoX + 55, infoY)
+    doc.setFont('times', 'bold')
+    doc.text(label, infoX + labelWidth, infoY, { align: 'right' })
+    doc.setFont('times', 'normal')
+    doc.text(String(value || ''), infoX + labelWidth + 3, infoY)
     infoY += lineHeight
   })
 }
 
 /**
- * ÍNDICE - Tabla de contenidos
+ * ÍNDICE - Tabla de contenidos (Nuevo formato institucional)
  */
 function generarIndice(doc, { pageWidth, margin }) {
-  let y = 25
+  let y = 30
 
-  // Logo
+  // Logo UNITEPC
   doc.setFontSize(24)
   doc.setTextColor(...COLORS.morado)
   doc.setFont('helvetica', 'bold')
@@ -205,7 +228,7 @@ function generarIndice(doc, { pageWidth, margin }) {
   y += 15
 
   // Título ÍNDICE
-  doc.setFillColor(...COLORS.turquesa)
+  doc.setFillColor(...COLORS.morado)
   doc.rect(margin, y, pageWidth - margin * 2, 10, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(14)
@@ -214,70 +237,85 @@ function generarIndice(doc, { pageWidth, margin }) {
 
   y += 18
 
-  // Secciones del índice
-  const secciones = [
-    {
-      titulo: 'VALORES INSTITUCIONALES',
-      color: COLORS.morado,
-      items: [
-        { nombre: 'Misión de la carrera', codigo: '' },
-        { nombre: 'Visión de la carrera', codigo: 'MVP' },
-        { nombre: 'Perfil profesional', codigo: '' }
-      ]
-    },
-    {
-      titulo: 'ASPECTOS ORGANIZACIONALES',
-      color: COLORS.turquesa,
-      items: [
-        { nombre: 'Horario de clases de la asignatura', codigo: 'HR' },
-        { nombre: 'Rol de exámenes de la asignatura', codigo: '' }
-      ]
-    },
-    {
-      titulo: 'PLANIFICACIÓN ACADÉMICA',
-      color: COLORS.morado,
-      items: [
-        { nombre: 'Programa analítico', codigo: 'PA' },
-        { nombre: 'Programa de asignatura por competencias', codigo: 'PAC' },
-        { nombre: 'Cronograma teórico-práctico', codigo: 'CT-P' },
-        { nombre: 'Plan de clase Teórico-Práctico (según corresponda)', codigo: 'PCT-PCP' }
-      ]
-    }
+  const tableWidth = pageWidth - margin * 2
+  const codeColWidth = 40
+
+  // --- VALORES INSTITUCIONALES ---
+  doc.setFillColor(...COLORS.turquesa)
+  doc.rect(margin, y, tableWidth - codeColWidth, 8, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(10)
+  doc.text('VALORES INSTITUCIONALES', margin + 3, y + 5.5)
+
+  doc.setFillColor(...COLORS.turquesa)
+  doc.rect(pageWidth - margin - codeColWidth, y, codeColWidth, 8, 'F')
+  doc.text('CÓDIGO', pageWidth - margin - codeColWidth / 2, y + 5.5, { align: 'center' })
+
+  y += 8
+  doc.setTextColor(0, 0, 0)
+  doc.setFont('helvetica', 'normal')
+  const valItems = ['Misión de la carrera', 'Visión de la carrera', 'Perfil profesional']
+  valItems.forEach((text, i) => {
+    doc.text(text, margin + 3, y + 6 + (i * 6))
+  })
+
+  // Box for MVP
+  doc.setFillColor(230, 243, 230) // Light green
+  doc.rect(pageWidth - margin - codeColWidth + 5, y + 2, codeColWidth - 10, 14, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.text('MVP', pageWidth - margin - codeColWidth / 2, y + 10, { align: 'center' })
+
+  y += 22
+
+  // --- ASPECTOS ORGANIZACIONALES ---
+  doc.setFillColor(...COLORS.morado)
+  doc.rect(margin, y, tableWidth - codeColWidth, 8, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.text('ASPECTOS ORGANIZACIONALES', margin + 3, y + 5.5)
+
+  doc.setFillColor(...COLORS.morado)
+  doc.rect(pageWidth - margin - codeColWidth, y, codeColWidth, 8, 'F')
+  doc.text('CÓDIGO', pageWidth - margin - codeColWidth / 2, y + 5.5, { align: 'center' })
+
+  y += 8
+  doc.setTextColor(0, 0, 0)
+  doc.setFont('helvetica', 'normal')
+  const orgItems = ['Horario de clases de la asignatura', 'Rol de exámenes de la asignatura']
+  orgItems.forEach((text, i) => {
+    doc.text(text, margin + 3, y + 6 + (i * 6))
+  })
+
+  // Box for HR
+  doc.setFillColor(226, 232, 240) // Light gray
+  doc.rect(pageWidth - margin - codeColWidth + 5, y + 2, codeColWidth - 10, 10, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.text('HR', pageWidth - margin - codeColWidth / 2, y + 8, { align: 'center' })
+
+  y += 18
+
+  // --- PLANIFICACIÓN ACADÉMICA ---
+  doc.setFillColor(...COLORS.turquesa)
+  doc.rect(margin, y, tableWidth - codeColWidth, 8, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.text('PLANIFICACIÓN ACADÉMICA', margin + 3, y + 5.5)
+
+  doc.setFillColor(...COLORS.turquesa)
+  doc.rect(pageWidth - margin - codeColWidth, y, codeColWidth, 8, 'F')
+  doc.text('CÓDIGO', pageWidth - margin - codeColWidth / 2, y + 5.5, { align: 'center' })
+
+  y += 8
+  const planItems = [
+    { n: 'Programa analítico', c: 'PA' },
+    { n: 'Programa de asignatura por competencias', c: 'PAC' },
+    { n: 'Plan de clase Teórico-Práctico (según corresponda)', c: 'PCT-PCP' }
   ]
 
-  secciones.forEach(seccion => {
-    // Cabecera de sección
-    doc.setFillColor(...seccion.color)
-    doc.rect(margin, y, pageWidth - margin * 2 - 40, 8, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
-    doc.text(seccion.titulo, margin + 3, y + 5.5)
-
-    // Columna CODIGO
-    doc.setFillColor(...COLORS.gris)
-    doc.rect(pageWidth - margin - 40, y, 40, 8, 'F')
-    doc.setTextColor(0, 0, 0)
-    doc.text('CÓDIGO', pageWidth - margin - 20, y + 5.5, { align: 'center' })
-
-    y += 12
-
-    // Items
+  planItems.forEach((item, i) => {
     doc.setTextColor(0, 0, 0)
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-
-    seccion.items.forEach(item => {
-      doc.text(item.nombre, margin + 3, y)
-      if (item.codigo) {
-        doc.setFont('helvetica', 'bold')
-        doc.text(item.codigo, pageWidth - margin - 20, y, { align: 'center' })
-        doc.setFont('helvetica', 'normal')
-      }
-      y += 8
-    })
-
-    y += 5
+    doc.text(item.n, margin + 3, y + 6 + (i * 6))
+    doc.setFont('helvetica', 'bold')
+    doc.text(item.c, pageWidth - margin - codeColWidth / 2, y + 6 + (i * 6), { align: 'center' })
   })
 }
 
@@ -369,10 +407,10 @@ function generarMVP(doc, { carrera, pageWidth, margin }) {
 }
 
 /**
- * HORARIOS - Horario de clases y fechas de exámenes
+ * HORARIOS Y EXÁMENES (HR)
  */
-function generarHorarios(doc, { asignatura, pageWidth, margin }) {
-  let y = 25
+function generarHorariosExamenes(doc, { data, pageWidth, margin }) {
+  let y = 30
 
   // Logo
   doc.setFontSize(24)
@@ -388,76 +426,48 @@ function generarHorarios(doc, { asignatura, pageWidth, margin }) {
 
   // HORARIO DE CLASES
   doc.setFillColor(...COLORS.morado)
-  doc.rect(margin + 20, y, pageWidth - margin * 2 - 40, 12, 'F')
+  doc.rect(margin, y, pageWidth - margin * 2, 12, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
   doc.text('HORARIO DE CLASES', pageWidth / 2, y + 8, { align: 'center' })
 
-  y += 20
+  y += 15
 
-  // Cuadro de horarios
-  const horarios = asignatura.horarios || [
-    { dia: 'Lunes', horaInicio: '08:00', horaFin: '10:00' },
-    { dia: 'Miércoles', horaInicio: '08:00', horaFin: '10:00' }
-  ]
-
-  doc.setDrawColor(...COLORS.morado)
-  doc.setLineWidth(0.5)
-
-  const horarioData = horarios.map(h => [h.dia + ':', `${h.horaInicio} - ${h.horaFin}`])
+  const horarioData = (data.horarios || []).map(h => [h.dia, `${h.hora_inicio} - ${h.hora_fin}`, h.aula])
 
   autoTable(doc, {
     startY: y,
-    margin: { left: margin + 30, right: margin + 30 },
-    theme: 'plain',
+    margin: { left: margin, right: margin },
+    theme: 'grid',
     styles: { fontSize: 11, cellPadding: 4, halign: 'center' },
-    head: [['DÍAS', 'HORA']],
-    headStyles: { fillColor: false, textColor: 0, fontStyle: 'bold' },
-    body: horarioData,
-    tableLineColor: COLORS.morado,
-    tableLineWidth: 0.5
+    head: [['DÍA', 'HORARIO', 'AULA']],
+    headStyles: { fillColor: COLORS.gris, textColor: 0, fontStyle: 'bold' },
+    body: horarioData.length > 0 ? horarioData : [['-', '-', '-']]
   })
 
-  y = doc.lastAutoTable.finalY + 30
+  y = doc.lastAutoTable.finalY + 20
 
   // FECHAS DE EXÁMENES
   doc.setFillColor(...COLORS.turquesa)
-  doc.rect(margin + 20, y, pageWidth - margin * 2 - 40, 12, 'F')
+  doc.rect(margin, y, pageWidth - margin * 2, 12, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text('FECHAS DE EXÁMENES', pageWidth / 2, y + 8, { align: 'center' })
+  doc.text('ROL DE EXÁMENES', pageWidth / 2, y + 8, { align: 'center' })
 
-  y += 20
+  y += 15
 
-  // Datos de exámenes (mock)
-  const examenes = asignatura.fechas_examenes || {
-    primer_parcial: '27/03/2025',
-    segundo_parcial: '22/05/2025',
-    examen_final: '13/06/2025',
-    segunda_instancia: '-'
-  }
+  const examenesData = (data.examenes || []).map(e => [e.tipo, e.fecha, e.hora, e.aula])
 
   autoTable(doc, {
     startY: y,
-    margin: { left: margin + 30, right: margin + 30 },
-    theme: 'plain',
-    styles: { fontSize: 11, cellPadding: 4 },
-    head: [['PARCIAL', 'FECHA']],
-    headStyles: { fillColor: false, textColor: 0, fontStyle: 'bold', halign: 'center' },
-    body: [
-      ['Primer Parcial:', examenes.primer_parcial],
-      ['Segundo Parcial:', examenes.segundo_parcial],
-      ['Examen Final:', examenes.examen_final],
-      ['Segunda Instancia:', examenes.segunda_instancia]
-    ],
-    columnStyles: {
-      0: { fontStyle: 'bold', halign: 'right' },
-      1: { halign: 'right' }
-    },
-    tableLineColor: COLORS.turquesa,
-    tableLineWidth: 0.5
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 11, cellPadding: 4, halign: 'center' },
+    head: [['TIPO', 'FECHA', 'HORA', 'AULA']],
+    headStyles: { fillColor: COLORS.gris, textColor: 0, fontStyle: 'bold' },
+    body: examenesData.length > 0 ? examenesData : [['No cargado', '-', '-', '-']]
   })
 }
 
@@ -642,59 +652,7 @@ function generarPAC(doc, { asignatura, pageWidth, margin }) {
   }
 }
 
-/**
- * CRONOGRAMA TEÓRICO-PRÁCTICO (CT-P)
- */
-function generarCronograma(doc, { asignatura, pageWidth, margin }) {
-  let y = 20
 
-  // Título
-  doc.setFillColor(...COLORS.turquesa)
-  doc.rect(margin, y, pageWidth - margin * 2, 10, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
-  doc.text('CRONOGRAMA TEÓRICO-PRÁCTICO', pageWidth / 2, y + 7, { align: 'center' })
-
-  y += 18
-
-  // Tabla de cronograma
-  const unidades = asignatura.unidades || []
-  const rows = []
-  let semana = 1
-
-  unidades.forEach(unidad => {
-    const temas = unidad.temas || []
-    temas.forEach(tema => {
-      rows.push([
-        semana,
-        `Unidad ${unidad.numero}`,
-        `Tema ${tema.numero}: ${tema.titulo}`,
-        tema.horas_teoricas || 2,
-        tema.horas_practicas || 2
-      ])
-      semana++
-    })
-  })
-
-  if (rows.length > 0) {
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 3 },
-      head: [['Semana', 'Unidad', 'Tema', 'Hrs. Teóricas', 'Hrs. Prácticas']],
-      headStyles: { fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold', halign: 'center' },
-      body: rows,
-      columnStyles: {
-        0: { cellWidth: 18, halign: 'center' },
-        1: { cellWidth: 25 },
-        3: { cellWidth: 25, halign: 'center' },
-        4: { cellWidth: 25, halign: 'center' }
-      }
-    })
-  }
-}
 
 /**
  * PLAN DE CLASE TEÓRICO (PCT/PCP)

@@ -1,8 +1,9 @@
 <template>
     <q-page class="carpeta-page q-pa-lg doc-container">
-        <!-- Botón de imprimir (solo visible en pantalla) -->
-        <div class="print-actions text-right q-mb-lg">
-            <q-btn icon="print" label="Imprimir Portada" color="primary" @click="printPage" />
+        <!-- Botones de acción (solo visible en pantalla) -->
+        <div class="print-actions text-right q-mb-lg q-gutter-sm">
+            <q-btn icon="picture_as_pdf" label="Descargar Carpeta Completa (PDF)" color="secondary" @click="downloadPDF" :loading="loading" />
+            <q-btn icon="print" label="Vista Previa / Imprimir Portada" color="primary" @click="printPage" />
         </div>
 
         <!-- Contenido de la Portada -->
@@ -54,7 +55,114 @@
                     <div class="col-7 field-value">{{ gestion }}</div>
                 </div>
             </div>
+        </div>
+    </q-page>
 
+    <!-- PÁGINA 2: ÍNDICE -->
+    <q-page class="carpeta-page q-pa-lg doc-container page-break">
+        <div class="portada-container q-px-xl">
+            <!-- Portada simplified header for inner pages -->
+            <div class="text-center q-mb-xl">
+                <div class="text-h5 text-purple-title text-bold">UNITEPC</div>
+                <div class="text-caption text-teal-subtitle">UNIVERSIDAD PRIVADA</div>
+            </div>
+
+            <div class="titulo-seccion-box q-mb-xl">
+                <div class="text-h4 text-center text-bold text-white">ÍNDICE</div>
+            </div>
+
+            <div class="indice-container">
+                <table class="indice-table">
+                    <thead>
+                        <tr class="seccion-header-valores">
+                            <th class="text-left text-white">VALORES INSTITUCIONALES</th>
+                            <th class="text-white" style="width: 100px;">CÓDIGO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="no-border-bottom">
+                                <div class="q-py-xs">Misión de la carrera</div>
+                                <div class="q-py-xs">Visión de la carrera</div>
+                                <div class="q-py-xs">Perfil profesional</div>
+                            </td>
+                            <td class="text-center valor-codigo-box">
+                                <div class="codigo-box bg-light-green">MVP</div>
+                            </td>
+                        </tr>
+
+                        <tr class="seccion-header-aspectos">
+                            <td class="text-bold text-white">ASPECTOS ORGANIZACIONALES</td>
+                            <td class="text-bold text-white text-center">CÓDIGO</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="q-py-xs">Horario de clases de la asignatura</div>
+                                <div class="q-py-xs">Rol de exámenes de la asignatura</div>
+                            </td>
+                            <td class="text-center valor-codigo-box">
+                                <div class="codigo-box bg-light-gray">HR</div>
+                            </td>
+                        </tr>
+
+                        <tr class="seccion-header-planificacion">
+                            <td class="text-bold text-white">PLANIFICACIÓN ACADÉMICA</td>
+                            <td class="text-bold text-white text-center">CÓDIGO</td>
+                        </tr>
+                        <tr>
+                            <td class="no-border-right">
+                                <div class="row items-center q-py-xs">
+                                    <div class="col">Programa analítico</div>
+                                    <div class="text-bold" style="width: 60px;">PA</div>
+                                </div>
+                                <div class="row items-center q-py-xs">
+                                    <div class="col">Programa de asignatura por competencias</div>
+                                    <div class="text-bold" style="width: 60px;">PAC</div>
+                                </div>
+                                <div class="row items-center q-py-xs">
+                                    <div class="col">Plan de clase Teórico-Práctico (según corresponda)</div>
+                                    <div class="text-bold" style="width: 60px;">PCT-PCP</div>
+                                </div>
+                            </td>
+                            <td class="bg-light-green-light"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </q-page>
+
+    <!-- PÁGINA 3: VALORES INSTITUCIONALES -->
+    <q-page class="carpeta-page q-pa-lg doc-container page-break">
+        <div class="portada-container q-px-xl">
+            <div class="text-center q-mb-xl">
+                <div class="text-h5 text-purple-title text-bold">UNITEPC</div>
+                <div class="text-caption text-teal-subtitle">UNIVERSIDAD PRIVADA</div>
+            </div>
+
+            <!-- MISIÓN -->
+            <div class="mvp-section q-mb-xl">
+                <div class="titulo-mvp text-center text-white text-bold q-mb-md">MISIÓN</div>
+                <div class="contenido-mvp-box shadow-1">
+                    {{ mision }}
+                </div>
+            </div>
+
+            <!-- VISIÓN -->
+            <div class="mvp-section q-mb-xl">
+                <div class="titulo-mvp text-center text-white text-bold q-mb-md">VISIÓN</div>
+                <div class="contenido-mvp-box shadow-1">
+                    {{ vision }}
+                </div>
+            </div>
+
+            <!-- PERFIL PROFESIONAL -->
+            <div class="mvp-section">
+                <div class="titulo-mvp text-center text-white text-bold q-mb-md" style="background-color: #00A99D;">PERFIL PROFESIONAL</div>
+                <div class="contenido-mvp-box shadow-1" style="border-color: #00A99D;">
+                    {{ perfil_profesional }}
+                </div>
+            </div>
         </div>
     </q-page>
 </template>
@@ -63,6 +171,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from 'src/boot/axios'
+import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
 
 const route = useRoute()
 
@@ -75,9 +184,52 @@ const codigo_asignatura = ref('')
 const semestre = ref('')
 const grupo = ref('')
 const gestion = ref('')
+const mision = ref('')
+const vision = ref('')
+const perfil_profesional = ref('')
+const loading = ref(false)
+const fullData = ref(null)
+const logoBase64 = ref(null)
 
 function printPage() {
     window.print()
+}
+
+async function downloadPDF() {
+    if (!fullData.value) return
+    loading.value = true
+    try {
+        await generarCarpetaDocente(
+            fullData.value,
+            fullData.value.carrera_obj,
+            fullData.value.sede,
+            {
+                gestion: fullData.value.gestion,
+                grupo: fullData.value.grupo,
+                logo: logoBase64.value
+            }
+        )
+    } catch (error) {
+        console.error('Error generando PDF:', error)
+    } finally {
+        loading.value = false
+    }
+}
+
+async function convertImageToBase64(url) {
+    try {
+        const response = await fetch(url)
+        const blob = await response.blob()
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result)
+            reader.onerror = reject
+            reader.readAsDataURL(blob)
+        })
+    } catch (e) {
+        console.error('Error converting logo to base64:', e)
+        return null
+    }
 }
 
 function formatDocenteName(name) {
@@ -103,6 +255,11 @@ onMounted(async () => {
     try {
         const { data } = await api.get(`/grupos/${id}`)
 
+        mision.value = data.mision || 'Misión no definida'
+        vision.value = data.vision || 'Visión no definida'
+        perfil_profesional.value = data.perfil_profesional || 'Perfil no definido'
+        fullData.value = data
+
         // NORMALIZACIÓN DE ÁREA
         let rawArea = data.area ? data.area.toUpperCase().trim() : 'ÁREA NO DEFINIDA';
         // Eliminar "AREA DE " o "ÁREA DE " (insensible a acentos y mayusculas) al inicio
@@ -119,6 +276,9 @@ onMounted(async () => {
         semestre.value = data.semestre || ''
         grupo.value = data.grupo || ''
         gestion.value = data.gestion || ''
+
+        // Convertir logo a base64 para el PDF
+        logoBase64.value = await convertImageToBase64('/unitepc-logo-clean.png')
     } catch (error) {
         console.error('Error cargando datos de carpeta:', error)
     }
@@ -254,5 +414,108 @@ onMounted(async () => {
         overflow: hidden;
         /* Evitar scrollbars fantasmas */
     }
+
+    .page-break {
+        page-break-before: always;
+        break-before: page;
+    }
+}
+
+/* Estilos de Índice y MVP */
+.titulo-seccion-box {
+    background-color: #00A99D;
+    padding: 10px;
+    width: 100%;
+}
+
+.indice-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.1rem;
+}
+
+.indice-table th {
+    background-color: #ccc;
+    padding: 8px;
+    border: 1px solid black;
+}
+
+.indice-table td {
+    padding: 10px;
+    border: 1px solid black;
+}
+
+.seccion-header-valores {
+    background-color: #00A99D;
+    color: white;
+}
+
+.seccion-header-aspectos {
+    background-color: #5B3C88;
+    color: white;
+}
+
+.seccion-header-planificacion {
+    background-color: #00A99D;
+    color: white;
+}
+
+.codigo-box {
+    padding: 15px 5px;
+    font-weight: bold;
+    border-radius: 4px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-light-green {
+    background-color: #E6F3E6;
+    color: black;
+}
+
+.bg-light-gray {
+    background-color: #E2E8F0;
+    color: black;
+}
+
+.bg-light-green-light {
+    background-color: #F0F9F0;
+}
+
+.valor-codigo-box {
+    padding: 10px !important;
+}
+
+.no-border-bottom {
+    border-bottom: 1px solid black !important;
+}
+
+.no-border-right {
+    border-right: none !important;
+}
+
+.mvp-section {
+    width: 100%;
+}
+
+.titulo-mvp {
+    background-color: #5B3C88;
+    padding: 10px;
+    font-size: 1.3rem;
+    width: 70%;
+    margin: 0 auto 15px auto;
+}
+
+.contenido-mvp-box {
+    border: 2px solid #5B3C88;
+    padding: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>
