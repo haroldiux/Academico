@@ -86,6 +86,14 @@ export const useReportesStore = defineStore('reportes', () => {
         fetchReportes,
         fetchSeguimientoSemanal,
         createSeguimientoSemanal,
-        updateSeguimientoSemanal
+        updateSeguimientoSemanal,
+        checkAuditoriaSemanal(params) {
+            return api.get('/reportes/auditoria-semanal', { params })
+                .then(r => r.data)
+                .catch(e => {
+                    console.error('Error auditoria', e)
+                    throw e
+                })
+        }
     }
 })

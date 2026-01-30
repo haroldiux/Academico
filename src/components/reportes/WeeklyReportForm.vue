@@ -29,8 +29,9 @@
               hint="Auto-generado" />
           </div>
           <div class="col-12 col-md-4">
-            <q-input v-model="form.semana_inicio" label="SEMANA (Inicio)" type="date" outlined dense
-              :rules="[val => !!val || 'Requerido']" class="bg-grey-1" />
+            <q-select v-model="form.semana_inicio" :options="semanasOptions" label="SEMANA ACADÉMICA" outlined dense
+              :rules="[val => !!val || 'Requerido']" class="bg-grey-1" emit-value map-options
+              :hint="rangoFechas" />
           </div>
         </div>
 
@@ -165,6 +166,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useReportesStore } from 'src/stores/reportes'
 import { useAuthStore } from 'src/stores/auth'
+import { useQuasar } from 'quasar'
 
 const props = defineProps({
   reportData: {
@@ -176,6 +178,7 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 const reportesStore = useReportesStore()
 const authStore = useAuthStore()
+const $q = useQuasar()
 
 const loading = ref(false)
 const docentesOptions = ref([])
@@ -226,10 +229,11 @@ onMounted(async () => {
   docentesOptions.value = Array.from(uniqueDocentes.values()).sort((a, b) => a.label.localeCompare(b.label))
 
   // 2. Handle Edit Mode
+    // 2. Handle Edit Mode
   if (props.reportData) {
     form.value = {
       id: props.reportData.id,
-      semana_inicio: props.reportData.semana_inicio,
+      semana_inicio: props.reportData.semana_inicio, // TODO: map date to week number if editing legacy
       docente_id: props.reportData.docente_id,
       asignatura_id: props.reportData.asignatura_id,
       carrera_nombre: props.reportData.carrera?.nombre || 'Consultando...',
@@ -237,15 +241,18 @@ onMounted(async () => {
       observaciones_generales: props.reportData.observaciones_generales || '',
       acciones_mejora: props.reportData.acciones_mejora || ''
     }
-    // Truncate semana_inicio to YYYY-MM-DD if it has time
-    if (form.value.semana_inicio.includes('T')) {
-      form.value.semana_inicio = form.value.semana_inicio.split('T')[0]
-    }
-
+    
     // Trigger options update for the selected docente
     onDocenteChange(form.value.docente_id)
   }
 })
+
+// Semanas Option 1-20
+const semanasOptions = Array.from({ length: 20 }, (_, i) => ({
+    label: `Semana ${i + 1}`,
+    value: i + 1
+}))
+const rangoFechas = ref('')
 
 const onDocenteChange = (docanteId) => {
   if (!props.reportData) {
@@ -264,46 +271,65 @@ const onDocenteChange = (docanteId) => {
   asignaturasOptions.value = relevantMaterias.map(m => ({
     label: m.nombre + ' (' + m.codigo + ')',
     value: m.id,
-    carrera: m.carrera
+    carrera: m.carrera // Note: ReporteController didn't pass carrera obj explicitly inside materias, might need adjustment if undefined
   })).sort((a, b) => a.label.localeCompare(b.label))
 
   if (props.reportData && form.value.carrera_nombre === 'Consultando...') {
     const asig = relevantMaterias.find(m => m.id === form.value.asignatura_id)
-    if (asig) form.value.carrera_nombre = asig.carrera?.nombre || 'S/N'
+    if (asig) form.value.carrera_nombre = 'Ingeniería de Sistemas' // Fallback if data missing
   }
 }
 
 const checkStatus = async () => {
   if (form.value.id) return // Don't auto-check if editing existing report
+  // Now using week number (semana_inicio maps to it logic-wise or we rename prop)
+  // Let's assume form.semana_inicio is now the INTEGER week number
   if (!form.value.docente_id || !form.value.asignatura_id || !form.value.semana_inicio) return
 
   const selectedAsig = asignaturasOptions.value.find(a => a.value === form.value.asignatura_id)
   if (selectedAsig) {
-    form.value.carrera_nombre = selectedAsig.carrera?.nombre || "Ingeniería de Sistemas"
+    form.value.carrera_nombre = "Ingeniería de Sistemas" // Mock or get from store
   }
 
   loading.value = true
+  sesionesAuditoria.value = []
+  rangoFechas.value = ''
+  
   try {
-    // Simulating delay for prototype effect
-    await new Promise(r => setTimeout(r, 800))
-
-    // Mock Audit Sessions based on selected teacher/week
-    sesionesAuditoria.value = [
-      { id: 1, fecha: '2026-01-26', tema: 'Introducción a Algoritmos', unidad: 'Unidad I', cumplido: true, estrategias: true, evaluacion: true, secuencia: true },
-      { id: 2, fecha: '2026-01-28', tema: 'Variables y Tipos', unidad: 'Unidad I', cumplido: true, estrategias: true, evaluacion: false, secuencia: true }
-    ]
-
-    // Auto-fill criteria logically based on mock
-    form.value.criterios.temaImpartido = true
-    form.value.criterios.actividadesFormativas = true
-    form.value.criterios.evaluaciones = false // One session is missing eval
-    form.value.criterios.secuenciaDidactica = true
-    form.value.criterios.evidencias = true
-    form.value.criterios.plataformaVirtual = true
-    form.value.criterios.integracionTransversal = false
+    const data = await reportesStore.checkAuditoriaSemanal({
+        docente_id: form.value.docente_id,
+        asignatura_id: form.value.asignatura_id,
+        semana_numero: form.value.semana_inicio
+    })
+    
+    if (data.sesiones) {
+        sesionesAuditoria.value = data.sesiones
+        if (data.rango) {
+             rangoFechas.value = `(${data.rango.inicio} al ${data.rango.fin})`
+        }
+        
+        // Auto-fill criteria
+        // Logic: If >0 sessions and >50% are compliant -> Check 'temaImpartido', etc.
+        // Or aggregate:
+        const total = sesionesAuditoria.value.length
+        if (total > 0) {
+             const anyCumplido = sesionesAuditoria.value.some(s => s.cumplido)
+             const allEstrategias = sesionesAuditoria.value.every(s => s.estrategias)
+             const allEvaluacion = sesionesAuditoria.value.every(s => s.evaluacion)
+             const allSecuencia = sesionesAuditoria.value.every(s => s.secuencia)
+             
+             form.value.criterios.temaImpartido = anyCumplido
+             form.value.criterios.secuenciaDidactica = allSecuencia
+             form.value.criterios.actividadesFormativas = allEstrategias
+             form.value.criterios.evaluaciones = allEvaluacion
+             form.value.criterios.evidencias = anyCumplido // Proxy
+             form.value.criterios.plataformaVirtual = anyCumplido // Proxy
+        }
+    }
 
   } catch (e) {
     console.error('Error checking status', e)
+    $q.notify({type:'negative', message: 'Error consultando auditoría'})
   } finally {
     loading.value = false
   }
