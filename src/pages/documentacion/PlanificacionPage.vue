@@ -855,8 +855,8 @@ function actualizarHorariosDesdeGrupo() {
   const diasOrder = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5, 'Domingo': 6 }
   
   todosLosHorarios.sort((a, b) => {
-    const diaA = diasOrder[a.dia] || 99
-    const diaB = diasOrder[b.dia] || 99
+    const diaA = getNroDia(a.dia)
+    const diaB = getNroDia(b.dia)
     if (diaA !== diaB) return diaA - diaB
     return a.horaInicio.localeCompare(b.horaInicio)
   })
@@ -945,8 +945,8 @@ const opcionesTemasGlobales = computed(() => {
 const horariosOrdenados = computed(() => {
     const diasOrder = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5, 'Domingo': 6 }
     return [...horarios.value].sort((a, b) => {
-        const diaA = diasOrder[a.dia] || 99
-        const diaB = diasOrder[b.dia] || 99
+        const diaA = getNroDia(a.dia)
+        const diaB = getNroDia(b.dia)
         if (diaA !== diaB) return diaA - diaB
         return (a.horaInicio || '').localeCompare(b.horaInicio || '')
     })
@@ -1129,8 +1129,9 @@ function calcularPropuestaPlanificacion() {
       if (!idsAsignados.has(s.numeroGlobal)) {
           let unidadId = 'finales'
           if (s.semana <= 17) {
-              const unidadPrevia = nuevasSesiones.filter(ns => ns.semana <= s.semana).pop()?.unidad_id
-              unidadId = unidadPrevia || unidades[0]?.id || 'finales'
+              // Buscar la unidad por el número de sesión (más fiable que la semana)
+              const sesionPrevia = nuevasSesiones.filter(ns => ns.numeroGlobal < s.numeroGlobal).pop()
+              unidadId = sesionPrevia?.unidad_id || unidades[0]?.id || 'finales'
           }
           nuevasSesiones.push({ ...s, unidad_id: unidadId })
       }
