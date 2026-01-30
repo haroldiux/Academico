@@ -11,14 +11,14 @@
 
     <q-card-section class="q-pa-md">
       <q-form @submit="onSubmit" class="q-gutter-md">
-        
+
         <!-- Selección de Clase a Auditar (Imagen A) -->
         <div class="row q-col-gutter-sm items-end bg-grey-1 q-pa-sm rounded-borders">
           <div class="col-12 col-md-4">
-            <q-select 
-              v-model="form.docente_id" 
-              :options="opcionesDocentes" 
-              label="Seleccionar Docente" 
+            <q-select
+              v-model="form.docente_id"
+              :options="opcionesDocentes"
+              label="Seleccionar Docente"
               outlined dense emit-value map-options
               @update:model-value="onDocenteChange"
             >
@@ -26,10 +26,10 @@
             </q-select>
           </div>
           <div class="col-12 col-md-4">
-            <q-select 
-              v-model="form.asignatura_id" 
-              :options="opcionesMaterias" 
-              label="Elegir Asignatura" 
+            <q-select
+              v-model="form.asignatura_id"
+              :options="opcionesMaterias"
+              label="Elegir Asignatura"
               outlined dense emit-value map-options
               :disable="!form.docente_id"
               @update:model-value="onMateriaChange"
@@ -38,11 +38,11 @@
             </q-select>
           </div>
           <div class="col-12 col-md-4">
-            <q-select 
-              v-model="form.grupo" 
-              :options="opcionesGrupos" 
-              label="Grupo" 
-              outlined dense 
+            <q-select
+              v-model="form.grupo"
+              :options="opcionesGrupos"
+              label="Grupo"
+              outlined dense
               :disable="!form.asignatura_id"
             >
               <template v-slot:prepend><q-icon name="groups" /></template>
@@ -56,11 +56,11 @@
              <q-input v-model="form.hora" label="Hora de Ingreso" type="time" outlined dense />
           </div>
           <div class="col-12 col-md-3">
-             <q-select 
-              v-model="form.semana" 
-              :options="['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5']" 
-              label="Semana" 
-              outlined dense 
+             <q-select
+              v-model="form.semana"
+              :options="['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5']"
+              label="Semana"
+              outlined dense
              />
           </div>
           <div class="col-12 col-md-3">
@@ -192,7 +192,7 @@ const onDocenteChange = (val) => {
   form.value.grupo = ''
 }
 
-const onMateriaChange = (val) => {
+const onMateriaChange = () => {
   form.value.grupo = 'G1' // Auto-default for prototype
 }
 
@@ -220,7 +220,7 @@ const onSubmit = () => {
     $q.loading.show({ message: 'Sincronizando auditoría institucional...' })
     setTimeout(() => {
         $q.loading.hide()
-        
+
         // Find labels for readable event
         const docLabel = opcionesDocentes.find(d => d.value === form.value.docente_id)?.label
         const matLabel = opcionesMaterias.value.find(m => m.value === form.value.asignatura_id)?.label

@@ -45,6 +45,17 @@ export default {
     })
   },
 
+  importExcel(id, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    return api.post(`/asignaturas/${id}/import-excel`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+  },
+
   // Bibliografias
   addBibliografia(data) {
     return api.post('/bibliografias', data)

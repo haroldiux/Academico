@@ -49,7 +49,12 @@
 
             <q-item v-if="puedeImportar" clickable v-close-popup @click="abrirDialogoImportar">
               <q-item-section avatar><q-icon name="upload_file" color="teal" /></q-item-section>
-              <q-item-section>Importar Word (Sede Central)</q-item-section>
+              <q-item-section>Importar Word (Prog. Analítico)</q-item-section>
+            </q-item>
+
+            <q-item v-if="puedeImportar" clickable v-close-popup @click="abrirDialogoImportarExcel">
+              <q-item-section avatar><q-icon name="table_chart" color="green" /></q-item-section>
+              <q-item-section>Importar Excel (Prog. Asignatura)</q-item-section>
             </q-item>
 
             <q-item clickable v-close-popup @click="generarCarpetaHtml">
@@ -295,41 +300,68 @@
               </q-card-section>
             </q-card>
 
-            <!-- 9. Evaluación (Card) -->
+            <!-- 9. Evaluación (Card REFORMULADO) -->
             <q-card class="section-card q-mb-lg">
               <q-card-section>
                 <div class="row items-center q-mb-md">
                   <q-icon name="assignment_turned_in" color="primary" size="24px" class="q-mr-sm" />
                   <div class="text-h6 text-primary">9.- Sistema de Evaluación</div>
                 </div>
-                <q-input v-model="formPrograma.sistema_evaluacion" label="CRITERIOS DE EVALUACIÓN" type="textarea"
-                  rows="6" outlined :readonly="!puedeEditarCampo()"
-                  placeholder="Describa el sistema y criterios de evaluación..." />
+
+                <div class="q-gutter-y-lg">
+                  <!-- Bloque 1: Intro -->
+                  <q-input v-model="formPrograma.sistema_evaluacion.intro" label="PROCESO EVALUADOR (INTRODUCCIÓN)"
+                    type="textarea" rows="3" outlined :readonly="!puedeEditarCampo()"
+                    placeholder="El proceso evaluador es único..." />
+
+                  <!-- Bloque 2: Fases (Side-by-side) -->
+                  <div class="row q-col-gutter-md">
+                    <div class="col-12 col-md-4">
+                      <q-input v-model="formPrograma.sistema_evaluacion.diagnostica" label="EVALUACIÓN DIAGNÓSTICA"
+                        type="textarea" rows="5" outlined :readonly="!puedeEditarCampo()"
+                        placeholder="a. La evaluación diagnóstica tiene por objeto..." />
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <q-input v-model="formPrograma.sistema_evaluacion.formativa" label="EVALUACIÓN FORMATIVA"
+                        type="textarea" rows="5" outlined :readonly="!puedeEditarCampo()"
+                        placeholder="b. La evaluación formativa permitirá medir..." />
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <q-input v-model="formPrograma.sistema_evaluacion.sumativa" label="EVALUACIÓN SUMATIVA"
+                        type="textarea" rows="5" outlined :readonly="!puedeEditarCampo()"
+                        placeholder="c. La evaluación sumativa está estrechamente relacionada..." />
+                    </div>
+                  </div>
+
+                  <!-- Bloque 3: Ponderación -->
+                  <q-input v-model="formPrograma.sistema_evaluacion.ponderacion" label="PARÁMETROS Y PONDERACIÓN"
+                    type="textarea" rows="4" outlined :readonly="!puedeEditarCampo()"
+                    placeholder="La evaluación considera los siguientes parámetros (Parciales, Examen Final)..." />
+
+                  <!-- Bloque 4: Aspectos Finales -->
+                  <q-input v-model="formPrograma.sistema_evaluacion.final" label="ASPECTOS DE EVALUACIÓN FINAL"
+                    type="textarea" rows="3" outlined :readonly="!puedeEditarCampo()"
+                    placeholder="La evaluación final se desarrollará considerando..." />
+                </div>
               </q-card-section>
             </q-card>
 
-            <!-- 12. Criterios (Card) -->
+            <!-- 12. Criterios (Card REFORMULADO) -->
             <q-card class="section-card q-mb-lg">
               <q-card-section>
-                <div class="row items-center justify-between q-mb-md">
-                  <div class="row items-center">
-                    <q-icon name="gavel" color="primary" size="24px" class="q-mr-sm" />
-                    <div class="text-h6 text-primary">12.- Criterios y Normativa</div>
-                  </div>
-                  <q-btn v-if="puedeEditarCampo()" unelevated color="primary" icon="add" label="Agregar Regla" size="sm"
-                    no-caps @click="agregarRegla" />
+                <div class="row items-center q-mb-md">
+                  <q-icon name="gavel" color="primary" size="24px" class="q-mr-sm" />
+                  <div class="text-h6 text-primary">12.- Criterios y Normativa de la Asignatura</div>
                 </div>
 
                 <div class="q-gutter-y-md">
-                  <div v-for="(regla, index) in formPrograma.reglamento_normativa" :key="index"
-                    class="relative-position">
-                    <q-input v-model="formPrograma.reglamento_normativa[index]" :label="`REGLA ${index + 1}`" outlined
-                      dense :readonly="!puedeEditarCampo()" placeholder="Escriba la regla...">
-                      <template v-slot:append v-if="puedeEditarCampo()">
-                        <q-btn round dense flat icon="delete" color="red" @click="quitarRegla(index)" />
-                      </template>
-                    </q-input>
-                  </div>
+                  <q-input v-model="formPrograma.reglamento_normativa.clase" label="REGLAMENTO PARA LAS CLASES"
+                    type="textarea" rows="5" outlined :readonly="!puedeEditarCampo()"
+                    placeholder="1. El ingreso se realizará de manera puntual..." />
+
+                  <q-input v-model="formPrograma.reglamento_normativa.laboratorio" label="NORMAS DE LABORATORIO / PRÁCTICA"
+                    type="textarea" rows="4" outlined :readonly="!puedeEditarCampo()"
+                    placeholder="Además, en laboratorio tomar en cuenta: (PRÁCTICA PRESENCIAL)..." />
                 </div>
               </q-card-section>
             </q-card>
@@ -674,13 +706,11 @@
           <div class="q-mt-md q-gutter-sm bg-grey-1 q-pa-sm rounded-borders">
             <div class="text-subtitle2 text-weight-bold q-mb-xs">¿Qué desea importar?</div>
             <div class="row">
-              <q-checkbox class="col-12" v-model="importOpciones.datos"
-                label="Plan de Clases (Justificación, Objetivos, Metodología)" dense color="teal" />
               <q-checkbox class="col-12" v-model="importOpciones.unidades"
-                label="Plan Analítico (Unidades, Temas y Contenidos)" dense color="teal" />
+                label="Programa Analítico (Unidades, Temas y Contenidos)" dense color="teal" />
             </div>
             <div class="text-caption text-grey-7 q-pl-sm">
-              * La bibliografía se actualizará automáticamente con el Plan de Clases.
+              * La bibliografía se actualizará automáticamente con el Programa Analítico.
             </div>
           </div>
         </q-card-section>
@@ -689,6 +719,52 @@
           <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
           <q-btn unelevated label="Procesar Importación" color="teal" :loading="store.loading"
             :disable="!archivoImportar" @click="procesarImportacion" no-caps />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Importar Excel -->
+    <q-dialog v-model="dialogImportarExcel">
+      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-weight-bold row items-center">
+            <q-icon name="table_chart" color="green" class="q-mr-sm" size="28px" />
+            Importar Programa de Asignatura (Excel)
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <q-banner rounded class="bg-indigo-1 text-black q-mb-md">
+            <template v-slot:avatar>
+              <q-icon name="info" color="indigo" />
+            </template>
+            <div class="text-weight-bold">Importación de Metadatos</div>
+            <div>
+              Esta función carga los datos generales del programa (Justificación, Objetivos, Competencias, Metodología,
+              etc.) desde un archivo Excel.
+            </div>
+          </q-banner>
+
+          <q-file v-model="archivoImportarExcel" label="Seleccionar Archivo Excel (.xlsx, .xls)" outlined dense
+            accept=".xlsx, .xls" counter>
+            <template v-slot:prepend>
+              <q-icon name="attach_file" />
+            </template>
+          </q-file>
+
+          <div class="q-mt-md text-caption text-grey-7 italic">
+            * El archivo debe contener las etiquetas exactas en la primera columna (ej: Modalidad, Justificación,
+            Propósito
+            General, etc.)
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pt-none q-pb-md q-pr-md">
+          <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
+          <q-btn unelevated label="Subir e Importar" color="green" :loading="store.loading"
+            :disable="!archivoImportarExcel" @click="procesarImportacionExcel" no-caps />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -788,7 +864,7 @@ const asignatura = computed(() => store.asignaturaActual)
 
 // Opciones de Importación
 const importOpciones = ref({
-  datos: true,
+  datos: false,
   unidades: true
 })
 
@@ -1117,6 +1193,8 @@ const biblioSeleccionada = ref(null)
 // Importación
 const dialogImportar = ref(false)
 const archivoImportar = ref(null)
+const dialogImportarExcel = ref(false)
+const archivoImportarExcel = ref(null)
 
 const puedeImportar = computed(() => {
   // 1. Debe ser Cochabamba (Sede 1)
@@ -1151,28 +1229,49 @@ async function procesarImportacion() {
   if (!archivoImportar.value) return
 
   try {
-    // Vincular bibliografía al Plan de Clases (datos) O al Plan Analítico (unidades)
-    // El usuario indicó que la bibliografía está en ambos y debe importarse.
+    // Word refined: Only units and themes
     const opcionesEnvio = {
-      ...importOpciones.value,
-      bibliografia: importOpciones.value.datos || importOpciones.value.unidades
+      datos: false,
+      unidades: true,
+      bibliografia: false
     }
 
     await store.importarWord(asignatura.value.id, archivoImportar.value, opcionesEnvio)
-    // El store ya actualiza el estado local y recarga si es necesario
     $q.notify({
       type: 'positive',
-      message: 'Importación completada con éxito. Revisa los campos.',
-      icon: 'check_circle',
-      timeout: 5000,
-      position: 'top'
+      message: 'Programa Analítico importado con éxito.',
+      icon: 'check_circle'
     })
     dialogImportar.value = false
   } catch (err) {
-    // Error notification handled by store or global handler usually, but here manual:
     $q.notify({
       type: 'negative',
-      message: 'Error al importar: ' + (err.response?.data?.error || err.message),
+      message: 'Error al importar Word: ' + (err.response?.data?.error || err.message),
+      position: 'top'
+    })
+  }
+}
+
+function abrirDialogoImportarExcel() {
+  archivoImportarExcel.value = null
+  dialogImportarExcel.value = true
+}
+
+async function procesarImportacionExcel() {
+  if (!archivoImportarExcel.value) return
+
+  try {
+    await store.importarExcel(asignatura.value.id, archivoImportarExcel.value)
+    $q.notify({
+      type: 'positive',
+      message: 'Programa de Asignatura actualizado desde Excel.',
+      icon: 'check_circle'
+    })
+    dialogImportarExcel.value = false
+  } catch (err) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al importar Excel: ' + (err.response?.data?.error || err.message),
       position: 'top'
     })
   }
@@ -1294,20 +1393,6 @@ function cargarFormDatos() {
   // Guardar copia de datos originales para validar permisos de edición
   datosOriginales.value = JSON.parse(JSON.stringify(formDatos.value))
   // Cargar datos del programa
-  // Convertir reglamento_normativa de string a array de reglas
-  let reglamentoArray = []
-  const reglamentoRaw = asignatura.value.reglamento_normativa
-  if (reglamentoRaw) {
-    if (Array.isArray(reglamentoRaw)) {
-      reglamentoArray = reglamentoRaw
-    } else if (typeof reglamentoRaw === 'string') {
-      // Dividir por saltos de línea y limpiar bullets
-      reglamentoArray = reglamentoRaw.split('\n')
-        .map(line => line.replace(/^[-•*]\s*/, '').trim())
-        .filter(line => line.length > 0)
-    }
-  }
-
   // Cargar metodología estructurada
   const met = asignatura.value.metodologia_general || {}
 
@@ -1333,18 +1418,23 @@ function cargarFormDatos() {
     metodologia_aula: met.aula || '',
     metodologia_simulacion: met.simulacion || '',
     metodologia_hospital: met.hospital || '',
-    reglamento_normativa: reglamentoArray,
-    sistema_evaluacion: asignatura.value.sistema_evaluacion || ''
+    reglamento_normativa: {
+      clase: typeof asignatura.value.reglamento_normativa === 'object' && !Array.isArray(asignatura.value.reglamento_normativa)
+        ? (asignatura.value.reglamento_normativa?.clase || '')
+        : (Array.isArray(asignatura.value.reglamento_normativa) ? asignatura.value.reglamento_normativa.join('\n') : (asignatura.value.reglamento_normativa || '')),
+      laboratorio: asignatura.value.reglamento_normativa?.laboratorio || ''
+    },
+    sistema_evaluacion: {
+      intro: typeof asignatura.value.sistema_evaluacion === 'object' ? (asignatura.value.sistema_evaluacion?.intro || '') : (asignatura.value.sistema_evaluacion || ''),
+      diagnostica: asignatura.value.sistema_evaluacion?.diagnostica || '',
+      formativa: asignatura.value.sistema_evaluacion?.formativa || '',
+      sumativa: asignatura.value.sistema_evaluacion?.sumativa || '',
+      ponderacion: asignatura.value.sistema_evaluacion?.ponderacion || '',
+      final: asignatura.value.sistema_evaluacion?.final || ''
+    }
   }
 }
 
-function agregarRegla() {
-  formPrograma.value.reglamento_normativa.push('')
-}
-
-function quitarRegla(index) {
-  formPrograma.value.reglamento_normativa.splice(index, 1)
-}
 
 
 function guardarCambios() {

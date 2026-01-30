@@ -114,24 +114,36 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     }
   }
 
+  // Acciones de Importación
   async function importarWord(id, file, options = {}) {
     loading.value = true
     try {
       const response = await asignaturaService.importWord(id, file, options)
       // Actualizar asignatura actual con los nuevos datos
-      // Podríamos hacer un merge manual, pero lo más seguro es recargar o usar la data retornada si es completa.
-      // El backend retorna { message: '...', data: { justificacion, ... } }
-      // Combinamos con lo actual
       if (asignaturaActual.value && asignaturaActual.value.id === id) {
-          // Actualización parcial reactiva
-          Object.assign(asignaturaActual.value, response.data.data)
-          // Recargar bibliografias si vinieron nuevas (el backend las guardó en BD, pero aquí no las tenemos en response.data.data como objetos completos con ID)
-          // Mejor recargar la asignatura completa para traer bibliografías con IDs generados.
+          // Para Word refinado, solo actualizamos unidades y temas
           await setAsignaturaActual(id)
       }
       return response.data
     } catch (err) {
       console.error('Error importing word:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function importarExcel(id, file) {
+    loading.value = true
+    try {
+      const response = await asignaturaService.importExcel(id, file)
+      if (asignaturaActual.value && asignaturaActual.value.id === id) {
+          // Actualizamos datos generales
+          await setAsignaturaActual(id)
+      }
+      return response.data
+    } catch (err) {
+      console.error('Error importing excel:', err)
       throw err
     } finally {
       loading.value = false
@@ -564,6 +576,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     deleteBibliografia,
     calcularProgresoTema,
     importarWord,
+    importarExcel,
     createUnidad,
     updateUnidad,
     deleteUnidad,
