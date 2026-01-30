@@ -708,28 +708,37 @@ async function cargarPlanificacion() {
         cronogramasDB.forEach(db => {
             const sesionView = planificacionSesiones.value.find(s => s.numeroGlobal === db.numero_sesion)
             if (sesionView) {
-                // Prioridad 1: Título del tema relacionado. Prioridad 2: Texto guardado en campo tema.
-                const temaTitulo = db.tema?.titulo || db.tema?.nombre || db.tema || db.tema_id || ''
-                sesionView.tema = temaTitulo || db.tema_texto || db.tema || ''
+                // 1. Manejo de Temas (Prioridad IDs para el select)
+                if (db.temas && db.temas.length > 0) {
+                    sesionView.temasSeleccionados = db.temas.map(t => t.id)
+                    sesionView.tema_id = db.tema_id || db.temas[0].id
+                } else if (db.tema_id) {
+                    sesionView.temasSeleccionados = [db.tema_id]
+                    sesionView.tema_id = db.tema_id
+                } else {
+                    // Texto plano como fallback (retrocompatibilidad)
+                    const temaStr = String(db.tema || '')
+                    sesionView.temasSeleccionados = temaStr ? temaStr.split(',').map(s => s.trim()).filter(s => s) : []
+                    sesionView.tema_id = null
+                }
                 
-                // Asegurar que temasSeleccionados sea un array
-                const temaStr = String(sesionView.tema || '')
-                sesionView.temasSeleccionados = temaStr ? temaStr.split(',').map(s => s.trim()).filter(s => s) : []
-                
+                // Mapeo visual para columnas que no usan el select
+                sesionView.tema = db.tema?.titulo || db.tema?.nombre || db.tema || db.tema_id || ''
+
                 // IMPORTANTE: Si tiene un tema asociado, actualizar su unidad_id basándose en ese tema
                 if (db.tema?.unidad_id) {
                     sesionView.unidad_id = db.tema.unidad_id
                 }
 
-                sesionView.conceptual = db.contenido_conceptual || db.contenido_conceptual_texto || ''
-                sesionView.procedimental = db.contenido_procedimental
-                sesionView.actitudinal = db.contenido_actitudinal
+                sesionView.conceptual = db.contenido_conceptual || ''
+                sesionView.procedimental = db.contenido_procedimental || ''
+                sesionView.actitudinal = db.contenido_actitudinal || ''
                 
                 sesionView.criteriosDesempeno = db.criterios_desempeno
-                sesionView.criteriosSeleccionados = db.criterios_desempeno ? db.criterios_desempeno.split(', ') : []
+                sesionView.criteriosSeleccionados = db.criterios_desempeno ? (typeof db.criterios_desempeno === 'string' ? db.criterios_desempeno.split(', ') : db.criterios_desempeno) : []
                 
                 sesionView.instrumentosEvaluacion = db.instrumentos_evaluacion
-                sesionView.instrumentosSeleccionados = db.instrumentos_evaluacion ? db.instrumentos_evaluacion.split(', ') : []
+                sesionView.instrumentosSeleccionados = db.instrumentos_evaluacion ? (typeof db.instrumentos_evaluacion === 'string' ? db.instrumentos_evaluacion.split(', ') : db.instrumentos_evaluacion) : []
             }
         })
 
@@ -923,7 +932,7 @@ const opcionesTemasGlobales = computed(() => {
             const titulo = typeof t === 'string' ? t : (t.titulo || t.nombre || '')
             opciones.push({
                 label: titulo,
-                value: titulo,
+                value: t.id || titulo,
                 unidad_id: u.id,
                 unidad_nombre: u.titulo
             })
@@ -1101,12 +1110,13 @@ function calcularPropuestaPlanificacion() {
         ...sesionBase,
         unidad_id: unidad.id,
         tema: temaOriginal?.titulo || '',
-        temasSeleccionados: temaOriginal?.titulo ? [temaOriginal.titulo] : [],
-        conceptual: temaOriginal?.contenidos?.conceptual?.map(c => '- ' + c).join('\n') || '',
-        procedimental: temaOriginal?.contenidos?.procedimental?.map(c => '- ' + c).join('\n') || '',
-        actitudinal: temaOriginal?.contenidos?.actitudinal?.map(c => '- ' + c).join('\n') || '',
-        criteriosDesempeno: temaOriginal?.logros_esperados?.map(l => '- ' + l.descripcion).join('\n') || '',
-        criteriosSeleccionados: temaOriginal?.logros_esperados?.map(l => l.descripcion) || [],
+        tema_id: temaOriginal?.id || null,
+        temasSeleccionados: temaOriginal?.id ? [temaOriginal.id] : (temaOriginal?.titulo ? [temaOriginal.titulo] : []),
+        conceptual: Array.isArray(temaOriginal?.contenido_conceptual) ? temaOriginal.contenido_conceptual.join('\n') : (temaOriginal?.contenido_conceptual || ''),
+        procedimental: Array.isArray(temaOriginal?.contenido_procedimental) ? temaOriginal.contenido_procedimental.join('\n') : (temaOriginal?.contenido_procedimental || ''),
+        actitudinal: Array.isArray(temaOriginal?.contenido_actitudinal) ? temaOriginal.contenido_actitudinal.join('\n') : (temaOriginal?.contenido_actitudinal || ''),
+        criteriosDesempeno: '',
+        criteriosSeleccionados: [],
         instrumentosEvaluacion: '', instrumentosSeleccionados: []
       })
       indiceSesion++
@@ -1294,16 +1304,15 @@ async function guardarTodo(silent = false) {
         if (Array.isArray(sesion.criteriosSeleccionados)) sesion.criteriosDesempeno = sesion.criteriosSeleccionados.join(', ')
         if (Array.isArray(sesion.instrumentosSeleccionados)) sesion.instrumentosEvaluacion = sesion.instrumentosSeleccionados.join(', ')
         
-        // Mapear para el backend (snake_case para lo que el Controller espera explícitamente si aplica)
-        // NOTA: El Controller PlanificacionSemestralController@savePlanificacion busca:
-        // 'criterios_desempeno' => $sesion['criteriosDesempeno']
-        // 'instrumentos_evaluacion' => $sesion['instrumentosEvaluacion']
+        // Preparar para el backend
         const sDB = {
             ...sesion,
             contenido_conceptual: sesion.conceptual,
             contenido_procedimental: sesion.procedimental,
             contenido_actitudinal: sesion.actitudinal,
-            numero_sesion: sesion.numeroGlobal
+            numero_sesion: sesion.numeroGlobal,
+            tema_id: sesion.tema_id || (Array.isArray(sesion.temasSeleccionados) && typeof sesion.temasSeleccionados[0] === 'number' ? sesion.temasSeleccionados[0] : null),
+            temas_ids: Array.isArray(sesion.temasSeleccionados) ? sesion.temasSeleccionados.filter(v => typeof v === 'number') : []
         }
         
         sDB.grupo_id = targetGrupoId
@@ -1345,14 +1354,29 @@ const fechasGlobales = ref({})
 
 function onTemaUpdate(val, sesion) {
     if (!val) val = []
-    sesion.tema = val.join(', ')
+    
+    // Sincronizar tema label (opcional)
+    const labels = []
+    val.forEach(v => {
+        if (typeof v === 'number') {
+            const opt = opcionesTemasGlobales.value.find(o => o.value === v)
+            if (opt) labels.push(opt.label)
+        } else {
+            labels.push(v)
+        }
+    })
+    sesion.tema = labels.join(', ')
+    
+    // Actualizar tema_id (primer seleccionado como principal para compatibilidad)
+    sesion.tema_id = val.find(v => typeof v === 'number') || null
+
     marcarModificado(sesion)
     
     // Si se seleccionó un tema que existe en mis opciones, 
     // mover la sesión a la unidad de ese tema (usando el último seleccionado)
     if (val.length > 0) {
-        const ultimoTema = val[val.length - 1]
-        const opcion = opcionesTemasGlobales.value.find(o => o.label === ultimoTema)
+        const ultimoValor = val[val.length - 1]
+        const opcion = opcionesTemasGlobales.value.find(o => o.value === ultimoValor)
         if (opcion && opcion.unidad_id) {
             sesion.unidad_id = opcion.unidad_id
         }
