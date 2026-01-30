@@ -287,32 +287,30 @@ async function fetchData() {
       return
     }
 
-    // Cargar detalles completos desde el servidor para cada materia
-    // Preservamos los datos del pivote (grupo, aula, horario) del login
-    const materiasConDetalles = []
-    for (const materiaBase of misMateriasBasicas) {
+    // Cargar detalles completos desde el servidor para cada materia en paralelo
+    const promesas = misMateriasBasicas.map(async (materiaBase) => {
       const id = typeof materiaBase === 'object' ? materiaBase.id : materiaBase
       try {
-        // CORRECCIÓN: Usar servicio directo para NO afectar el estado global `asignaturaActual`
-        // Pass sede_id from pivot if available to help backend select correct context
         const params = {}
         if (materiaBase.pivot && materiaBase.pivot.sede_id) {
           params.sede_id = materiaBase.pivot.sede_id
         }
         const response = await asignaturaService.getAsignatura(id, params)
         if (response.data) {
-          // Combinar detalles del servidor + datos del pivote del login
-          materiasConDetalles.push({
+          return {
             ...response.data,
-            pivot: materiaBase.pivot || null  // Preservar grupo, aula, horario
-          })
+            pivot: materiaBase.pivot || null
+          }
         }
+        return null
       } catch (e) {
         console.error('Error cargando asignatura', id, e)
+        return null
       }
-    }
+    })
 
-    asignaturasStore.asignaturas = materiasConDetalles
+    const resultados = await Promise.all(promesas)
+    asignaturasStore.asignaturas = resultados.filter(a => a !== null)
     return
   }
 
@@ -348,10 +346,8 @@ const sedesOptions = computed(() => {
 })
 
 const carrerasOptions = computed(() => {
-  let list = carrerasStore.carreras
-  if (filtros.value.sede) {
-    list = list.filter(c => c.sede_id === filtros.value.sede)
-  }
+  // Usar la función robusta del store para filtrar por sede
+  const list = carrerasStore.getCarrerasBySede(filtros.value.sede)
   return list.map(c => ({ label: c.nombre, value: c.id }))
 })
 

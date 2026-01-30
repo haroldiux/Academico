@@ -316,8 +316,8 @@
                         </td>
                         <td>
                             <div v-if="sesion.semana <= 17">
-                                <q-select v-model="sesion.temasSeleccionados" 
-                                    :options="opcionesTemasGlobales" 
+                                <q-select v-model="sesion.temasSeleccionados"
+                                    :options="opcionesTemasGlobales"
                                     multiple use-chips use-input new-value-mode="add-unique"
                                     emit-value map-options
                                     dense outlined class="cell-input"
@@ -341,19 +341,19 @@
                             class="cell-input" placeholder="Actitudes..."
                             @update:model-value="marcarModificado(sesion)" /></td>
                         <td>
-                            <q-select v-if="sesion.semana <= 17" v-model="sesion.criteriosSeleccionados" 
+                            <q-select v-if="sesion.semana <= 17" v-model="sesion.criteriosSeleccionados"
                                 multiple use-chips use-input new-value-mode="add-unique"
                                 :options="criteriosOptions"
                                 outlined dense class="cell-input" placeholder="Criterios..."
-                                @update:model-value="marcarModificado(sesion)" 
+                                @update:model-value="marcarModificado(sesion)"
                             />
                         </td>
                         <td>
-                            <q-select v-if="sesion.semana <= 17" v-model="sesion.instrumentosSeleccionados" 
+                            <q-select v-if="sesion.semana <= 17" v-model="sesion.instrumentosSeleccionados"
                                 multiple use-chips use-input new-value-mode="add-unique"
                                 :options="instrumentosOptions"
                                 outlined dense class="cell-input" placeholder="Instrumentos..."
-                                @update:model-value="marcarModificado(sesion)" 
+                                @update:model-value="marcarModificado(sesion)"
                             />
                         </td>
                         <td class="cell-actions">
@@ -702,8 +702,8 @@ async function cargarPlanificacion() {
         // a menos que la recalculemos o guardemos metadatos.
 
         // 1. Calcular estructura base sin guardar
-        planificacionSesiones.value = calcularPropuestaPlanificacion() 
-        
+        planificacionSesiones.value = calcularPropuestaPlanificacion()
+
         // Ahora inyectar datos reales sobre planificacionSesiones
         cronogramasDB.forEach(db => {
             const sesionView = planificacionSesiones.value.find(s => s.numeroGlobal === db.numero_sesion)
@@ -721,7 +721,7 @@ async function cargarPlanificacion() {
                     sesionView.temasSeleccionados = temaStr ? temaStr.split(',').map(s => s.trim()).filter(s => s) : []
                     sesionView.tema_id = null
                 }
-                
+
                 // Mapeo visual para columnas que no usan el select
                 sesionView.tema = db.tema?.titulo || db.tema?.nombre || db.tema || db.tema_id || ''
 
@@ -733,10 +733,10 @@ async function cargarPlanificacion() {
                 sesionView.conceptual = db.contenido_conceptual || ''
                 sesionView.procedimental = db.contenido_procedimental || ''
                 sesionView.actitudinal = db.contenido_actitudinal || ''
-                
+
                 sesionView.criteriosDesempeno = db.criterios_desempeno
                 sesionView.criteriosSeleccionados = db.criterios_desempeno ? (typeof db.criterios_desempeno === 'string' ? db.criterios_desempeno.split(', ') : db.criterios_desempeno) : []
-                
+
                 sesionView.instrumentosEvaluacion = db.instrumentos_evaluacion
                 sesionView.instrumentosSeleccionados = db.instrumentos_evaluacion ? (typeof db.instrumentos_evaluacion === 'string' ? db.instrumentos_evaluacion.split(', ') : db.instrumentos_evaluacion) : []
             }
@@ -852,7 +852,7 @@ function actualizarHorariosDesdeGrupo() {
   })
 
   // Ordenar por día y hora
-  
+
   todosLosHorarios.sort((a, b) => {
     const diaA = getNroDia(a.dia)
     const diaB = getNroDia(b.dia)
@@ -899,7 +899,7 @@ const planificacion = computed(() => {
     // Reconstruir la estructura Unidades -> Sesiones para el template
     // pero de forma dinámica basada en el unidad_id de cada sesión.
     if (!unidadesDocumentacion.value) return []
-    
+
     return unidadesDocumentacion.value.map(u => {
         return {
             id: u.id,
@@ -993,7 +993,7 @@ const getNroDia = (diaStr) => {
     // Normalizar: minúsculas y sin tildes (miercoles, sabado)
     const d = diaStr.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     const map = {
-        'lunes': 1, 'martes': 2, 'miercoles': 3, 'jueves': 4, 
+        'lunes': 1, 'martes': 2, 'miercoles': 3, 'jueves': 4,
         'viernes': 5, 'sabado': 6, 'domingo': 7
     }
     return map[d] || 99
@@ -1045,7 +1045,7 @@ function calcularPropuestaPlanificacion() {
       const diaIndex = (diaNum >= 1 && diaNum <= 7) ? diaNum - 1 : 0
       const fechaSesion = new Date(fechaSemanaInicio)
       fechaSesion.setDate(fechaSemanaInicio.getDate() + diaIndex)
-      
+
       const y = fechaSesion.getFullYear()
       const m = String(fechaSesion.getMonth() + 1).padStart(2, '0')
       const d = String(fechaSesion.getDate()).padStart(2, '0')
@@ -1145,7 +1145,7 @@ async function generarPlanificacion(silent = false) {
   try {
     // 1. Calcular propuesta usando la nueva función pura
     const propuestas = calcularPropuestaPlanificacion()
-    
+
     // 2. Aplicar a la reactividad
     planificacionSesiones.value = propuestas
 
@@ -1303,7 +1303,7 @@ async function guardarTodo(silent = false) {
         if (Array.isArray(sesion.temasSeleccionados)) sesion.tema = sesion.temasSeleccionados.join(', ')
         if (Array.isArray(sesion.criteriosSeleccionados)) sesion.criteriosDesempeno = sesion.criteriosSeleccionados.join(', ')
         if (Array.isArray(sesion.instrumentosSeleccionados)) sesion.instrumentosEvaluacion = sesion.instrumentosSeleccionados.join(', ')
-        
+
         // Preparar para el backend
         const sDB = {
             ...sesion,
@@ -1314,7 +1314,7 @@ async function guardarTodo(silent = false) {
             tema_id: sesion.tema_id || (Array.isArray(sesion.temasSeleccionados) && typeof sesion.temasSeleccionados[0] === 'number' ? sesion.temasSeleccionados[0] : null),
             temas_ids: Array.isArray(sesion.temasSeleccionados) ? sesion.temasSeleccionados.filter(v => typeof v === 'number') : []
         }
-        
+
         sDB.grupo_id = targetGrupoId
         sesiones.push(sDB)
     })
@@ -1354,7 +1354,7 @@ const fechasGlobales = ref({})
 
 function onTemaUpdate(val, sesion) {
     if (!val) val = []
-    
+
     // Sincronizar tema label (opcional)
     const labels = []
     val.forEach(v => {
@@ -1366,13 +1366,13 @@ function onTemaUpdate(val, sesion) {
         }
     })
     sesion.tema = labels.join(', ')
-    
+
     // Actualizar tema_id (primer seleccionado como principal para compatibilidad)
     sesion.tema_id = val.find(v => typeof v === 'number') || null
 
     marcarModificado(sesion)
-    
-    // Si se seleccionó un tema que existe en mis opciones, 
+
+    // Si se seleccionó un tema que existe en mis opciones,
     // mover la sesión a la unidad de ese tema (usando el último seleccionado)
     if (val.length > 0) {
         const ultimoValor = val[val.length - 1]
@@ -1406,7 +1406,7 @@ function calcularFechasTodosLosGrupos() {
              const dIndex = (diaNum >= 1 && diaNum <= 7) ? diaNum - 1 : 0
              const fSesion = new Date(inicioSem)
              fSesion.setDate(inicioSem.getDate() + dIndex)
-             
+
              // En la vista general, cada sesión global corresponde a UN horario específico
              // pero queremos mostrar la fecha para ese horario.
              map[sesionIdx] = [{
@@ -1837,13 +1837,13 @@ function exportarPDF() {
 .fecha-grupo-row:last-child {
   border-bottom: none;
 }
-.fg-grupo { 
-  font-weight: 700; 
-  color: var(--primary); 
-  margin-right: 6px; 
+.fg-grupo {
+  font-weight: 700;
+  color: var(--primary);
+  margin-right: 6px;
 }
-.fg-fecha { 
-  color: var(--text-secondary); 
+.fg-fecha {
+  color: var(--text-secondary);
 }
 
 /* Filas de Examen */
