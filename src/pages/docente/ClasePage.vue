@@ -118,8 +118,38 @@
                         <q-select v-model="claseSeleccionada" :options="clasesUnificadas" label="Seleccionar Clase"
                            outlined dense option-label="nombreDisplay" option-value="id" emit-value map-options />
                      </div>
-                     <div class="col-12 col-md-3">
-                        <q-input v-model="fechaSeguimiento" type="date" label="Fecha" outlined dense />
+                     <div class="col-12 col-md-2">
+                        <q-btn-toggle
+                           v-model="vistaHistorial"
+                           toggle-color="primary"
+                           :options="[
+                              {label: 'Pendientes', value: false},
+                              {label: 'Completadas', value: true}
+                           ]"
+                           dense
+                           unelevated
+                           class="full-width"
+                        />
+                     </div>
+                     <div class="col-12 col-md-4">
+                        <q-select
+                           v-model="fechaSeguimiento"
+                           :options="sesionesOptions"
+                           :label="vistaHistorial ? 'Seleccionar Sesión Completada' : 'Seleccionar Sesión Pendiente'"
+                           outlined
+                           dense
+                           emit-value
+                           map-options
+                           :disable="!claseSeleccionada || loadingSesiones"
+                        >
+                           <template v-slot:no-option>
+                              <q-item>
+                                 <q-item-section class="text-grey">
+                                    {{ vistaHistorial ? 'No hay clases completadas' : 'No hay clases pendientes' }}
+                                 </q-item-section>
+                              </q-item>
+                           </template>
+                        </q-select>
                      </div>
                   </div>
 
@@ -134,14 +164,14 @@
                            <div class="row q-col-gutter-lg">
                               <div class="col-12 col-md-6">
                                  <q-input v-model="temaPlanificado" label="Tema Planificado (Según Plan de Clase)"
-                                    outlined />
+                                    outlined readonly />
                               </div>
                               <div class="col-12 col-md-6 flex items-center">
-                                 <q-checkbox v-model="temaCumplido" label="Tema Cumplido" color="green" size="lg" />
+                                 <q-checkbox v-model="temaCumplido" label="Tema Cumplido" color="green" size="lg" :disable="esLecturaSola" />
                               </div>
                               <div class="col-12">
                                  <q-input v-model="observacionesClase" label="Observaciones Generales" type="textarea"
-                                    outlined rows="3" />
+                                    outlined rows="3" :readonly="esLecturaSola" />
                               </div>
                            </div>
                         </q-card>
@@ -162,26 +192,142 @@
                                        <div v-for="(item, idx) in pedagogico.estrategias" :key="'est-' + idx"
                                           class="q-mb-xs">
                                           <q-checkbox v-model="item.cumplido" :label="item.nombre" dense
-                                             color="green" />
+                                             color="green" :disable="esLecturaSola" />
                                        </div>
                                     </td>
                                     <td class="q-pa-sm" style="vertical-align: top">
                                        <div v-for="(item, idx) in pedagogico.evaluacion" :key="'eva-' + idx"
                                           class="q-mb-xs">
                                           <q-checkbox v-model="item.cumplido" :label="item.nombre" dense
-                                             color="green" />
+                                             color="green" :disable="esLecturaSola" />
                                        </div>
                                     </td>
                                     <td class="q-pa-sm" style="vertical-align: top">
                                        <div v-for="(item, idx) in pedagogico.secuencia" :key="'sec-' + idx"
                                           class="q-mb-xs">
                                           <q-checkbox v-model="item.cumplido" :label="item.nombre" dense
-                                             color="green" />
+                                             color="green" :disable="esLecturaSola" />
                                        </div>
                                     </td>
                                  </tr>
                               </tbody>
                            </q-markup-table>
+                        </div>
+
+                        <!-- Sección de Integración Transversal -->
+                        <div class="q-mt-lg">
+                           <div class="text-subtitle1 text-weight-bold q-mb-sm">Integración Transversal</div>
+                           <q-card flat bordered class="q-pa-md">
+                              <div class="row q-col-gutter-md">
+                                 <!-- Investigación -->
+                                 <div class="col-12 col-md-4">
+                                    <q-checkbox 
+                                       v-model="integracionTransversal.investigacion.cumplido" 
+                                       label="Investigación" 
+                                       color="primary"
+                                       class="text-weight-medium"
+                                       :disable="esLecturaSola"
+                                    />
+                                    <q-slide-transition>
+                                       <div v-show="integracionTransversal.investigacion.cumplido" class="q-mt-sm">
+                                          <!-- Show saved file if exists (string path) -->
+                                          <div v-if="typeof integracionTransversal.investigacion.evidencia === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
+                                             <div class="text-caption text-grey-7">Evidencia guardada:</div>
+                                             <a :href="`/storage/${integracionTransversal.investigacion.evidencia}`" target="_blank" class="text-primary">
+                                                <q-icon name="download" size="xs" /> Ver archivo
+                                             </a>
+                                          </div>
+                                          <!-- File upload input (only if not completed) -->
+                                          <q-file 
+                                             v-else
+                                             v-model="integracionTransversal.investigacion.evidencia" 
+                                             label="Subir evidencia" 
+                                             outlined 
+                                             dense
+                                             accept="image/*,video/*,.pdf,.doc,.docx"
+                                             :disable="esLecturaSola"
+                                          >
+                                             <template v-slot:prepend>
+                                                <q-icon name="science" color="primary" />
+                                             </template>
+                                          </q-file>
+                                       </div>
+                                    </q-slide-transition>
+                                 </div>
+
+                                 <!-- Interacción Social -->
+                                 <div class="col-12 col-md-4">
+                                    <q-checkbox 
+                                       v-model="integracionTransversal.interaccion.cumplido" 
+                                       label="Interacción Social" 
+                                       color="primary"
+                                       class="text-weight-medium"
+                                       :disable="esLecturaSola"
+                                    />
+                                    <q-slide-transition>
+                                       <div v-show="integracionTransversal.interaccion.cumplido" class="q-mt-sm">
+                                          <!-- Show saved file if exists -->
+                                          <div v-if="typeof integracionTransversal.interaccion.evidencia === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
+                                             <div class="text-caption text-grey-7">Evidencia guardada:</div>
+                                             <a :href="`/storage/${integracionTransversal.interaccion.evidencia}`" target="_blank" class="text-primary">
+                                                <q-icon name="download" size="xs" /> Ver archivo
+                                             </a>
+                                          </div>
+                                          <!-- File upload input -->
+                                          <q-file 
+                                             v-else
+                                             v-model="integracionTransversal.interaccion.evidencia" 
+                                             label="Subir evidencia" 
+                                             outlined 
+                                             dense
+                                             accept="image/*,video/*,.pdf,.doc,.docx"
+                                             :disable="esLecturaSola"
+                                          >
+                                             <template v-slot:prepend>
+                                                <q-icon name="groups" color="primary" />
+                                             </template>
+                                          </q-file>
+                                       </div>
+                                    </q-slide-transition>
+                                 </div>
+
+                                 <!-- Internalización -->
+                                 <div class="col-12 col-md-4">
+                                    <q-checkbox 
+                                       v-model="integracionTransversal.internalizacion.cumplido" 
+                                       label="Internalización" 
+                                       color="primary"
+                                       class="text-weight-medium"
+                                       :disable="esLecturaSola"
+                                    />
+                                    <q-slide-transition>
+                                       <div v-show="integracionTransversal.internalizacion.cumplido" class="q-mt-sm">
+                                          <!-- Show saved file if exists -->
+                                          <div v-if="typeof integracionTransversal.internalizacion.evidencia === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
+                                             <div class="text-caption text-grey-7">Evidencia guardada:</div>
+                                             <a :href="`/storage/${integracionTransversal.internalizacion.evidencia}`" target="_blank" class="text-primary">
+                                                <q-icon name="download" size="xs" /> Ver archivo
+                                             </a>
+                                          </div>
+                                          <!-- File upload input -->
+                                          <q-file 
+                                             v-else
+                                             v-model="integracionTransversal.internalizacion.evidencia" 
+                                             label="Subir evidencia" 
+                                             outlined 
+                                             dense
+                                             accept="image/*,video/*,.pdf,.doc,.docx"
+                                             :disable="esLecturaSola"
+                                          >
+                                             <template v-slot:prepend>
+                                                <q-icon name="psychology" color="primary" />
+                                             </template>
+                                          </q-file>
+                                       </div>
+                                    </q-slide-transition>
+                                 </div>
+                              </div>
+                           </q-card>
                         </div>
 
                         <!-- Sección de Evidencias -->
@@ -191,72 +337,53 @@
                               Evidencias de la Clase
                            </div>
                             <q-card flat bordered class="q-pa-md">
-                               <div class="row q-col-gutter-md">
-                                 <!-- Nivel 1: Evidencias Específicas -->
                                  <div class="col-12">
                                      <div class="row q-col-gutter-md">
                                          <!-- Aprendizaje Activo -->
-                                         <div class="col-12 col-md-6">
+                                         <div class="col-12 col-md-4">
                                              <div class="text-caption text-weight-bold text-indigo q-mb-xs">Evidencia Aprendizaje Activo (Foto/Video)</div>
-                                             <q-file v-model="evidencias.aprendizaje_activo" label="Subir evidencia" outlined dense accept="image/*,video/*">
+                                             <!-- Show saved file if exists -->
+                                             <div v-if="typeof evidencias.aprendizaje_activo === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
+                                                <div class="text-caption text-grey-7">Evidencia guardada:</div>
+                                                <a :href="`/storage/${evidencias.aprendizaje_activo}`" target="_blank" class="text-primary">
+                                                   <q-icon name="download" size="xs" /> Ver archivo
+                                                </a>
+                                             </div>
+                                             <!-- File upload -->
+                                             <q-file v-else v-model="evidencias.aprendizaje_activo" label="Subir evidencia" outlined dense accept="image/*,video/*" :disable="esLecturaSola">
                                                  <template v-slot:prepend><q-icon name="stars" color="indigo" /></template>
                                              </q-file>
                                          </div>
                                          <!-- Evaluación Formativa -->
-                                         <div class="col-12 col-md-6">
-                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Evaluación Formativa (Link/Evidencia)</div>
-                                             <q-input v-model="evidencias.evaluacion_formativa" placeholder="Link a actividad en plataforma" outlined dense>
-                                                 <template v-slot:prepend><q-icon name="assignment_turned_in" color="indigo" /></template>
-                                             </q-input>
-                                         </div>
-                                         <!-- Banco de Preguntas -->
                                          <div class="col-12 col-md-4">
-                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Banco de Preguntas (Link)</div>
-                                             <q-input v-model="evidencias.banco_preguntas" placeholder="Link al repositorio" outlined dense>
-                                                 <template v-slot:prepend><q-icon name="help_center" color="indigo" /></template>
+                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Evaluación Formativa (Link/Evidencia)</div>
+                                             <q-input v-model="evidencias.evaluacion_formativa" placeholder="Link o Archivo" outlined dense :readonly="esLecturaSola">
+                                                 <template v-slot:prepend><q-icon name="assignment_turned_in" color="indigo" /></template>
                                              </q-input>
                                          </div>
                                          <!-- Secuencia Didáctica (Diapositivas) -->
                                          <div class="col-12 col-md-4">
-                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Secuencia Didáctica (Diapositivas)</div>
-                                             <q-file v-model="evidencias.diapositivas" label="Subir Diapositivas" outlined dense accept=".ppt,.pptx,.pdf">
+                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Secuencia Didáctica / Diapositivas</div>
+                                             <!-- Show saved file if exists -->
+                                             <div v-if="typeof evidencias.secuencia_didactica === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
+                                                <div class="text-caption text-grey-7">Evidencia guardada:</div>
+                                                <a :href="`/storage/${evidencias.secuencia_didactica}`" target="_blank" class="text-primary">
+                                                   <q-icon name="download" size="xs" /> Ver archivo
+                                                </a>
+                                             </div>
+                                             <!-- File upload -->
+                                             <q-file v-else v-model="evidencias.secuencia_didactica" label="Subir Archivos" outlined dense accept=".ppt,.pptx,.pdf,.doc,.docx" :disable="esLecturaSola">
                                                  <template v-slot:prepend><q-icon name="presentation_chart_bar" color="indigo" /></template>
                                              </q-file>
                                          </div>
-                                         <!-- Material Plataforma -->
-                                         <div class="col-12 col-md-4">
-                                             <div class="text-caption text-weight-bold text-indigo q-mb-xs">Subida de Material (Evidencia)</div>
-                                             <q-checkbox v-model="evidencias.material_plataforma" label="Material subido a Moodle" color="indigo" dense />
-                                         </div>
                                      </div>
                                  </div>
-
-                                 <!-- Otros Documentos/Fotos (Genérico) -->
-                                 <div class="col-12 col-md-6 q-mt-md">
-                                    <div class="text-caption text-grey-7 q-mb-sm">Otras Fotografías</div>
-                                    <q-file v-model="evidencias.fotos" label="Subir fotos" outlined dense multiple
-                                       accept="image/*" max-files="5">
-                                       <template v-slot:prepend>
-                                          <q-icon name="photo_camera" color="primary" />
-                                       </template>
-                                    </q-file>
-                                 </div>
-                                 <div class="col-12 col-md-6 q-mt-md">
-                                    <div class="text-caption text-grey-7 q-mb-sm">Otros Documentos</div>
-                                    <q-file v-model="evidencias.documentos" label="Subir documentos" outlined dense
-                                       multiple accept=".pdf,.doc,.docx,.xls,.xlsx" max-files="5">
-                                       <template v-slot:prepend>
-                                          <q-icon name="description" color="primary" />
-                                       </template>
-                                    </q-file>
-                                 </div>
-                               </div>
                             </q-card>
                         </div>
-
+                        
                         <div class="flex justify-end q-mt-lg">
                            <q-btn color="secondary" icon="save_as" label="Guardar Seguimiento"
-                              @click="guardarSeguimiento" />
+                              @click="guardarSeguimiento" :disable="esLecturaSola" />
                         </div>
                      </template>
                   </div>
@@ -284,7 +411,7 @@ const gruposStore = useGruposStore()
 
 const tab = ref('asistencia')
 const claseSeleccionada = ref(null)
-const fechaSeguimiento = ref(new Date().toISOString().split('T')[0])
+const fechaSeguimiento = ref(null)
 const loading = ref(false)
 const loadingSesiones = ref(false)
 
@@ -292,6 +419,14 @@ const loadingSesiones = ref(false)
 const materiasReales = ref([])
 const sesiones = ref([])
 const sesionActual = ref(null)
+
+// Computed: Check if current session is completed (read-only mode)
+const esLecturaSola = computed(() => {
+   const cumplido = sesionActual.value?.cumplido
+   const result = cumplido === true || cumplido === 1 || cumplido === '1' || cumplido === 'true'
+   console.log('esLecturaSola computed - cumplido:', cumplido, 'type:', typeof cumplido, 'result:', result)
+   return result
+})
 
 const fetchData = async () => {
    loading.value = true
@@ -350,6 +485,55 @@ const clasesUnificadas = computed(() => {
    return unificadas
 })
 
+// Toggle between pending and completed sessions
+const vistaHistorial = ref(false)
+
+// Computed options based on vistaHistorial toggle
+const sesionesOptions = computed(() => {
+   const filtered = sesiones.value.filter(s => {
+      const isCumplido = s.cumplido === true || s.cumplido === 1 || s.cumplido === '1' || s.cumplido === 'true'
+      return vistaHistorial.value ? isCumplido : !isCumplido
+   })
+   
+   console.log('sesionesOptions - vistaHistorial:', vistaHistorial.value, 'filtered count:', filtered.length, 'total:', sesiones.value.length)
+   
+   return filtered.map(s => {
+           // Format date for display: DD/MM/YYYY
+           let fechaDisplay = s.fecha
+           if (s.fecha && s.fecha.includes('-')) {
+              const [y, m, d] = s.fecha.split('-')
+              fechaDisplay = `${d}/${m}/${y}`
+           }
+           
+           let label = `${fechaDisplay} - Sesión ${s.numero_sesion}`
+           // Try to get a meaningful title
+           if (s.tema && s.tema.titulo) {
+              label += ` - ${s.tema.titulo.substring(0, 40)}...`
+           } else if (s.observaciones) {
+              label += ` - ${s.observaciones}`
+           } else {
+              label += ' - (Sin tema asignado)'
+          }
+          
+          // Add completion indicator for completed sessions
+          if (vistaHistorial.value) {
+             label = '✓ ' + label
+          }
+          
+          return {
+             label: label,
+             value: s.fecha,
+             // Extra data if needed
+             sesionId: s.id
+          }
+      })
+})
+
+// Keep old computed for backward compatibility
+const sesionesPendientesOptions = computed(() => {
+   return sesionesOptions.value
+})
+
 const fetchSesiones = async () => {
    if (!claseSeleccionada.value) return
 
@@ -363,6 +547,24 @@ const fetchSesiones = async () => {
    try {
       const response = await planificacionSemestralService.getPlanificacion(mainCarreraId)
       sesiones.value = response.data.planificacion || []
+      
+      // DEBUG: Log first session to see pedagogico structure
+      if (sesiones.value.length > 0) {
+         console.log('DEBUG - Primera sesión completa:', JSON.stringify(sesiones.value[0], null, 2))
+         console.log('DEBUG - Pedagogico contenido:', JSON.stringify(sesiones.value[0].pedagogico, null, 2))
+         console.log('DEBUG - Tiene tema?:', !!sesiones.value[0].tema)
+         if (sesiones.value[0].tema) {
+            console.log('DEBUG - Tema:', JSON.stringify(sesiones.value[0].tema, null, 2))
+         }
+      }
+      
+      // Auto-select first pending date if available
+      if (sesionesPendientesOptions.value.length > 0) {
+          fechaSeguimiento.value = sesionesPendientesOptions.value[0].value
+      } else {
+          fechaSeguimiento.value = null
+      }
+      
       actualizarSesionPorFecha()
    } catch (error) {
       console.error('Error fetching sessions:', error)
@@ -372,7 +574,10 @@ const fetchSesiones = async () => {
 }
 
 const actualizarSesionPorFecha = () => {
-   if (!sesiones.value.length) return
+   if (!sesiones.value.length || !fechaSeguimiento.value) {
+       sesionActual.value = null
+       return
+   }
 
    // Find session for the current date
    const found = sesiones.value.find(s => s.fecha === fechaSeguimiento.value)
@@ -386,71 +591,99 @@ const actualizarSesionPorFecha = () => {
          temaPlanificado.value = found.contenido_conceptual || 'Sin título de tema'
       }
 
-      temaCumplido.value = found.cumplido || false
+      // Load tema_cumplido from pedagogico (pedagogical information)
+      // cronograma.cumplido indicates if follow-up was saved, not if topic was covered
+      temaCumplido.value = false  // Default
+      
       observacionesClase.value = found.observaciones || ''
 
-      // 2. Pedagogical Details Mapping (Strategies, Evaluation, Sequence)
-      // If we have saved tracking data in the session, use it!
+      // 2. Pedagogical Details Mapping
+      // Includes pedagogical + integration + evidences
       if (found.pedagogico && typeof found.pedagogico === 'object') {
-         pedagogico.value = JSON.parse(JSON.stringify(found.pedagogico))
-         return
-      }
-
-      // We look for planningPersonal first, then shared fields on Tema
-      const planning = found.tema?.planificacion_personal || found.tema
-
-      if (planning) {
-         // ESTRATEGIAS: map recursos array or split text
-         let estrategias = []
-         if (Array.isArray(planning.estrategias_recursos)) {
-            estrategias = planning.estrategias_recursos.map(r => ({ nombre: r, cumplido: false }))
+         const saved = JSON.parse(JSON.stringify(found.pedagogico))
+         
+         // Load tema_cumplido from pedagogico
+         if (saved.tema_cumplido !== undefined) {
+            temaCumplido.value = !!(saved.tema_cumplido)
+            console.log('Loading tema_cumplido from pedagogico:', saved.tema_cumplido, 'converted to:', temaCumplido.value)
          }
-         // Add text categories if present
-         if (planning.estrategias_metodologicas && typeof planning.estrategias_metodologicas === 'string') {
-            estrategias.unshift({ nombre: `Metodología: ${planning.estrategias_metodologicas.substring(0, 50)}...`, cumplido: false })
-         }
-
-         pedagogico.value.estrategias = estrategias.length ? estrategias : [
-            { nombre: 'Lluvia de ideas', cumplido: false },
-            { nombre: 'Trabajo grupal', cumplido: false }
-         ]
-
-         // EVALUACION: map from formativa/sumativa objects (actividades, instrumentos, evidencias)
-         let evaluaciones = []
-         const extractEval = (obj, prefix) => {
-            if (obj && Array.isArray(obj.actividades)) {
-               obj.actividades.forEach(a => evaluaciones.push({ nombre: `${prefix}: ${a}`, cumplido: false }))
-            }
-            if (obj && Array.isArray(obj.instrumentos)) {
-               obj.instrumentos.forEach(i => evaluaciones.push({ nombre: `Inst: ${i}`, cumplido: false }))
-            }
-         }
-
-         extractEval(planning.evaluacion_formativa, 'Form')
-         extractEval(planning.evaluacion_sumativa, 'Sum')
-
-         pedagogico.value.evaluacion = evaluaciones.length ? evaluaciones : [
-            { nombre: 'Participación en clase', cumplido: false },
-            { nombre: 'Prueba rápida', cumplido: false }
-         ]
-
-         // SECUENCIA: map from secuencia_didactica array
-         if (Array.isArray(planning.secuencia_didactica)) {
-            pedagogico.value.secuencia = planning.secuencia_didactica.map(s => ({
-               nombre: `${s.momento}: ${s.actividad?.substring(0, 60)}...`,
-               cumplido: false
-            }))
+         
+         pedagogico.value.estrategias = saved.estrategias || []
+         pedagogico.value.evaluacion = saved.evaluacion || []
+         pedagogico.value.secuencia = saved.secuencia || []
+         
+         if(saved.integracion) {
+             pedagogico.value.integracion = saved.integracion
          } else {
-            // Check if it's the old Tema structure or fallback
-            pedagogico.value.secuencia = [
-               { nombre: 'Introducción', cumplido: false },
-               { nombre: 'Desarrollo', cumplido: false },
-               { nombre: 'Cierre', cumplido: false }
-            ]
+             resetIntegracion()
          }
+         
+         // Load Evidences if saved inside pedagogico
+         if (saved.evidencias) {
+             evidencias.value = saved.evidencias
+         } else {
+             resetEvidencias()
+         }
+         
+         // Load Integración Transversal (new simplified structure)
+         if (saved.integracionTransversal) {
+             integracionTransversal.value = saved.integracionTransversal
+         } else {
+             // Reset to defaults
+             integracionTransversal.value = {
+                investigacion: { cumplido: false, evidencia: null },
+                interaccion: { cumplido: false, evidencia: null },
+                internalizacion: { cumplido: false, evidencia: null }
+             }
+         }
+
       } else {
-         // Fallback to defaults if no topic/planning
-         resetPedagogico()
+         // Load from Planning (Tema)
+         const planning = found.tema?.planificacion_personal || found.tema
+
+         if (planning) {
+             // ESTRATEGIAS
+             let estrategias = []
+             if (Array.isArray(planning.estrategias_recursos)) {
+                estrategias = planning.estrategias_recursos.map(r => ({ nombre: r, cumplido: false }))
+             }
+             if (planning.estrategias_metodologicas && typeof planning.estrategias_metodologicas === 'string') {
+                estrategias.unshift({ nombre: `Metodología: ${planning.estrategias_metodologicas.substring(0, 50)}...`, cumplido: false })
+             }
+             pedagogico.value.estrategias = estrategias
+
+             // EVALUACION
+             let evaluaciones = []
+             const extractEval = (obj, prefix) => {
+                if (obj && Array.isArray(obj.actividades)) {
+                   obj.actividades.forEach(a => evaluaciones.push({ nombre: `${prefix}: ${a}`, cumplido: false }))
+                }
+                if (obj && Array.isArray(obj.instrumentos)) {
+                   obj.instrumentos.forEach(i => evaluaciones.push({ nombre: `Inst: ${i}`, cumplido: false }))
+                }
+             }
+             extractEval(planning.evaluacion_formativa, 'Form')
+             extractEval(planning.evaluacion_sumativa, 'Sum')
+             pedagogico.value.evaluacion = evaluaciones
+
+             // SECUENCIA
+             if (Array.isArray(planning.secuencia_didactica)) {
+                pedagogico.value.secuencia = planning.secuencia_didactica.map(s => ({
+                   nombre: `${s.momento}: ${s.actividad?.substring(0, 60)}...`,
+                   cumplido: false
+                }))
+             } else {
+                pedagogico.value.secuencia = [
+                   { nombre: 'Introducción / Inicio', cumplido: false },
+                   { nombre: 'Desarrollo del contenido', cumplido: false },
+                   { nombre: 'Cierre / Conclusión', cumplido: false }
+                ]
+             }
+         } else {
+             resetPedagogico()
+         }
+         resetIntegracion()
+         resetEvidencias()
       }
    } else {
       sesionActual.value = null
@@ -458,6 +691,8 @@ const actualizarSesionPorFecha = () => {
       temaCumplido.value = false
       observacionesClase.value = ''
       resetPedagogico()
+      resetIntegracion()
+      resetEvidencias()
    }
 }
 
@@ -465,21 +700,42 @@ const resetPedagogico = () => {
    pedagogico.value.estrategias = [
       { nombre: 'Lluvia de ideas', cumplido: false },
       { nombre: 'Trabajo grupal', cumplido: false },
-      { nombre: 'Exposición magistral', cumplido: false },
-      { nombre: 'Casos prácticos', cumplido: false }
+      { nombre: 'Exposición magistral', cumplido: false }
    ]
    pedagogico.value.evaluacion = [
       { nombre: 'Participación en clase', cumplido: false },
-      { nombre: 'Prueba rápida', cumplido: false },
-      { nombre: 'Trabajo en grupo', cumplido: false }
+      { nombre: 'Prueba rápida', cumplido: false }
    ]
    pedagogico.value.secuencia = [
-      { nombre: 'Introducción', cumplido: false },
-      { nombre: 'Resultados de aprendizaje / Logros esperados', cumplido: false },
-      { nombre: 'Contenidos de la clase', cumplido: false },
-      { nombre: 'Cuerpo de contenidos', cumplido: false },
-      { nombre: 'Conclusión o cierre', cumplido: false }
+      { nombre: 'Inicio', cumplido: false },
+      { nombre: 'Desarrollo', cumplido: false },
+      { nombre: 'Cierre', cumplido: false }
    ]
+}
+
+const resetIntegracion = () => {
+    pedagogico.value.integracion = {
+      investigacion: [
+         { nombre: 'Verificación de investigación', cumplido: false },
+         { nombre: 'Análisis crítico', cumplido: false }
+      ],
+      interaccion: [
+         { nombre: 'Interacción social', cumplido: false },
+         { nombre: 'Trabajo en equipo', cumplido: false }
+      ],
+      internalizacion: [
+         { nombre: 'Internalización de valores', cumplido: false },
+         { nombre: 'Aplicación ética', cumplido: false }
+      ]
+   }
+}
+
+const resetEvidencias = () => {
+   evidencias.value = {
+      aprendizaje_activo: null,
+      evaluacion_formativa: '',
+      secuencia_didactica: null
+   }
 }
 
 watch(claseSeleccionada, () => {
@@ -490,6 +746,15 @@ watch(claseSeleccionada, () => {
 
 watch(fechaSeguimiento, () => {
    actualizarSesionPorFecha()
+})
+
+// Watch for toggle changes to auto-select first available session
+watch(vistaHistorial, () => {
+   if (sesionesOptions.value.length > 0) {
+      fechaSeguimiento.value = sesionesOptions.value[0].value
+   } else {
+      fechaSeguimiento.value = null
+   }
 })
 
 const generateMockStudents = (seed) => {
@@ -516,9 +781,7 @@ const claseSeleccionadaObj = computed(() => {
    return clasesUnificadas.value.find(c => c.id === claseSeleccionada.value)
 })
 
-// Mocks for prototype structure
 const temaSeleccionado = ref(null)
-
 watch(temaSeleccionado, (val) => {
    if (val) temaPlanificado.value = val.titulo
 })
@@ -544,36 +807,24 @@ const temaCumplido = ref(false)
 const observacionesClase = ref('')
 
 const pedagogico = ref({
-   estrategias: [
-      { nombre: 'Lluvia de ideas', cumplido: false },
-      { nombre: 'Trabajo grupal', cumplido: false },
-      { nombre: 'Exposición magistral', cumplido: false },
-      { nombre: 'Casos prácticos', cumplido: false }
-   ],
-   evaluacion: [
-      { nombre: 'Participación en clase', cumplido: false },
-      { nombre: 'Prueba rápida', cumplido: false },
-      { nombre: 'Trabajo en grupo', cumplido: false }
-   ],
-   secuencia: [
-      { nombre: 'Introducción', cumplido: false },
-      { nombre: 'Resultados de aprendizaje / Logros esperados', cumplido: false },
-      { nombre: 'Contenidos de la clase', cumplido: false },
-      { nombre: 'Cuerpo de contenidos', cumplido: false },
-      { nombre: 'Conclusión o cierre', cumplido: false }
-   ]
+   estrategias: [],
+   evaluacion: [],
+   secuencia: [],
+   integracion: {}
 })
 
-// Evidencias
+// Evidencias (Simplified)
 const evidencias = ref({
-   fotos: [],
-   links: [],
-   documentos: [],
    aprendizaje_activo: null,
    evaluacion_formativa: '',
-   banco_preguntas: '',
-   diapositivas: null,
-   material_plataforma: false
+   secuencia_didactica: null
+})
+
+// Integración Transversal (Simplified)
+const integracionTransversal = ref({
+   investigacion: { cumplido: false, evidencia: null },
+   interaccion: { cumplido: false, evidencia: null },
+   internalizacion: { cumplido: false, evidencia: null }
 })
 
 const guardarSeguimiento = async () => {
@@ -583,11 +834,57 @@ const guardarSeguimiento = async () => {
    }
 
    try {
-      await planificacionSemestralService.saveSeguimiento(sesionActual.value.id, {
-         cumplido: temaCumplido.value,
-         observaciones: observacionesClase.value,
-         pedagogico: pedagogico.value // Includes checkboxes states
-      })
+      // Create FormData to handle file uploads
+      const formData = new FormData()
+      
+      // Add basic fields
+      // tema_cumplido is pedagogical information, not session completion status
+      formData.append('tema_cumplido', temaCumplido.value ? 'true' : 'false')
+      formData.append('observaciones', observacionesClase.value || '')
+      
+      console.log('Saving session with tema_cumplido:', temaCumplido.value)
+      
+      // Add pedagogical details (non-file data)
+      const pedagogicoData = {
+         estrategias: pedagogico.value.estrategias,
+         evaluacion: pedagogico.value.evaluacion,
+         secuencia: pedagogico.value.secuencia,
+         integracion: pedagogico.value.integracion
+      }
+      
+      // Add integración transversal status (without files)
+      const integracionData = {
+         investigacion: { cumplido: integracionTransversal.value.investigacion.cumplido },
+         interaccion: { cumplido: integracionTransversal.value.interaccion.cumplido },
+         internalizacion: { cumplido: integracionTransversal.value.internalizacion.cumplido }
+      }
+      
+      formData.append('pedagogico', JSON.stringify(pedagogicoData))
+      formData.append('integracion_transversal', JSON.stringify(integracionData))
+      
+      // Add evidence files
+      if (evidencias.value.aprendizaje_activo) {
+         formData.append('evidencia_aprendizaje', evidencias.value.aprendizaje_activo)
+      }
+      if (evidencias.value.evaluacion_formativa) {
+         formData.append('evidencia_evaluacion', evidencias.value.evaluacion_formativa)
+      }
+      if (evidencias.value.secuencia_didactica) {
+         formData.append('evidencia_secuencia', evidencias.value.secuencia_didactica)
+      }
+      
+      // Add integración transversal evidence files
+      if (integracionTransversal.value.investigacion.evidencia) {
+         formData.append('evidencia_investigacion', integracionTransversal.value.investigacion.evidencia)
+      }
+      if (integracionTransversal.value.interaccion.evidencia) {
+         formData.append('evidencia_interaccion', integracionTransversal.value.interaccion.evidencia)
+      }
+      if (integracionTransversal.value.internalizacion.evidencia) {
+         formData.append('evidencia_internalizacion', integracionTransversal.value.internalizacion.evidencia)
+      }
+
+      await planificacionSemestralService.saveSeguimiento(sesionActual.value.id, formData)
 
       $q.notify({
          type: 'positive',
@@ -595,8 +892,32 @@ const guardarSeguimiento = async () => {
          icon: 'save'
       })
 
+      // Store current session date before reload
+      const currentSessionDate = fechaSeguimiento.value
+
+      console.log('Before reload - currentSessionDate:', currentSessionDate)
+
       // Refresh data to ensure sync
-      fetchSesiones()
+      await fetchSesiones()
+      
+      console.log('After reload - sessions:', sesiones.value.length)
+      
+      // Update sesionActual.cumplido to trigger readonly mode immediately
+      // Sessions are always marked as completed when follow-up is saved
+      if (sesionActual.value) {
+         sesionActual.value.cumplido = true
+         console.log('Updated sesionActual.cumplido to: true, esLecturaSola:', esLecturaSola.value)
+      }
+      
+      // Always switch to completed view since session is now completed
+      console.log('Switching to completed view')
+      vistaHistorial.value = true
+      // Wait for next tick to ensure sesionesOptions is updated
+      await new Promise(resolve => setTimeout(resolve, 100))
+      // Re-select the same session in completed view
+      fechaSeguimiento.value = currentSessionDate
+      
+      console.log('Final state - vistaHistorial:', vistaHistorial.value, 'fechaSeguimiento:', fechaSeguimiento.value)
    } catch (error) {
       console.error('Error saving follow-up:', error)
       $q.notify({
@@ -609,7 +930,6 @@ const guardarSeguimiento = async () => {
 onMounted(() => {
    fetchData()
 })
-
 </script>
 
 <style scoped>
