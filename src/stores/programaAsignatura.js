@@ -41,18 +41,7 @@ export const useProgramaAsignaturaStore = defineStore('programaAsignatura', () =
         // Sección 9: Metodología General
         metodologia_general: '',
 
-        // Sección 10: Sistema de Evaluación
-        sistema_evaluacion: {
-            diagnostica: '',
-            formativa: '',
-            sumativa: ''
-        },
-
-        // Sección 12: Organización y Calendario
-        organizacion_calendario: '',
-
-        // Sección 15: Bibliografía Complementaria
-        bibliografia_complementaria: []
+        reglamento_normativa: { clase: '', laboratorio: '' }
     })
 
     // ==========================================
@@ -151,8 +140,8 @@ export const useProgramaAsignaturaStore = defineStore('programaAsignatura', () =
                     proposito_general: response.data.proposito_general || '',
                     competencias: response.data.competencias || { global_especifica: '', competencia_asignatura: '' },
                     elementos_competencia: response.data.elementos_competencia || [],
-                    metodologia_general: response.data.metodologia_general || '',
-                    sistema_evaluacion: response.data.sistema_evaluacion || { diagnostica: '', formativa: '', sumativa: '' },
+                    reglamento_normativa: response.data.reglamento_normativa || { clase: '', laboratorio: '' },
+                    sistema_evaluacion: response.data.sistema_evaluacion || { intro: '', diagnostica: '', formativa: '', sumativa: '', ponderacion: '', final: '' },
                     organizacion_calendario: response.data.organizacion_calendario || '',
                     bibliografia_complementaria: response.data.bibliografia_complementaria || []
                 }

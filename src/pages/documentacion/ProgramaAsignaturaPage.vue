@@ -259,24 +259,41 @@
             />
           </div>
 
-          <!-- Sección 12: Organización y Calendario -->
+          <!-- Sección 12: Criterios y Normativa (REFORMULADO) -->
+          <div class="q-mb-xl">
+            <div class="row items-center q-mb-md">
+              <q-icon name="gavel" color="primary" size="28px" class="q-mr-sm" />
+              <span class="text-h6 text-weight-bold">12. Criterios y Normativa de la Asignatura</span>
+            </div>
+
+            <div class="q-mb-md">
+              <div class="text-subtitle2 text-grey-7 q-mb-xs">Normas Generales de Clase:</div>
+              <div class="q-pa-md bg-grey-1 rounded-borders border-grey-4" style="white-space: pre-wrap;">
+                {{ programa.reglamento_normativa.clase || 'No definido' }}
+              </div>
+            </div>
+
+            <div v-if="programa.reglamento_normativa.laboratorio">
+              <div class="text-subtitle2 text-grey-7 q-mb-xs">Normas de Laboratorio / Práctica:</div>
+              <div class="q-pa-md bg-grey-1 rounded-borders border-grey-4" style="white-space: pre-wrap;">
+                {{ programa.reglamento_normativa.laboratorio }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Sección 13: Organización y Calendario (Legacy/Otros) -->
           <div>
             <div class="row items-center q-mb-md">
               <q-icon name="calendar_month" color="teal" size="28px" class="q-mr-sm" />
-              <span class="text-h6 text-weight-bold">12. Organización y Calendario</span>
+              <span class="text-h6 text-weight-bold">13. Organización y Calendario</span>
             </div>
-            <q-input
-              v-model="programa.organizacion_calendario"
-              outlined
-              type="textarea"
-              rows="4"
-              :readonly="esSoloLectura"
-              placeholder="Cronograma de actividades, fechas importantes..."
-            />
+            <div class="q-pa-md bg-grey-1 rounded-borders border-grey-4" style="white-space: pre-wrap;">
+              {{ programa.organizacion_calendario || 'Cronograma a definir por el docente' }}
+            </div>
           </div>
         </q-tab-panel>
 
-        <!-- Tab: Evaluación -->
+        <!-- Tab: Evaluación (REFORMULADO) -->
         <q-tab-panel name="evaluacion" class="q-pa-lg">
           <q-banner class="bg-purple-1 text-purple-9 q-mb-md rounded-borders" dense>
             <template v-slot:avatar>
@@ -291,21 +308,19 @@
             <span class="text-h6 text-weight-bold">10. Sistema de Evaluación</span>
           </div>
 
-          <div class="row q-col-gutter-lg">
+          <div class="q-mb-md">
+             <div class="text-subtitle2 text-grey-7 q-mb-xs">Introducción:</div>
+             <div class="q-pa-sm bg-grey-1 rounded-borders border-grey-4">{{ programa.sistema_evaluacion.intro }}</div>
+          </div>
+
+          <div class="row q-col-gutter-lg q-mb-md">
             <div class="col-12 col-md-4">
               <q-card flat bordered>
                 <q-card-section class="bg-blue-1">
                   <span class="text-subtitle1 text-weight-bold text-blue-9">Evaluación Diagnóstica</span>
                 </q-card-section>
-                <q-card-section>
-                  <q-input
-                    v-model="programa.sistema_evaluacion.diagnostica"
-                    outlined
-                    type="textarea"
-                    rows="4"
-                    :readonly="esSoloLectura"
-                    placeholder="Recuperación de conocimientos previos..."
-                  />
+                <q-card-section class="q-pa-sm" style="white-space: pre-wrap;">
+                  {{ programa.sistema_evaluacion.diagnostica }}
                 </q-card-section>
               </q-card>
             </div>
@@ -314,15 +329,8 @@
                 <q-card-section class="bg-green-1">
                   <span class="text-subtitle1 text-weight-bold text-green-9">Evaluación Formativa</span>
                 </q-card-section>
-                <q-card-section>
-                  <q-input
-                    v-model="programa.sistema_evaluacion.formativa"
-                    outlined
-                    type="textarea"
-                    rows="4"
-                    :readonly="esSoloLectura"
-                    placeholder="Logro de objetivos de enseñanza..."
-                  />
+                <q-card-section class="q-pa-sm" style="white-space: pre-wrap;">
+                  {{ programa.sistema_evaluacion.formativa }}
                 </q-card-section>
               </q-card>
             </div>
@@ -331,20 +339,27 @@
                 <q-card-section class="bg-orange-1">
                   <span class="text-subtitle1 text-weight-bold text-orange-9">Evaluación Sumativa</span>
                 </q-card-section>
-                <q-card-section>
-                  <q-input
-                    v-model="programa.sistema_evaluacion.sumativa"
-                    outlined
-                    type="textarea"
-                    rows="4"
-                    :readonly="esSoloLectura"
-                    placeholder="Mide el desarrollo de competencias..."
-                  />
+                <q-card-section class="q-pa-sm" style="white-space: pre-wrap;">
+                  {{ programa.sistema_evaluacion.sumativa }}
                 </q-card-section>
               </q-card>
             </div>
           </div>
+
+          <div class="q-mb-md">
+             <div class="text-subtitle2 text-grey-7 q-mb-xs">Ponderación y Parámetros:</div>
+             <div class="q-pa-md bg-grey-1 rounded-borders border-grey-4" style="white-space: pre-wrap; font-family: monospace;">{{ programa.sistema_evaluacion.ponderacion }}</div>
+          </div>
+
+          <div>
+             <div class="text-subtitle2 text-grey-7 q-mb-xs">Aspectos de Evaluación Final:</div>
+             <div class="q-pa-sm bg-grey-1 rounded-borders border-grey-4">{{ programa.sistema_evaluacion.final }}</div>
+          </div>
         </q-tab-panel>
+
+        <!-- Tab: Criterios y Normativa (NUEVO TAB O SECCIÓN EN METODOLOGÍA) -->
+        <!-- Nota: En ProgramaAsignaturaPage.vue original no había tab de Bibliografía literal sino en Bibliografía -->
+        <!-- Reemplazaremos el loop de Bibliografía por algo compatible o mantendremos el tab de Metodología -->
 
         <!-- Tab: Bibliografía -->
         <q-tab-panel name="bibliografia" class="q-pa-lg">
