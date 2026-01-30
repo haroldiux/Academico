@@ -12,10 +12,12 @@
         </p>
       </div>
       <div class="col-auto row q-gutter-sm">
-        <q-btn v-if="examenesFiltrados.length > 0" outline color="red" icon="delete_forever" label="Eliminar Todo"
+        <q-btn v-if="puedeEditar && examenesFiltrados.length > 0" outline color="red" icon="delete_forever" label="Eliminar Todo"
           no-caps @click="eliminarTodo" />
-        <q-btn outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" />
-        <q-btn unelevated color="green" icon="upload_file" label="Subir Excel" no-caps
+        <q-btn v-if="authStore.rol === 'VICERRECTOR_SEDE'" outline color="purple" icon="analytics"
+          label="Reporte Cumplimiento" no-caps @click="abrirReporte" />
+        <q-btn v-if="puedeEditar" outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" />
+        <q-btn v-if="puedeEditar" unelevated color="green" icon="upload_file" label="Subir Excel" no-caps
           @click="showUploadDialog = true" />
       </div>
     </div>
@@ -91,12 +93,19 @@
 
           <template v-slot:body-cell-actions="props">
             <q-td :props="props" class="text-center">
-              <q-btn flat round dense icon="edit" size="sm" color="primary" @click="editarExamen(props.row)">
-                <q-tooltip>Editar</q-tooltip>
-              </q-btn>
-              <q-btn flat round dense icon="delete" size="sm" color="red" @click="eliminarExamen(props.row)">
-                <q-tooltip>Eliminar</q-tooltip>
-              </q-btn>
+              <div v-if="puedeEditar">
+                <q-btn flat round dense icon="edit" size="sm" color="primary" @click="editarExamen(props.row)">
+                  <q-tooltip>Editar</q-tooltip>
+                </q-btn>
+                <q-btn flat round dense icon="delete" size="sm" color="red" @click="eliminarExamen(props.row)">
+                  <q-tooltip>Eliminar</q-tooltip>
+                </q-btn>
+              </div>
+              <div v-else>
+                <q-icon name="lock" color="grey-5" size="xs">
+                  <q-tooltip>Solo lectura</q-tooltip>
+                </q-icon>
+              </div>
             </q-td>
           </template>
 
@@ -104,7 +113,7 @@
             <div class="text-center q-pa-xl">
               <q-icon name="event_busy" size="64px" color="grey-4" />
               <p class="text-grey-6 q-mt-md">No hay exámenes cargados para esta gestión</p>
-              <q-btn unelevated color="green" icon="upload_file" label="Subir Excel" no-caps
+              <q-btn v-if="puedeEditar" unelevated color="green" icon="upload_file" label="Subir Excel" no-caps
                 @click="showUploadDialog = true" />
             </div>
           </template>
@@ -199,6 +208,47 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    <!-- Dialog Reporte Cumplimiento -->
+    <q-dialog v-model="showReportDialog">
+      <q-card style="min-width: 600px; max-width: 80vw;">
+        <div class="dialog-header bg-purple">
+          <h3><q-icon name="analytics" class="q-mr-sm" />Reporte de Cumplimiento</h3>
+        </div>
+
+        <q-card-section>
+          <div class="row items-center justify-between q-mb-md">
+            <div class="text-subtitle1">Gestión: <b>{{ filtros.gestion }}</b></div>
+            <q-btn color="primary" label="Generar Análisis" icon="refresh" :loading="reportLoading"
+              @click="generarReporte" />
+          </div>
+
+          <q-table :rows="reporteData" :columns="reporteColumns" row-key="carrera" dense flat bordered
+            :loading="reportLoading" :pagination="{ rowsPerPage: 0 }" hide-bottom>
+            <template v-slot:body-cell-estado="props">
+              <q-td :props="props" class="text-center">
+                <q-chip :color="props.row.total > 0 ? 'positive' : 'negative'" text-color="white" size="sm">
+                  {{ props.row.total > 0 ? 'Cumplido' : 'Pendiente' }}
+                </q-chip>
+              </q-td>
+            </template>
+            <template v-slot:body-cell-total="props">
+              <q-td :props="props" class="text-center">
+                <span :class="props.row.total === 0 ? 'text-red text-weight-bold' : ''">{{ props.row.total }}</span>
+              </q-td>
+            </template>
+            <template v-slot:no-data>
+              <div class="text-center q-pa-md text-grey">
+                Haga clic en "Generar Análisis" para ver el estado de carga por carrera.
+              </div>
+            </template>
+          </q-table>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cerrar" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -206,10 +256,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
-import { useAuthStore } from 'src/stores/auth'
+import { useAuthStore, ROLES } from 'src/stores/auth'
+import { useCarrerasStore } from 'src/stores/carreras'
+import rolExamenesService from 'src/services/rolExamenesService'
 
 const $q = useQuasar()
 const store = useRolExamenesStore()
+const carrerasStore = useCarrerasStore()
 
 // State
 const showUploadDialog = ref(false)
@@ -245,6 +298,15 @@ const gestionesOptions = [
 const authStore = useAuthStore()
 
 const carrerasOptions = computed(() => {
+  // Para Vicerrector Sede
+  if (authStore.rol === ROLES.VICERRECTOR_SEDE) {
+    return carrerasStore.getCarrerasBySede(authStore.sedeId).map(c => ({
+      label: c.nombre,
+      value: c.id
+    }))
+  }
+
+  // Para Director
   const user = authStore.usuarioActual
   if (!user || !user.director) return []
 
@@ -254,6 +316,11 @@ const carrerasOptions = computed(() => {
     label: c.nombre,
     value: c.id
   }))
+})
+
+// Permiso de Edición
+const puedeEditar = computed(() => {
+  return [ROLES.DIRECTOR_CARRERA, ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol)
 })
 
 const tiposExamenOptions = [
@@ -500,6 +567,61 @@ function eliminarTodo() {
   })
 }
 
+// Reporte State
+const showReportDialog = ref(false)
+const reportLoading = ref(false)
+const reporteData = ref([])
+const reporteColumns = [
+  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left', sortable: true },
+  { name: 'total', label: 'Exámenes Cargados', field: 'total', align: 'center', sortable: true },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true }
+]
+
+function abrirReporte() {
+  showReportDialog.value = true
+  reporteData.value = [] // Reset
+}
+
+async function generarReporte() {
+  reportLoading.value = true
+  reporteData.value = []
+  
+  try {
+    const gestion = filtros.value.gestion
+    const carreras = carrerasOptions.value
+    
+    // Iterate securely using service direct call to avoid Store UI flush
+    const promises = carreras.map(async (c) => {
+      try {
+        const res = await rolExamenesService.getRolExamenes({
+          gestion: gestion,
+          carrera_id: c.value
+        })
+        const total = (res.data.data || res.data || []).length
+        return {
+          carrera: c.label,
+          total: total,
+          estado: total > 0 ? 'Cumplido' : 'Pendiente'
+        }
+      } catch {
+        return {
+          carrera: c.label,
+          total: 0,
+          estado: 'Error'
+        }
+      }
+    })
+    
+    // Execute all in parallel (might be heavy for server if many, but for 30 is fine)
+    reporteData.value = await Promise.all(promises)
+    
+  } catch {
+    $q.notify({ type: 'negative', message: 'Error generando reporte' })
+  } finally {
+    reportLoading.value = false
+  }
+}
+
 onMounted(async () => {
   // Auto-seleccionar si solo hay una carrera
   if (carrerasOptions.value.length === 1) {
@@ -527,6 +649,10 @@ onMounted(async () => {
 
 .dialog-header.bg-green {
   background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.dialog-header.bg-purple {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 }
 
 .dialog-header h3 {

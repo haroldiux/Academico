@@ -484,6 +484,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
@@ -499,6 +500,7 @@ const authStore = useAuthStore()
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
 const reportesStore = useReportesStore()
+const route = useRoute()
 
 // Filtros
 const filtros = ref({
@@ -703,6 +705,12 @@ onMounted(async () => {
   const diff = today.getDate() - day + (day === 0 ? -6 : 1) // adjustments for Sunday
   const monday = new Date(today.setDate(diff))
   filtros.value.fechaDesde = monday.toISOString().split('T')[0]
+
+  // Check for tab query param
+  const tabQuery = route.query.tab
+  if (tabQuery) {
+      tabActivo.value = tabQuery
+  } 
 
   cargarReportes()
 })

@@ -852,7 +852,6 @@ function actualizarHorariosDesdeGrupo() {
   })
 
   // Ordenar por día y hora
-  const diasOrder = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5, 'Domingo': 6 }
   
   todosLosHorarios.sort((a, b) => {
     const diaA = getNroDia(a.dia)
@@ -943,7 +942,6 @@ const opcionesTemasGlobales = computed(() => {
 
 // Lista de todos los horarios ordenados por día y hora
 const horariosOrdenados = computed(() => {
-    const diasOrder = { 'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5, 'Domingo': 6 }
     return [...horarios.value].sort((a, b) => {
         const diaA = getNroDia(a.dia)
         const diaB = getNroDia(b.dia)

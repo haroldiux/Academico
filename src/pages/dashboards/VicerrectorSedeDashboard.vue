@@ -157,25 +157,32 @@
       </div>
     </div>
 
-    <!-- Acciones -->
+    <!-- Accesos Rápidos Solicitados -->
     <div class="actions-section">
-      <h2 class="section-title">Informes Disponibles</h2>
+      <h2 class="section-title">Accesos Rápidos y Reportes</h2>
       <div class="actions-grid">
-        <div class="action-card" @click="generarInformeGeneral">
-          <q-icon name="summarize" size="32px" color="primary" />
-          <span>Informe General</span>
+        <div class="action-card" @click="$router.push('/director/docentes')">
+          <q-icon name="people" size="32px" color="blue" />
+          <span>Gestión Docentes</span>
+          <small class="text-grey-6">Ver Staff de Sede</small>
         </div>
-        <div class="action-card" @click="generarInformeCarreras">
-          <q-icon name="school" size="32px" color="green" />
-          <span>Por Carreras</span>
+        
+        <div class="action-card" @click="$router.push('/carreras')">
+          <q-icon name="school" size="32px" color="indigo" />
+          <span>Carreras</span>
+          <small class="text-grey-6">Directores y Planes</small>
         </div>
-        <div class="action-card" @click="generarInformeDocentes">
-          <q-icon name="people" size="32px" color="orange" />
-          <span>Por Docentes</span>
+
+        <div class="action-card" @click="$router.push('/director/reportes')">
+          <q-icon name="assessment" size="32px" color="green" />
+          <span>Centro de Reportes</span>
+          <small class="text-grey-6">Seguimiento y Control</small>
         </div>
-        <div class="action-card" @click="generarInformePendientes">
-          <q-icon name="pending_actions" size="32px" color="red" />
-          <span>Pendientes</span>
+
+        <div class="action-card" @click="$router.push('/director/reportes?tab=noconformidad')">
+          <q-icon name="gavel" size="32px" color="red" />
+          <span>No Conformidades</span>
+          <small class="text-grey-6">Nivel 4: Decisiones</small>
         </div>
       </div>
     </div>
@@ -220,10 +227,7 @@ const alertas = ref([
 ])
 
 function generarInforme() { console.log('Generando informe ejecutivo...') }
-function generarInformeGeneral() { console.log('Informe general') }
-function generarInformeCarreras() { console.log('Informe por carreras') }
-function generarInformeDocentes() { console.log('Informe por docentes') }
-function generarInformePendientes() { console.log('Informe de pendientes') }
+
 </script>
 
 <style scoped>
