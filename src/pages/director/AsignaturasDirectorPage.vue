@@ -199,11 +199,13 @@ import { useQuasar } from 'quasar'
 import asignaturaService from 'src/services/asignaturaService'
 import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
 import { ref, computed, onMounted, watch } from 'vue'
-import { useAuthStore } from 'src/stores/auth'
+import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
+import { useCarrerasStore } from 'src/stores/carreras'
 
 const authStore = useAuthStore()
 const asignaturasStore = useAsignaturasStore()
+const carrerasStore = useCarrerasStore()
 const $q = useQuasar()
 
 // State for interaction
@@ -309,6 +311,16 @@ const filtros = ref({
 
 // Opciones de Carreras (Dinámicas)
 const carrerasOptions = computed(() => {
+  // Para Vicerrector Sede: Mostrar todas las carreras de su sede
+  if (authStore.rol === ROLES.VICERRECTOR_SEDE) {
+    // Asegurar que las carreras estén cargadas o usar getter
+    return carrerasStore.getCarrerasBySede(authStore.sedeId).map(c => ({
+      label: c.nombre,
+      value: c.id
+    }))
+  }
+
+  // Para Director: Mostrar su(s) carrera(s) asignada(s)
   const director = authStore.usuarioActual?.director
   if (!director) return []
 
@@ -317,8 +329,6 @@ const carrerasOptions = computed(() => {
     return [{ label: director.carrera.nombre, value: director.carrera.id }]
   }
 
-  // Opción 2: Director de múltiples carreras (si implementaste hasMany 'carreras')
-  // Por ahora asumiendo que el backend podría mandarlo, o fallback a lo básico
   return []
 })
 

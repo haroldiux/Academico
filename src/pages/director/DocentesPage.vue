@@ -96,120 +96,94 @@
       </div>
     </div>
 
-    <!-- Lista de Docentes (Expandible con detalle por materia) -->
-    <q-card flat bordered>
-      <q-list separator>
-        <q-expansion-item v-for="docente in docentesFiltrados" :key="docente.id" group="docentes"
-          header-class="bg-white">
-          <template v-slot:header>
-            <q-item-section avatar>
-              <q-avatar color="primary" text-color="white" size="42px">
+    <!-- Grid de Docentes (Cards) -->
+    <div class="row q-col-gutter-md">
+      <div v-for="docente in docentesFiltrados" :key="docente.id" class="col-12 col-sm-6 col-md-3 col-lg-3">
+        <q-card flat bordered class="docente-card full-height">
+          <q-card-section>
+            <div class="row items-start no-wrap">
+              <q-avatar color="green-5" text-color="white" size="48px" class="q-mr-md shadow-1">
                 {{ docente.iniciales }}
               </q-avatar>
-            </q-item-section>
-            <q-item-section>
-              <q-item-label class="text-weight-bold">{{ docente.nombre }}</q-item-label>
-              <q-item-label caption>CI: {{ docente.ci }} • {{ docente.materiasData.length }} materias
-                asignadas</q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <div class="row q-gutter-sm items-center">
-                <q-chip :color="getEstadoGeneralColor(docente)" text-color="white" size="sm">
-                  {{ getEstadoGeneral(docente) }}
-                </q-chip>
-                <q-btn flat round dense icon="assessment" color="primary" @click.stop="generarReporteDocente(docente)">
-                  <q-tooltip>Generar Reporte Completo</q-tooltip>
-                </q-btn>
-                <q-btn flat round dense icon="email" color="grey" @click.stop="contactarDocente(docente)">
-                  <q-tooltip>Contactar</q-tooltip>
-                </q-btn>
+              <div class="col overflow-hidden">
+                <div class="text-subtitle1 text-weight-bold ellipsis">{{ docente.nombre_completo }}</div>
+                <div class="row q-gutter-xs q-mt-xs">
+                  <q-badge color="green-1" text-color="green-8" label="Activo" />
+                  <q-badge color="blue-1" text-color="blue-8" :label="docente.tipo_dedicacion || 'TIEMPO_PARCIAL'" />
+                </div>
               </div>
-            </q-item-section>
-          </template>
+              <q-btn flat round dense icon="more_vert" color="grey-7">
+                <q-menu>
+                  <q-list style="min-width: 150px">
+                    <q-item clickable v-close-popup @click="contactarDocente(docente)">
+                      <q-item-section avatar><q-icon name="email" size="xs" /></q-item-section>
+                      <q-item-section>Contactar</q-item-section>
+                    </q-item>
+                    <q-item clickable v-close-popup @click="generarReporteDocente(docente)">
+                      <q-item-section avatar><q-icon name="assessment" size="xs" /></q-item-section>
+                      <q-item-section>Reporte</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </div>
+          </q-card-section>
 
-          <!-- Detalle por Materia -->
-          <q-card class="bg-grey-1" flat bordered>
-            <q-card-section class="q-pa-md">
-              <q-table :rows="docente.materiasData" :columns="columnasMateria" row-key="codigo" flat bordered
-                separator="cell" dense hide-bottom class="bg-white rounded-borders">
-                <!-- Columna Materia -->
-                <template v-slot:body-cell-materia="props">
-                  <q-td :props="props">
-                    <div>
-                      <div class="text-weight-medium">{{ props.row.nombre }}</div>
-                      <div class="text-caption text-grey-6">{{ props.row.codigo }} • Grupo {{ props.row.grupo }}</div>
-                    </div>
-                  </q-td>
-                </template>
+          <q-separator />
 
-                <!-- Columna Avance Temas -->
-                <template v-slot:body-cell-avanceTemas="props">
-                  <q-td :props="props">
-                    <div class="row items-center no-wrap justify-center" style="min-width: 120px;">
-                      <q-linear-progress :value="props.row.avanceTemas / 100"
-                        :color="getColorPorcentaje(props.row.avanceTemas)" class="q-mr-sm" rounded size="8px"
-                        style="width: 60px;" />
-                      <span class="text-caption">{{ props.row.avanceTemas }}%</span>
-                    </div>
-                  </q-td>
-                </template>
+          <q-card-section class="q-py-sm bg-grey-1">
+            <div class="row text-center">
+              <div class="col">
+                <div class="text-h6 text-weight-bold">{{ docente.materias_count || 0 }}</div>
+                <div class="text-caption text-grey-7" style="font-size: 10px;">Materias</div>
+              </div>
+              <div class="col">
+                <div class="text-h6 text-weight-bold">{{ docente.grupos ? docente.grupos.length : 0 }}</div>
+                <div class="text-caption text-grey-7" style="font-size: 10px;">Grupos</div>
+              </div>
+              <div class="col">
+                <div class="text-h6 text-weight-bold">{{ docente.horas_semanales || 40 }}</div>
+                <div class="text-caption text-grey-7" style="font-size: 10px;">Hrs/Sem</div>
+              </div>
+            </div>
+          </q-card-section>
 
-                <!-- Columna Asistencia -->
-                <template v-slot:body-cell-asistencia="props">
-                  <q-td :props="props">
-                    <q-chip :color="getColorPorcentaje(props.row.asistencia)"
-                      :text-color="getTextColor(getColorPorcentaje(props.row.asistencia))" size="sm">
-                      {{ props.row.asistencia }}%
-                    </q-chip>
-                  </q-td>
-                </template>
+          <q-separator />
 
-                <!-- Columna Documentación -->
-                <template v-slot:body-cell-documentacion="props">
-                  <q-td :props="props">
-                    <div class="row q-gutter-xs justify-center">
-                      <q-icon name="description" :color="props.row.pac ? 'positive' : 'negative'" size="20px">
-                        <q-tooltip>PAC: {{ props.row.pac ? 'Entregado' : 'Pendiente' }}</q-tooltip>
-                      </q-icon>
-                      <q-icon name="class" :color="props.row.planClase ? 'positive' : 'negative'" size="20px">
-                        <q-tooltip>Plan de Clase: {{ props.row.planClase ? 'Entregado' : 'Pendiente' }}</q-tooltip>
-                      </q-icon>
-                      <q-icon name="book" :color="props.row.syllabus ? 'positive' : 'negative'" size="20px">
-                        <q-tooltip>Syllabus: {{ props.row.syllabus ? 'Entregado' : 'Pendiente' }}</q-tooltip>
-                      </q-icon>
-                    </div>
-                  </q-td>
-                </template>
+          <q-card-section class="q-pt-sm" style="min-height: 80px;">
+            <div class="text-caption text-grey-6 q-mb-xs">Materias Asignadas</div>
+            <div v-if="docente.materiasData && docente.materiasData.length > 0" class="row q-gutter-xs">
+              <q-chip v-for="materia in docente.materiasData.slice(0, 3)" :key="materia.codigo" 
+                dense size="xs" color="purple-1" text-color="purple-9" :label="materia.nombre" 
+                class="ellipsis" style="max-width: 100%;" />
+              <q-chip v-if="docente.materiasData.length > 3" dense size="xs" color="grey-2" text-color="grey-8">
+                +{{ docente.materiasData.length - 3 }} más
+              </q-chip>
+            </div>
+            <div v-else class="text-caption text-grey-5 text-italic">
+              Sin materias asignadas
+            </div>
+          </q-card-section>
 
-                <!-- Columna Estado -->
-                <template v-slot:body-cell-estado="props">
-                  <q-td :props="props">
-                    <q-chip :color="getColorEstado(props.row.estado)"
-                      :text-color="getTextColor(getColorEstado(props.row.estado))" size="sm">
-                      {{ props.row.estado }}
-                    </q-chip>
-                  </q-td>
-                </template>
+          <q-card-section class="q-pt-none q-pb-sm">
+             <div class="row items-center text-caption text-grey-6">
+               <q-icon name="fingerprint" size="14px" class="q-mr-xs" />
+               <span class="q-mr-md">{{ docente.ci }}</span>
+               <q-icon name="place" size="14px" class="q-mr-xs" />
+               <span>{{ docente.sede_nombre }}</span>
+             </div>
+          </q-card-section>
+          
+          <!-- Botón flotante acción principal -->
+          <q-btn absolute top-right fab-mini flat icon="visibility" color="grey-5" class="absolute-bottom-right q-ma-sm" 
+            @click="verDetalleMateria(docente, docente.materiasData[0])" 
+            v-if="docente.materiasData.length > 0" >
+             <q-tooltip>Ver Detalle</q-tooltip>
+          </q-btn>
 
-                <!-- Columna Acciones -->
-                <template v-slot:body-cell-acciones="props">
-                  <q-td :props="props">
-                    <q-btn flat round dense icon="visibility" color="primary" size="sm"
-                      @click="verDetalleMateria(docente, props.row)">
-                      <q-tooltip>Ver Detalle</q-tooltip>
-                    </q-btn>
-                    <q-btn flat round dense icon="download" color="grey" size="sm"
-                      @click="descargarReporteMateria(docente, props.row)">
-                      <q-tooltip>Descargar Reporte</q-tooltip>
-                    </q-btn>
-                  </q-td>
-                </template>
-              </q-table>
-            </q-card-section>
-          </q-card>
-        </q-expansion-item>
-      </q-list>
-    </q-card>
+        </q-card>
+      </div>
+    </div>
 
     <!-- Dialog Detalle Materia -->
     <q-dialog v-model="dialogDetalle" persistent>
@@ -228,7 +202,7 @@
               <div class="text-h6 text-weight-bold">{{ detalleSeleccionado.materia.nombre }}</div>
               <div class="text-caption text-grey-6">
                 {{ detalleSeleccionado.materia.codigo }} • Grupo {{ detalleSeleccionado.materia.grupo }} •
-                Docente: {{ detalleSeleccionado.docente.nombre }}
+                Docente: {{ detalleSeleccionado.docente.nombre_completo }}
               </div>
             </div>
           </div>
@@ -319,13 +293,15 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useQuasar } from 'quasar'
-import { useAuthStore } from 'src/stores/auth'
+import { useQuasar, exportFile } from 'quasar'
+import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useDocentesStore } from 'src/stores/docentes'
+import { useCarrerasStore } from 'src/stores/carreras'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
 const docentesStore = useDocentesStore()
+const carrerasStore = useCarrerasStore()
 
 // Filtros
 const filtros = ref({
@@ -340,15 +316,21 @@ const detalleSeleccionado = ref(null)
 
 // Opciones
 const carrerasOptions = computed(() => {
+  // Para Vicerrector Sede
+  if (authStore.rol === ROLES.VICERRECTOR_SEDE) {
+    return carrerasStore.getCarrerasBySede(authStore.sedeId).map(c => ({
+      label: c.nombre,
+      value: c.id
+    }))
+  }
+
   if (authStore.rol === 'DIRECTOR_CARRERA' && authStore.usuarioActual?.director?.carrera) {
     return [{
       label: authStore.usuarioActual.director.carrera.nombre,
       value: authStore.usuarioActual.director.carrera.id
     }]
   }
-  // For Admin/Vicerrector, could fetch all. For now simple or mock fallback if needed, but better use real.
-  // Assuming authStore has accessible careers list or similar.
-  // If not, we might default to Current User's Context.
+  // Fallback for others (Admin) - assuming they might want similar specific access or just current context
   return [{ label: 'Mi Carrera', value: authStore.usuarioActual?.director?.carrera_id }]
 })
 
@@ -411,14 +393,7 @@ watch(() => filtros.value.carrera, () => {
 
 
 // Columnas de la tabla de materias
-const columnasMateria = [
-  { name: 'materia', label: 'Materia', field: 'nombre', align: 'left' },
-  { name: 'avanceTemas', label: 'Avance Temas', field: 'avanceTemas', align: 'center' },
-  { name: 'asistencia', label: 'Asistencia', field: 'asistencia', align: 'center' },
-  { name: 'documentacion', label: 'Documentación', field: 'documentacion', align: 'center' },
-  { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
-]
+
 
 // Docentes computed from STORE instead of mock
 const docentesFiltrados = computed(() => {
@@ -429,7 +404,7 @@ const docentesFiltrados = computed(() => {
     if (filtros.value.buscar) {
       const buscar = filtros.value.buscar.toLowerCase()
       // Backend provides 'nombre' as nombre_completo
-      if (!d.nombre.toLowerCase().includes(buscar) && !(d.ci || '').includes(buscar)) {
+      if (!d.nombre_completo?.toLowerCase().includes(buscar) && !(d.ci || '').includes(buscar)) {
         return false
       }
     }
@@ -474,9 +449,7 @@ const getEstadoGeneral = (docente) => {
   return 'Al día'
 }
 
-const getEstadoGeneralColor = (docente) => {
-  return getColorEstado(getEstadoGeneral(docente))
-}
+
 
 // Acciones
 const verDetalleMateria = (docente, materia) => {
@@ -484,22 +457,49 @@ const verDetalleMateria = (docente, materia) => {
   dialogDetalle.value = true
 }
 
-const descargarReporteMateria = (docente, materia) => {
-  $q.notify({
-    type: 'positive',
-    message: `Descargando reporte de ${materia.nombre} - ${docente.nombre}...`,
-    icon: 'download'
-  })
-}
+
 
 const descargarReporteDetalle = () => {
   if (detalleSeleccionado.value) {
-    $q.notify({
-      type: 'positive',
-      message: `Reporte descargado`,
-      icon: 'check'
-    })
-    dialogDetalle.value = false
+    const m = detalleSeleccionado.value.materia
+    const d = detalleSeleccionado.value.docente
+
+    // Formato CSV Key-Value con BOM
+    const content = [
+      '\uFEFFCampo;Valor',
+      `Reporte;Seguimiento Académico`,
+      `Materia;${m.nombre} (${m.codigo})`,
+      `Docente;${d.nombre_completo || d.nombre}`,
+      `Grupo;${m.grupo}`,
+      `Avance de Temas;${m.avanceTemas}%`,
+      `Asistencia Promedio;${m.asistencia}%`,
+      `Estado PAC;${m.pac ? 'Entregado' : 'Pendiente'}`,
+      `Estado Plan de Clase;${m.planClase ? 'Entregado' : 'Pendiente'}`,
+      `Estado Syllabus;${m.syllabus ? 'Entregado' : 'Pendiente'}`,
+      `Estado General;${m.estado}`,
+      `Fecha Generación;${new Date().toLocaleString()}`
+    ].join('\r\n')
+
+    const status = exportFile(
+      `Reporte_${m.codigo}_${d.ci}.csv`,
+      content,
+      'text/csv'
+    )
+
+    if (status) {
+      $q.notify({
+        type: 'positive',
+        message: 'Reporte descargado correctamente (CSV)',
+        icon: 'check_circle'
+      })
+      dialogDetalle.value = false
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Error al generar descarga',
+        icon: 'warning'
+      })
+    }
   }
 }
 
@@ -519,12 +519,32 @@ const contactarDocente = (docente) => {
   })
 }
 
+
+
+// ... existing imports
+
 const exportarLista = () => {
-  $q.notify({
-    type: 'positive',
-    message: 'Lista de docentes exportada',
-    icon: 'download'
-  })
+  // BOM for Excel support of special characters (accents, etc)
+  const header = '\uFEFFNombre;CI;Sede;Materias;Grupos;Estado'
+  const rows = docentesFiltrados.value.map(d => 
+    `${d.nombre_completo};${d.ci};${d.sede_nombre};${d.materias_count};${d.grupos?.length || 0};${getEstadoGeneral(d)}`
+  )
+  
+  const content = [header, ...rows].join('\r\n')
+
+  const status = exportFile(
+    'lista-docentes.csv',
+    content,
+    'text/csv'
+  )
+
+  if (!status) {
+    $q.notify({
+      type: 'negative',
+      message: 'El navegador denegó la descarga',
+      icon: 'warning'
+    })
+  }
 }
 </script>
 

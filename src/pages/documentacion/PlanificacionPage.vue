@@ -853,6 +853,7 @@ function actualizarHorariosDesdeGrupo() {
 
   // Ordenar por día y hora
 
+
   todosLosHorarios.sort((a, b) => {
     const diaA = getNroDia(a.dia)
     const diaB = getNroDia(b.dia)
