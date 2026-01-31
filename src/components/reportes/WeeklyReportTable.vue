@@ -15,11 +15,16 @@
 
     <template v-slot:body-cell-criterios="props">
       <q-td :props="props">
-        <div class="row q-gutter-xs">
-          <!-- Show small indicators for criteria -->
-          <q-icon v-for="(val, key) in props.row.criterios" :key="key" :name="val ? 'check' : 'close'"
-            :color="val ? 'positive' : 'negative'" size="xs">
-            <q-tooltip>{{ formatCriterioName(key) }}: {{ val ? 'Cumple' : 'No cumple' }}</q-tooltip>
+        <div class="row q-gutter-xs justify-center">
+          <q-icon v-for="(session, index) in props.row.criterios" :key="index"
+            :name="isSessionOk(session) ? 'check_circle' : 'cancel'"
+            :color="isSessionOk(session) ? 'positive' : 'negative'" size="sm">
+            <q-tooltip>
+              <div class="text-caption text-weight-bold">{{ formatDate(session.fecha) }}</div>
+              <div>Asistencia: {{ session.asistencia ? 'OK' : 'Baja' }}</div>
+              <div>Planificación: {{ session.planificacion ? 'OK' : 'Falta' }}</div>
+              <div>Contenido: {{ session.contenido ? 'OK' : 'Falta' }}</div>
+            </q-tooltip>
           </q-icon>
         </div>
       </q-td>
@@ -52,9 +57,9 @@ defineProps({
 })
 
 const columns = [
-  { name: 'asignatura', label: 'Asignatura', field: row => row.asignatura?.nombre || 'N/A', align: 'left', sortable: true },
-  { name: 'carrera', label: 'Carrera', field: row => row.carrera?.nombre || 'N/A', align: 'left', sortable: true },
-  { name: 'docente', label: 'Docente', field: row => row.docente?.nombre || row.docente?.username || 'N/A', align: 'left', sortable: true },
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left', sortable: true },
+  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left', sortable: true },
+  { name: 'docente', label: 'Docente', field: 'docente', align: 'left', sortable: true },
   { name: 'semana', label: 'Semana', field: 'semana_inicio', align: 'left', sortable: true },
   { name: 'criterios', label: 'Criterios', field: 'criterios', align: 'center' },
   { name: 'alerta', label: 'Alerta', field: 'alerta', align: 'center', sortable: true },
@@ -71,8 +76,8 @@ const formatDate = (fecha) => {
   return date.formatDate(fecha, 'DD/MM/YYYY')
 }
 
-const formatCriterioName = (key) => {
-  // Map keys to readable names if needed, or just capitalize
-  return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+const isSessionOk = (session) => {
+  // Define strictness: Must be completed (system status) AND attendance good AND scheduled
+  return session.cumplido && session.asistencia
 }
 </script>

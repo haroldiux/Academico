@@ -94,6 +94,22 @@ export const useReportesStore = defineStore('reportes', () => {
                     console.error('Error auditoria', e)
                     throw e
                 })
+        },
+        generateWeeklyReport(params) {
+            return api.get('/reportes/director/weekly', { params })
+                .then(r => r.data)
+                .catch(e => {
+                    console.error('Error generating weekly report', e)
+                    throw e
+                })
+        },
+        bulkGenerateWeeklyReport(data) {
+            return api.post('/seguimiento-semanal/bulk-generate', data)
+                .then(r => r.data)
+                .catch(e => {
+                    console.error('Error bulk generating', e)
+                    throw e
+                })
         }
     }
 })

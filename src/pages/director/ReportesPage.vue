@@ -64,14 +64,38 @@
 
           <!-- Docente -->
           <div class="col-12 col-md-3">
-            <q-select v-model="filtros.docente" :options="docentesOptions" label="Docente" emit-value map-options
-              outlined dense clearable />
+            <q-select v-model="filtros.docente" :options="filteredDocentes_options" label="Docente" emit-value
+              map-options outlined dense clearable use-input @filter="filterDocentes">
+              <template v-slot:option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt.label }}</q-item-label>
+                    <q-item-label caption>CI: {{ scope.opt.ci }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </template>
+              <template v-slot:no-option>
+                <q-item>
+                  <q-item-section class="text-grey">
+                    No hubo coincidencias.
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
           </div>
 
           <!-- Materia -->
           <div class="col-12 col-md-3">
-            <q-select v-model="filtros.materia" :options="materiasOptions" label="Materia" emit-value map-options
-              outlined dense clearable />
+            <q-select v-model="filtros.materia" :options="filteredMaterias_options" label="Materia" emit-value
+              map-options outlined dense clearable use-input @filter="filterMaterias">
+              <template v-slot:no-option>
+                <q-item>
+                  <q-item-section class="text-grey">
+                    No hubo coincidencias.
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
           </div>
 
           <!-- Botones -->
@@ -145,12 +169,12 @@
         <q-tab name="materias" icon="menu_book" label="Por Materia" />
         <q-tab name="semanal" icon="assignment" label="Cumplimiento Semanal" />
         <q-tab
-          v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'"
+          v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol?.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'"
           name="auditoria" icon="rule" label="Auditoría 25%" />
         <q-tab
-          v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'"
+          v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol?.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'"
           name="matriz" icon="grid_view" label="Matriz Institucional" />
-        <q-tab v-if="authStore.rol.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'" name="noconformidad"
+        <q-tab v-if="authStore.rol?.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'" name="noconformidad"
           icon="gavel" label="No Conformidades" />
         <q-tab v-if="authStore.rol !== 'VICERRECTOR_NACIONAL'" name="asistencias" icon="event_available"
           label="Asistencias" />
@@ -284,7 +308,7 @@
               <q-btn color="primary" icon="add" label="Nuevo Reporte Manual" @click="dialogWeekly = true" />
             </div>
           </div>
-          <weekly-report-table :rows="weeklyReports" :loading="loadingWeekly" @refresh="cargarSeguimientoSemanal"
+          <weekly-report-table :rows="weeklyReports" :loading="loadingWeekly" @refresh="loadWeeklyReports"
             @create="dialogWeekly = true" @edit="editWeeklyReport" />
         </q-tab-panel>
 
@@ -408,7 +432,7 @@
             <template v-slot:body-cell-alertas="props">
               <q-td :props="props">
                 <q-badge :color="props.row.semaforo" class="full-width text-center q-pa-xs">{{ props.row.alertaLabel
-                }}</q-badge>
+                  }}</q-badge>
               </q-td>
             </template>
             <template v-slot:body-cell-avanceReal="props">
@@ -529,14 +553,22 @@ const nombreSedeUsuario = computed(() => {
   return sede ? sede.nombre : 'Sede ' + authStore.usuarioActual.sede_id
 })
 
+// Data from Store
+const metricas = computed(() => reportesStore.metricas)
+const reporteMaterias = computed(() => reportesStore.reporteMaterias)
+
 // Computed options based on loaded data
+const filteredDocentes_options = ref([])
+const filteredMaterias_options = ref([])
+
+// Computed source options
 const docentesOptions = computed(() => {
-  // Extract unique docentes from loaded report data
   const docs = new Map();
+  if (!reporteMaterias.value) return []
   reporteMaterias.value.forEach(m => {
     m.docentes.forEach(d => {
       if (!docs.has(d.id)) {
-        docs.set(d.id, { label: d.nombre, value: d.id });
+        docs.set(d.id, { label: d.nombre, value: d.id, ci: d.ci || 'N/A' });
       }
     })
   });
@@ -544,11 +576,48 @@ const docentesOptions = computed(() => {
 })
 
 const materiasOptions = computed(() => {
+  if (!reporteMaterias.value) return []
   return reporteMaterias.value.map(m => ({
     label: `${m.nombre} (${m.codigo})`,
-    value: m.codigo // Using code as ID for filter currently, or use m.id if available
+    value: m.codigo, // Using code as ID for filter currently
+    nombre: m.nombre,
+    codigo: m.codigo
   })).sort((a, b) => a.label.localeCompare(b.label));
 })
+
+// Filter methods
+const filterDocentes = (val, update) => {
+  if (val === '') {
+    update(() => {
+      filteredDocentes_options.value = docentesOptions.value
+    })
+    return
+  }
+
+  update(() => {
+    const needle = val.toLowerCase()
+    filteredDocentes_options.value = docentesOptions.value.filter(v =>
+      v.label.toLowerCase().indexOf(needle) > -1 ||
+      String(v.ci).toLowerCase().indexOf(needle) > -1
+    )
+  })
+}
+
+const filterMaterias = (val, update) => {
+  if (val === '') {
+    update(() => {
+      filteredMaterias_options.value = materiasOptions.value
+    })
+    return
+  }
+
+  update(() => {
+    const needle = val.toLowerCase()
+    filteredMaterias_options.value = materiasOptions.value.filter(v =>
+      v.label.toLowerCase().indexOf(needle) > -1
+    )
+  })
+}
 
 const carrerasOptions = computed(() => {
   const currentSedeId = filtros.value.sede || authStore.usuarioActual?.sede_id
@@ -564,9 +633,13 @@ const carrerasOptions = computed(() => {
   return carrerasStore.getCarrerasOptions(currentSedeId)
 })
 
-// Data from Store
-const metricas = computed(() => reportesStore.metricas)
-const reporteMaterias = computed(() => reportesStore.reporteMaterias)
+watch(docentesOptions, (val) => {
+  filteredDocentes_options.value = val
+}, { immediate: true })
+
+watch(materiasOptions, (val) => {
+  filteredMaterias_options.value = val
+}, { immediate: true })
 
 // Columnas Nivel 3 y 4
 const columnasAuditoria25 = [
@@ -618,6 +691,25 @@ const columnasDocentesMateria = [
   { name: 'asistencia', label: 'Asistencia', field: 'asistencia', align: 'center' },
   { name: 'documentacion', label: 'Documentación', field: 'documentacion', align: 'center' },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center' }
+]
+
+const columnasAsistencias = [
+  { name: 'materia', label: 'Materia', field: 'materia', align: 'left', sortable: true },
+  { name: 'docente', label: 'Docente', field: 'docente', align: 'left', sortable: true },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
+  { name: 'clasesImpartidas', label: 'Clases', field: 'clasesImpartidas', align: 'center' },
+  { name: 'estudiantesInscritos', label: 'Inscritos', field: 'estudiantesInscritos', align: 'center' },
+  { name: 'porcentaje', label: 'Asistencia %', field: 'porcentaje', align: 'center', sortable: true },
+  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
+]
+
+const columnasSeguimiento = [
+  { name: 'materia', label: 'Materia', field: 'materia', align: 'left', sortable: true },
+  { name: 'docente', label: 'Docente', field: 'docente', align: 'left', sortable: true },
+  { name: 'temasCompletados', label: 'Avance Temas', field: 'temasCompletados', align: 'left' },
+  { name: 'ultimaClase', label: 'Última Clase', field: 'ultimaClase', align: 'center' },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
+  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
 ]
 
 // Derived lists for other tabs
@@ -709,8 +801,8 @@ onMounted(async () => {
   // Check for tab query param
   const tabQuery = route.query.tab
   if (tabQuery) {
-      tabActivo.value = tabQuery
-  } 
+    tabActivo.value = tabQuery
+  }
 
   cargarReportes()
 })
@@ -910,52 +1002,36 @@ const descargarReporteDocenteMateria = (materia, docente) => {
 }
 const generateWeeklyReports = async () => {
   if (!filtros.value.carrera || !filtros.value.fechaDesde) {
-    $q.notify({ type: 'warning', message: 'Seleccione Carrera y Fecha Desde para generar reportes' })
+    $q.notify({ type: 'warning', message: 'Seleccione Carrera y Fecha Desde' })
     return
   }
 
-  $q.loading.show({ message: 'Escaneando Control de Clase del Docente...' })
-
-  // Simulate prototype behavior
-  await new Promise(r => setTimeout(r, 1500))
-
+  loadingWeekly.value = true
   try {
-    const mockData = [
-      {
-        id: Math.random(),
-        asignatura: { nombre: 'Álgebra I', codigo: 'MAT-101' },
-        carrera: { nombre: 'Ingeniería de Sistemas' },
-        docente: { nombre: 'KARINA PAOLA LOPEZ' },
-        semana_inicio: filtros.value.fechaDesde,
-        alerta: 'VERDE',
-        criterios: { temaImpartido: true, actividadesFormativas: true, secuenciaDidactica: true, plataformaVirtual: true, evidencias: true, evaluaciones: true, integracionTransversal: true },
-        observaciones_generales: 'Sin observaciones. Cumplimiento total.'
-      },
-      {
-        id: Math.random(),
-        asignatura: { nombre: 'Programación I', codigo: 'SIS-121' },
-        carrera: { nombre: 'Ingeniería de Sistemas' },
-        docente: { nombre: 'HAROLD MARCO ANTONIO ROJAS' },
-        semana_inicio: filtros.value.fechaDesde,
-        alerta: 'ROJO',
-        criterios: { temaImpartido: false, actividadesFormativas: true, secuenciaDidactica: false, plataformaVirtual: true, evidencias: false, evaluaciones: true, integracionTransversal: false },
-        observaciones_generales: 'Generado automáticamente: Se detectó falta de registro de temas y evidencias en 2 de 3 sesiones.'
-      }
-    ]
+    const params = {
+      carrera_id: filtros.value.carrera,
+      sede_id: filtros.value.sede || authStore.usuarioActual?.sede_id,
+      fecha_inicio: filtros.value.fechaDesde
+    }
 
-    weeklyReports.value = [...mockData, ...weeklyReports.value]
+    // Call real endpoint
+    const data = await reportesStore.generateWeeklyReport(params)
 
-    $q.notify({
-      type: 'positive',
-      message: 'Se han generado 2 reportes basados en la actividad docente de la semana.',
-      caption: '1 en VERDE, 1 en ROJO',
-      icon: 'auto_awesome'
-    })
+    if (data.length === 0) {
+      $q.notify({ type: 'info', message: 'No se encontraron materias con programación para esta semana' })
+    } else {
+      weeklyReports.value = data
+      $q.notify({
+        type: 'positive',
+        message: `Se han generado ${data.length} reportes de cumplimiento semanal`
+      })
+    }
+
   } catch (error) {
-    console.error(error)
-    $q.notify({ type: 'negative', message: 'Error al generar reportes' })
+    console.error('Error in weekly reports:', error)
+    $q.notify({ type: 'negative', message: 'Error al generar reportes semanales' })
   } finally {
-    $q.loading.hide()
+    loadingWeekly.value = false
   }
 }
 
