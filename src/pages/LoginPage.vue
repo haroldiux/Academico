@@ -218,7 +218,7 @@ async function handleChangePassword() {
   changingPassword.value = true
   changeError.value = ''
 
-  const result = await authStore.changePassword(password.value, newPassword.value)
+  const result = await authStore.changePassword(newPassword.value)
 
   changingPassword.value = false
   if (result.success) {
