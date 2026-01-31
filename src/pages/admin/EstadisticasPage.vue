@@ -10,43 +10,18 @@
         <p class="page-subtitle">Análisis y métricas académicas en tiempo real</p>
       </div>
       <div class="header-actions">
-        <q-select
-          v-model="periodoSeleccionado"
-          :options="periodosOptions"
-          outlined
-          dense
-          emit-value
-          map-options
-          style="min-width: 150px;"
-        />
+        <q-select v-model="periodoSeleccionado" :options="periodosOptions" outlined dense emit-value map-options
+          style="width: 100%; max-width: 150px; min-width: 120px;" />
         <q-btn outline color="primary" icon="download" label="Exportar" no-caps />
       </div>
     </div>
 
     <!-- Filtros principales -->
     <div class="filters-section">
-      <q-select
-        v-model="filtros.sede"
-        :options="sedesOptions"
-        outlined
-        dense
-        label="Sede"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 180px;"
-      />
-      <q-select
-        v-model="filtros.carrera"
-        :options="carrerasOptions"
-        outlined
-        dense
-        label="Carrera"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 220px;"
-      />
+      <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
+        clearable style="min-width: 180px;" />
+      <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
+        map-options clearable style="min-width: 220px;" />
     </div>
 
     <!-- KPIs Principales -->
@@ -141,17 +116,10 @@
           <div class="chart-content donut-wrapper">
             <div class="donut-chart">
               <svg viewBox="0 0 100 100" class="donut">
-                <circle 
-                  v-for="carrera in carrerasDistribucion" 
-                  :key="carrera.nombre"
-                  cx="50" cy="50" r="40"
-                  fill="transparent"
-                  :stroke="carrera.color"
-                  stroke-width="15"
-                  :stroke-dasharray="carrera.dasharray"
+                <circle v-for="carrera in carrerasDistribucion" :key="carrera.nombre" cx="50" cy="50" r="40"
+                  fill="transparent" :stroke="carrera.color" stroke-width="15" :stroke-dasharray="carrera.dasharray"
                   :stroke-dashoffset="carrera.offset"
-                  :style="{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }"
-                />
+                  :style="{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }" />
               </svg>
               <div class="donut-center">
                 <span class="donut-value">{{ stats.totalEstudiantes.toLocaleString() }}</span>
@@ -183,12 +151,8 @@
                   <span class="progress-name">{{ item.carrera }}</span>
                   <span class="progress-percent">{{ item.progreso }}%</span>
                 </div>
-                <q-linear-progress 
-                  :value="item.progreso / 100" 
-                  :color="getProgressColor(item.progreso)"
-                  rounded
-                  size="8px"
-                />
+                <q-linear-progress :value="item.progreso / 100" :color="getProgressColor(item.progreso)" rounded
+                  size="8px" />
               </div>
             </div>
           </div>
@@ -233,35 +197,24 @@
           <h3>Rendimiento por Sede</h3>
           <q-btn flat color="primary" icon="download" label="Exportar Excel" size="sm" no-caps />
         </div>
-        <q-table
-          :rows="rendimientoPorSede"
-          :columns="columnsRendimiento"
-          row-key="sede"
-          flat
-          dense
-        >
+        <q-table :rows="rendimientoPorSede" :columns="columnsRendimiento" row-key="sede" flat dense>
           <template v-slot:body-cell-progreso="props">
             <q-td :props="props">
               <div class="flex items-center gap-2">
-                <q-linear-progress 
-                  :value="props.row.progreso / 100" 
-                  :color="getProgressColor(props.row.progreso)"
-                  style="width: 80px;"
-                  rounded
-                />
+                <q-linear-progress :value="props.row.progreso / 100" :color="getProgressColor(props.row.progreso)"
+                  style="width: 80px;" rounded />
                 <span>{{ props.row.progreso }}%</span>
               </div>
             </q-td>
           </template>
           <template v-slot:body-cell-tendencia="props">
             <q-td :props="props">
-              <q-chip 
-                :color="props.row.tendencia > 0 ? 'green-2' : props.row.tendencia < 0 ? 'red-2' : 'grey-3'" 
+              <q-chip :color="props.row.tendencia > 0 ? 'green-2' : props.row.tendencia < 0 ? 'red-2' : 'grey-3'"
                 :text-color="props.row.tendencia > 0 ? 'green-9' : props.row.tendencia < 0 ? 'red-9' : 'grey-7'"
-                size="sm"
-                dense
-              >
-                <q-icon :name="props.row.tendencia > 0 ? 'trending_up' : props.row.tendencia < 0 ? 'trending_down' : 'remove'" size="14px" class="q-mr-xs" />
+                size="sm" dense>
+                <q-icon
+                  :name="props.row.tendencia > 0 ? 'trending_up' : props.row.tendencia < 0 ? 'trending_down' : 'remove'"
+                  size="14px" class="q-mr-xs" />
                 {{ props.row.tendencia > 0 ? '+' : '' }}{{ props.row.tendencia }}%
               </q-chip>
             </q-td>
@@ -292,11 +245,11 @@ const periodosOptions = [
   { label: 'Gestión 2025-I', value: '2025-1' }
 ]
 
-const sedesOptions = computed(() => 
+const sedesOptions = computed(() =>
   sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
 )
 
-const carrerasOptions = computed(() => 
+const carrerasOptions = computed(() =>
   carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id }))
 )
 
@@ -331,7 +284,7 @@ const carrerasDistribucion = computed(() => {
     { nombre: 'Administración', porcentaje: 15, color: '#f59e0b' },
     { nombre: 'Otros', porcentaje: 10, color: '#6b7280' }
   ]
-  
+
   let offset = 0
   return data.map(item => {
     const dasharray = (item.porcentaje / 100) * 251.2 // 2 * PI * 40
@@ -442,15 +395,26 @@ function getProgressColor(value) {
   gap: 20px;
 }
 
-.gradient-purple { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
-.gradient-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-.gradient-green { background: linear-gradient(135deg, #10b981, #059669); }
-.gradient-orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.gradient-purple {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+}
+
+.gradient-blue {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.gradient-green {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.gradient-orange {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
 
 .kpi-icon {
   width: 60px;
   height: 60px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -483,8 +447,13 @@ function getProgressColor(value) {
   width: fit-content;
 }
 
-.kpi-change.positive { background: rgba(255,255,255,0.2); }
-.kpi-change.neutral { background: rgba(255,255,255,0.15); }
+.kpi-change.positive {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.kpi-change.neutral {
+  background: rgba(255, 255, 255, 0.15);
+}
 
 /* Charts Grid */
 .charts-grid {
@@ -685,12 +654,22 @@ function getProgressColor(value) {
 }
 
 @media (max-width: 1200px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .charts-grid { grid-template-columns: 1fr; }
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 600px) {
-  .kpi-grid { grid-template-columns: 1fr; }
-  .donut-wrapper { flex-direction: column; }
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .donut-wrapper {
+    flex-direction: column;
+  }
 }
 </style>

@@ -7,14 +7,8 @@
         <h1 class="page-title">Mi Perfil</h1>
       </div>
       <div class="header-right">
-        <q-btn
-          color="primary"
-          icon="save"
-          label="Guardar Cambios"
-          class="btn-rounded shadow-2"
-          :loading="saving"
-          @click="handleSave"
-        />
+        <q-btn color="primary" icon="save" label="Guardar Cambios" class="btn-rounded shadow-2" :loading="saving"
+          @click="handleSave" />
       </div>
     </div>
 
@@ -28,58 +22,29 @@
           </div>
 
           <div class="form-grid">
-            <q-input
-              v-model="form.nombre"
-              label="Nombre(s)"
-              outlined
-              class="input-rounded"
-              bg-color="bg-tertiary"
-              :rules="[val => !!val || 'Requerido']"
-            >
+            <q-input v-model="form.nombre" label="Nombre(s)" outlined class="input-rounded" bg-color="bg-tertiary"
+              :rules="[val => !!val || 'Requerido']">
               <template v-slot:prepend><q-icon name="person" /></template>
             </q-input>
 
-            <q-input
-              v-model="form.apellido"
-              label="Apellidos"
-              outlined
-              class="input-rounded"
-              bg-color="bg-tertiary"
-              :rules="[val => !!val || 'Requerido']"
-            >
+            <q-input v-model="form.apellido" label="Apellidos" outlined class="input-rounded" bg-color="bg-tertiary"
+              :rules="[val => !!val || 'Requerido']">
               <template v-slot:prepend><q-icon name="people" /></template>
             </q-input>
 
-            <q-input
-              v-model="form.ci"
-              label="Cédula de Identidad (CI)"
-              outlined
-              class="input-rounded"
-              bg-color="bg-tertiary"
-              :rules="[val => !!val || 'Requerido']"
-            >
+            <q-input v-model="form.ci" label="Cédula de Identidad (CI)" outlined class="input-rounded"
+              bg-color="bg-tertiary" :rules="[val => !!val || 'Requerido']">
               <template v-slot:prepend><q-icon name="fingerprint" /></template>
             </q-input>
 
-            <q-input
-              v-model="form.email"
-              label="Correo Electrónico"
-              outlined
-              class="input-rounded"
+            <q-input v-model="form.email" label="Correo Electrónico" outlined class="input-rounded"
               bg-color="bg-tertiary"
-              :rules="[val => !!val || 'Correo inválido', val => /.+@.+\..+/.test(val) || 'Formato inválido']"
-            >
+              :rules="[val => !!val || 'Correo inválido', val => /.+@.+\..+/.test(val) || 'Formato inválido']">
               <template v-slot:prepend><q-icon name="email" /></template>
             </q-input>
 
-            <q-input
-              v-model="form.telefono"
-              label="Número de Teléfono / Celular"
-              outlined
-              class="input-rounded"
-              bg-color="bg-tertiary"
-              placeholder="Ej: 78945612"
-            >
+            <q-input v-model="form.telefono" label="Número de Teléfono / Celular" outlined class="input-rounded"
+              bg-color="bg-tertiary" placeholder="Ej: 78945612">
               <template v-slot:prepend><q-icon name="phone" /></template>
             </q-input>
           </div>
@@ -134,7 +99,7 @@
               <p class="info-value">{{ carreraNombre }}</p>
             </div>
             <q-separator dark class="q-my-sm opacity-10" />
-             <div v-if="authStore.usuarioActual?.docente?.grado_academico" class="info-item">
+            <div v-if="authStore.usuarioActual?.docente?.grado_academico" class="info-item">
               <p class="info-label">Grado Académico</p>
               <p class="info-value">{{ authStore.usuarioActual.docente.grado_academico }}</p>
             </div>
@@ -145,19 +110,21 @@
 
     <!-- Password Dialog -->
     <q-dialog v-model="showPwdDialog" backdrop-filter="blur(4px)">
-      <q-card style="min-width: 400px; border-radius: 16px;">
+      <q-card style="width: 100%; max-width: 400px; border-radius: 16px;">
         <q-card-section class="bg-gradient-warning text-white q-py-lg">
           <div class="text-h6 text-weight-bold">Cambiar Contraseña</div>
         </q-card-section>
 
         <q-card-section class="q-pa-lg q-gutter-md">
           <q-input v-model="pwdForm.new" label="Nueva Contraseña" outlined type="password" class="input-rounded" />
-          <q-input v-model="pwdForm.confirm" label="Confirmar Nueva Contraseña" outlined type="password" class="input-rounded" />
+          <q-input v-model="pwdForm.confirm" label="Confirmar Nueva Contraseña" outlined type="password"
+            class="input-rounded" />
         </q-card-section>
 
         <q-card-actions align="right" class="q-pa-md border-top">
           <q-btn flat label="Cancelar" color="grey-7" v-close-popup no-caps />
-          <q-btn unelevated label="Actualizar Contraseña" color="primary" class="btn-rounded" :loading="changingPwd" @click="handleUpdatePwd" no-caps />
+          <q-btn unelevated label="Actualizar Contraseña" color="primary" class="btn-rounded" :loading="changingPwd"
+            @click="handleUpdatePwd" no-caps />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -233,14 +200,14 @@ const rolLabel = computed(() => {
 
 const sedeNombre = computed(() => authStore.usuarioActual?.docente?.sede?.nombre || 'Cochabamba')
 const carreraNombre = computed(() => {
-    const director = authStore.usuarioActual?.director
-    if (director?.carrera) return director.carrera.nombre
+  const director = authStore.usuarioActual?.director
+  if (director?.carrera) return director.carrera.nombre
 
-    // Si es docente, mostrar todas sus carreras asociadas
-    const careers = authStore.usuarioActual?.carreras || []
-    if (careers.length > 0) return careers.join(', ')
+  // Si es docente, mostrar todas sus carreras asociadas
+  const careers = authStore.usuarioActual?.carreras || []
+  if (careers.length > 0) return careers.join(', ')
 
-    return 'General'
+  return 'General'
 })
 
 async function handleSave() {
@@ -322,7 +289,9 @@ async function handleUpdatePwd() {
 }
 
 @media (max-width: 900px) {
-  .content-grid { grid-template-columns: 1fr; }
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .profile-card {
@@ -357,7 +326,9 @@ async function handleUpdatePwd() {
 }
 
 @media (max-width: 600px) {
-  .form-grid { grid-template-columns: 1fr; }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .input-rounded :deep(.q-field__control) {
@@ -475,5 +446,7 @@ async function handleUpdatePwd() {
   border-top: 1px solid var(--border-color);
 }
 
-.opacity-10 { opacity: 0.1; }
+.opacity-10 {
+  opacity: 0.1;
+}
 </style>

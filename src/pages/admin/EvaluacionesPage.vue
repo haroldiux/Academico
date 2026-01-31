@@ -10,37 +10,22 @@
         <p class="page-subtitle">Crea y administra exámenes desde el banco de preguntas</p>
       </div>
       <div class="header-actions">
-        <q-btn outline color="green" icon="upload_file" label="Importar Horarios" no-caps @click="showImportDialog = true" />
+        <q-btn outline color="green" icon="upload_file" label="Importar Horarios" no-caps
+          @click="showImportDialog = true" />
         <q-btn unelevated color="orange" icon="add" label="Nueva Evaluación" no-caps @click="openDialog()" />
       </div>
     </div>
 
     <!-- Filtros -->
     <div class="filters-section">
-      <q-select
-        v-model="filtros.sede"
-        :options="sedesOptions"
-        outlined dense label="Sede" emit-value map-options clearable
-        style="min-width: 180px;"
-      />
-      <q-select
-        v-model="filtros.carrera"
-        :options="carrerasOptions"
-        outlined dense label="Carrera" emit-value map-options clearable
-        style="min-width: 200px;"
-      />
-      <q-select
-        v-model="filtros.parcial"
-        :options="parcialesOptions"
-        outlined dense label="Parcial" emit-value map-options clearable
-        style="min-width: 150px;"
-      />
-      <q-select
-        v-model="filtros.estado"
-        :options="estadosOptions"
-        outlined dense label="Estado" emit-value map-options clearable
-        style="min-width: 150px;"
-      />
+      <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
+        clearable style="min-width: 180px;" />
+      <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
+        map-options clearable style="min-width: 200px;" />
+      <q-select v-model="filtros.parcial" :options="parcialesOptions" outlined dense label="Parcial" emit-value
+        map-options clearable style="min-width: 150px;" />
+      <q-select v-model="filtros.estado" :options="estadosOptions" outlined dense label="Estado" emit-value map-options
+        clearable style="min-width: 150px;" />
     </div>
 
     <!-- Estadísticas -->
@@ -77,13 +62,7 @@
 
     <!-- Tabla de Evaluaciones -->
     <q-card class="table-card">
-      <q-table
-        :rows="evaluacionesFiltradas"
-        :columns="columns"
-        row-key="id"
-        flat
-        :pagination="{ rowsPerPage: 10 }"
-      >
+      <q-table :rows="evaluacionesFiltradas" :columns="columns" row-key="id" flat :pagination="{ rowsPerPage: 10 }">
         <template v-slot:body-cell-materia="props">
           <q-td :props="props">
             <div class="materia-cell">
@@ -114,22 +93,17 @@
           <q-td :props="props">
             <div class="flex items-center gap-2">
               <span class="text-weight-medium">{{ props.row.preguntas_count }}</span>
-              <q-linear-progress 
-                :value="props.row.preguntas_count / props.row.preguntas_total" 
-                :color="props.row.preguntas_count >= props.row.preguntas_total ? 'green' : 'orange'" 
-                rounded size="6px" style="width: 60px;" 
-              />
+              <q-linear-progress :value="props.row.preguntas_count / props.row.preguntas_total"
+                :color="props.row.preguntas_count >= props.row.preguntas_total ? 'green' : 'orange'" rounded size="6px"
+                style="width: 60px;" />
             </div>
           </q-td>
         </template>
 
         <template v-slot:body-cell-patron="props">
           <q-td :props="props">
-            <q-btn 
-              v-if="puedeGenerarPatron(props.row)" 
-              flat dense color="green" icon="fact_check" label="Generar Patrón" no-caps size="sm"
-              @click="generarPatron(props.row)"
-            />
+            <q-btn v-if="puedeGenerarPatron(props.row)" flat dense color="green" icon="fact_check"
+              label="Generar Patrón" no-caps size="sm" @click="generarPatron(props.row)" />
             <q-chip v-else-if="props.row.patronGenerado" color="green-2" text-color="green-9" size="sm" dense>
               <q-icon name="check" size="14px" class="q-mr-xs" /> Patrón listo
             </q-chip>
@@ -155,7 +129,7 @@
 
     <!-- Dialog Crear/Editar Evaluación -->
     <q-dialog v-model="showDialog" persistent>
-      <q-card class="dialog-card" style="min-width: 700px; max-width: 90vw;">
+      <q-card class="dialog-card" style="width: 100%; max-width: 700px;">
         <div class="dialog-header">
           <h3>
             <q-icon :name="editMode ? 'edit' : 'add_circle'" class="q-mr-sm" />
@@ -168,32 +142,24 @@
             <!-- Paso 1: Información Básica -->
             <q-step :name="1" title="Información Básica" icon="info" :done="step > 1">
               <div class="q-gutter-md">
-                <q-input v-model="form.nombre" outlined label="Nombre de la Evaluación *" placeholder="Ej: Primer Parcial - Anatomía I" />
-                
+                <q-input v-model="form.nombre" outlined label="Nombre de la Evaluación *"
+                  placeholder="Ej: Primer Parcial - Anatomía I" />
+
                 <div class="row q-col-gutter-md">
                   <div class="col-6">
-                    <q-select
-                      v-model="form.carrera"
-                      :options="carrerasOptions"
-                      outlined label="Carrera *" emit-value map-options
-                    />
+                    <q-select v-model="form.carrera" :options="carrerasOptions" outlined label="Carrera *" emit-value
+                      map-options />
                   </div>
                   <div class="col-6">
-                    <q-select
-                      v-model="form.materia"
-                      :options="materiasOptions"
-                      outlined label="Materia *" emit-value map-options
-                    />
+                    <q-select v-model="form.materia" :options="materiasOptions" outlined label="Materia *" emit-value
+                      map-options />
                   </div>
                 </div>
 
                 <div class="row q-col-gutter-md">
                   <div class="col-4">
-                    <q-select
-                      v-model="form.parcial"
-                      :options="parcialesOptions"
-                      outlined label="Parcial *" emit-value map-options
-                    >
+                    <q-select v-model="form.parcial" :options="parcialesOptions" outlined label="Parcial *" emit-value
+                      map-options>
                       <template v-slot:option="scope">
                         <q-item v-bind="scope.itemProps">
                           <q-item-section avatar>
@@ -226,11 +192,8 @@
                 <!-- Total de preguntas -->
                 <div class="config-section">
                   <div class="section-title">Total de Preguntas</div>
-                  <q-input 
-                    v-model.number="form.totalPreguntas" 
-                    outlined type="number" min="5" max="100"
-                    style="max-width: 200px;"
-                  >
+                  <q-input v-model.number="form.totalPreguntas" outlined type="number" min="5" max="100"
+                    style="max-width: 200px;">
                     <template v-slot:append>
                       <span class="text-grey-6">preguntas</span>
                     </template>
@@ -240,8 +203,9 @@
                 <!-- Distribución por Dificultad -->
                 <div class="config-section">
                   <div class="section-title">Distribución por Dificultad</div>
-                  <p class="text-caption text-grey-6 q-mb-md">Arrastra los separadores para distribuir las {{ form.totalPreguntas }} preguntas</p>
-                  
+                  <p class="text-caption text-grey-6 q-mb-md">Arrastra los separadores para distribuir las {{
+                    form.totalPreguntas }} preguntas</p>
+
                   <!-- Barra única segmentada -->
                   <div class="distribucion-bar-container">
                     <div class="distribucion-bar">
@@ -262,63 +226,49 @@
                     <div class="control-item">
                       <q-chip color="green" text-color="white" size="sm" icon="sentiment_satisfied">Fácil</q-chip>
                       <div class="control-btns">
-                        <q-btn round flat dense icon="remove" size="sm" @click="ajustarDificultad('facil', -1)" :disable="form.dificultad.facil <= 0" />
-                        <q-input 
-                          v-model.number="form.dificultad.facil" 
-                          type="number" 
-                          dense 
-                          borderless 
-                          input-class="text-center text-weight-bold" 
-                          style="width: 50px;"
-                          :min="0"
-                          :max="form.totalPreguntas"
-                          @update:model-value="validarDificultad('facil')"
-                        />
-                        <q-btn round flat dense icon="add" size="sm" @click="ajustarDificultad('facil', 1)" :disable="sumaDificultad >= form.totalPreguntas" />
+                        <q-btn round flat dense icon="remove" size="sm" @click="ajustarDificultad('facil', -1)"
+                          :disable="form.dificultad.facil <= 0" />
+                        <q-input v-model.number="form.dificultad.facil" type="number" dense borderless
+                          input-class="text-center text-weight-bold" style="width: 50px;" :min="0"
+                          :max="form.totalPreguntas" @update:model-value="validarDificultad('facil')" />
+                        <q-btn round flat dense icon="add" size="sm" @click="ajustarDificultad('facil', 1)"
+                          :disable="sumaDificultad >= form.totalPreguntas" />
                       </div>
                     </div>
                     <div class="control-item">
                       <q-chip color="orange" text-color="white" size="sm" icon="sentiment_neutral">Medio</q-chip>
                       <div class="control-btns">
-                        <q-btn round flat dense icon="remove" size="sm" @click="ajustarDificultad('medio', -1)" :disable="form.dificultad.medio <= 0" />
-                        <q-input 
-                          v-model.number="form.dificultad.medio" 
-                          type="number" 
-                          dense 
-                          borderless 
-                          input-class="text-center text-weight-bold" 
-                          style="width: 50px;"
-                          :min="0"
-                          :max="form.totalPreguntas"
-                          @update:model-value="validarDificultad('medio')"
-                        />
-                        <q-btn round flat dense icon="add" size="sm" @click="ajustarDificultad('medio', 1)" :disable="sumaDificultad >= form.totalPreguntas" />
+                        <q-btn round flat dense icon="remove" size="sm" @click="ajustarDificultad('medio', -1)"
+                          :disable="form.dificultad.medio <= 0" />
+                        <q-input v-model.number="form.dificultad.medio" type="number" dense borderless
+                          input-class="text-center text-weight-bold" style="width: 50px;" :min="0"
+                          :max="form.totalPreguntas" @update:model-value="validarDificultad('medio')" />
+                        <q-btn round flat dense icon="add" size="sm" @click="ajustarDificultad('medio', 1)"
+                          :disable="sumaDificultad >= form.totalPreguntas" />
                       </div>
                     </div>
                     <div class="control-item">
                       <q-chip color="red" text-color="white" size="sm" icon="sentiment_dissatisfied">Difícil</q-chip>
                       <div class="control-btns">
-                        <q-btn round flat dense icon="remove" size="sm" @click="ajustarDificultad('dificil', -1)" :disable="form.dificultad.dificil <= 0" />
-                        <q-input 
-                          v-model.number="form.dificultad.dificil" 
-                          type="number" 
-                          dense 
-                          borderless 
-                          input-class="text-center text-weight-bold" 
-                          style="width: 50px;"
-                          :min="0"
-                          :max="form.totalPreguntas"
-                          @update:model-value="validarDificultad('dificil')"
-                        />
-                        <q-btn round flat dense icon="add" size="sm" @click="ajustarDificultad('dificil', 1)" :disable="sumaDificultad >= form.totalPreguntas" />
+                        <q-btn round flat dense icon="remove" size="sm" @click="ajustarDificultad('dificil', -1)"
+                          :disable="form.dificultad.dificil <= 0" />
+                        <q-input v-model.number="form.dificultad.dificil" type="number" dense borderless
+                          input-class="text-center text-weight-bold" style="width: 50px;" :min="0"
+                          :max="form.totalPreguntas" @update:model-value="validarDificultad('dificil')" />
+                        <q-btn round flat dense icon="add" size="sm" @click="ajustarDificultad('dificil', 1)"
+                          :disable="sumaDificultad >= form.totalPreguntas" />
                       </div>
                     </div>
                   </div>
 
-                  <q-banner :class="sumaDificultad === form.totalPreguntas ? 'bg-green-1 text-green-9' : 'bg-orange-1 text-orange-9'" class="q-mt-md" rounded dense>
+                  <q-banner
+                    :class="sumaDificultad === form.totalPreguntas ? 'bg-green-1 text-green-9' : 'bg-orange-1 text-orange-9'"
+                    class="q-mt-md" rounded dense>
                     <q-icon :name="sumaDificultad === form.totalPreguntas ? 'check' : 'warning'" class="q-mr-sm" />
                     Total: {{ sumaDificultad }} / {{ form.totalPreguntas }} preguntas
-                    <span v-if="sumaDificultad !== form.totalPreguntas" class="text-caption"> (faltan {{ form.totalPreguntas - sumaDificultad }})</span>
+                    <span v-if="sumaDificultad !== form.totalPreguntas" class="text-caption"> (faltan {{
+                      form.totalPreguntas
+                      - sumaDificultad }})</span>
                   </q-banner>
                 </div>
 
@@ -329,28 +279,23 @@
                     Se tomarán preguntas del banco según el parcial seleccionado:
                     <strong>{{ form.parcial <= 2 ? `${form.parcial}° Parcial` : 'Todos los logros' }}</strong>
                   </p>
-                  
+
                   <!-- Vista previa de temas y logros -->
                   <div v-if="materiaSeleccionada" class="temas-preview q-mt-md">
                     <div class="text-subtitle2 q-mb-sm">
                       <q-icon name="menu_book" color="primary" class="q-mr-xs" />
                       Contenido disponible para {{ materiaSeleccionada.nombre }}:
                     </div>
-                    
+
                     <div v-if="logrosDisponibles.length === 0" class="text-center q-pa-md bg-grey-1 rounded-borders">
                       <q-icon name="info" size="24px" color="grey-5" />
                       <p class="text-caption text-grey-6 q-mb-none">No hay logros marcados para este parcial</p>
                     </div>
-                    
+
                     <q-list v-else dense bordered separator class="rounded-borders">
-                      <q-expansion-item 
-                        v-for="unidad in unidadesConLogros" 
-                        :key="unidad.id"
+                      <q-expansion-item v-for="unidad in unidadesConLogros" :key="unidad.id"
                         :label="`Unidad ${unidad.numero}: ${unidad.titulo}`"
-                        :caption="`${unidad.logrosCount} logros disponibles`"
-                        header-class="bg-blue-1"
-                        dense
-                      >
+                        :caption="`${unidad.logrosCount} logros disponibles`" header-class="bg-blue-1" dense>
                         <q-card>
                           <q-card-section class="q-pa-sm">
                             <div v-for="tema in unidad.temas" :key="tema.id" class="q-mb-sm">
@@ -361,17 +306,14 @@
                               <q-list dense class="q-pl-md">
                                 <q-item v-for="logro in tema.logros" :key="logro.id" dense class="q-py-xs">
                                   <q-item-section avatar>
-                                    <q-chip 
-                                      :color="logro.parcial === 1 ? 'blue' : 'orange'" 
-                                      text-color="white" 
-                                      size="xs" 
-                                      dense
-                                    >
+                                    <q-chip :color="logro.parcial === 1 ? 'blue' : 'orange'" text-color="white"
+                                      size="xs" dense>
                                       {{ logro.parcial }}°
                                     </q-chip>
                                   </q-item-section>
                                   <q-item-section>
-                                    <q-item-label class="text-caption">{{ logro.codigo }}: {{ logro.descripcion }}</q-item-label>
+                                    <q-item-label class="text-caption">{{ logro.codigo }}: {{ logro.descripcion
+                                      }}</q-item-label>
                                   </q-item-section>
                                 </q-item>
                               </q-list>
@@ -380,13 +322,13 @@
                         </q-card>
                       </q-expansion-item>
                     </q-list>
-                    
+
                     <q-banner class="bg-green-1 text-green-9 q-mt-md" rounded dense>
                       <q-icon name="quiz" class="q-mr-sm" />
                       <strong>{{ logrosDisponibles.length }}</strong> logros disponibles para generar preguntas
                     </q-banner>
                   </div>
-                  
+
                   <q-banner v-else class="bg-orange-1 text-orange-9 q-mt-md" rounded dense>
                     <q-icon name="warning" class="q-mr-sm" />
                     Selecciona una materia en el paso anterior para ver los logros disponibles
@@ -396,7 +338,8 @@
 
               <q-stepper-navigation>
                 <q-btn flat color="grey" label="Atrás" @click="step = 1" class="q-mr-sm" />
-                <q-btn unelevated color="orange" label="Siguiente" @click="step = 3" :disable="sumaDificultad !== form.totalPreguntas" />
+                <q-btn unelevated color="orange" label="Siguiente" @click="step = 3"
+                  :disable="sumaDificultad !== form.totalPreguntas" />
               </q-stepper-navigation>
             </q-step>
 
@@ -406,10 +349,11 @@
                 <q-toggle v-model="form.mezclarPreguntas" label="Mezclar orden de preguntas" />
                 <q-toggle v-model="form.mezclarOpciones" label="Mezclar orden de opciones" />
                 <q-toggle v-model="form.tiempoLimite" label="Habilitar tiempo límite" />
-                
+
                 <q-banner class="bg-green-1 text-green-9 q-mt-md" rounded dense>
                   <q-icon name="fact_check" class="q-mr-sm" />
-                  <strong>Patrón de Respuestas:</strong> Estará disponible 3 horas después de la hora de inicio del examen.
+                  <strong>Patrón de Respuestas:</strong> Estará disponible 3 horas después de la hora de inicio del
+                  examen.
                 </q-banner>
               </div>
 
@@ -434,15 +378,11 @@
           <h3><q-icon name="upload_file" class="q-mr-sm" /> Importar Horarios de Exámenes</h3>
         </div>
         <q-card-section>
-          <p class="q-mb-md">Sube un archivo Excel con los horarios de exámenes proporcionado por el Director de Carrera.</p>
-          
-          <q-file 
-            v-model="archivoExcel" 
-            outlined 
-            label="Seleccionar archivo Excel"
-            accept=".xlsx, .xls"
-            max-files="1"
-          >
+          <p class="q-mb-md">Sube un archivo Excel con los horarios de exámenes proporcionado por el Director de
+            Carrera.
+          </p>
+
+          <q-file v-model="archivoExcel" outlined label="Seleccionar archivo Excel" accept=".xlsx, .xls" max-files="1">
             <template v-slot:prepend>
               <q-icon name="attach_file" />
             </template>
@@ -460,7 +400,8 @@
         </q-card-section>
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="showImportDialog = false" />
-          <q-btn unelevated color="green" icon="upload" label="Importar" @click="ejecutarImportacion" :disable="!archivoExcel" />
+          <q-btn unelevated color="green" icon="upload" label="Importar" @click="ejecutarImportacion"
+            :disable="!archivoExcel" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -529,7 +470,8 @@
               <div class="tipo-examen-box">
                 <div class="tipo-label">TIPO DE EXAMEN</div>
                 <div class="tipo-options">
-                  <span v-for="tipo in ['A', 'B', 'C', 'D', 'E']" :key="tipo" class="tipo-bubble" :class="{ active: patronData.tipoExamen === tipo }">{{ tipo }}</span>
+                  <span v-for="tipo in ['A', 'B', 'C', 'D', 'E']" :key="tipo" class="tipo-bubble"
+                    :class="{ active: patronData.tipoExamen === tipo }">{{ tipo }}</span>
                 </div>
               </div>
               <div class="fecha-box">
@@ -551,12 +493,8 @@
               </div>
               <div v-for="num in 25" :key="num" class="respuesta-row">
                 <span class="pregunta-num">{{ (col - 1) * 25 + num }}</span>
-                <span 
-                  v-for="opt in ['A', 'B', 'C', 'D', 'E']" 
-                  :key="opt" 
-                  class="bubble" 
-                  :class="{ filled: patronData.respuestas[(col - 1) * 25 + num - 1] === opt }"
-                >
+                <span v-for="opt in ['A', 'B', 'C', 'D', 'E']" :key="opt" class="bubble"
+                  :class="{ filled: patronData.respuestas[(col - 1) * 25 + num - 1] === opt }">
                   {{ opt }}
                 </span>
               </div>
@@ -565,7 +503,8 @@
 
           <!-- Recomendaciones -->
           <div class="recomendaciones">
-            <div class="rec-title">RECOMENDACIONES: Esta cartilla debe ser llenada con bolígrafo azul, no se aceptan borrones enmendadas o raspaduras; la prueba se realizará en silencio</div>
+            <div class="rec-title">RECOMENDACIONES: Esta cartilla debe ser llenada con bolígrafo azul, no se aceptan
+              borrones enmendadas o raspaduras; la prueba se realizará en silencio</div>
             <div class="rec-list">
               <div class="rec-col">
                 <p>Quedará nulo en caso de:</p>
@@ -580,7 +519,8 @@
             </div>
             <div class="correcto-incorrecto">
               <span>Correcto <span class="bubble filled">●</span></span>
-              <span class="q-ml-lg">Incorrecto <span class="bubble">○</span> <span class="bubble">⊘</span> <span class="bubble">⊗</span></span>
+              <span class="q-ml-lg">Incorrecto <span class="bubble">○</span> <span class="bubble">⊘</span> <span
+                  class="bubble">⊗</span></span>
             </div>
           </div>
         </q-card-section>
@@ -666,7 +606,8 @@
 
           <!-- Instrucciones -->
           <div class="instrucciones">
-            <strong>INSTRUCCIONES:</strong> Lea cuidadosamente cada pregunta y marque con una X la opción correcta en su hoja de respuestas.
+            <strong>INSTRUCCIONES:</strong> Lea cuidadosamente cada pregunta y marque con una X la opción correcta en su
+            hoja de respuestas.
             Tiempo máximo: {{ examenData.duracion }} minutos. Total de preguntas: {{ examenData.totalPreguntas }}.
           </div>
 
@@ -800,10 +741,10 @@ const materiaSeleccionada = computed(() => {
 // Obtener logros disponibles según el parcial seleccionado
 const logrosDisponibles = computed(() => {
   if (!materiaSeleccionada.value) return []
-  
+
   const logros = []
   const parcialFiltro = form.value.parcial
-  
+
   materiaSeleccionada.value.unidades?.forEach(unidad => {
     unidad.temas?.forEach(tema => {
       tema.logros_esperados?.forEach(logro => {
@@ -822,16 +763,16 @@ const logrosDisponibles = computed(() => {
       })
     })
   })
-  
+
   return logros
 })
 
 // Agrupar logros por unidad y tema para mostrar en la UI
 const unidadesConLogros = computed(() => {
   if (!materiaSeleccionada.value || logrosDisponibles.value.length === 0) return []
-  
+
   const unidadesMap = new Map()
-  
+
   logrosDisponibles.value.forEach(logro => {
     if (!unidadesMap.has(logro.unidadId)) {
       unidadesMap.set(logro.unidadId, {
@@ -842,10 +783,10 @@ const unidadesConLogros = computed(() => {
         logrosCount: 0
       })
     }
-    
+
     const unidad = unidadesMap.get(logro.unidadId)
     unidad.logrosCount++
-    
+
     if (!unidad.temas.has(logro.temaId)) {
       unidad.temas.set(logro.temaId, {
         id: logro.temaId,
@@ -853,10 +794,10 @@ const unidadesConLogros = computed(() => {
         logros: []
       })
     }
-    
+
     unidad.temas.get(logro.temaId).logros.push(logro)
   })
-  
+
   // Convertir Map a array
   return Array.from(unidadesMap.values()).map(unidad => ({
     ...unidad,
@@ -867,14 +808,14 @@ const unidadesConLogros = computed(() => {
 // Función para ajustar dificultad con +/-
 function ajustarDificultad(tipo, delta) {
   const nuevoValor = form.value.dificultad[tipo] + delta
-  
+
   // No permitir valores negativos
   if (nuevoValor < 0) return
-  
+
   // No permitir que el total exceda el máximo
   const nuevoTotal = sumaDificultad.value + delta
   if (nuevoTotal > form.value.totalPreguntas) return
-  
+
   form.value.dificultad[tipo] = nuevoValor
 }
 
@@ -885,21 +826,21 @@ function validarDificultad(tipo) {
     form.value.dificultad[tipo] = 0
     return
   }
-  
+
   // Convertir a entero
   form.value.dificultad[tipo] = Math.floor(form.value.dificultad[tipo])
-  
+
   // No permitir valores negativos
   if (form.value.dificultad[tipo] < 0) {
     form.value.dificultad[tipo] = 0
   }
-  
+
   // Calcular cuánto espacio hay disponible (total - suma de los otros dos)
   const tipos = ['facil', 'medio', 'dificil']
   const otrosTipos = tipos.filter(t => t !== tipo)
   const sumaOtros = otrosTipos.reduce((sum, t) => sum + form.value.dificultad[t], 0)
   const maximoDisponible = form.value.totalPreguntas - sumaOtros
-  
+
   // Limitar al máximo disponible
   if (form.value.dificultad[tipo] > maximoDisponible) {
     form.value.dificultad[tipo] = maximoDisponible
@@ -975,10 +916,10 @@ function puedeGenerarPatron(evaluacion) {
 function generarPatron(evaluacion) {
   // Generar respuestas aleatorias para demostración
   const opciones = ['A', 'B', 'C', 'D', 'E']
-  const respuestas = Array.from({ length: 100 }, () => 
+  const respuestas = Array.from({ length: 100 }, () =>
     opciones[Math.floor(Math.random() * opciones.length)]
   )
-  
+
   // Llenar datos del patrón
   patronData.value = {
     carrera: evaluacion.carrera || 'Medicina',
@@ -991,7 +932,7 @@ function generarPatron(evaluacion) {
     tipoExamen: 'A',
     respuestas: respuestas
   }
-  
+
   evaluacion.patronGenerado = true
   showPatronDialog.value = true
   $q.notify({ type: 'positive', message: 'Patrón de respuestas generado', icon: 'fact_check' })
@@ -1026,12 +967,12 @@ function exportarPDF(evaluacion) {
   const preguntasDemo = []
   const temas = [
     'anatomía del sistema nervioso',
-    'fisiología cardiovascular', 
+    'fisiología cardiovascular',
     'histología de tejidos',
     'embriología general',
     'bioquímica celular'
   ]
-  
+
   for (let i = 0; i < evaluacion.preguntas_count; i++) {
     const tema = temas[i % temas.length]
     preguntasDemo.push({
@@ -1045,7 +986,7 @@ function exportarPDF(evaluacion) {
       ]
     })
   }
-  
+
   examenData.value = {
     carrera: evaluacion.carrera || 'Medicina',
     materia: evaluacion.materia,
@@ -1057,7 +998,7 @@ function exportarPDF(evaluacion) {
     tipo: 'A',
     preguntas: preguntasDemo
   }
-  
+
   showExamenDialog.value = true
   $q.notify({ type: 'positive', message: `Generando PDF: ${evaluacion.nombre}`, icon: 'picture_as_pdf' })
 }
@@ -1073,53 +1014,218 @@ function ejecutarImportacion() {
 </script>
 
 <style scoped>
-.evaluaciones-page { padding: 24px; background: var(--bg-primary); min-height: 100vh; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-.page-title { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; }
-.page-subtitle { color: var(--text-secondary); margin: 4px 0 0 0; }
-.header-actions { display: flex; gap: 12px; }
+.evaluaciones-page {
+  padding: 24px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
 
-.filters-section { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
-.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px; }
-.stat-info { display: flex; flex-direction: column; }
-.stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-.stat-label { font-size: 0.8rem; color: var(--text-muted); }
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
 
-.table-card { background: var(--bg-secondary) !important; border: 1px solid var(--border-color); border-radius: 16px; }
-.materia-cell { display: flex; align-items: center; gap: 8px; }
-.materia-nombre { font-size: 0.85rem; }
+.page-subtitle {
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+}
 
-.dialog-card { background: var(--bg-secondary) !important; border-radius: 16px !important; }
-.dialog-header { padding: 20px 24px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; margin: -16px -16px 16px -16px; border-radius: 16px 16px 0 0; }
-.dialog-header.bg-green { background: linear-gradient(135deg, #10b981, #059669); }
-.dialog-header h3 { margin: 0; font-size: 1.25rem; display: flex; align-items: center; }
-.dialog-actions { padding: 16px 24px; border-top: 1px solid var(--border-color); }
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
 
-.config-section { background: var(--bg-tertiary); padding: 16px; border-radius: 12px; }
-.section-title { font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
+.filters-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.table-card {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+
+.materia-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.materia-nombre {
+  font-size: 0.85rem;
+}
+
+.dialog-card {
+  background: var(--bg-secondary) !important;
+  border-radius: 16px !important;
+}
+
+.dialog-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  margin: -16px -16px 16px -16px;
+  border-radius: 16px 16px 0 0;
+}
+
+.dialog-header.bg-green {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.config-section {
+  background: var(--bg-tertiary);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.section-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
 
 /* Barra de distribución segmentada */
-.distribucion-bar-container { padding: 8px 0; }
-.distribucion-bar { display: flex; height: 48px; border-radius: 12px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
-.segment { display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; color: white; transition: width 0.3s ease; min-width: 0; }
-.segment span { text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
-.segment-facil { background: linear-gradient(135deg, #10b981, #059669); }
-.segment-medio { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.segment-dificil { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.distribucion-bar-container {
+  padding: 8px 0;
+}
+
+.distribucion-bar {
+  display: flex;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+  transition: width 0.3s ease;
+  min-width: 0;
+}
+
+.segment span {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.segment-facil {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.segment-medio {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.segment-dificil {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
 
 /* Controles de ajuste */
-.distribucion-controls { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-.control-item { display: flex; flex-direction: column; align-items: center; gap: 8px; background: var(--bg-hover); padding: 12px 16px; border-radius: 12px; min-width: 100px; }
-.control-btns { display: flex; align-items: center; gap: 4px; }
-.control-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); min-width: 32px; text-align: center; }
+.distribucion-controls {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.control-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-hover);
+  padding: 12px 16px;
+  border-radius: 12px;
+  min-width: 100px;
+}
+
+.control-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.control-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 32px;
+  text-align: center;
+}
 
 /* Patrón de Respuestas */
-.patron-dialog { background: white !important; }
-.patron-content { 
-  background: #f5f0e8; 
-  padding: 20px; 
+.patron-dialog {
+  background: white !important;
+}
+
+.patron-content {
+  background: #f5f0e8;
+  padding: 20px;
   font-family: Arial, sans-serif;
   max-width: 800px;
   margin: 0 auto;
@@ -1133,22 +1239,56 @@ function ejecutarImportacion() {
   border-bottom: 2px solid #6b21a8;
 }
 
-.logo-section { width: 80px; }
-.logo { width: 80px; height: auto; }
-.logo-fallback { text-align: center; }
-.logo-text { font-size: 14px; font-weight: bold; color: #6b21a8; }
+.logo-section {
+  width: 80px;
+}
 
-.header-info { flex: 1; text-align: center; }
-.universidad-name { font-size: 16px; font-weight: bold; color: #6b21a8; }
-.carrera-line { font-size: 14px; margin: 4px 0; }
-.slogan { font-size: 10px; color: #666; font-style: italic; }
+.logo {
+  width: 80px;
+  height: auto;
+}
 
-.codigo-section { text-align: right; }
-.codigo-box { 
-  background: #dc2626; 
-  color: white; 
-  padding: 8px 16px; 
-  font-size: 18px; 
+.logo-fallback {
+  text-align: center;
+}
+
+.logo-text {
+  font-size: 14px;
+  font-weight: bold;
+  color: #6b21a8;
+}
+
+.header-info {
+  flex: 1;
+  text-align: center;
+}
+
+.universidad-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #6b21a8;
+}
+
+.carrera-line {
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.slogan {
+  font-size: 10px;
+  color: #666;
+  font-style: italic;
+}
+
+.codigo-section {
+  text-align: right;
+}
+
+.codigo-box {
+  background: #dc2626;
+  color: white;
+  padding: 8px 16px;
+  font-size: 18px;
   font-weight: bold;
   border-radius: 4px;
 }
@@ -1162,37 +1302,83 @@ function ejecutarImportacion() {
   background: white;
 }
 
-.datos-left { flex: 2; }
-.datos-right { flex: 1; }
+.datos-left {
+  flex: 2;
+}
 
-.field-row { margin: 4px 0; font-size: 12px; }
-.field-label { font-weight: bold; }
-.field-value { margin-left: 8px; }
-.field-patron { font-size: 28px; font-weight: bold; margin-left: 8px; }
+.datos-right {
+  flex: 1;
+}
 
-.tipo-examen-box { text-align: center; margin-bottom: 8px; }
-.tipo-label { font-size: 10px; font-weight: bold; }
-.tipo-options { display: flex; justify-content: center; gap: 4px; margin-top: 4px; }
-.tipo-bubble { 
-  width: 24px; 
-  height: 24px; 
-  border: 2px solid #333; 
-  border-radius: 50%; 
-  display: flex; 
-  align-items: center; 
+.field-row {
+  margin: 4px 0;
+  font-size: 12px;
+}
+
+.field-label {
+  font-weight: bold;
+}
+
+.field-value {
+  margin-left: 8px;
+}
+
+.field-patron {
+  font-size: 28px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.tipo-examen-box {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.tipo-label {
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.tipo-options {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tipo-bubble {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #333;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
   justify-content: center;
   font-size: 12px;
 }
-.tipo-bubble.active { background: #333; color: white; }
 
-.fecha-box { text-align: center; margin: 8px 0; font-size: 12px; }
-.firma-box { 
-  border: 1px solid #ccc; 
-  padding: 8px; 
-  text-align: center; 
+.tipo-bubble.active {
+  background: #333;
+  color: white;
+}
+
+.fecha-box {
+  text-align: center;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.firma-box {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
   min-height: 60px;
 }
-.firma-label { font-size: 10px; font-weight: bold; }
+
+.firma-label {
+  font-size: 10px;
+  font-weight: bold;
+}
 
 .respuestas-grid {
   display: grid;
@@ -1203,7 +1389,10 @@ function ejecutarImportacion() {
   border: 1px solid #ccc;
 }
 
-.respuestas-column { padding: 4px; }
+.respuestas-column {
+  padding: 4px;
+}
+
 .column-header {
   display: flex;
   gap: 2px;
@@ -1212,8 +1401,15 @@ function ejecutarImportacion() {
   padding: 4px 0;
   border-bottom: 1px solid #ccc;
 }
-.col-num { width: 24px; }
-.opt-header { width: 18px; text-align: center; }
+
+.col-num {
+  width: 24px;
+}
+
+.opt-header {
+  width: 18px;
+  text-align: center;
+}
 
 .respuesta-row {
   display: flex;
@@ -1222,10 +1418,10 @@ function ejecutarImportacion() {
   border-bottom: 1px solid #eee;
 }
 
-.pregunta-num { 
-  width: 24px; 
-  font-size: 11px; 
-  font-weight: bold; 
+.pregunta-num {
+  width: 24px;
+  font-size: 11px;
+  font-weight: bold;
   text-align: right;
   padding-right: 4px;
 }
@@ -1256,24 +1452,53 @@ function ejecutarImportacion() {
   font-size: 9px;
 }
 
-.rec-title { font-weight: bold; margin-bottom: 8px; }
-.rec-list { display: flex; gap: 16px; }
-.rec-col p { margin: 2px 0; }
-.correcto-incorrecto { text-align: center; margin-top: 8px; font-weight: bold; }
+.rec-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.rec-list {
+  display: flex;
+  gap: 16px;
+}
+
+.rec-col p {
+  margin: 2px 0;
+}
+
+.correcto-incorrecto {
+  text-align: center;
+  margin-top: 8px;
+  font-weight: bold;
+}
 
 /* Print styles */
 @media print {
-  .no-print { display: none !important; }
-  .patron-content, .examen-content { 
-    padding: 0; 
+  .no-print {
+    display: none !important;
+  }
+
+  .patron-content,
+  .examen-content {
+    padding: 0;
     background: white;
   }
-  .q-dialog__inner { padding: 0 !important; }
-  .patron-dialog, .examen-dialog { box-shadow: none !important; }
+
+  .q-dialog__inner {
+    padding: 0 !important;
+  }
+
+  .patron-dialog,
+  .examen-dialog {
+    box-shadow: none !important;
+  }
 }
 
 /* Examen para Impresión */
-.examen-dialog { background: white !important; }
+.examen-dialog {
+  background: white !important;
+}
+
 .examen-content {
   background: white;
   padding: 24px;
@@ -1292,7 +1517,10 @@ function ejecutarImportacion() {
   margin-bottom: 16px;
 }
 
-.tipo-section { margin-left: auto; }
+.tipo-section {
+  margin-left: auto;
+}
+
 .tipo-box {
   border: 2px solid #333;
   padding: 8px 16px;
@@ -1307,14 +1535,21 @@ function ejecutarImportacion() {
   background: #fafafa;
 }
 
-.field-line { 
-  display: flex; 
+.field-line {
+  display: flex;
   align-items: baseline;
   gap: 8px;
   font-size: 12px;
 }
-.field-line .label { font-weight: bold; }
-.field-line .line { border-bottom: 1px solid #333; flex: 1; }
+
+.field-line .label {
+  font-weight: bold;
+}
+
+.field-line .line {
+  border-bottom: 1px solid #333;
+  flex: 1;
+}
 
 .instrucciones {
   padding: 12px;

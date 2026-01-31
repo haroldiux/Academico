@@ -39,9 +39,9 @@
     <!-- Filtros -->
     <div class="filters-section q-mb-lg">
       <q-select v-model="filtros.materia" :options="materiasOptions" label="Materia" outlined dense emit-value
-        map-options clearable style="min-width: 200px" />
+        map-options clearable style="width: 100%; max-width: 200px; min-width: 150px" />
       <q-select v-model="filtros.parcial" :options="parcialOptions" label="Parcial" outlined dense emit-value
-        map-options clearable style="min-width: 150px" />
+        map-options clearable style="width: 100%; max-width: 150px; min-width: 120px" />
     </div>
 
     <!-- Lista de Evaluaciones -->

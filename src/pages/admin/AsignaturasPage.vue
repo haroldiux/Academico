@@ -222,7 +222,7 @@
 
     <!-- Dialog Asignar Docentes -->
     <q-dialog v-model="showDocentesDialog" persistent>
-      <q-card class="dialog-card" style="min-width: 500px;">
+      <q-card class="dialog-card" style="width: 100%; max-width: 500px;">
         <div class="dialog-header" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
           <h3><q-icon name="group_add" class="q-mr-sm" /> Asignar Docentes</h3>
         </div>

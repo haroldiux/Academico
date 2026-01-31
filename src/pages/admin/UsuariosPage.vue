@@ -200,7 +200,7 @@
 
     <!-- Dialog Nuevo/Editar Usuario -->
     <q-dialog v-model="showDialogUsuario" persistent>
-        <q-card style="width: 700px; max-width: 95vw; border-radius: 20px; overflow: hidden;">
+      <q-card style="width: 100%; max-width: 700px; border-radius: 20px; overflow: hidden;">
         <div class="dialog-header row items-center justify-between q-py-md q-px-lg">
           <div class="text-h6 text-white text-weight-bold row items-center">
             <q-icon :name="editando ? 'edit' : 'person_add'" size="28px" class="q-mr-sm" />
@@ -216,7 +216,8 @@
 
             <!-- Sección: Información Personal -->
             <div>
-              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase" style="letter-spacing: 0.5px;">
+              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase"
+                style="letter-spacing: 0.5px;">
                 <q-icon name="badge" class="q-mr-xs" /> Información Personal
               </div>
               <div class="row q-col-gutter-md">
@@ -245,7 +246,8 @@
                   </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                  <q-input v-model="formUsuario.telefono" label="Teléfono / Celular" outlined dense class="input-rounded">
+                  <q-input v-model="formUsuario.telefono" label="Teléfono / Celular" outlined dense
+                    class="input-rounded">
                     <template v-slot:prepend>
                       <q-icon name="phone_iphone" color="grey-6" />
                     </template>
@@ -256,7 +258,8 @@
 
             <!-- Sección: Cuenta y Contacto -->
             <div>
-              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase" style="letter-spacing: 0.5px;">
+              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase"
+                style="letter-spacing: 0.5px;">
                 <q-icon name="contact_mail" class="q-mr-xs" /> Cuenta
               </div>
               <q-input v-model="formUsuario.email" label="Correo Electrónico Institucional" outlined dense type="email"
@@ -272,23 +275,25 @@
 
             <!-- Sección: Roles y Permisos -->
             <div class="bg-grey-1 q-pa-md rounded-borders">
-               <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase" style="letter-spacing: 0.5px;">
+              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase"
+                style="letter-spacing: 0.5px;">
                 <q-icon name="admin_panel_settings" class="q-mr-xs" /> Asignación de Rol
               </div>
 
               <div class="row q-col-gutter-md">
                 <!-- Rol Selector -->
                 <div class="col-12">
-                  <q-select v-model="formUsuario.rolId" label="Seleccionar Rol" outlined dense :options="opcionesRolesForm" emit-value
-                    map-options :rules="[val => !!val || 'Seleccione un rol']" @update:model-value="onRolChange"
-                    class="input-rounded bg-white">
+                  <q-select v-model="formUsuario.rolId" label="Seleccionar Rol" outlined dense
+                    :options="opcionesRolesForm" emit-value map-options :rules="[val => !!val || 'Seleccione un rol']"
+                    @update:model-value="onRolChange" class="input-rounded bg-white">
                     <template v-slot:prepend>
                       <q-icon name="groups" color="primary" />
                     </template>
                     <template v-slot:option="scope">
                       <q-item v-bind="scope.itemProps">
                         <q-item-section avatar>
-                          <q-icon :name="getIconoRol(scope.opt.value)" :style="{ color: getColorRol(scope.opt.value) }" />
+                          <q-icon :name="getIconoRol(scope.opt.value)"
+                            :style="{ color: getColorRol(scope.opt.value) }" />
                         </q-item-section>
                         <q-item-section>
                           <q-item-label class="text-weight-medium">{{ scope.opt.label }}</q-item-label>
@@ -300,9 +305,8 @@
 
                 <!-- Sede Selector (Condicional o siempre visible) -->
                 <div class="col-12 col-md-6 animate-fade" v-if="requiereSede">
-                  <q-select v-model="formUsuario.sedeId" label="Sede Académica" outlined dense
-                    :options="opcionesSedes" emit-value map-options clearable
-                    :rules="[val => !requiereSede || !!val || 'La Sede es requerida']"
+                  <q-select v-model="formUsuario.sedeId" label="Sede Académica" outlined dense :options="opcionesSedes"
+                    emit-value map-options clearable :rules="[val => !requiereSede || !!val || 'La Sede es requerida']"
                     class="input-rounded bg-white">
                     <template v-slot:prepend>
                       <q-icon name="apartment" color="indigo" />
@@ -313,8 +317,8 @@
                 <!-- Carrera Selector (Condicional) -->
                 <div class="col-12 col-md-6 animate-fade" v-if="requiereCarrera">
                   <q-select v-model="formUsuario.carrera" label="Carrera(s) Asignada(s)" outlined dense
-                    :options="opcionesCarrerasFiltradas" emit-value map-options clearable multiple use-chips
-                    use-input input-debounce="0" @filter="filtrarCarreras"
+                    :options="opcionesCarrerasFiltradas" emit-value map-options clearable multiple use-chips use-input
+                    input-debounce="0" @filter="filtrarCarreras"
                     :rules="[val => !requiereCarrera || (val && val.length > 0) || 'Seleccione al menos una carrera']"
                     class="input-rounded bg-white">
                     <template v-slot:prepend>
@@ -344,16 +348,16 @@
 
             <!-- Toggle Estado -->
             <div class="row items-center justify-between q-mt-md q-pa-sm rounded-borders border-dashed">
-               <div class="row items-center">
-                  <q-icon :name="formUsuario.estado === 'activo' ? 'check_circle' : 'cancel'"
-                    :color="formUsuario.estado === 'activo' ? 'green' : 'grey'" size="24px" class="q-mr-sm" />
-                  <div class="text-body2">
-                    <div class="text-weight-bold">Estado del Usuario</div>
-                    <div class="text-caption text-grey">Determina si el usuario puede acceder al sistema</div>
-                  </div>
-               </div>
-               <q-toggle v-model="formUsuario.estado"
-                :color="formUsuario.estado === 'activo' ? 'green' : 'grey'" true-value="activo" false-value="inactivo" />
+              <div class="row items-center">
+                <q-icon :name="formUsuario.estado === 'activo' ? 'check_circle' : 'cancel'"
+                  :color="formUsuario.estado === 'activo' ? 'green' : 'grey'" size="24px" class="q-mr-sm" />
+                <div class="text-body2">
+                  <div class="text-weight-bold">Estado del Usuario</div>
+                  <div class="text-caption text-grey">Determina si el usuario puede acceder al sistema</div>
+                </div>
+              </div>
+              <q-toggle v-model="formUsuario.estado" :color="formUsuario.estado === 'activo' ? 'green' : 'grey'"
+                true-value="activo" false-value="inactivo" />
             </div>
 
           </q-form>
@@ -546,8 +550,8 @@ const opcionesEstado = [
 
 // Watchers
 watch(() => formUsuario.value.sedeId, (val) => {
-    // Si cambia de sede, recargar opciones de carrera válidas para esa sede
-    if (val) actualizarOpcionesCarreras()
+  // Si cambia de sede, recargar opciones de carrera válidas para esa sede
+  if (val) actualizarOpcionesCarreras()
 })
 
 // Table columns
@@ -572,33 +576,33 @@ const opcionesSedes = computed(() => {
 
 // Opciones base de carreras (reactivas al store y sede seleccionada)
 const opcionesCarreras = computed(() => {
-    // Si hay sede seleccionada, filtrar por ella (usando el helper del store si existe, o filtrando aquí)
-    const sedeId = formUsuario.value.sedeId
-    if (sedeId) {
-        return carrerasStore.getCarrerasOptions(sedeId)
-    }
-    // Si no, todas
-    return carrerasStore.getCarrerasOptions()
+  // Si hay sede seleccionada, filtrar por ella (usando el helper del store si existe, o filtrando aquí)
+  const sedeId = formUsuario.value.sedeId
+  if (sedeId) {
+    return carrerasStore.getCarrerasOptions(sedeId)
+  }
+  // Si no, todas
+  return carrerasStore.getCarrerasOptions()
 })
 
 function actualizarOpcionesCarreras() {
-    opcionesCarrerasFiltradas.value = opcionesCarreras.value
+  opcionesCarrerasFiltradas.value = opcionesCarreras.value
 }
 
-function filtrarCarreras (val, update) {
-    if (val === '') {
-        update(() => {
-            opcionesCarrerasFiltradas.value = opcionesCarreras.value
-        })
-        return
-    }
-
+function filtrarCarreras(val, update) {
+  if (val === '') {
     update(() => {
-        const needle = val.toLowerCase()
-        opcionesCarrerasFiltradas.value = opcionesCarreras.value.filter(v =>
-            v.label.toLowerCase().indexOf(needle) > -1
-        )
+      opcionesCarrerasFiltradas.value = opcionesCarreras.value
     })
+    return
+  }
+
+  update(() => {
+    const needle = val.toLowerCase()
+    opcionesCarrerasFiltradas.value = opcionesCarreras.value.filter(v =>
+      v.label.toLowerCase().indexOf(needle) > -1
+    )
+  })
 }
 
 // Computed
@@ -624,7 +628,7 @@ const requiereCarrera = computed(() => {
 
 // Verificar si requiere sede (casi todos menos Admin Global tal vez, pero asumiremos todos para director)
 const requiereSede = computed(() => {
-    return true
+  return true
 })
 
 const usuariosFiltrados = computed(() => {
@@ -706,11 +710,11 @@ function editarUsuario(usuario) {
   // Transformar carrera string a array si es necesario para el q-select multiple
   let carrerasVal = []
   if (Array.isArray(usuario.carrera)) {
-      carrerasVal = usuario.carrera
+    carrerasVal = usuario.carrera
   } else if (usuario.carrera) {
-      // Si viene separado por comas o es solo uno
-      // INTENTO DE SPLIT SI ES STRING CSV? A veces guardan 'SIS, MED'
-      carrerasVal = [usuario.carrera] // Asumimos string simple por ahora o array
+    // Si viene separado por comas o es solo uno
+    // INTENTO DE SPLIT SI ES STRING CSV? A veces guardan 'SIS, MED'
+    carrerasVal = [usuario.carrera] // Asumimos string simple por ahora o array
   }
 
   formUsuario.value = {
@@ -765,13 +769,13 @@ function guardarUsuario() {
   }
 
   if (requiereCarrera.value && (!formUsuario.value.carrera || formUsuario.value.carrera.length === 0)) {
-     $q.notify({ type: 'warning', message: 'Seleccione al menos una carrera para este rol', icon: 'warning' })
-     return
+    $q.notify({ type: 'warning', message: 'Seleccione al menos una carrera para este rol', icon: 'warning' })
+    return
   }
 
   if (requiereSede.value && !formUsuario.value.sedeId) {
-     $q.notify({ type: 'warning', message: 'Seleccione la Sede', icon: 'warning' })
-     return
+    $q.notify({ type: 'warning', message: 'Seleccione la Sede', icon: 'warning' })
+    return
   }
 
   const payload = { ...formUsuario.value }

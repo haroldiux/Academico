@@ -12,7 +12,7 @@
       </div>
       <div class="col-auto">
         <q-select v-model="sedeSeleccionada" :options="opcionesSedes" label="Filtrar por Sede" outlined dense
-          style="min-width: 200px;" />
+          style="width: 100%; max-width: 200px; min-width: 150px;" />
       </div>
     </div>
 

@@ -120,13 +120,14 @@
                     Exámenes
                   </div>
                   <div v-if="fechasExamenes.length" class="q-gutter-y-xs">
-                    <div v-for="examen in fechasExamenes" :key="examen.id" class="row items-center justify-between q-pa-xs bg-grey-1 rounded-borders">
-                       <div class="text-caption text-weight-bold">{{ examen.tipoExamen }}</div>
-                       <q-chip size="xs" color="indigo" text-color="white" icon="event">{{ examen.fecha }}</q-chip>
+                    <div v-for="examen in fechasExamenes" :key="examen.id"
+                      class="row items-center justify-between q-pa-xs bg-grey-1 rounded-borders">
+                      <div class="text-caption text-weight-bold">{{ examen.tipoExamen }}</div>
+                      <q-chip size="xs" color="indigo" text-color="white" icon="event">{{ examen.fecha }}</q-chip>
                     </div>
                   </div>
                   <div v-else class="text-caption text-grey-6 q-pa-sm text-center">
-                    <q-icon name="info" class="q-mr-xs"/>
+                    <q-icon name="info" class="q-mr-xs" />
                     Sin fechas generadas
                   </div>
                 </q-card-section>
@@ -159,7 +160,7 @@
                       <div class="horario-dia"><q-icon name="event" class="q-mr-xs" />{{ horario.dia }}</div>
                       <div class="horario-hora">{{ horario.horaInicio }} - {{ horario.horaFin }}</div>
                       <div class="horario-aula">{{ horario.aula }} <span v-if="horario.grupo">(Grupo {{ horario.grupo
-                      }})</span></div>
+                          }})</span></div>
                       <q-btn v-if="!horario.desdeAPI" flat round dense icon="close" size="xs" color="red"
                         class="delete-btn" @click="eliminarHorario(horario)" />
                       <q-icon v-else name="lock" size="14px" color="blue" class="lock-icon">
@@ -271,9 +272,10 @@
                           </div>
                         </td>
                         <td class="cell-fechas bg-grey-1">
-                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
-                             <div class="fg-grupo">{{ fg.grupo }}</div>
-                             <div class="fg-fecha">{{ fg.fecha }}</div>
+                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx"
+                            class="fecha-grupo-row">
+                            <div class="fg-grupo">{{ fg.grupo }}</div>
+                            <div class="fg-fecha">{{ fg.fecha }}</div>
                           </div>
                         </td>
                         <td colspan="6" class="examen-cell">
@@ -309,52 +311,43 @@
                           </div>
                         </td>
                         <td class="cell-fechas bg-grey-1">
-                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
-                             <div class="fg-grupo">{{ fg.grupo }}</div>
-                             <div class="fg-fecha">{{ fg.fecha }}</div>
+                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx"
+                            class="fecha-grupo-row">
+                            <div class="fg-grupo">{{ fg.grupo }}</div>
+                            <div class="fg-fecha">{{ fg.fecha }}</div>
                           </div>
                         </td>
                         <td>
-                            <div v-if="sesion.semana <= 17">
-                                <q-select v-model="sesion.temasSeleccionados"
-                                    :options="opcionesTemasGlobales"
-                                    multiple use-chips use-input new-value-mode="add-unique"
-                                    emit-value map-options
-                                    dense outlined class="cell-input"
-                                    label="Temas"
-                                    option-value="value"
-                                    option-label="label"
-                                    @update:model-value="(val) => onTemaUpdate(val, sesion)"
-                                />
-                            </div>
-                            <div v-else class="text-caption text-grey text-center">
-                                --
-                            </div>
+                          <div v-if="sesion.semana <= 17">
+                            <q-select v-model="sesion.temasSeleccionados" :options="opcionesTemasGlobales" multiple
+                              use-chips use-input new-value-mode="add-unique" emit-value map-options dense outlined
+                              class="cell-input" label="Temas" option-value="value" option-label="label"
+                              @update:model-value="(val) => onTemaUpdate(val, sesion)" />
+                          </div>
+                          <div v-else class="text-caption text-grey text-center">
+                            --
+                          </div>
                         </td>
-                        <td><q-input v-if="sesion.semana <= 17" v-model="sesion.conceptual" outlined dense type="textarea" autogrow
-                            class="cell-input" placeholder="Contenidos..."
+                        <td><q-input v-if="sesion.semana <= 17" v-model="sesion.conceptual" outlined dense
+                            type="textarea" autogrow class="cell-input" placeholder="Contenidos..."
                             @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-if="sesion.semana <= 17" v-model="sesion.procedimental" outlined dense type="textarea" autogrow
-                            class="cell-input" placeholder="Habilidades..."
+                        <td><q-input v-if="sesion.semana <= 17" v-model="sesion.procedimental" outlined dense
+                            type="textarea" autogrow class="cell-input" placeholder="Habilidades..."
                             @update:model-value="marcarModificado(sesion)" /></td>
-                        <td><q-input v-if="sesion.semana <= 17" v-model="sesion.actitudinal" outlined dense type="textarea" autogrow
-                            class="cell-input" placeholder="Actitudes..."
+                        <td><q-input v-if="sesion.semana <= 17" v-model="sesion.actitudinal" outlined dense
+                            type="textarea" autogrow class="cell-input" placeholder="Actitudes..."
                             @update:model-value="marcarModificado(sesion)" /></td>
                         <td>
-                            <q-select v-if="sesion.semana <= 17" v-model="sesion.criteriosSeleccionados"
-                                multiple use-chips use-input new-value-mode="add-unique"
-                                :options="criteriosOptions"
-                                outlined dense class="cell-input" placeholder="Criterios..."
-                                @update:model-value="marcarModificado(sesion)"
-                            />
+                          <q-select v-if="sesion.semana <= 17" v-model="sesion.criteriosSeleccionados" multiple
+                            use-chips use-input new-value-mode="add-unique" :options="criteriosOptions" outlined dense
+                            class="cell-input" placeholder="Criterios..."
+                            @update:model-value="marcarModificado(sesion)" />
                         </td>
                         <td>
-                            <q-select v-if="sesion.semana <= 17" v-model="sesion.instrumentosSeleccionados"
-                                multiple use-chips use-input new-value-mode="add-unique"
-                                :options="instrumentosOptions"
-                                outlined dense class="cell-input" placeholder="Instrumentos..."
-                                @update:model-value="marcarModificado(sesion)"
-                            />
+                          <q-select v-if="sesion.semana <= 17" v-model="sesion.instrumentosSeleccionados" multiple
+                            use-chips use-input new-value-mode="add-unique" :options="instrumentosOptions" outlined
+                            dense class="cell-input" placeholder="Instrumentos..."
+                            @update:model-value="marcarModificado(sesion)" />
                         </td>
                         <td class="cell-actions">
                           <q-btn flat round dense icon="delete" size="xs" color="red"
@@ -421,13 +414,13 @@
                   <tr v-for="sesion in unidad.sesiones" :key="sesion.id">
                     <td class="text-center">{{ sesion.semana }}<br><small>{{ sesion.semanaFechas }}</small></td>
                     <td class="text-center">SESIÓN {{ sesion.numeroGlobal }}<br><small>{{ sesion.tipoClase || 'Clase'
-                        }}</small>
+                    }}</small>
                     </td>
                     <td class="cell-fechas bg-grey-1">
-                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
-                             <div class="fg-grupo">{{ fg.grupo }}</div>
-                             <div class="fg-fecha">{{ fg.fecha }}</div>
-                          </div>
+                      <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
+                        <div class="fg-grupo">{{ fg.grupo }}</div>
+                        <div class="fg-fecha">{{ fg.fecha }}</div>
+                      </div>
                     </td>
                     <td>{{ sesion.tema }}</td>
                     <td>
@@ -497,7 +490,7 @@
 
     <!-- Dialog Copiar Gestión -->
     <q-dialog v-model="showCopiarDialog">
-      <q-card class="dialog-card" style="min-width: 400px;">
+      <q-card class="dialog-card" style="width: 100%; max-width: 400px;">
         <div class="dialog-header bg-primary">
           <h3><q-icon name="content_copy" class="q-mr-sm" /> Copiar Planificación</h3>
         </div>
@@ -547,48 +540,48 @@ const grupoSeleccionado = ref(null) // { label, value, tipo }
 const fechasExamenes = computed(() => {
   // 1. Prioridad: Rol de Exámenes Oficial (cargado desde Admin)
   if (examenesRol.value.length > 0) {
-      let oficiales = examenesRol.value
+    let oficiales = examenesRol.value
 
-      // Filtrar por grupo si no es "ALL" y si el objeto tiene propiedad 'grupo'
-      // Ojo: el string de grupo puede variar ("1", "Grupo 1"). Haremos un match simple.
-      if (grupoSeleccionado.value && grupoSeleccionado.value.value !== 'ALL') {
-          // Intentar filtrar. Si no hay propiedad grupo, mostramos todo.
-          // Asumimos que `experiencia` nos dirá si existe campo grupo.
-          // En la captura se ve columna "Grupo".
-          oficiales = oficiales.filter(e => e.grupo == grupoSeleccionado.value.nombre || e.grupo == grupoSeleccionado.value.value)
+    // Filtrar por grupo si no es "ALL" y si el objeto tiene propiedad 'grupo'
+    // Ojo: el string de grupo puede variar ("1", "Grupo 1"). Haremos un match simple.
+    if (grupoSeleccionado.value && grupoSeleccionado.value.value !== 'ALL') {
+      // Intentar filtrar. Si no hay propiedad grupo, mostramos todo.
+      // Asumimos que `experiencia` nos dirá si existe campo grupo.
+      // En la captura se ve columna "Grupo".
+      oficiales = oficiales.filter(e => e.grupo == grupoSeleccionado.value.nombre || e.grupo == grupoSeleccionado.value.value)
+    }
+
+    // Si después del filtro nos quedamos sin nada (quizás por mismatch de string),
+    // podríamos optar por mostrar todos o nada. Mostremos todos los de la materia como fallback o nada.
+    // Mejor mostrar los filtrados si match, si no hubo match exacto quizas el user quiere ver algo.
+    // Pero "Grupo 1" vs "1".
+    // Vamos a mapear y retornar.
+
+    // Ordenar por fecha antes de formatear
+    oficiales.sort((a, b) => new Date(a.fecha_examen || a.fecha) - new Date(b.fecha_examen || b.fecha))
+
+    // Map to display format
+    return oficiales.map(e => {
+      const rawDate = e.fecha_examen || e.fecha
+      let formattedDate = 'Sin fecha'
+      if (rawDate && typeof rawDate === 'string') {
+        // Asegurar que solo tomamos la parte de la fecha (YYYY-MM-DD)
+        // manejando formatos ISO como "2026-03-24T00:00:00.000Z"
+        const datePart = rawDate.split('T')[0]
+        const parts = datePart.split('-')
+
+        if (parts.length === 3) {
+          formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`
+        } else {
+          formattedDate = datePart
+        }
       }
-
-      // Si después del filtro nos quedamos sin nada (quizás por mismatch de string),
-      // podríamos optar por mostrar todos o nada. Mostremos todos los de la materia como fallback o nada.
-      // Mejor mostrar los filtrados si match, si no hubo match exacto quizas el user quiere ver algo.
-      // Pero "Grupo 1" vs "1".
-      // Vamos a mapear y retornar.
-
-      // Ordenar por fecha antes de formatear
-      oficiales.sort((a, b) => new Date(a.fecha_examen || a.fecha) - new Date(b.fecha_examen || b.fecha))
-
-      // Map to display format
-      return oficiales.map(e => {
-          const rawDate = e.fecha_examen || e.fecha
-          let formattedDate = 'Sin fecha'
-          if (rawDate && typeof rawDate === 'string') {
-              // Asegurar que solo tomamos la parte de la fecha (YYYY-MM-DD)
-              // manejando formatos ISO como "2026-03-24T00:00:00.000Z"
-              const datePart = rawDate.split('T')[0]
-              const parts = datePart.split('-')
-
-              if (parts.length === 3) {
-                  formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`
-              } else {
-                  formattedDate = datePart
-              }
-          }
-          return {
-              id: e.id,
-              tipoExamen: e.tipo_examen || e.tipo,
-              fecha: formattedDate
-          }
-      })
+      return {
+        id: e.id,
+        tipoExamen: e.tipo_examen || e.tipo,
+        fecha: formattedDate
+      }
+    })
   }
 
   // 2. Si no hay rol oficial, NO MOSTRAR NADA (A pedido del usuario)
@@ -659,91 +652,91 @@ async function cargarPlanificacion() {
 
   let targetGrupoId = grupoSeleccionado.value.value
   if (targetGrupoId === 'ALL') {
-      if (asignatura.value?.horarios_data?.length > 0) {
-          targetGrupoId = asignatura.value.horarios_data[0].id
-      } else {
-        return // No hay grupos, nada que cargar
-      }
+    if (asignatura.value?.horarios_data?.length > 0) {
+      targetGrupoId = asignatura.value.horarios_data[0].id
+    } else {
+      return // No hay grupos, nada que cargar
+    }
   }
 
   try {
     const response = await planificacionSemestralService.getPlanificacion(route.params.id, {
-        grupo_id: targetGrupoId
+      grupo_id: targetGrupoId
     })
 
     // Si viene planificacion, mapearla
     if (response.data.planificacion && response.data.planificacion.length > 0) {
-        // Necesitamos reconstruir la estructura de unidades -> sesiones
-        // Esto es complejo porque la API devuelve lista plana de cronogramas
-        // Pero la vista espera "Unidades" con "Sesiones" dentro.
-        // Reutilizaremos la lógica de "generar" pero poblando con datos existentes?
-        // O mejor: mapear lo que llega a la estructura de la vista.
+      // Necesitamos reconstruir la estructura de unidades -> sesiones
+      // Esto es complejo porque la API devuelve lista plana de cronogramas
+      // Pero la vista espera "Unidades" con "Sesiones" dentro.
+      // Reutilizaremos la lógica de "generar" pero poblando con datos existentes?
+      // O mejor: mapear lo que llega a la estructura de la vista.
 
-        // Estrategia:
-        // 1. Obtener unidades base (documentacion)
-        // 2. Mapear sesiones por numero_sesion
-        const cronogramasDB = response.data.planificacion
+      // Estrategia:
+      // 1. Obtener unidades base (documentacion)
+      // 2. Mapear sesiones por numero_sesion
+      const cronogramasDB = response.data.planificacion
 
 
-        // Agrupar sesiones por semana/unidad para reconstruir la vista?
-        // La vista actual agrupa por UNIDAD.
-        // Pero el cronograma es plano.
-        // ¿Cómo sabe qué sesión pertenece a qué unidad?
-        // El cronograma no tiene unidad_id guardado (tiene tema_id, pero no unidad_id directo, aunque se puede inferir).
-        // En `generarPlanificacion`, asignamos sesiones a unidades secuencialmente.
-        // Si no guardamos esa relación, es difícil reconstruirla EXACTAMENTE igual.
-        // PERO, `savePlanificacion` guarda TODO el array.
-        // Si guardamos, el backend lo guarda plano.
+      // Agrupar sesiones por semana/unidad para reconstruir la vista?
+      // La vista actual agrupa por UNIDAD.
+      // Pero el cronograma es plano.
+      // ¿Cómo sabe qué sesión pertenece a qué unidad?
+      // El cronograma no tiene unidad_id guardado (tiene tema_id, pero no unidad_id directo, aunque se puede inferir).
+      // En `generarPlanificacion`, asignamos sesiones a unidades secuencialmente.
+      // Si no guardamos esa relación, es difícil reconstruirla EXACTAMENTE igual.
+      // PERO, `savePlanificacion` guarda TODO el array.
+      // Si guardamos, el backend lo guarda plano.
 
-        // Revisando `generarPlanificacion`:
-        // Asigna sesiones a `planificacion.value` que es un array de UNIDADES.
+      // Revisando `generarPlanificacion`:
+      // Asigna sesiones a `planificacion.value` que es un array de UNIDADES.
 
-        // Si el backend solo devuelve cronogramas planos, PERDEMOS la agrupación por unidad visualmente
-        // a menos que la recalculemos o guardemos metadatos.
+      // Si el backend solo devuelve cronogramas planos, PERDEMOS la agrupación por unidad visualmente
+      // a menos que la recalculemos o guardemos metadatos.
 
-        // 1. Calcular estructura base sin guardar
-        planificacionSesiones.value = calcularPropuestaPlanificacion()
+      // 1. Calcular estructura base sin guardar
+      planificacionSesiones.value = calcularPropuestaPlanificacion()
 
-        // Ahora inyectar datos reales sobre planificacionSesiones
-        cronogramasDB.forEach(db => {
-            const sesionView = planificacionSesiones.value.find(s => s.numeroGlobal === db.numero_sesion)
-            if (sesionView) {
-                // 1. Manejo de Temas (Prioridad IDs para el select)
-                if (db.temas && db.temas.length > 0) {
-                    sesionView.temasSeleccionados = db.temas.map(t => t.id)
-                    sesionView.tema_id = db.tema_id || db.temas[0].id
-                } else if (db.tema_id) {
-                    sesionView.temasSeleccionados = [db.tema_id]
-                    sesionView.tema_id = db.tema_id
-                } else {
-                    // Texto plano como fallback (retrocompatibilidad)
-                    const temaStr = String(db.tema || '')
-                    sesionView.temasSeleccionados = temaStr ? temaStr.split(',').map(s => s.trim()).filter(s => s) : []
-                    sesionView.tema_id = null
-                }
+      // Ahora inyectar datos reales sobre planificacionSesiones
+      cronogramasDB.forEach(db => {
+        const sesionView = planificacionSesiones.value.find(s => s.numeroGlobal === db.numero_sesion)
+        if (sesionView) {
+          // 1. Manejo de Temas (Prioridad IDs para el select)
+          if (db.temas && db.temas.length > 0) {
+            sesionView.temasSeleccionados = db.temas.map(t => t.id)
+            sesionView.tema_id = db.tema_id || db.temas[0].id
+          } else if (db.tema_id) {
+            sesionView.temasSeleccionados = [db.tema_id]
+            sesionView.tema_id = db.tema_id
+          } else {
+            // Texto plano como fallback (retrocompatibilidad)
+            const temaStr = String(db.tema || '')
+            sesionView.temasSeleccionados = temaStr ? temaStr.split(',').map(s => s.trim()).filter(s => s) : []
+            sesionView.tema_id = null
+          }
 
-                // Mapeo visual para columnas que no usan el select
-                sesionView.tema = db.tema?.titulo || db.tema?.nombre || db.tema || db.tema_id || ''
+          // Mapeo visual para columnas que no usan el select
+          sesionView.tema = db.tema?.titulo || db.tema?.nombre || db.tema || db.tema_id || ''
 
-                // IMPORTANTE: Si tiene un tema asociado, actualizar su unidad_id basándose en ese tema
-                if (db.tema?.unidad_id) {
-                    sesionView.unidad_id = db.tema.unidad_id
-                }
+          // IMPORTANTE: Si tiene un tema asociado, actualizar su unidad_id basándose en ese tema
+          if (db.tema?.unidad_id) {
+            sesionView.unidad_id = db.tema.unidad_id
+          }
 
-                sesionView.conceptual = db.contenido_conceptual || ''
-                sesionView.procedimental = db.contenido_procedimental || ''
-                sesionView.actitudinal = db.contenido_actitudinal || ''
+          sesionView.conceptual = db.contenido_conceptual || ''
+          sesionView.procedimental = db.contenido_procedimental || ''
+          sesionView.actitudinal = db.contenido_actitudinal || ''
 
-                sesionView.criteriosDesempeno = db.criterios_desempeno
-                sesionView.criteriosSeleccionados = db.criterios_desempeno ? (typeof db.criterios_desempeno === 'string' ? db.criterios_desempeno.split(', ') : db.criterios_desempeno) : []
+          sesionView.criteriosDesempeno = db.criterios_desempeno
+          sesionView.criteriosSeleccionados = db.criterios_desempeno ? (typeof db.criterios_desempeno === 'string' ? db.criterios_desempeno.split(', ') : db.criterios_desempeno) : []
 
-                sesionView.instrumentosEvaluacion = db.instrumentos_evaluacion
-                sesionView.instrumentosSeleccionados = db.instrumentos_evaluacion ? (typeof db.instrumentos_evaluacion === 'string' ? db.instrumentos_evaluacion.split(', ') : db.instrumentos_evaluacion) : []
-            }
-        })
+          sesionView.instrumentosEvaluacion = db.instrumentos_evaluacion
+          sesionView.instrumentosSeleccionados = db.instrumentos_evaluacion ? (typeof db.instrumentos_evaluacion === 'string' ? db.instrumentos_evaluacion.split(', ') : db.instrumentos_evaluacion) : []
+        }
+      })
 
-        planificacionGenerada.value = true
-        $q.notify({ type: 'info', message: 'Planificación cargada', icon: 'cloud_download' })
+      planificacionGenerada.value = true
+      $q.notify({ type: 'info', message: 'Planificación cargada', icon: 'cloud_download' })
     }
   } catch (err) {
     console.error('Error cargando planificación', err)
@@ -827,8 +820,8 @@ watch(grupoSeleccionado, (val) => {
  */
 function actualizarHorariosDesdeGrupo() {
   if (!asignatura.value?.horarios_data) {
-      horarios.value = []
-      return
+    horarios.value = []
+    return
   }
 
   // Cargar TODOS los horarios de TODOS los grupos (Vista Agregada)
@@ -836,18 +829,18 @@ function actualizarHorariosDesdeGrupo() {
 
   asignatura.value.horarios_data.forEach(grupoData => {
     if (grupoData.horarios && grupoData.horarios.length > 0) {
-        const horariosGrupo = grupoData.horarios.map(h => ({
-            dia: h.dia,
-            horaInicio: h.hora_inicio?.substring(0, 5),
-            horaFin: h.hora_fin?.substring(0, 5),
-            // Mostrar nombre del grupo en el aula si es necesario
-            aula: h.aula || 'Sin Aula',
-            grupo: grupoData.grupo, // Para mostrar "Grupo 1" en la tarjeta
-            tipoClase: grupoData.tipo,
-            desdeAPI: true,
-            docente: grupoData.docente_nombre
-        }))
-        todosLosHorarios.push(...horariosGrupo)
+      const horariosGrupo = grupoData.horarios.map(h => ({
+        dia: h.dia,
+        horaInicio: h.hora_inicio?.substring(0, 5),
+        horaFin: h.hora_fin?.substring(0, 5),
+        // Mostrar nombre del grupo en el aula si es necesario
+        aula: h.aula || 'Sin Aula',
+        grupo: grupoData.grupo, // Para mostrar "Grupo 1" en la tarjeta
+        tipoClase: grupoData.tipo,
+        desdeAPI: true,
+        docente: grupoData.docente_nombre
+      }))
+      todosLosHorarios.push(...horariosGrupo)
     }
   })
 
@@ -896,59 +889,59 @@ const unidadForm = ref({ nombre: '', elementoCompetencia: '' })
 
 const planificacionSesiones = ref([])
 const planificacion = computed(() => {
-    // Reconstruir la estructura Unidades -> Sesiones para el template
-    // pero de forma dinámica basada en el unidad_id de cada sesión.
-    if (!unidadesDocumentacion.value) return []
+  // Reconstruir la estructura Unidades -> Sesiones para el template
+  // pero de forma dinámica basada en el unidad_id de cada sesión.
+  if (!unidadesDocumentacion.value) return []
 
-    return unidadesDocumentacion.value.map(u => {
-        return {
-            id: u.id,
-            nombre: u.titulo.toUpperCase(),
-            elementoCompetencia: u.elemento_competencia || '',
-            temas: u.temas || [],
-            collapsed: false,
-            sesiones: planificacionSesiones.value
-                .filter(s => s.unidad_id === u.id)
-                .sort((a, b) => a.numeroGlobal - b.numeroGlobal)
-        }
-    }).concat(planificacionSesiones.value.some(s => s.unidad_id === 'finales') ? [{
-        id: 'finales',
-        nombre: 'EXÁMENES FINALES Y SEGUNDA INSTANCIA',
-        elementoCompetencia: 'Evaluación de resultados de aprendizaje.',
-        temas: [],
-        collapsed: false,
-        sesiones: planificacionSesiones.value
-            .filter(s => s.unidad_id === 'finales')
-            .sort((a, b) => a.numeroGlobal - b.numeroGlobal)
-    }] : [])
+  return unidadesDocumentacion.value.map(u => {
+    return {
+      id: u.id,
+      nombre: u.titulo.toUpperCase(),
+      elementoCompetencia: u.elemento_competencia || '',
+      temas: u.temas || [],
+      collapsed: false,
+      sesiones: planificacionSesiones.value
+        .filter(s => s.unidad_id === u.id)
+        .sort((a, b) => a.numeroGlobal - b.numeroGlobal)
+    }
+  }).concat(planificacionSesiones.value.some(s => s.unidad_id === 'finales') ? [{
+    id: 'finales',
+    nombre: 'EXÁMENES FINALES Y SEGUNDA INSTANCIA',
+    elementoCompetencia: 'Evaluación de resultados de aprendizaje.',
+    temas: [],
+    collapsed: false,
+    sesiones: planificacionSesiones.value
+      .filter(s => s.unidad_id === 'finales')
+      .sort((a, b) => a.numeroGlobal - b.numeroGlobal)
+  }] : [])
 })
 
 // Lista global de todos los temas de todas las unidades
 const opcionesTemasGlobales = computed(() => {
-    const opciones = []
-    unidadesDocumentacion.value.forEach(u => {
-        (u.temas || []).forEach(t => {
-            const titulo = typeof t === 'string' ? t : (t.titulo || t.nombre || '')
-            opciones.push({
-                label: titulo,
-                value: t.id || titulo,
-                unidad_id: u.id,
-                unidad_nombre: u.titulo
-            })
-        })
+  const opciones = []
+  unidadesDocumentacion.value.forEach(u => {
+    (u.temas || []).forEach(t => {
+      const titulo = typeof t === 'string' ? t : (t.titulo || t.nombre || '')
+      opciones.push({
+        label: titulo,
+        value: t.id || titulo,
+        unidad_id: u.id,
+        unidad_nombre: u.titulo
+      })
     })
-    return opciones
+  })
+  return opciones
 })
 
 // Lista de todos los horarios ordenados por día y hora
 const horariosOrdenados = computed(() => {
 
-    return [...horarios.value].sort((a, b) => {
-        const diaA = getNroDia(a.dia)
-        const diaB = getNroDia(b.dia)
-        if (diaA !== diaB) return diaA - diaB
-        return (a.horaInicio || '').localeCompare(b.horaInicio || '')
-    })
+  return [...horarios.value].sort((a, b) => {
+    const diaA = getNroDia(a.dia)
+    const diaB = getNroDia(b.dia)
+    if (diaA !== diaB) return diaA - diaB
+    return (a.horaInicio || '').localeCompare(b.horaInicio || '')
+  })
 })
 
 const totalSesionesGeneradas = computed(() => planificacion.value.reduce((sum, u) => sum + (u.sesiones?.length || 0), 0))
@@ -989,14 +982,14 @@ function eliminarHorario(horario) {
 
 // Helper para normalizar días (API sin tildes vs App con tildes)
 const getNroDia = (diaStr) => {
-    if (!diaStr) return 99
-    // Normalizar: minúsculas y sin tildes (miercoles, sabado)
-    const d = diaStr.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    const map = {
-        'lunes': 1, 'martes': 2, 'miercoles': 3, 'jueves': 4,
-        'viernes': 5, 'sabado': 6, 'domingo': 7
-    }
-    return map[d] || 99
+  if (!diaStr) return 99
+  // Normalizar: minúsculas y sin tildes (miercoles, sabado)
+  const d = diaStr.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  const map = {
+    'lunes': 1, 'martes': 2, 'miercoles': 3, 'jueves': 4,
+    'viernes': 5, 'sabado': 6, 'domingo': 7
+  }
+  return map[d] || 99
 }
 
 /**
@@ -1009,7 +1002,7 @@ function calcularPropuestaPlanificacion() {
   const day = inputFecha.getDay() || 7
   const mondayOfFirstWeek = new Date(inputFecha)
   if (day !== 1) mondayOfFirstWeek.setDate(inputFecha.getDate() - day + 1)
-  mondayOfFirstWeek.setHours(0,0,0,0)
+  mondayOfFirstWeek.setHours(0, 0, 0, 0)
 
   const unidades = unidadesDocumentacion.value
   const SEMANAS_EXAMEN = semanasExamen.value
@@ -1019,20 +1012,20 @@ function calcularPropuestaPlanificacion() {
   // Determinar ID de grupo para las sesiones
   let targetGrupoId = grupoSeleccionado.value?.value
   if (targetGrupoId === 'ALL' && asignatura.value?.horarios_data?.length > 0) {
-      targetGrupoId = asignatura.value.horarios_data[0].id
+    targetGrupoId = asignatura.value.horarios_data[0].id
   }
 
   // Preparar mapa de exámenes
   const fechasExamenMap = {}
   if (examenesRol.value.length > 0) {
-      let examenesRelevantes = examenesRol.value
-      if (grupoSeleccionado.value && grupoSeleccionado.value.value !== 'ALL') {
-          examenesRelevantes = examenesRelevantes.filter(e => e.grupo == grupoSeleccionado.value.nombre || e.grupo == grupoSeleccionado.value.value)
-      }
-      examenesRelevantes.forEach(ex => {
-          const raw = ex.fecha_examen || ex.fecha
-          if (raw) fechasExamenMap[raw.split('T')[0]] = ex.tipo_examen || ex.tipo
-      })
+    let examenesRelevantes = examenesRol.value
+    if (grupoSeleccionado.value && grupoSeleccionado.value.value !== 'ALL') {
+      examenesRelevantes = examenesRelevantes.filter(e => e.grupo == grupoSeleccionado.value.nombre || e.grupo == grupoSeleccionado.value.value)
+    }
+    examenesRelevantes.forEach(ex => {
+      const raw = ex.fecha_examen || ex.fecha
+      if (raw) fechasExamenMap[raw.split('T')[0]] = ex.tipo_examen || ex.tipo
+    })
   }
 
   // Bucle de generación (20 semanas) usando horarios ordenados
@@ -1055,14 +1048,14 @@ function calcularPropuestaPlanificacion() {
       let nombreExamen = null
 
       if (fechasExamenMap[fechaSesionIso]) {
-          esExamen = true
-          nombreExamen = fechasExamenMap[fechaSesionIso]
+        esExamen = true
+        nombreExamen = fechasExamenMap[fechaSesionIso]
       } else if (Object.keys(fechasExamenMap).length === 0) {
-          const esUltimaSesionSemana = sesionEnSemana === horariosOrdenados.value.length - 1
-          if (esUltimaSesionSemana && SEMANAS_EXAMEN[semana]) {
-              esExamen = true
-              nombreExamen = SEMANAS_EXAMEN[semana]
-          }
+        const esUltimaSesionSemana = sesionEnSemana === horariosOrdenados.value.length - 1
+        if (esUltimaSesionSemana && SEMANAS_EXAMEN[semana]) {
+          esExamen = true
+          nombreExamen = SEMANAS_EXAMEN[semana]
+        }
       }
 
       todasLasSesiones.push({
@@ -1125,15 +1118,15 @@ function calcularPropuestaPlanificacion() {
   // Agregar restantes (exámenes y semanas 18-20)
   const idsAsignados = new Set(nuevasSesiones.map(s => s.numeroGlobal))
   todasLasSesiones.forEach(s => {
-      if (!idsAsignados.has(s.numeroGlobal)) {
-          let unidadId = 'finales'
-          if (s.semana <= 17) {
-              // Buscar la unidad por el número de sesión (más fiable que la semana)
-              const sesionPrevia = nuevasSesiones.filter(ns => ns.numeroGlobal < s.numeroGlobal).pop()
-              unidadId = sesionPrevia?.unidad_id || unidades[0]?.id || 'finales'
-          }
-          nuevasSesiones.push({ ...s, unidad_id: unidadId })
+    if (!idsAsignados.has(s.numeroGlobal)) {
+      let unidadId = 'finales'
+      if (s.semana <= 17) {
+        // Buscar la unidad por el número de sesión (más fiable que la semana)
+        const sesionPrevia = nuevasSesiones.filter(ns => ns.numeroGlobal < s.numeroGlobal).pop()
+        unidadId = sesionPrevia?.unidad_id || unidades[0]?.id || 'finales'
       }
+      nuevasSesiones.push({ ...s, unidad_id: unidadId })
+    }
   })
 
   return nuevasSesiones.sort((a, b) => a.numeroGlobal - b.numeroGlobal)
@@ -1155,8 +1148,8 @@ async function generarPlanificacion(silent = false) {
     // 4. Cambiar UI
     planificacionGenerada.value = true
     if (!silent) {
-       tabActual.value = 'planificacion'
-       $q.notify({ type: 'positive', message: 'Planificación generada y guardada', icon: 'check_circle' })
+      tabActual.value = 'planificacion'
+      $q.notify({ type: 'positive', message: 'Planificación generada y guardada', icon: 'check_circle' })
     }
   } catch (err) {
     console.error('Error en generación/guardado:', err)
@@ -1254,14 +1247,14 @@ function eliminarSesion(unidad, sesion) {
 
 async function ejecutarCopia() {
   if (!gestionACopiar.value) {
-     $q.notify({ type: 'warning', message: 'Seleccione una gestión de origen', icon: 'warning' })
-     return
+    $q.notify({ type: 'warning', message: 'Seleccione una gestión de origen', icon: 'warning' })
+    return
   }
 
   $q.loading.show({ message: 'Copiando planificación...' })
   try {
     const response = await planificacionSemestralService.copiarPlanificacion(route.params.id, {
-        gestion_origen: gestionACopiar.value
+      gestion_origen: gestionACopiar.value
     })
 
     // Recargar todo
@@ -1283,13 +1276,13 @@ async function guardarTodo(silent = false) {
     let targetGrupoId = grupoSeleccionado.value?.value
 
     if (targetGrupoId === 'ALL') {
-         if (asignatura.value?.horarios_data?.length > 0) {
-             targetGrupoId = asignatura.value.horarios_data[0].id
-         } else {
-             if (!silent) $q.notify({ type: 'warning', message: 'No hay grupos asociados para guardar la planificación', icon: 'warning' })
-             guardando.value = false
-             return
-         }
+      if (asignatura.value?.horarios_data?.length > 0) {
+        targetGrupoId = asignatura.value.horarios_data[0].id
+      } else {
+        if (!silent) $q.notify({ type: 'warning', message: 'No hay grupos asociados para guardar la planificación', icon: 'warning' })
+        guardando.value = false
+        return
+      }
     }
 
     if (!targetGrupoId) {
@@ -1299,24 +1292,24 @@ async function guardarTodo(silent = false) {
 
     const sesiones = []
     planificacionSesiones.value.forEach(sesion => {
-        // Sincronizar arrays a strings antes de guardar
-        if (Array.isArray(sesion.temasSeleccionados)) sesion.tema = sesion.temasSeleccionados.join(', ')
-        if (Array.isArray(sesion.criteriosSeleccionados)) sesion.criteriosDesempeno = sesion.criteriosSeleccionados.join(', ')
-        if (Array.isArray(sesion.instrumentosSeleccionados)) sesion.instrumentosEvaluacion = sesion.instrumentosSeleccionados.join(', ')
+      // Sincronizar arrays a strings antes de guardar
+      if (Array.isArray(sesion.temasSeleccionados)) sesion.tema = sesion.temasSeleccionados.join(', ')
+      if (Array.isArray(sesion.criteriosSeleccionados)) sesion.criteriosDesempeno = sesion.criteriosSeleccionados.join(', ')
+      if (Array.isArray(sesion.instrumentosSeleccionados)) sesion.instrumentosEvaluacion = sesion.instrumentosSeleccionados.join(', ')
 
-        // Preparar para el backend
-        const sDB = {
-            ...sesion,
-            contenido_conceptual: sesion.conceptual,
-            contenido_procedimental: sesion.procedimental,
-            contenido_actitudinal: sesion.actitudinal,
-            numero_sesion: sesion.numeroGlobal,
-            tema_id: sesion.tema_id || (Array.isArray(sesion.temasSeleccionados) && typeof sesion.temasSeleccionados[0] === 'number' ? sesion.temasSeleccionados[0] : null),
-            temas_ids: Array.isArray(sesion.temasSeleccionados) ? sesion.temasSeleccionados.filter(v => typeof v === 'number') : []
-        }
+      // Preparar para el backend
+      const sDB = {
+        ...sesion,
+        contenido_conceptual: sesion.conceptual,
+        contenido_procedimental: sesion.procedimental,
+        contenido_actitudinal: sesion.actitudinal,
+        numero_sesion: sesion.numeroGlobal,
+        tema_id: sesion.tema_id || (Array.isArray(sesion.temasSeleccionados) && typeof sesion.temasSeleccionados[0] === 'number' ? sesion.temasSeleccionados[0] : null),
+        temas_ids: Array.isArray(sesion.temasSeleccionados) ? sesion.temasSeleccionados.filter(v => typeof v === 'number') : []
+      }
 
-        sDB.grupo_id = targetGrupoId
-        sesiones.push(sDB)
+      sDB.grupo_id = targetGrupoId
+      sesiones.push(sDB)
     })
 
     await planificacionSemestralService.savePlanificacion(route.params.id, {
@@ -1326,9 +1319,9 @@ async function guardarTodo(silent = false) {
 
     // También guardar configuración de fechas
     await planificacionSemestralService.saveConfig(route.params.id, {
-        fecha_inicio_clases: calendario.value.fechaInicio,
-        fecha_fin_clases: calendario.value.fechaFin,
-        gestion_academica: gestionSeleccionada.value
+      fecha_inicio_clases: calendario.value.fechaInicio,
+      fecha_fin_clases: calendario.value.fechaFin,
+      gestion_academica: gestionSeleccionada.value
     })
 
     if (!silent) $q.notify({ type: 'positive', message: 'Planificación guardada exitosamente', icon: 'save' })
@@ -1353,135 +1346,135 @@ const instrumentosOptions = [
 const fechasGlobales = ref({})
 
 function onTemaUpdate(val, sesion) {
-    if (!val) val = []
+  if (!val) val = []
 
-    // Sincronizar tema label (opcional)
-    const labels = []
-    val.forEach(v => {
-        if (typeof v === 'number') {
-            const opt = opcionesTemasGlobales.value.find(o => o.value === v)
-            if (opt) labels.push(opt.label)
-        } else {
-            labels.push(v)
-        }
-    })
-    sesion.tema = labels.join(', ')
-
-    // Actualizar tema_id (primer seleccionado como principal para compatibilidad)
-    sesion.tema_id = val.find(v => typeof v === 'number') || null
-
-    marcarModificado(sesion)
-
-    // Si se seleccionó un tema que existe en mis opciones,
-    // mover la sesión a la unidad de ese tema (usando el último seleccionado)
-    if (val.length > 0) {
-        const ultimoValor = val[val.length - 1]
-        const opcion = opcionesTemasGlobales.value.find(o => o.value === ultimoValor)
-        if (opcion && opcion.unidad_id) {
-            sesion.unidad_id = opcion.unidad_id
-        }
+  // Sincronizar tema label (opcional)
+  const labels = []
+  val.forEach(v => {
+    if (typeof v === 'number') {
+      const opt = opcionesTemasGlobales.value.find(o => o.value === v)
+      if (opt) labels.push(opt.label)
+    } else {
+      labels.push(v)
     }
+  })
+  sesion.tema = labels.join(', ')
+
+  // Actualizar tema_id (primer seleccionado como principal para compatibilidad)
+  sesion.tema_id = val.find(v => typeof v === 'number') || null
+
+  marcarModificado(sesion)
+
+  // Si se seleccionó un tema que existe en mis opciones,
+  // mover la sesión a la unidad de ese tema (usando el último seleccionado)
+  if (val.length > 0) {
+    const ultimoValor = val[val.length - 1]
+    const opcion = opcionesTemasGlobales.value.find(o => o.value === ultimoValor)
+    if (opcion && opcion.unidad_id) {
+      sesion.unidad_id = opcion.unidad_id
+    }
+  }
 }
 
 function calcularFechasTodosLosGrupos() {
-    const map = {}
-    if (!horarios.value || horarios.value.length === 0) return
+  const map = {}
+  if (!horarios.value || horarios.value.length === 0) return
 
-    // Usamos el mismo lunes de inicio
-    const fechaInicioStr = calendario.value.fechaInicio + 'T12:00:00'
-    const inputFecha = new Date(fechaInicioStr)
-    const day = inputFecha.getDay() || 7
-    const mondayOfFirstWeek = new Date(inputFecha)
-    if (day !== 1) mondayOfFirstWeek.setDate(inputFecha.getDate() - day + 1)
-    mondayOfFirstWeek.setHours(0,0,0,0)
+  // Usamos el mismo lunes de inicio
+  const fechaInicioStr = calendario.value.fechaInicio + 'T12:00:00'
+  const inputFecha = new Date(fechaInicioStr)
+  const day = inputFecha.getDay() || 7
+  const mondayOfFirstWeek = new Date(inputFecha)
+  if (day !== 1) mondayOfFirstWeek.setDate(inputFecha.getDate() - day + 1)
+  mondayOfFirstWeek.setHours(0, 0, 0, 0)
 
-    // El mapa DEBE coincidir con el bucle de generarPlanificacion
-    let sesionIdx = 1
-    for (let sem = 1; sem <= 20; sem++) {
-        const inicioSem = new Date(mondayOfFirstWeek)
-        inicioSem.setDate(mondayOfFirstWeek.getDate() + (sem - 1) * 7)
+  // El mapa DEBE coincidir con el bucle de generarPlanificacion
+  let sesionIdx = 1
+  for (let sem = 1; sem <= 20; sem++) {
+    const inicioSem = new Date(mondayOfFirstWeek)
+    inicioSem.setDate(mondayOfFirstWeek.getDate() + (sem - 1) * 7)
 
-        horarios.value.forEach(h => {
-             const diaNum = getNroDia(h.dia)
-             const dIndex = (diaNum >= 1 && diaNum <= 7) ? diaNum - 1 : 0
-             const fSesion = new Date(inicioSem)
-             fSesion.setDate(inicioSem.getDate() + dIndex)
+    horarios.value.forEach(h => {
+      const diaNum = getNroDia(h.dia)
+      const dIndex = (diaNum >= 1 && diaNum <= 7) ? diaNum - 1 : 0
+      const fSesion = new Date(inicioSem)
+      fSesion.setDate(inicioSem.getDate() + dIndex)
 
-             // En la vista general, cada sesión global corresponde a UN horario específico
-             // pero queremos mostrar la fecha para ese horario.
-             map[sesionIdx] = [{
-                 grupo: h.grupo || 'G',
-                 fecha: formatDate(fSesion)
-             }]
-             sesionIdx++
-        })
-    }
-    fechasGlobales.value = map
+      // En la vista general, cada sesión global corresponde a UN horario específico
+      // pero queremos mostrar la fecha para ese horario.
+      map[sesionIdx] = [{
+        grupo: h.grupo || 'G',
+        fecha: formatDate(fSesion)
+      }]
+      sesionIdx++
+    })
+  }
+  fechasGlobales.value = map
 }
 
 function getFechasGrupos(nroSesion) {
-   return fechasGlobales.value[nroSesion] || []
+  return fechasGlobales.value[nroSesion] || []
 }
 
 // Recalcular al montar o cambiar
 watch([() => asignatura.value, horarios], () => {
-    calcularFechasTodosLosGrupos()
+  calcularFechasTodosLosGrupos()
 }, { deep: true })
 
 onMounted(() => {
-    calcularFechasTodosLosGrupos()
+  calcularFechasTodosLosGrupos()
 })
 
 function exportarPDF() {
   if (!planificacionGenerada.value) {
-      $q.notify({ type: 'warning', message: 'Primero genere la planificación', icon: 'warning' })
-      return
+    $q.notify({ type: 'warning', message: 'Primero genere la planificación', icon: 'warning' })
+    return
   }
 
   $q.loading.show({ message: 'Generando PDF...' })
   try {
-      // Preparar objeto asignatura enriquecido con la planificación actual para el PDF
-      // El servicio pdfService espera 'unidades' con 'temas', pero nuestra planificación
-      // tiene una estructura ligeramente diferente (unidades con sesiones).
-      // Debemos adaptar los datos para que el reporte salga bonito, o crear un reporte específico.
-      // USaremos generarPlanDeClase pero le pasaremos los datos "reales" de la planificación grid.
+    // Preparar objeto asignatura enriquecido con la planificación actual para el PDF
+    // El servicio pdfService espera 'unidades' con 'temas', pero nuestra planificación
+    // tiene una estructura ligeramente diferente (unidades con sesiones).
+    // Debemos adaptar los datos para que el reporte salga bonito, o crear un reporte específico.
+    // USaremos generarPlanDeClase pero le pasaremos los datos "reales" de la planificación grid.
 
-      const asignaturaParaPDF = {
-          ...asignatura.value,
-          // Sobreescribimos unidades con la info de la planificación actual (sesiones distribuidas)
-          unidades: planificacion.value.map(p => ({
-              numero: p.id, // Ojo: id puede no ser numero secuencial
-              titulo: p.nombre,
-              elemento_competencia: p.elementoCompetencia,
-              temas: p.sesiones.filter(s => !s.esExamen).map((s, idx) => ({
-                  numero: idx + 1,
-                  titulo: s.tema,
-                  resultados_aprendizaje: s.criteriosDesempeno, // Mapeo aproximado
-                  contenidos: {
-                      conceptual: s.conceptual ? s.conceptual.split('\n') : [],
-                      procedimental: s.procedimental ? s.procedimental.split('\n') : [],
-                      actitudinal: s.actitudinal ? s.actitudinal.split('\n') : []
-                  },
-                  estrategias: {
-                      metodologicas: '', // No está en grid explícito
-                      aprendizaje: '',
-                      recursos: []
-                  },
-                  evaluacion: {
-                      formativa: { actividades: [], instrumentos: [s.instrumentosEvaluacion || ''] },
-                      sumativa: { actividades: [], instrumentos: [] }
-                  }
-              }))
-          }))
-      }
+    const asignaturaParaPDF = {
+      ...asignatura.value,
+      // Sobreescribimos unidades con la info de la planificación actual (sesiones distribuidas)
+      unidades: planificacion.value.map(p => ({
+        numero: p.id, // Ojo: id puede no ser numero secuencial
+        titulo: p.nombre,
+        elemento_competencia: p.elementoCompetencia,
+        temas: p.sesiones.filter(s => !s.esExamen).map((s, idx) => ({
+          numero: idx + 1,
+          titulo: s.tema,
+          resultados_aprendizaje: s.criteriosDesempeno, // Mapeo aproximado
+          contenidos: {
+            conceptual: s.conceptual ? s.conceptual.split('\n') : [],
+            procedimental: s.procedimental ? s.procedimental.split('\n') : [],
+            actitudinal: s.actitudinal ? s.actitudinal.split('\n') : []
+          },
+          estrategias: {
+            metodologicas: '', // No está en grid explícito
+            aprendizaje: '',
+            recursos: []
+          },
+          evaluacion: {
+            formativa: { actividades: [], instrumentos: [s.instrumentosEvaluacion || ''] },
+            sumativa: { actividades: [], instrumentos: [] }
+          }
+        }))
+      }))
+    }
 
-      pdfService.generarPlanDeClase(asignaturaParaPDF, { fecha: new Date().toLocaleDateString() })
-      $q.notify({ type: 'positive', message: 'PDF generado', icon: 'download' })
+    pdfService.generarPlanDeClase(asignaturaParaPDF, { fecha: new Date().toLocaleDateString() })
+    $q.notify({ type: 'positive', message: 'PDF generado', icon: 'download' })
   } catch (e) {
-      console.error(e)
-      $q.notify({ type: 'negative', message: 'Error generando PDF', icon: 'error' })
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Error generando PDF', icon: 'error' })
   } finally {
-      $q.loading.hide()
+    $q.loading.hide()
   }
 }
 </script>
@@ -1834,14 +1827,17 @@ function exportarPDF() {
   border-bottom: 1px dashed #e0e0e0;
   padding: 2px 4px;
 }
+
 .fecha-grupo-row:last-child {
   border-bottom: none;
 }
+
 .fg-grupo {
   font-weight: 700;
   color: var(--primary);
   margin-right: 6px;
 }
+
 .fg-fecha {
   color: var(--text-secondary);
 }

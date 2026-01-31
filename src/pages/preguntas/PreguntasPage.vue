@@ -15,8 +15,10 @@
         </div>
       </div>
       <div class="header-actions">
-        <q-btn outline color="primary" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" />
-        <q-btn unelevated color="primary" icon="upload_file" label="Importar Excel" no-caps @click="showImportDialog = true" />
+        <q-btn outline color="primary" icon="download" label="Descargar Plantilla" no-caps
+          @click="descargarPlantilla" />
+        <q-btn unelevated color="primary" icon="upload_file" label="Importar Excel" no-caps
+          @click="showImportDialog = true" />
         <q-btn unelevated color="green" icon="add" label="Nueva Pregunta" no-caps @click="showAddDialog = true" />
       </div>
     </div>
@@ -55,39 +57,15 @@
 
     <!-- Filtros -->
     <div class="filters-row">
-      <q-input
-        v-model="filtro.busqueda"
-        outlined
-        dense
-        placeholder="Buscar pregunta..."
-        class="search-input"
-      >
+      <q-input v-model="filtro.busqueda" outlined dense placeholder="Buscar pregunta..." class="search-input">
         <template v-slot:prepend>
           <q-icon name="search" />
         </template>
       </q-input>
-      <q-select
-        v-model="filtro.tipo"
-        :options="opcionesTipo"
-        outlined
-        dense
-        label="Tipo"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 180px;"
-      />
-      <q-select
-        v-model="filtro.dificultad"
-        :options="opcionesDificultad"
-        outlined
-        dense
-        label="Dificultad"
-        emit-value
-        map-options
-        clearable
-        style="min-width: 150px;"
-      />
+      <q-select v-model="filtro.tipo" :options="opcionesTipo" outlined dense label="Tipo" emit-value map-options
+        clearable style="min-width: 180px;" />
+      <q-select v-model="filtro.dificultad" :options="opcionesDificultad" outlined dense label="Dificultad" emit-value
+        map-options clearable style="width: 100%; max-width: 150px;" />
     </div>
 
     <!-- Lista de Preguntas -->
@@ -96,7 +74,8 @@
         <q-icon name="quiz" size="80px" color="grey-5" />
         <h3>No hay preguntas</h3>
         <p>Importa preguntas desde un Excel o crea una nueva manualmente</p>
-        <q-btn unelevated color="primary" icon="upload_file" label="Importar Excel" no-caps @click="showImportDialog = true" />
+        <q-btn unelevated color="primary" icon="upload_file" label="Importar Excel" no-caps
+          @click="showImportDialog = true" />
       </div>
 
       <div v-for="(pregunta, index) in preguntasFiltradas" :key="pregunta.id" class="pregunta-card">
@@ -123,13 +102,11 @@
 
         <div class="pregunta-opciones">
           <template v-for="(opcion, letra) in pregunta.opciones" :key="letra">
-            <div 
-              v-if="opcion"
-              :class="['opcion-item', { 'correcta': pregunta.respuesta_correcta.includes(letra) }]"
-            >
+            <div v-if="opcion" :class="['opcion-item', { 'correcta': pregunta.respuesta_correcta.includes(letra) }]">
               <span class="opcion-letra">{{ letra }}</span>
               <span class="opcion-texto">{{ opcion }}</span>
-              <q-icon v-if="pregunta.respuesta_correcta.includes(letra)" name="check_circle" color="green" size="18px" />
+              <q-icon v-if="pregunta.respuesta_correcta.includes(letra)" name="check_circle" color="green"
+                size="18px" />
             </div>
           </template>
         </div>
@@ -163,30 +140,37 @@
             <div class="format-info">
               <h5>Formato de columnas:</h5>
               <table class="format-table">
-                <tr><td><strong>ENUNCIADO</strong></td><td>Texto de la pregunta</td></tr>
-                <tr><td><strong>TIPO</strong></td><td>SELECCION_UNICA, SELECCION_MULTIPLE, FALSO_VERDADERO</td></tr>
-                <tr><td><strong>A, B, C, D, E</strong></td><td>Opciones de respuesta</td></tr>
-                <tr><td><strong>DIFICULTAD</strong></td><td>FACIL, MEDIO, DIFICIL</td></tr>
-                <tr><td><strong>PESO</strong></td><td>Valor numérico (ej: 10)</td></tr>
-                <tr><td><strong>RESPUESTA</strong></td><td>Letra(s) correcta(s): A, B, A;B;C para múltiple</td></tr>
+                <tr>
+                  <td><strong>ENUNCIADO</strong></td>
+                  <td>Texto de la pregunta</td>
+                </tr>
+                <tr>
+                  <td><strong>TIPO</strong></td>
+                  <td>SELECCION_UNICA, SELECCION_MULTIPLE, FALSO_VERDADERO</td>
+                </tr>
+                <tr>
+                  <td><strong>A, B, C, D, E</strong></td>
+                  <td>Opciones de respuesta</td>
+                </tr>
+                <tr>
+                  <td><strong>DIFICULTAD</strong></td>
+                  <td>FACIL, MEDIO, DIFICIL</td>
+                </tr>
+                <tr>
+                  <td><strong>PESO</strong></td>
+                  <td>Valor numérico (ej: 10)</td>
+                </tr>
+                <tr>
+                  <td><strong>RESPUESTA</strong></td>
+                  <td>Letra(s) correcta(s): A, B, A;B;C para múltiple</td>
+                </tr>
               </table>
             </div>
           </div>
 
-          <div class="upload-area" 
-               @dragover.prevent 
-               @drop.prevent="handleDrop"
-               :class="{ 'dragging': isDragging }"
-               @dragenter="isDragging = true"
-               @dragleave="isDragging = false"
-          >
-            <input 
-              type="file" 
-              ref="fileInput" 
-              accept=".xlsx,.xls" 
-              @change="handleFileSelect"
-              style="display: none;"
-            />
+          <div class="upload-area" @dragover.prevent @drop.prevent="handleDrop" :class="{ 'dragging': isDragging }"
+            @dragenter="isDragging = true" @dragleave="isDragging = false">
+            <input type="file" ref="fileInput" accept=".xlsx,.xls" @change="handleFileSelect" style="display: none;" />
             <q-icon name="cloud_upload" size="48px" color="primary" />
             <p>Arrastra tu archivo Excel aquí o</p>
             <q-btn outline color="primary" label="Seleccionar Archivo" no-caps @click="$refs.fileInput.click()" />
@@ -215,14 +199,8 @@
 
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="cancelarImport" />
-          <q-btn 
-            unelevated 
-            color="primary" 
-            label="Importar Preguntas" 
-            :disable="previewData.length === 0"
-            :loading="importing"
-            @click="confirmarImport" 
-          />
+          <q-btn unelevated color="primary" label="Importar Preguntas" :disable="previewData.length === 0"
+            :loading="importing" @click="confirmarImport" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -235,71 +213,39 @@
         </div>
 
         <q-card-section>
-          <q-input
-            v-model="nuevaPregunta.enunciado"
-            outlined
-            type="textarea"
-            label="Enunciado de la pregunta"
-            rows="3"
-            class="q-mb-md"
-          />
+          <q-input v-model="nuevaPregunta.enunciado" outlined type="textarea" label="Enunciado de la pregunta" rows="3"
+            class="q-mb-md" />
 
           <div class="row q-col-gutter-md q-mb-md">
             <div class="col-6">
-              <q-select
-                v-model="nuevaPregunta.tipo"
-                :options="opcionesTipoCompleto"
-                outlined
-                label="Tipo de pregunta"
-                emit-value
-                map-options
-              />
+              <q-select v-model="nuevaPregunta.tipo" :options="opcionesTipoCompleto" outlined label="Tipo de pregunta"
+                emit-value map-options />
             </div>
             <div class="col-3">
-              <q-select
-                v-model="nuevaPregunta.nivel_dificultad"
-                :options="opcionesDificultadCompleto"
-                outlined
-                label="Dificultad"
-                emit-value
-                map-options
-              />
+              <q-select v-model="nuevaPregunta.nivel_dificultad" :options="opcionesDificultadCompleto" outlined
+                label="Dificultad" emit-value map-options />
             </div>
             <div class="col-3">
-              <q-input
-                v-model.number="nuevaPregunta.peso"
-                outlined
-                type="number"
-                label="Peso"
-                min="1"
-              />
+              <q-input v-model.number="nuevaPregunta.peso" outlined type="number" label="Peso" min="1" />
             </div>
           </div>
 
           <div class="opciones-section">
             <h4>Opciones de respuesta</h4>
             <div v-for="letra in ['A', 'B', 'C', 'D', 'E']" :key="letra" class="opcion-input-row">
-              <q-checkbox 
-                v-model="nuevaPregunta.respuesta_correcta" 
-                :val="letra"
-                :disable="nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'"
-              />
+              <q-checkbox v-model="nuevaPregunta.respuesta_correcta" :val="letra"
+                :disable="nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'" />
               <span class="opcion-letra-input">{{ letra }}.</span>
-              <q-input
-                v-model="nuevaPregunta.opciones[letra]"
-                outlined
-                dense
-                :placeholder="getPlaceholderOpcion(letra)"
-                :disable="nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'"
-                class="flex-1"
-              />
+              <q-input v-model="nuevaPregunta.opciones[letra]" outlined dense :placeholder="getPlaceholderOpcion(letra)"
+                :disable="nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'" class="flex-1" />
             </div>
           </div>
         </q-card-section>
 
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="cancelarAdd" />
-          <q-btn unelevated color="primary" :label="editMode ? 'Guardar Cambios' : 'Crear Pregunta'" @click="guardarPregunta" />
+          <q-btn unelevated color="primary" :label="editMode ? 'Guardar Cambios' : 'Crear Pregunta'"
+            @click="guardarPregunta" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -459,7 +405,7 @@ function handleDrop(event) {
 function procesarExcel(file) {
   selectedFile.value = file
   const reader = new FileReader()
-  
+
   reader.onload = (e) => {
     const data = new Uint8Array(e.target.result)
     const workbook = XLSX.read(data, { type: 'array' })
@@ -500,7 +446,7 @@ function cancelarImport() {
 
 function confirmarImport() {
   importing.value = true
-  
+
   const preguntasValidas = previewData.value.filter(p => p.valido)
   const docenteId = authStore.usuarioActual?.id || 7
   const grupos = authStore.usuarioActual?.grupos || ['A', 'B']
@@ -519,7 +465,7 @@ function confirmarImport() {
     showImportDialog.value = false
     selectedFile.value = null
     previewData.value = []
-    
+
     // Notificación de éxito
     console.log(`${count} preguntas importadas exitosamente`)
   }, 1000)
@@ -783,7 +729,8 @@ function cancelarAdd() {
 }
 
 /* Dialogs */
-.import-dialog, .add-dialog {
+.import-dialog,
+.add-dialog {
   background: var(--bg-secondary) !important;
   border-radius: 16px !important;
   min-width: 600px;
@@ -935,11 +882,30 @@ function cancelarAdd() {
 }
 
 @media (max-width: 768px) {
-  .page-header { flex-direction: column; gap: 16px; }
-  .header-actions { flex-wrap: wrap; }
-  .stats-row { flex-wrap: wrap; }
-  .stat-mini-card { min-width: 150px; }
-  .filters-row { flex-direction: column; }
-  .import-dialog, .add-dialog { min-width: 90vw; }
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .stats-row {
+    flex-wrap: wrap;
+  }
+
+  .stat-mini-card {
+    min-width: 150px;
+  }
+
+  .filters-row {
+    flex-direction: column;
+  }
+
+  .import-dialog,
+  .add-dialog {
+    min-width: 90vw;
+  }
 }
 </style>

@@ -18,13 +18,13 @@
     <!-- Filtros -->
     <div class="filters-section">
       <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
-        style="min-width: 180px;" @update:model-value="onSedeChange" />
+        style="width: 100%; max-width: 180px; min-width: 150px;" @update:model-value="onSedeChange" />
       <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
-        map-options style="min-width: 220px;" @update:model-value="onFiltroChange" />
+        map-options style="width: 100%; max-width: 220px; min-width: 180px;" @update:model-value="onFiltroChange" />
       <q-select v-model="filtros.gestion" :options="gestionesOptions" outlined dense label="Gestión" emit-value
-        map-options style="min-width: 130px;" @update:model-value="onFiltroChange" />
+        map-options style="width: 100%; max-width: 130px; min-width: 100px;" @update:model-value="onFiltroChange" />
       <q-select v-model="filtros.semestre" :options="semestresOptions" outlined dense label="Semestre" emit-value
-        map-options clearable style="min-width: 150px;" />
+        map-options clearable style="width: 100%; max-width: 150px; min-width: 120px;" />
     </div>
 
     <!-- Estadísticas -->
@@ -71,7 +71,7 @@
         <div class="materia-header">
           <div class="materia-info">
             <q-chip color="blue-1" text-color="blue-10" size="sm" dense class="text-weight-bold">{{ materia.codigo
-              }}</q-chip>
+            }}</q-chip>
             <h3 class="materia-nombre">{{ materia.nombre }}</h3>
             <div class="materia-meta">
               <q-chip size="xs" color="purple-2" text-color="purple-9">{{ materia.carrera }}</q-chip>

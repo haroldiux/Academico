@@ -165,7 +165,7 @@
 
     <!-- Dialog Crear/Editar Docente -->
     <q-dialog v-model="showDialog" persistent>
-      <q-card class="dialog-card" style="min-width: 650px;">
+      <q-card class="dialog-card" style="width: 100%; max-width: 650px;">
         <div class="dialog-header" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
           <h3>
             <q-icon :name="editMode ? 'edit' : 'person_add'" class="q-mr-sm" />

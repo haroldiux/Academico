@@ -11,14 +11,10 @@
         </p>
       </div>
       <div class="col-auto">
-        <q-btn-toggle
-          v-model="viewMode"
-          toggle-color="primary"
-          :options="[
-            { label: 'Mapa', value: 'map', icon: 'map' },
-            { label: 'Lista', value: 'list', icon: 'list' }
-          ]"
-        />
+        <q-btn-toggle v-model="viewMode" toggle-color="primary" :options="[
+          { label: 'Mapa', value: 'map', icon: 'map' },
+          { label: 'Lista', value: 'list', icon: 'list' }
+        ]" />
       </div>
     </div>
 
@@ -38,15 +34,8 @@
     <!-- Tabs de Tipo de Reporte -->
     <div class="row q-mb-lg">
       <div class="col-12">
-        <q-tabs
-          v-model="selectedReportType"
-          dense
-          class="text-grey-7 bg-white rounded-borders shadow-1"
-          active-color="primary"
-          indicator-color="primary"
-          align="justify"
-          narrow-indicator
-        >
+        <q-tabs v-model="selectedReportType" dense class="text-grey-7 bg-white rounded-borders shadow-1"
+          active-color="primary" indicator-color="primary" align="justify" narrow-indicator>
           <q-tab name="doc" icon="description" label="Documentación" />
           <q-tab name="seg" icon="analytics" label="Seguimiento Docente" />
           <q-tab name="ast" icon="how_to_reg" label="Asistencia Estudiantes" />
@@ -60,12 +49,8 @@
         <div class="col-12 col-md-7">
           <q-card flat bordered class="map-card">
             <q-card-section>
-              <BoliviaMapSVG 
-                :sedes-data="sedesPorDepartamento" 
-                :title="getReportLabel(selectedReportType)"
-                @select-department="onSelectDepartment"
-                @select-sede="onSelectSede"
-              />
+              <BoliviaMapSVG :sedes-data="sedesPorDepartamento" :title="getReportLabel(selectedReportType)"
+                @select-department="onSelectDepartment" @select-sede="onSelectSede" />
             </q-card-section>
           </q-card>
         </div>
@@ -77,8 +62,8 @@
                 Resumen por Departamento
               </div>
               <q-list separator>
-                <q-item v-for="(sedes, deptId) in deptsConSedes" :key="deptId" 
-                        clickable @click="handleDeptClick(deptId, sedes)">
+                <q-item v-for="(sedes, deptId) in deptsConSedes" :key="deptId" clickable
+                  @click="handleDeptClick(deptId, sedes)">
                   <q-item-section avatar>
                     <q-avatar :color="getAvatarColor(getAvgProgress(sedes))" text-color="white" size="40px">
                       {{ getDeptAbbr(deptId) }}
@@ -110,7 +95,8 @@
             <h3 class="sede-nombre">{{ sede.nombre }}</h3>
             <span class="sede-codigo">Código: {{ sede.codigo }}</span>
           </div>
-          <q-chip :color="sede.activo ? 'green-2' : 'grey-2'" :text-color="sede.activo ? 'green-9' : 'grey-9'" size="sm">
+          <q-chip :color="sede.activo ? 'green-2' : 'grey-2'" :text-color="sede.activo ? 'green-9' : 'grey-9'"
+            size="sm">
             {{ sede.activo ? 'Activo' : 'Inactivo' }}
           </q-chip>
         </div>
@@ -135,7 +121,7 @@
 
     <!-- Modal para seleccionar sede cuando hay múltiples -->
     <q-dialog v-model="showSedeSelector">
-      <q-card style="min-width: 400px">
+      <q-card style="width: 100%; max-width: 400px">
         <q-card-section class="bg-primary text-white">
           <div class="text-h6">
             <q-icon name="apartment" class="q-mr-sm" />
@@ -157,9 +143,12 @@
                 {{ sede.codigo }}
               </q-avatar>
               <div class="text-h6">{{ sede.nombre }}</div>
-              <div class="text-caption text-grey q-mb-md">{{ sede.carreras || 0 }} carreras • {{ sede.docentes || 0 }} docentes</div>
-              <q-linear-progress :value="sede.progreso / 100" :color="getAvatarColor(sede.progreso)" rounded size="10px" class="q-mb-md" />
-              <div class="text-h4 text-weight-bold" :class="'text-' + getAvatarColor(sede.progreso)">{{ sede.progreso }}%</div>
+              <div class="text-caption text-grey q-mb-md">{{ sede.carreras || 0 }} carreras • {{ sede.docentes || 0 }}
+                docentes</div>
+              <q-linear-progress :value="sede.progreso / 100" :color="getAvatarColor(sede.progreso)" rounded size="10px"
+                class="q-mb-md" />
+              <div class="text-h4 text-weight-bold" :class="'text-' + getAvatarColor(sede.progreso)">{{ sede.progreso
+                }}%</div>
             </div>
           </q-tab-panel>
         </q-tab-panels>
@@ -221,7 +210,7 @@ const sedesPorDepartamento = computed(() => {
     chuquisaca: [],
     tarija: []
   }
-  
+
   // Mapear sedes del store a departamentos
   sedesStore.sedes.forEach(sede => {
     const deptId = getDepartmentForSede(sede.nombre)
@@ -232,7 +221,7 @@ const sedesPorDepartamento = computed(() => {
       })
     }
   })
-  
+
   return mapping
 })
 
@@ -281,7 +270,7 @@ function getProgresoSede(sedeId, type = 'doc') {
     'seg': { 1: 65, 2: 80, 3: 40, 4: 70, 5: 92, 6: 85, 7: 60, 8: 45, 9: 78, 10: 65, 11: 35, 12: 25 },
     'ast': { 1: 90, 2: 85, 3: 88, 4: 95, 5: 82, 6: 78, 7: 85, 8: 72, 9: 80, 10: 92, 11: 85, 12: 90 }
   }
-  
+
   const dataset = variations[type] || variations['doc']
   return dataset[sedeId] || 70
 }
@@ -339,9 +328,9 @@ function navigateToSelectedSede() {
 }
 
 function irASede(sede) {
-  router.push({ 
-    path: '/vicerrector/reportes', 
-    query: { sedeId: sede.id, sedeName: sede.nombre } 
+  router.push({
+    path: '/vicerrector/reportes',
+    query: { sedeId: sede.id, sedeName: sede.nombre }
   })
 }
 </script>
