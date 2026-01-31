@@ -777,8 +777,7 @@
 
         <q-card-section>
           <q-form @submit="guardarUnidad" class="q-gutter-md">
-            <q-input v-model.number="formUnidad.numero" label="Número" type="number" outlined dense
-              :readonly="editandoUnidad" />
+            <q-input v-model.number="formUnidad.numero" label="Número" type="number" outlined dense />
             <q-input v-model="formUnidad.titulo" label="Título" outlined dense autofocus />
 
             <div class="row justify-end q-gutter-sm q-mt-md">
@@ -1030,8 +1029,14 @@ const puedeEditarPlanificacion = computed(() => {
 
   // 4. Docente
   if (rol === ROLES.DOCENTE) {
-    // Validar asignación? Por ahora true si no está aprobado
-    return true
+    // Si es Cochabamba (Sede 1), permitir editar si no está aprobado
+    // O si está asignado a la materia
+    const authSede = Number(authStore.usuarioActual?.sede_id)
+    if (authSede === 1) return true
+
+    // Fallback: Verificar si está entre los docentes de la asignatura
+    const esAsignado = asignatura.value?.docentes?.some(d => d.id === authStore.usuarioActual?.docente_id)
+    return esAsignado || false
   }
 
   return false
@@ -1072,7 +1077,16 @@ const nombreDocenteCarpeta = computed(() => {
   }
 
   // 3. Si soy docente (rol), mostrar mi nombre
-  // (Opcional, pero cubierto por el filtro previo normalmente)
+  if (authStore.rol === ROLES.DOCENTE) {
+    const me = asignatura.value.docentes.find(d => d.id === authStore.usuarioActual?.docente_id)
+    if (me) return me.nombre_completo
+  }
+
+  // 4. Si hay varios, intentar filtrar por sede del usuario actual
+  if (authStore.usuarioActual?.sede_id) {
+    const matches = asignatura.value.docentes.filter(d => d.sede_id == authStore.usuarioActual.sede_id)
+    if (matches.length === 1) return matches[0].nombre_completo
+  }
 
   return null
 })
@@ -1437,7 +1451,7 @@ function cargarFormDatos() {
 
 
 
-function guardarCambios() {
+async function guardarCambios() {
   // Sync Elementos de Competencia from Units
   if (asignatura.value?.unidades) {
     formPrograma.value.elementos_competencia = asignatura.value.unidades
@@ -1463,8 +1477,13 @@ function guardarCambios() {
     criterios_evaluacion: formPrograma.value.sistema_evaluacion
   }
 
-  store.updateAsignatura(asignatura.value.id, datosCompletos)
-  $q.notify({ type: 'positive', message: 'Cambios guardados', icon: 'check_circle', position: 'top' })
+  try {
+    await store.updateAsignatura(asignatura.value.id, datosCompletos)
+    $q.notify({ type: 'positive', message: 'Cambios guardados', icon: 'check_circle', position: 'top' })
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Error al guardar cambios: ' + e.message })
+  }
 }
 
 function calcularProgresoTema(tema) {

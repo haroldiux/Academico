@@ -19,7 +19,8 @@ export const ROLES = {
 const ROLE_NAME_MAP = {
   'SUPER_ADMIN': ROLES.SUPER_ADMIN,
   'ADMIN': ROLES.ADMIN,
-  'VICERRECTORADO': ROLES.VICERRECTOR_NACIONAL,
+  'VICERRECTORADO_NACIONAL': ROLES.VICERRECTOR_NACIONAL,
+  'VICERRECTORADO': ROLES.VICERRECTOR_SEDE,
   'VICERRECTOR_SEDE': ROLES.VICERRECTOR_SEDE,
   'DIRECCION_ACADEMICA': ROLES.DIRECCION_ACADEMICA,
   'DIRECTOR_CARRERA': ROLES.DIRECTOR_CARRERA,
@@ -186,17 +187,16 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Cambiar contraseña
-  async function changePassword(currentPassword, newPassword) {
+  async function changePassword(newPassword) {
     try {
       await api.post('/change-password', {
-        current_password: currentPassword,
         new_password: newPassword,
         new_password_confirmation: newPassword
       })
       passwordChangeRequired.value = false
       return { success: true }
     } catch (error) {
-      const mensaje = error.response?.data?.message || error.response?.data?.errors?.current_password?.[0] || 'Error al cambiar contraseña'
+      const mensaje = error.response?.data?.message || 'Error al cambiar contraseña'
       return { success: false, error: mensaje }
     }
   }

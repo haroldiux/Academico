@@ -43,10 +43,52 @@ export const useDocentesStore = defineStore('docentes', () => {
     }
   }
 
+  async function createDocente(data) {
+    loading.value = true
+    try {
+      await api.post('/docentes', data)
+      return true
+    } catch (error) {
+      console.error('Error creating docente:', error)
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateDocente(id, data) {
+    loading.value = true
+    try {
+      await api.put(`/docentes/${id}`, data)
+      return true
+    } catch (error) {
+      console.error('Error updating docente:', error)
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteDocente(id) {
+    loading.value = true
+    try {
+      await api.delete(`/docentes/${id}`)
+      return true
+    } catch (error) {
+      console.error('Error deleting docente:', error)
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     docentes,
     loading,
     fetchDocentes,
-    syncDocentes
+    syncDocentes,
+    createDocente,
+    updateDocente,
+    deleteDocente
   }
 })

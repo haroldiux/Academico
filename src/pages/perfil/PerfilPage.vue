@@ -151,7 +151,6 @@
         </q-card-section>
 
         <q-card-section class="q-pa-lg q-gutter-md">
-          <q-input v-model="pwdForm.current" label="Contraseña Actual" outlined type="password" class="input-rounded" />
           <q-input v-model="pwdForm.new" label="Nueva Contraseña" outlined type="password" class="input-rounded" />
           <q-input v-model="pwdForm.confirm" label="Confirmar Nueva Contraseña" outlined type="password" class="input-rounded" />
         </q-card-section>
@@ -186,7 +185,6 @@ const form = ref({
 })
 
 const pwdForm = ref({
-  current: '',
   new: '',
   confirm: ''
 })
@@ -274,13 +272,13 @@ async function handleUpdatePwd() {
   }
 
   changingPwd.value = true
-  const result = await authStore.changePassword(pwdForm.value.current, pwdForm.value.new)
+  const result = await authStore.changePassword(pwdForm.value.new)
   changingPwd.value = false
 
   if (result.success) {
     $q.notify({ type: 'positive', message: 'Contraseña actualizada' })
     showPwdDialog.value = false
-    pwdForm.value = { current: '', new: '', confirm: '' }
+    pwdForm.value = { new: '', confirm: '' }
   } else {
     $q.notify({ type: 'negative', message: result.error })
   }
