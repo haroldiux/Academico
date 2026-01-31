@@ -10,7 +10,8 @@ import axios from 'axios'
 const api = axios.create({
   baseURL: process.env.DEV
     ? 'http://127.0.0.1:8000/api'
-    : 'https://api.documentacion.xpertiaplus.com/api'
+    : 'https://api.documentacion.xpertiaplus.com/api',
+  withCredentials: true
 })
 
 export default boot(({ app }) => {
