@@ -16,7 +16,8 @@
               <img src="/unitepc-logo-clean.png" alt="UNITEPC" class="logo-img shadow-10 rounded-borders" />
             </div>
             <h2 class="text-h3 text-weight-bolder q-ma-none text-uppercase tracking-wider">UNITEPC</h2>
-            <div class="text-subtitle1 text-uppercase text-weight-medium q-mb-md tracking-widest opacity-80">Documentación Académica</div>
+            <div class="text-subtitle1 text-uppercase text-weight-medium q-mb-md tracking-widest opacity-80">
+              Documentación Académica</div>
             <p class="text-h6 text-weight-light opacity-90" style="max-width: 400px; margin: 0 auto;">
               Gestión integral para docentes, estudiantes y administrativos.
             </p>
@@ -33,59 +34,35 @@
             </div>
 
             <q-form @submit.prevent="handleLogin" class="q-gutter-y-lg animate-fade-in-delayed-2">
-              <q-input
-                v-model="username"
-                outlined
-                label="Usuario / CI"
-                placeholder="Ej: 1234567"
-                class="input-rounded"
-                bg-color="grey-1"
-                :rules="[val => !!val || 'El usuario es requerido']"
-                hide-bottom-space
-              >
+              <q-input v-model="username" outlined label="Usuario / CI" placeholder="Ej: 1234567" class="input-rounded"
+                bg-color="grey-1" :rules="[val => !!val || 'El usuario es requerido']" hide-bottom-space>
                 <template v-slot:prepend>
                   <q-icon name="person_outline" color="primary" />
                 </template>
               </q-input>
 
-              <q-input
-                v-model="password"
-                outlined
-                :type="showPassword ? 'text' : 'password'"
-                label="Contraseña"
-                placeholder="••••••"
-                class="input-rounded"
-                bg-color="grey-1"
-                :rules="[val => !!val || 'La contraseña es requerida']"
-                hide-bottom-space
-              >
+              <q-input v-model="password" outlined :type="showPassword ? 'text' : 'password'" label="Contraseña"
+                placeholder="••••••" class="input-rounded" bg-color="grey-1"
+                :rules="[val => !!val || 'La contraseña es requerida']" hide-bottom-space>
                 <template v-slot:prepend>
                   <q-icon name="lock_outline" color="primary" />
                 </template>
                 <template v-slot:append>
-                  <q-icon
-                    :name="showPassword ? 'visibility_off' : 'visibility'"
-                    class="cursor-pointer text-grey-6"
-                    @click="showPassword = !showPassword"
-                  />
+                  <q-icon :name="showPassword ? 'visibility_off' : 'visibility'" class="cursor-pointer text-grey-6"
+                    @click="showPassword = !showPassword" />
                 </template>
               </q-input>
 
               <div class="row items-center justify-between q-mt-sm">
-                <q-checkbox v-model="rememberMe" label="Recordarme" color="primary" dense size="sm" class="text-grey-8" />
-                <a href="#" class="text-primary text-weight-medium" style="text-decoration: none; font-size: 0.9rem">¿Olvidaste tu contraseña?</a>
+                <q-checkbox v-model="rememberMe" label="Recordarme" color="primary" dense size="sm"
+                  class="text-grey-8" />
+                <a href="#" class="text-primary text-weight-medium"
+                  style="text-decoration: none; font-size: 0.9rem">¿Olvidaste tu
+                  contraseña?</a>
               </div>
 
-              <q-btn
-                type="submit"
-                color="primary"
-                class="full-width q-py-md btn-rounded shadow-3 text-weight-bold"
-                label="Iniciar Sesión"
-                :loading="loading"
-                no-caps
-                unelevated
-                size="lg"
-              >
+              <q-btn type="submit" color="primary" class="full-width q-py-md btn-rounded shadow-3 text-weight-bold"
+                label="Iniciar Sesión" :loading="loading" no-caps unelevated size="lg">
                 <template v-slot:loading>
                   <q-spinner-dots class="on-left" />
                   Validando...
@@ -110,7 +87,7 @@
 
         <!-- Dialog: Cambio de Contraseña Obligatorio (Modernizado) -->
         <q-dialog v-model="showChangePassword" persistent backdrop-filter="blur(4px)">
-          <q-card style="width: 90vw; max-width: 450px; border-radius: 20px;" class="shadow-20">
+          <q-card style="width: 95vw; max-width: 480px; border-radius: 20px;" class="shadow-20">
             <q-card-section class="bg-gradient-warning text-white q-py-lg">
               <div class="text-h6 text-weight-bold flex items-center">
                 <q-icon name="lock_reset" size="28px" class="q-mr-sm" />
@@ -121,67 +98,43 @@
 
             <q-card-section class="q-pa-lg">
               <p class="text-grey-8 q-mb-lg text-body1">
-                Es tu primer inicio de sesión o tu contraseña ha expirado. Por favor, define una nueva contraseña segura.
+                Es tu primer inicio de sesión o tu contraseña ha expirado. Por favor, define una nueva contraseña
+                segura.
               </p>
 
               <q-form @submit.prevent="handleChangePassword" class="q-gutter-md">
-                <q-input
-                  v-model="currentPasswordChange"
-                  outlined
-                  readonly
-                  label="Usuario (CI)"
-                  class="input-rounded"
-                  bg-color="grey-2"
-                  hint="Tu usuario actual"
-                >
+                <q-input v-model="currentPasswordChange" outlined readonly label="Usuario (CI)" class="input-rounded"
+                  bg-color="grey-2" hint="Tu usuario actual">
                   <template v-slot:prepend>
                     <q-icon name="fingerprint" color="grey-7" />
                   </template>
                 </q-input>
 
-                <q-input
-                  v-model="newPassword"
-                  outlined
-                  :type="showNewPwd ? 'text' : 'password'"
-                  label="Nueva Contraseña"
-                  class="input-rounded"
-                  :rules="[
+                <q-input v-model="newPassword" outlined :type="showNewPwd ? 'text' : 'password'"
+                  label="Nueva Contraseña" class="input-rounded" :rules="[
                     val => !!val || 'Requerido',
                     val => val.length >= 6 || 'Mínimo 6 caracteres'
-                  ]"
-                >
+                  ]">
                   <template v-slot:prepend>
                     <q-icon name="vpn_key" color="primary" />
                   </template>
                   <template v-slot:append>
-                    <q-icon
-                      :name="showNewPwd ? 'visibility_off' : 'visibility'"
-                      class="cursor-pointer"
-                      @click="showNewPwd = !showNewPwd"
-                    />
+                    <q-icon :name="showNewPwd ? 'visibility_off' : 'visibility'" class="cursor-pointer"
+                      @click="showNewPwd = !showNewPwd" />
                   </template>
                 </q-input>
 
-                <q-input
-                  v-model="confirmPassword"
-                  outlined
-                  :type="showConfirmPwd ? 'text' : 'password'"
-                  label="Confirmar Nueva Contraseña"
-                  class="input-rounded"
-                  :rules="[
+                <q-input v-model="confirmPassword" outlined :type="showConfirmPwd ? 'text' : 'password'"
+                  label="Confirmar Nueva Contraseña" class="input-rounded" :rules="[
                     val => !!val || 'Requerido',
                     val => val === newPassword || 'Las contraseñas no coinciden'
-                  ]"
-                >
+                  ]">
                   <template v-slot:prepend>
                     <q-icon name="check_circle_outline" color="primary" />
                   </template>
-                   <template v-slot:append>
-                    <q-icon
-                      :name="showConfirmPwd ? 'visibility_off' : 'visibility'"
-                      class="cursor-pointer"
-                      @click="showConfirmPwd = !showConfirmPwd"
-                    />
+                  <template v-slot:append>
+                    <q-icon :name="showConfirmPwd ? 'visibility_off' : 'visibility'" class="cursor-pointer"
+                      @click="showConfirmPwd = !showConfirmPwd" />
                   </template>
                 </q-input>
 
@@ -192,16 +145,8 @@
                 </div>
 
                 <div class="row justify-end q-mt-lg">
-                  <q-btn
-                    type="submit"
-                    color="primary"
-                    class="full-width btn-rounded shadow-2"
-                    label="Actualizar y Continuar"
-                    :loading="changingPassword"
-                    no-caps
-                    unelevated
-                    size="md"
-                  />
+                  <q-btn type="submit" color="primary" class="full-width btn-rounded shadow-2"
+                    label="Actualizar y Continuar" :loading="changingPassword" no-caps unelevated size="md" />
                 </div>
               </q-form>
             </q-card-section>
@@ -297,15 +242,28 @@ async function handleChangePassword() {
 <style scoped>
 /* Modern Gradient Background */
 .bg-branding {
-  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); /* Deep Professional Blue/Dark */
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  /* Deep Professional Blue/Dark */
   /* Alternative vibrant: background: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);  Too much? */
-  background: linear-gradient(135deg, #003366 0%, #0055A4 100%); /* UNITEPC-ish Blue */
+  background: linear-gradient(135deg, #003366 0%, #0055A4 100%);
+  /* UNITEPC-ish Blue */
 }
 
-.opacity-80 { opacity: 0.8; }
-.opacity-90 { opacity: 0.9; }
-.tracking-wider { letter-spacing: 2px; }
-.tracking-widest { letter-spacing: 3px; }
+.opacity-80 {
+  opacity: 0.8;
+}
+
+.opacity-90 {
+  opacity: 0.9;
+}
+
+.tracking-wider {
+  letter-spacing: 2px;
+}
+
+.tracking-widest {
+  letter-spacing: 3px;
+}
 
 /* Abstract Shapes */
 .shape {
@@ -315,6 +273,7 @@ async function handleChangePassword() {
   opacity: 0.6;
   animation: float 10s infinite ease-in-out;
 }
+
 .shape-1 {
   width: 300px;
   height: 300px;
@@ -323,6 +282,7 @@ async function handleChangePassword() {
   left: -50px;
   animation-delay: 0s;
 }
+
 .shape-2 {
   width: 400px;
   height: 400px;
@@ -331,6 +291,7 @@ async function handleChangePassword() {
   right: -50px;
   animation-delay: -2s;
 }
+
 .shape-3 {
   width: 200px;
   height: 200px;
@@ -342,9 +303,17 @@ async function handleChangePassword() {
 }
 
 @keyframes float {
-  0% { transform: translate(0, 0); }
-  50% { transform: translate(20px, 40px); }
-  100% { transform: translate(0, 0); }
+  0% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(20px, 40px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
 }
 
 /* Glass Panel on Branding */
@@ -367,6 +336,7 @@ async function handleChangePassword() {
 .input-rounded :deep(.q-field__control) {
   border-radius: 12px;
 }
+
 .btn-rounded {
   border-radius: 12px;
   letter-spacing: 0.5px;
@@ -384,37 +354,81 @@ async function handleChangePassword() {
 .animate-fade-up {
   animation: fadeUp 0.8s ease-out;
 }
+
 .animate-fade-in-delayed {
   animation: fadeIn 0.8s ease-out 0.3s backwards;
 }
+
 .animate-fade-in-delayed-2 {
   animation: fadeIn 0.8s ease-out 0.5s backwards;
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Mobile Responsiveness */
 @media (max-width: 1023px) {
   .login-page {
     flex-direction: column;
+    height: auto;
+    /* Allow scrolling on small screens */
+    min-height: 100vh;
   }
+
   .bg-branding {
-    min-height: 35vh;
+    min-height: 30vh;
+    padding: 40px 20px;
+  }
+
+  .branding-content h2 {
+    font-size: 2.5rem;
+  }
+
+  .form-container {
+    padding: 30px 20px !important;
+    max-width: 100% !important;
   }
 }
 
 @media (max-width: 599px) {
+  .bg-branding {
+    min-height: 25vh;
+    padding: 30px 15px;
+  }
+
+  .branding-content h2 {
+    font-size: 2rem;
+  }
+
+  .branding-content .text-h6 {
+    font-size: 1rem;
+  }
+
   .form-container {
-    padding: 24px !important;
+    padding: 20px 15px !important;
+  }
+
+  .text-h3 {
+    font-size: 2rem;
   }
 }
 </style>
-
-
