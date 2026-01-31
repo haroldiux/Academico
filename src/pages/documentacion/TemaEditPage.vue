@@ -658,7 +658,7 @@
 
     <!-- Dialog: Nuevo Indicador -->
     <q-dialog v-model="dialogIndicador" persistent>
-      <q-card style="width: 500px; max-width: 95vw; border-radius: 16px;">
+      <q-card style="width: 100%; max-width: 500px; border-radius: 16px;">
         <div class="dialog-header" style="background: linear-gradient(135deg, #1976d2, #42a5f5);">
           <div class="dialog-header-title"><q-icon name="check_circle" size="28px" />Nuevo Indicador para {{ logroSeleccionado?.codigo }}</div>
         </div>

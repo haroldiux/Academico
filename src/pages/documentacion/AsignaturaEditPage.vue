@@ -359,8 +359,9 @@
                     type="textarea" rows="5" outlined :readonly="!puedeEditarCampo()"
                     placeholder="1. El ingreso se realizará de manera puntual..." />
 
-                  <q-input v-model="formPrograma.reglamento_normativa.laboratorio" label="NORMAS DE LABORATORIO / PRÁCTICA"
-                    type="textarea" rows="4" outlined :readonly="!puedeEditarCampo()"
+                  <q-input v-model="formPrograma.reglamento_normativa.laboratorio"
+                    label="NORMAS DE LABORATORIO / PRÁCTICA" type="textarea" rows="4" outlined
+                    :readonly="!puedeEditarCampo()"
                     placeholder="Además, en laboratorio tomar en cuenta: (PRÁCTICA PRESENCIAL)..." />
                 </div>
               </q-card-section>
@@ -420,7 +421,7 @@
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
                 <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                  }}</q-badge>
+                }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
                 <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
@@ -452,7 +453,7 @@
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
                 <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
                   bibliografiasProgramaAnalitico.length
-                  }}</q-badge>
+                }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
@@ -465,7 +466,7 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
                         biblio.autor
-                        }}</div>
+                      }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
                           biblio.anio !==
@@ -542,7 +543,7 @@
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
                     <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                      }})</span>
+                    }})</span>
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
@@ -670,7 +671,7 @@
 
     <!-- Dialog Importar Word -->
     <q-dialog v-model="dialogImportar">
-      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px;">
+      <q-card style="width: 100%; max-width: 500px; border-radius: 12px;">
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6 text-weight-bold row items-center">
             <q-icon name="upload_file" color="teal" class="q-mr-sm" size="28px" />
