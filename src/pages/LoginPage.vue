@@ -110,7 +110,7 @@
 
         <!-- Dialog: Cambio de Contraseña Obligatorio (Modernizado) -->
         <q-dialog v-model="showChangePassword" persistent backdrop-filter="blur(4px)">
-          <q-card style="min-width: 450px; border-radius: 20px;" class="shadow-20">
+          <q-card style="width: 90vw; max-width: 450px; border-radius: 20px;" class="shadow-20">
             <q-card-section class="bg-gradient-warning text-white q-py-lg">
               <div class="text-h6 text-weight-bold flex items-center">
                 <q-icon name="lock_reset" size="28px" class="q-mr-sm" />
@@ -407,6 +407,12 @@ async function handleChangePassword() {
   }
   .bg-branding {
     min-height: 35vh;
+  }
+}
+
+@media (max-width: 599px) {
+  .form-container {
+    padding: 24px !important;
   }
 }
 </style>
