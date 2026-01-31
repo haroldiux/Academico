@@ -101,55 +101,55 @@
           </div>
         </div>
 
-        <!-- Dialog: Change Password -->
-        <q-dialog v-model="showChangePassword" persistent backdrop-filter="blur(8px)">
-          <q-card class="dialog-card glass-card text-white">
-            <q-linear-progress :value="1" color="warning" class="absolute-top" />
+        <!-- Dialog: Change Password (FIXED CLEAN DESIGN) -->
+        <q-dialog v-model="showChangePassword" persistent backdrop-filter="blur(4px)">
+          <q-card class="bg-white shadow-24 rounded-borders" style="width: 100%; max-width: 450px;">
 
-            <q-card-section class="text-center q-pt-xl">
-              <div class="avatar-icon bg-warning shadow-10 q-mb-md">
-                <q-icon name="lock_reset" size="32px" color="white" />
+            <q-card-section class="bg-primary text-white q-py-lg text-center">
+              <div class="q-mb-sm">
+                <q-avatar color="white" text-color="primary" icon="lock_reset" size="50px" class="shadow-2" />
               </div>
-              <div class="text-h5 text-weight-bold">Seguridad Requerida</div>
-              <p class="text-subtitle2 opacity-80 q-mt-sm">
-                Es necesario que actualices tu contraseña para continuar.
-              </p>
+              <div class="text-h6 text-weight-bold">Actualización de Seguridad</div>
+              <div class="text-caption opacity-90">Tu contraseña ha expirado o es el primer acceso</div>
             </q-card-section>
 
-            <q-card-section class="q-px-xl q-pb-xl">
+            <q-card-section class="q-px-lg q-pt-lg q-pb-md">
+              <p class="text-grey-8 text-center q-mb-md">
+                Por favor, establece una nueva contraseña segura para tu cuenta.
+              </p>
+
               <q-form @submit.prevent="handleChangePassword" class="q-gutter-y-md">
-                <q-input dark outlined v-model="currentPasswordChange" label="Usuario Actual" readonly dense
-                  class="input-dark">
-                  <template v-slot:prepend><q-icon name="fingerprint" /></template>
+                <q-input outlined v-model="currentPasswordChange" label="Usuario / CI" readonly bg-color="grey-1" dense>
+                  <template v-slot:prepend><q-icon name="person" color="grey-6" /></template>
                 </q-input>
 
-                <q-input dark outlined v-model="newPassword" :type="showNewPwd ? 'text' : 'password'"
-                  label="Nueva Contraseña" class="input-dark"
-                  :rules="[val => val.length >= 6 || 'Mínimo 6 caracteres']">
-                  <template v-slot:prepend><q-icon name="vpn_key" /></template>
+                <q-input outlined v-model="newPassword" :type="showNewPwd ? 'text' : 'password'"
+                  label="Nueva Contraseña" :rules="[val => val.length >= 6 || 'Mínimo 6 caracteres']" bg-color="white">
+                  <template v-slot:prepend><q-icon name="vpn_key" color="primary" /></template>
                   <template v-slot:append>
                     <q-btn flat round dense :icon="showNewPwd ? 'visibility_off' : 'visibility'"
-                      @click="showNewPwd = !showNewPwd" />
+                      @click="showNewPwd = !showNewPwd" color="grey-7" />
                   </template>
                 </q-input>
 
-                <q-input dark outlined v-model="confirmPassword" :type="showConfirmPwd ? 'text' : 'password'"
-                  label="Confirmar Contraseña" class="input-dark"
-                  :rules="[val => val === newPassword || 'No coinciden']">
-                  <template v-slot:prepend><q-icon name="check_circle" /></template>
+                <q-input outlined v-model="confirmPassword" :type="showConfirmPwd ? 'text' : 'password'"
+                  label="Confirmar Contraseña" :rules="[val => val === newPassword || 'No coinciden']" bg-color="white">
+                  <template v-slot:prepend><q-icon name="check_circle" color="primary" /></template>
                   <template v-slot:append>
                     <q-btn flat round dense :icon="showConfirmPwd ? 'visibility_off' : 'visibility'"
-                      @click="showConfirmPwd = !showConfirmPwd" />
+                      @click="showConfirmPwd = !showConfirmPwd" color="grey-7" />
                   </template>
                 </q-input>
 
-                <div v-if="changeError" class="text-red-3 text-center q-mb-sm text-caption">
-                  {{ changeError }}
+                <div v-if="changeError" class="q-pa-sm bg-red-1 text-red-9 rounded-borders text-center text-caption">
+                  <q-icon name="warning" class="q-mr-xs" /> {{ changeError }}
                 </div>
 
-                <q-btn type="submit" color="warning" text-color="dark" label="Actualizar Contraseña"
-                  class="full-width text-weight-bold shadow-5 btn-glow" :loading="changingPassword" unelevated
-                  size="md" />
+                <div class="row q-mt-md">
+                  <q-btn type="submit" color="primary" label="Confirmar Cambio"
+                    class="full-width q-py-sm text-weight-bold shadow-2 btn-rounded" :loading="changingPassword"
+                    unelevated no-caps />
+                </div>
               </q-form>
             </q-card-section>
           </q-card>
@@ -369,34 +369,9 @@ async function handleChangePassword() {
   border-left: 4px solid #d32f2f;
 }
 
-/* DIALOG STYLES */
-.glass-card {
-  background: rgba(20, 20, 30, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  width: 100%;
-  max-width: 420px;
-}
-
-.avatar-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-}
-
-.input-dark :deep(.q-field__control) {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-radius: 12px;
-}
-
-.btn-glow {
-  box-shadow: 0 0 15px rgba(242, 192, 55, 0.4);
+/* DIALOG STYLES (Fixed) */
+.dialog-card {
+  /* Using utility classes instead */
 }
 
 /* UTILS */
