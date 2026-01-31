@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/xpertiap/documentacion.xpertiaplus.com/
+    - /bin/cp -R dist/spa/* $DEPLOYPATH
