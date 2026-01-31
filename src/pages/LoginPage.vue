@@ -1,152 +1,134 @@
 <template>
   <q-layout view="lHh Lpr fff">
     <q-page-container>
-      <q-page class="login-page row window-height">
+      <q-page class="fullscreen-bg flex flex-center">
 
-        <!-- Left Panel: Branding & Decorative -->
-        <div class="col-12 col-md-6 bg-branding flex flex-center text-white relative-position overflow-hidden">
-          <!-- Animated Background Shapes -->
+        <!-- Animated Background Shapes -->
+        <div class="absolute-full overflow-hidden">
           <div class="shape shape-1"></div>
           <div class="shape shape-2"></div>
-          <div class="shape shape-3"></div>
-
-          <!-- Content -->
-          <div class="branding-content text-center q-pa-xl relative-position glass-panel animate-fade-up">
-            <div class="logo-container q-mb-lg">
-              <img src="/unitepc-logo-clean.png" alt="UNITEPC" class="logo-img shadow-10 rounded-borders" />
-            </div>
-            <h2 class="text-h3 text-weight-bolder q-ma-none text-uppercase tracking-wider">UNITEPC</h2>
-            <div class="text-subtitle1 text-uppercase text-weight-medium q-mb-md tracking-widest opacity-80">
-              Documentación Académica</div>
-            <p class="text-h6 text-weight-light opacity-90" style="max-width: 400px; margin: 0 auto;">
-              Gestión integral para docentes, estudiantes y administrativos.
-            </p>
-          </div>
         </div>
 
-        <!-- Right Panel: Login Form -->
-        <div class="col-12 col-md-6 bg-white flex flex-center relative-position">
-          <div class="form-container q-pa-xl full-width" style="max-width: 550px">
+        <!-- Main Card Container -->
+        <div class="login-card shadow-24 relative-position bg-white rounded-borders overflow-hidden row q-ma-md">
 
-            <div class="text-left q-mb-xl animate-fade-in-delayed">
-              <h4 class="text-primary text-weight-bold q-ma-none q-mb-sm">Bienvenido de nuevo</h4>
-              <p class="text-grey-7 text-body1">Ingresa tus credenciales para acceder a tu cuenta.</p>
-            </div>
-
-            <q-form @submit.prevent="handleLogin" class="q-gutter-y-lg animate-fade-in-delayed-2">
-              <q-input v-model="username" outlined label="Usuario / CI" placeholder="Ej: 1234567" class="input-rounded"
-                bg-color="grey-1" :rules="[val => !!val || 'El usuario es requerido']" hide-bottom-space>
-                <template v-slot:prepend>
-                  <q-icon name="person_outline" color="primary" />
-                </template>
-              </q-input>
-
-              <q-input v-model="password" outlined :type="showPassword ? 'text' : 'password'" label="Contraseña"
-                placeholder="••••••" class="input-rounded" bg-color="grey-1"
-                :rules="[val => !!val || 'La contraseña es requerida']" hide-bottom-space>
-                <template v-slot:prepend>
-                  <q-icon name="lock_outline" color="primary" />
-                </template>
-                <template v-slot:append>
-                  <q-icon :name="showPassword ? 'visibility_off' : 'visibility'" class="cursor-pointer text-grey-6"
-                    @click="showPassword = !showPassword" />
-                </template>
-              </q-input>
-
-              <div class="row items-center justify-between q-mt-sm">
-                <q-checkbox v-model="rememberMe" label="Recordarme" color="primary" dense size="sm"
-                  class="text-grey-8" />
-                <a href="#" class="text-primary text-weight-medium"
-                  style="text-decoration: none; font-size: 0.9rem">¿Olvidaste tu
-                  contraseña?</a>
+          <!-- Desktop: Left Panel (Branding) -->
+          <div class="col-md-5 col-xs-12 bg-branding flex flex-center q-pa-lg relative-position gt-sm">
+            <div class="text-center text-white z-top">
+              <img src="/unitepc-logo-clean.png" style="width: 100px; filter: brightness(0) invert(1);"
+                class="q-mb-md opacity-90" />
+              <h3 class="text-h4 text-weight-bolder q-ma-none q-mb-xs">UNITEPC</h3>
+              <div class="text-subtitle2 text-uppercase tracking-widest opacity-80 q-mb-lg">Documentación Académica
               </div>
-
-              <q-btn type="submit" color="primary" class="full-width q-py-md btn-rounded shadow-3 text-weight-bold"
-                label="Iniciar Sesión" :loading="loading" no-caps unelevated size="lg">
-                <template v-slot:loading>
-                  <q-spinner-dots class="on-left" />
-                  Validando...
-                </template>
-              </q-btn>
-            </q-form>
-
-            <div v-if="error" class="q-mt-lg animate-shake">
-              <q-banner class="bg-red-1 text-red-9 rounded-borders border-red" dense>
-                <template v-slot:avatar>
-                  <q-icon name="error_outline" color="red-9" />
-                </template>
-                {{ error }}
-              </q-banner>
-            </div>
-
-            <div class="text-center q-mt-xl text-grey-5 text-caption">
-              Documentación Unitepc v2.0 &bull; UNITEPC
-            </div>
-          </div>
-        </div>
-
-        <!-- Dialog: Cambio de Contraseña Obligatorio (Modernizado) -->
-        <q-dialog v-model="showChangePassword" persistent backdrop-filter="blur(4px)">
-          <q-card style="width: 95vw; max-width: 480px; border-radius: 20px;" class="shadow-20">
-            <q-card-section class="bg-gradient-warning text-white q-py-lg">
-              <div class="text-h6 text-weight-bold flex items-center">
-                <q-icon name="lock_reset" size="28px" class="q-mr-sm" />
-                Actualización de Seguridad
-              </div>
-              <div class="text-subtitle2 opacity-80">Tu contraseña debe ser actualizada</div>
-            </q-card-section>
-
-            <q-card-section class="q-pa-lg">
-              <p class="text-grey-8 q-mb-lg text-body1">
-                Es tu primer inicio de sesión o tu contraseña ha expirado. Por favor, define una nueva contraseña
-                segura.
+              <p class="text-body2 opacity-80" style="max-width: 250px; margin: 0 auto;">
+                Plataforma integral para la gestión académica.
               </p>
+            </div>
+            <!-- Decorative overlay -->
+            <div class="absolute-full bg-overlay"></div>
+          </div>
 
-              <q-form @submit.prevent="handleChangePassword" class="q-gutter-md">
-                <q-input v-model="currentPasswordChange" outlined readonly label="Usuario (CI)" class="input-rounded"
-                  bg-color="grey-2" hint="Tu usuario actual">
+          <!-- Form Panel -->
+          <div class="col-md-7 col-xs-12 q-pa-xl flex flex-center relative-position bg-white column">
+
+            <!-- Mobile Logo (Visible only on xs/sm) -->
+            <div class="lt-md q-mb-md text-center">
+              <img src="/unitepc-logo-clean.png" style="width: 80px;" class="q-mb-sm" />
+              <div class="text-h6 text-primary text-weight-bold">UNITEPC</div>
+            </div>
+
+            <div class="full-width" style="max-width: 360px">
+              <div class="text-left q-mb-lg">
+                <h5 class="text-h5 text-weight-bold q-ma-none text-grey-9">¡Hola! 👋</h5>
+                <p class="text-grey-7 q-mt-xs">Inicia sesión para continuar.</p>
+              </div>
+
+              <q-form @submit.prevent="handleLogin" class="q-gutter-y-md">
+                <q-input v-model="username" outlined label="Usuario / CI" placeholder="Ej: 67760520"
+                  class="input-modern" bg-color="grey-1" dense :rules="[val => !!val || 'Requerido']">
                   <template v-slot:prepend>
-                    <q-icon name="fingerprint" color="grey-7" />
+                    <q-icon name="person" class="text-grey-5" />
                   </template>
                 </q-input>
 
-                <q-input v-model="newPassword" outlined :type="showNewPwd ? 'text' : 'password'"
-                  label="Nueva Contraseña" class="input-rounded" :rules="[
-                    val => !!val || 'Requerido',
-                    val => val.length >= 6 || 'Mínimo 6 caracteres'
-                  ]">
+                <q-input v-model="password" outlined :type="showPassword ? 'text' : 'password'" label="Contraseña"
+                  class="input-modern" bg-color="grey-1" dense :rules="[val => !!val || 'Requerida']">
                   <template v-slot:prepend>
-                    <q-icon name="vpn_key" color="primary" />
+                    <q-icon name="lock" class="text-grey-5" />
                   </template>
                   <template v-slot:append>
-                    <q-icon :name="showNewPwd ? 'visibility_off' : 'visibility'" class="cursor-pointer"
+                    <q-icon :name="showPassword ? 'visibility_off' : 'visibility'" class="cursor-pointer text-grey-5"
+                      @click="showPassword = !showPassword" />
+                  </template>
+                </q-input>
+
+                <div class="row items-center justify-between q-mt-none">
+                  <q-checkbox v-model="rememberMe" label="Recordarme" color="primary" size="sm" class="text-grey-8" />
+                  <a href="#" class="text-primary text-weight-medium text-caption"
+                    style="text-decoration: none;">Recuperar acceso</a>
+                </div>
+
+                <q-btn type="submit" color="primary" class="full-width q-py-sm shadow-1 q-mt-md btn-modern"
+                  label="Ingresar" :loading="loading" no-caps unelevated size="lg" />
+              </q-form>
+
+              <div v-if="error" class="q-mt-md">
+                <q-banner class="bg-red-1 text-red-9 rounded-borders text-caption" dense>
+                  <template v-slot:avatar>
+                    <q-icon name="error" color="red" size="xs" />
+                  </template>
+                  {{ error }}
+                </q-banner>
+              </div>
+            </div>
+
+            <div class="absolute-bottom text-center q-pb-md text-caption text-grey-4">
+              v2.0 &bull; UNITEPC
+            </div>
+          </div>
+        </div>
+
+        <!-- Dialog: Cambio de Contraseña (Responsive) -->
+        <q-dialog v-model="showChangePassword" persistent backdrop-filter="blur(5px)">
+          <q-card class="bg-white rounded-borders shadow-24" style="width: 100%; max-width: 400px; margin: 20px;">
+            <q-card-section class="bg-primary text-white q-py-lg text-center relative-position overflow-hidden">
+              <div class="absolute-full bg-decoration opacity-20"></div>
+              <q-avatar icon="lock_reset" color="white" text-color="primary" size="lg" class="q-mb-sm shadow-3" />
+              <div class="text-h6 text-weight-bold">Seguridad de Cuenta</div>
+              <div class="text-caption opacity-90">Actualiza tu contraseña para continuar</div>
+            </q-card-section>
+
+            <q-card-section class="q-pa-lg">
+              <q-form @submit.prevent="handleChangePassword" class="q-gutter-y-md">
+                <q-input v-model="currentPasswordChange" outlined readonly dense label="Usuario" bg-color="grey-1">
+                  <template v-slot:prepend><q-icon name="badge" color="grey-6" /></template>
+                </q-input>
+
+                <q-input v-model="newPassword" outlined :type="showNewPwd ? 'text' : 'password'"
+                  label="Nueva contraseña" dense :rules="[val => val.length >= 6 || 'Min. 6 caracteres']">
+                  <template v-slot:prepend><q-icon name="key" color="primary" /></template>
+                  <template v-slot:append>
+                    <q-btn flat round dense :icon="showNewPwd ? 'visibility_off' : 'visibility'"
                       @click="showNewPwd = !showNewPwd" />
                   </template>
                 </q-input>
 
                 <q-input v-model="confirmPassword" outlined :type="showConfirmPwd ? 'text' : 'password'"
-                  label="Confirmar Nueva Contraseña" class="input-rounded" :rules="[
-                    val => !!val || 'Requerido',
-                    val => val === newPassword || 'Las contraseñas no coinciden'
-                  ]">
-                  <template v-slot:prepend>
-                    <q-icon name="check_circle_outline" color="primary" />
-                  </template>
+                  label="Confirmar contraseña" dense :rules="[val => val === newPassword || 'No coinciden']">
+                  <template v-slot:prepend><q-icon name="check_circle" color="primary" /></template>
                   <template v-slot:append>
-                    <q-icon :name="showConfirmPwd ? 'visibility_off' : 'visibility'" class="cursor-pointer"
+                    <q-btn flat round dense :icon="showConfirmPwd ? 'visibility_off' : 'visibility'"
                       @click="showConfirmPwd = !showConfirmPwd" />
                   </template>
                 </q-input>
 
-                <div v-if="changeError" class="q-mb-md">
-                  <q-banner class="bg-red-1 text-red-9 rounded-borders border-red" dense>
-                    {{ changeError }}
-                  </q-banner>
+                <div v-if="changeError" class="q-px-sm q-py-xs bg-red-1 text-red text-caption rounded-borders">
+                  {{ changeError }}
                 </div>
 
-                <div class="row justify-end q-mt-lg">
-                  <q-btn type="submit" color="primary" class="full-width btn-rounded shadow-2"
-                    label="Actualizar y Continuar" :loading="changingPassword" no-caps unelevated size="md" />
+                <div class="row justify-end q-mt-md">
+                  <q-btn type="submit" color="primary" label="Actualizar" class="full-width btn-modern"
+                    :loading="changingPassword" no-caps unelevated />
                 </div>
               </q-form>
             </q-card-section>
@@ -189,12 +171,9 @@ const changeError = ref('')
 async function handleLogin() {
   loading.value = true
   error.value = ''
-
-  // Simulating network delay for effect
   await new Promise(resolve => setTimeout(resolve, 800))
 
   const result = await authStore.login(username.value, password.value)
-
   loading.value = false
 
   if (result.success) {
@@ -205,7 +184,6 @@ async function handleLogin() {
       $q.notify({
         type: 'positive',
         message: `Bienvenido, ${result.usuario.nombre}`,
-        icon: 'verified',
         position: 'top',
         timeout: 2500
       })
@@ -219,19 +197,12 @@ async function handleLogin() {
 async function handleChangePassword() {
   changingPassword.value = true
   changeError.value = ''
-
-  const result = await authStore.changePassword(password.value, newPassword.value) // Use original pwd as current
-
+  const result = await authStore.changePassword(password.value, newPassword.value)
   changingPassword.value = false
 
   if (result.success) {
     showChangePassword.value = false
-    $q.notify({
-      type: 'positive',
-      message: 'Contraseña actualizada. Bienvenido.',
-      icon: 'check_circle',
-      position: 'top'
-    })
+    $q.notify({ type: 'positive', message: 'Contraseña actualizada.', position: 'top' })
     router.push('/')
   } else {
     changeError.value = result.error
@@ -240,195 +211,66 @@ async function handleChangePassword() {
 </script>
 
 <style scoped>
-/* Modern Gradient Background */
-.bg-branding {
-  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-  /* Deep Professional Blue/Dark */
-  /* Alternative vibrant: background: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);  Too much? */
-  background: linear-gradient(135deg, #003366 0%, #0055A4 100%);
-  /* UNITEPC-ish Blue */
+.fullscreen-bg {
+  background: #f0f2f5;
+  background-image: radial-gradient(#e1e8ed 1px, transparent 1px);
+  /* Subtle pattern */
+  background-size: 20px 20px;
 }
 
-.opacity-80 {
-  opacity: 0.8;
+.login-card {
+  width: 100%;
+  max-width: 900px;
+  min-height: 550px;
+  border-radius: 20px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.bg-branding {
+  background: linear-gradient(135deg, #003366 0%, #0055A4 100%);
+}
+
+.bg-overlay {
+  background: url('/unitepc-logo-clean.png') no-repeat center center;
+  background-size: 600px;
+  opacity: 0.05;
+  filter: grayscale(100%);
+}
+
+.input-modern :deep(.q-field__control) {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.input-modern :deep(.q-field__control:hover) {
+  background: #ffffff;
+}
+
+.btn-modern {
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
 }
 
 .opacity-90 {
   opacity: 0.9;
 }
 
-.tracking-wider {
-  letter-spacing: 2px;
+.opacity-80 {
+  opacity: 0.8;
 }
 
 .tracking-widest {
-  letter-spacing: 3px;
+  letter-spacing: 2px;
 }
 
-/* Abstract Shapes */
-.shape {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.6;
-  animation: float 10s infinite ease-in-out;
-}
-
-.shape-1 {
-  width: 300px;
-  height: 300px;
-  background: #4facfe;
-  top: -50px;
-  left: -50px;
-  animation-delay: 0s;
-}
-
-.shape-2 {
-  width: 400px;
-  height: 400px;
-  background: #00f2fe;
-  bottom: -100px;
-  right: -50px;
-  animation-delay: -2s;
-}
-
-.shape-3 {
-  width: 200px;
-  height: 200px;
-  background: #ffffff;
-  top: 40%;
-  left: 40%;
-  opacity: 0.1;
-  animation-delay: -5s;
-}
-
-@keyframes float {
-  0% {
-    transform: translate(0, 0);
-  }
-
-  50% {
-    transform: translate(20px, 40px);
-  }
-
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-/* Glass Panel on Branding */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-}
-
-/* Logo */
-.logo-img {
-  width: 120px;
-  height: auto;
-  background: white;
-  padding: 10px;
-}
-
-/* Form Styles */
-.input-rounded :deep(.q-field__control) {
-  border-radius: 12px;
-}
-
-.btn-rounded {
-  border-radius: 12px;
-  letter-spacing: 0.5px;
-}
-
-.bg-gradient-warning {
-  background: linear-gradient(to right, #f2994a, #f2c94c);
-}
-
-.border-red {
-  border: 1px solid #ffcdd2;
-}
-
-/* Animations */
-.animate-fade-up {
-  animation: fadeUp 0.8s ease-out;
-}
-
-.animate-fade-in-delayed {
-  animation: fadeIn 0.8s ease-out 0.3s backwards;
-}
-
-.animate-fade-in-delayed-2 {
-  animation: fadeIn 0.8s ease-out 0.5s backwards;
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-/* Mobile Responsiveness */
+/* Responsive adjustments */
 @media (max-width: 1023px) {
-  .login-page {
+  .login-card {
+    max-width: 450px;
+    min-height: auto;
     flex-direction: column;
-    height: auto;
-    /* Allow scrolling on small screens */
-    min-height: 100vh;
-  }
-
-  .bg-branding {
-    min-height: 30vh;
-    padding: 40px 20px;
-  }
-
-  .branding-content h2 {
-    font-size: 2.5rem;
-  }
-
-  .form-container {
-    padding: 30px 20px !important;
-    max-width: 100% !important;
-  }
-}
-
-@media (max-width: 599px) {
-  .bg-branding {
-    min-height: 25vh;
-    padding: 30px 15px;
-  }
-
-  .branding-content h2 {
-    font-size: 2rem;
-  }
-
-  .branding-content .text-h6 {
-    font-size: 1rem;
-  }
-
-  .form-container {
-    padding: 20px 15px !important;
-  }
-
-  .text-h3 {
-    font-size: 2rem;
   }
 }
 </style>
