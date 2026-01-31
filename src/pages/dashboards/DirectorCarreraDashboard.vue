@@ -192,8 +192,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { usePermisos } from 'src/composables/usePermisos'
+import dashboardService from 'src/services/dashboardService'
 
 const { asignaturasFiltradas, sedeActual, carreraActual } = usePermisos()
 
@@ -204,27 +205,42 @@ const greeting = computed(() => {
   return 'Buenas noches'
 })
 
+const loading = ref(true)
 const totalAsignaturas = computed(() => asignaturasFiltradas.value.length)
-const docentesActivos = ref(8)
-const notificaciones = ref(5)
-const documentacionPendiente = ref(12)
-const progresoCarrera = ref(68)
+const docentesActivos = ref(0)
+const notificaciones = ref(0)
+const documentacionPendiente = ref(0)
+const progresoCarrera = ref(0)
 
-const semestres = ref([
-  { numero: 1, asignaturas: 6, progreso: 85 },
-  { numero: 2, asignaturas: 6, progreso: 78 },
-  { numero: 3, asignaturas: 5, progreso: 65 },
-  { numero: 4, asignaturas: 5, progreso: 72 },
-  { numero: 5, asignaturas: 5, progreso: 55 }
-])
+const semestres = ref([])
+const docentesCarrera = ref([])
 
-const docentesCarrera = ref([
-  { id: 1, nombre: 'Ing. Pedro García', avatar: 'PG', materias: 3, progreso: 85 },
-  { id: 2, nombre: 'Lic. Ana Torres', avatar: 'AT', materias: 2, progreso: 72 },
-  { id: 3, nombre: 'Ing. Carlos Rojas', avatar: 'CR', materias: 4, progreso: 45 },
-  { id: 4, nombre: 'Lic. María López', avatar: 'ML', materias: 2, progreso: 90 },
-  { id: 5, nombre: 'Ing. Luis Vargas', avatar: 'LV', materias: 3, progreso: 60 }
-])
+async function loadStats() {
+  if (!carreraActual.value || !sedeActual.value) return
+
+  loading.value = true
+  try {
+    const data = await dashboardService.getDirectorStats({
+      carrera_id: carreraActual.value.id,
+      sede_id: sedeActual.value.id
+    })
+
+    docentesActivos.value = data.stats.docentesActivos
+    documentacionPendiente.value = data.stats.documentacionPendiente
+    progresoCarrera.value = data.stats.progresoCarrera
+
+    semestres.value = data.semestres
+    docentesCarrera.value = data.docentes
+  } catch (error) {
+    console.error('Error cargando estadísticas de director:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadStats()
+})
 
 function generarReporte() {
   console.log('Generando reporte de carrera...')

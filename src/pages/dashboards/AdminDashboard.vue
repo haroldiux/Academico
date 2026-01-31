@@ -113,13 +113,13 @@
             <div class="sede-bar-info">
               <span class="sede-name">{{ sede.nombre }}</span>
               <span class="sede-value">
-                {{ vistaEstadisticas === 'progreso' ? sede.progreso + '%' : 
+                {{ vistaEstadisticas === 'progreso' ? sede.progreso + '%' :
                    vistaEstadisticas === 'asignaturas' ? sede.asignaturas : sede.docentes }}
               </span>
             </div>
             <div class="sede-bar-container">
-              <div 
-                class="sede-bar" 
+              <div
+                class="sede-bar"
                 :style="{ width: getBarWidth(sede) + '%', background: sede.color }"
               ></div>
             </div>
@@ -282,8 +282,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { usePermisos } from 'src/composables/usePermisos'
+import dashboardService from 'src/services/dashboardService'
 
 const { sedesFiltradas, carrerasFiltradas, asignaturasFiltradas } = usePermisos()
 
@@ -294,44 +295,44 @@ const greeting = computed(() => {
   return 'Buenas noches'
 })
 
-const notificaciones = ref(18)
-const totalSedes = computed(() => sedesFiltradas.value.length || 9)
-const totalCarreras = computed(() => carrerasFiltradas.value.length || 72)
-const totalAsignaturas = computed(() => asignaturasFiltradas.value.length || 2850)
-const totalUsuarios = ref(1245)
-const progresoGlobal = ref(71)
-const tasaCompletitud = ref(78)
-const tasaCumplimiento = ref(65)
+const loading = ref(true)
+const notificaciones = ref(0)
+const totalUsuarios = ref(0)
+const progresoGlobal = ref(0)
+const tasaCompletitud = ref(0)
+const tasaCumplimiento = ref(0)
 
 const vistaEstadisticas = ref('progreso')
+const estadisticasSedes = ref([])
+const usuariosPorRol = ref([])
+const actividadReciente = ref([])
 
-const estadisticasSedes = ref([
-  { id: 1, nombre: 'Cochabamba', progreso: 78, asignaturas: 420, docentes: 180, color: '#7C3AED' },
-  { id: 2, nombre: 'La Paz', progreso: 72, asignaturas: 380, docentes: 150, color: '#14B8A6' },
-  { id: 3, nombre: 'Santa Cruz', progreso: 68, asignaturas: 360, docentes: 165, color: '#F97316' },
-  { id: 4, nombre: 'Oruro', progreso: 82, asignaturas: 220, docentes: 95, color: '#3B82F6' },
-  { id: 5, nombre: 'Sucre', progreso: 75, asignaturas: 280, docentes: 110, color: '#22C55E' },
-  { id: 6, nombre: 'Potosí', progreso: 65, asignaturas: 180, docentes: 70, color: '#EF4444' },
-  { id: 7, nombre: 'Tarija', progreso: 70, asignaturas: 200, docentes: 80, color: '#8B5CF6' },
-  { id: 8, nombre: 'Trinidad', progreso: 58, asignaturas: 150, docentes: 55, color: '#EC4899' },
-  { id: 9, nombre: 'Cobija', progreso: 52, asignaturas: 120, docentes: 45, color: '#06B6D4' }
-])
+const totalSedes = computed(() => sedesFiltradas.value.length || estadisticasSedes.value.length)
+const totalCarreras = computed(() => carrerasFiltradas.value.length || 0)
+const totalAsignaturas = computed(() => asignaturasFiltradas.value.length || 0)
 
-const usuariosPorRol = ref([
-  { nombre: 'Docentes', cantidad: 890, porcentaje: 72, icono: 'person', color: '#7C3AED' },
-  { nombre: 'Dir. Carrera', cantidad: 72, porcentaje: 6, icono: 'supervisor_account', color: '#14B8A6' },
-  { nombre: 'Dir. Académica', cantidad: 18, porcentaje: 1.5, icono: 'business', color: '#F97316' },
-  { nombre: 'Vicerrectores', cantidad: 12, porcentaje: 1, icono: 'stars', color: '#3B82F6' },
-  { nombre: 'Administradores', cantidad: 8, porcentaje: 0.5, icono: 'admin_panel_settings', color: '#EF4444' }
-])
+async function loadStats() {
+  loading.value = true
+  try {
+    const data = await dashboardService.getAdminStats()
+    totalUsuarios.value = data.stats.totalUsuarios
+    progresoGlobal.value = data.stats.progresoGlobal
+    tasaCompletitud.value = data.stats.tasaCompletitud
+    tasaCumplimiento.value = data.stats.tasaCumplimiento
 
-const actividadReciente = ref([
-  { id: 1, tipo: 'success', texto: 'Usuario creado: Ing. Juan Pérez', tiempo: 'Hace 5 min' },
-  { id: 2, tipo: 'info', texto: 'Rol actualizado: Director Carrera', tiempo: 'Hace 15 min' },
-  { id: 3, tipo: 'warning', texto: 'Sede Cobija: 10 asignaturas pendientes', tiempo: 'Hace 1 hora' },
-  { id: 4, tipo: 'success', texto: 'Reporte generado: Estadísticas Q4', tiempo: 'Hace 2 horas' },
-  { id: 5, tipo: 'info', texto: 'Backup completado exitosamente', tiempo: 'Hace 3 horas' }
-])
+    estadisticasSedes.value = data.estadisticasSedes
+    usuariosPorRol.value = data.usuariosPorRol
+    actividadReciente.value = data.actividadReciente
+  } catch (error) {
+    console.error('Error cargando estadísticas:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadStats()
+})
 
 function getBarWidth(sede) {
   const maxValues = {
@@ -341,7 +342,7 @@ function getBarWidth(sede) {
   }
   const value = vistaEstadisticas.value === 'progreso' ? sede.progreso :
                 vistaEstadisticas.value === 'asignaturas' ? sede.asignaturas : sede.docentes
-  return (value / maxValues[vistaEstadisticas.value]) * 100
+  return (value / (maxValues[vistaEstadisticas.value] || 1)) * 100
 }
 
 function generarReporteGlobal() {

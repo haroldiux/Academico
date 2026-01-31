@@ -13,10 +13,10 @@
           <!-- Content -->
           <div class="branding-content text-center q-pa-xl relative-position glass-panel animate-fade-up">
             <div class="logo-container q-mb-lg">
-              <img src="/logo.png" alt="UNITEPC" class="logo-img shadow-10 rounded-borders" onerror="this.style.display='none'" />
+              <img src="/unitepc-logo-clean.png" alt="UNITEPC" class="logo-img shadow-10 rounded-borders" />
             </div>
             <h2 class="text-h3 text-weight-bolder q-ma-none text-uppercase tracking-wider">UNITEPC</h2>
-            <div class="text-subtitle1 text-uppercase text-weight-medium q-mb-md tracking-widest opacity-80">Sistema Académico</div>
+            <div class="text-subtitle1 text-uppercase text-weight-medium q-mb-md tracking-widest opacity-80">Documentación Académica</div>
             <p class="text-h6 text-weight-light opacity-90" style="max-width: 400px; margin: 0 auto;">
               Gestión integral para docentes, estudiantes y administrativos.
             </p>
@@ -103,7 +103,7 @@
             </div>
 
             <div class="text-center q-mt-xl text-grey-5 text-caption">
-              Sistema Académico v2.0 &bull; UNITEPC
+              Documentación Unitepc v2.0 &bull; UNITEPC
             </div>
           </div>
         </div>

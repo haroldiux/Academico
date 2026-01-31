@@ -7,10 +7,10 @@
 
         <!-- Logo -->
         <div class="logo-container">
-          <div class="logo-icon">
-            <q-icon name="school" size="18px" />
+          <div class="logo-icon bg-white">
+            <q-img src="/unitepc-logo-clean.png" width="24px" height="24px" fit="contain" />
           </div>
-          <span class="logo-text">UNITEPC</span>
+          <span class="logo-text">Documentación Unitepc</span>
         </div>
 
         <q-space />
