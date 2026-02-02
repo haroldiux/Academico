@@ -5,6 +5,7 @@ import {
   createWebHistory,
   createWebHashHistory,
 } from 'vue-router'
+import { Platform } from 'quasar'
 import routes from './routes'
 
 /*
@@ -63,6 +64,22 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       if (!rolesPermitidos.includes(user.rol) && user.rol !== 'SUPER_ADMIN') {
         console.warn(`Acceso denegado: Se requiere ${rolesPermitidos.join(' o ')} pero usuario es ${user.rol}`)
         return next({ name: 'dashboard' })
+      }
+    }
+
+    // 4. Lógica Mobile (Capacitor)
+    // También verificamos si está activo el modo simulación en localStorage
+    const isMobileSim = localStorage.getItem('mobile_sim') === 'true'
+
+    if ((Platform.is.capacitor || isMobileSim) && user) {
+      // Si está en móvil, siempre forzar ir a 'docente-clase' si intenta ir a otro dashboard o root
+      // Permitimos rutas que empiecen con /docente/clase (para hijos si los hubiera) y logout
+
+      const allowedMobileRoutes = ['docente-clase', 'login']
+      const isAllowed = allowedMobileRoutes.includes(to.name) || to.path.startsWith('/docente/clase')
+
+      if (!isAllowed) {
+        return next({ name: 'docente-clase' })
       }
     }
 

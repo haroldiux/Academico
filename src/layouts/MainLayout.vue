@@ -39,6 +39,12 @@
           <q-tooltip>{{ themeStore.isDark ? 'Modo Claro' : 'Modo Oscuro' }}</q-tooltip>
         </button>
 
+        <!-- Mobile Simulation Toggle (Solo visible en dev/web) -->
+        <button class="theme-toggle" @click="offlineStore.toggleSimulation()" v-if="!$q.platform.is.capacitor">
+          <q-icon :name="offlineStore.isMobileSimulated ? 'phonelink_erase' : 'phonelink_setup'" size="20px" />
+          <q-tooltip>{{ offlineStore.isMobileSimulated ? 'Desactivar Vista Móvil' : 'Simular Vista Móvil' }}</q-tooltip>
+        </button>
+
         <!-- User Avatar -->
         <q-btn flat round dense class="user-btn">
           <div class="user-avatar">{{ authStore.avatar }}</div>
@@ -138,14 +144,19 @@ import { useRouter } from 'vue-router'
 import { useThemeStore } from 'src/stores/theme'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { usePermisos } from 'src/composables/usePermisos'
+import { useOfflineStore } from 'src/stores/offline-store'
+
 
 import { useQuasar } from 'quasar'
 
 const router = useRouter()
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
+const offlineStore = useOfflineStore()
 const $q = useQuasar()
 const { getMenuItems, sedeActual } = usePermisos()
+const isMobile = computed(() => $q.platform.is.capacitor || offlineStore.isMobileSimulated)
+
 
 const leftDrawerOpen = ref(true)
 const searchQuery = ref('')
@@ -154,6 +165,7 @@ const searchQuery = ref('')
 // Verificar autenticación al montar
 onMounted(() => {
   authStore.checkAuth()
+  offlineStore.initListeners()
 })
 
 const rolLabel = computed(() => {
@@ -170,7 +182,18 @@ const rolLabel = computed(() => {
   return labels[authStore.rol] || 'Usuario'
 })
 
-const menuItems = computed(() => getMenuItems())
+const menuItems = computed(() => {
+  if (isMobile.value) {
+    // En móvil solo mostramos Control de Clase y Logout (Logout está en el footer/user menu)
+    // Buscamos específicamente la ruta de Control de Clase
+    const allItems = getMenuItems()
+    // Filtramos recursivamente o buscamos directamente el item 'Control de Clase'
+    // Asumimos que getMenuItems retorna una estructura plana o anidada.
+    // Simplificaremos: Si es móvil, mostramos solo items específicos
+    return allItems.filter(item => item.to === '/docente/clase' || item.label === 'Control de Clase' || item.to.includes('clase'))
+  }
+  return getMenuItems()
+})
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
