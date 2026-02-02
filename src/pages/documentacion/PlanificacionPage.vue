@@ -241,12 +241,13 @@
                       <th style="width:70px">SESIÓN</th>
                       <th style="width:140px" class="bg-grey-1 text-grey-8">FECHAS / GRUPOS</th>
                       <th style="width:250px">TEMAS</th>
+                      <th>CONTENIDO</th>
                       <th>CONCEPTUAL</th>
                       <th>PROCEDIMENTAL</th>
                       <th>ACTITUDINAL</th>
                       <th>CRITERIOS</th>
                       <th>INSTRUMENTOS</th>
-                      <th style="width:40px"></th>
+                      <th style="width:50px">ACCIONES</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -328,6 +329,30 @@
                             --
                           </div>
                         </td>
+                        <td>
+                          <div v-if="sesion.semana <= 17">
+                            <!-- Select múltiple de contenido_items -->
+                            <q-select
+                              v-model="sesion.contenido_items_seleccionados"
+                              :options="getContenidoItemsOptions(sesion)"
+                              multiple
+                              use-chips
+                              use-input
+                              emit-value
+                              map-options
+                              dense
+                              outlined
+                              class="cell-input"
+                              label="Contenido"
+                              option-value="value"
+                              option-label="label"
+                              :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0"
+                              :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0 ? 'Seleccione tema(s) primero' : ''"
+                              @update:model-value="marcarModificado(sesion)"
+                            />
+                          </div>
+                          <div v-else class="text-caption text-grey text-center">--</div>
+                        </td>
                         <td><q-input v-if="sesion.semana <= 17" v-model="sesion.conceptual" outlined dense
                             type="textarea" autogrow class="cell-input" placeholder="Contenidos..."
                             @update:model-value="marcarModificado(sesion)" /></td>
@@ -400,6 +425,7 @@
                     <th rowspan="2">SESIONES</th>
                     <th rowspan="2" style="width:140px">FECHAS / GRUPOS</th>
                     <th rowspan="2">TEMAS</th>
+                    <th rowspan="2">CONTENIDO</th>
                     <th colspan="3">APRENDIZAJES</th>
                     <th rowspan="2">CRITERIOS DE DESEMPEÑO</th>
                     <th rowspan="2">INSTRUMENTOS DE EVALUACIÓN</th>
@@ -423,6 +449,9 @@
                       </div>
                     </td>
                     <td>{{ sesion.tema }}</td>
+                    <td>
+                      <div class="preview-content">{{ sesion.contenido }}</div>
+                    </td>
                     <td>
                       <div class="preview-content">{{ sesion.conceptual }}</div>
                     </td>
@@ -732,6 +761,7 @@ async function cargarPlanificacion() {
 
           sesionView.instrumentosEvaluacion = db.instrumentos_evaluacion
           sesionView.instrumentosSeleccionados = db.instrumentos_evaluacion ? (typeof db.instrumentos_evaluacion === 'string' ? db.instrumentos_evaluacion.split(', ') : db.instrumentos_evaluacion) : []
+          sesionView.contenido_items_seleccionados = db.contenido_items_seleccionados || []
         }
       })
 
@@ -1109,7 +1139,9 @@ function calcularPropuestaPlanificacion() {
         actitudinal: Array.isArray(temaOriginal?.contenido_actitudinal) ? temaOriginal.contenido_actitudinal.join('\n') : (temaOriginal?.contenido_actitudinal || ''),
         criteriosDesempeno: '',
         criteriosSeleccionados: [],
-        instrumentosEvaluacion: '', instrumentosSeleccionados: []
+        instrumentosEvaluacion: '', 
+        instrumentosSeleccionados: [],
+        contenido_items_seleccionados: [] // Inicializar array vacío para items seleccionables
       })
       indiceSesion++
     }
@@ -1191,6 +1223,47 @@ function marcarModificado(sesion) {
   sesion.modificado = true
 }
 
+// Funciones para manejar contenido_items seleccionables
+function getTemasSeleccionados(sesion) {
+  if (!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0) {
+    return []
+  }
+  
+  const temas = []
+  // Buscar los temas completos en las unidades de la DOCUMENTACIÓN (asignatura)
+  for (const unidad of asignatura.value?.unidades || []) {
+    for (const temaId of sesion.temasSeleccionados) {
+      const tema = unidad.temas?.find(t => t.id === temaId)
+      if (tema && !temas.find(t => t.id === tema.id)) {
+        temas.push(tema)
+      }
+    }
+  }
+  
+  return temas
+}
+
+// Generar opciones para el select de contenido_items
+function getContenidoItemsOptions(sesion) {
+  const temas = getTemasSeleccionados(sesion)
+  const options = []
+  
+  for (const tema of temas) {
+    if (tema.contenido_items && tema.contenido_items.length > 0) {
+      tema.contenido_items.forEach((item, index) => {
+        options.push({
+          value: `${tema.id}:${index}`,
+          label: `${tema.titulo} - ${index + 1}. ${item}`,
+          temaId: tema.id,
+          itemIndex: index
+        })
+      })
+    }
+  }
+  
+  return options
+}
+
 function editarUnidad(unidad) {
   unidadEditando.value = unidad
   unidadForm.value = { nombre: unidad.nombre, elementoCompetencia: unidad.elementoCompetencia }
@@ -1221,6 +1294,8 @@ function agregarSesionManual(unidad) {
     periodoExamen: null,
     tema: '',
     temasSeleccionados: [],
+    contenido: '',
+    contenido_items_seleccionados: [], // Array de "temaId:itemIndex"
     conceptual: '',
     procedimental: '',
     actitudinal: '',
@@ -1305,7 +1380,8 @@ async function guardarTodo(silent = false) {
         contenido_actitudinal: sesion.actitudinal,
         numero_sesion: sesion.numeroGlobal,
         tema_id: sesion.tema_id || (Array.isArray(sesion.temasSeleccionados) && typeof sesion.temasSeleccionados[0] === 'number' ? sesion.temasSeleccionados[0] : null),
-        temas_ids: Array.isArray(sesion.temasSeleccionados) ? sesion.temasSeleccionados.filter(v => typeof v === 'number') : []
+        temas_ids: Array.isArray(sesion.temasSeleccionados) ? sesion.temasSeleccionados.filter(v => typeof v === 'number') : [],
+        contenido_items_seleccionados: sesion.contenido_items_seleccionados || []
       }
 
       sDB.grupo_id = targetGrupoId
@@ -1328,7 +1404,7 @@ async function guardarTodo(silent = false) {
   } catch (err) {
     console.error('Error guardando:', err)
     if (!silent) $q.notify({ type: 'negative', message: 'Error guardando planificación', icon: 'error' })
-    throw err // Propagar para que el llamante maneje el error si es necesario
+    throw err
   } finally {
     if (!silent) guardando.value = false
   }
@@ -1981,5 +2057,27 @@ function exportarPDF() {
 .dialog-actions {
   padding: 16px 24px;
   border-top: 1px solid var(--border-color);
+}
+
+/* Estilos para contenido_items seleccionables */
+.contenido-items-container {
+  padding: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tema-contenido-group {
+  margin-bottom: 8px;
+}
+
+.contenido-item-checkbox {
+  display: block;
+  margin-bottom: 4px;
+  padding: 2px 0;
+}
+
+.contenido-item-checkbox :deep(.q-checkbox__label) {
+  font-size: 12px;
+  line-height: 1.4;
 }
 </style>

@@ -158,23 +158,149 @@
                         <q-spinner-dots color="primary" size="40px" />
                      </div>
                      <template v-else>
-                        <q-card flat bordered class="q-pa-md bg-grey-1">
-                           <div class="text-subtitle1 text-weight-bold q-mb-md">Planificación del Día</div>
+                        <!-- Planificación del Día -->
+                        <div class="planificacion-container">
+                           <div class="section-header">
+                              <q-icon name="event_note" size="24px" color="primary" class="q-mr-sm" />
+                              <span class="text-h6 text-weight-bold">Planificación del Día</span>
+                           </div>
 
-                           <div class="row q-col-gutter-lg">
+                           <!-- Tema Principal (Solo título) -->
+                           <div class="q-mb-md">
+                              <div class="text-subtitle1 text-weight-bold text-primary">{{ temaPlanificado || 'Sin tema asignado' }}</div>
+                           </div>
+
+                           <!-- Contenidos Planificados -->
+                           <div class="row q-col-gutter-md q-mb-md">
+                              <!-- (Sección Contenido eliminada por redundancia) -->
+                              
+                              <div class="col-12 col-md-4">
+                                 <q-card flat bordered class="content-card">
+                                    <q-card-section class="q-pa-sm">
+                                       <div class="content-label">
+                                          <q-icon name="psychology" size="16px" class="q-mr-xs" />
+                                          Conceptual
+                                       </div>
+                                       <div class="content-text">{{ conceptualPlanificado || '---' }}</div>
+                                    </q-card-section>
+                                 </q-card>
+                              </div>
+
+                              <div class="col-12 col-md-4">
+                                 <q-card flat bordered class="content-card">
+                                    <q-card-section class="q-pa-sm">
+                                       <div class="content-label">
+                                          <q-icon name="build" size="16px" class="q-mr-xs" />
+                                          Procedimental
+                                       </div>
+                                       <div class="content-text">{{ procedimentalPlanificado || '---' }}</div>
+                                    </q-card-section>
+                                 </q-card>
+                              </div>
+
+                              <div class="col-12 col-md-4">
+                                 <q-card flat bordered class="content-card">
+                                    <q-card-section class="q-pa-sm">
+                                       <div class="content-label">
+                                          <q-icon name="favorite" size="16px" class="q-mr-xs" />
+                                          Actitudinal
+                                       </div>
+                                       <div class="content-text">{{ actitudinalPlanificado || '---' }}</div>
+                                    </q-card-section>
+                                 </q-card>
+                              </div>
+
                               <div class="col-12 col-md-6">
-                                 <q-input v-model="temaPlanificado" label="Tema Planificado (Según Plan de Clase)"
-                                    outlined readonly />
+                                 <q-card flat bordered class="content-card">
+                                    <q-card-section class="q-pa-sm">
+                                       <div class="content-label">
+                                          <q-icon name="checklist" size="16px" class="q-mr-xs" />
+                                          Criterios de Desempeño
+                                       </div>
+                                       <div class="content-text">{{ criteriosPlanificado || '---' }}</div>
+                                    </q-card-section>
+                                 </q-card>
                               </div>
-                              <div class="col-12 col-md-6 flex items-center">
-                                 <q-checkbox v-model="temaCumplido" label="Tema Cumplido" color="green" size="lg" :disable="esLecturaSola" />
+
+                              <div class="col-12 col-md-6">
+                                 <q-card flat bordered class="content-card">
+                                    <q-card-section class="q-pa-sm">
+                                       <div class="content-label">
+                                          <q-icon name="assessment" size="16px" class="q-mr-xs" />
+                                          Instrumentos de Evaluación
+                                       </div>
+                                       <div class="content-text">{{ instrumentosPlanificado || '---' }}</div>
+                                    </q-card-section>
+                                 </q-card>
                               </div>
-                              <div class="col-12">
-                                 <q-input v-model="observacionesClase" label="Observaciones Generales" type="textarea"
-                                    outlined rows="3" :readonly="esLecturaSola" />
+
+                              <!-- Contenido Items Seleccionados -->
+                              <div v-if="contenidoItemsSeleccionados.length > 0" class="col-12">
+                                 <q-card flat bordered class="content-card">
+                                    <q-card-section class="q-pa-sm">
+                                       <div class="content-label">
+                                          <q-icon name="checklist_rtl" size="16px" class="q-mr-xs" />
+                                          Contenido Items Seleccionados
+                                       </div>
+                                       <div class="q-mt-xs">
+                                          <q-chip
+                                             v-for="(item, idx) in contenidoItemsSeleccionados"
+                                             :key="idx"
+                                             size="sm"
+                                             color="primary"
+                                             text-color="white"
+                                             icon="check_circle"
+                                          >
+                                             {{ resolveContentItem(item) }}
+                                          </q-chip>
+                                       </div>
+                                    </q-card-section>
+                                 </q-card>
                               </div>
                            </div>
-                        </q-card>
+
+                           <!-- Observaciones -->
+                           <q-card flat bordered>
+                              <q-card-section>
+                                 <q-input v-model="observacionesClase" label="Observaciones Generales" type="textarea"
+                                    outlined rows="3" :readonly="esLecturaSola" />
+                              </q-card-section>
+                           </q-card>
+
+                           <!-- Estado de Cumplimiento Botones -->
+                           <div class="q-mt-lg">
+                              <div class="text-subtitle2 q-mb-sm text-grey-8">Estado de Cumplimiento del Tema</div>
+                              <div class="row q-gutter-sm">
+                                 <q-btn 
+                                    :color="estadoCumplimiento === 'TOTAL' ? 'positive' : 'grey-3'"
+                                    :text-color="estadoCumplimiento === 'TOTAL' ? 'white' : 'grey-8'"
+                                    label="TOTALMENTE CUMPLIDO"
+                                    icon="check_circle"
+                                    @click="estadoCumplimiento = 'TOTAL'"
+                                    unelevated
+                                    :disable="esLecturaSola"
+                                 />
+                                 <q-btn 
+                                    :color="estadoCumplimiento === 'PARCIAL' ? 'warning' : 'grey-3'"
+                                    :text-color="estadoCumplimiento === 'PARCIAL' ? 'white' : 'grey-8'"
+                                    label="PARCIALMENTE CUMPLIDO"
+                                    icon="timelapse"
+                                    @click="estadoCumplimiento = 'PARCIAL'"
+                                    unelevated
+                                    :disable="esLecturaSola"
+                                 />
+                                 <q-btn 
+                                    :color="estadoCumplimiento === 'NO' ? 'negative' : 'grey-3'"
+                                    :text-color="estadoCumplimiento === 'NO' ? 'white' : 'grey-8'"
+                                    label="NO CUMPLIDO"
+                                    icon="cancel"
+                                    @click="estadoCumplimiento = 'NO'"
+                                    unelevated
+                                    :disable="esLecturaSola"
+                                 />
+                              </div>
+                           </div>
+                        </div>
 
                         <div class="q-mt-lg">
                            <div class="text-subtitle1 text-weight-bold q-mb-sm">Detalles Pedagógicos</div>
@@ -591,10 +717,17 @@ const actualizarSesionPorFecha = () => {
          temaPlanificado.value = found.contenido_conceptual || 'Sin título de tema'
       }
 
-      // Load tema_cumplido from pedagogico (pedagogical information)
-      // cronograma.cumplido indicates if follow-up was saved, not if topic was covered
-      temaCumplido.value = false  // Default
+      // 2. Load cronograma fields (readonly display)
+      contenidoPlanificado.value = found.contenido || ''
+      conceptualPlanificado.value = found.contenido_conceptual || ''
+      procedimentalPlanificado.value = found.contenido_procedimental || ''
+      actitudinalPlanificado.value = found.contenido_actitudinal || ''
+      criteriosPlanificado.value = found.criterios_desempeno || ''
+      instrumentosPlanificado.value = found.instrumentos_evaluacion || ''
       
+      // Load content items selected
+      contenidoItemsSeleccionados.value = found.contenido_items_seleccionados || []
+
       observacionesClase.value = found.observaciones || ''
 
       // 2. Pedagogical Details Mapping
@@ -602,15 +735,12 @@ const actualizarSesionPorFecha = () => {
       if (found.pedagogico && typeof found.pedagogico === 'object') {
          const saved = JSON.parse(JSON.stringify(found.pedagogico))
          
-         // Load tema_cumplido from pedagogico
-         if (saved.tema_cumplido !== undefined) {
-            temaCumplido.value = !!(saved.tema_cumplido)
-            console.log('Loading tema_cumplido from pedagogico:', saved.tema_cumplido, 'converted to:', temaCumplido.value)
-         }
-         
          pedagogico.value.estrategias = saved.estrategias || []
          pedagogico.value.evaluacion = saved.evaluacion || []
          pedagogico.value.secuencia = saved.secuencia || []
+         // Load estado cumplimiento from pedagogico or map from old boolean
+         estadoCumplimiento.value = saved.estado_cumplimiento || (saved.tema_cumplido ? 'TOTAL' : null)
+         temaCumplido.value = saved.tema_cumplido || false
          
          if(saved.integracion) {
              pedagogico.value.integracion = saved.integracion
@@ -684,15 +814,28 @@ const actualizarSesionPorFecha = () => {
          }
          resetIntegracion()
          resetEvidencias()
+         resetIntegracion()
+         resetEvidencias()
+         temaCumplido.value = false
+         estadoCumplimiento.value = null
       }
    } else {
       sesionActual.value = null
       temaPlanificado.value = ''
-      temaCumplido.value = false
+      contenidoPlanificado.value = ''
+      conceptualPlanificado.value = ''
+      procedimentalPlanificado.value = ''
+      actitudinalPlanificado.value = ''
+      criteriosPlanificado.value = ''
+      instrumentosPlanificado.value = ''
       observacionesClase.value = ''
       resetPedagogico()
       resetIntegracion()
       resetEvidencias()
+      resetIntegracion()
+      resetEvidencias()
+      temaCumplido.value = false
+      estadoCumplimiento.value = null
    }
 }
 
@@ -781,6 +924,42 @@ const claseSeleccionadaObj = computed(() => {
    return clasesUnificadas.value.find(c => c.id === claseSeleccionada.value)
 })
 
+// Resolver texto del item de contenido (FORMATO: temaId:index)
+const resolveContentItem = (itemVal) => {
+   if (!itemVal || !itemVal.includes(':')) return itemVal
+   
+   const [temaId, itemIndex] = itemVal.split(':')
+   const index = parseInt(itemIndex)
+   
+   // Buscar en el tema de la sesión actual
+   let tema = null
+   
+   if (sesionActual.value) {
+       // Caso 1: Tema directo en la sesión
+       if (sesionActual.value.tema && sesionActual.value.tema.id == temaId) {
+           tema = sesionActual.value.tema
+       } 
+       // Caso 2: Temas múltiples (si existieran)
+       else if (sesionActual.value.temas) {
+           tema = sesionActual.value.temas.find(t => t.id == temaId)
+       }
+   }
+   
+   if (tema && tema.contenido_items && Array.isArray(tema.contenido_items) && tema.contenido_items[index]) {
+       const contentText = tema.contenido_items[index]
+       // Get topic title, truncated if necessary
+       const topicTitle = tema.titulo 
+           ? (tema.titulo.length > 20 ? tema.titulo.substring(0, 20) + '...' : tema.titulo) 
+           : 'Tema'
+           
+       const displayText = `${topicTitle}: ${contentText}`
+       
+       return displayText.length > 70 ? displayText.substring(0, 70) + '...' : displayText
+   }
+   
+   return itemVal // Fallback si no se encuentra
+}
+
 const temaSeleccionado = ref(null)
 watch(temaSeleccionado, (val) => {
    if (val) temaPlanificado.value = val.titulo
@@ -803,8 +982,16 @@ const guardarAsistencia = () => {
 
 // Seguimiento
 const temaPlanificado = ref('')
-const temaCumplido = ref(false)
+const contenidoPlanificado = ref('')
+const conceptualPlanificado = ref('')
+const procedimentalPlanificado = ref('')
+const actitudinalPlanificado = ref('')
+const criteriosPlanificado = ref('')
+const instrumentosPlanificado = ref('')
+const contenidoItemsSeleccionados = ref([])
 const observacionesClase = ref('')
+const temaCumplido = ref(false)
+const estadoCumplimiento = ref(null)
 
 const pedagogico = ref({
    estrategias: [],
@@ -838,18 +1025,20 @@ const guardarSeguimiento = async () => {
       const formData = new FormData()
       
       // Add basic fields
-      // tema_cumplido is pedagogical information, not session completion status
-      formData.append('tema_cumplido', temaCumplido.value ? 'true' : 'false')
+      // Validar si el estado es TOTAL o PARCIAL para marcar como "cumplido" general
+      const isCumplido = estadoCumplimiento.value === 'TOTAL' || estadoCumplimiento.value === 'PARCIAL'
+      formData.append('tema_cumplido', isCumplido ? 'true' : 'false')
       formData.append('observaciones', observacionesClase.value || '')
       
-      console.log('Saving session with tema_cumplido:', temaCumplido.value)
+      console.log('Saving session with tema_cumplido:', isCumplido, 'estado:', estadoCumplimiento.value)
       
       // Add pedagogical details (non-file data)
       const pedagogicoData = {
          estrategias: pedagogico.value.estrategias,
          evaluacion: pedagogico.value.evaluacion,
          secuencia: pedagogico.value.secuencia,
-         integracion: pedagogico.value.integracion
+         integracion: pedagogico.value.integracion,
+         estado_cumplimiento: estadoCumplimiento.value // Save the specific status
       }
       
       // Add integración transversal status (without files)
@@ -891,6 +1080,13 @@ const guardarSeguimiento = async () => {
          message: 'Seguimiento de clase actualizado correctamente',
          icon: 'save'
       })
+      
+      if (!estadoCumplimiento.value) {
+          $q.notify({
+             type: 'warning',
+             message: 'Recuerda seleccionar el estado de cumplimiento (Total, Parcial o No)'
+          })
+      }
 
       // Store current session date before reload
       const currentSessionDate = fechaSeguimiento.value
@@ -934,33 +1130,104 @@ onMounted(() => {
 
 <style scoped>
 .clase-page {
-   padding: 24px;
-   background-color: #f5f7fa;
+   padding: 20px;
+   background: #f5f7fa;
+   min-height: 100vh;
+}
+
+.page-header {
+   margin-bottom: 24px;
 }
 
 .page-title {
-   font-size: 1.8rem;
+   font-size: 1.75rem;
    font-weight: 700;
-   color: #1e293b;
+   color: #1976d2;
    margin: 0;
    display: flex;
    align-items: center;
 }
 
 .page-subtitle {
-   color: #64748b;
-   margin: 4px 0 0 0;
+   color: #666;
+   margin: 8px 0 0 0;
+   font-size: 0.95rem;
 }
 
 .main-card {
    border-radius: 12px;
-   border: 1px solid #e2e8f0;
-   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-.nota-info {
-   font-size: 0.85rem;
-   color: #64748b;
-   margin-top: 4px;
+/* Planificación del Día Styles */
+.planificacion-container {
+   background: white;
+   border-radius: 12px;
+   padding: 24px;
+   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.section-header {
+   display: flex;
+   align-items: center;
+   margin-bottom: 20px;
+   padding-bottom: 12px;
+   border-bottom: 2px solid #e0e0e0;
+}
+
+.info-card {
+   background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+   color: white;
+   border: none !important;
+   box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.info-card .text-caption {
+   color: rgba(255,255,255,0.9);
+}
+
+.info-card .text-body1 {
+   color: white;
+   font-size: 1.1rem;
+}
+
+.content-card {
+   border: 1px solid #e0e0e0;
+   border-radius: 8px;
+   transition: all 0.3s ease;
+   height: 100%;
+   background: #fafafa;
+}
+
+.content-card:hover {
+   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+   transform: translateY(-2px);
+}
+
+.content-label {
+   font-size: 0.75rem;
+   font-weight: 600;
+   color: #546e7a;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+   margin-bottom: 8px;
+   display: flex;
+   align-items: center;
+}
+
+.content-text {
+   min-height: 40px;
+   color: #424242;
+   white-space: pre-wrap;
+   line-height: 1.5;
+   font-size: 0.95rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+   .planificacion-container {
+      padding: 16px;
+   }
 }
 </style>
+

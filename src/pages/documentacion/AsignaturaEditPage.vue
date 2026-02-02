@@ -563,10 +563,11 @@
                   <q-item-section>
                     <q-item-label class="text-weight-medium">{{ tema.titulo }}</q-item-label>
                     <q-item-label caption>
+                      {{ tema.contenido_items?.length || (tema.descripcion ? 1 : 0) }} puntos de contenido •
                       {{ countLogros(tema) }} logros •
                       {{ countIndicadores(tema) }} indicadores
-                      <q-icon v-if="!tema.descripcion" name="warning" color="orange" size="xs" class="q-ml-sm">
-                        <q-tooltip>Falta Contenido/Descripción</q-tooltip>
+                      <q-icon v-if="!tema.descripcion && !tema.contenido_items?.length" name="warning" color="orange" size="xs" class="q-ml-sm">
+                        <q-tooltip>Falta Contenido</q-tooltip>
                       </q-icon>
                     </q-item-label>
                   </q-item-section>
@@ -792,7 +793,7 @@
 
     <!-- Dialog Tema -->
     <q-dialog v-model="dialogTema" persistent>
-      <q-card style="width: 500px; max-width: 95vw;">
+      <q-card style="width: 600px; max-width: 95vw;">
         <q-card-section>
           <div class="text-h6">{{ editandoTema ? 'Editar Tema' : 'Nuevo Tema' }}</div>
           <div class="text-caption text-grey" v-if="unidadSeleccionada">
@@ -802,20 +803,78 @@
 
         <q-card-section>
           <q-form @submit="guardarTema" class="q-gutter-md">
-            <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus />
-            <q-input v-model="formTema.descripcion" label="Contenido / Descripción *" type="textarea" rows="4" outlined
-              dense placeholder="Ej: Principios básicos, definiciones, clasificación..."
-              hint="Describa los puntos clave o subtemas que se abordarán."
-              :rules="[val => !!val || 'El contenido es obligatorio']">
-              <template v-slot:prepend>
-                <q-icon name="article" />
-              </template>
-            </q-input>
-            <!-- Horas removed as per request -->
+            <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus 
+              :rules="[val => !!val || 'El título es obligatorio']" />
+            
+            <!-- Lista de Contenidos -->
+            <div class="contenido-list">
+              <div class="text-subtitle2 q-mb-sm row items-center">
+                <q-icon name="list" class="q-mr-xs" color="primary" />
+                <span>Contenido del Tema (Lista de Puntos)</span>
+                <q-space />
+                <q-chip size="sm" color="grey-3" text-color="grey-8">
+                  {{ formTema.contenido_items?.length || 0 }} items
+                </q-chip>
+              </div>
+              
+              <div class="text-caption text-grey-7 q-mb-md">
+                Agregue los puntos clave o subtemas que se abordarán en este tema.
+              </div>
+
+              <!-- Lista de items existentes -->
+              <div v-if="formTema.contenido_items?.length" class="q-gutter-sm q-mb-md">
+                <div v-for="(item, index) in formTema.contenido_items" :key="index" 
+                     class="row items-start q-gutter-sm">
+                  <q-badge color="primary" :label="index + 1" class="q-mt-sm" />
+                  <q-input 
+                    v-model="formTema.contenido_items[index]" 
+                    outlined 
+                    dense 
+                    class="col"
+                    type="textarea"
+                    rows="2"
+                    autogrow
+                    placeholder="Ej: Principios básicos, definiciones..."
+                    :rules="[val => !!val?.trim() || 'El contenido no puede estar vacío']"
+                  />
+                  <q-btn 
+                    flat 
+                    round 
+                    dense 
+                    icon="delete" 
+                    color="red" 
+                    size="sm"
+                    class="q-mt-sm"
+                    @click="eliminarContenidoItem(index)"
+                  >
+                    <q-tooltip>Eliminar item</q-tooltip>
+                  </q-btn>
+                </div>
+              </div>
+
+              <div v-else class="text-center q-pa-md bg-grey-1 rounded-borders q-mb-md">
+                <q-icon name="info" size="24px" color="grey-5" />
+                <div class="text-caption text-grey-7 q-mt-xs">
+                  No hay contenidos agregados. Haga clic en "Agregar Punto" para comenzar.
+                </div>
+              </div>
+              
+              <!-- Botón para agregar nuevo item -->
+              <q-btn 
+                outline 
+                color="primary" 
+                icon="add" 
+                label="Agregar Punto" 
+                size="sm"
+                @click="agregarContenidoItem"
+                no-caps
+              />
+            </div>
 
             <div class="row justify-end q-gutter-sm q-mt-md">
               <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-              <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps />
+              <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps 
+                :disable="!formTema.contenido_items?.length" />
             </div>
           </q-form>
         </q-card-section>
@@ -878,7 +937,13 @@ const formUnidad = ref({ id: null, titulo: '', numero: 1, horas: 0 })
 const dialogTema = ref(false)
 const editandoTema = ref(false)
 const unidadSeleccionada = ref(null)
-const formTema = ref({ id: null, titulo: '', descripcion: '', horas_teoricas: 0, horas_practicas: 0 })
+const formTema = ref({ 
+  id: null, 
+  titulo: '', 
+  contenido_items: [],  // Changed from descripcion to array
+  horas_teoricas: 0, 
+  horas_practicas: 0 
+})
 
 // Unidades
 function abrirDialogoUnidad(unidad = null) {
@@ -931,11 +996,53 @@ function abrirDialogoTema(unidad, tema = null) {
   unidadSeleccionada.value = unidad
   editandoTema.value = !!tema
   if (tema) {
-    formTema.value = { ...tema }
+    // Migración automática de datos antiguos
+    if (tema.descripcion && !tema.contenido_items) {
+      // Convertir descripcion (texto libre) a array de items
+      const items = tema.descripcion
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+      
+      formTema.value = { 
+        ...tema, 
+        contenido_items: items.length > 0 ? items : [''] 
+      }
+    } else {
+      formTema.value = { 
+        ...tema,
+        contenido_items: tema.contenido_items && tema.contenido_items.length > 0 
+          ? [...tema.contenido_items] 
+          : ['']  // Al menos un item vacío
+      }
+    }
   } else {
-    formTema.value = { id: null, titulo: '', descripcion: '', horas_teoricas: 0, horas_practicas: 0 }
+    formTema.value = { 
+      id: null, 
+      titulo: '', 
+      contenido_items: [''],  // Iniciar con un item vacío
+      horas_teoricas: 0, 
+      horas_practicas: 0 
+    }
   }
   dialogTema.value = true
+}
+
+// Funciones para manejar items de contenido
+function agregarContenidoItem() {
+  formTema.value.contenido_items.push('')
+}
+
+function eliminarContenidoItem(index) {
+  if (formTema.value.contenido_items.length > 1) {
+    formTema.value.contenido_items.splice(index, 1)
+  } else {
+    $q.notify({
+      type: 'warning',
+      message: 'Debe haber al menos un punto de contenido',
+      icon: 'warning'
+    })
+  }
 }
 
 async function guardarTema() {
