@@ -317,21 +317,24 @@
                                     <td class="q-pa-sm" style="vertical-align: top">
                                        <div v-for="(item, idx) in pedagogico.estrategias" :key="'est-' + idx"
                                           class="q-mb-xs">
-                                          <q-checkbox v-model="item.cumplido" :label="item.nombre" dense
+                                          <div v-if="item.isHeader" class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
+                                          <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
                                              color="green" :disable="esLecturaSola" />
                                        </div>
                                     </td>
                                     <td class="q-pa-sm" style="vertical-align: top">
                                        <div v-for="(item, idx) in pedagogico.evaluacion" :key="'eva-' + idx"
                                           class="q-mb-xs">
-                                          <q-checkbox v-model="item.cumplido" :label="item.nombre" dense
+                                          <div v-if="item.isHeader" class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
+                                          <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
                                              color="green" :disable="esLecturaSola" />
                                        </div>
                                     </td>
                                     <td class="q-pa-sm" style="vertical-align: top">
                                        <div v-for="(item, idx) in pedagogico.secuencia" :key="'sec-' + idx"
                                           class="q-mb-xs">
-                                          <q-checkbox v-model="item.cumplido" :label="item.nombre" dense
+                                          <div v-if="item.isHeader" class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
+                                          <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
                                              color="green" :disable="esLecturaSola" />
                                        </div>
                                     </td>
@@ -730,14 +733,58 @@ const actualizarSesionPorFecha = () => {
 
       observacionesClase.value = found.observaciones || ''
 
-      // 2. Pedagogical Details Mapping
-      // Includes pedagogical + integration + evidences
+      // 3. Pedagogical Details Mapping
+      // Logic: 
+      // A. If saved (and has data), use saved.
+      // B. If not saved (or saved is empty/default defaults), try to load from Topic (PlanificacionPersonal).
+      
+      let useSaved = false
       if (found.pedagogico && typeof found.pedagogico === 'object') {
+          // Check if it has meaningful data or just empty/default structure
+          // If the backend sent resolved defaults, use them.
+          useSaved = true
+      }
+
+      if (useSaved) {
          const saved = JSON.parse(JSON.stringify(found.pedagogico))
          
-         pedagogico.value.estrategias = saved.estrategias || []
-         pedagogico.value.evaluacion = saved.evaluacion || []
-         pedagogico.value.secuencia = saved.secuencia || []
+         // MERGE STRATEGY: Load definitions from Plan (Topic), apply status from Saved.
+         // This ensures formatting (prefixes) and new items are visible, while keeping progress.
+         
+         const planning = found.tema?.planificacion_personal || found.tema
+         const fromPlan = extractFromTopic(planning)
+         
+         // Helper to merge: baseItems (plan) + savedItems (status)
+         const mergeItems = (planItems, savedItems) => {
+             if (!planItems || planItems.length === 0) {
+                 // If plan is empty, maybe we rely on saved items (legacy support)
+                 return savedItems || []
+             }
+             return planItems.map(pItem => {
+                 // Find matching saved item (loose match by name/content)
+                 // content match: ignore prefix like "Recurso: " for matching if saved didn't have it?
+                 // Or just simpler: find item where saved name contains pItem name or vice versa?
+                 // Let's try exact match or "saved name is contained in plan name" (since we added prefixes)
+                 const match = (savedItems || []).find(s => 
+                     s.nombre === pItem.nombre || 
+                     pItem.nombre.includes(s.nombre) || 
+                     s.nombre.includes(pItem.nombre)
+                 )
+                 return {
+                     ...pItem,
+                     cumplido: match ? match.cumplido : false
+                 }
+             })
+         }
+
+         pedagogico.value.estrategias = mergeItems(fromPlan.estrategias, saved.estrategias)
+         pedagogico.value.evaluacion = mergeItems(fromPlan.evaluacion, saved.evaluacion)
+         pedagogico.value.secuencia = mergeItems(fromPlan.secuencia, saved.secuencia)
+         
+         // If plan items were empty but saved had something, keep saved (fallback)
+         if (fromPlan.estrategias.length === 0 && saved.estrategias?.length > 0) pedagogico.value.estrategias = saved.estrategias
+         if (fromPlan.evaluacion.length === 0 && saved.evaluacion?.length > 0) pedagogico.value.evaluacion = saved.evaluacion
+         if (fromPlan.secuencia.length === 0 && saved.secuencia?.length > 0) pedagogico.value.secuencia = saved.secuencia
          // Load estado cumplimiento from pedagogico or map from old boolean
          estadoCumplimiento.value = saved.estado_cumplimiento || (saved.tema_cumplido ? 'TOTAL' : null)
          temaCumplido.value = saved.tema_cumplido || false
@@ -759,63 +806,24 @@ const actualizarSesionPorFecha = () => {
          if (saved.integracionTransversal) {
              integracionTransversal.value = saved.integracionTransversal
          } else {
-             // Reset to defaults
-             integracionTransversal.value = {
-                investigacion: { cumplido: false, evidencia: null },
-                interaccion: { cumplido: false, evidencia: null },
-                internalizacion: { cumplido: false, evidencia: null }
-             }
+             resetIntegracionTransversalDefault()
          }
 
       } else {
-         // Load from Planning (Tema)
+         // Load directly from Planning (Tema)
          const planning = found.tema?.planificacion_personal || found.tema
 
          if (planning) {
-             // ESTRATEGIAS
-             let estrategias = []
-             if (Array.isArray(planning.estrategias_recursos)) {
-                estrategias = planning.estrategias_recursos.map(r => ({ nombre: r, cumplido: false }))
-             }
-             if (planning.estrategias_metodologicas && typeof planning.estrategias_metodologicas === 'string') {
-                estrategias.unshift({ nombre: `Metodología: ${planning.estrategias_metodologicas.substring(0, 50)}...`, cumplido: false })
-             }
-             pedagogico.value.estrategias = estrategias
-
-             // EVALUACION
-             let evaluaciones = []
-             const extractEval = (obj, prefix) => {
-                if (obj && Array.isArray(obj.actividades)) {
-                   obj.actividades.forEach(a => evaluaciones.push({ nombre: `${prefix}: ${a}`, cumplido: false }))
-                }
-                if (obj && Array.isArray(obj.instrumentos)) {
-                   obj.instrumentos.forEach(i => evaluaciones.push({ nombre: `Inst: ${i}`, cumplido: false }))
-                }
-             }
-             extractEval(planning.evaluacion_formativa, 'Form')
-             extractEval(planning.evaluacion_sumativa, 'Sum')
-             pedagogico.value.evaluacion = evaluaciones
-
-             // SECUENCIA
-             if (Array.isArray(planning.secuencia_didactica)) {
-                pedagogico.value.secuencia = planning.secuencia_didactica.map(s => ({
-                   nombre: `${s.momento}: ${s.actividad?.substring(0, 60)}...`,
-                   cumplido: false
-                }))
-             } else {
-                pedagogico.value.secuencia = [
-                   { nombre: 'Introducción / Inicio', cumplido: false },
-                   { nombre: 'Desarrollo del contenido', cumplido: false },
-                   { nombre: 'Cierre / Conclusión', cumplido: false }
-                ]
-             }
+             const extracted = extractFromTopic(planning)
+             pedagogico.value.estrategias = extracted.estrategias
+             pedagogico.value.evaluacion = extracted.evaluacion
+             pedagogico.value.secuencia = extracted.secuencia
          } else {
              resetPedagogico()
          }
          resetIntegracion()
          resetEvidencias()
-         resetIntegracion()
-         resetEvidencias()
+         resetIntegracionTransversalDefault()
          temaCumplido.value = false
          estadoCumplimiento.value = null
       }
@@ -832,22 +840,150 @@ const actualizarSesionPorFecha = () => {
       resetPedagogico()
       resetIntegracion()
       resetEvidencias()
-      resetIntegracion()
-      resetEvidencias()
+      resetIntegracionTransversalDefault()
       temaCumplido.value = false
       estadoCumplimiento.value = null
    }
 }
 
+// Helper to extract pedagogical data from a Topic/Planning object
+const extractFromTopic = (planning) => {
+    const result = { estrategias: [], evaluacion: [], secuencia: [] }
+    if (!planning) return result
+
+     // ESTRATEGIAS
+     // 1. Metodología Docente
+     if (planning.estrategias_metodologicas && typeof planning.estrategias_metodologicas === 'string') {
+        result.estrategias.push({ nombre: 'METODOLOGÍA (DOCENTE)', isHeader: true })
+        result.estrategias.push({ nombre: planning.estrategias_metodologicas, cumplido: false })
+     }
+     
+     // 2. Estrategias de Aprendizaje (Estudiante)
+     if (planning.estrategias_aprendizaje && typeof planning.estrategias_aprendizaje === 'string') {
+        result.estrategias.push({ nombre: 'APRENDIZAJE (ESTUDIANTE)', isHeader: true })
+        result.estrategias.push({ nombre: planning.estrategias_aprendizaje, cumplido: false })
+     }
+
+     // 3. Recursos
+     if (Array.isArray(planning.estrategias_recursos) && planning.estrategias_recursos.length > 0) {
+        result.estrategias.push({ nombre: 'RECURSOS', isHeader: true })
+        planning.estrategias_recursos.forEach(r => {
+            result.estrategias.push({ nombre: r, cumplido: false })
+        })
+     }
+
+     // Fallback / Legacy (if nothing above found)
+     if (result.estrategias.length === 0) {
+         if (typeof planning.estrategias_recursos === 'string') {
+             try {
+                 const parsed = JSON.parse(planning.estrategias_recursos)
+                 if (Array.isArray(parsed)) {
+                     result.estrategias.push({ nombre: 'RECURSOS', isHeader: true })
+                     parsed.forEach(r => result.estrategias.push({ nombre: r, cumplido: false }))
+                 }
+             } catch(e) {
+                 console.error('Error parsing estrategias_recursos fallback:', e)
+             }
+         }
+     }
+
+     // EVALUACION
+     const extractEval = (obj, typeName) => {
+        if (obj) {
+            // Handle if it's a string (JSON)
+            if (typeof obj === 'string') {
+                try { obj = JSON.parse(obj) } catch(error) { console.error(error); return }
+            }
+            
+            const hasContent = (Array.isArray(obj.actividades) && obj.actividades.length > 0) || 
+                               (Array.isArray(obj.instrumentos) && obj.instrumentos.length > 0) ||
+                               (Array.isArray(obj.evidencias) && obj.evidencias.length > 0);
+                               
+            if (hasContent) {
+                result.evaluacion.push({ nombre: typeName.toUpperCase(), isHeader: true })
+                
+                if (Array.isArray(obj.actividades)) {
+                   obj.actividades.forEach(a => result.evaluacion.push({ nombre: `Actividad: ${a}`, cumplido: false }))
+                }
+                if (Array.isArray(obj.instrumentos)) {
+                   obj.instrumentos.forEach(i => result.evaluacion.push({ nombre: `Instrumento: ${i}`, cumplido: false }))
+                }
+                if (Array.isArray(obj.evidencias)) {
+                   obj.evidencias.forEach(e => result.evaluacion.push({ nombre: `Evidencia: ${e}`, cumplido: false }))
+                }
+            }
+        }
+     }
+     extractEval(planning.evaluacion_formativa, 'Evaluación Formativa')
+     extractEval(planning.evaluacion_sumativa, 'Evaluación Sumativa')
+
+     // SECUENCIA
+     if (Array.isArray(planning.secuencia_didactica)) {
+        // Group by momento
+        const grupos = {}
+        planning.secuencia_didactica.forEach(s => {
+            const momento = s.momento || 'GENERAL'
+            if (!grupos[momento]) grupos[momento] = []
+            grupos[momento].push(s)
+        })
+        
+        // Define order if possible
+        const order = ['Inicio', 'Desarrollo', 'Cierre']
+        
+        // Add specific groups in order
+        order.forEach(m => {
+            if (grupos[m]) {
+                result.secuencia.push({ nombre: m.toUpperCase(), isHeader: true })
+                grupos[m].forEach(s => {
+                     result.secuencia.push({ nombre: s.actividad, cumplido: false })
+                })
+                delete grupos[m]
+            }
+        })
+        // Add remaining groups
+        Object.keys(grupos).forEach(m => {
+            result.secuencia.push({ nombre: m.toUpperCase(), isHeader: true })
+            grupos[m].forEach(s => {
+                 result.secuencia.push({ nombre: s.actividad, cumplido: false })
+            })
+        })
+
+     } else if (typeof planning.secuencia_didactica === 'string') {
+         // Try parse
+         try {
+             const parsed = JSON.parse(planning.secuencia_didactica)
+             if (Array.isArray(parsed)) {
+                 result.secuencia.push({ nombre: 'SECUENCIA', isHeader: true })
+                  parsed.forEach(s => {
+                     result.secuencia.push({ nombre: `${s.momento || ''}: ${s.actividad}`, cumplido: false })
+                  })
+             }
+         } catch(error) { console.error(error) }
+     } else if (planning.secuencias && Array.isArray(planning.secuencias)) {
+        // Direct relation fallback items
+        planning.secuencias.forEach(s => {
+            result.secuencia.push({ nombre: `${s.momento}: ${s.descripcion}`, cumplido: false })
+        })
+     }
+     
+     return result
+}
+
+const resetIntegracionTransversalDefault = () => {
+   integracionTransversal.value = {
+      investigacion: { cumplido: false, evidencia: null },
+      interaccion: { cumplido: false, evidencia: null },
+      internalizacion: { cumplido: false, evidencia: null }
+   }
+}
+
 const resetPedagogico = () => {
    pedagogico.value.estrategias = [
-      { nombre: 'Lluvia de ideas', cumplido: false },
-      { nombre: 'Trabajo grupal', cumplido: false },
-      { nombre: 'Exposición magistral', cumplido: false }
+      { nombre: 'Clase Magistral', cumplido: false },
+      { nombre: 'Participación Activa', cumplido: false }
    ]
    pedagogico.value.evaluacion = [
-      { nombre: 'Participación en clase', cumplido: false },
-      { nombre: 'Prueba rápida', cumplido: false }
+      { nombre: 'Evaluación continua', cumplido: false }
    ]
    pedagogico.value.secuencia = [
       { nombre: 'Inicio', cumplido: false },
