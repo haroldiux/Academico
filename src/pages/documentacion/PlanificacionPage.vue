@@ -439,7 +439,7 @@
                     </td>
                     <td>{{ sesion.tema }}</td>
                     <td>
-                      <div class="preview-content">{{ sesion.contenido }}</div>
+                      <div class="preview-content">{{ resolveContenido(sesion) }}</div>
                     </td>
                     <td>
                       <div class="preview-content">{{ sesion.conceptual }}</div>
@@ -928,10 +928,8 @@ const planificacion = computed(() => {
       sesiones: planificacionSesiones.value
         .filter(s => s.unidad_id === u.id)
         .sort((a, b) => a.numeroGlobal - b.numeroGlobal)
-        .map(s => ({
-          ...s,
-          contenido: resolveContenido(s)
-        }))
+        .filter(s => s.unidad_id === u.id)
+        .sort((a, b) => a.numeroGlobal - b.numeroGlobal)
     }
   }).concat(planificacionSesiones.value.some(s => s.unidad_id === 'finales') ? [{
     id: 'finales',
@@ -1546,7 +1544,7 @@ function exportarPDF() {
           resultados_aprendizaje: s.criteriosDesempeno, // Mapeo aproximado
           contenidos: {
             conceptual: [
-              ...(s.contenido ? s.contenido.split('\n') : []),
+              ...(resolveContenido(s) ? resolveContenido(s).split('\n') : []),
               ...(s.conceptual ? s.conceptual.split('\n') : [])
             ],
             procedimental: s.procedimental ? s.procedimental.split('\n') : [],
