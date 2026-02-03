@@ -33,11 +33,13 @@
           Conectado
         </div>
 
-        <!-- Theme Toggle -->
+        <!-- Theme Toggle (Deshabilitado - Solo modo claro) -->
+        <!-- 
         <button class="theme-toggle" @click="themeStore.toggleTheme">
           <q-icon :name="themeStore.isDark ? 'light_mode' : 'dark_mode'" size="20px" />
           <q-tooltip>{{ themeStore.isDark ? 'Modo Claro' : 'Modo Oscuro' }}</q-tooltip>
         </button>
+        -->
 
         <!-- User Avatar -->
         <q-btn flat round dense class="user-btn">
@@ -135,14 +137,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useThemeStore } from 'src/stores/theme'
+// import { useThemeStore } from 'src/stores/theme' // Deshabilitado - solo modo claro
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { usePermisos } from 'src/composables/usePermisos'
 
 import { useQuasar } from 'quasar'
 
 const router = useRouter()
-const themeStore = useThemeStore()
+// const themeStore = useThemeStore() // No usado - modo oscuro deshabilitado
 const authStore = useAuthStore()
 const $q = useQuasar()
 const { getMenuItems, sedeActual } = usePermisos()

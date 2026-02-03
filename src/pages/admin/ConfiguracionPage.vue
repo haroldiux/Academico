@@ -193,6 +193,11 @@
           <q-card class="config-card">
             <q-card-section>
               <h3 class="card-title">Tema</h3>
+              <div class="text-grey-6 q-pa-md text-center">
+                <q-icon name="light_mode" size="32px" color="primary" class="q-mb-sm" />
+                <p class="q-mb-none">El sistema utiliza el <strong>modo claro</strong> por defecto.</p>
+              </div>
+              <!-- Selector de tema deshabilitado
               <div class="theme-options">
                 <div 
                   :class="['theme-option', { active: themeStore.isDark === false }]"
@@ -209,6 +214,7 @@
                   <span>Oscuro</span>
                 </div>
               </div>
+              -->
             </q-card-section>
           </q-card>
 
@@ -284,10 +290,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useQuasar } from 'quasar'
-import { useThemeStore } from 'src/stores/theme'
+// import { useThemeStore } from 'src/stores/theme' // Deshabilitado - solo modo claro
 
 const $q = useQuasar()
-const themeStore = useThemeStore()
+// const themeStore = useThemeStore() // No usado - modo oscuro deshabilitado
 
 const activeSection = ref('academico')
 

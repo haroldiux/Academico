@@ -17,7 +17,20 @@
           Unidad {{ unidad?.numero }}: {{ unidad?.titulo }}
         </p>
       </div>
-      <div class="col-auto row q-gutter-sm">
+      <div class="col-auto row q-gutter-sm items-center">
+        <!-- Auto-save Status Indicator -->
+        <q-chip
+          v-if="saveStatus !== 'idle'"
+          :color="saveStatus === 'saving' ? 'blue-2' : saveStatus === 'saved' ? 'green-2' : 'red-2'"
+          :text-color="saveStatus === 'saving' ? 'blue-9' : saveStatus === 'saved' ? 'green-9' : 'red-9'"
+          size="md"
+          class="q-mr-sm"
+        >
+          <q-spinner-dots v-if="saveStatus === 'saving'" size="16px" class="q-mr-xs" />
+          <q-icon v-else-if="saveStatus === 'saved'" name="check_circle" class="q-mr-xs" />
+          <q-icon v-else-if="saveStatus === 'error'" name="error" class="q-mr-xs" />
+          {{ saveStatus === 'saving' ? 'Guardando...' : saveStatus === 'saved' ? 'Guardado' : 'Error al guardar' }}
+        </q-chip>
         <q-chip
           :color="progresoTotal >= 80 ? 'green-2' : progresoTotal >= 50 ? 'amber-2' : 'red-2'"
           :text-color="progresoTotal >= 80 ? 'green-9' : progresoTotal >= 50 ? 'amber-9' : 'red-9'"
@@ -27,7 +40,8 @@
           {{ progresoTotal }}% Completado
         </q-chip>
         <q-btn outline color="green" icon="picture_as_pdf" label="Generar PDF" no-caps />
-        <q-btn unelevated color="primary" icon="save" label="Guardar Cambios" no-caps @click="guardarCambios" />
+        <!-- Botón manual deshabilitado - auto-guardado activo -->
+        <!--<q-btn unelevated color="primary" icon="save" label="Guardar Cambios" no-caps @click="guardarCambios" />-->
       </div>
     </div>
 
@@ -710,6 +724,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { watchDebounced } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
@@ -717,6 +732,7 @@ import { useAuthStore } from 'src/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
+// eslint-disable-next-line no-unused-vars
 const $q = useQuasar()
 const store = useAsignaturasStore()
 const authStore = useAuthStore()
@@ -777,6 +793,10 @@ const logroSeleccionado = ref(null)
 const nuevoLogro = ref('')
 const nuevoIndicador = ref('')
 const formSecuencia = ref({ momento: 'INTRODUCCIÓN', actividad: '', duracion: 10 })
+
+// Estado de auto-guardado
+const saveStatus = ref('idle') // 'idle' | 'saving' | 'saved' | 'error'
+let dataLoaded = false // Flag para evitar guardar durante carga inicial
 
 const opcionesMomento = [
   { label: 'INTRODUCCION', value: 'INTRODUCCION' },
@@ -1044,6 +1064,29 @@ function calcularProgresoLocal(seccion) {
 onMounted(() => cargarDatos())
 watch(() => route.params, () => cargarDatos())
 
+// Auto-guardado con debounce de 1500ms
+watchDebounced(
+  () => JSON.stringify(formTema.value),
+  async () => {
+    if (!dataLoaded) return // No guardar durante la carga inicial
+    if (!asignatura.value || !unidad.value || !tema.value) return
+    
+    saveStatus.value = 'saving'
+    try {
+      await store.updateTema(tema.value.id, formTema.value)
+      saveStatus.value = 'saved'
+      // Ocultar el indicador "Guardado" después de 2 segundos
+      setTimeout(() => {
+        if (saveStatus.value === 'saved') saveStatus.value = 'idle'
+      }, 2000)
+    } catch (error) {
+      console.error('Error al auto-guardar:', error)
+      saveStatus.value = 'error'
+    }
+  },
+  { debounce: 1500, maxWait: 5000, deep: true }
+)
+
 async function cargarDatos() {
   const aId = parseInt(route.params.id)
   const uId = parseInt(route.params.unidadId)
@@ -1123,14 +1166,19 @@ async function cargarDatos() {
           }))
         }
       }
-    }
+}
   }
+  // Marcar que los datos fueron cargados (habilitar auto-guardado)
+  dataLoaded = true
 }
 
+// Función de guardado manual (backup, disponible para uso futuro)
+// eslint-disable-next-line no-unused-vars
 function guardarCambios() {
   if (!asignatura.value || !unidad.value || !tema.value) return
   store.updateTema(tema.value.id, formTema.value)
-  $q.notify({ type: 'positive', message: 'Cambios guardados exitosamente', icon: 'check_circle', position: 'top' })
+  saveStatus.value = 'saved'
+  setTimeout(() => { if (saveStatus.value === 'saved') saveStatus.value = 'idle' }, 2000)
 }
 
 function agregarReferenciaBiblio() {

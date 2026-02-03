@@ -138,31 +138,31 @@
             </ol>
 
             <div class="format-info">
-              <h5>Formato de columnas:</h5>
+              <h5>Formato de columnas con ejemplos:</h5>
               <table class="format-table">
                 <tr>
                   <td><strong>ENUNCIADO</strong></td>
-                  <td>Texto de la pregunta</td>
+                  <td>Ej: "¿Cuál es la capital de Bolivia?"</td>
                 </tr>
                 <tr>
                   <td><strong>TIPO</strong></td>
-                  <td>SELECCION_UNICA, SELECCION_MULTIPLE, FALSO_VERDADERO</td>
+                  <td>SELECCION_UNICA, SELECCION_MULTIPLE o FALSO_VERDADERO</td>
                 </tr>
                 <tr>
                   <td><strong>A, B, C, D, E</strong></td>
-                  <td>Opciones de respuesta</td>
+                  <td>Ej: A="Sucre" B="La Paz" C="Santa Cruz" D="Cochabamba" E=""</td>
                 </tr>
                 <tr>
                   <td><strong>DIFICULTAD</strong></td>
-                  <td>FACIL, MEDIO, DIFICIL</td>
+                  <td>FACIL, MEDIO o DIFICIL</td>
                 </tr>
                 <tr>
                   <td><strong>PESO</strong></td>
-                  <td>Valor numérico (ej: 10)</td>
+                  <td>Número del 1 al 10 (Ej: 5)</td>
                 </tr>
                 <tr>
                   <td><strong>RESPUESTA</strong></td>
-                  <td>Letra(s) correcta(s): A, B, A;B;C para múltiple</td>
+                  <td>Única: "A" | Múltiple: "A;B;C" | V/F: "A" o "B"</td>
                 </tr>
               </table>
             </div>
@@ -226,15 +226,28 @@
                 label="Dificultad" emit-value map-options />
             </div>
             <div class="col-3">
-              <q-input v-model.number="nuevaPregunta.peso" outlined type="number" label="Peso" min="1" />
+              <q-input v-model.number="nuevaPregunta.peso" outlined type="number" label="Peso" 
+                min="1" max="10" :rules="[val => val >= 1 && val <= 10 || 'Peso debe ser 1-10']" />
             </div>
           </div>
 
           <div class="opciones-section">
-            <h4>Opciones de respuesta</h4>
+            <h4>Opciones de respuesta <span v-if="nuevaPregunta.tipo === 'SELECCION_UNICA'" class="text-caption text-grey">(selecciona UNA correcta)</span><span v-else-if="nuevaPregunta.tipo === 'SELECCION_MULTIPLE'" class="text-caption text-grey">(selecciona VARIAS correctas)</span></h4>
             <div v-for="letra in ['A', 'B', 'C', 'D', 'E']" :key="letra" class="opcion-input-row">
-              <q-checkbox v-model="nuevaPregunta.respuesta_correcta" :val="letra"
-                :disable="nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'" />
+              <!-- Radio para selección única -->
+              <q-radio 
+                v-if="nuevaPregunta.tipo === 'SELECCION_UNICA' || nuevaPregunta.tipo === 'FALSO_VERDADERO'"
+                v-model="respuestaUnica" 
+                :val="letra"
+                :disable="nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'"
+                @update:model-value="actualizarRespuestaUnica"
+              />
+              <!-- Checkbox para selección múltiple -->
+              <q-checkbox 
+                v-else
+                v-model="nuevaPregunta.respuesta_correcta" 
+                :val="letra"
+              />
               <span class="opcion-letra-input">{{ letra }}.</span>
               <q-input v-model="nuevaPregunta.opciones[letra]" outlined dense :placeholder="getPlaceholderOpcion(letra)"
                 :disable="nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'" class="flex-1" />
@@ -300,6 +313,14 @@ const nuevaPreguntaDefault = {
 }
 const nuevaPregunta = ref({ ...nuevaPreguntaDefault })
 
+// Variable auxiliar para selección única (radio buttons)
+const respuestaUnica = ref('')
+
+// Función para actualizar respuesta única
+function actualizarRespuestaUnica(val) {
+  nuevaPregunta.value.respuesta_correcta = val ? [val] : []
+}
+
 // Opciones para selects
 const opcionesTipo = [
   { label: 'Selección Única', value: TIPOS_PREGUNTA.SELECCION_UNICA },
@@ -346,6 +367,14 @@ watch(() => nuevaPregunta.value.tipo, (newTipo) => {
   if (newTipo === TIPOS_PREGUNTA.FALSO_VERDADERO) {
     nuevaPregunta.value.opciones = { A: 'Verdadero', B: 'Falso', C: null, D: null, E: null }
     nuevaPregunta.value.respuesta_correcta = nuevaPregunta.value.respuesta_correcta.filter(r => ['A', 'B'].includes(r))
+  }
+  // Resetear respuesta cuando cambia el tipo
+  if (newTipo === TIPOS_PREGUNTA.SELECCION_UNICA || newTipo === TIPOS_PREGUNTA.FALSO_VERDADERO) {
+    // Mantener solo una respuesta
+    if (nuevaPregunta.value.respuesta_correcta.length > 1) {
+      nuevaPregunta.value.respuesta_correcta = [nuevaPregunta.value.respuesta_correcta[0]]
+    }
+    respuestaUnica.value = nuevaPregunta.value.respuesta_correcta[0] || ''
   }
 })
 
@@ -495,6 +524,10 @@ function guardarPregunta() {
 function editarPregunta(pregunta) {
   editMode.value = true
   nuevaPregunta.value = { ...pregunta, opciones: { ...pregunta.opciones }, respuesta_correcta: [...pregunta.respuesta_correcta] }
+  // Sincronizar respuestaUnica para selección única/V.F
+  if (pregunta.tipo === TIPOS_PREGUNTA.SELECCION_UNICA || pregunta.tipo === TIPOS_PREGUNTA.FALSO_VERDADERO) {
+    respuestaUnica.value = pregunta.respuesta_correcta[0] || ''
+  }
   showAddDialog.value = true
 }
 

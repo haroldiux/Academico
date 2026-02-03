@@ -1,52 +1,40 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
 export const useThemeStore = defineStore('theme', () => {
-  // Check for saved theme preference or system preference
-  const getInitialTheme = () => {
-    const savedTheme = localStorage.getItem('theme')
-    if (savedTheme) {
-      return savedTheme === 'dark'
-    }
-    // Check system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  // Forzar siempre modo claro
+  const isDark = ref(false)
+
+  // Forzar tema claro en localStorage y DOM
+  const applyTheme = () => {
+    localStorage.setItem('theme', 'light')
+    document.documentElement.classList.remove('dark')
+    document.body.classList.remove('body--dark')
   }
 
-  const isDark = ref(getInitialTheme())
+  // Aplicar tema claro al cargar
+  applyTheme()
 
-  // Apply theme to document
-  const applyTheme = (dark) => {
-    if (dark) {
-      document.documentElement.classList.add('dark')
-      document.body.classList.add('body--dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-      document.body.classList.remove('body--dark')
-    }
-  }
-
-  // Initialize theme on load
-  applyTheme(isDark.value)
-
-  // Watch for changes and persist
-  watch(isDark, (newValue) => {
-    localStorage.setItem('theme', newValue ? 'dark' : 'light')
-    applyTheme(newValue)
-  })
-
-  // Toggle theme
+  // Toggle deshabilitado - siempre modo claro
   const toggleTheme = () => {
-    isDark.value = !isDark.value
+    // No hace nada - modo oscuro deshabilitado
+    console.warn('Modo oscuro deshabilitado')
   }
 
-  // Set specific theme
-  const setTheme = (dark) => {
-    isDark.value = dark
+  // Set theme deshabilitado
+  const setTheme = () => {
+    // Siempre forzar modo claro
+    isDark.value = false
+    applyTheme()
   }
+
+  // Alias usado en ConfiguracionPage
+  const setDarkMode = setTheme
 
   return {
     isDark,
     toggleTheme,
-    setTheme
+    setTheme,
+    setDarkMode
   }
 })

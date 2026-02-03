@@ -64,9 +64,27 @@
           </q-list>
         </q-btn-dropdown>
 
-        <q-btn unelevated color="primary" icon="save" label="Guardar" no-caps @click="guardarCambios" />
+        <!-- Botón manual deshabilitado - auto-guardado activo -->
+        <!--<q-btn unelevated color="primary" icon="save" label="Guardar" no-caps @click="guardarCambios" />-->
       </div>
     </div>
+
+    <!-- Auto-save Status Indicator (Flotante estilo Google Docs) -->
+    <transition name="fade">
+      <div v-if="saveStatus !== 'idle'" class="auto-save-indicator">
+        <q-chip
+          :color="saveStatus === 'saving' ? 'blue-1' : saveStatus === 'saved' ? 'green-1' : 'red-1'"
+          :text-color="saveStatus === 'saving' ? 'blue-8' : saveStatus === 'saved' ? 'green-8' : 'red-8'"
+          size="sm"
+          dense
+        >
+          <q-spinner-dots v-if="saveStatus === 'saving'" size="14px" class="q-mr-xs" />
+          <q-icon v-else-if="saveStatus === 'saved'" name="cloud_done" size="16px" class="q-mr-xs" />
+          <q-icon v-else-if="saveStatus === 'error'" name="cloud_off" size="16px" class="q-mr-xs" />
+          {{ saveStatus === 'saving' ? 'Guardando...' : saveStatus === 'saved' ? 'Guardado' : 'Error' }}
+        </q-chip>
+      </div>
+    </transition>
 
     <!-- Tabs -->
     <q-card class="card-main">
@@ -885,6 +903,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { watchDebounced } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
@@ -919,6 +938,11 @@ const authStore = useAuthStore()
 // Estado
 const tabActual = ref('datos')
 const asignatura = computed(() => store.asignaturaActual)
+
+// Estado de auto-guardado
+const saveStatus = ref('idle') // 'idle' | 'saving' | 'saved' | 'error'
+let dataLoaded = false // Flag para evitar guardar durante carga inicial
+let lastSavedSnapshot = '' // Snapshot del último estado guardado
 
 
 // Opciones de Importación
@@ -1512,8 +1536,8 @@ function cargarFormDatos() {
   }
   formDatos.value.horas_detalle = detalle
 
-  // Guardar copia de datos originales para validar permisos de edición
   datosOriginales.value = JSON.parse(JSON.stringify(formDatos.value))
+  
   // Cargar datos del programa
   // Cargar metodología estructurada
   const met = asignatura.value.metodologia_general || {}
@@ -1555,11 +1579,42 @@ function cargarFormDatos() {
       final: asignatura.value.sistema_evaluacion?.final || ''
     }
   }
+
+  // Inicializar snapshot DESPUÉS de cargar todos los datos
+  lastSavedSnapshot = JSON.stringify({ datos: formDatos.value, programa: formPrograma.value })
+  // Marcar datos como cargados (habilitar auto-guardado)
+  dataLoaded = true
 }
 
+// Auto-guardado estilo Google Docs - solo guarda si hay cambios reales
+watchDebounced(
+  () => JSON.stringify({ datos: formDatos.value, programa: formPrograma.value }),
+  async (newValue) => {
+    if (!dataLoaded) return // No guardar durante la carga inicial
+    if (!asignatura.value?.id) return
+    
+    // Comparar con el último snapshot guardado
+    if (newValue === lastSavedSnapshot) return // Sin cambios reales
+    
+    saveStatus.value = 'saving'
+    try {
+      await guardadoInterno()
+      lastSavedSnapshot = newValue // Actualizar snapshot después de guardar
+      saveStatus.value = 'saved'
+      // Ocultar el indicador "Guardado" después de 3 segundos
+      setTimeout(() => {
+        if (saveStatus.value === 'saved') saveStatus.value = 'idle'
+      }, 3000)
+    } catch (error) {
+      console.error('Error al auto-guardar:', error)
+      saveStatus.value = 'error'
+    }
+  },
+  { debounce: 2000, maxWait: 10000 }
+)
 
-
-async function guardarCambios() {
+// Función interna de guardado (sin notificaciones)
+async function guardadoInterno() {
   // Sync Elementos de Competencia from Units
   if (asignatura.value?.unidades) {
     formPrograma.value.elementos_competencia = asignatura.value.unidades
@@ -1579,18 +1634,27 @@ async function guardarCambios() {
     ...formDatos.value,
     ...formPrograma.value,
     metodologia_general,
-    // Mapeo inverso para campos heredados
-    metodologia_ensenanza: metodologia_general, // Alias para el backend
+    metodologia_ensenanza: metodologia_general,
     competencia_asignatura: formPrograma.value.competencia_unidad,
     criterios_evaluacion: formPrograma.value.sistema_evaluacion
   }
 
+  await store.updateAsignatura(asignatura.value.id, datosCompletos)
+}
+
+
+
+// Función de guardado manual (backup, disponible para uso futuro)
+// eslint-disable-next-line no-unused-vars
+async function guardarCambios() {
+  saveStatus.value = 'saving'
   try {
-    await store.updateAsignatura(asignatura.value.id, datosCompletos)
-    $q.notify({ type: 'positive', message: 'Cambios guardados', icon: 'check_circle', position: 'top' })
+    await guardadoInterno()
+    saveStatus.value = 'saved'
+    setTimeout(() => { if (saveStatus.value === 'saved') saveStatus.value = 'idle' }, 2000)
   } catch (e) {
     console.error(e)
-    $q.notify({ type: 'negative', message: 'Error al guardar cambios: ' + e.message })
+    saveStatus.value = 'error'
   }
 }
 
@@ -2330,5 +2394,24 @@ function generarCarpetaHtml() {
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--text-primary);
+}
+
+/* Auto-save indicator flotante estilo Google Docs */
+.auto-save-indicator {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
