@@ -106,7 +106,7 @@
               </div>
               <div class="semestre-stat">
                 <span class="stat-num" :class="sem.progreso >= 80 ? 'text-green' : 'text-orange'">{{ sem.progreso
-                }}%</span>
+                  }}%</span>
                 <span class="stat-desc">Progreso</span>
               </div>
             </div>
@@ -196,7 +196,10 @@ import { computed, ref, onMounted } from 'vue'
 import { usePermisos } from 'src/composables/usePermisos'
 import dashboardService from 'src/services/dashboardService'
 
-const { asignaturasFiltradas, sedeActual, carreraActual } = usePermisos()
+import { useCarrerasStore } from 'src/stores/carreras'
+
+const { sedeActual, carreraActual, carreraId, sedeId } = usePermisos()
+const carrerasStore = useCarrerasStore()
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -206,7 +209,7 @@ const greeting = computed(() => {
 })
 
 const loading = ref(true)
-const totalAsignaturas = computed(() => asignaturasFiltradas.value.length)
+const totalAsignaturas = ref(0)
 const docentesActivos = ref(0)
 const notificaciones = ref(0)
 const documentacionPendiente = ref(0)
@@ -216,18 +219,19 @@ const semestres = ref([])
 const docentesCarrera = ref([])
 
 async function loadStats() {
-  if (!carreraActual.value || !sedeActual.value) return
+  if (!carreraId.value || !sedeId.value) return
 
   loading.value = true
   try {
     const data = await dashboardService.getDirectorStats({
-      carrera_id: carreraActual.value.id,
-      sede_id: sedeActual.value.id
+      carrera_id: carreraId.value,
+      sede_id: sedeId.value
     })
 
     docentesActivos.value = data.stats.docentesActivos
     documentacionPendiente.value = data.stats.documentacionPendiente
     progresoCarrera.value = data.stats.progresoCarrera
+    totalAsignaturas.value = data.stats.totalAsignaturas
 
     semestres.value = data.semestres
     docentesCarrera.value = data.docentes
@@ -238,7 +242,24 @@ async function loadStats() {
   }
 }
 
-onMounted(() => {
+import { useAuthStore } from 'src/stores/auth'
+import { useSedesStore } from 'src/stores/sedes'
+
+const authStore = useAuthStore()
+const sedesStore = useSedesStore()
+
+onMounted(async () => {
+  // 1. Refrescar usuario para asegurar IDs correctos (fix DB sync)
+  await authStore.fetchUser()
+
+  // 2. Cargar catálogos necesarios
+  const promises = []
+  if (!carreraActual.value) promises.push(carrerasStore.fetchCarreras())
+  if (!sedeActual.value) promises.push(sedesStore.fetchSedes())
+
+  await Promise.all(promises)
+
+  // 3. Cargar estadísticas
   loadStats()
 })
 

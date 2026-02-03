@@ -146,7 +146,7 @@ export const useAuthStore = defineStore('auth', () => {
             ...user.docente,
             sede: user.docente?.sede || null
         },
-        carrera_id: null,
+        carrera_id: user.director?.carrera_id || user.carrera_id || null,
         avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
         materias_asignadas: user.docente?.asignaturas?.map(a => ({
           id: a.id,
@@ -253,6 +253,7 @@ export const useAuthStore = defineStore('auth', () => {
         ci: user.ci,
         rol: rolNombre,
         sede_id: user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || null,
+        carrera_id: user.director?.carrera_id || user.carrera_id || null,
         docente: {
             ...user.docente,
             sede: user.docente?.sede || null
