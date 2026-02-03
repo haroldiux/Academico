@@ -19,23 +19,17 @@
       </div>
       <div class="col-auto row q-gutter-sm items-center">
         <!-- Auto-save Status Indicator -->
-        <q-chip
-          v-if="saveStatus !== 'idle'"
+        <q-chip v-if="saveStatus !== 'idle'"
           :color="saveStatus === 'saving' ? 'blue-2' : saveStatus === 'saved' ? 'green-2' : 'red-2'"
-          :text-color="saveStatus === 'saving' ? 'blue-9' : saveStatus === 'saved' ? 'green-9' : 'red-9'"
-          size="md"
-          class="q-mr-sm"
-        >
+          :text-color="saveStatus === 'saving' ? 'blue-9' : saveStatus === 'saved' ? 'green-9' : 'red-9'" size="md"
+          class="q-mr-sm">
           <q-spinner-dots v-if="saveStatus === 'saving'" size="16px" class="q-mr-xs" />
           <q-icon v-else-if="saveStatus === 'saved'" name="check_circle" class="q-mr-xs" />
           <q-icon v-else-if="saveStatus === 'error'" name="error" class="q-mr-xs" />
           {{ saveStatus === 'saving' ? 'Guardando...' : saveStatus === 'saved' ? 'Guardado' : 'Error al guardar' }}
         </q-chip>
-        <q-chip
-          :color="progresoTotal >= 80 ? 'green-2' : progresoTotal >= 50 ? 'amber-2' : 'red-2'"
-          :text-color="progresoTotal >= 80 ? 'green-9' : progresoTotal >= 50 ? 'amber-9' : 'red-9'"
-          size="lg"
-        >
+        <q-chip :color="progresoTotal >= 80 ? 'green-2' : progresoTotal >= 50 ? 'amber-2' : 'red-2'"
+          :text-color="progresoTotal >= 80 ? 'green-9' : progresoTotal >= 50 ? 'amber-9' : 'red-9'" size="lg">
           <q-icon name="assignment_turned_in" class="q-mr-xs" />
           {{ progresoTotal }}% Completado
         </q-chip>
@@ -48,13 +42,15 @@
     <div class="row q-col-gutter-lg">
       <div class="col-12">
         <q-card class="card-main">
-          <q-tabs v-model="tabActual" dense class="text-grey" active-color="primary" indicator-color="primary" align="left">
+          <q-tabs v-model="tabActual" dense class="text-grey" active-color="primary" indicator-color="primary"
+            align="left">
             <q-tab name="aprendizaje" no-caps>
               <div class="row items-center q-gutter-sm">
                 <q-icon name="school" />
                 <span>Resultados</span>
                 <q-chip size="xs" color="purple-2" text-color="purple-9" dense class="q-ml-xs">Compartido</q-chip>
-                <q-badge :color="progresoResultados >= 100 ? 'green' : progresoResultados >= 50 ? 'amber' : 'red'" text-color="white">
+                <q-badge :color="progresoResultados >= 100 ? 'green' : progresoResultados >= 50 ? 'amber' : 'red'"
+                  text-color="white">
                   {{ progresoResultados }}%
                 </q-badge>
               </div>
@@ -64,7 +60,8 @@
                 <q-icon name="list_alt" />
                 <span>Contenidos</span>
                 <q-chip size="xs" color="purple-2" text-color="purple-9" dense class="q-ml-xs">Compartido</q-chip>
-                <q-badge :color="progresoContenidos >= 100 ? 'green' : progresoContenidos >= 50 ? 'amber' : 'red'" text-color="white">
+                <q-badge :color="progresoContenidos >= 100 ? 'green' : progresoContenidos >= 50 ? 'amber' : 'red'"
+                  text-color="white">
                   {{ progresoContenidos }}%
                 </q-badge>
               </div>
@@ -74,7 +71,8 @@
                 <q-icon name="psychology" />
                 <span>Estrategias</span>
                 <q-chip size="xs" color="teal-2" text-color="teal-9" dense class="q-ml-xs">Personal</q-chip>
-                <q-badge :color="progresoEstrategias >= 100 ? 'green' : progresoEstrategias >= 50 ? 'amber' : 'red'" text-color="white">
+                <q-badge :color="progresoEstrategias >= 100 ? 'green' : progresoEstrategias >= 50 ? 'amber' : 'red'"
+                  text-color="white">
                   {{ progresoEstrategias }}%
                 </q-badge>
               </div>
@@ -84,7 +82,8 @@
                 <q-icon name="grading" />
                 <span>Evaluación</span>
                 <q-chip size="xs" color="teal-2" text-color="teal-9" dense class="q-ml-xs">Personal</q-chip>
-                <q-badge :color="progresoEvaluacion >= 100 ? 'green' : progresoEvaluacion >= 50 ? 'amber' : 'red'" text-color="white">
+                <q-badge :color="progresoEvaluacion >= 100 ? 'green' : progresoEvaluacion >= 50 ? 'amber' : 'red'"
+                  text-color="white">
                   {{ progresoEvaluacion }}%
                 </q-badge>
               </div>
@@ -94,7 +93,8 @@
                 <q-icon name="timeline" />
                 <span>Secuencia</span>
                 <q-chip size="xs" color="teal-2" text-color="teal-9" dense class="q-ml-xs">Personal</q-chip>
-                <q-badge :color="progresoSecuencia >= 100 ? 'green' : progresoSecuencia >= 50 ? 'amber' : 'red'" text-color="white">
+                <q-badge :color="progresoSecuencia >= 100 ? 'green' : progresoSecuencia >= 50 ? 'amber' : 'red'"
+                  text-color="white">
                   {{ progresoSecuencia }}%
                 </q-badge>
               </div>
@@ -112,7 +112,8 @@
                   <q-icon name="groups" color="purple" />
                 </template>
                 <span class="text-weight-medium">Campo Compartido (Materia)</span>
-                <span class="q-ml-sm text-caption">Estos datos son visibles para todos los docentes de esta materia.</span>
+                <span class="q-ml-sm text-caption">Estos datos son visibles para todos los docentes de esta
+                  materia.</span>
                 <template v-slot:action v-if="!puedeEditarCompartido">
                   <q-chip color="orange" text-color="white" size="sm" icon="lock">Solo lectura (Sede)</q-chip>
                 </template>
@@ -121,10 +122,14 @@
               <!-- Barra de progreso -->
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
-                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta sección</span>
-                  <span class="text-caption text-weight-bold" :class="progresoResultados >= 100 ? 'text-green' : 'text-orange'">{{ progresoResultados }}%</span>
+                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta
+                    sección</span>
+                  <span class="text-caption text-weight-bold"
+                    :class="progresoResultados >= 100 ? 'text-green' : 'text-orange'">{{
+                    progresoResultados }}%</span>
                 </div>
-                <q-linear-progress :value="progresoResultados / 100" :color="progresoResultados >= 100 ? 'green' : 'orange'" rounded size="8px" />
+                <q-linear-progress :value="progresoResultados / 100"
+                  :color="progresoResultados >= 100 ? 'green' : 'orange'" rounded size="8px" />
               </div>
 
               <!-- Resultado de Aprendizaje -->
@@ -135,8 +140,7 @@
                 </div>
                 <q-input v-model="formTema.resultado_aprendizaje" outlined type="textarea" rows="3"
                   placeholder="Describe el resultado de aprendizaje esperado..."
-                  hint="El estudiante al finalizar este tema será capaz de..."
-                  :readonly="!puedeEditarCompartido" />
+                  hint="El estudiante al finalizar este tema será capaz de..." :readonly="!puedeEditarCompartido" />
               </div>
 
               <!-- Logros Esperados con Indicadores anidados -->
@@ -146,7 +150,8 @@
                     <q-icon name="flag" color="green" size="28px" class="q-mr-sm" />
                     <span class="text-h6 text-weight-bold">Logros Esperados e Indicadores</span>
                   </div>
-                  <q-btn v-if="puedeEditarCompartido" unelevated color="green" icon="add" label="Agregar Logro" size="sm" no-caps @click="dialogLogro = true" />
+                  <q-btn v-if="puedeEditarCompartido" unelevated color="green" icon="add" label="Agregar Logro"
+                    size="sm" no-caps @click="dialogLogro = true" />
                 </div>
                 <p class="text-body2 q-mb-md" style="color: var(--text-secondary);">
                   Cada logro esperado puede tener múltiples indicadores que evidencian su cumplimiento.
@@ -170,34 +175,19 @@
                             placeholder="Descripción del logro..." :readonly="!puedeEditarCompartido" />
                         </div>
                         <!-- Selector de Parcial -->
-                        <q-btn-toggle
-                          v-model="logro.parcial"
-                          push
-                          glossy
-                          toggle-color="primary"
-                          :options="[
-                            {label: '1°', value: 1},
-                            {label: '2°', value: 2}
-                          ]"
-                          dense
-                          size="sm"
-                          class="q-mr-sm"
-                        >
+                        <q-btn-toggle v-model="logro.parcial" push glossy toggle-color="primary" :options="[
+                          { label: '1°', value: 1 },
+                          { label: '2°', value: 2 }
+                        ]" dense size="sm" class="q-mr-sm">
                           <q-tooltip>Parcial al que pertenece este logro</q-tooltip>
                         </q-btn-toggle>
-                        <q-btn
-                          flat
-                          round
-                          dense
-                          icon="quiz"
-                          color="purple"
-                          size="sm"
-                          @click="irBancoPreguntas(logro)"
-                        >
-                          <q-badge v-if="logro.mis_preguntas_count" floating color="teal" :label="logro.mis_preguntas_count" />
+                        <q-btn flat round dense icon="quiz" color="purple" size="sm" @click="irBancoPreguntas(logro)">
+                          <q-badge v-if="logro.mis_preguntas_count" floating color="teal"
+                            :label="logro.mis_preguntas_count" />
                           <q-tooltip>Banco de Preguntas ({{ logro.mis_preguntas_count || 0 }} mías)</q-tooltip>
                         </q-btn>
-                        <q-btn v-if="puedeEditarCompartido" flat round dense icon="delete" color="red" size="sm" @click="eliminarLogro(logro)" />
+                        <q-btn v-if="puedeEditarCompartido" flat round dense icon="delete" color="red" size="sm"
+                          @click="eliminarLogro(logro)" />
                       </div>
                     </q-card-section>
 
@@ -208,11 +198,13 @@
                           <q-icon name="check_circle" color="blue" class="q-mr-xs" />
                           Indicadores de este logro
                         </span>
-                        <q-btn v-if="puedeEditarCompartido" flat dense color="blue" icon="add" label="Indicador" size="sm" no-caps @click="abrirDialogIndicador(logro)" />
+                        <q-btn v-if="puedeEditarCompartido" flat dense color="blue" icon="add" label="Indicador"
+                          size="sm" no-caps @click="abrirDialogIndicador(logro)" />
                       </div>
 
                       <div v-if="!logro.indicadores?.length" class="text-center q-pa-sm bg-grey-1 rounded-borders">
-                        <span class="text-caption text-grey-6">Sin indicadores. Agrega cómo se evidencia este logro.</span>
+                        <span class="text-caption text-grey-6">Sin indicadores. Agrega cómo se evidencia este
+                          logro.</span>
                       </div>
 
                       <q-list v-else dense separator>
@@ -221,10 +213,13 @@
                             <q-chip size="sm" color="blue-2" text-color="blue-9" dense>{{ indicador.codigo }}</q-chip>
                           </q-item-section>
                           <q-item-section>
-                            <q-input v-model="indicador.descripcion" dense borderless placeholder="El estudiante demuestra el logro cuando..." :readonly="!puedeEditarCompartido" />
+                            <q-input v-model="indicador.descripcion" dense borderless
+                              placeholder="El estudiante demuestra el logro cuando..."
+                              :readonly="!puedeEditarCompartido" />
                           </q-item-section>
                           <q-item-section side>
-                            <q-btn v-if="puedeEditarCompartido" flat round dense icon="close" size="xs" color="red" @click="eliminarIndicador(logro, indicador)" />
+                            <q-btn v-if="puedeEditarCompartido" flat round dense icon="close" size="xs" color="red"
+                              @click="eliminarIndicador(logro, indicador)" />
                           </q-item-section>
                         </q-item>
                       </q-list>
@@ -242,7 +237,8 @@
                   <q-icon name="groups" color="purple" />
                 </template>
                 <span class="text-weight-medium">Campo Compartido (Materia)</span>
-                <span class="q-ml-sm text-caption">Los contenidos y bibliografía son comunes para todos los docentes.</span>
+                <span class="q-ml-sm text-caption">Los contenidos y bibliografía son comunes para todos los
+                  docentes.</span>
                 <template v-slot:action v-if="!puedeEditarCompartido">
                   <q-chip color="orange" text-color="white" size="sm" icon="lock">Solo lectura (Sede)</q-chip>
                 </template>
@@ -250,10 +246,14 @@
 
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
-                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta sección</span>
-                  <span class="text-caption text-weight-bold" :class="progresoContenidos >= 100 ? 'text-green' : 'text-orange'">{{ progresoContenidos }}%</span>
+                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta
+                    sección</span>
+                  <span class="text-caption text-weight-bold"
+                    :class="progresoContenidos >= 100 ? 'text-green' : 'text-orange'">{{
+                    progresoContenidos }}%</span>
                 </div>
-                <q-linear-progress :value="progresoContenidos / 100" :color="progresoContenidos >= 100 ? 'green' : 'orange'" rounded size="8px" />
+                <q-linear-progress :value="progresoContenidos / 100"
+                  :color="progresoContenidos >= 100 ? 'green' : 'orange'" rounded size="8px" />
               </div>
 
               <div class="row q-col-gutter-lg">
@@ -268,11 +268,15 @@
                       <q-list dense>
                         <q-item v-for="(item, idx) in formTema.contenidos.conceptual" :key="idx" class="q-pa-xs">
                           <q-item-section avatar><q-icon name="circle" size="8px" color="blue" /></q-item-section>
-                          <q-item-section><q-input v-model="formTema.contenidos.conceptual[idx]" dense borderless :readonly="!puedeEditarCompartido" /></q-item-section>
-                          <q-item-section side><q-btn v-if="puedeEditarCompartido" flat round dense icon="close" size="xs" color="red" @click="formTema.contenidos.conceptual.splice(idx, 1)" /></q-item-section>
+                          <q-item-section><q-input v-model="formTema.contenidos.conceptual[idx]" dense borderless
+                              :readonly="!puedeEditarCompartido" /></q-item-section>
+                          <q-item-section side><q-btn v-if="puedeEditarCompartido" flat round dense icon="close"
+                              size="xs" color="red"
+                              @click="formTema.contenidos.conceptual.splice(idx, 1)" /></q-item-section>
                         </q-item>
                       </q-list>
-                      <q-btn v-if="puedeEditarCompartido" flat color="blue" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.contenidos.conceptual.push('')" no-caps />
+                      <q-btn v-if="puedeEditarCompartido" flat color="blue" icon="add" label="Agregar" size="sm"
+                        class="q-mt-sm full-width" @click="formTema.contenidos.conceptual.push('')" no-caps />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -287,11 +291,15 @@
                       <q-list dense>
                         <q-item v-for="(item, idx) in formTema.contenidos.procedimental" :key="idx" class="q-pa-xs">
                           <q-item-section avatar><q-icon name="circle" size="8px" color="green" /></q-item-section>
-                          <q-item-section><q-input v-model="formTema.contenidos.procedimental[idx]" dense borderless :readonly="!puedeEditarCompartido" /></q-item-section>
-                          <q-item-section side><q-btn v-if="puedeEditarCompartido" flat round dense icon="close" size="xs" color="red" @click="formTema.contenidos.procedimental.splice(idx, 1)" /></q-item-section>
+                          <q-item-section><q-input v-model="formTema.contenidos.procedimental[idx]" dense borderless
+                              :readonly="!puedeEditarCompartido" /></q-item-section>
+                          <q-item-section side><q-btn v-if="puedeEditarCompartido" flat round dense icon="close"
+                              size="xs" color="red"
+                              @click="formTema.contenidos.procedimental.splice(idx, 1)" /></q-item-section>
                         </q-item>
                       </q-list>
-                      <q-btn v-if="puedeEditarCompartido" flat color="green" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.contenidos.procedimental.push('')" no-caps />
+                      <q-btn v-if="puedeEditarCompartido" flat color="green" icon="add" label="Agregar" size="sm"
+                        class="q-mt-sm full-width" @click="formTema.contenidos.procedimental.push('')" no-caps />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -306,11 +314,15 @@
                       <q-list dense>
                         <q-item v-for="(item, idx) in formTema.contenidos.actitudinal" :key="idx" class="q-pa-xs">
                           <q-item-section avatar><q-icon name="circle" size="8px" color="purple" /></q-item-section>
-                          <q-item-section><q-input v-model="formTema.contenidos.actitudinal[idx]" dense borderless :readonly="!puedeEditarCompartido" /></q-item-section>
-                          <q-item-section side><q-btn v-if="puedeEditarCompartido" flat round dense icon="close" size="xs" color="red" @click="formTema.contenidos.actitudinal.splice(idx, 1)" /></q-item-section>
+                          <q-item-section><q-input v-model="formTema.contenidos.actitudinal[idx]" dense borderless
+                              :readonly="!puedeEditarCompartido" /></q-item-section>
+                          <q-item-section side><q-btn v-if="puedeEditarCompartido" flat round dense icon="close"
+                              size="xs" color="red"
+                              @click="formTema.contenidos.actitudinal.splice(idx, 1)" /></q-item-section>
                         </q-item>
                       </q-list>
-                      <q-btn v-if="puedeEditarCompartido" flat color="purple" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.contenidos.actitudinal.push('')" no-caps />
+                      <q-btn v-if="puedeEditarCompartido" flat color="purple" icon="add" label="Agregar" size="sm"
+                        class="q-mt-sm full-width" @click="formTema.contenidos.actitudinal.push('')" no-caps />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -323,13 +335,15 @@
                     <q-icon name="menu_book" color="primary" size="28px" class="q-mr-sm" />
                     <span class="text-h6 text-weight-bold">Referencias Bibliográficas</span>
                   </div>
-                  <q-btn v-if="puedeEditarCompartido" unelevated color="primary" icon="add" label="Agregar Referencia" size="sm" no-caps @click="agregarReferenciaBiblio" />
+                  <q-btn v-if="puedeEditarCompartido" unelevated color="primary" icon="add" label="Agregar Referencia"
+                    size="sm" no-caps @click="agregarReferenciaBiblio" />
                 </div>
                 <p class="text-body2 q-mb-md" style="color: var(--text-secondary);">
                   Selecciona las bibliografías y las páginas donde se encuentra el contenido de este tema.
                 </p>
 
-                <div v-if="!formTema.referencias_bibliograficas?.length" class="text-center q-pa-lg bg-grey-1 rounded-borders">
+                <div v-if="!formTema.referencias_bibliograficas?.length"
+                  class="text-center q-pa-lg bg-grey-1 rounded-borders">
                   <q-icon name="menu_book" size="48px" color="grey-4" />
                   <p class="text-body2 text-grey-6 q-mt-sm">No hay referencias bibliográficas asignadas a este tema</p>
                 </div>
@@ -342,41 +356,17 @@
                           <q-icon name="book" />
                         </q-avatar>
                         <div class="col">
-                          <q-select
-                            v-model="ref.bibliografia_id"
-                            :options="opcionesBibliografias"
-                            label="Bibliografía"
-                            dense
-                            outlined
-                            emit-value
-                            map-options
-                            class="q-mb-xs"
-                            :readonly="!puedeEditarCompartido"
-                          />
+                          <q-select v-model="ref.bibliografia_id" :options="opcionesBibliografias" label="Bibliografía"
+                            dense outlined emit-value map-options class="q-mb-xs" :readonly="!puedeEditarCompartido" />
                           <div class="row q-gutter-sm">
-                            <q-input
-                              v-model="ref.pagina_desde"
-                              label="Pág. desde"
-                              dense
-                              outlined
-                              type="number"
-                              class="col"
-                              style="max-width: 100px;"
-                              :readonly="!puedeEditarCompartido"
-                            />
-                            <q-input
-                              v-model="ref.pagina_hasta"
-                              label="Pág. hasta"
-                              dense
-                              outlined
-                              type="number"
-                              class="col"
-                              style="max-width: 100px;"
-                              :readonly="!puedeEditarCompartido"
-                            />
+                            <q-input v-model="ref.pagina_desde" label="Pág. desde" dense outlined type="number"
+                              class="col" style="max-width: 100px;" :readonly="!puedeEditarCompartido" />
+                            <q-input v-model="ref.pagina_hasta" label="Pág. hasta" dense outlined type="number"
+                              class="col" style="max-width: 100px;" :readonly="!puedeEditarCompartido" />
                           </div>
                         </div>
-                        <q-btn v-if="puedeEditarCompartido" flat round dense icon="delete" color="red" size="sm" @click="formTema.referencias_bibliograficas.splice(idx, 1)" />
+                        <q-btn v-if="puedeEditarCompartido" flat round dense icon="delete" color="red" size="sm"
+                          @click="formTema.referencias_bibliograficas.splice(idx, 1)" />
                       </div>
                     </q-card>
                   </div>
@@ -392,7 +382,8 @@
                   <q-icon name="person" color="teal" />
                 </template>
                 <span class="text-weight-medium">Campo Personal (Docente)</span>
-                <span class="q-ml-sm text-caption">Estas estrategias son tu configuración personal para esta materia.</span>
+                <span class="q-ml-sm text-caption">Estas estrategias son tu configuración personal para esta
+                  materia.</span>
                 <template v-slot:action v-if="esSoloLectura">
                   <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
                 </template>
@@ -400,10 +391,14 @@
 
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
-                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta sección</span>
-                  <span class="text-caption text-weight-bold" :class="progresoEstrategias >= 100 ? 'text-green' : 'text-orange'">{{ progresoEstrategias }}%</span>
+                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta
+                    sección</span>
+                  <span class="text-caption text-weight-bold"
+                    :class="progresoEstrategias >= 100 ? 'text-green' : 'text-orange'">{{
+                    progresoEstrategias }}%</span>
                 </div>
-                <q-linear-progress :value="progresoEstrategias / 100" :color="progresoEstrategias >= 100 ? 'green' : 'orange'" rounded size="8px" />
+                <q-linear-progress :value="progresoEstrategias / 100"
+                  :color="progresoEstrategias >= 100 ? 'green' : 'orange'" rounded size="8px" />
               </div>
 
               <div class="row q-col-gutter-lg">
@@ -414,7 +409,8 @@
                       <span class="text-subtitle1 text-weight-bold text-indigo-9">Metodológicas (Docente)</span>
                     </q-card-section>
                     <q-card-section>
-                      <q-input v-model="formTema.estrategias.metodologicas" type="textarea" rows="8" outlined placeholder="Estrategias de enseñanza..." />
+                      <q-input v-model="formTema.estrategias.metodologicas" type="textarea" rows="8" outlined
+                        placeholder="Estrategias de enseñanza..." />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -425,7 +421,8 @@
                       <span class="text-subtitle1 text-weight-bold text-teal-9">Aprendizaje (Estudiante)</span>
                     </q-card-section>
                     <q-card-section>
-                      <q-input v-model="formTema.estrategias.aprendizaje" type="textarea" rows="8" outlined placeholder="Actividades del estudiante..." />
+                      <q-input v-model="formTema.estrategias.aprendizaje" type="textarea" rows="8" outlined
+                        placeholder="Actividades del estudiante..." />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -439,11 +436,14 @@
                       <q-list dense>
                         <q-item v-for="(item, idx) in formTema.estrategias.recursos" :key="idx" class="q-pa-xs">
                           <q-item-section avatar><q-icon name="check" size="16px" color="orange" /></q-item-section>
-                          <q-item-section><q-input v-model="formTema.estrategias.recursos[idx]" dense borderless /></q-item-section>
-                          <q-item-section side><q-btn flat round dense icon="close" size="xs" color="red" @click="formTema.estrategias.recursos.splice(idx, 1)" /></q-item-section>
+                          <q-item-section><q-input v-model="formTema.estrategias.recursos[idx]" dense
+                              borderless /></q-item-section>
+                          <q-item-section side><q-btn flat round dense icon="close" size="xs" color="red"
+                              @click="formTema.estrategias.recursos.splice(idx, 1)" /></q-item-section>
                         </q-item>
                       </q-list>
-                      <q-btn flat color="orange" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width" @click="formTema.estrategias.recursos.push('')" no-caps />
+                      <q-btn flat color="orange" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width"
+                        @click="formTema.estrategias.recursos.push('')" no-caps />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -458,7 +458,8 @@
                   <q-icon name="person" color="teal" />
                 </template>
                 <span class="text-weight-medium">Campo Personal (Docente)</span>
-                <span class="q-ml-sm text-caption">Define tu propia metodología de evaluación formativa y sumativa.</span>
+                <span class="q-ml-sm text-caption">Define tu propia metodología de evaluación formativa y
+                  sumativa.</span>
                 <template v-slot:action v-if="esSoloLectura">
                   <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
                 </template>
@@ -466,10 +467,14 @@
 
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
-                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta sección</span>
-                  <span class="text-caption text-weight-bold" :class="progresoEvaluacion >= 100 ? 'text-green' : 'text-orange'">{{ progresoEvaluacion }}%</span>
+                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta
+                    sección</span>
+                  <span class="text-caption text-weight-bold"
+                    :class="progresoEvaluacion >= 100 ? 'text-green' : 'text-orange'">{{
+                    progresoEvaluacion }}%</span>
                 </div>
-                <q-linear-progress :value="progresoEvaluacion / 100" :color="progresoEvaluacion >= 100 ? 'green' : 'orange'" rounded size="8px" />
+                <q-linear-progress :value="progresoEvaluacion / 100"
+                  :color="progresoEvaluacion >= 100 ? 'green' : 'orange'" rounded size="8px" />
               </div>
 
               <div class="row q-col-gutter-lg">
@@ -482,43 +487,19 @@
                       <p class="text-caption q-mb-none text-cyan-7">Evaluación continua durante el proceso</p>
                     </q-card-section>
                     <q-card-section class="q-gutter-md">
-                      <q-select
-                        v-model="formTema.evaluacion.formativa.actividades"
+                      <q-select v-model="formTema.evaluacion.formativa.actividades"
                         :options="optsEvalFormativaActividades"
                         @update:model-value="val => checkOtros(val, 'formativa', 'actividades')"
-                        label="Actividades y Técnicas"
-                        outlined
-                        dense
-                        multiple
-                        use-chips
-                        emit-value
-                        map-options
-                        hint="Seleccione una o más actividades"
-                      />
-                      <q-select
-                        v-model="formTema.evaluacion.formativa.instrumentos"
+                        label="Actividades y Técnicas" outlined dense multiple use-chips emit-value map-options
+                        hint="Seleccione una o más actividades" />
+                      <q-select v-model="formTema.evaluacion.formativa.instrumentos"
                         :options="optsEvalFormativaInstrumentos"
-                        @update:model-value="val => checkOtros(val, 'formativa', 'instrumentos')"
-                        label="Instrumentos"
-                        outlined
-                        dense
-                        multiple
-                        use-chips
-                        emit-value
-                        map-options
-                      />
-                      <q-select
-                        v-model="formTema.evaluacion.formativa.evidencias"
+                        @update:model-value="val => checkOtros(val, 'formativa', 'instrumentos')" label="Instrumentos"
+                        outlined dense multiple use-chips emit-value map-options />
+                      <q-select v-model="formTema.evaluacion.formativa.evidencias"
                         :options="optsEvalFormativaEvidencias"
-                        @update:model-value="val => checkOtros(val, 'formativa', 'evidencias')"
-                        label="Evidencias"
-                        outlined
-                        dense
-                        multiple
-                        use-chips
-                        emit-value
-                        map-options
-                      />
+                        @update:model-value="val => checkOtros(val, 'formativa', 'evidencias')" label="Evidencias"
+                        outlined dense multiple use-chips emit-value map-options />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -532,43 +513,18 @@
                       <p class="text-caption q-mb-none text-red-7">Evaluación al final del tema</p>
                     </q-card-section>
                     <q-card-section class="q-gutter-md">
-                      <q-select
-                        v-model="formTema.evaluacion.sumativa.actividades"
+                      <q-select v-model="formTema.evaluacion.sumativa.actividades"
                         :options="optsEvalSumativaActividades"
                         @update:model-value="val => checkOtros(val, 'sumativa', 'actividades')"
-                        label="Actividades y Técnicas"
-                        outlined
-                        dense
-                        multiple
-                        use-chips
-                        emit-value
-                        map-options
-                        hint="Seleccione una o más actividades"
-                      />
-                      <q-select
-                        v-model="formTema.evaluacion.sumativa.instrumentos"
+                        label="Actividades y Técnicas" outlined dense multiple use-chips emit-value map-options
+                        hint="Seleccione una o más actividades" />
+                      <q-select v-model="formTema.evaluacion.sumativa.instrumentos"
                         :options="optsEvalSumativaInstrumentos"
-                        @update:model-value="val => checkOtros(val, 'sumativa', 'instrumentos')"
-                        label="Instrumentos"
-                        outlined
-                        dense
-                        multiple
-                        use-chips
-                        emit-value
-                        map-options
-                      />
-                      <q-select
-                        v-model="formTema.evaluacion.sumativa.evidencias"
-                        :options="optsEvalSumativaEvidencias"
-                        @update:model-value="val => checkOtros(val, 'sumativa', 'evidencias')"
-                        label="Evidencias"
-                        outlined
-                        dense
-                        multiple
-                        use-chips
-                        emit-value
-                        map-options
-                      />
+                        @update:model-value="val => checkOtros(val, 'sumativa', 'instrumentos')" label="Instrumentos"
+                        outlined dense multiple use-chips emit-value map-options />
+                      <q-select v-model="formTema.evaluacion.sumativa.evidencias" :options="optsEvalSumativaEvidencias"
+                        @update:model-value="val => checkOtros(val, 'sumativa', 'evidencias')" label="Evidencias"
+                        outlined dense multiple use-chips emit-value map-options />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -591,15 +547,22 @@
 
               <div class="q-mb-lg">
                 <div class="row items-center justify-between q-mb-xs">
-                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta sección</span>
-                  <span class="text-caption text-weight-bold" :class="progresoSecuencia >= 100 ? 'text-green' : 'text-orange'">{{ progresoSecuencia }}%</span>
+                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">Progreso de esta
+                    sección</span>
+                  <span class="text-caption text-weight-bold"
+                    :class="progresoSecuencia >= 100 ? 'text-green' : 'text-orange'">{{
+                    progresoSecuencia }}%</span>
                 </div>
-                <q-linear-progress :value="progresoSecuencia / 100" :color="progresoSecuencia >= 100 ? 'green' : 'orange'" rounded size="8px" />
+                <q-linear-progress :value="progresoSecuencia / 100"
+                  :color="progresoSecuencia >= 100 ? 'green' : 'orange'" rounded size="8px" />
               </div>
 
               <div class="row items-center justify-between q-mb-lg">
-                <span class="text-h6 text-weight-bold"><q-icon name="timeline" color="primary" class="q-mr-sm" />Secuencia Didáctica</span>
-                <q-btn unelevated color="primary" icon="add" label="Agregar Momento" size="sm" no-caps @click="abrirDialogSecuencia()" />
+                <span class="text-h6 text-weight-bold"><q-icon name="timeline" color="primary"
+                    class="q-mr-sm" />Secuencia
+                  Didáctica</span>
+                <q-btn unelevated color="primary" icon="add" label="Agregar Momento" size="sm" no-caps
+                  @click="abrirDialogSecuencia()" />
               </div>
 
               <div v-if="!formTema.secuencia_didactica?.length" class="text-center q-pa-xl bg-grey-1 rounded-borders">
@@ -609,34 +572,46 @@
               </div>
 
               <div v-else class="q-gutter-md">
-                <q-card v-for="(momento, idx) in formTema.secuencia_didactica" :key="momento.id" flat bordered class="momento-card">
+                <q-card v-for="(momento, idx) in formTema.secuencia_didactica" :key="momento.id" flat bordered
+                  class="momento-card">
                   <q-card-section horizontal :class="getMomentoClass(momento.momento)">
                     <q-card-section class="col-auto flex flex-center" style="min-width: 250px; max-width: 250px;">
                       <div class="text-center full-width q-px-sm">
                         <q-icon :name="getMomentoIcon(momento.momento)" size="32px" />
-                        <div class="text-weight-bold q-mt-xs" :class="momento.momento.length > 30 ? 'text-caption' : 'text-subtitle1'" style="line-height: 1.2;">{{ momento.momento }}</div>
-                        <q-chip clickable ripple :color="getMomentoColor(momento.momento)" text-color="white" dense size="sm" class="q-mt-sm">
+                        <div class="text-weight-bold q-mt-xs"
+                          :class="momento.momento.length > 30 ? 'text-caption' : 'text-subtitle1'"
+                          style="line-height: 1.2;">{{
+                          momento.momento }}</div>
+                        <q-chip clickable ripple :color="getMomentoColor(momento.momento)" text-color="white" dense
+                          size="sm" class="q-mt-sm">
                           <q-icon name="schedule" size="10px" class="q-mr-xs" />
                           {{ momento.duracion }} min
                           <q-icon name="edit" size="10px" class="q-ml-xs" style="opacity: 0.7;" />
 
                           <q-tooltip>Clic para cambiar duración</q-tooltip>
-                          <q-popup-edit v-model.number="momento.duracion" auto-save v-slot="scope" anchor="top middle" self="bottom middle">
-                            <q-input v-model.number="scope.value" dense autofocus borderless type="number" style="width: 60px" @keyup.enter="scope.set" />
+                          <q-popup-edit v-model.number="momento.duracion" auto-save v-slot="scope" anchor="top middle"
+                            self="bottom middle">
+                            <q-input v-model.number="scope.value" dense autofocus borderless type="number"
+                              style="width: 60px" @keyup.enter="scope.set" />
                           </q-popup-edit>
                         </q-chip>
                       </div>
                     </q-card-section>
                     <q-separator vertical />
                     <q-card-section class="col">
-                      <q-input v-model="momento.actividad" type="textarea" rows="3" borderless placeholder="Actividades..." />
+                      <q-input v-model="momento.actividad" type="textarea" rows="3" borderless
+                        placeholder="Actividades..." />
                     </q-card-section>
                     <q-card-section class="col-auto flex items-start">
                       <div class="column q-gutter-xs">
-                        <q-btn flat round dense icon="edit" size="sm" color="orange" @click="abrirDialogSecuencia(momento)" />
-                        <q-btn flat round dense icon="delete" size="sm" color="red" @click="eliminarSecuencia(momento)" />
-                        <q-btn v-if="idx > 0" flat round dense icon="arrow_upward" size="sm" color="grey" @click="moverSecuencia(idx, -1)" />
-                        <q-btn v-if="idx < formTema.secuencia_didactica.length - 1" flat round dense icon="arrow_downward" size="sm" color="grey" @click="moverSecuencia(idx, 1)" />
+                        <q-btn flat round dense icon="edit" size="sm" color="orange"
+                          @click="abrirDialogSecuencia(momento)" />
+                        <q-btn flat round dense icon="delete" size="sm" color="red"
+                          @click="eliminarSecuencia(momento)" />
+                        <q-btn v-if="idx > 0" flat round dense icon="arrow_upward" size="sm" color="grey"
+                          @click="moverSecuencia(idx, -1)" />
+                        <q-btn v-if="idx < formTema.secuencia_didactica.length - 1" flat round dense
+                          icon="arrow_downward" size="sm" color="grey" @click="moverSecuencia(idx, 1)" />
                       </div>
                     </q-card-section>
                   </q-card-section>
@@ -661,7 +636,8 @@
           <div class="dialog-header-title"><q-icon name="flag" size="28px" />Nuevo Logro Esperado</div>
         </div>
         <q-card-section class="q-pt-lg">
-          <q-input v-model="nuevoLogro" outlined type="textarea" rows="3" label="Descripción del Logro" placeholder="El estudiante..." hint="Qué se espera que logre el estudiante" />
+          <q-input v-model="nuevoLogro" outlined type="textarea" rows="3" label="Descripción del Logro"
+            placeholder="El estudiante..." hint="Qué se espera que logre el estudiante" />
         </q-card-section>
         <div class="dialog-actions">
           <q-btn flat label="Cancelar" color="grey" @click="dialogLogro = false; nuevoLogro = ''" no-caps />
@@ -674,10 +650,12 @@
     <q-dialog v-model="dialogIndicador" persistent>
       <q-card style="width: 100%; max-width: 500px; border-radius: 16px;">
         <div class="dialog-header" style="background: linear-gradient(135deg, #1976d2, #42a5f5);">
-          <div class="dialog-header-title"><q-icon name="check_circle" size="28px" />Nuevo Indicador para {{ logroSeleccionado?.codigo }}</div>
+          <div class="dialog-header-title"><q-icon name="check_circle" size="28px" />Nuevo Indicador para {{
+            logroSeleccionado?.codigo }}</div>
         </div>
         <q-card-section class="q-pt-lg">
-          <q-input v-model="nuevoIndicador" outlined type="textarea" rows="3" label="Descripción del Indicador" placeholder="El estudiante demuestra el logro cuando..." hint="Cómo se evidencia que se alcanzó el logro" />
+          <q-input v-model="nuevoIndicador" outlined type="textarea" rows="3" label="Descripción del Indicador"
+            placeholder="El estudiante demuestra el logro cuando..." hint="Cómo se evidencia que se alcanzó el logro" />
         </q-card-section>
         <div class="dialog-actions">
           <q-btn flat label="Cancelar" color="grey" @click="dialogIndicador = false; nuevoIndicador = ''" no-caps />
@@ -690,11 +668,15 @@
     <q-dialog v-model="dialogSecuencia" persistent>
       <q-card style="width: 550px; max-width: 95vw; border-radius: 16px;">
         <div class="dialog-header">
-          <div class="dialog-header-title"><q-icon name="timeline" size="28px" />{{ editandoSecuencia ? 'Editar' : 'Nuevo' }} Momento</div>
+          <div class="dialog-header-title"><q-icon name="timeline" size="28px" />{{ editandoSecuencia ? 'Editar' :
+            'Nuevo'
+            }} Momento</div>
         </div>
         <q-card-section class="q-pt-lg q-gutter-md">
-          <q-select v-model="formSecuencia.momento" outlined dense label="Momento" :options="opcionesMomento" emit-value map-options />
-          <q-input v-model.number="formSecuencia.duracion" outlined dense type="number" label="Duración (min)" min="1" />
+          <q-select v-model="formSecuencia.momento" outlined dense label="Momento" :options="opcionesMomento" emit-value
+            map-options />
+          <q-input v-model.number="formSecuencia.duracion" outlined dense type="number" label="Duración (min)"
+            min="1" />
           <q-input v-model="formSecuencia.actividad" outlined type="textarea" rows="4" label="Actividades" />
         </q-card-section>
         <div class="dialog-actions">
@@ -711,7 +693,8 @@
           <div class="dialog-header-title"><q-icon name="edit_note" size="28px" />Especificar Otra Opción</div>
         </div>
         <q-card-section class="q-pt-lg">
-          <q-input v-model="textoOtros" outlined label="Descripción" placeholder="Escribe aquí el valor personalizado..." autofocus @keyup.enter="guardarOtros" />
+          <q-input v-model="textoOtros" outlined label="Descripción"
+            placeholder="Escribe aquí el valor personalizado..." autofocus @keyup.enter="guardarOtros" />
         </q-card-section>
         <div class="dialog-actions">
           <q-btn flat label="Cancelar" color="grey" @click="cancelarOtros" no-caps />
@@ -765,7 +748,7 @@ const puedeEditarCompartido = computed(() => {
   // Cocha Only (Sede ID 1)
   // Directores y Docentes de Cocha pueden editar
   if (user.sede_id === 1) {
-      return ['DIRECTOR_CARRERA', 'DIRECTOR CARRERA', 'DOCENTE'].includes(user.rol)
+    return ['DIRECTOR_CARRERA', 'DIRECTOR CARRERA', 'DOCENTE'].includes(user.rol)
   }
 
   return false
@@ -1070,7 +1053,7 @@ watchDebounced(
   async () => {
     if (!dataLoaded) return // No guardar durante la carga inicial
     if (!asignatura.value || !unidad.value || !tema.value) return
-    
+
     saveStatus.value = 'saving'
     try {
       await store.updateTema(tema.value.id, formTema.value)
@@ -1091,7 +1074,14 @@ async function cargarDatos() {
   const aId = parseInt(route.params.id)
   const uId = parseInt(route.params.unidadId)
   const tId = parseInt(route.params.temaId)
-  asignatura.value = await store.getAsignaturaById(aId)
+
+  // Capturar docente_id si existe (para vista de Director/Admin)
+  const params = {}
+  if (route.query.docente_id) {
+    params.docente_id = route.query.docente_id
+  }
+
+  asignatura.value = await store.getAsignaturaById(aId, params)
   if (asignatura.value) {
     unidad.value = asignatura.value.unidades.find(u => u.id === uId)
     if (unidad.value) {
@@ -1104,8 +1094,8 @@ async function cargarDatos() {
             codigo: l.codigo || `LE.${index + 1}`, // Generate UI code if missing
             // Map indicadores with codes too
             indicadores: (l.indicadores || []).map((ind, iIdx) => ({
-                ...ind,
-                codigo: ind.codigo || `IND.${index + 1}.${iIdx + 1}`
+              ...ind,
+              codigo: ind.codigo || `IND.${index + 1}.${iIdx + 1}`
             })),
             parcial: l.periodo === '2do Parcial' ? 2 : (parseInt(l.periodo) || 1) // Map backend period to frontend partial ID
           })),
@@ -1134,19 +1124,19 @@ async function cargarDatos() {
           secuencia_didactica: tema.value.planificacion_personal?.secuencia_didactica
             ? JSON.parse(JSON.stringify(tema.value.planificacion_personal.secuencia_didactica))
             : (tema.value.secuencia_didactica && tema.value.secuencia_didactica.length > 0
-                ? JSON.parse(JSON.stringify(tema.value.secuencia_didactica))
-                : []),
+              ? JSON.parse(JSON.stringify(tema.value.secuencia_didactica))
+              : []),
 
           referencias_bibliograficas: tema.value.referencias_bibliograficas
-             ? JSON.parse(JSON.stringify(tema.value.referencias_bibliograficas))
-             : (tema.value.bibliografias ? tema.value.bibliografias.map(b => ({
-                 bibliografia_id: b.id,
-                 pagina_desde: b.pivot?.pagina_desde || '',
-                 pagina_hasta: b.pivot?.pagina_hasta || '',
-                 // Optional: keep title/author for display if needed
-                 titulo: b.titulo,
-                 autor: b.autor
-             })) : [])
+            ? JSON.parse(JSON.stringify(tema.value.referencias_bibliograficas))
+            : (tema.value.bibliografias ? tema.value.bibliografias.map(b => ({
+              bibliografia_id: b.id,
+              pagina_desde: b.pivot?.pagina_desde || '',
+              pagina_hasta: b.pivot?.pagina_hasta || '',
+              // Optional: keep title/author for display if needed
+              titulo: b.titulo,
+              autor: b.autor
+            })) : [])
         }
 
         // Pre-populate sequence if empty
@@ -1166,7 +1156,7 @@ async function cargarDatos() {
           }))
         }
       }
-}
+    }
   }
   // Marcar que los datos fueron cargados (habilitar auto-guardado)
   dataLoaded = true

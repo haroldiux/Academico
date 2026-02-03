@@ -40,7 +40,8 @@
         <!-- Herramientas Dropdown -->
         <q-btn-dropdown outline color="indigo" icon="settings" label="Gestión" no-caps>
           <q-list>
-            <q-item clickable v-close-popup :to="`/documentacion/${route.params.id}/planificacion`">
+            <q-item clickable v-close-popup
+              :to="{ path: `/documentacion/${route.params.id}/planificacion`, query: route.query }">
               <q-item-section avatar><q-icon name="calendar_month" color="indigo" /></q-item-section>
               <q-item-section>Planificación Semestral</q-item-section>
             </q-item>
@@ -72,12 +73,9 @@
     <!-- Auto-save Status Indicator (Flotante estilo Google Docs) -->
     <transition name="fade">
       <div v-if="saveStatus !== 'idle'" class="auto-save-indicator">
-        <q-chip
-          :color="saveStatus === 'saving' ? 'blue-1' : saveStatus === 'saved' ? 'green-1' : 'red-1'"
-          :text-color="saveStatus === 'saving' ? 'blue-8' : saveStatus === 'saved' ? 'green-8' : 'red-8'"
-          size="sm"
-          dense
-        >
+        <q-chip :color="saveStatus === 'saving' ? 'blue-1' : saveStatus === 'saved' ? 'green-1' : 'red-1'"
+          :text-color="saveStatus === 'saving' ? 'blue-8' : saveStatus === 'saved' ? 'green-8' : 'red-8'" size="sm"
+          dense>
           <q-spinner-dots v-if="saveStatus === 'saving'" size="14px" class="q-mr-xs" />
           <q-icon v-else-if="saveStatus === 'saved'" name="cloud_done" size="16px" class="q-mr-xs" />
           <q-icon v-else-if="saveStatus === 'error'" name="cloud_off" size="16px" class="q-mr-xs" />
@@ -584,7 +582,8 @@
                       {{ tema.contenido_items?.length || (tema.descripcion ? 1 : 0) }} puntos de contenido •
                       {{ countLogros(tema) }} logros •
                       {{ countIndicadores(tema) }} indicadores
-                      <q-icon v-if="!tema.descripcion && !tema.contenido_items?.length" name="warning" color="orange" size="xs" class="q-ml-sm">
+                      <q-icon v-if="!tema.descripcion && !tema.contenido_items?.length" name="warning" color="orange"
+                        size="xs" class="q-ml-sm">
                         <q-tooltip>Falta Contenido</q-tooltip>
                       </q-icon>
                     </q-item-label>
@@ -821,9 +820,9 @@
 
         <q-card-section>
           <q-form @submit="guardarTema" class="q-gutter-md">
-            <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus 
+            <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus
               :rules="[val => !!val || 'El título es obligatorio']" />
-            
+
             <!-- Lista de Contenidos -->
             <div class="contenido-list">
               <div class="text-subtitle2 q-mb-sm row items-center">
@@ -834,37 +833,20 @@
                   {{ formTema.contenido_items?.length || 0 }} items
                 </q-chip>
               </div>
-              
+
               <div class="text-caption text-grey-7 q-mb-md">
                 Agregue los puntos clave o subtemas que se abordarán en este tema.
               </div>
 
               <!-- Lista de items existentes -->
               <div v-if="formTema.contenido_items?.length" class="q-gutter-sm q-mb-md">
-                <div v-for="(item, index) in formTema.contenido_items" :key="index" 
-                     class="row items-start q-gutter-sm">
+                <div v-for="(item, index) in formTema.contenido_items" :key="index" class="row items-start q-gutter-sm">
                   <q-badge color="primary" :label="index + 1" class="q-mt-sm" />
-                  <q-input 
-                    v-model="formTema.contenido_items[index]" 
-                    outlined 
-                    dense 
-                    class="col"
-                    type="textarea"
-                    rows="2"
-                    autogrow
-                    placeholder="Ej: Principios básicos, definiciones..."
-                    :rules="[val => !!val?.trim() || 'El contenido no puede estar vacío']"
-                  />
-                  <q-btn 
-                    flat 
-                    round 
-                    dense 
-                    icon="delete" 
-                    color="red" 
-                    size="sm"
-                    class="q-mt-sm"
-                    @click="eliminarContenidoItem(index)"
-                  >
+                  <q-input v-model="formTema.contenido_items[index]" outlined dense class="col" type="textarea" rows="2"
+                    autogrow placeholder="Ej: Principios básicos, definiciones..."
+                    :rules="[val => !!val?.trim() || 'El contenido no puede estar vacío']" />
+                  <q-btn flat round dense icon="delete" color="red" size="sm" class="q-mt-sm"
+                    @click="eliminarContenidoItem(index)">
                     <q-tooltip>Eliminar item</q-tooltip>
                   </q-btn>
                 </div>
@@ -876,22 +858,15 @@
                   No hay contenidos agregados. Haga clic en "Agregar Punto" para comenzar.
                 </div>
               </div>
-              
+
               <!-- Botón para agregar nuevo item -->
-              <q-btn 
-                outline 
-                color="primary" 
-                icon="add" 
-                label="Agregar Punto" 
-                size="sm"
-                @click="agregarContenidoItem"
-                no-caps
-              />
+              <q-btn outline color="primary" icon="add" label="Agregar Punto" size="sm" @click="agregarContenidoItem"
+                no-caps />
             </div>
 
             <div class="row justify-end q-gutter-sm q-mt-md">
               <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-              <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps 
+              <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps
                 :disable="!formTema.contenido_items?.length" />
             </div>
           </q-form>
@@ -961,12 +936,12 @@ const formUnidad = ref({ id: null, titulo: '', numero: 1, horas: 0 })
 const dialogTema = ref(false)
 const editandoTema = ref(false)
 const unidadSeleccionada = ref(null)
-const formTema = ref({ 
-  id: null, 
-  titulo: '', 
+const formTema = ref({
+  id: null,
+  titulo: '',
   contenido_items: [],  // Changed from descripcion to array
-  horas_teoricas: 0, 
-  horas_practicas: 0 
+  horas_teoricas: 0,
+  horas_practicas: 0
 })
 
 // Unidades
@@ -1027,26 +1002,26 @@ function abrirDialogoTema(unidad, tema = null) {
         .split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0)
-      
-      formTema.value = { 
-        ...tema, 
-        contenido_items: items.length > 0 ? items : [''] 
+
+      formTema.value = {
+        ...tema,
+        contenido_items: items.length > 0 ? items : ['']
       }
     } else {
-      formTema.value = { 
+      formTema.value = {
         ...tema,
-        contenido_items: tema.contenido_items && tema.contenido_items.length > 0 
-          ? [...tema.contenido_items] 
+        contenido_items: tema.contenido_items && tema.contenido_items.length > 0
+          ? [...tema.contenido_items]
           : ['']  // Al menos un item vacío
       }
     }
   } else {
-    formTema.value = { 
-      id: null, 
-      titulo: '', 
+    formTema.value = {
+      id: null,
+      titulo: '',
       contenido_items: [''],  // Iniciar con un item vacío
-      horas_teoricas: 0, 
-      horas_practicas: 0 
+      horas_teoricas: 0,
+      horas_practicas: 0
     }
   }
   dialogTema.value = true
@@ -1537,7 +1512,7 @@ function cargarFormDatos() {
   formDatos.value.horas_detalle = detalle
 
   datosOriginales.value = JSON.parse(JSON.stringify(formDatos.value))
-  
+
   // Cargar datos del programa
   // Cargar metodología estructurada
   const met = asignatura.value.metodologia_general || {}
@@ -1592,10 +1567,10 @@ watchDebounced(
   async (newValue) => {
     if (!dataLoaded) return // No guardar durante la carga inicial
     if (!asignatura.value?.id) return
-    
+
     // Comparar con el último snapshot guardado
     if (newValue === lastSavedSnapshot) return // Sin cambios reales
-    
+
     saveStatus.value = 'saving'
     try {
       await guardadoInterno()
@@ -1697,7 +1672,10 @@ function guardarElementoCompetencia(unidad) {
 }
 
 function irATema(unidad, tema) {
-  router.push(`/documentacion/${asignatura.value.id}/unidad/${unidad.id}/tema/${tema.id}`)
+  router.push({
+    path: `/documentacion/${asignatura.value.id}/unidad/${unidad.id}/tema/${tema.id}`,
+    query: route.query // Sincronía: Preservar docente_id para que el Director vea los datos correctos
+  })
 }
 
 // Bibliografía

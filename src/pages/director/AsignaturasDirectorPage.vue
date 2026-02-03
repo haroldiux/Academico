@@ -148,7 +148,7 @@
                 <template v-slot:body-cell-acciones="props">
                   <q-td :props="props">
                     <q-btn flat round dense icon="visibility" color="primary" size="sm"
-                      :to="`/documentacion/${props.row.id}${(props.row.docentes_data && props.row.docentes_data.length === 1) ? '?docente_id=' + props.row.docentes_data[0].id : ''}`">
+                      @click="irADocumentacion(props.row)">
                       <q-tooltip>Ver Documentación</q-tooltip>
                     </q-btn>
                     <q-btn flat round dense icon="picture_as_pdf" color="secondary" size="sm"
@@ -167,8 +167,7 @@
       <q-card style="min-width: 350px">
         <q-card-section>
           <div class="text-h6">Seleccionar Docente</div>
-          <div class="text-caption">Esta asignatura tiene múltiples docentes. Seleccione uno para generar la carpeta.
-          </div>
+          <div class="text-caption">Esta asignatura tiene múltiples docentes.</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
@@ -199,6 +198,7 @@ import { useQuasar } from 'quasar'
 import asignaturaService from 'src/services/asignaturaService'
 import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useCarrerasStore } from 'src/stores/carreras'
@@ -207,11 +207,36 @@ const authStore = useAuthStore()
 const asignaturasStore = useAsignaturasStore()
 const carrerasStore = useCarrerasStore()
 const $q = useQuasar()
+const router = useRouter()
 
 // State for interaction
 const showDocenteDialog = ref(false)
 const docentesDialogOptions = ref([])
 const asignaturaSeleccionada = ref(null)
+const dialogMode = ref('pdf') // 'pdf' | 'nav'
+
+// Función para ir a documentación (con selección de docente si es materia común)
+function irADocumentacion(row) {
+  const docentes = row.docentes_data || []
+
+  if (docentes.length === 0) {
+    // Sin docentes, ir directamente
+    router.push(`/documentacion/${row.id}`)
+    return
+  }
+
+  if (docentes.length === 1) {
+    // Un solo docente, ir con su ID
+    router.push({ path: `/documentacion/${row.id}`, query: { docente_id: docentes[0].id } })
+    return
+  }
+
+  // Múltiples docentes (Materia Común): Mostrar diálogo de selección
+  dialogMode.value = 'nav'
+  asignaturaSeleccionada.value = row
+  docentesDialogOptions.value = docentes
+  showDocenteDialog.value = true
+}
 
 // Action function
 async function generarCarpeta(row) {
@@ -236,6 +261,7 @@ async function generarCarpeta(row) {
   }
 
   // Multiple docents: Show dialog
+  dialogMode.value = 'pdf'
   asignaturaSeleccionada.value = row
   docentesDialogOptions.value = docentes
   showDocenteDialog.value = true
@@ -243,10 +269,20 @@ async function generarCarpeta(row) {
 
 async function seleccionarDocente(docenteId) {
   showDocenteDialog.value = false
-  if (asignaturaSeleccionada.value) {
+  if (!asignaturaSeleccionada.value) return
+
+  if (dialogMode.value === 'nav') {
+    // Navegar a documentación con el docente seleccionado
+    router.push({
+      path: `/documentacion/${asignaturaSeleccionada.value.id}`,
+      query: { docente_id: docenteId }
+    })
+  } else {
+    // Generar PDF
     await processGenerarPDF(asignaturaSeleccionada.value, docenteId)
-    asignaturaSeleccionada.value = null
   }
+
+  asignaturaSeleccionada.value = null
 }
 
 async function processGenerarPDF(rowSummary, docenteId) {

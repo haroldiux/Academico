@@ -509,17 +509,25 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
   }
 
   // Getter para buscar asignatura por ID (usa asignaturaActual o busca en lista)
-  async function getAsignaturaById(id) {
+  async function getAsignaturaById(id, params = {}) {
+    // Si hay parámetros específicos (ej: docente_id), forzar recarga para asegurar contexto correcto
+    if (Object.keys(params).length > 0) {
+        await setAsignaturaActual(id, params)
+        return asignaturaActual.value
+    }
+
     // Primero revisar si ya la tenemos cargada
     if (asignaturaActual.value && asignaturaActual.value.id == id) {
       return asignaturaActual.value
     }
-    // Buscar en lista local
+    // Buscar en lista local (Solo si no necesitamos data detallada/personalizada)
     const found = asignaturas.value.find(a => a.id == id)
     if (found) {
+      // WARNING: Found local puede ser incompleto. Mejor llamar a API si se necesita detalle.
+      // Pero por compatibilidad dejamos esto, asumiendo que quien llama sin params acepta data parcial.
       return found
     }
-    await setAsignaturaActual(id)
+    await setAsignaturaActual(id, params)
     return asignaturaActual.value
   }
 

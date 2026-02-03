@@ -160,7 +160,7 @@
                       <div class="horario-dia"><q-icon name="event" class="q-mr-xs" />{{ horario.dia }}</div>
                       <div class="horario-hora">{{ horario.horaInicio }} - {{ horario.horaFin }}</div>
                       <div class="horario-aula">{{ horario.aula }} <span v-if="horario.grupo">(Grupo {{ horario.grupo
-                          }})</span></div>
+                      }})</span></div>
                       <q-btn v-if="!horario.desdeAPI" flat round dense icon="close" size="xs" color="red"
                         class="delete-btn" @click="eliminarHorario(horario)" />
                       <q-icon v-else name="lock" size="14px" color="blue" class="lock-icon">
@@ -332,24 +332,13 @@
                         <td>
                           <div v-if="sesion.semana <= 17">
                             <!-- Select múltiple de contenido_items -->
-                            <q-select
-                              v-model="sesion.contenido_items_seleccionados"
-                              :options="getContenidoItemsOptions(sesion)"
-                              multiple
-                              use-chips
-                              use-input
-                              emit-value
-                              map-options
-                              dense
-                              outlined
-                              class="cell-input"
-                              label="Contenido"
-                              option-value="value"
+                            <q-select v-model="sesion.contenido_items_seleccionados"
+                              :options="getContenidoItemsOptions(sesion)" multiple use-chips use-input emit-value
+                              map-options dense outlined class="cell-input" label="Contenido" option-value="value"
                               option-label="label"
                               :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0"
                               :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0 ? 'Seleccione tema(s) primero' : ''"
-                              @update:model-value="marcarModificado(sesion)"
-                            />
+                              @update:model-value="marcarModificado(sesion)" />
                           </div>
                           <div v-else class="text-caption text-grey text-center">--</div>
                         </td>
@@ -440,7 +429,7 @@
                   <tr v-for="sesion in unidad.sesiones" :key="sesion.id">
                     <td class="text-center">{{ sesion.semana }}<br><small>{{ sesion.semanaFechas }}</small></td>
                     <td class="text-center">SESIÓN {{ sesion.numeroGlobal }}<br><small>{{ sesion.tipoClase || 'Clase'
-                    }}</small>
+                        }}</small>
                     </td>
                     <td class="cell-fechas bg-grey-1">
                       <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
@@ -656,8 +645,13 @@ const examenesRol = ref([])
 
 onMounted(async () => {
   const id = parseInt(route.params.id)
+
+  // Extract params
+  const params = {}
+  if (route.query.docente_id) params.docente_id = route.query.docente_id
+
   // IMPORTANTE: Esperar a que se cargue la asignatura antes de buscar horarios
-  await asignaturasStore.setAsignaturaActual(id)
+  await asignaturasStore.setAsignaturaActual(id, params)
 
   // Auto-seleccionar primer grupo si existe (o la opción GENERAL por defecto)
   if (gruposOptions.value.length > 0) {
@@ -689,9 +683,10 @@ async function cargarPlanificacion() {
   }
 
   try {
-    const response = await planificacionSemestralService.getPlanificacion(route.params.id, {
-      grupo_id: targetGrupoId
-    })
+    const params = { grupo_id: targetGrupoId }
+    if (route.query.docente_id) params.docente_id = route.query.docente_id
+
+    const response = await planificacionSemestralService.getPlanificacion(route.params.id, params)
 
     // Si viene planificacion, mapearla
     if (response.data.planificacion && response.data.planificacion.length > 0) {
@@ -1139,7 +1134,7 @@ function calcularPropuestaPlanificacion() {
         actitudinal: Array.isArray(temaOriginal?.contenido_actitudinal) ? temaOriginal.contenido_actitudinal.join('\n') : (temaOriginal?.contenido_actitudinal || ''),
         criteriosDesempeno: '',
         criteriosSeleccionados: [],
-        instrumentosEvaluacion: '', 
+        instrumentosEvaluacion: '',
         instrumentosSeleccionados: [],
         contenido_items_seleccionados: [] // Inicializar array vacío para items seleccionables
       })
@@ -1228,7 +1223,7 @@ function getTemasSeleccionados(sesion) {
   if (!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0) {
     return []
   }
-  
+
   const temas = []
   // Buscar los temas completos en las unidades de la DOCUMENTACIÓN (asignatura)
   for (const unidad of asignatura.value?.unidades || []) {
@@ -1239,7 +1234,7 @@ function getTemasSeleccionados(sesion) {
       }
     }
   }
-  
+
   return temas
 }
 
@@ -1247,7 +1242,7 @@ function getTemasSeleccionados(sesion) {
 function getContenidoItemsOptions(sesion) {
   const temas = getTemasSeleccionados(sesion)
   const options = []
-  
+
   for (const tema of temas) {
     if (tema.contenido_items && tema.contenido_items.length > 0) {
       tema.contenido_items.forEach((item, index) => {
@@ -1260,7 +1255,7 @@ function getContenidoItemsOptions(sesion) {
       })
     }
   }
-  
+
   return options
 }
 
