@@ -160,7 +160,7 @@
                       <div class="horario-dia"><q-icon name="event" class="q-mr-xs" />{{ horario.dia }}</div>
                       <div class="horario-hora">{{ horario.horaInicio }} - {{ horario.horaFin }}</div>
                       <div class="horario-aula">{{ horario.aula }} <span v-if="horario.grupo">(Grupo {{ horario.grupo
-                      }})</span></div>
+                          }})</span></div>
                       <q-btn v-if="!horario.desdeAPI" flat round dense icon="close" size="xs" color="red"
                         class="delete-btn" @click="eliminarHorario(horario)" />
                       <q-icon v-else name="lock" size="14px" color="blue" class="lock-icon">
@@ -333,8 +333,8 @@
                           <div v-if="sesion.semana <= 17">
                             <!-- Select múltiple de contenido_items -->
                             <q-select v-model="sesion.contenido_items_seleccionados"
-                              :options="getContenidoItemsOptions(sesion)" multiple use-chips use-input emit-value
-                              map-options dense outlined class="cell-input" label="Contenido" option-value="value"
+                              :options="getContenidoItemsOptions(sesion)" multiple use-chips emit-value map-options
+                              dense outlined class="cell-input" label="Contenido" option-value="value"
                               option-label="label"
                               :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0"
                               :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0 ? 'Seleccione tema(s) primero' : ''"
@@ -429,7 +429,7 @@
                   <tr v-for="sesion in unidad.sesiones" :key="sesion.id">
                     <td class="text-center">{{ sesion.semana }}<br><small>{{ sesion.semanaFechas }}</small></td>
                     <td class="text-center">SESIÓN {{ sesion.numeroGlobal }}<br><small>{{ sesion.tipoClase || 'Clase'
-                        }}</small>
+                    }}</small>
                     </td>
                     <td class="cell-fechas bg-grey-1">
                       <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
@@ -928,6 +928,10 @@ const planificacion = computed(() => {
       sesiones: planificacionSesiones.value
         .filter(s => s.unidad_id === u.id)
         .sort((a, b) => a.numeroGlobal - b.numeroGlobal)
+        .map(s => ({
+          ...s,
+          contenido: resolveContenido(s)
+        }))
     }
   }).concat(planificacionSesiones.value.some(s => s.unidad_id === 'finales') ? [{
     id: 'finales',
@@ -940,6 +944,25 @@ const planificacion = computed(() => {
       .sort((a, b) => a.numeroGlobal - b.numeroGlobal)
   }] : [])
 })
+
+function resolveContenido(sesion) {
+  // Si no hay items seleccionados, retornar lo que haya en texto manual
+  if (!sesion.contenido_items_seleccionados || sesion.contenido_items_seleccionados.length === 0) {
+    return sesion.contenido || ''
+  }
+
+  // Obtener las opciones disponibles para esta sesión (basado en temas seleccionados)
+  const options = getContenidoItemsOptions(sesion)
+
+  // Mapear los valores seleccionados a sus etiquetas
+  const selectedLabels = sesion.contenido_items_seleccionados.map(val => {
+    const opt = options.find(o => o.value === val)
+    // Limpiar la etiqueta si tiene prefijos redundantes (opcional)
+    return opt ? opt.label.split(' - ').slice(1).join(' - ') : ''
+  }).filter(l => l)
+
+  return selectedLabels.join('\n')
+}
 
 // Lista global de todos los temas de todas las unidades
 const opcionesTemasGlobales = computed(() => {
@@ -1522,7 +1545,10 @@ function exportarPDF() {
           titulo: s.tema,
           resultados_aprendizaje: s.criteriosDesempeno, // Mapeo aproximado
           contenidos: {
-            conceptual: s.conceptual ? s.conceptual.split('\n') : [],
+            conceptual: [
+              ...(s.contenido ? s.contenido.split('\n') : []),
+              ...(s.conceptual ? s.conceptual.split('\n') : [])
+            ],
             procedimental: s.procedimental ? s.procedimental.split('\n') : [],
             actitudinal: s.actitudinal ? s.actitudinal.split('\n') : []
           },
