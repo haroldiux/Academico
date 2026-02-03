@@ -148,21 +148,30 @@ export const useAuthStore = defineStore('auth', () => {
         },
         carrera_id: user.director?.carrera_id || user.carrera_id || null,
         avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
-        materias_asignadas: user.docente?.asignaturas?.map(a => ({
-          id: a.id,
-          nombre: a.nombre,
-          codigo: a.codigo,
-          semestre: a.semestre,
-          // Map real progress from backend accessor
-          progreso: a.progreso || 0,
-          estadisticas: a.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
-          carreras: a.carreras?.map(c => c.nombre) || [],
-          pivot: a.pivot ? {
-            grupo: a.pivot.grupo,
-            aula: a.pivot.aula,
-            horario: a.pivot.horario
-          } : null
-        })) || [],
+        materias_asignadas: user.docente?.grupos?.map(g => {
+          const asig = g.asignatura || {}
+          // Format schedules: "LUN 08:00-10:00, MAR..."
+          const horariosFmt = g.horarios?.map(h =>
+            `${h.dia.substring(0,3)} ${h.hora_inicio?.substring(0,5)}-${h.hora_fin?.substring(0,5)}`
+          ).join(', ')
+
+          return {
+            id: asig.id || g.asignatura_id,
+            nombre: asig.nombre || 'Desconocida',
+            codigo: asig.codigo || '---',
+            semestre: asig.semestre || g.semestre,
+            progreso: asig.progreso || 0,
+            estadisticas: asig.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
+            carreras: asig.carreras?.map(c => c.nombre) || [],
+            pivot: {
+              grupo: g.nombre,
+              aula: g.aula_id,
+              horario: horariosFmt || 'Por definir',
+              turno: g.turno,
+              gestion: g.gestion
+            }
+          }
+        }) || [],
         // Flat list of all unique career names this teacher belongs to
         carreras: [...new Set(user.docente?.asignaturas?.flatMap(a => a.carreras?.map(c => c.nombre)) || [])],
         // Fix: Load groups from docente.grupos relation, fallback to legacy
@@ -259,20 +268,30 @@ export const useAuthStore = defineStore('auth', () => {
             sede: user.docente?.sede || null
         },
         avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
-        materias_asignadas: user.docente?.asignaturas?.map(a => ({
-          id: a.id,
-          nombre: a.nombre,
-          codigo: a.codigo,
-          semestre: a.semestre,
-          progreso: a.progreso || 0,
-          estadisticas: a.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
-          carreras: a.carreras?.map(c => c.nombre) || [],
-          pivot: a.pivot ? {
-            grupo: a.pivot.grupo,
-            aula: a.pivot.aula,
-            horario: a.pivot.horario
-          } : null
-        })) || [],
+        materias_asignadas: user.docente?.grupos?.map(g => {
+          const asig = g.asignatura || {}
+          // Format schedules
+          const horariosFmt = g.horarios?.map(h =>
+            `${h.dia.substring(0,3)} ${h.hora_inicio?.substring(0,5)}-${h.hora_fin?.substring(0,5)}`
+          ).join(', ')
+
+          return {
+            id: asig.id || g.asignatura_id,
+            nombre: asig.nombre || 'Desconocida',
+            codigo: asig.codigo || '---',
+            semestre: asig.semestre || g.semestre,
+            progreso: asig.progreso || 0,
+            estadisticas: asig.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
+            carreras: asig.carreras?.map(c => c.nombre) || [],
+            pivot: {
+              grupo: g.nombre,
+              aula: g.aula_id,
+              horario: horariosFmt || 'Por definir',
+              turno: g.turno,
+              gestion: g.gestion
+            }
+          }
+        }) || [],
         carreras: [...new Set(user.docente?.asignaturas?.flatMap(a => a.carreras?.map(c => c.nombre)) || [])],
         grupos: user.docente?.grupos || (user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || []),
         director: user.director ? {
