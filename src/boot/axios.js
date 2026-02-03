@@ -11,7 +11,10 @@ const api = axios.create({
   baseURL: process.env.DEV
     ? 'http://127.0.0.1:8000/api'
     : (typeof window !== 'undefined' && window.location.hostname.includes('planificacion.unitepc.edu.bo') ? '/api' : 'https://api.documentacion.xpertiaplus.com/api'),
-  withCredentials: true
+  withCredentials: true,
+  headers: {
+    'Accept': 'application/json'
+  }
 })
 
 export default boot(({ app }) => {
