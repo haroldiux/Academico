@@ -148,30 +148,59 @@ export const useAuthStore = defineStore('auth', () => {
         },
         carrera_id: user.director?.carrera_id || user.carrera_id || null,
         avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
-        materias_asignadas: user.docente?.grupos?.map(g => {
-          const asig = g.asignatura || {}
-          // Format schedules: "LUN 08:00-10:00, MAR..."
-          const horariosFmt = g.horarios?.map(h =>
-            `${h.dia.substring(0,3)} ${h.hora_inicio?.substring(0,5)}-${h.hora_fin?.substring(0,5)}`
-          ).join(', ')
+        materias_asignadas: (() => {
+          // Group grupos by asignatura_id to avoid duplicate cards
+          const gruposRaw = user.docente?.grupos || []
+          const grouped = {}
 
-          return {
-            id: asig.id || g.asignatura_id,
-            nombre: asig.nombre || 'Desconocida',
-            codigo: asig.codigo || '---',
-            semestre: asig.semestre || g.semestre,
-            progreso: asig.progreso || 0,
-            estadisticas: asig.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
-            carreras: asig.carreras?.map(c => c.nombre) || [],
-            pivot: {
-              grupo: g.nombre,
-              aula: g.aula_id,
-              horario: horariosFmt || 'Por definir',
+          for (const g of gruposRaw) {
+            const asig = g.asignatura || {}
+            const asigId = asig.id || g.asignatura_id
+            if (!asigId) continue
+
+            // Format this group's schedule
+            const horariosFmt = g.horarios?.map(h =>
+              `${h.dia?.substring(0,3) || '?'} ${h.hora_inicio?.substring(0,5) || ''}-${h.hora_fin?.substring(0,5) || ''}`
+            ).join(', ') || ''
+
+            if (!grouped[asigId]) {
+              grouped[asigId] = {
+                id: asigId,
+                nombre: asig.nombre || 'Desconocida',
+                codigo: asig.codigo || '---',
+                semestre: asig.semestre || g.semestre,
+                progreso: asig.progreso || 0,
+                estadisticas: asig.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
+                carreras: asig.carreras?.map(c => c.nombre) || [],
+                grupos: [], // All groups for this subject
+                pivot: {} // Legacy: first group's data
+              }
+            }
+
+            // Add this group to the list
+            grouped[asigId].grupos.push({
+              id: g.id,
+              nombre: g.nombre,
+              tipo: g.tipo,
               turno: g.turno,
-              gestion: g.gestion
+              gestion: g.gestion,
+              horario: horariosFmt
+            })
+
+            // Set pivot to first group's data (legacy compatibility)
+            if (!grouped[asigId].pivot.grupo) {
+              grouped[asigId].pivot = {
+                grupo: g.nombre,
+                aula: g.aula_id,
+                horario: horariosFmt || 'Por definir',
+                turno: g.turno,
+                gestion: g.gestion
+              }
             }
           }
-        }) || [],
+
+          return Object.values(grouped)
+        })(),
         // Flat list of all unique career names this teacher belongs to
         carreras: [...new Set(user.docente?.asignaturas?.flatMap(a => a.carreras?.map(c => c.nombre)) || [])],
         // Fix: Load groups from docente.grupos relation, fallback to legacy
@@ -268,30 +297,57 @@ export const useAuthStore = defineStore('auth', () => {
             sede: user.docente?.sede || null
         },
         avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
-        materias_asignadas: user.docente?.grupos?.map(g => {
-          const asig = g.asignatura || {}
-          // Format schedules
-          const horariosFmt = g.horarios?.map(h =>
-            `${h.dia.substring(0,3)} ${h.hora_inicio?.substring(0,5)}-${h.hora_fin?.substring(0,5)}`
-          ).join(', ')
+        materias_asignadas: (() => {
+          // Group grupos by asignatura_id to avoid duplicate cards
+          const gruposRaw = user.docente?.grupos || []
+          const grouped = {}
 
-          return {
-            id: asig.id || g.asignatura_id,
-            nombre: asig.nombre || 'Desconocida',
-            codigo: asig.codigo || '---',
-            semestre: asig.semestre || g.semestre,
-            progreso: asig.progreso || 0,
-            estadisticas: asig.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
-            carreras: asig.carreras?.map(c => c.nombre) || [],
-            pivot: {
-              grupo: g.nombre,
-              aula: g.aula_id,
-              horario: horariosFmt || 'Por definir',
+          for (const g of gruposRaw) {
+            const asig = g.asignatura || {}
+            const asigId = asig.id || g.asignatura_id
+            if (!asigId) continue
+
+            // Format this group's schedule
+            const horariosFmt = g.horarios?.map(h =>
+              `${h.dia?.substring(0,3) || '?'} ${h.hora_inicio?.substring(0,5) || ''}-${h.hora_fin?.substring(0,5) || ''}`
+            ).join(', ') || ''
+
+            if (!grouped[asigId]) {
+              grouped[asigId] = {
+                id: asigId,
+                nombre: asig.nombre || 'Desconocida',
+                codigo: asig.codigo || '---',
+                semestre: asig.semestre || g.semestre,
+                progreso: asig.progreso || 0,
+                estadisticas: asig.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
+                carreras: asig.carreras?.map(c => c.nombre) || [],
+                grupos: [],
+                pivot: {}
+              }
+            }
+
+            grouped[asigId].grupos.push({
+              id: g.id,
+              nombre: g.nombre,
+              tipo: g.tipo,
               turno: g.turno,
-              gestion: g.gestion
+              gestion: g.gestion,
+              horario: horariosFmt
+            })
+
+            if (!grouped[asigId].pivot.grupo) {
+              grouped[asigId].pivot = {
+                grupo: g.nombre,
+                aula: g.aula_id,
+                horario: horariosFmt || 'Por definir',
+                turno: g.turno,
+                gestion: g.gestion
+              }
             }
           }
-        }) || [],
+
+          return Object.values(grouped)
+        })(),
         carreras: [...new Set(user.docente?.asignaturas?.flatMap(a => a.carreras?.map(c => c.nombre)) || [])],
         grupos: user.docente?.grupos || (user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || []),
         director: user.director ? {
