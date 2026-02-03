@@ -1169,13 +1169,13 @@ async function toggleEstadoCarpeta() {
 }
 
 const nombreDocenteCarpeta = computed(() => {
-  if (!asignatura.value || !asignatura.value.docentes) return null
+  if (!asignatura.value || !asignatura.value.docentes || asignatura.value.docentes.length === 0) return null
 
   // 1. Si hay un ID en la URL (seleccionado previamente)
   const docenteIdParam = route.query.docente_id
   if (docenteIdParam) {
     const docente = asignatura.value.docentes.find(d => d.id == docenteIdParam)
-    return docente ? docente.nombre_completo : null
+    if (docente) return docente.nombre_completo
   }
 
   // 2. Si solo hay un docente asignado
@@ -1189,13 +1189,14 @@ const nombreDocenteCarpeta = computed(() => {
     if (me) return me.nombre_completo
   }
 
-  // 4. Si hay varios, intentar filtrar por sede del usuario actual
+  // 4. Si hay varios, intentar filtrar por sede del usuario actual (show first match)
   if (authStore.usuarioActual?.sede_id) {
     const matches = asignatura.value.docentes.filter(d => d.sede_id == authStore.usuarioActual.sede_id)
-    if (matches.length === 1) return matches[0].nombre_completo
+    if (matches.length > 0) return matches[0].nombre_completo
   }
 
-  return null
+  // 5. Fallback: mostrar el primer docente disponible
+  return asignatura.value.docentes[0].nombre_completo
 })
 
 const nombreSede = computed(() => {
