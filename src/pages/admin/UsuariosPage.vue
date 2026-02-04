@@ -708,8 +708,11 @@ function editarUsuario(usuario) {
   usuarioSeleccionado.value = usuario
 
   // Transformar carrera string a array si es necesario para el q-select multiple
+  // Transformar carrera string a array si es necesario para el q-select multiple
   let carrerasVal = []
-  if (Array.isArray(usuario.carrera)) {
+  if (Array.isArray(usuario.carreraIds) && usuario.carreraIds.length > 0) {
+    carrerasVal = usuario.carreraIds
+  } else if (Array.isArray(usuario.carrera)) {
     carrerasVal = usuario.carrera
   } else if (usuario.carrera) {
     // Si viene separado por comas o es solo uno
