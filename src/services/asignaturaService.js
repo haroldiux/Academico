@@ -56,6 +56,17 @@ export default {
     })
   },
 
+  importPlanClase(id, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    return api.post(`/asignaturas/${id}/import-plan-clase`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+  },
+
   // Bibliografias
   addBibliografia(data) {
     return api.post('/bibliografias', data)

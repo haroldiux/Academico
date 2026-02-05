@@ -39,13 +39,13 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     error.value = null
     asignaturaActual.value = null
     try {
-        const response = await asignaturaService.getAsignatura(id, params)
-        asignaturaActual.value = response.data
+      const response = await asignaturaService.getAsignatura(id, params)
+      asignaturaActual.value = response.data
     } catch (err) {
-        console.error('Error getting asignatura:', err)
-        error.value = err
+      console.error('Error getting asignatura:', err)
+      error.value = err
     } finally {
-        loading.value = false
+      loading.value = false
     }
   }
 
@@ -85,32 +85,32 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
   async function deleteAsignatura(id) {
     loading.value = true
     try {
-        await asignaturaService.deleteAsignatura(id)
-        asignaturas.value = asignaturas.value.filter(a => a.id !== id)
+      await asignaturaService.deleteAsignatura(id)
+      asignaturas.value = asignaturas.value.filter(a => a.id !== id)
     } catch (err) {
-        console.error('Error deleting asignatura:', err)
-        throw err
+      console.error('Error deleting asignatura:', err)
+      throw err
     } finally {
-        loading.value = false
+      loading.value = false
     }
   }
 
   async function assignDocentes(id, docenteIds) {
     loading.value = true
     try {
-        const response = await asignaturaService.assignDocentes(id, docenteIds)
-        // Actualizar lista local si es necesario (ej: propiedad docentes)
-        const index = asignaturas.value.findIndex(a => a.id === id)
-        if (index !== -1) {
-           // Asumimos que el backend retorna los datos actualizados de docentes o forzamos recarga
-           asignaturas.value[index].docentes = response.data.docentes.map(d => d.nombre_completo)
-        }
-        return response.data
+      const response = await asignaturaService.assignDocentes(id, docenteIds)
+      // Actualizar lista local si es necesario (ej: propiedad docentes)
+      const index = asignaturas.value.findIndex(a => a.id === id)
+      if (index !== -1) {
+        // Asumimos que el backend retorna los datos actualizados de docentes o forzamos recarga
+        asignaturas.value[index].docentes = response.data.docentes.map(d => d.nombre_completo)
+      }
+      return response.data
     } catch (err) {
-        console.error('Error assigning docentes:', err)
-        throw err
+      console.error('Error assigning docentes:', err)
+      throw err
     } finally {
-        loading.value = false
+      loading.value = false
     }
   }
 
@@ -121,8 +121,8 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
       const response = await asignaturaService.importWord(id, file, options)
       // Actualizar asignatura actual con los nuevos datos
       if (asignaturaActual.value && asignaturaActual.value.id === id) {
-          // Para Word refinado, solo actualizamos unidades y temas
-          await setAsignaturaActual(id)
+        // Para Word refinado, solo actualizamos unidades y temas
+        await setAsignaturaActual(id)
       }
       return response.data
     } catch (err) {
@@ -138,12 +138,29 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     try {
       const response = await asignaturaService.importExcel(id, file)
       if (asignaturaActual.value && asignaturaActual.value.id === id) {
-          // Actualizamos datos generales
-          await setAsignaturaActual(id)
+        // Actualizamos datos generales
+        await setAsignaturaActual(id)
       }
       return response.data
     } catch (err) {
       console.error('Error importing excel:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function importarPlanClase(id, file) {
+    loading.value = true
+    try {
+      const response = await asignaturaService.importPlanClase(id, file)
+      if (asignaturaActual.value && asignaturaActual.value.id === id) {
+        // Actualizamos unidades y temas que es lo que afecta el Plan de Clase
+        await setAsignaturaActual(id)
+      }
+      return response.data
+    } catch (err) {
+      console.error('Error importing plan clase:', err)
       throw err
     } finally {
       loading.value = false
@@ -157,190 +174,190 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
   async function createUnidad(asignaturaId, data) {
     loading.value = true
     try {
-        const payload = { ...data, asignatura_id: asignaturaId }
-        const response = await asignaturaService.createUnidad(asignaturaId, payload)
+      const payload = { ...data, asignatura_id: asignaturaId }
+      const response = await asignaturaService.createUnidad(asignaturaId, payload)
 
-        // Update local state
-        if (asignaturaActual.value && asignaturaActual.value.id === asignaturaId) {
-            if (!asignaturaActual.value.unidades) asignaturaActual.value.unidades = []
-            asignaturaActual.value.unidades.push(response.data)
-        }
-        return response.data
+      // Update local state
+      if (asignaturaActual.value && asignaturaActual.value.id === asignaturaId) {
+        if (!asignaturaActual.value.unidades) asignaturaActual.value.unidades = []
+        asignaturaActual.value.unidades.push(response.data)
+      }
+      return response.data
     } catch (err) {
-        console.error('Error creating unit:', err)
-        throw err
+      console.error('Error creating unit:', err)
+      throw err
     } finally {
-        loading.value = false
+      loading.value = false
     }
   }
 
   async function updateUnidad(id, data) {
     loading.value = true
     try {
-        const response = await asignaturaService.updateUnidad(id, data)
-        // Find and update local
-        if (asignaturaActual.value && asignaturaActual.value.unidades) {
-            const idx = asignaturaActual.value.unidades.findIndex(u => u.id === id)
-            if (idx !== -1) {
-                // Merge data
-                Object.assign(asignaturaActual.value.unidades[idx], response.data)
-            }
+      const response = await asignaturaService.updateUnidad(id, data)
+      // Find and update local
+      if (asignaturaActual.value && asignaturaActual.value.unidades) {
+        const idx = asignaturaActual.value.unidades.findIndex(u => u.id === id)
+        if (idx !== -1) {
+          // Merge data
+          Object.assign(asignaturaActual.value.unidades[idx], response.data)
         }
-        return response.data
+      }
+      return response.data
     } catch (err) {
-        console.error('Error updating unit:', err)
-        throw err
+      console.error('Error updating unit:', err)
+      throw err
     } finally {
-        loading.value = false
+      loading.value = false
     }
   }
 
   async function deleteUnidad(id) {
     loading.value = true
     try {
-        await asignaturaService.deleteUnidad(id)
-        if (asignaturaActual.value && asignaturaActual.value.unidades) {
-            asignaturaActual.value.unidades = asignaturaActual.value.unidades.filter(u => u.id !== id)
-        }
+      await asignaturaService.deleteUnidad(id)
+      if (asignaturaActual.value && asignaturaActual.value.unidades) {
+        asignaturaActual.value.unidades = asignaturaActual.value.unidades.filter(u => u.id !== id)
+      }
     } catch (err) {
-        console.error('Error deleting unit:', err)
-        throw err
+      console.error('Error deleting unit:', err)
+      throw err
     } finally {
-        loading.value = false
+      loading.value = false
     }
   }
 
   async function createTema(unidadId, data) {
     loading.value = true
     try {
-        const response = await asignaturaService.createTema(unidadId, data)
-        // Agregar a la unidad correspondiente
-        if (asignaturaActual.value && asignaturaActual.value.unidades) {
-            const unidad = asignaturaActual.value.unidades.find(u => u.id === unidadId)
-            if (unidad) {
-                if (!unidad.temas) unidad.temas = []
-                unidad.temas.push(response.data)
-            }
+      const response = await asignaturaService.createTema(unidadId, data)
+      // Agregar a la unidad correspondiente
+      if (asignaturaActual.value && asignaturaActual.value.unidades) {
+        const unidad = asignaturaActual.value.unidades.find(u => u.id === unidadId)
+        if (unidad) {
+          if (!unidad.temas) unidad.temas = []
+          unidad.temas.push(response.data)
         }
-        return response.data
+      }
+      return response.data
     } catch (err) {
-        console.error('Error creating theme:', err)
-        throw err
+      console.error('Error creating theme:', err)
+      throw err
     } finally {
-        loading.value = false
+      loading.value = false
     }
   }
 
   async function updateTema(id, data) {
-      // Nota: el endpoint updateTema es genérico, sirve para título tb.
-      loading.value = true
-      try {
-          const response = await asignaturaService.updateTema(id, data)
-          // Update local
-           if (asignaturaActual.value && asignaturaActual.value.unidades) {
-               for (const u of asignaturaActual.value.unidades) {
-                   if (u.temas) {
-                       const tIdx = u.temas.findIndex(t => t.id === id)
-                       if (tIdx !== -1) {
-                           Object.assign(u.temas[tIdx], response.data)
-                           break
-                       }
-                   }
-               }
-           }
-          return response.data
-      } catch (err) {
-          console.error('Error updating theme:', err)
-          throw err
-      } finally {
-          loading.value = false
+    // Nota: el endpoint updateTema es genérico, sirve para título tb.
+    loading.value = true
+    try {
+      const response = await asignaturaService.updateTema(id, data)
+      // Update local
+      if (asignaturaActual.value && asignaturaActual.value.unidades) {
+        for (const u of asignaturaActual.value.unidades) {
+          if (u.temas) {
+            const tIdx = u.temas.findIndex(t => t.id === id)
+            if (tIdx !== -1) {
+              Object.assign(u.temas[tIdx], response.data)
+              break
+            }
+          }
+        }
       }
+      return response.data
+    } catch (err) {
+      console.error('Error updating theme:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
   }
 
   async function deleteTema(id) {
-      loading.value = true
-      try {
-          await asignaturaService.deleteTema(id)
-          // Delete locally and re-sort?
-          // Backend reorders, so we might need to refresh or manually reindex local array.
-          // Simple approach: Remove locally, manual reindex for display if not refreshing.
-          if (asignaturaActual.value && asignaturaActual.value.unidades) {
-               for (const u of asignaturaActual.value.unidades) {
-                   if (u.temas) {
-                       const prevLen = u.temas.length
-                       u.temas = u.temas.filter(t => t.id !== id)
-                       if (u.temas.length < prevLen) {
-                           // Re-assign index locally to match backend logic
-                           u.temas.forEach((t, i) => t.orden = i + 1)
-                           break
-                       }
-                   }
-               }
-           }
-      } catch (err) {
-          console.error('Error updating theme:', err)
-          throw err
-      } finally {
-          loading.value = false
+    loading.value = true
+    try {
+      await asignaturaService.deleteTema(id)
+      // Delete locally and re-sort?
+      // Backend reorders, so we might need to refresh or manually reindex local array.
+      // Simple approach: Remove locally, manual reindex for display if not refreshing.
+      if (asignaturaActual.value && asignaturaActual.value.unidades) {
+        for (const u of asignaturaActual.value.unidades) {
+          if (u.temas) {
+            const prevLen = u.temas.length
+            u.temas = u.temas.filter(t => t.id !== id)
+            if (u.temas.length < prevLen) {
+              // Re-assign index locally to match backend logic
+              u.temas.forEach((t, i) => t.orden = i + 1)
+              break
+            }
+          }
+        }
       }
+    } catch (err) {
+      console.error('Error updating theme:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
   }
 
   async function moveTema(unidadId, temaId, direction) {
-      // Optimistic update or wait for reload?
-      // Wait for reload is safer for order consistency
-      loading.value = true
-      try {
-          await asignaturaService.moveTema(temaId, direction)
+    // Optimistic update or wait for reload?
+    // Wait for reload is safer for order consistency
+    loading.value = true
+    try {
+      await asignaturaService.moveTema(temaId, direction)
 
-          // Local update: Find unit, find theme index, swap
-           if (asignaturaActual.value && asignaturaActual.value.unidades) {
-               const unidad = asignaturaActual.value.unidades.find(u => u.id === unidadId)
-               if (unidad && unidad.temas) {
-                   const index = unidad.temas.findIndex(t => t.id === temaId)
-                   if (index !== -1) {
-                       const neighborIndex = direction === 'up' ? index - 1 : index + 1
-                       if (neighborIndex >= 0 && neighborIndex < unidad.temas.length) {
-                           // Swap local array
-                           const temp = unidad.temas[index]
-                           unidad.temas[index] = unidad.temas[neighborIndex]
-                           unidad.temas[neighborIndex] = temp
+      // Local update: Find unit, find theme index, swap
+      if (asignaturaActual.value && asignaturaActual.value.unidades) {
+        const unidad = asignaturaActual.value.unidades.find(u => u.id === unidadId)
+        if (unidad && unidad.temas) {
+          const index = unidad.temas.findIndex(t => t.id === temaId)
+          if (index !== -1) {
+            const neighborIndex = direction === 'up' ? index - 1 : index + 1
+            if (neighborIndex >= 0 && neighborIndex < unidad.temas.length) {
+              // Swap local array
+              const temp = unidad.temas[index]
+              unidad.temas[index] = unidad.temas[neighborIndex]
+              unidad.temas[neighborIndex] = temp
 
-                           // Swap keys for consistency? No, just swap positions.
-                           // But if we use 'orden' property for sorting, we should swap that too.
-                           const tempOrder = unidad.temas[index].orden
-                           unidad.temas[index].orden = unidad.temas[neighborIndex].orden
-                           unidad.temas[neighborIndex].orden = tempOrder
-                       }
-                   }
-               }
-           }
-      } catch (err) {
-          console.error('Error moving theme:', err)
-          throw err
-      } finally {
-          loading.value = false
+              // Swap keys for consistency? No, just swap positions.
+              // But if we use 'orden' property for sorting, we should swap that too.
+              const tempOrder = unidad.temas[index].orden
+              unidad.temas[index].orden = unidad.temas[neighborIndex].orden
+              unidad.temas[neighborIndex].orden = tempOrder
+            }
+          }
+        }
       }
+    } catch (err) {
+      console.error('Error moving theme:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
   }
 
   async function cambiarEstado(id, estado) {
-      if (!id) return
-      loading.value = true
-      try {
-          const response = await asignaturaService.cambiarEstado(id, estado)
-          if (asignaturaActual.value && asignaturaActual.value.id === id) {
-              asignaturaActual.value.estado = response.data.estado
-          }
-           // Update list if present
-           const index = asignaturas.value.findIndex(a => a.id === id)
-           if (index !== -1) {
-               asignaturas.value[index].estado = response.data.estado
-           }
-      } catch (err) {
-          console.error('Error changing state:', err)
-          throw err
-      } finally {
-          loading.value = false
+    if (!id) return
+    loading.value = true
+    try {
+      const response = await asignaturaService.cambiarEstado(id, estado)
+      if (asignaturaActual.value && asignaturaActual.value.id === id) {
+        asignaturaActual.value.estado = response.data.estado
       }
+      // Update list if present
+      const index = asignaturas.value.findIndex(a => a.id === id)
+      if (index !== -1) {
+        asignaturas.value[index].estado = response.data.estado
+      }
+    } catch (err) {
+      console.error('Error changing state:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
   }
 
   async function addBibliografia(asigId, data) {
@@ -399,14 +416,14 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
 
     // Helpers para acceder a propiedades anidadas o planas (Legacy support)
     const getDeep = (obj, path) => {
-        return path.split('.').reduce((acc, part) => acc && acc[part], obj)
+      return path.split('.').reduce((acc, part) => acc && acc[part], obj)
     }
     const getAny = (obj, paths) => {
-        for (const path of paths) {
-            const val = getDeep(obj, path)
-            if (val !== undefined && val !== null) return val
-        }
-        return undefined
+      for (const path of paths) {
+        const val = getDeep(obj, path)
+        if (val !== undefined && val !== null) return val
+      }
+      return undefined
     }
 
     // 1. Resultados
@@ -422,19 +439,19 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     if (tieneIndicador) camposLlenosRes++
 
     if (logros.length > 1) {
-        logros.slice(1).forEach(logro => {
-            totalCamposRes++
-            if (logro.descripcion?.trim()) camposLlenosRes++
-        })
+      logros.slice(1).forEach(logro => {
+        totalCamposRes++
+        if (logro.descripcion?.trim()) camposLlenosRes++
+      })
     }
     logros.forEach(logro => {
-        const indicadores = logro.indicadores || []
-        if (indicadores.length > 1) {
-            indicadores.slice(1).forEach(ind => {
-                totalCamposRes++
-                if (ind.descripcion?.trim()) camposLlenosRes++
-            })
-        }
+      const indicadores = logro.indicadores || []
+      if (indicadores.length > 1) {
+        indicadores.slice(1).forEach(ind => {
+          totalCamposRes++
+          if (ind.descripcion?.trim()) camposLlenosRes++
+        })
+      }
     })
     pResultados = Math.round((camposLlenosRes / totalCamposRes) * 100)
 
@@ -502,7 +519,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     // 6. Descripción General (Nuevo Campo)
     let pDescripcion = 0
     if (tema.descripcion && tema.descripcion.trim().length > 0) {
-        pDescripcion = 100
+      pDescripcion = 100
     }
 
     return Math.round((pResultados + pContenidos + pEstrategias + pEvaluacion + pSecuencia + pDescripcion) / 6)
@@ -512,8 +529,8 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
   async function getAsignaturaById(id, params = {}) {
     // Si hay parámetros específicos (ej: docente_id), forzar recarga para asegurar contexto correcto
     if (Object.keys(params).length > 0) {
-        await setAsignaturaActual(id, params)
-        return asignaturaActual.value
+      await setAsignaturaActual(id, params)
+      return asignaturaActual.value
     }
 
     // Primero revisar si ya la tenemos cargada
@@ -585,6 +602,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     calcularProgresoTema,
     importarWord,
     importarExcel,
+    importarPlanClase,
     createUnidad,
     updateUnidad,
     deleteUnidad,

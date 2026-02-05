@@ -58,6 +58,11 @@
               <q-item-section>Importar Excel (Prog. Asignatura)</q-item-section>
             </q-item>
 
+            <q-item v-if="puedeImportar" clickable v-close-popup @click="abrirDialogoImportarPlanClase">
+              <q-item-section avatar><q-icon name="table_view" color="purple" /></q-item-section>
+              <q-item-section>Importar Excel (Plan de Clase)</q-item-section>
+            </q-item>
+
             <q-item clickable v-close-popup @click="generarCarpetaHtml">
               <q-item-section avatar><q-icon name="auto_stories" color="green" /></q-item-section>
               <q-item-section>Ver Carpeta (HTML)</q-item-section>
@@ -437,7 +442,7 @@
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
                 <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                  }}</q-badge>
+                }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
                 <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
@@ -469,7 +474,7 @@
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
                 <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
                   bibliografiasProgramaAnalitico.length
-                  }}</q-badge>
+                }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
@@ -482,7 +487,7 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
                         biblio.autor
-                        }}</div>
+                      }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
                           biblio.anio !==
@@ -559,7 +564,7 @@
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
                     <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                      }})</span>
+                    }})</span>
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
@@ -787,6 +792,50 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    <!-- Dialog Importar Plan de Clase -->
+    <q-dialog v-model="dialogImportarPlanClase">
+      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-weight-bold row items-center">
+            <q-icon name="table_view" color="purple" class="q-mr-sm" size="28px" />
+            Importar Plan de Clase (Excel)
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <q-banner rounded class="bg-purple-1 text-black q-mb-md">
+            <template v-slot:avatar>
+              <q-icon name="info" color="purple" />
+            </template>
+            <div class="text-weight-bold">Importación de Unidades y Temas</div>
+            <div>
+              Esta función carga la planificación detallada (unidades, temas, contenidos, estrategias) desde un archivo
+              Excel.
+            </div>
+          </q-banner>
+
+          <q-file v-model="archivoImportarPlanClase" label="Seleccionar Archivo Excel (.xlsx, .xls)" outlined dense
+            accept=".xlsx, .xls" counter>
+            <template v-slot:prepend>
+              <q-icon name="attach_file" />
+            </template>
+          </q-file>
+
+          <div class="q-mt-md text-caption text-grey-7 italic">
+            * Se espera que el archivo contenga hojas con el formato de Avance Programático o Plan de Clase.
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pt-none q-pb-md q-pr-md">
+          <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
+          <q-btn unelevated label="Subir e Importar" color="purple" :loading="store.loading"
+            :disable="!archivoImportarPlanClase" @click="procesarImportacionPlanClase" no-caps />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Dialog Unidad -->
     <q-dialog v-model="dialogUnidad" persistent>
       <q-card style="width: 400px; max-width: 95vw;">
@@ -1317,6 +1366,8 @@ const dialogImportar = ref(false)
 const archivoImportar = ref(null)
 const dialogImportarExcel = ref(false)
 const archivoImportarExcel = ref(null)
+const dialogImportarPlanClase = ref(false)
+const archivoImportarPlanClase = ref(null)
 
 const puedeImportar = computed(() => {
   // 1. Debe ser Cochabamba (Sede 1)
@@ -1397,6 +1448,33 @@ async function procesarImportacionExcel() {
     $q.notify({
       type: 'negative',
       message: 'Error al importar Excel: ' + (err.response?.data?.error || err.message),
+      position: 'top'
+    })
+  }
+}
+
+function abrirDialogoImportarPlanClase() {
+  archivoImportarPlanClase.value = null
+  dialogImportarPlanClase.value = true
+}
+
+async function procesarImportacionPlanClase() {
+  if (!archivoImportarPlanClase.value) return
+
+  try {
+    await store.importarPlanClase(asignatura.value.id, archivoImportarPlanClase.value)
+    cargarFormDatos()
+
+    $q.notify({
+      type: 'positive',
+      message: 'Plan de Clase importado con éxito (Unidades y Temas actualizados).',
+      icon: 'check_circle'
+    })
+    dialogImportarPlanClase.value = false
+  } catch (err) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al importar Plan de Clase: ' + (err.response?.data?.error || err.message),
       position: 'top'
     })
   }
