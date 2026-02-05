@@ -55,15 +55,16 @@
                   </div>
 
                   <div v-if="claseSeleccionada" class="listas-container">
-                     <!-- Iterar sobre las carreras de la clase unificada -->
-                     <div v-for="carrera in claseSeleccionadaObj.carreras" :key="carrera.id" class="q-mb-xl">
+                     <!-- Iterar sobre lo que diga estudiantesVista (pueden ser carreras separadas o una lista unificada) -->
+                     <div v-for="grupoVista in estudiantesVista" :key="grupoVista.id" class="q-mb-xl">
                         <div class="text-h6 q-mb-sm flex items-center text-primary">
-                           <q-icon name="school" class="q-mr-sm" />
-                           {{ carrera.nombreCarrera }}
-                           <span class="text-caption text-grey q-ml-sm">({{ carrera.materia }})</span>
+                           <q-icon :name="claseSeleccionadaObj.esFusionada ? 'group' : 'school'" class="q-mr-sm" />
+                           {{ grupoVista.nombreCarrera }}
+                           <span class="text-caption text-grey q-ml-sm">({{ grupoVista.materia }})</span>
+                           <q-badge v-if="claseSeleccionadaObj.esFusionada" color="indigo" label="Fusionada" class="q-ml-sm" />
                         </div>
 
-                        <q-table :rows="carrera.estudiantes" :columns="columnsAsistencia" row-key="id" flat bordered
+                        <q-table :rows="grupoVista.estudiantes" :columns="columnsAsistencia" row-key="id" flat bordered
                            hide-pagination :rows-per-page-options="[0]">
                            <template v-slot:header="props">
                               <q-tr :props="props">
@@ -76,6 +77,9 @@
                               <q-tr :props="props">
                                  <q-td key="nombre" :props="props">
                                     {{ props.row.nombre }} {{ props.row.apellido }}
+                                    <div v-if="claseSeleccionadaObj.esFusionada" class="text-caption text-grey">
+                                       {{ props.row.carreraOrigen }}
+                                    </div>
                                  </q-td>
                                  <q-td key="estado" :props="props" auto-width>
                                     <div class="q-gutter-xs">
@@ -560,10 +564,12 @@ const esLecturaSola = computed(() => {
 const fetchData = async () => {
    loading.value = true
    try {
+      console.log('fetchData - calling fetchGrupos')
       const response = await gruposStore.fetchGrupos({
-         gestion: '1-2026' // Por ahora fijo, puede venir de config
+         gestion: '1-2026'
       })
-      materiasReales.value = response.data || []
+      console.log('fetchData - response received:', response)
+      materiasReales.value = (response && response.data) ? response.data : []
    } catch (error) {
       console.error('Error fetching real data:', error)
       $q.notify({
@@ -581,10 +587,25 @@ const clasesUnificadas = computed(() => {
    let idCounter = 1
 
    materiasReales.value.forEach(materia => {
+      if (!Array.isArray(materia.grupos)) return
+
       materia.grupos.forEach(descGrupo => {
-         // Clave de unificación: Nombre Materia + Nombre Grupo + Horario (Dia/Hora)
          const horarioStr = `${descGrupo.dia} ${descGrupo.hora_inicio}-${descGrupo.hora_fin}`
-         const key = `${materia.nombre}-${descGrupo.grupo}-${horarioStr}`
+         
+         // LÓGICA DE UNIFICACIÓN AVANZADA
+         let key, nombreComun, esFusionada = false
+         
+         if (materia.comun_token && materia.comun_tipo === 'fusionada') {
+            // Si es fusionada, la clave es el token y el horario.
+            // (Asumimos que si están fusionadas es porque comparten el mismo horario físico)
+            key = `token-${materia.comun_token}-${horarioStr}`
+            nombreComun = `${materia.nombre} (Fusionada)`
+            esFusionada = true
+         } else {
+            // Unificamos por nombre/grupo/horario (heurística tradicional)
+            key = `simple-${materia.nombre}-${descGrupo.grupo}-${horarioStr}`
+            nombreComun = `${materia.nombre} (${descGrupo.grupo})`
+         }
 
          let unificada = unificadas.find(u => u.key === key)
 
@@ -592,9 +613,10 @@ const clasesUnificadas = computed(() => {
             unificada = {
                id: idCounter++,
                key: key,
-               nombreComun: `${materia.nombre} (${descGrupo.grupo})`,
+               nombreComun: nombreComun,
                horario: horarioStr,
-               nombreDisplay: `${materia.nombre} (${descGrupo.grupo}) - ${horarioStr}`,
+               nombreDisplay: `${nombreComun} - ${horarioStr}`,
+               esFusionada: esFusionada,
                carreras: []
             }
             unificadas.push(unificada)
@@ -1058,6 +1080,40 @@ const generateMockStudents = (seed) => {
 
 const claseSeleccionadaObj = computed(() => {
    return clasesUnificadas.value.find(c => c.id === claseSeleccionada.value)
+})
+
+const estudiantesVista = computed(() => {
+   const obj = claseSeleccionadaObj.value
+   if (!obj) return []
+
+   if (obj.esFusionada) {
+      // Unificar todos los estudiantes en un solo listado
+      const todosEstudiantes = []
+      obj.carreras.forEach(c => {
+         c.estudiantes.forEach(e => {
+            todosEstudiantes.push({
+               ...e,
+               carreraOrigen: c.nombreCarrera
+            })
+         })
+      })
+      
+      // Ordenar por apellido/nombre opcionalmente
+      todosEstudiantes.sort((a, b) => {
+         const nameA = `${a.apellido} ${a.nombre}`.toLowerCase()
+         const nameB = `${b.apellido} ${b.nombre}`.toLowerCase()
+         return nameA.localeCompare(nameB)
+      })
+
+      return [{
+         id: 'fusionada',
+         nombreCarrera: 'Lista Unificada de Estudiantes',
+         materia: obj.nombreComun,
+         estudiantes: todosEstudiantes
+      }]
+   }
+
+   return obj.carreras
 })
 
 // Resolver texto del item de contenido (FORMATO: temaId:index)

@@ -143,8 +143,8 @@ export const useAuthStore = defineStore('auth', () => {
         sede_id: user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || null,
         // Persist full sede object for UI use if available
         docente: {
-            ...user.docente,
-            sede: user.docente?.sede || null
+          ...user.docente,
+          sede: user.docente?.sede || null
         },
         carrera_id: user.director?.carrera_id || user.carrera_id || null,
         avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
@@ -160,7 +160,7 @@ export const useAuthStore = defineStore('auth', () => {
 
             // Format this group's schedule
             const horariosFmt = g.horarios?.map(h =>
-              `${h.dia?.substring(0,3) || '?'} ${h.hora_inicio?.substring(0,5) || ''}-${h.hora_fin?.substring(0,5) || ''}`
+              `${h.dia?.substring(0, 3) || '?'} ${h.hora_inicio?.substring(0, 5) || ''}-${h.hora_fin?.substring(0, 5) || ''}`
             ).join(', ') || ''
 
             if (!grouped[asigId]) {
@@ -184,6 +184,8 @@ export const useAuthStore = defineStore('auth', () => {
               tipo: g.tipo,
               turno: g.turno,
               gestion: g.gestion,
+              carrera_id: g.carrera_id,
+              sede_id: g.sede_id,
               horario: horariosFmt
             })
 
@@ -207,9 +209,9 @@ export const useAuthStore = defineStore('auth', () => {
         grupos: user.docente?.grupos || (user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || []),
         // Director data
         director: user.director ? {
-            ...user.director,
-            carrera: user.director.carrera,
-            carreras: user.director.carreras // If multiple
+          ...user.director,
+          carrera: user.director.carrera,
+          carreras: user.director.carreras // If multiple
         } : null
       }
 
@@ -293,8 +295,8 @@ export const useAuthStore = defineStore('auth', () => {
         sede_id: user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || null,
         carrera_id: user.director?.carrera_id || user.carrera_id || null,
         docente: {
-            ...user.docente,
-            sede: user.docente?.sede || null
+          ...user.docente,
+          sede: user.docente?.sede || null
         },
         avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
         materias_asignadas: (() => {
@@ -309,7 +311,7 @@ export const useAuthStore = defineStore('auth', () => {
 
             // Format this group's schedule
             const horariosFmt = g.horarios?.map(h =>
-              `${h.dia?.substring(0,3) || '?'} ${h.hora_inicio?.substring(0,5) || ''}-${h.hora_fin?.substring(0,5) || ''}`
+              `${h.dia?.substring(0, 3) || '?'} ${h.hora_inicio?.substring(0, 5) || ''}-${h.hora_fin?.substring(0, 5) || ''}`
             ).join(', ') || ''
 
             if (!grouped[asigId]) {
@@ -332,6 +334,7 @@ export const useAuthStore = defineStore('auth', () => {
               tipo: g.tipo,
               turno: g.turno,
               gestion: g.gestion,
+              carrera_id: g.carrera_id,
               horario: horariosFmt
             })
 
@@ -351,9 +354,9 @@ export const useAuthStore = defineStore('auth', () => {
         carreras: [...new Set(user.docente?.asignaturas?.flatMap(a => a.carreras?.map(c => c.nombre)) || [])],
         grupos: user.docente?.grupos || (user.docente?.asignaturas?.map(a => a.pivot?.grupo).filter((v, i, a) => v && a.indexOf(v) === i) || []),
         director: user.director ? {
-            ...user.director,
-            carrera: user.director.carrera,
-            carreras: user.director.carreras
+          ...user.director,
+          carrera: user.director.carrera,
+          carreras: user.director.carreras
         } : null
       }
 
