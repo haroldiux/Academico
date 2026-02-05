@@ -460,34 +460,23 @@ function irADocumentacion(id) {
   }
 
   if (docentes.length === 0) {
-<<<<<<< HEAD
-    // Sin docente asignado -> Entrar modo genérico
+    // Sin docente asignado -> Entrar modo genérico con contexto base
     router.push({ 
       path: `/documentacion/${id}`, 
-      query: { carrera_id: filtros.value.carrera } 
+      query: { ...baseQuery, carrera_id: filtros.value.carrera } 
     })
   } else if (docentes.length === 1) {
-    // Un solo docente -> Entrar directo
+    // Un solo docente -> Entrar directo seleccionando a ese docente
     // Intentar inferir carrera_id de los grupos del docente o de los filtros
     const careerId = docentes[0].carrera_id || filtros.value.carrera || ''
-    router.push({ 
-      path: `/documentacion/${id}`, 
-      query: { 
-        docente_id: docentes[0].id,
-        carrera_id: careerId 
-      } 
-=======
-    // Sin docente asignado -> Entrar modo genérico (o mostrar alerta)
-    router.push({ path: `/documentacion/${id}`, query: baseQuery })
-  } else if (docentes.length === 1) {
-    // Un solo docente -> Entrar directo seleccionando a ese docente
+    
     router.push({
       path: `/documentacion/${id}`,
       query: {
         ...baseQuery,
-        docente_id: docentes[0].id
+        docente_id: docentes[0].id,
+        carrera_id: careerId
       }
->>>>>>> f523a6e66ed43205b32f49db6d54e7d1bfe2148a
     })
   } else {
     // Múltiples docentes -> Mostrar diálogo
