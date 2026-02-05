@@ -436,23 +436,18 @@ function irADocumentacion(id) {
 
   // CASO 1: Es DOCENTE -> Navega directo a su propia "carpeta"
   if (rolActual === ROLES.DOCENTE) {
-    // Verificar si está asignado (aunque el filtro visual ya lo hace)
-    // Pasamos su propio ID para filtrar en la vista destino
-    // Ojo: authStore.usuarioActual.id es el ID de usuario, necesitamos el ID de DOCENTE asociado.
-    // Usualmente el ID de usuario se mapea a docente.
-    // Si la estructura del store tiene 'id' como id de usuario, necesitamos saber cual es el id de docente.
-    // Asumiremos por ahora que authStore.usuarioActual.id se puede usar para filtrar
-    // o que el backend lo maneja.
-    // Dado que la vista PlanificacionPage no filtra por docenteID en la URL,
-    // tal vez necesitemos pasarlo.
-    // EN este requerimiento: "EL DOCENTE UNICAMENTE VA A VER SU CARPETRA"
-
-    // Pasamos query params con contexto (Sede, Docente)
-    const query = {
-      sede_id: asignatura.sede_id || asignatura.pivot?.sede_id || authStore.sedeId,
-      nombre_sede: asignatura.sede_nombre // Optional helper
-    }
-    router.push({ path: `/documentacion/${id}`, query })
+    // Intentar obtener carrera_id del primer grupo asignado de esta materia
+    const miMateria = authStore.usuarioActual?.materias_asignadas?.find(m => m.id === id)
+    const careerId = miMateria?.grupos?.[0]?.carrera_id || ''
+    const sedeId = miMateria?.grupos?.[0]?.sede_id || ''
+    
+    router.push({ 
+      path: `/documentacion/${id}`, 
+      query: { 
+        carrera_id: careerId,
+        sede_id: sedeId
+      } 
+    })
     return
   }
 
@@ -465,15 +460,22 @@ function irADocumentacion(id) {
   }
 
   if (docentes.length === 0) {
-    // Sin docente asignado -> Entrar modo genérico (o mostrar alerta)
-    router.push({ path: `/documentacion/${id}`, query: baseQuery })
+    // Sin docente asignado -> Entrar modo genérico con contexto base
+    router.push({ 
+      path: `/documentacion/${id}`, 
+      query: { ...baseQuery, carrera_id: filtros.value.carrera } 
+    })
   } else if (docentes.length === 1) {
     // Un solo docente -> Entrar directo seleccionando a ese docente
+    // Intentar inferir carrera_id de los grupos del docente o de los filtros
+    const careerId = docentes[0].carrera_id || filtros.value.carrera || ''
+    
     router.push({
       path: `/documentacion/${id}`,
       query: {
         ...baseQuery,
-        docente_id: docentes[0].id
+        docente_id: docentes[0].id,
+        carrera_id: careerId
       }
     })
   } else {

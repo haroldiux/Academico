@@ -202,6 +202,14 @@
                       <q-icon v-else name="lock" size="14px" color="blue" class="lock-icon">
                         <q-tooltip>Horario de la API (no editable)</q-tooltip>
                       </q-icon>
+                      <!-- DEBUG INFO -->
+                      <div class="debug-info q-mt-xs text-caption text-grey-6 bg-grey-2 q-pa-xs rounded-borders" style="font-size: 0.7rem; line-height: 1.1;">
+                          <div>ID Horario: {{ horario.id }}</div>
+                          <div>API ID: {{ horario.id_horario_api || '?' }}</div>
+                          <div>Grupo ID: {{ horario.grupo_id }}</div>
+                          <div>Asig ID: {{ horario.asignatura_id }}</div>
+                          <div>Carrera ID: {{ horario.carrera_id }} | Sede: {{ horario.sede_id }}</div>
+                      </div>
                     </div>
                   </div>
                 </q-card-section>
@@ -710,6 +718,8 @@ onMounted(async () => {
   // Extract params
   const params = {}
   if (route.query.docente_id) params.docente_id = route.query.docente_id
+  if (route.query.carrera_id) params.carrera_id = route.query.carrera_id
+  if (route.query.sede_id) params.sede_id = route.query.sede_id
 
   // IMPORTANTE: Esperar a que se cargue la asignatura antes de buscar horarios
   await asignaturasStore.setAsignaturaActual(id, params)
@@ -955,6 +965,13 @@ function actualizarHorariosDesdeGrupo() {
         tipoClase: grupoData.tipo,
         desdeAPI: true,
         docente: grupoData.docente_nombre,
+        // DEBUG FIELDS
+        id: h.id,
+        id_horario_api: h.id_horario_api,
+        asignatura_id: grupoData.asignatura_id,
+        carrera_id: grupoData.carrera_id,
+        sede_id: grupoData.sede_id,
+        grupo_id: grupoData.id,
       }))
       todosLosHorarios.push(...horariosGrupo)
     }

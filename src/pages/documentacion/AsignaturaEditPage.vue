@@ -7,7 +7,7 @@
         <q-breadcrumbs class="q-mb-sm">
           <q-breadcrumbs-el icon="home" to="/" />
           <q-breadcrumbs-el :label="breadcrumbInfo.label" :to="breadcrumbInfo.to" />
-          <q-breadcrumbs-el :label="asignatura?.codigo || 'Asignatura'" />
+          <q-breadcrumbs-el :label="codigoVisual" />
         </q-breadcrumbs>
         <h4 class="q-ma-none text-weight-bold" style="line-height: 1.2;">
           <q-icon name="menu_book" size="36px" color="primary" class="q-mr-sm" />
@@ -19,7 +19,7 @@
           </q-chip>
         </h4>
         <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
-          {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ nombreCarrera }}
+          {{ codigoVisual }} - {{ asignatura?.semestre }}° Semestre • {{ nombreCarrera }}
         </p>
         <div class="row items-center q-gutter-sm q-mt-sm">
           <q-chip v-if="nombreSede" outline color="orange" icon="business" dense>
@@ -124,7 +124,7 @@
                     <q-input :model-value="nombreCarrera" label="Carrera" outlined dense readonly bg-color="white" />
                   </div>
                   <div class="col-12 col-md-2">
-                    <q-input v-model="formDatos.codigo" label="Código" outlined dense readonly bg-color="white"
+                    <q-input :model-value="codigoVisual" label="Código" outlined dense readonly bg-color="white"
                       input-class="text-weight-bold" />
                   </div>
                   <div class="col-12 col-md-2">
@@ -447,7 +447,7 @@
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
                 <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                }}</q-badge>
+                  }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
                 <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
@@ -479,7 +479,7 @@
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
                 <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
                   bibliografiasProgramaAnalitico.length
-                }}</q-badge>
+                  }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
@@ -492,7 +492,7 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
                         biblio.autor
-                      }}</div>
+                        }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
                           biblio.anio !==
@@ -569,7 +569,7 @@
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
                     <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                    }})</span>
+                      }})</span>
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
@@ -1323,6 +1323,17 @@ const nombreCarrera = computed(() => {
 
   return 'N/A'
 })
+
+// Computed for Visual Code (Stripping Technical Suffixes)
+// Converts "OPT-101-CBA-SON" -> "OPT-101" for display
+const codigoVisual = computed(() => {
+  if (!asignatura.value?.codigo) return 'Asignatura'
+  // Regex to remove -XXX-YYYY suffixes (e.g. -CBA-CARSON)
+  // Matches a hyphen followed by 3 uppercase letters, followed by another hyphen and alphanumeric
+  return asignatura.value.codigo.replace(/-[A-Z]{3}-[A-Z0-9-]+$/, '')
+})
+
+
 
 // Computed para bibliografías separadas por tipo
 // Bibliografías del Word (tipos en español)
