@@ -447,35 +447,51 @@ function irADocumentacion(id) {
     // tal vez necesitemos pasarlo.
     // EN este requerimiento: "EL DOCENTE UNICAMENTE VA A VER SU CARPETRA"
 
-    router.push(`/documentacion/${id}`)
+    // Pasamos query params con contexto (Sede, Docente)
+    const query = {
+      sede_id: asignatura.sede_id || asignatura.pivot?.sede_id || authStore.sedeId,
+      nombre_sede: asignatura.sede_nombre // Optional helper
+    }
+    router.push({ path: `/documentacion/${id}`, query })
     return
   }
 
   // CASO 2: DIRECTORES/ADMIN -> Lógica de Selección
   const docentes = asignatura.docentes_data || []
 
+  // Contexto de sede para directores
+  const baseQuery = {
+    sede_id: filtros.value.sede || asignatura.sede_id
+  }
+
   if (docentes.length === 0) {
     // Sin docente asignado -> Entrar modo genérico (o mostrar alerta)
-    router.push(`/documentacion/${id}`)
+    router.push({ path: `/documentacion/${id}`, query: baseQuery })
   } else if (docentes.length === 1) {
     // Un solo docente -> Entrar directo seleccionando a ese docente
-    // Pasamos query param para que la siguiente vista sepa a quien filtrar
-    // O bien, la siguiente vista muestra todo si no se filtra.
-    // El usuario pidió: "SI LA AMTERIA TIENE SOLO UNN DOCENTE QUE ACCEDA DIRECTAMENTE"
-    // Asumiremos que quiere ver la carpeta DE ESE docente.
-    router.push({ path: `/documentacion/${id}`, query: { docente_id: docentes[0].id } })
+    router.push({
+      path: `/documentacion/${id}`,
+      query: {
+        ...baseQuery,
+        docente_id: docentes[0].id
+      }
+    })
   } else {
     // Múltiples docentes -> Mostrar diálogo
-    asignaturaSeleccionada.value = asignatura
+    asignaturaSeleccionada.value = { ...asignatura, overrideQuery: baseQuery }
     showDocenteDialog.value = true
   }
 }
 
 function seleccionarDocente(docenteId) {
   if (asignaturaSeleccionada.value) {
+    const query = {
+      ...(asignaturaSeleccionada.value.overrideQuery || {}),
+      docente_id: docenteId
+    }
     router.push({
       path: `/documentacion/${asignaturaSeleccionada.value.id}`,
-      query: { docente_id: docenteId }
+      query
     })
     showDocenteDialog.value = false
     asignaturaSeleccionada.value = null
