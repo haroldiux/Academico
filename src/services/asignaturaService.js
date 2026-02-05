@@ -67,6 +67,12 @@ export default {
     })
   },
 
+  importarCronograma(id, formData) {
+    return api.post(`/asignaturas/${id}/import-cronograma`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
   // Bibliografias
   addBibliografia(data) {
     return api.post('/bibliografias', data)

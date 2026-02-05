@@ -17,73 +17,25 @@
         </div>
       </div>
       <div class="header-actions">
-        <q-select
-          v-model="grupoSeleccionado"
-          :options="gruposOptions"
-          outlined
-          dense
-          label="Grupo/Materia"
-          class="q-mr-sm"
-          style="min-width: 200px"
-          option-label="label"
-          option-value="value"
-          @update:model-value="cargarPlanificacion"
-        />
+        <q-select v-model="grupoSeleccionado" :options="gruposOptions" outlined dense label="Grupo/Materia"
+          class="q-mr-sm" style="min-width: 200px" option-label="label" option-value="value"
+          @update:model-value="cargarPlanificacion" />
 
-        <q-select
-          v-model="gestionSeleccionada"
-          :options="gestionesOptions"
-          outlined
-          dense
-          label="Gestión"
-          emit-value
-          map-options
-          style="min-width: 150px"
-        />
-        <q-btn
-          outline
-          color="primary"
-          icon="content_copy"
-          label="Copiar Gestión"
-          no-caps
-          @click="showCopiarDialog = true"
-        />
-        <q-btn
-          outline
-          color="green"
-          icon="picture_as_pdf"
-          label="Exportar PDF"
-          no-caps
-          @click="exportarPDF"
-        />
+        <q-select v-model="gestionSeleccionada" :options="gestionesOptions" outlined dense label="Gestión" emit-value
+          map-options style="min-width: 150px" />
+        <q-btn outline color="primary" icon="content_copy" label="Copiar Gestión" no-caps
+          @click="showCopiarDialog = true" />
+        <q-btn outline color="green" icon="picture_as_pdf" label="Exportar PDF" no-caps @click="exportarPDF" />
 
         <!-- Auto-save Status Indicator -->
         <transition name="fade">
           <div v-if="saveStatus !== 'idle'" class="auto-save-indicator q-ml-sm">
-            <q-chip
-              :color="
-                saveStatus === 'saving' ? 'blue-1' : saveStatus === 'saved' ? 'green-1' : 'red-1'
-              "
-              :text-color="
-                saveStatus === 'saving' ? 'blue-8' : saveStatus === 'saved' ? 'green-8' : 'red-8'
-              "
-              size="md"
-              dense
-              class="q-px-md"
-            >
+            <q-chip :color="saveStatus === 'saving' ? 'blue-1' : saveStatus === 'saved' ? 'green-1' : 'red-1'
+              " :text-color="saveStatus === 'saving' ? 'blue-8' : saveStatus === 'saved' ? 'green-8' : 'red-8'
+                " size="md" dense class="q-px-md">
               <q-spinner-dots v-if="saveStatus === 'saving'" size="14px" class="q-mr-sm" />
-              <q-icon
-                v-else-if="saveStatus === 'saved'"
-                name="cloud_done"
-                size="16px"
-                class="q-mr-sm"
-              />
-              <q-icon
-                v-else-if="saveStatus === 'error'"
-                name="cloud_off"
-                size="16px"
-                class="q-mr-sm"
-              />
+              <q-icon v-else-if="saveStatus === 'saved'" name="cloud_done" size="16px" class="q-mr-sm" />
+              <q-icon v-else-if="saveStatus === 'error'" name="cloud_off" size="16px" class="q-mr-sm" />
               {{
                 saveStatus === 'saving'
                   ? 'Guardando...'
@@ -99,29 +51,11 @@
 
     <!-- Tabs -->
     <q-card class="main-card">
-      <q-tabs
-        v-model="tabActual"
-        dense
-        class="text-grey"
-        active-color="indigo"
-        indicator-color="indigo"
-        align="left"
-      >
+      <q-tabs v-model="tabActual" dense class="text-grey" active-color="indigo" indicator-color="indigo" align="left">
         <q-tab name="horario" icon="schedule" label="1. Configurar Horario" no-caps />
-        <q-tab
-          name="planificacion"
-          icon="view_timeline"
-          label="2. Planificación por Unidades"
-          no-caps
-          :disable="!planificacionGenerada"
-        />
-        <q-tab
-          name="preview"
-          icon="visibility"
-          label="3. Vista Previa"
-          no-caps
-          :disable="!planificacionGenerada"
-        />
+        <q-tab name="planificacion" icon="view_timeline" label="2. Planificación por Unidades" no-caps
+          :disable="!planificacionGenerada" />
+        <q-tab name="preview" icon="visibility" label="3. Vista Previa" no-caps :disable="!planificacionGenerada" />
       </q-tabs>
 
       <q-separator />
@@ -139,20 +73,8 @@
                     Calendario Académico
                   </div>
                   <div class="q-gutter-md">
-                    <q-input
-                      v-model="calendario.fechaInicio"
-                      outlined
-                      dense
-                      label="Inicio de Clases"
-                      type="date"
-                    />
-                    <q-input
-                      v-model="calendario.fechaFin"
-                      outlined
-                      dense
-                      label="Fin de Clases"
-                      type="date"
-                    />
+                    <q-input v-model="calendario.fechaInicio" outlined dense label="Inicio de Clases" type="date" />
+                    <q-input v-model="calendario.fechaFin" outlined dense label="Fin de Clases" type="date" />
                   </div>
                   <q-banner class="bg-blue-1 text-blue-9 q-mt-md" rounded dense>
                     <strong>{{ totalSemanas }} semanas</strong> académicas
@@ -171,20 +93,17 @@
                   </div>
                   <div class="examenes-grid">
                     <div class="examen-item">
-                      <q-chip color="blue-2" text-color="blue-9" size="sm">1er Parcial</q-chip
-                      ><span>Sem 7-8</span>
+                      <q-chip color="blue-2" text-color="blue-9" size="sm">1er Parcial</q-chip><span>Sem 7-8</span>
                     </div>
                     <div class="examen-item">
-                      <q-chip color="orange-2" text-color="orange-9" size="sm">2do Parcial</q-chip
-                      ><span>Sem 14-15</span>
+                      <q-chip color="orange-2" text-color="orange-9" size="sm">2do Parcial</q-chip><span>Sem
+                        14-15</span>
                     </div>
                     <div class="examen-item">
-                      <q-chip color="purple-2" text-color="purple-9" size="sm">Final</q-chip
-                      ><span>Sem 18-19</span>
+                      <q-chip color="purple-2" text-color="purple-9" size="sm">Final</q-chip><span>Sem 18-19</span>
                     </div>
                     <div class="examen-item">
-                      <q-chip color="red-2" text-color="red-9" size="sm">2da Inst.</q-chip
-                      ><span>Sem 20</span>
+                      <q-chip color="red-2" text-color="red-9" size="sm">2da Inst.</q-chip><span>Sem 20</span>
                     </div>
                   </div>
                 </q-card-section>
@@ -200,19 +119,13 @@
                     Unidades de Aprendizaje
                   </div>
                   <div v-if="unidadesDocumentacion.length" class="unidades-preview">
-                    <div
-                      v-for="unidad in unidadesDocumentacion"
-                      :key="unidad.id"
-                      class="unidad-preview-item"
-                    >
+                    <div v-for="unidad in unidadesDocumentacion" :key="unidad.id" class="unidad-preview-item">
                       <q-avatar color="indigo" text-color="white" size="24px">{{
                         unidad.numero
                       }}</q-avatar>
                       <div class="unidad-preview-info">
                         <span class="unidad-preview-titulo">{{ unidad.titulo }}</span>
-                        <span class="unidad-preview-temas"
-                          >{{ unidad.temas?.length || 0 }} temas</span
-                        >
+                        <span class="unidad-preview-temas">{{ unidad.temas?.length || 0 }} temas</span>
                       </div>
                     </div>
                   </div>
@@ -233,11 +146,8 @@
                     Exámenes
                   </div>
                   <div v-if="fechasExamenes.length" class="q-gutter-y-xs">
-                    <div
-                      v-for="examen in fechasExamenes"
-                      :key="examen.id"
-                      class="row items-center justify-between q-pa-xs bg-grey-1 rounded-borders"
-                    >
+                    <div v-for="examen in fechasExamenes" :key="examen.id"
+                      class="row items-center justify-between q-pa-xs bg-grey-1 rounded-borders">
                       <div class="text-caption text-weight-bold">{{ examen.tipoExamen }}</div>
                       <q-chip size="xs" color="indigo" text-color="white" icon="event">{{
                         examen.fecha
@@ -261,15 +171,8 @@
                       <q-icon name="schedule" color="green" class="q-mr-sm" />
                       Horario de Clases Semanal
                     </div>
-                    <q-btn
-                      unelevated
-                      color="green"
-                      icon="add"
-                      label="Agregar Sesión"
-                      no-caps
-                      size="sm"
-                      @click="agregarHorario"
-                    />
+                    <q-btn unelevated color="green" icon="add" label="Agregar Sesión" no-caps size="sm"
+                      @click="agregarHorario" />
                   </div>
 
                   <div v-if="!horarios.length" class="text-center q-pa-lg">
@@ -280,21 +183,10 @@
                   </div>
 
                   <div v-else class="horarios-grid">
-                    <div
-                      v-for="(horario, idx) in horariosOrdenados"
-                      :key="idx"
-                      class="horario-card"
-                      :class="{ 'horario-api': horario.desdeAPI }"
-                    >
-                      <q-chip
-                        v-if="horario.desdeAPI"
-                        color="blue-2"
-                        text-color="blue-9"
-                        size="xs"
-                        dense
-                        class="api-badge"
-                        >API</q-chip
-                      >
+                    <div v-for="(horario, idx) in horariosOrdenados" :key="idx" class="horario-card"
+                      :class="{ 'horario-api': horario.desdeAPI }">
+                      <q-chip v-if="horario.desdeAPI" color="blue-2" text-color="blue-9" size="xs" dense
+                        class="api-badge">API</q-chip>
                       <div class="horario-dia">
                         <q-icon name="event" class="q-mr-xs" />{{ horario.dia }}
                       </div>
@@ -305,17 +197,8 @@
                         {{ horario.aula }}
                         <span v-if="horario.grupo">(Grupo {{ horario.grupo }})</span>
                       </div>
-                      <q-btn
-                        v-if="!horario.desdeAPI"
-                        flat
-                        round
-                        dense
-                        icon="close"
-                        size="xs"
-                        color="red"
-                        class="delete-btn"
-                        @click="eliminarHorario(horario)"
-                      />
+                      <q-btn v-if="!horario.desdeAPI" flat round dense icon="close" size="xs" color="red"
+                        class="delete-btn" @click="eliminarHorario(horario)" />
                       <q-icon v-else name="lock" size="14px" color="blue" class="lock-icon">
                         <q-tooltip>Horario de la API (no editable)</q-tooltip>
                       </q-icon>
@@ -327,15 +210,8 @@
 
             <!-- Botón Generar -->
             <div class="col-12 text-center">
-              <q-btn
-                unelevated
-                color="indigo"
-                icon="auto_awesome"
-                label="Generar Planificación Automática"
-                size="lg"
-                no-caps
-                @click="generarPlanificacion"
-              />
+              <q-btn unelevated color="indigo" icon="auto_awesome" label="Generar Planificación Automática" size="lg"
+                no-caps @click="generarPlanificacion" />
               <p class="text-grey-6 q-mt-sm text-caption">
                 Se distribuirán {{ totalTemasDocumentacion }} temas de
                 {{ unidadesDocumentacion.length }} unidades en {{ totalSemanas }} semanas
@@ -388,14 +264,7 @@
                   <q-btn flat round dense icon="edit" size="sm" @click.stop="editarUnidad(unidad)">
                     <q-tooltip>Editar Unidad</q-tooltip>
                   </q-btn>
-                  <q-btn
-                    flat
-                    round
-                    dense
-                    icon="add"
-                    size="sm"
-                    @click.stop="agregarSesionManual(unidad)"
-                  >
+                  <q-btn flat round dense icon="add" size="sm" @click.stop="agregarSesionManual(unidad)">
                     <q-tooltip>Agregar Sesión</q-tooltip>
                   </q-btn>
                 </div>
@@ -422,22 +291,13 @@
                     <template v-for="sesion in unidad.sesiones" :key="sesion.id">
                       <!-- Fila de EXAMEN -->
                       <tr v-if="sesion.esExamen" class="sesion-examen-row">
-                        <td
-                          class="cell-semana"
-                          :rowspan="getSemanaRowspan(unidad, sesion)"
-                          v-if="isFirstSesionOfSemana(unidad, sesion)"
-                        >
+                        <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)"
+                          v-if="isFirstSesionOfSemana(unidad, sesion)">
                           <div class="semana-content">
                             <span class="semana-numero">{{ sesion.semana }}</span>
                             <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
-                            <q-chip
-                              v-if="sesion.periodoExamen"
-                              :color="getExamenColor(sesion.periodoExamen)"
-                              text-color="white"
-                              size="xs"
-                              dense
-                              class="q-mt-xs"
-                            >
+                            <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)"
+                              text-color="white" size="xs" dense class="q-mt-xs">
                               {{ sesion.periodoExamen }}
                             </q-chip>
                           </div>
@@ -450,11 +310,8 @@
                           </div>
                         </td>
                         <td class="cell-fechas bg-grey-1">
-                          <div
-                            v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)"
-                            :key="idx"
-                            class="fecha-grupo-row"
-                          >
+                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx"
+                            class="fecha-grupo-row">
                             <div class="fg-grupo">{{ fg.grupo }}</div>
                             <div class="fg-fecha">{{ fg.fecha }}</div>
                           </div>
@@ -473,22 +330,13 @@
                       </tr>
                       <!-- Fila NORMAL -->
                       <tr v-else :class="getSesionRowClass(sesion)">
-                        <td
-                          class="cell-semana"
-                          :rowspan="getSemanaRowspan(unidad, sesion)"
-                          v-if="isFirstSesionOfSemana(unidad, sesion)"
-                        >
+                        <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)"
+                          v-if="isFirstSesionOfSemana(unidad, sesion)">
                           <div class="semana-content">
                             <span class="semana-numero">{{ sesion.semana }}</span>
                             <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
-                            <q-chip
-                              v-if="sesion.periodoExamen"
-                              :color="getExamenColor(sesion.periodoExamen)"
-                              text-color="white"
-                              size="xs"
-                              dense
-                              class="q-mt-xs"
-                            >
+                            <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)"
+                              text-color="white" size="xs" dense class="q-mt-xs">
                               {{ sesion.periodoExamen }}
                             </q-chip>
                           </div>
@@ -501,147 +349,65 @@
                           </div>
                         </td>
                         <td class="cell-fechas bg-grey-1">
-                          <div
-                            v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)"
-                            :key="idx"
-                            class="fecha-grupo-row"
-                          >
+                          <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx"
+                            class="fecha-grupo-row">
                             <div class="fg-grupo">{{ fg.grupo }}</div>
                             <div class="fg-fecha">{{ fg.fecha }}</div>
                           </div>
                         </td>
                         <td>
                           <div v-if="sesion.semana <= 17">
-                            <q-select
-                              v-model="sesion.temasSeleccionados"
-                              :options="opcionesTemasGlobales"
-                              multiple
-                              use-chips
-                              use-input
-                              new-value-mode="add-unique"
-                              emit-value
-                              map-options
-                              dense
-                              outlined
-                              class="cell-input"
-                              label="Temas"
-                              option-value="value"
-                              option-label="label"
-                              @update:model-value="(val) => onTemaUpdate(val, sesion)"
-                            />
+                            <q-select v-model="sesion.temasSeleccionados" :options="opcionesTemasGlobales" multiple
+                              use-chips use-input new-value-mode="add-unique" emit-value map-options dense outlined
+                              class="cell-input" label="Temas" option-value="value" option-label="label"
+                              @update:model-value="(val) => onTemaUpdate(val, sesion)" />
                           </div>
                           <div v-else class="text-caption text-grey text-center">--</div>
                         </td>
                         <td>
                           <div v-if="sesion.semana <= 17">
                             <!-- Select múltiple de contenido_items -->
-                            <q-select
-                              v-model="sesion.contenido_items_seleccionados"
-                              :options="getContenidoItemsOptions(sesion)"
-                              multiple
-                              use-chips
-                              emit-value
-                              map-options
-                              dense
-                              outlined
-                              class="cell-input"
-                              label="Contenido"
-                              option-value="value"
-                              option-label="label"
-                              :disable="
-                                !sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0
-                              "
-                              :hint="
-                                !sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0
+                            <q-select v-model="sesion.contenido_items_seleccionados"
+                              :options="getContenidoItemsOptions(sesion)" multiple use-chips emit-value map-options
+                              dense outlined class="cell-input" label="Contenido" option-value="value"
+                              option-label="label" :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0
+                                " :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0
                                   ? 'Seleccione tema(s) primero'
                                   : ''
-                              "
-                              @update:model-value="marcarModificado(sesion)"
-                            />
+                                " @update:model-value="marcarModificado(sesion)" />
                           </div>
                           <div v-else class="text-caption text-grey text-center">--</div>
                         </td>
                         <td>
-                          <q-input
-                            v-if="sesion.semana <= 17"
-                            v-model="sesion.conceptual"
-                            outlined
-                            dense
-                            type="textarea"
-                            autogrow
-                            class="cell-input"
-                            placeholder="Contenidos..."
-                            @update:model-value="marcarModificado(sesion)"
-                          />
+                          <q-input v-if="sesion.semana <= 17" v-model="sesion.conceptual" outlined dense type="textarea"
+                            autogrow class="cell-input" placeholder="Contenidos..."
+                            @update:model-value="marcarModificado(sesion)" />
                         </td>
                         <td>
-                          <q-input
-                            v-if="sesion.semana <= 17"
-                            v-model="sesion.procedimental"
-                            outlined
-                            dense
-                            type="textarea"
-                            autogrow
-                            class="cell-input"
-                            placeholder="Habilidades..."
-                            @update:model-value="marcarModificado(sesion)"
-                          />
+                          <q-input v-if="sesion.semana <= 17" v-model="sesion.procedimental" outlined dense
+                            type="textarea" autogrow class="cell-input" placeholder="Habilidades..."
+                            @update:model-value="marcarModificado(sesion)" />
                         </td>
                         <td>
-                          <q-input
-                            v-if="sesion.semana <= 17"
-                            v-model="sesion.actitudinal"
-                            outlined
-                            dense
-                            type="textarea"
-                            autogrow
-                            class="cell-input"
-                            placeholder="Actitudes..."
-                            @update:model-value="marcarModificado(sesion)"
-                          />
+                          <q-input v-if="sesion.semana <= 17" v-model="sesion.actitudinal" outlined dense
+                            type="textarea" autogrow class="cell-input" placeholder="Actitudes..."
+                            @update:model-value="marcarModificado(sesion)" />
                         </td>
                         <td>
-                          <q-select
-                            v-if="sesion.semana <= 17"
-                            v-model="sesion.criteriosSeleccionados"
-                            multiple
-                            use-chips
-                            use-input
-                            new-value-mode="add-unique"
-                            :options="criteriosOptions"
-                            outlined
-                            dense
-                            class="cell-input"
-                            placeholder="Criterios..."
-                            @update:model-value="marcarModificado(sesion)"
-                          />
+                          <q-select v-if="sesion.semana <= 17" v-model="sesion.criteriosSeleccionados" multiple
+                            use-chips use-input new-value-mode="add-unique" :options="criteriosOptions" outlined dense
+                            class="cell-input" placeholder="Criterios..."
+                            @update:model-value="marcarModificado(sesion)" />
                         </td>
                         <td>
-                          <q-select
-                            v-if="sesion.semana <= 17"
-                            v-model="sesion.instrumentosSeleccionados"
-                            multiple
-                            use-chips
-                            use-input
-                            new-value-mode="add-unique"
-                            :options="instrumentosOptions"
-                            outlined
-                            dense
-                            class="cell-input"
-                            placeholder="Instrumentos..."
-                            @update:model-value="marcarModificado(sesion)"
-                          />
+                          <q-select v-if="sesion.semana <= 17" v-model="sesion.instrumentosSeleccionados" multiple
+                            use-chips use-input new-value-mode="add-unique" :options="instrumentosOptions" outlined
+                            dense class="cell-input" placeholder="Instrumentos..."
+                            @update:model-value="marcarModificado(sesion)" />
                         </td>
                         <td class="cell-actions">
-                          <q-btn
-                            flat
-                            round
-                            dense
-                            icon="delete"
-                            size="xs"
-                            color="red"
-                            @click="eliminarSesion(unidad, sesion)"
-                          />
+                          <q-btn flat round dense icon="delete" size="xs" color="red"
+                            @click="eliminarSesion(unidad, sesion)" />
                         </td>
                       </tr>
                     </template>
@@ -711,11 +477,7 @@
                       }}</small>
                     </td>
                     <td class="cell-fechas bg-grey-1">
-                      <div
-                        v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)"
-                        :key="idx"
-                        class="fecha-grupo-row"
-                      >
+                      <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
                         <div class="fg-grupo">{{ fg.grupo }}</div>
                         <div class="fg-fecha">{{ fg.fecha }}</div>
                       </div>
@@ -755,14 +517,7 @@
           <h3><q-icon name="schedule" class="q-mr-sm" /> Agregar Sesión de Clase</h3>
         </div>
         <q-card-section class="q-gutter-md">
-          <q-select
-            v-model="horarioForm.dia"
-            :options="diasOptions"
-            outlined
-            label="Día"
-            emit-value
-            map-options
-          />
+          <q-select v-model="horarioForm.dia" :options="diasOptions" outlined label="Día" emit-value map-options />
           <div class="row q-col-gutter-md">
             <div class="col-6">
               <q-input v-model="horarioForm.horaInicio" outlined label="Hora Inicio" type="time" />
@@ -788,14 +543,9 @@
         </div>
         <q-card-section class="q-gutter-md">
           <q-input v-model="unidadForm.nombre" outlined label="Nombre de la Unidad" />
-          <q-input
-            v-model="unidadForm.elementoCompetencia"
-            outlined
-            type="textarea"
-            rows="4"
+          <q-input v-model="unidadForm.elementoCompetencia" outlined type="textarea" rows="4"
             label="Elemento de Competencia"
-            hint="Describe la competencia que el estudiante desarrollará en esta unidad"
-          />
+            hint="Describe la competencia que el estudiante desarrollará en esta unidad" />
         </q-card-section>
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="showUnidadDialog = false" />
@@ -812,15 +562,8 @@
         </div>
         <q-card-section>
           <p>Selecciona la gestión de origen:</p>
-          <q-select
-            v-model="gestionACopiar"
-            :options="gestionesAnteriores"
-            outlined
-            label="Gestión origen"
-            emit-value
-            map-options
-            class="q-mb-md"
-          />
+          <q-select v-model="gestionACopiar" :options="gestionesAnteriores" outlined label="Gestión origen" emit-value
+            map-options class="q-mb-md" />
           <q-banner class="bg-orange-1 text-orange-9" rounded dense>
             <q-icon name="warning" class="q-mr-sm" />
             Esto reemplazará la planificación actual.
@@ -849,6 +592,7 @@ const $q = useQuasar()
 const asignaturasStore = useAsignaturasStore()
 const rolExamenesStore = useRolExamenesStore()
 
+const guardando = ref(false)
 const tabActual = ref('horario')
 const gestionSeleccionada = ref('2026-I')
 const showHorarioDialog = ref(false)
@@ -1055,9 +799,9 @@ async function cargarPlanificacion() {
             const temaStr = String(db.tema || '')
             sesionView.temasSeleccionados = temaStr
               ? temaStr
-                  .split(',')
-                  .map((s) => s.trim())
-                  .filter((s) => s)
+                .split(',')
+                .map((s) => s.trim())
+                .filter((s) => s)
               : []
             sesionView.tema_id = null
           }
@@ -1283,17 +1027,17 @@ const planificacion = computed(() => {
     .concat(
       planificacionSesiones.value.some((s) => s.unidad_id === 'finales')
         ? [
-            {
-              id: 'finales',
-              nombre: 'EXÁMENES FINALES Y SEGUNDA INSTANCIA',
-              elementoCompetencia: 'Evaluación de resultados de aprendizaje.',
-              temas: [],
-              collapsed: false,
-              sesiones: planificacionSesiones.value
-                .filter((s) => s.unidad_id === 'finales')
-                .sort((a, b) => a.numeroGlobal - b.numeroGlobal),
-            },
-          ]
+          {
+            id: 'finales',
+            nombre: 'EXÁMENES FINALES Y SEGUNDA INSTANCIA',
+            elementoCompetencia: 'Evaluación de resultados de aprendizaje.',
+            temas: [],
+            collapsed: false,
+            sesiones: planificacionSesiones.value
+              .filter((s) => s.unidad_id === 'finales')
+              .sort((a, b) => a.numeroGlobal - b.numeroGlobal),
+          },
+        ]
         : [],
     )
 })
@@ -1323,7 +1067,7 @@ function resolveContenido(sesion) {
 const opcionesTemasGlobales = computed(() => {
   const opciones = []
   unidadesDocumentacion.value.forEach((u) => {
-    ;(u.temas || []).forEach((t) => {
+    ; (u.temas || []).forEach((t) => {
       const titulo = typeof t === 'string' ? t : t.titulo || t.nombre || ''
       opciones.push({
         label: titulo,
@@ -1805,7 +1549,7 @@ async function guardarTodo(silent = false) {
         tema_id:
           sesion.tema_id ||
           (Array.isArray(sesion.temasSeleccionados) &&
-          typeof sesion.temasSeleccionados[0] === 'number'
+            typeof sesion.temasSeleccionados[0] === 'number'
             ? sesion.temasSeleccionados[0]
             : null),
         temas_ids: Array.isArray(sesion.temasSeleccionados)
@@ -2570,7 +2314,8 @@ function exportarPDF() {
   font-size: 12px;
   line-height: 1.4;
 }
-  background: white;
+
+background: white;
 }
 
 /* Transiciones */
