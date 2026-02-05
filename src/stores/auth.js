@@ -334,6 +334,8 @@ export const useAuthStore = defineStore('auth', () => {
                 codigo: asig.codigo || '---',
                 semestre: asig.semestre || g.semestre,
                 progreso: asig.progreso || 0,
+                // Sede: Priorizar Sede del GRUPO (donde enseña), fallback a Sede de la Materia
+                sede_nombre: g.sede?.nombre || asig.sede?.nombre || null,
                 estadisticas: asig.estadisticas_progreso || { total: 0, completados: 0, pendientes: 0 },
                 carreras: asig.carreras?.map(c => c.nombre) || [],
                 grupos: [],
@@ -347,7 +349,8 @@ export const useAuthStore = defineStore('auth', () => {
               tipo: g.tipo,
               turno: g.turno,
               gestion: g.gestion,
-              horario: horariosFmt
+              horario: horariosFmt,
+              sede_nombre: g.sede?.nombre // Guardar también por grupo
             })
 
             if (!grouped[asigId].pivot.grupo) {
@@ -357,7 +360,8 @@ export const useAuthStore = defineStore('auth', () => {
                 horario: horariosFmt || 'Por definir',
                 turno: g.turno,
                 gestion: g.gestion,
-                sede_id: g.sede_id // Added sede context
+                sede_id: g.sede_id,
+                sede_nombre: g.sede?.nombre // Added sede context
               }
             }
           }
