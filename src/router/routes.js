@@ -59,6 +59,12 @@ const routes = [
         component: () => import('pages/dashboards/AdminDashboard.vue'),
         meta: { title: 'Panel Administrativo', rol: 'ADMIN' }
       },
+      {
+        path: 'admin/explorador',
+        name: 'explorador-academico',
+        component: () => import('pages/admin/ExploradorAcademicoPage.vue'),
+        meta: { title: 'Explorador Académico', rol: ['SUPER_ADMIN', 'VICERRECTOR_NACIONAL', 'ADMIN'] }
+      },
       // Docente Routes
       {
         path: 'docente',
