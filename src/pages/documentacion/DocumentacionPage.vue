@@ -448,9 +448,6 @@ function irADocumentacion(id) {
         sede_id: sedeId
       } 
     })
-    }
-    router.push({ path: `/documentacion/${id}`, query })
->>>>>>> f523a6e66ed43205b32f49db6d54e7d1bfe2148a
     return
   }
 
