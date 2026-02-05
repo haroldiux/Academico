@@ -447,7 +447,7 @@
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
                 <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                  }}</q-badge>
+                }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
                 <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
@@ -479,7 +479,7 @@
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
                 <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
                   bibliografiasProgramaAnalitico.length
-                  }}</q-badge>
+                }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
@@ -492,7 +492,7 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
                         biblio.autor
-                        }}</div>
+                      }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
                           biblio.anio !==
@@ -569,7 +569,7 @@
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
                     <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                      }})</span>
+                    }})</span>
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
@@ -1625,16 +1625,20 @@ function cargarFormDatos() {
   if (authStore.rol === 'DOCENTE') {
     const u = authStore.usuarioActual
     if (u) {
+      console.log('DEBUG: Cargando datos de docente', u)
       // Email: Priorizar email del usuario
       if (u.email) formDatos.value.docente_email = u.email
 
-      // Datos del perfil docente (si existen)
-      if (u.docente) {
-        if (u.docente.formacion) formDatos.value.docente_formacion = u.docente.formacion
-        if (u.docente.telefono) formDatos.value.docente_telefono = u.docente.telefono
-        // Si el docente tiene un campo específico de email en su perfil docente, usar ese
-        if (u.docente.email) formDatos.value.docente_email = u.docente.email
-      }
+      // Telefono: Prioridad -> User.telefono (Perfil) -> Docente.celular -> Asignatura (Guardado)
+      const telAuth = u.telefono
+      const telDoc = u.docente?.celular
+      const telAsig = asignatura.value.docente_telefono
+      console.log('DEBUG: Teléfonos', { telAuth, telDoc, telAsig })
+
+      formDatos.value.docente_telefono = telAuth || telDoc || telAsig
+
+      // Formacion: Priorizar perfil
+      formDatos.value.docente_formacion = u.docente?.formacion || asignatura.value.docente_formacion
     }
   }
 
