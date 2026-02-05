@@ -263,6 +263,12 @@ export const useAuthStore = defineStore('auth', () => {
           if (profileData.formacion !== undefined && usuarioActual.value.docente) {
              usuarioActual.value.docente.formacion = profileData.formacion
           }
+          if (profileData.telefono !== undefined) {
+             usuarioActual.value.telefono = profileData.telefono
+             if (usuarioActual.value.docente) {
+                usuarioActual.value.docente.celular = profileData.telefono
+             }
+          }
 
           localStorage.setItem('auth_user', JSON.stringify(usuarioActual.value))
         }
