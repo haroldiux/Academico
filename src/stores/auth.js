@@ -194,7 +194,8 @@ export const useAuthStore = defineStore('auth', () => {
                 aula: g.aula_id,
                 horario: horariosFmt || 'Por definir',
                 turno: g.turno,
-                gestion: g.gestion
+                gestion: g.gestion,
+                sede_id: g.sede_id // Added sede context
               }
             }
           }
@@ -341,7 +342,8 @@ export const useAuthStore = defineStore('auth', () => {
                 aula: g.aula_id,
                 horario: horariosFmt || 'Por definir',
                 turno: g.turno,
-                gestion: g.gestion
+                gestion: g.gestion,
+                sede_id: g.sede_id // Added sede context
               }
             }
           }
