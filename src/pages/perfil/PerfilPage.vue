@@ -7,8 +7,12 @@
         <h1 class="page-title">Mi Perfil</h1>
       </div>
       <div class="header-right">
-        <q-btn color="primary" icon="save" label="Guardar Cambios" class="btn-rounded shadow-2" :loading="saving"
-          @click="handleSave" />
+        <q-chip v-if="saving" color="warning" text-color="white" icon="sync">
+          Guardando...
+        </q-chip>
+        <q-chip v-else color="positive" text-color="white" icon="check_circle">
+          Guardado Automático
+        </q-chip>
       </div>
     </div>
 
@@ -46,6 +50,11 @@
             <q-input v-model="form.telefono" label="Número de Teléfono / Celular" outlined class="input-rounded"
               bg-color="bg-tertiary" placeholder="Ej: 78945612">
               <template v-slot:prepend><q-icon name="phone" /></template>
+            </q-input>
+
+            <q-input v-model="form.formacion" label="Formación Académica / Título" outlined class="input-rounded"
+              bg-color="bg-tertiary" placeholder="Ej: Magister en Educación Superior">
+              <template v-slot:prepend><q-icon name="school" /></template>
             </q-input>
           </div>
         </div>
@@ -132,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useQuasar } from 'quasar'
 
@@ -148,7 +157,8 @@ const form = ref({
   apellido: '',
   ci: '',
   email: '',
-  telefono: ''
+  telefono: '',
+  formacion: ''
 })
 
 const pwdForm = ref({
@@ -182,7 +192,9 @@ onMounted(async () => {
       apellido: nombres.slice(1).join(' ') || '',
       ci: freshUser.ci || '',
       email: freshUser.email || '',
-      telefono: freshUser.telefono || ''
+      telefono: freshUser.telefono || '',
+      // Cargar formación si existe en el perfil docente
+      formacion: freshUser.docente?.formacion || ''
     }
   }
 })
@@ -221,11 +233,23 @@ async function handleSave() {
   saving.value = false
 
   if (result.success) {
-    $q.notify({ type: 'positive', message: 'Perfil actualizado correctamente', icon: 'check_circle' })
+    // $q.notify({ type: 'positive', message: 'Perfil actualizado correctamente', icon: 'check_circle' }) // Convert to silent
   } else {
     $q.notify({ type: 'negative', message: result.error })
   }
 }
+
+// Autosave Logic
+let autoSaveTimeout = null
+watch(form, () => {
+  saving.value = true
+  if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
+
+  autoSaveTimeout = setTimeout(async () => {
+    await handleSave()
+    saving.value = false
+  }, 2000)
+}, { deep: true })
 
 async function handleUpdatePwd() {
   if (pwdForm.value.new !== pwdForm.value.confirm) {

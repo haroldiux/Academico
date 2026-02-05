@@ -7,7 +7,7 @@
         <q-breadcrumbs class="q-mb-sm">
           <q-breadcrumbs-el icon="home" to="/" />
           <q-breadcrumbs-el :label="breadcrumbInfo.label" :to="breadcrumbInfo.to" />
-          <q-breadcrumbs-el :label="asignatura?.codigo || 'Asignatura'" />
+          <q-breadcrumbs-el :label="codigoVisual" />
         </q-breadcrumbs>
         <h4 class="q-ma-none text-weight-bold" style="line-height: 1.2;">
           <q-icon name="menu_book" size="36px" color="primary" class="q-mr-sm" />
@@ -19,7 +19,7 @@
           </q-chip>
         </h4>
         <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
-          {{ asignatura?.codigo }} - {{ asignatura?.semestre }}° Semestre • {{ nombreCarrera }}
+          {{ codigoVisual }} - {{ asignatura?.semestre }}° Semestre • {{ nombreCarrera }}
         </p>
         <div class="row items-center q-gutter-sm q-mt-sm">
           <q-chip v-if="nombreSede" outline color="orange" icon="business" dense>
@@ -124,7 +124,7 @@
                     <q-input :model-value="nombreCarrera" label="Carrera" outlined dense readonly bg-color="white" />
                   </div>
                   <div class="col-12 col-md-2">
-                    <q-input v-model="formDatos.codigo" label="Código" outlined dense readonly bg-color="white"
+                    <q-input :model-value="codigoVisual" label="Código" outlined dense readonly bg-color="white"
                       input-class="text-weight-bold" />
                   </div>
                   <div class="col-12 col-md-2">
@@ -447,7 +447,7 @@
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
                 <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                }}</q-badge>
+                  }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
                 <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
@@ -479,7 +479,7 @@
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
                 <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
                   bibliografiasProgramaAnalitico.length
-                }}</q-badge>
+                  }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
@@ -492,7 +492,7 @@
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
                         biblio.autor
-                      }}</div>
+                        }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
                           biblio.anio !==
@@ -569,7 +569,7 @@
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
                     <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                    }})</span>
+                      }})</span>
                   </div>
                   <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
@@ -1238,10 +1238,25 @@ const nombreDocenteCarpeta = computed(() => {
     return asignatura.value.docentes[0].nombre_completo
   }
 
-  // 3. Si soy docente (rol), mostrar mi nombre
-  if (authStore.rol === ROLES.DOCENTE) {
-    const me = asignatura.value.docentes.find(d => d.id === authStore.usuarioActual?.docente_id)
+  // 3. Si soy docente (rol), mostrar MI nombre con lógica robusta
+  if (authStore.rol === 'DOCENTE') {
+    const myDocenteId = authStore.usuarioActual?.docente?.id || authStore.usuarioActual?.docente_id
+    const myUserId = authStore.usuarioActual?.id
+
+    // Intento 1: Buscar por ID de docente
+    let me = asignatura.value.docentes.find(d => d.id == myDocenteId)
+
+    // Intento 2: Buscar por ID de usuario (si el objeto docente tiene user_id)
+    if (!me && myUserId) {
+      me = asignatura.value.docentes.find(d => d.user_id == myUserId || d.usuario_id == myUserId)
+    }
+
+    // Intento 3: Si no encuentro match pero SOY docente, asumimos que soy yo (Fallback visual)
     if (me) return me.nombre_completo
+
+    // Fallback Agresivo: Si soy docente y tengo acceso a esta pagina, mostrar mi nombre del store
+    // aunque no esté explícitamente en el array de 'docentes' de la asignatura (casos de sync retardo)
+    if (authStore.nombreCompleto) return authStore.nombreCompleto
   }
 
   // 4. Si hay varios, intentar filtrar por sede del usuario actual (show first match)
@@ -1255,10 +1270,30 @@ const nombreDocenteCarpeta = computed(() => {
 })
 
 const nombreSede = computed(() => {
+  // 0. Prioridad Total: Query Param (Pasado desde el listado)
+  if (route.query.nombre_sede) return route.query.nombre_sede
+  const querySedeId = route.query.sede_id
+  if (querySedeId) {
+    const s = sedesStore.sedes.find(x => x.id == querySedeId)
+    if (s) return s.nombre
+  }
+
+  // 1. Si es DOCENTE, priorizar SU Sede asignada (Contexto Físico)
+  if (authStore.rol === 'DOCENTE' && authStore.usuarioActual?.docente?.sede?.nombre) {
+    return authStore.usuarioActual.docente.sede.nombre
+  }
+
   if (!asignatura.value) return null
 
   // 1. Relación correcta: Array de Carreras (Sync)
   if (asignatura.value.carreras?.length > 0) {
+    // Intentar buscar la carrera que coincida con la sede del usuario (si es docente)
+    if (authStore.rol === 'DOCENTE') {
+      const docenteSedeId = authStore.sedeId
+      const carreraSede = asignatura.value.carreras.find(c => c.sede_id == docenteSedeId)
+      if (carreraSede?.sede?.nombre) return carreraSede.sede.nombre
+    }
+
     const c = asignatura.value.carreras[0]
     if (c.sede?.nombre) return c.sede.nombre
     if (c.sede_id) {
@@ -1288,6 +1323,17 @@ const nombreCarrera = computed(() => {
 
   return 'N/A'
 })
+
+// Computed for Visual Code (Stripping Technical Suffixes)
+// Converts "OPT-101-CBA-SON" -> "OPT-101" for display
+const codigoVisual = computed(() => {
+  if (!asignatura.value?.codigo) return 'Asignatura'
+  // Regex to remove -XXX-YYYY suffixes (e.g. -CBA-CARSON)
+  // Matches a hyphen followed by 3 uppercase letters, followed by another hyphen and alphanumeric
+  return asignatura.value.codigo.replace(/-[A-Z]{3}-[A-Z0-9-]+$/, '')
+})
+
+
 
 // Computed para bibliografías separadas por tipo
 // Bibliografías del Word (tipos en español)
@@ -1585,6 +1631,28 @@ function cargarFormDatos() {
     docente_email: asignatura.value.docente_email || ''
   }
 
+  // Lógica para priorizar datos del DOCENTE actual (Perfil) sobre los datos guardados en la asignatura
+  // Esto evita que un docente vea los datos de otro si comparten la materia
+  if (authStore.rol === 'DOCENTE') {
+    const u = authStore.usuarioActual
+    if (u) {
+      console.log('DEBUG: Cargando datos de docente', u)
+      // Email: Priorizar email del usuario
+      if (u.email) formDatos.value.docente_email = u.email
+
+      // Telefono: Prioridad -> User.telefono (Perfil) -> Docente.celular -> Asignatura (Guardado)
+      const telAuth = u.telefono
+      const telDoc = u.docente?.celular
+      const telAsig = asignatura.value.docente_telefono
+      console.log('DEBUG: Teléfonos', { telAuth, telDoc, telAsig })
+
+      formDatos.value.docente_telefono = telAuth || telDoc || telAsig
+
+      // Formacion: Priorizar perfil
+      formDatos.value.docente_formacion = u.docente?.formacion || asignatura.value.docente_formacion
+    }
+  }
+
   // Recalcular Carga Horaria Total y Detalle inmediatamente al cargar
   const ht = Number(asignatura.value.horas_teoricas) || 0
   const hp = Number(asignatura.value.horas_practicas) || 0
@@ -1702,7 +1770,31 @@ async function guardadoInterno() {
     criterios_evaluacion: formPrograma.value.sistema_evaluacion
   }
 
+  // 1. Guardar en la Asignatura (Base de datos compartida)
+  // Nota: Esto actualiza los campos docente_email, etc. en la tabla asignatura.
+  // Sin embargo, cada docente carga visualmente SU info desde el perfil.
   await store.updateAsignatura(asignatura.value.id, datosCompletos)
+
+  // 2. ACTUALIZAR PERFIL DEL DOCENTE (Datos Personales)
+  // Si el usuario es docente, guardamos estos cambios también en su perfil personal
+  // para que persistan como SUS datos de contacto preferidos.
+  if (authStore.rol === 'DOCENTE' && authStore.usuarioActual) {
+    const perfilUpdate = {
+      email: formDatos.value.docente_email, // Actualizar email de contacto
+      // Asumimos que el backend acepta 'docente' object nested o campos planos
+      // Ajustar según la estructura de updateProfile en auth store
+      telefono: formDatos.value.docente_telefono,
+      formacion: formDatos.value.docente_formacion
+    }
+
+    // Intentar actualizar perfil silenciosamente (sin bloquear)
+    try {
+      await authStore.updateProfile(perfilUpdate)
+    } catch (e) {
+      console.warn('No se pudo actualizar el perfil personal del docente:', e)
+      // No lanzamos error para no detener el guardado principal
+    }
+  }
 }
 
 

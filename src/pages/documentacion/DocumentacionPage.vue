@@ -448,13 +448,22 @@ function irADocumentacion(id) {
         sede_id: sedeId
       } 
     })
+    }
+    router.push({ path: `/documentacion/${id}`, query })
+>>>>>>> f523a6e66ed43205b32f49db6d54e7d1bfe2148a
     return
   }
 
   // CASO 2: DIRECTORES/ADMIN -> Lógica de Selección
   const docentes = asignatura.docentes_data || []
 
+  // Contexto de sede para directores
+  const baseQuery = {
+    sede_id: filtros.value.sede || asignatura.sede_id
+  }
+
   if (docentes.length === 0) {
+<<<<<<< HEAD
     // Sin docente asignado -> Entrar modo genérico
     router.push({ 
       path: `/documentacion/${id}`, 
@@ -470,19 +479,35 @@ function irADocumentacion(id) {
         docente_id: docentes[0].id,
         carrera_id: careerId 
       } 
+=======
+    // Sin docente asignado -> Entrar modo genérico (o mostrar alerta)
+    router.push({ path: `/documentacion/${id}`, query: baseQuery })
+  } else if (docentes.length === 1) {
+    // Un solo docente -> Entrar directo seleccionando a ese docente
+    router.push({
+      path: `/documentacion/${id}`,
+      query: {
+        ...baseQuery,
+        docente_id: docentes[0].id
+      }
+>>>>>>> f523a6e66ed43205b32f49db6d54e7d1bfe2148a
     })
   } else {
     // Múltiples docentes -> Mostrar diálogo
-    asignaturaSeleccionada.value = asignatura
+    asignaturaSeleccionada.value = { ...asignatura, overrideQuery: baseQuery }
     showDocenteDialog.value = true
   }
 }
 
 function seleccionarDocente(docenteId) {
   if (asignaturaSeleccionada.value) {
+    const query = {
+      ...(asignaturaSeleccionada.value.overrideQuery || {}),
+      docente_id: docenteId
+    }
     router.push({
       path: `/documentacion/${asignaturaSeleccionada.value.id}`,
-      query: { docente_id: docenteId }
+      query
     })
     showDocenteDialog.value = false
     asignaturaSeleccionada.value = null

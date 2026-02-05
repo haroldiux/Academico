@@ -134,6 +134,25 @@
                   </q-td>
                 </template>
 
+                <!-- Columna Progreso Documentación -->
+                <template v-slot:body-cell-progreso="props">
+                  <q-td :props="props">
+                    <div class="progreso-cell">
+                      <q-linear-progress
+                        :value="(props.row.progreso_documentacion || 0) / 100"
+                        :color="getProgresoColor(props.row.progreso_documentacion || 0)"
+                        rounded
+                        size="10px"
+                        class="q-mb-xs"
+                        style="min-width: 80px;"
+                      />
+                      <span class="progreso-text" :class="getProgresoClass(props.row.progreso_documentacion || 0)">
+                        {{ props.row.progreso_documentacion || 0 }}%
+                      </span>
+                    </div>
+                  </q-td>
+                </template>
+
                 <!-- Columna Estado -->
                 <template v-slot:body-cell-estado="props">
                   <q-td :props="props">
@@ -347,10 +366,21 @@ const filtros = ref({
 
 // Opciones de Carreras (Dinámicas)
 const carrerasOptions = computed(() => {
-  // Para Vicerrector Sede: Mostrar todas las carreras de su sede
-  if (authStore.rol === ROLES.VICERRECTOR_SEDE) {
-    // Asegurar que las carreras estén cargadas o usar getter
-    return carrerasStore.getCarrerasBySede(authStore.sedeId).map(c => ({
+  // Para Vicerrector Sede o Direccion Academica: Mostrar todas las carreras de su sede
+  if (authStore.rol === ROLES.VICERRECTOR_SEDE || authStore.rol === ROLES.DIRECCION_ACADEMICA) {
+    // Obtener sede del usuario
+    const sedeId = authStore.sedeId || authStore.usuarioActual?.sede_id
+    
+    if (!sedeId) {
+      // Si no hay sede asignada, mostrar todas las carreras
+      return carrerasStore.carreras.map(c => ({
+        label: c.nombre,
+        value: c.id
+      }))
+    }
+    
+    // Mostrar carreras de la sede del usuario
+    return carrerasStore.getCarrerasBySede(sedeId).map(c => ({
       label: c.nombre,
       value: c.id
     }))
@@ -384,7 +414,12 @@ async function cargarAsignaturas() {
 }
 
 // Inicialización
-onMounted(() => {
+onMounted(async () => {
+  // Cargar carreras primero
+  if (carrerasStore.carreras.length === 0) {
+    await carrerasStore.fetchCarreras()
+  }
+  
   // Pre-seleccionar la primera carrera disponible
   if (carrerasOptions.value.length > 0) {
     filtros.value.carreraId = carrerasOptions.value[0].value
@@ -407,6 +442,7 @@ const columnasAsignaturas = [
   { name: 'asignatura', label: 'Asignatura', field: 'nombre', align: 'left', sortable: true },
   { name: 'horas', label: 'Horas', field: 'horas_teoricas', align: 'center', format: (val, row) => ((row.horas_teoricas || 0) * 20) + ((row.horas_practicas || 0) * 20), style: 'width: 80px' }, // Suma x20
   { name: 'docente', label: 'Docente Principal', field: 'docente_nombre', align: 'left' },
+  { name: 'progreso', label: 'Progreso Doc.', field: 'progreso_documentacion', align: 'center', sortable: true, style: 'width: 150px' },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 100px' },
   { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center', style: 'width: 100px' }
 ]
@@ -458,6 +494,20 @@ function getNemotecnicoSemestre(n) {
   const maps = ['Cero', 'Primer', 'Segundo', 'Tercer', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo', 'Noveno', 'Décimo']
   return (maps[n] || n) + ' Semestre'
 }
+
+// Funciones de progreso para documentación
+function getProgresoColor(progreso) {
+  if (progreso >= 80) return 'green'
+  if (progreso >= 50) return 'orange'
+  if (progreso >= 30) return 'amber'
+  return 'red'
+}
+
+function getProgresoClass(progreso) {
+  if (progreso >= 80) return 'text-green'
+  if (progreso >= 50) return 'text-orange'
+  return 'text-red'
+}
 </script>
 
 <style scoped>
@@ -475,4 +525,21 @@ function getNemotecnicoSemestre(n) {
 .metric-card:hover {
   transform: translateY(-2px);
 }
+
+/* Estilos de progreso de documentación */
+.progreso-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.progreso-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.progreso-text.text-green { color: #22c55e; }
+.progreso-text.text-orange { color: #f97316; }
+.progreso-text.text-red { color: #ef4444; }
 </style>

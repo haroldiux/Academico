@@ -31,7 +31,12 @@
 
     <!-- Carreras Grid -->
     <div class="carreras-grid">
-      <div v-for="carrera in carrerasFiltradas" :key="carrera.id" class="carrera-card">
+      <div 
+        v-for="carrera in carrerasFiltradas" 
+        :key="carrera.id" 
+        class="carrera-card clickable"
+        @click="navegarACarrera(carrera)"
+      >
         <div class="carrera-header">
           <div class="carrera-icon"
             :style="{ background: getCarreraColor(carrera.id) + '20', color: getCarreraColor(carrera.id) }">
@@ -44,6 +49,24 @@
         </div>
         <h3 class="carrera-nombre">{{ carrera.nombre }}</h3>
         <p class="carrera-codigo">{{ carrera.codigo }} • {{ getSedeName(carrera.sede_id) }}</p>
+        
+        <!-- Barra de Progreso de Documentación -->
+        <div class="carrera-progreso">
+          <div class="progreso-header">
+            <span class="progreso-label">Documentación</span>
+            <span class="progreso-value" :class="getProgresoClass(carrera.progreso_documentacion || 0)">
+              {{ carrera.progreso_documentacion || 0 }}%
+            </span>
+          </div>
+          <q-linear-progress
+            :value="(carrera.progreso_documentacion || 0) / 100"
+            :color="getProgresoColor(carrera.progreso_documentacion || 0)"
+            rounded
+            size="8px"
+            class="progreso-bar"
+          />
+        </div>
+        
         <div class="carrera-stats">
           <div class="carrera-stat">
             <q-icon name="menu_book" size="16px" />
@@ -54,6 +77,11 @@
             <span>{{ carrera.docentes_count || 0 }} docentes</span>
           </div>
         </div>
+        
+        <!-- Indicador de click -->
+        <div class="carrera-action">
+          <q-icon name="chevron_right" size="20px" color="grey-5" />
+        </div>
       </div>
     </div>
   </q-page>
@@ -61,9 +89,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 
+const router = useRouter()
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
 
@@ -102,6 +132,32 @@ function getCarreraColor(id) {
 function getSedeName(sedeId) {
   const sede = sedesStore.getSedeById(sedeId)
   return sede?.nombre || 'Sin sede'
+}
+
+// Navegación a la carrera seleccionada
+function navegarACarrera(carrera) {
+  router.push({
+    path: '/director/reportes',
+    query: {
+      tab: 'materias',
+      carrera: carrera.id,
+      sede: carrera.sede_id
+    }
+  })
+}
+
+// Funciones de progreso
+function getProgresoColor(progreso) {
+  if (progreso >= 80) return 'green'
+  if (progreso >= 50) return 'orange'
+  if (progreso >= 30) return 'amber'
+  return 'red'
+}
+
+function getProgresoClass(progreso) {
+  if (progreso >= 80) return 'text-green'
+  if (progreso >= 50) return 'text-orange'
+  return 'text-red'
 }
 </script>
 
@@ -240,5 +296,61 @@ function getSedeName(sedeId) {
   gap: 8px;
   color: var(--text-secondary);
   font-size: 0.875rem;
+}
+
+/* Clickable card styles */
+.carrera-card.clickable {
+  cursor: pointer;
+  position: relative;
+}
+
+.carrera-card.clickable:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.carrera-action {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.carrera-card.clickable:hover .carrera-action {
+  opacity: 1;
+}
+
+/* Progress bar styles */
+.carrera-progreso {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.progreso-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progreso-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.progreso-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.progreso-value.text-green { color: var(--accent-green); }
+.progreso-value.text-orange { color: var(--accent-orange); }
+.progreso-value.text-red { color: #ef4444; }
+
+.progreso-bar {
+  background: rgba(0, 0, 0, 0.1);
 }
 </style>

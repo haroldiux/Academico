@@ -13,7 +13,48 @@
             </q-chip>
           </div>
         </div>
-        <q-btn color="primary" icon="download" label="Exportar" @click="exportarReporte" />
+        <q-btn-dropdown color="primary" icon="download" label="Exportar">
+          <q-list>
+            <q-item clickable v-close-popup @click="exportarReporte">
+              <q-item-section avatar>
+                <q-icon name="table_chart" color="primary" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Exportar Vista Actual</q-item-label>
+                <q-item-label caption>Exporta los datos del tab activo</q-item-label>
+              </q-item-section>
+            </q-item>
+            <q-separator />
+            <q-item-label header>Reportes de Avance de Documentación</q-item-label>
+            <q-item clickable v-close-popup @click="exportarAvanceCarreras">
+              <q-item-section avatar>
+                <q-icon name="school" color="secondary" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Avance por Carrera</q-item-label>
+                <q-item-label caption>Progreso de documentación por carrera</q-item-label>
+              </q-item-section>
+            </q-item>
+            <q-item clickable v-close-popup @click="exportarAvanceDocentes">
+              <q-item-section avatar>
+                <q-icon name="people" color="orange" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Avance por Docente</q-item-label>
+                <q-item-label caption>Progreso de documentación por docente</q-item-label>
+              </q-item-section>
+            </q-item>
+            <q-item clickable v-close-popup @click="exportarAvanceMaterias">
+              <q-item-section avatar>
+                <q-icon name="menu_book" color="green" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Avance por Materia</q-item-label>
+                <q-item-label caption>Detalle de documentación por materia</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
       </div>
     </div>
 
@@ -262,9 +303,7 @@
                               <q-tooltip>Plan de Clase: {{ props.row.planClase ? 'Entregado' : 'Pendiente'
                                 }}</q-tooltip>
                             </q-icon>
-                            <q-icon name="book" :color="props.row.syllabus ? 'positive' : 'negative'" size="18px">
-                              <q-tooltip>Syllabus: {{ props.row.syllabus ? 'Entregado' : 'Pendiente' }}</q-tooltip>
-                            </q-icon>
+
                           </div>
                         </q-td>
                       </template>
@@ -509,10 +548,12 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRoute } from 'vue-router'
+import { api } from 'boot/axios'
 import { useAuthStore } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useReportesStore } from 'src/stores/reportes'
+import { generarReporteAvanceMateria } from 'src/services/reporteAvanceService'
 import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
 import WeeklyReportForm from 'src/components/reportes/WeeklyReportForm.vue'
 import AcademicAuditForm from 'src/components/reportes/AcademicAuditForm.vue'
@@ -555,7 +596,20 @@ const nombreSedeUsuario = computed(() => {
 
 // Data from Store
 const metricas = computed(() => reportesStore.metricas)
-const reporteMaterias = computed(() => reportesStore.reporteMaterias)
+const reporteMaterias = computed(() => {
+  // Filtrar para mostrar solo grupos teóricos (números: 1, 2, 3) y no prácticos (letras: A, B, C)
+  const materias = reportesStore.reporteMaterias || []
+  return materias.map(m => ({
+    ...m,
+    // Filtrar docentes que tienen grupos teóricos (el nombre del grupo es un número)
+    docentes: (m.docentes || []).filter(d => {
+      // Grupo teórico: si el grupo es un número (1, 2, 3...) o contiene un número
+      const grupo = String(d.grupo || '').trim()
+      // Es teórico si es un número o si empieza con un número
+      return /^[0-9]+$/.test(grupo) || /^Grupo\s*[0-9]+$/i.test(grupo) || grupo === ''
+    })
+  })).filter(m => m.docentes.length > 0) // Solo mostrar materias con al menos un grupo teórico
+})
 
 // Computed options based on loaded data
 const filteredDocentes_options = ref([])
@@ -749,7 +803,44 @@ const reporteSeguimiento = computed(() => {
   return filterList(list)
 })
 
+const reporteDocentes = computed(() => {
+  const docentesMap = new Map()
+  
+  if (!reporteMaterias.value) return []
 
+  reporteMaterias.value.forEach(m => {
+    if (m.docentes) {
+      m.docentes.forEach(d => {
+        if (!docentesMap.has(d.id)) {
+          docentesMap.set(d.id, {
+            id: d.id,
+            nombre: d.nombre,
+            totalMaterias: 0,
+            sumaProgreso: 0,
+            materias: [],
+            materias_completas: 0
+          })
+        }
+        
+        const docente = docentesMap.get(d.id)
+        docente.totalMaterias++
+        
+        // Usar progreso_documentacion si existe (del backend) o calcular promedio
+        const progreso = m.progreso_documentacion !== undefined ? m.progreso_documentacion : (m.promedioGeneral || 0)
+        
+        docente.sumaProgreso += progreso
+        if (progreso >= 80) docente.materias_completas++
+        
+        docente.materias.push({ nombre: m.nombre, progreso })
+      })
+    }
+  })
+  
+  return Array.from(docentesMap.values()).map(d => ({
+    ...d,
+    promedioProgreso: d.totalMaterias > 0 ? Math.round(d.sumaProgreso / d.totalMaterias) : 0
+  })).sort((a, b) => b.promedioProgreso - a.promedioProgreso)
+})
 
 // Client-side filtering helper for simpler fields
 // (Sede/Carrera are server-side)
@@ -802,6 +893,18 @@ onMounted(async () => {
   const tabQuery = route.query.tab
   if (tabQuery) {
     tabActivo.value = tabQuery
+  }
+
+  // Check for carrera query param (from Direccion Academica dashboard)
+  const carreraQuery = route.query.carrera
+  if (carreraQuery) {
+    filtros.value.carrera = parseInt(carreraQuery) || carreraQuery
+  }
+
+  // Check for sede query param
+  const sedeQuery = route.query.sede
+  if (sedeQuery) {
+    filtros.value.sede = parseInt(sedeQuery) || sedeQuery
   }
 
   cargarReportes()
@@ -947,14 +1050,6 @@ const onWeeklySaved = async () => {
   })
 }
 
-const exportarReporte = () => {
-  $q.notify({
-    type: 'positive',
-    message: 'Reporte exportado exitosamente',
-    icon: 'download'
-  })
-}
-
 const verDetalle = (row) => {
   detalleSeleccionado.value = { titulo: `Detalle de Asistencia - ${row.materia}`, data: row }
   dialogDetalle.value = true
@@ -975,13 +1070,21 @@ const verSeguimiento = (row) => {
 
 
 
+
+
 // Funciones para el nuevo tab "Por Materia"
 const generarReporteMateria = (materia) => {
-  $q.notify({
-    type: 'info',
-    message: `Generando reporte de ${materia.nombre}...`,
-    icon: 'assessment'
-  })
+  $q.loading.show({ message: `Generando reporte de ${materia.nombre}...` })
+  
+  try {
+     generarReporteAvanceMateria(materia)
+     $q.notify({ type: 'positive', message: 'Reporte generado exitosamente' })
+  } catch (e) {
+     console.error('Error generando reporte:', e)
+     $q.notify({ type: 'negative', message: 'Error al generar reporte de la materia' })
+  } finally {
+     $q.loading.hide()
+  }
 }
 
 const verDetalleDocenteMateria = (materia, docente) => {
@@ -1033,6 +1136,144 @@ const generateWeeklyReports = async () => {
   } finally {
     loadingWeekly.value = false
   }
+}
+
+// Funciones de exportación de reportes
+
+// Exportar vista actual del tab activo
+function exportarReporte() {
+  $q.notify({
+    type: 'info',
+    message: 'Exportando vista actual...',
+    icon: 'download'
+  })
+  
+  // Generar CSV según el tab activo
+  let csv = ''
+  let filename = 'reporte'
+  
+  if (tabActivo.value === 'materias') {
+    csv = 'Codigo,Nombre,Docente,Progreso %\n'
+    reporteMaterias.value.forEach(m => {
+      csv += `${m.codigo},${m.nombre.replace(/,/g, ';')},${m.docentePrincipal || 'Sin asignar'},${m.progresoDocumentacion || 0}\n`
+    })
+    filename = 'reporte_materias'
+  } else if (tabActivo.value === 'docentes') {
+    csv = 'Nombre,Total Materias,Promedio Progreso %\n'
+    reporteDocentes.value.forEach(d => {
+      csv += `${d.nombre.replace(/,/g, ';')},${d.totalMaterias || 0},${d.promedioProgreso || 0}\n`
+    })
+    filename = 'reporte_docentes'
+  }
+  
+  // Descargar
+  if (csv) {
+    downloadCSV(csv, filename)
+    $q.notify({ type: 'positive', message: 'Reporte exportado correctamente' })
+  } else {
+    $q.notify({ type: 'warning', message: 'No hay datos para exportar en esta vista' })
+  }
+}
+
+// Exportar avance por carrera
+async function exportarAvanceCarreras() {
+  $q.loading.show({ message: 'Generando reporte de avance por carrera...' })
+  
+  try {
+    // Obtener carreras con su progreso
+    const response = await api.get('/carreras')
+    const carreras = response.data
+    
+    let csv = 'Carrera,Codigo,Sede,Total Asignaturas,Docentes Asignados,Progreso Documentación %\n'
+    
+    carreras.forEach(c => {
+      csv += `${c.nombre.replace(/,/g, ';')},${c.codigo || 'N/A'},${c.sede_id || 'N/A'},${c.asignaturas_count || 0},${c.docentes_count || 0},${c.progreso_documentacion || 0}\n`
+    })
+    
+    downloadCSV(csv, `avance_por_carrera_${formatDateForFile()}`)
+    $q.notify({ type: 'positive', message: `Reporte generado con ${carreras.length} carreras` })
+    
+  } catch (error) {
+    console.error('Error exportando carreras:', error)
+    $q.notify({ type: 'negative', message: 'Error al generar reporte de carreras' })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
+// Exportar avance por docente
+async function exportarAvanceDocentes() {
+  $q.loading.show({ message: 'Generando reporte de avance por docente...' })
+  
+  try {
+    const sedeId = filtros.value.sede || authStore.usuarioActual?.sede_id || authStore.sedeId
+    const response = await api.get('/docentes', { params: { sede_id: sedeId, with_progress: true } })
+    const docentes = response.data?.data || response.data || []
+    
+    let csv = 'Docente,Total Materias,Materias con Documentación Completa,Promedio Progreso %\n'
+    
+    docentes.forEach(d => {
+      const nombre = d.nombre_completo || `${d.nombre} ${d.apellido || ''}`
+      csv += `${nombre.replace(/,/g, ';')},${d.asignaturas_count || d.total_materias || 0},${d.materias_completas || 0},${d.promedio_progreso || 0}\n`
+    })
+    
+    downloadCSV(csv, `avance_por_docente_${formatDateForFile()}`)
+    $q.notify({ type: 'positive', message: `Reporte generado con ${docentes.length} docentes` })
+    
+  } catch (error) {
+    console.error('Error exportando docentes:', error)
+    $q.notify({ type: 'negative', message: 'Error al generar reporte de docentes' })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
+// Exportar avance por materia
+async function exportarAvanceMaterias() {
+  $q.loading.show({ message: 'Generando reporte detallado por materia...' })
+  
+  try {
+    const sedeId = filtros.value.sede || authStore.usuarioActual?.sede_id || authStore.sedeId
+    const carreraId = filtros.value.carrera
+    
+    const params = { sede_id: sedeId }
+    if (carreraId) params.carrera_id = carreraId
+    
+    const response = await api.get('/asignaturas', { params })
+    const materias = response.data
+    
+    let csv = 'Codigo,Nombre,Carrera,Semestre,Docente,Progreso Documentación %,Estado\n'
+    
+    materias.forEach(m => {
+      const estado = m.progreso_documentacion >= 80 ? 'Completa' : (m.progreso_documentacion >= 50 ? 'En Progreso' : 'Pendiente')
+      csv += `${m.codigo},${m.nombre.replace(/,/g, ';')},${(m.carrera_nombre || 'N/A').replace(/,/g, ';')},${m.semestre || ''},${(m.docente_nombre || 'Sin asignar').replace(/,/g, ';')},${m.progreso_documentacion || 0},${estado}\n`
+    })
+    
+    downloadCSV(csv, `avance_por_materia_${formatDateForFile()}`)
+    $q.notify({ type: 'positive', message: `Reporte generado con ${materias.length} materias` })
+    
+  } catch (error) {
+    console.error('Error exportando materias:', error)
+    $q.notify({ type: 'negative', message: 'Error al generar reporte de materias' })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
+// Helper para descargar CSV
+function downloadCSV(content, filename) {
+  const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `${filename}.csv`
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+// Helper para formato de fecha en nombre de archivo
+function formatDateForFile() {
+  const now = new Date()
+  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
 }
 
 </script>
