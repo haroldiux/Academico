@@ -6,7 +6,20 @@
         <p class="greeting">{{ greeting }}</p>
         <h1 class="page-title">Dirección Académica</h1>
         <p class="welcome-text">
-          Sede: <span class="highlight">{{ sedeActual?.nombre || 'Sede' }}</span>
+          Sede: 
+          <q-select 
+            v-if="!sedeAsignada"
+            v-model="sedeSeleccionada" 
+            :options="opcionesSedes" 
+            label="Seleccionar Sede"
+            outlined 
+            dense
+            emit-value
+            map-options
+            style="min-width: 200px; display: inline-block;"
+            @update:model-value="onSedeChange"
+          />
+          <span v-else class="highlight">{{ sedeNombre }}</span>
           <q-chip size="sm" color="amber" text-color="black" class="q-ml-sm">
             <q-icon name="visibility" size="14px" class="q-mr-xs" />
             Solo Lectura
@@ -85,7 +98,12 @@
         </div>
 
         <div class="carreras-list">
-          <div v-for="carrera in carrerasSede" :key="carrera.id" class="carrera-item">
+          <div 
+            v-for="carrera in carrerasSede" 
+            :key="carrera.id" 
+            class="carrera-item clickable"
+            @click="navegarACarrera(carrera)"
+          >
             <div class="carrera-info">
               <div class="carrera-icon" :style="{ background: carrera.color + '20', color: carrera.color }">
                 <q-icon name="school" size="20px" />
@@ -107,6 +125,7 @@
               <span class="progress-value" :class="carrera.progreso >= 80 ? 'text-green' : 'text-orange'">
                 {{ carrera.progreso }}%
               </span>
+              <q-icon name="chevron_right" size="20px" color="grey-5" class="q-ml-sm" />
             </div>
           </div>
         </div>
@@ -209,14 +228,67 @@
         </div>
       </div>
     </div>
+
+    <!-- Loading Indicator -->
+    <q-inner-loading :showing="loading">
+      <q-spinner-gears size="50px" color="primary" />
+    </q-inner-loading>
   </q-page>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { usePermisos } from 'src/composables/usePermisos'
+import { useAuthStore } from 'src/stores/auth'
+import { useSedesStore } from 'src/stores/sedes'
+import { getDashboardStats } from 'src/services/direccionService'
 
-const { sedeActual, carrerasFiltradas, asignaturasFiltradas } = usePermisos()
+const $q = useQuasar()
+const router = useRouter()
+const authStore = useAuthStore()
+const sedesStore = useSedesStore()
+const { sedeActual } = usePermisos()
+
+// Estado
+const loading = ref(false)
+const notificaciones = ref(0)
+const sedeSeleccionada = ref(null)
+
+// Computed para saber si tiene sede asignada
+const sedeAsignada = computed(() => {
+  return !!(sedeActual.value?.id || authStore.sedeId || authStore.usuarioActual?.sede_id)
+})
+
+// Nombre de sede para mostrar
+const sedeNombre = computed(() => {
+  if (sedeSeleccionada.value) {
+    const sede = sedesStore.sedes.find(s => s.id === sedeSeleccionada.value)
+    return sede?.nombre || 'Sede'
+  }
+  return sedeActual.value?.nombre || 'Sede'
+})
+
+// Opciones de sedes para el selector
+const opcionesSedes = computed(() => {
+  return sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
+})
+
+// Estadísticas
+const totalCarreras = ref(0)
+const totalAsignaturas = ref(0)
+const docentesActivos = ref(0)
+const progresoGeneral = ref(0)
+
+// KPIs
+const asignaturasCompletas = ref(0)
+const asignaturasPendientes = ref(0)
+const asignaturasAtrasadas = ref(0)
+const directoresCarrera = ref(0)
+
+// Lista de carreras
+const carrerasSede = ref([])
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -225,45 +297,99 @@ const greeting = computed(() => {
   return 'Buenas noches'
 })
 
-const totalCarreras = computed(() => carrerasFiltradas.value.length)
-const totalAsignaturas = computed(() => asignaturasFiltradas.value.length)
-const docentesActivos = ref(45)
-const notificaciones = ref(8)
-const progresoGeneral = ref(72)
-const asignaturasCompletas = ref(28)
-const asignaturasPendientes = ref(15)
-const asignaturasAtrasadas = ref(4)
-const directoresCarrera = ref(8)
+// Cargar datos del dashboard
+async function loadDashboard(sedeId) {
+  if (!sedeId) {
+    console.warn('loadDashboard llamado sin sedeId')
+    return
+  }
 
-const carrerasSede = ref([
-  { id: 1, nombre: 'Ingeniería de Sistemas', asignaturas: 45, docentes: 12, progreso: 78, color: '#7C3AED' },
-  { id: 2, nombre: 'Ingeniería Civil', asignaturas: 52, docentes: 15, progreso: 65, color: '#14B8A6' },
-  { id: 3, nombre: 'Ingeniería Comercial', asignaturas: 38, docentes: 10, progreso: 82, color: '#F97316' },
-  { id: 4, nombre: 'Derecho', asignaturas: 48, docentes: 14, progreso: 71, color: '#3B82F6' },
-  { id: 5, nombre: 'Medicina', asignaturas: 65, docentes: 20, progreso: 58, color: '#EF4444' },
-  { id: 6, nombre: 'Odontología', asignaturas: 42, docentes: 11, progreso: 75, color: '#22C55E' },
-  { id: 7, nombre: 'Contaduría Pública', asignaturas: 35, docentes: 9, progreso: 88, color: '#8B5CF6' },
-  { id: 8, nombre: 'Arquitectura', asignaturas: 40, docentes: 10, progreso: 62, color: '#EC4899' }
-])
+  loading.value = true
+  try {
+    const data = await getDashboardStats(sedeId)
+    
+    // Stats
+    totalCarreras.value = data.stats?.totalCarreras || 0
+    totalAsignaturas.value = data.stats?.totalAsignaturas || 0
+    docentesActivos.value = data.stats?.docentesActivos || 0
+    progresoGeneral.value = data.stats?.progresoGeneral || 0
+    
+    // KPIs
+    asignaturasCompletas.value = data.kpis?.asignaturasCompletas || 0
+    asignaturasPendientes.value = data.kpis?.asignaturasEnProgreso || 0
+    asignaturasAtrasadas.value = data.kpis?.asignaturasAtrasadas || 0
+    directoresCarrera.value = data.kpis?.directoresCarrera || 0
+    
+    // Carreras
+    carrerasSede.value = data.carreras || []
+  } catch (error) {
+    console.error('Error cargando dashboard:', error)
+    $q.notify({ type: 'negative', message: 'Error al cargar estadísticas' })
+  } finally {
+    loading.value = false
+  }
+}
 
+// Cuando cambia la sede seleccionada
+function onSedeChange(nuevoSedeId) {
+  if (nuevoSedeId) {
+    loadDashboard(nuevoSedeId)
+  }
+}
+
+onMounted(async () => {
+  // Cargar sedes si no están cargadas
+  if (sedesStore.sedes.length === 0) {
+    await sedesStore.fetchSedes()
+  }
+
+  // Determinar sede a usar
+  let sedeIdToUse = sedeActual.value?.id || authStore.sedeId || authStore.usuarioActual?.sede_id
+
+  // Si no hay sede asignada, usar la primera disponible
+  if (!sedeIdToUse && sedesStore.sedes.length > 0) {
+    sedeIdToUse = sedesStore.sedes[0].id
+    sedeSeleccionada.value = sedeIdToUse
+  } else if (sedeIdToUse) {
+    sedeSeleccionada.value = sedeIdToUse
+  }
+
+  if (sedeIdToUse) {
+    loadDashboard(sedeIdToUse)
+  }
+})
+
+// Funciones de navegación a reportes
 function generarReporte() {
-  console.log('Generando reporte general...')
+  router.push('/director/reportes')
 }
 
 function generarReporteGeneral() {
-  console.log('Reporte general de sede')
+  router.push({ path: '/director/reportes', query: { tab: 'materias' } })
 }
 
 function generarReporteCarreras() {
-  console.log('Reporte comparativo por carrera')
+  router.push({ path: '/director/reportes', query: { tab: 'seguimiento' } })
 }
 
 function generarReporteDocentes() {
-  console.log('Reporte de docentes')
+  router.push({ path: '/director/reportes', query: { tab: 'asistencias' } })
 }
 
 function generarReportePendientes() {
-  console.log('Reporte de pendientes')
+  router.push({ path: '/director/reportes', query: { tab: 'documentacion' } })
+}
+
+// Navegar al reporte detallado de una carrera
+function navegarACarrera(carrera) {
+  router.push({ 
+    path: '/director/reportes', 
+    query: { 
+      tab: 'materias',
+      carrera: carrera.id,
+      sede: sedeSeleccionada.value
+    } 
+  })
 }
 </script>
 
@@ -431,6 +557,17 @@ function generarReportePendientes() {
   padding: 16px;
   background: var(--bg-tertiary);
   border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.carrera-item.clickable {
+  cursor: pointer;
+}
+
+.carrera-item.clickable:hover {
+  background: var(--bg-hover, #f0f4ff);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .carrera-info {

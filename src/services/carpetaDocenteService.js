@@ -48,6 +48,9 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
     titulo: '' // Ya viene incluido en el nombre generalmente o no es necesario
   }
 
+  // Normalizar objeto asignatura (para soportar tanto { asignatura_obj: ... } como objeto directo)
+  const asignaturaObj = asignatura.asignatura_obj || asignatura
+
   // Gestión actual
   const gestion = opciones.gestion || 'II/2025'
   const grupo = opciones.grupo || 'Grupo 1'
@@ -56,7 +59,7 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   // PORTADA (PORT)
   // ==========================================
   generarPortada(doc, {
-    asignatura,
+    asignatura: asignaturaObj, // Usar objeto normalizado
     carrera: carreraObj,
     carreraNombre,
     sede: sedeObj,
@@ -86,34 +89,34 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   // HR (HORARIOS Y EXÁMENES)
   // ==========================================
   doc.addPage()
-  generarHorariosExamenes(doc, { data: asignatura, pageWidth, margin })
+  generarHorariosExamenes(doc, { data: asignaturaObj, pageWidth, margin })
 
   // ==========================================
   // PROGRAMA ANALÍTICO (PA)
   // ==========================================
   doc.addPage()
-  generarProgramaAnalitico(doc, { asignatura: asignatura.asignatura_obj, carrera: carreraObj, carreraNombre, pageWidth, margin })
+  generarProgramaAnalitico(doc, { asignatura: asignaturaObj, carrera: carreraObj, carreraNombre, pageWidth, margin })
 
   // ==========================================
   // PROGRAMA POR COMPETENCIAS (PAC)
   // ==========================================
   doc.addPage()
-  generarPAC(doc, { asignatura: asignatura.asignatura_obj, pageWidth, margin })
+  generarPAC(doc, { asignatura: asignaturaObj, pageWidth, margin })
 
   // ==========================================
   // PLANES DE CLASE (PCT/PCP)
   // ==========================================
-  const unidades = asignatura.asignatura_obj.unidades || []
+  const unidades = asignaturaObj.unidades || []
   unidades.forEach(unidad => {
     const temas = unidad.temas || []
     temas.forEach(tema => {
       doc.addPage()
-      generarPlanClase(doc, { asignatura: asignatura.asignatura_obj, unidad, tema, pageWidth, margin })
+      generarPlanClase(doc, { asignatura: asignaturaObj, unidad, tema, pageWidth, margin })
     })
   })
 
   // Guardar PDF con nombre correcto
-  const nombreArchivo = 'Carpeta_Docente_' + (asignatura.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
+  const nombreArchivo = 'Carpeta_Docente_' + (asignaturaObj.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
   doc.save(nombreArchivo)
 
   return doc
