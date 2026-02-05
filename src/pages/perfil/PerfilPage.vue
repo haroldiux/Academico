@@ -47,6 +47,11 @@
               bg-color="bg-tertiary" placeholder="Ej: 78945612">
               <template v-slot:prepend><q-icon name="phone" /></template>
             </q-input>
+
+            <q-input v-model="form.formacion" label="Formación Académica / Título" outlined class="input-rounded"
+              bg-color="bg-tertiary" placeholder="Ej: Magister en Educación Superior">
+              <template v-slot:prepend><q-icon name="school" /></template>
+            </q-input>
           </div>
         </div>
 
@@ -148,7 +153,8 @@ const form = ref({
   apellido: '',
   ci: '',
   email: '',
-  telefono: ''
+  telefono: '',
+  formacion: ''
 })
 
 const pwdForm = ref({
@@ -182,7 +188,9 @@ onMounted(async () => {
       apellido: nombres.slice(1).join(' ') || '',
       ci: freshUser.ci || '',
       email: freshUser.email || '',
-      telefono: freshUser.telefono || ''
+      telefono: freshUser.telefono || '',
+      // Cargar formación si existe en el perfil docente
+      formacion: freshUser.docente?.formacion || ''
     }
   }
 })
