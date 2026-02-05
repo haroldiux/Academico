@@ -247,17 +247,25 @@ export const useAuthStore = defineStore('auth', () => {
       const { user } = response.data
 
       // Actualizar estado local
-      if (usuarioActual.value) {
-        usuarioActual.value = {
-          ...usuarioActual.value,
-          nombre: `${user.nombre || ''} ${user.apellido || ''}`.trim(),
-          email: user.email,
-          ci: user.ci,
-          telefono: user.telefono,
-          avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || '')
+        if (usuarioActual.value) {
+          // Actualizar datos base
+          usuarioActual.value = {
+            ...usuarioActual.value,
+            nombre: `${user.nombre || ''} ${user.apellido || ''}`.trim(),
+            email: user.email,
+            ci: user.ci,
+            telefono: user.telefono,
+            avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || '')
+          }
+
+          // Optimistic Update para Docente (Formación y Teléfono)
+          // Si enviamos formacion, la guardamos localmente aunque el backend no devuelva el objeto docente completo
+          if (profileData.formacion !== undefined && usuarioActual.value.docente) {
+             usuarioActual.value.docente.formacion = profileData.formacion
+          }
+
+          localStorage.setItem('auth_user', JSON.stringify(usuarioActual.value))
         }
-        localStorage.setItem('auth_user', JSON.stringify(usuarioActual.value))
-      }
 
       return { success: true, message: response.data.message }
     } catch (error) {
