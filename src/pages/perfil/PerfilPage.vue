@@ -7,8 +7,12 @@
         <h1 class="page-title">Mi Perfil</h1>
       </div>
       <div class="header-right">
-        <q-btn color="primary" icon="save" label="Guardar Cambios" class="btn-rounded shadow-2" :loading="saving"
-          @click="handleSave" />
+        <q-chip v-if="saving" color="warning" text-color="white" icon="sync">
+          Guardando...
+        </q-chip>
+        <q-chip v-else color="positive" text-color="white" icon="check_circle">
+          Guardado Automático
+        </q-chip>
       </div>
     </div>
 
@@ -137,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useQuasar } from 'quasar'
 
@@ -229,11 +233,23 @@ async function handleSave() {
   saving.value = false
 
   if (result.success) {
-    $q.notify({ type: 'positive', message: 'Perfil actualizado correctamente', icon: 'check_circle' })
+    // $q.notify({ type: 'positive', message: 'Perfil actualizado correctamente', icon: 'check_circle' }) // Convert to silent
   } else {
     $q.notify({ type: 'negative', message: result.error })
   }
 }
+
+// Autosave Logic
+let autoSaveTimeout = null
+watch(form, () => {
+  saving.value = true
+  if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
+
+  autoSaveTimeout = setTimeout(async () => {
+    await handleSave()
+    saving.value = false
+  }, 2000)
+}, { deep: true })
 
 async function handleUpdatePwd() {
   if (pwdForm.value.new !== pwdForm.value.confirm) {
