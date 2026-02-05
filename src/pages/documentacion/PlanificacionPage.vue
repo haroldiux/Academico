@@ -2315,8 +2315,7 @@ function exportarPDF() {
   line-height: 1.4;
 }
 
-background: white;
-}
+
 
 /* Transiciones */
 .fade-enter-active,
