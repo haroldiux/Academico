@@ -265,6 +265,7 @@ import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useDocentesStore } from 'src/stores/docentes'
+import { useAuthStore } from 'src/stores/auth'
 import { useQuasar } from 'quasar'
 
 const router = useRouter()
@@ -273,6 +274,7 @@ const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
 const asignaturasStore = useAsignaturasStore()
 const docentesStore = useDocentesStore()
+const authStore = useAuthStore()
 
 // Computed proxy for store data
 const asignaturasFiltradas = computed(() => {
@@ -386,6 +388,15 @@ const sedesOptions = computed(() =>
 )
 
 const carrerasFiltradas = computed(() => {
+  // Lógica especial para Director de Carrera: mostrar SOLO sus carreras asignadas
+  if (authStore.rol === 'DIRECTOR_CARRERA' && authStore.usuarioActual?.director?.carreras?.length > 0) {
+    return authStore.usuarioActual.director.carreras.map(c => ({
+      label: c.nombre,
+      value: c.id,
+      sede_id: c.sede_id
+    }))
+  }
+
   if (filtros.value.sede) {
     return carrerasStore.getCarrerasBySede(filtros.value.sede).map(c => ({ label: c.nombre, value: c.id }))
   }
