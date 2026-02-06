@@ -139,6 +139,16 @@ export const useUsuariosStore = defineStore('usuarios', () => {
     return false
   }
 
+  async function resetPasswordUsuario(id) {
+    try {
+        await userService.resetPassword(id)
+        return true
+    } catch(err) {
+        console.error(err)
+        throw err
+    }
+  }
+
   function buscarUsuarios(termino) {
     return fetchUsuarios(termino)
   }
@@ -160,6 +170,7 @@ export const useUsuariosStore = defineStore('usuarios', () => {
     updateUsuario,
     deleteUsuario,
     toggleUsuarioEstado,
+    resetPasswordUsuario,
     buscarUsuarios
   }
 })

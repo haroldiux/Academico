@@ -177,6 +177,9 @@
             <q-btn flat round dense icon="edit" size="sm" color="orange" @click="editarUsuario(props.row)">
               <q-tooltip>Editar</q-tooltip>
             </q-btn>
+            <q-btn flat round dense icon="vpn_key" size="sm" color="deep-purple" @click="confirmarResetPassword(props.row)">
+              <q-tooltip>Restablecer Contraseña (CI)</q-tooltip>
+            </q-btn>
             <q-btn flat round dense :icon="props.row.estado === 'activo' ? 'person_off' : 'person'" size="sm"
               :color="props.row.estado === 'activo' ? 'orange' : 'green'" @click="toggleEstado(props.row)">
               <q-tooltip>{{ props.row.estado === 'activo' ? 'Desactivar' : 'Activar' }}</q-tooltip>
@@ -802,6 +805,47 @@ function guardarUsuario() {
   }
 
   cerrarDialog()
+}
+
+function confirmarResetPassword(usuario) {
+  $q.dialog({
+    title: 'Restablecer Contraseña',
+    message: `¿Estás seguro de restablecer la contraseña al número de CI (${usuario.ci}) para el usuario <b>${usuario.nombre} ${usuario.apellido}</b>?`,
+    html: true,
+    persistent: true,
+    ok: {
+      label: 'Sí, Restablecer',
+      color: 'deep-purple',
+      flat: true
+    },
+    cancel: {
+      label: 'Cancelar',
+      color: 'grey',
+      flat: true
+    }
+  }).onOk(async () => {
+    try {
+      $q.loading.show({ message: 'Restableciendo...' })
+      await usuariosStore.resetPasswordUsuario(usuario.id)
+
+      $q.notify({
+        type: 'positive',
+        message: 'Contraseña restablecida correctamente al CI',
+        icon: 'vpn_key',
+        position: 'top'
+      })
+    } catch (error) {
+      console.error(error)
+      $q.notify({
+        type: 'negative',
+        message: 'Error al restablecer contraseña',
+        icon: 'error',
+        position: 'top'
+      })
+    } finally {
+      $q.loading.hide()
+    }
+  })
 }
 
 function toggleEstado(usuario) {
