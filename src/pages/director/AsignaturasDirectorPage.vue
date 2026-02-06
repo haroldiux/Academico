@@ -370,7 +370,7 @@ const carrerasOptions = computed(() => {
   if (authStore.rol === ROLES.VICERRECTOR_SEDE || authStore.rol === ROLES.DIRECCION_ACADEMICA) {
     // Obtener sede del usuario
     const sedeId = authStore.sedeId || authStore.usuarioActual?.sede_id
-    
+
     if (!sedeId) {
       // Si no hay sede asignada, mostrar todas las carreras
       return carrerasStore.carreras.map(c => ({
@@ -378,7 +378,7 @@ const carrerasOptions = computed(() => {
         value: c.id
       }))
     }
-    
+
     // Mostrar carreras de la sede del usuario
     return carrerasStore.getCarrerasBySede(sedeId).map(c => ({
       label: c.nombre,
@@ -390,7 +390,15 @@ const carrerasOptions = computed(() => {
   const director = authStore.usuarioActual?.director
   if (!director) return []
 
-  // Opción 1: Director de una sola carrera (relación belongsTo)
+  // Opción 1: Director con múltiples carreras
+  if (director.carreras && director.carreras.length > 0) {
+    return director.carreras.map(c => ({
+      label: c.nombre,
+      value: c.id
+    }))
+  }
+
+  // Opción 2: Director de una sola carrera (fallback)
   if (director.carrera) {
     return [{ label: director.carrera.nombre, value: director.carrera.id }]
   }
@@ -419,7 +427,7 @@ onMounted(async () => {
   if (carrerasStore.carreras.length === 0) {
     await carrerasStore.fetchCarreras()
   }
-  
+
   // Pre-seleccionar la primera carrera disponible
   if (carrerasOptions.value.length > 0) {
     filtros.value.carreraId = carrerasOptions.value[0].value
