@@ -594,15 +594,17 @@ import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
 import planificacionSemestralService from 'src/services/planificacionSemestralService'
+import { useAuthStore } from 'src/stores/auth'
 
 const route = useRoute()
 const $q = useQuasar()
+const authStore = useAuthStore()
 const asignaturasStore = useAsignaturasStore()
 const rolExamenesStore = useRolExamenesStore()
 
-const guardando = ref(false)
+
 const tabActual = ref('horario')
-const gestionSeleccionada = ref('2026-I')
+const gestionSeleccionada = ref('2-2026')
 const showHorarioDialog = ref(false)
 const showUnidadDialog = ref(false)
 const showCopiarDialog = ref(false)
@@ -680,14 +682,19 @@ const gestionesOptions = [
 ]
 
 const gruposOptions = computed(() => {
-  // Solo mostramos una opción general, no por grupos individuales
-  return [
-    {
-      label: 'PLANIFICACIÓN GENERAL',
-      value: 'ALL',
-      tipo: 'TEORICO-PRACTICO',
-    },
-  ]
+  if (!asignatura.value || !asignatura.value.horarios_data) return []
+
+  // Map real groups from the API data
+  const options = asignatura.value.horarios_data.map(g => ({
+    label: `Grupo ${g.grupo} - ${g.docente_nombre || 'Sin Docente'}`,
+    value: g.id,
+    grupo: g.grupo,
+    docente_id: g.docente_id
+  }))
+
+  // Opcional: Agregar 'TODOS' solo si es Administrador o Jefe de Carrera
+  // Pero para edición, mejor forzar un grupo específico.
+  return options
 })
 
 const gestionesAnteriores = [
@@ -726,7 +733,16 @@ onMounted(async () => {
 
   // Auto-seleccionar primer grupo si existe (o la opción GENERAL por defecto)
   if (gruposOptions.value.length > 0) {
-    grupoSeleccionado.value = gruposOptions.value[0]
+    // Intentar seleccionar el grupo del usuario logueado
+    const userDocenteId = authStore.user?.docente?.id;
+    const miGrupo = gruposOptions.value.find(g => g.docente_id === userDocenteId);
+
+    if (miGrupo) {
+      grupoSeleccionado.value = miGrupo;
+    } else {
+      // Fallback al primero
+      grupoSeleccionado.value = gruposOptions.value[0];
+    }
   }
 
   // Cargar planificación
@@ -745,13 +761,14 @@ async function cargarPlanificacion() {
   if (!grupoSeleccionado.value) return
 
   let targetGrupoId = grupoSeleccionado.value.value
-  if (targetGrupoId === 'ALL') {
-    if (asignatura.value?.horarios_data?.length > 0) {
-      targetGrupoId = asignatura.value.horarios_data[0].id
-    } else {
-      return // No hay grupos, nada que cargar
-    }
-  }
+  // The 'ALL' option is removed, so this block is no longer needed.
+  // if (targetGrupoId === 'ALL') {
+  //   if (asignatura.value?.horarios_data?.length > 0) {
+  //     targetGrupoId = asignatura.value.horarios_data[0].id
+  //   } else {
+  //     return // No hay grupos, nada que cargar
+  //   }
+  // }
 
   try {
     const params = { grupo_id: targetGrupoId }
@@ -1189,9 +1206,10 @@ function calcularPropuestaPlanificacion() {
 
   // Determinar ID de grupo para las sesiones
   let targetGrupoId = grupoSeleccionado.value?.value
-  if (targetGrupoId === 'ALL' && asignatura.value?.horarios_data?.length > 0) {
-    targetGrupoId = asignatura.value.horarios_data[0].id
-  }
+  // The 'ALL' option is removed, so this block is no longer needed.
+  // if (targetGrupoId === 'ALL' && asignatura.value?.horarios_data?.length > 0) {
+  //   targetGrupoId = asignatura.value.horarios_data[0].id
+  // }
 
   // Preparar mapa de exámenes
   const fechasExamenMap = {}
@@ -1500,8 +1518,28 @@ async function ejecutarCopia() {
 
   $q.loading.show({ message: 'Copiando planificación...' })
   try {
+    // 0. Autoseleccionar grupo si no hay uno seleccionado
+    if (!grupoSeleccionado.value && gruposOptions.value.length > 0) {
+       // Intentar seleccionar el grupo del usuario logueado
+       const userDocenteId = authStore.user?.docente?.id;
+       const miGrupo = gruposOptions.value.find(g => g.docente_id === userDocenteId);
+
+       if (miGrupo) {
+         grupoSeleccionado.value = miGrupo;
+       } else {
+         // Fallback al primero
+         grupoSeleccionado.value = gruposOptions.value[0];
+       }
+    }
+
+    const grupoId = grupoSeleccionado.value?.value || grupoSeleccionado.value?.id;
+
+    if (!grupoId) return;
+
     const response = await planificacionSemestralService.copiarPlanificacion(route.params.id, {
       gestion_origen: gestionACopiar.value,
+      grupo_id: grupoId, // Ensure group_id is sent for copying
+      docente_id: authStore.user?.docente?.id // Send docent ID for personalized fetching
     })
 
     // Recargar todo
@@ -1526,19 +1564,9 @@ async function guardarTodo(silent = false) {
     // Si estamos en modo 'ALL', buscamos un ID de grupo válido para asociar (provisorio)
     let targetGrupoId = grupoSeleccionado.value?.value
 
-    if (targetGrupoId === 'ALL') {
-      if (asignatura.value?.horarios_data?.length > 0) {
-        targetGrupoId = asignatura.value.horarios_data[0].id
-      } else {
-        if (!silent)
-          $q.notify({
-            type: 'warning',
-            message: 'No hay grupos asociados para guardar la planificación',
-            icon: 'warning',
-          })
-        guardando.value = false
-        return
-      }
+    if (!targetGrupoId) {
+       // Intentar recuperar del objeto si viene completo
+       targetGrupoId = grupoSeleccionado.value?.id || grupoSeleccionado.value
     }
 
     if (!targetGrupoId) {
