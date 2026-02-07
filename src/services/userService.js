@@ -26,5 +26,9 @@ export default {
   // Eliminar un usuario
   deleteUsuario(id) {
     return api.delete(`/usuarios/${id}`)
+  },
+
+  resetPassword(id) {
+    return api.post(`/usuarios/${id}/reset-password`)
   }
 }
