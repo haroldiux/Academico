@@ -190,10 +190,68 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { usePermisos } from 'src/composables/usePermisos'
+import reporteService from 'src/services/reporteService'
 
-const { sedeActual, carrerasFiltradas, asignaturasFiltradas } = usePermisos()
+const { sedeActual, sedeId } = usePermisos()
+
+// Estado
+const loading = ref(true)
+const error = ref(null)
+
+// Datos de API (inicializados vacíos)
+const progresoSede = ref(0)
+const totalCarreras = ref(0)
+const totalAsignaturas = ref(0)
+const totalDocentes = ref(0)
+const notificaciones = ref(0)
+
+// KPIs
+const asignaturasCompletas = ref(0)
+const asignaturasEnProgreso = ref(0)
+const asignaturasAtrasadas = ref(0)
+const crecimientoMensual = ref(0)
+
+// Ranking de carreras (poblado desde API)
+const carrerasRanking = ref([])
+
+// Alertas (calculadas dinámicamente)
+const alertas = computed(() => {
+  const items = []
+  
+  if (asignaturasAtrasadas.value > 10) {
+    items.push({
+      id: 1,
+      tipo: 'warning',
+      icono: 'warning',
+      titulo: `${asignaturasAtrasadas.value} asignaturas atrasadas`,
+      descripcion: 'Requieren atención inmediata'
+    })
+  }
+  
+  if (progresoSede.value >= 80) {
+    items.push({
+      id: 2,
+      tipo: 'success',
+      icono: 'check',
+      titulo: 'Excelente progreso',
+      descripcion: `Sede al ${progresoSede.value}% completado`
+    })
+  }
+  
+  if (items.length === 0) {
+    items.push({
+      id: 3,
+      tipo: 'info',
+      icono: 'info',
+      titulo: 'Sin alertas pendientes',
+      descripcion: 'Todo funciona correctamente'
+    })
+  }
+  
+  return items
+})
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -202,32 +260,49 @@ const greeting = computed(() => {
   return 'Buenas noches'
 })
 
-const progresoSede = ref(74)
-const totalCarreras = computed(() => carrerasFiltradas.value.length || 8)
-const totalAsignaturas = computed(() => asignaturasFiltradas.value.length || 365)
-const totalDocentes = ref(120)
-const notificaciones = ref(12)
-const asignaturasCompletas = ref(180)
-const asignaturasEnProgreso = ref(140)
-const asignaturasAtrasadas = ref(45)
-const crecimientoMensual = ref(8)
+// Cargar datos reales desde API
+async function fetchDashboardData() {
+  loading.value = true
+  error.value = null
+  
+  try {
+    const { data } = await reporteService.getDireccionStats(sedeId.value)
+    
+    // Poblar estadísticas generales
+    progresoSede.value = data.stats?.progresoGeneral || 0
+    totalCarreras.value = data.stats?.totalCarreras || 0
+    totalAsignaturas.value = data.stats?.totalAsignaturas || 0
+    totalDocentes.value = data.stats?.docentesActivos || 0
+    
+    // Poblar KPIs
+    asignaturasCompletas.value = data.kpis?.asignaturasCompletas || 0
+    asignaturasEnProgreso.value = data.kpis?.asignaturasEnProgreso || 0
+    asignaturasAtrasadas.value = data.kpis?.asignaturasAtrasadas || 0
+    
+    // Ranking de carreras (top 5)
+    carrerasRanking.value = (data.carreras || []).slice(0, 5).map(c => ({
+      id: c.id,
+      nombre: c.nombre,
+      progreso: c.progreso
+    }))
+    
+  } catch (err) {
+    console.error('Error cargando stats de dirección:', err)
+    error.value = 'Error al cargar datos del dashboard'
+  } finally {
+    loading.value = false
+  }
+}
 
-const carrerasRanking = ref([
-  { id: 1, nombre: 'Contaduría Pública', progreso: 92 },
-  { id: 2, nombre: 'Ing. Comercial', progreso: 85 },
-  { id: 3, nombre: 'Ing. Sistemas', progreso: 78 },
-  { id: 4, nombre: 'Derecho', progreso: 72 },
-  { id: 5, nombre: 'Odontología', progreso: 68 }
-])
+onMounted(() => {
+  if (sedeId.value) {
+    fetchDashboardData()
+  }
+})
 
-const alertas = ref([
-  { id: 1, tipo: 'warning', icono: 'warning', titulo: '12 asignaturas atrasadas', descripcion: 'Ingeniería Civil' },
-  { id: 2, tipo: 'info', icono: 'info', titulo: 'Fecha límite próxima', descripcion: 'Entrega: 15 Feb 2026' },
-  { id: 3, tipo: 'success', icono: 'check', titulo: 'Meta alcanzada', descripcion: 'Contaduría: 90%+' }
-])
-
-function generarInforme() { console.log('Generando informe ejecutivo...') }
-
+function generarInforme() { 
+  console.log('Generando informe ejecutivo...') 
+}
 </script>
 
 <style scoped>

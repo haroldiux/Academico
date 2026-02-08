@@ -64,47 +64,50 @@
         <div class="text-subtitle1 text-weight-bold q-mb-md">
           <q-icon name="filter_alt" class="q-mr-xs" />
           Filtros
+          <q-chip v-if="filtrosActivos > 0" color="primary" size="sm" class="q-ml-sm">
+            {{ filtrosActivos }} activo{{ filtrosActivos > 1 ? 's' : '' }}
+          </q-chip>
         </div>
         <div class="row q-col-gutter-md">
-          <!-- Filtro Sede -->
+          <!-- Filtro Sede - Siempre visible para roles con acceso -->
           <div class="col-12 col-md-3"
-            v-if="authStore.rol === 'VICERRECTOR_NACIONAL' || authStore.rol === 'SUPER_ADMIN'">
+            v-if="(authStore.rol === 'VICERRECTOR_NACIONAL' || authStore.rol === 'SUPER_ADMIN') && mostrarFiltro('sede')">
             <q-select v-model="filtros.sede" :options="opcionesSedes" label="Sede" outlined dense emit-value
-              map-options>
+              map-options clearable>
               <template v-slot:prepend>
                 <q-icon name="apartment" />
               </template>
             </q-select>
           </div>
 
-          <!-- Filtro Carrera -->
-          <div class="col-12 col-md-3">
+          <!-- Filtro Carrera - Visible en tabs que filtran por carrera -->
+          <div class="col-12 col-md-3" v-if="mostrarFiltro('carrera')">
             <q-select v-model="filtros.carrera" :options="carrerasOptions" label="Carrera" outlined dense
-              bg-color="white" emit-value map-options :disable="authStore.rol === 'DIRECTOR_CARRERA'">
+              bg-color="white" emit-value map-options :disable="authStore.rol === 'DIRECTOR_CARRERA'" clearable>
               <template v-slot:prepend>
                 <q-icon name="school" />
               </template>
             </q-select>
           </div>
 
-          <!-- Filtro Tipo Reporte -->
-          <div class="col-12 col-md-3">
+          <!-- Filtro Tipo Reporte - Solo para tabs de reportes generales -->
+          <div class="col-12 col-md-3" v-if="mostrarFiltro('tipoReporte')">
             <q-select v-model="filtros.tipoReporte" :options="tiposReporte" label="Tipo de Reporte" emit-value
               map-options outlined dense />
           </div>
 
-          <!-- Fecha Desde -->
-          <div class="col-12 col-md-3">
+          <!-- Fecha Desde - Solo para tabs que usan fechas -->
+          <div class="col-12 col-md-3" v-if="mostrarFiltro('fechas')">
             <q-input v-model="filtros.fechaDesde" label="Fecha Desde" type="date" outlined dense />
           </div>
 
           <!-- Fecha Hasta -->
-          <div class="col-12 col-md-3">
+          <div class="col-12 col-md-3" v-if="mostrarFiltro('fechas')">
             <q-input v-model="filtros.fechaHasta" label="Fecha Hasta" type="date" outlined dense />
           </div>
 
-          <!-- Docente -->
-          <div class="col-12 col-md-3">
+          <!-- Docente - Solo para tabs que filtran por docente -->
+          <div class="col-12 col-md-3" v-if="mostrarFiltro('docente')">
             <q-select v-model="filtros.docente" :options="filteredDocentes_options" label="Docente" emit-value
               map-options outlined dense clearable use-input @filter="filterDocentes">
               <template v-slot:option="scope">
@@ -125,8 +128,8 @@
             </q-select>
           </div>
 
-          <!-- Materia -->
-          <div class="col-12 col-md-3">
+          <!-- Materia - Solo para tabs que filtran por materia -->
+          <div class="col-12 col-md-3" v-if="mostrarFiltro('materia')">
             <q-select v-model="filtros.materia" :options="filteredMaterias_options" label="Materia" emit-value
               map-options outlined dense clearable use-input @filter="filterMaterias">
               <template v-slot:no-option>
@@ -142,7 +145,7 @@
           <!-- Botones -->
           <div class="col-12 col-md-3 flex items-center justify-end">
             <q-btn flat color="grey" label="Limpiar" @click="limpiarFiltros" class="q-mr-sm" />
-            <q-btn color="primary" icon="search" label="Generar" @click="generarReporte" />
+            <q-btn color="primary" icon="search" label="Generar" @click="generarReporte" v-if="mostrarFiltro('botonGenerar')" />
           </div>
         </div>
       </q-card-section>
@@ -223,6 +226,12 @@
           label="Seguimiento de Clase" />
         <q-tab v-if="authStore.rol !== 'VICERRECTOR_NACIONAL'" name="documentacion" icon="folder_open"
           label="Documentación" />
+        <!-- NUEVOS TABS POR NIVEL -->
+        <q-tab name="docentes-criticos" icon="person_off" label="Docentes Críticos" />
+        <q-tab name="ranking" icon="leaderboard" label="Rankings" />
+        <q-tab 
+          v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol?.includes('VICERRECTOR') || authStore.rol === 'SUPER_ADMIN'"
+          name="alertas" icon="notifications_active" label="Alertas Rojas" />
       </q-tabs>
 
       <q-separator />
@@ -500,6 +509,182 @@
             </template>
           </q-table>
         </q-tab-panel>
+
+        <!-- NUEVO: Docentes Críticos -->
+        <q-tab-panel name="docentes-criticos">
+          <div class="row items-center q-mb-md">
+            <div class="text-h6">Docentes con Avance Crítico en Documentación</div>
+            <q-space />
+            <q-btn-toggle
+              v-model="filtroDocentesCriticos"
+              toggle-color="primary"
+              :options="[
+                {label: 'Sin Avance (0%)', value: 'sin-avance'},
+                {label: 'Críticos (<50%)', value: 'criticos'},
+                {label: 'Todos', value: 'todos'}
+              ]"
+              @update:model-value="cargarDocentesCriticos"
+            />
+          </div>
+          
+          <q-banner v-if="docentesCriticosMeta.sinAvance > 0" class="bg-red-1 text-red q-mb-md">
+            <template v-slot:avatar>
+              <q-icon name="warning" color="red" />
+            </template>
+            {{ docentesCriticosMeta.sinAvance }} docentes sin ningún avance ({{ docentesCriticosMeta.porcentaje }}% del total)
+          </q-banner>
+
+          <q-table
+            :rows="docentesCriticosList"
+            :columns="columnasDocentesCriticos"
+            row-key="id"
+            flat
+            bordered
+            :loading="loadingDocentes"
+          >
+            <template v-slot:body-cell-semaforo="props">
+              <q-td :props="props">
+                <q-icon name="circle" :color="props.row.semaforo" size="20px" />
+              </q-td>
+            </template>
+            <template v-slot:body-cell-avance="props">
+              <q-td :props="props">
+                <q-linear-progress
+                  :value="props.value / 100"
+                  :color="props.row.semaforo"
+                  size="20px"
+                  rounded
+                  class="q-mr-sm"
+                  style="width: 100px; display: inline-block"
+                />
+                <span class="text-weight-bold">{{ props.value }}%</span>
+              </q-td>
+            </template>
+          </q-table>
+        </q-tab-panel>
+
+        <!-- NUEVO: Rankings -->
+        <q-tab-panel name="ranking">
+          <div class="row items-center q-mb-md">
+            <div class="text-h6">Rankings por Avance</div>
+            <q-space />
+            <q-btn-toggle
+              v-model="tipoRanking"
+              toggle-color="primary"
+              :options="opcionesRanking"
+              @update:model-value="cargarRanking"
+            />
+          </div>
+
+          <div class="row q-mb-md">
+            <div class="col-12 col-md-4">
+              <q-card flat bordered class="bg-primary text-white">
+                <q-card-section>
+                  <div class="text-h4 text-weight-bold">{{ promedioRanking }}%</div>
+                  <div class="text-caption">Promedio General</div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
+
+          <q-table
+            :rows="rankingList"
+            :columns="columnasRanking"
+            row-key="id"
+            flat
+            bordered
+            :loading="loadingRanking"
+          >
+            <template v-slot:body-cell-posicion="props">
+              <q-td :props="props">
+                <q-avatar 
+                  :color="props.value <= 3 ? 'amber' : 'grey-4'" 
+                  :text-color="props.value <= 3 ? 'white' : 'grey-8'"
+                  size="30px"
+                >
+                  {{ props.value }}
+                </q-avatar>
+              </q-td>
+            </template>
+            <template v-slot:body-cell-semaforo="props">
+              <q-td :props="props">
+                <q-icon name="circle" :color="props.row.semaforo" size="20px" />
+              </q-td>
+            </template>
+            <template v-slot:body-cell-avance="props">
+              <q-td :props="props">
+                <q-linear-progress
+                  :value="props.value / 100"
+                  :color="props.row.semaforo"
+                  size="20px"
+                  rounded
+                  class="q-mr-sm"
+                  style="width: 120px; display: inline-block"
+                />
+                <span class="text-weight-bold">{{ props.value }}%</span>
+              </q-td>
+            </template>
+          </q-table>
+        </q-tab-panel>
+
+        <!-- NUEVO: Alertas Rojas -->
+        <q-tab-panel name="alertas">
+          <div class="row items-center q-mb-md">
+            <div class="text-h6">Alertas Críticas Consolidadas</div>
+            <q-space />
+            <q-chip color="red" text-color="white" icon="warning">
+              {{ alertasRojasList.length }} alertas activas
+            </q-chip>
+          </div>
+
+          <div class="row q-col-gutter-md q-mb-md">
+            <div class="col-12 col-md-4">
+              <q-card flat bordered class="bg-red-1">
+                <q-card-section>
+                  <div class="row items-center">
+                    <q-icon name="school" size="32px" color="red" class="q-mr-md" />
+                    <div>
+                      <div class="text-h5 text-weight-bold text-red">{{ alertasMeta.carrerasCriticas }}</div>
+                      <div class="text-caption">Carreras Críticas</div>
+                    </div>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+            <div class="col-12 col-md-4">
+              <q-card flat bordered class="bg-orange-1">
+                <q-card-section>
+                  <div class="row items-center">
+                    <q-icon name="person" size="32px" color="orange" class="q-mr-md" />
+                    <div>
+                      <div class="text-h5 text-weight-bold text-orange">{{ alertasMeta.docentesCriticos }}</div>
+                      <div class="text-caption">Docentes Sin Avance</div>
+                    </div>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
+
+          <q-list bordered separator>
+            <q-item v-for="alerta in alertasRojasList" :key="alerta.titulo + alerta.tipo" clickable>
+              <q-item-section avatar>
+                <q-avatar :color="alerta.color" text-color="white">
+                  <q-icon :name="alerta.icono" />
+                </q-avatar>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-bold">{{ alerta.titulo }}</q-item-label>
+                <q-item-label caption>{{ alerta.subtitulo }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-chip :color="alerta.color" text-color="white" size="sm">
+                  {{ alerta.tipo === 'carrera' ? 'Carrera' : 'Docente' }}
+                </q-chip>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-tab-panel>
       </q-tab-panels>
     </q-card>
 
@@ -554,6 +739,7 @@ import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useReportesStore } from 'src/stores/reportes'
 import { generarReporteAvanceMateria } from 'src/services/reporteAvanceService'
+import reporteService from 'src/services/reporteService'
 import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
 import WeeklyReportForm from 'src/components/reportes/WeeklyReportForm.vue'
 import AcademicAuditForm from 'src/components/reportes/AcademicAuditForm.vue'
@@ -579,6 +765,41 @@ const filtros = ref({
 })
 
 const tabActivo = ref('materias')
+
+// Configuración de filtros por tab
+const filtrosConfig = {
+  // tab: [filtros que aplican]
+  'materias': ['sede', 'carrera', 'tipoReporte', 'fechas', 'docente', 'materia', 'botonGenerar'],
+  'semanal': ['sede', 'carrera', 'fechas', 'botonGenerar'],
+  'auditoria': ['sede', 'carrera'],
+  'matriz': ['sede', 'carrera'],
+  'noconformidad': ['sede', 'carrera'],
+  'asistencias': ['sede', 'carrera', 'fechas', 'docente', 'materia'],
+  'seguimiento': ['sede', 'carrera', 'fechas', 'docente', 'materia'],
+  'documentacion': ['sede', 'carrera', 'docente', 'materia'],
+  // Nuevos tabs - solo filtros útiles
+  'docentes-criticos': ['sede', 'carrera'],
+  'ranking': ['sede', 'carrera'],
+  'alertas': ['sede']
+}
+
+// Función para determinar si mostrar un filtro
+const mostrarFiltro = (filtro) => {
+  const configTab = filtrosConfig[tabActivo.value] || []
+  return configTab.includes(filtro)
+}
+
+// Contador de filtros activos
+const filtrosActivos = computed(() => {
+  let count = 0
+  if (filtros.value.sede) count++
+  if (filtros.value.carrera) count++
+  if (filtros.value.docente) count++
+  if (filtros.value.materia) count++
+  if (filtros.value.fechaDesde) count++
+  if (filtros.value.fechaHasta) count++
+  return count
+})
 const dialogDetalle = ref(false)
 const detalleSeleccionado = ref(null)
 const loading = computed(() => reportesStore.loading)
@@ -589,9 +810,23 @@ const opcionesSedes = computed(() => [
 ])
 
 const nombreSedeUsuario = computed(() => {
-  if (!authStore.usuarioActual?.sede_id) return 'No asignada'
-  const sede = sedesStore.sedes.find(s => s.id === authStore.usuarioActual.sede_id)
-  return sede ? sede.nombre : 'Sede ' + authStore.usuarioActual.sede_id
+  const usuario = authStore.usuarioActual
+  if (!usuario) return 'No asignada'
+  
+  // 1. Primero intentar desde docente.sede objeto
+  if (usuario.docente?.sede?.nombre) {
+    return usuario.docente.sede.nombre
+  }
+  
+  // 2. Luego buscar por sede_id en lista de sedes
+  const sedeId = usuario.sede_id || usuario.docente?.sede_id
+  if (sedeId) {
+    const sede = sedesStore.sedes.find(s => s.id === sedeId)
+    return sede?.nombre || 'Sede ' + sedeId
+  }
+  
+  // 3. Si nada, mostrar No asignada
+  return 'No asignada'
 })
 
 // Data from Store
@@ -721,20 +956,57 @@ const columnasNC = [
   { name: 'acciones', label: 'Medidas', field: 'id', align: 'center' }
 ]
 
-// Mock Data N3/N4
-const auditoria25 = ref([
-  { id: 1, asignatura: 'Anatomía I', docente: 'Dr. Roberto Fernández', semana: 'S-4', inicioPuntual: true, secuencialidad: true, metodologias: false },
-  { id: 2, asignatura: 'Derecho Civil', docente: 'Lic. Ana Martínez', semana: 'S-4', inicioPuntual: false, secuencialidad: true, metodologias: true }
-])
+// Datos de Nivel 3/4 - Cargados desde API
+const auditoria25 = ref([])
+const matrizControl = ref([])
+const noConformidades = ref([])
+const auditoriaMeta = ref({ semana: 0, totalAsignaturas: 0, auditadas: 0 })
 
-const matrizControl = ref([
-  { id: 1, asignatura: 'Álgebra I', avancePlaneado: '60%', avanceReal: '58%', semaforo: 'positive', alertaLabel: 'Normal', acciones: 'Ninguna' },
-  { id: 2, asignatura: 'Programación I', avancePlaneado: '65%', avanceReal: '40%', semaforo: 'negative', alertaLabel: 'Muy Bajo', acciones: 'Llamado de atención 1' }
-])
+// NUEVOS: Datos para reportes por nivel
+const docentesCriticosList = ref([])
+const docentesCriticosMeta = ref({ total: 0, sinAvance: 0, porcentaje: 0 })
+const loadingDocentes = ref(false)
+const filtroDocentesCriticos = ref('sin-avance')
 
-const noConformidades = ref([
-  { id: 1, asignatura: 'Programación I', carrera: 'Ingeniería de Sistemas', descripcion: 'Incumplimiento reincidente de secuencia didáctica (2 semanas en Rojo)', plan: 'Capacitación obligatoria en planificación' }
-])
+const rankingList = ref([])
+const promedioRanking = ref(0)
+const loadingRanking = ref(false)
+const tipoRanking = ref('docentes')
+
+const alertasRojasList = ref([])
+const alertasMeta = ref({ totalAlertas: 0, carrerasCriticas: 0, docentesCriticos: 0 })
+
+// Columnas para nuevos tabs
+const columnasDocentesCriticos = [
+  { name: 'semaforo', label: '', field: 'semaforo', align: 'center', style: 'width: 40px' },
+  { name: 'nombre', label: 'Docente', field: 'nombre', align: 'left', sortable: true },
+  { name: 'email', label: 'Email', field: 'email', align: 'left' },
+  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left' },
+  { name: 'asignaturas', label: 'Asignaturas', field: 'asignaturas', align: 'center' },
+  { name: 'avance', label: 'Avance', field: 'avance', align: 'center', sortable: true }
+]
+
+const columnasRanking = [
+  { name: 'posicion', label: '#', field: 'posicion', align: 'center', style: 'width: 60px' },
+  { name: 'semaforo', label: '', field: 'semaforo', align: 'center', style: 'width: 40px' },
+  { name: 'nombre', label: 'Nombre', field: 'nombre', align: 'left', sortable: true },
+  { name: 'avance', label: 'Avance', field: 'avance', align: 'center', sortable: true }
+]
+
+// Opciones de ranking según rol
+const opcionesRanking = computed(() => {
+  const opciones = [{ label: 'Docentes', value: 'docentes' }]
+  
+  if (['DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL', 'SUPER_ADMIN'].includes(authStore.rol)) {
+    opciones.push({ label: 'Carreras', value: 'carreras' })
+  }
+  
+  if (['VICERRECTOR_NACIONAL', 'SUPER_ADMIN'].includes(authStore.rol)) {
+    opciones.push({ label: 'Sedes', value: 'sedes' })
+  }
+  
+  return opciones
+})
 
 
 
@@ -871,6 +1143,123 @@ const cargarReportes = async () => {
   await reportesStore.fetchReportes(params)
 }
 
+// Cargar Matriz de Control Institucional (Nivel 3)
+const cargarMatrizControl = async () => {
+  try {
+    const params = {
+      sede_id: filtros.value.sede || authStore.sedeId,
+      carrera_id: filtros.value.carrera
+    }
+    const { data } = await reporteService.getMatrizControl(params)
+    matrizControl.value = data
+    
+    // Derivar no conformidades: asignaturas con semáforo rojo (crítico)
+    noConformidades.value = data
+      .filter(item => item.semaforo === 'negative')
+      .map(item => ({
+        id: item.id,
+        asignatura: item.asignatura,
+        carrera: item.carrera || 'N/A',
+        descripcion: `Avance real (${item.avanceReal}) muy por debajo del planeado (${item.avancePlaneado})`,
+        plan: item.acciones
+      }))
+  } catch (error) {
+    console.error('Error cargando matriz de control:', error)
+  }
+}
+
+// Cargar Auditoría 25% Semanal (Nivel 3)
+const cargarAuditoria25 = async () => {
+  try {
+    const params = {
+      sede_id: filtros.value.sede || authStore.sedeId,
+      carrera_id: filtros.value.carrera
+    }
+    const { data } = await reporteService.getAuditoria25(params)
+    auditoria25.value = data.auditorias || []
+    auditoriaMeta.value = data.meta || { semana: 0, totalAsignaturas: 0, auditadas: 0 }
+  } catch (error) {
+    console.error('Error cargando auditoría 25%:', error)
+  }
+}
+
+// NUEVAS FUNCIONES DE CARGA BY NIVEL
+
+// Cargar docentes críticos/sin avance
+const cargarDocentesCriticos = async () => {
+  loadingDocentes.value = true
+  try {
+    const params = {
+      sede_id: filtros.value.sede || authStore.sedeId,
+      carrera_id: filtros.value.carrera
+    }
+    
+    let response
+    if (filtroDocentesCriticos.value === 'sin-avance') {
+      response = await reporteService.getDocentesSinAvance(params)
+      docentesCriticosList.value = response.data.docentes || []
+      docentesCriticosMeta.value = response.data.meta || {}
+    } else if (filtroDocentesCriticos.value === 'criticos') {
+      response = await reporteService.getDocentesCriticos(params)
+      docentesCriticosList.value = response.data.docentes || []
+      docentesCriticosMeta.value = response.data.meta || {}
+    } else {
+      // Todos: usar ranking para obtener lista completa
+      response = await reporteService.getRankingDocentes({ ...params, orden: 'asc' })
+      docentesCriticosList.value = response.data.ranking || []
+      docentesCriticosMeta.value = { total: docentesCriticosList.value.length }
+    }
+  } catch (error) {
+    console.error('Error cargando docentes críticos:', error)
+  } finally {
+    loadingDocentes.value = false
+  }
+}
+
+// Cargar ranking según tipo seleccionado
+const cargarRanking = async () => {
+  loadingRanking.value = true
+  try {
+    const params = {
+      sede_id: filtros.value.sede || authStore.sedeId,
+      carrera_id: filtros.value.carrera
+    }
+    
+    let response
+    if (tipoRanking.value === 'docentes') {
+      response = await reporteService.getRankingDocentes(params)
+      rankingList.value = response.data.ranking || []
+      promedioRanking.value = response.data.promedioGeneral || 0
+    } else if (tipoRanking.value === 'carreras') {
+      response = await reporteService.getRankingCarreras(params)
+      rankingList.value = response.data.ranking || []
+      promedioRanking.value = response.data.promedioGeneral || 0
+    } else if (tipoRanking.value === 'sedes') {
+      response = await reporteService.getRankingSedes()
+      rankingList.value = response.data.ranking || []
+      promedioRanking.value = response.data.promedioNacional || 0
+    }
+  } catch (error) {
+    console.error('Error cargando ranking:', error)
+  } finally {
+    loadingRanking.value = false
+  }
+}
+
+// Cargar alertas rojas
+const cargarAlertasRojas = async () => {
+  try {
+    const params = {
+      sede_id: filtros.value.sede || authStore.sedeId
+    }
+    const { data } = await reporteService.getAlertasRojas(params)
+    alertasRojasList.value = data.alertas || []
+    alertasMeta.value = data.meta || { totalAlertas: 0, carrerasCriticas: 0, docentesCriticos: 0 }
+  } catch (error) {
+    console.error('Error cargando alertas rojas:', error)
+  }
+}
+
 onMounted(async () => {
   await sedesStore.fetchSedes()
   await carrerasStore.fetchCarreras()
@@ -912,20 +1301,42 @@ onMounted(async () => {
 
 watch(() => filtros.value.carrera, () => {
   cargarReportes()
-  if (tabActivo.value === 'semanal') loadWeeklyReports()
+  // Recargar tab activo con nuevos filtros
+  recargarTabActivo()
 })
 watch(() => filtros.value.sede, () => {
   cargarReportes()
-  if (tabActivo.value === 'semanal') loadWeeklyReports()
+  recargarTabActivo()
 })
 watch(() => filtros.value.fechaDesde, () => {
   if (tabActivo.value === 'semanal') loadWeeklyReports()
 })
 
+// Función auxiliar para recargar el tab activo
+const recargarTabActivo = () => {
+  const tab = tabActivo.value
+  if (tab === 'semanal') loadWeeklyReports()
+  else if (tab === 'matriz' || tab === 'noconformidades') cargarMatrizControl()
+  else if (tab === 'auditoria') cargarAuditoria25()
+  else if (tab === 'docentes-criticos') cargarDocentesCriticos()
+  else if (tab === 'ranking') cargarRanking()
+  else if (tab === 'alertas') cargarAlertasRojas()
+}
+
 // Watch for tab change to load data
 watch(tabActivo, (val) => {
   if (val === 'semanal') {
     loadWeeklyReports()
+  } else if (val === 'matriz' || val === 'noconformidades') {
+    cargarMatrizControl()
+  } else if (val === 'auditoria') {
+    cargarAuditoria25()
+  } else if (val === 'docentes-criticos') {
+    cargarDocentesCriticos()
+  } else if (val === 'ranking') {
+    cargarRanking()
+  } else if (val === 'alertas') {
+    cargarAlertasRojas()
   }
 })
 

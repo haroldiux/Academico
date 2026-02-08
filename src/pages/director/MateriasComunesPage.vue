@@ -396,7 +396,7 @@ const vincularMultiple = async () => {
         $q.notify({ type: 'positive', message: `${materiasSeleccionadas.value.length} materia(s) vinculadas` })
         dialogLink.value = false
         fetchMateriasComunes()
-    } catch (e) {
+    } catch {
         $q.notify({ type: 'negative', message: 'Error al vincular' })
     } finally { saving.value = false }
 }
