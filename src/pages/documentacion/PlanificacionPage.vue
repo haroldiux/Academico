@@ -219,17 +219,33 @@
             <!-- Botón Generar -->
             <div class="col-12 text-center">
               <q-btn unelevated color="indigo" icon="auto_awesome" label="Generar Planificación Automática" size="lg"
-                no-caps @click="generarPlanificacion" />
+                no-caps @click="generarPlanificacion" :disable="planificacionGenerada" />
               <p class="text-grey-6 q-mt-sm text-caption">
                 Se distribuirán {{ totalTemasDocumentacion }} temas de
                 {{ unidadesDocumentacion.length }} unidades en {{ totalSemanas }} semanas
               </p>
+              <q-banner v-if="planificacionGenerada" class="bg-green-1 text-green-9 q-mt-md inline-block rounded-borders" dense>
+                <q-icon name="check_circle" class="q-mr-sm" />
+                La planificación ya ha sido generada.
+              </q-banner>
             </div>
           </div>
         </q-tab-panel>
 
         <!-- TAB 2: PLANIFICACIÓN -->
         <q-tab-panel name="planificacion" class="q-pa-lg">
+          <!-- Action Buttons Row -->
+          <div class="row justify-end q-gutter-sm q-mb-md">
+             <q-btn unelevated color="orange" icon="upload_file" label="Importar Cronograma Parcial (PAC)" no-caps
+                @click="abrirDialogoImportarCronograma" >
+                <q-tooltip>Importar avance semestral hasta semena 6 (Excel)</q-tooltip>
+             </q-btn>
+             
+             <q-btn outline color="grey-6" icon="lock" label="Importar Cronograma Total" no-caps disable>
+                <q-tooltip>Opción habilitada solo cuando el Director suba el Rol de Exámenes</q-tooltip>
+             </q-btn>
+          </div>
+
           <!-- Resumen -->
           <div class="planificacion-resumen q-mb-lg">
             <div class="resumen-item">
@@ -278,20 +294,20 @@
                 </div>
               </div>
 
-              <div v-if="!unidad.collapsed" class="sesiones-table-container">
-                <table class="sesiones-table">
+                <div v-if="!unidad.collapsed" class="sesiones-table-container" style="overflow-x: auto; max-width: 100%;">
+                <table class="sesiones-table" style="min-width: 1200px;">
                   <thead>
                     <tr>
-                      <th style="width: 70px">SEM</th>
+                      <th style="width: 70px; position: sticky; left: 0; z-index: 1;">SEM</th>
                       <th style="width: 70px">SESIÓN</th>
                       <th style="width: 140px" class="bg-grey-1 text-grey-8">FECHAS / GRUPOS</th>
                       <th style="width: 250px">TEMAS</th>
-                      <th>CONTENIDO</th>
-                      <th>CONCEPTUAL</th>
-                      <th>PROCEDIMENTAL</th>
-                      <th>ACTITUDINAL</th>
-                      <th>CRITERIOS</th>
-                      <th>INSTRUMENTOS</th>
+                      <th style="min-width: 300px;">CONTENIDO</th>
+                      <th style="min-width: 200px;">CONCEPTUAL</th>
+                      <th style="min-width: 200px;">PROCEDIMENTAL</th>
+                      <th style="min-width: 200px;">ACTITUDINAL</th>
+                      <th style="min-width: 200px;">CRITERIOS</th>
+                      <th style="min-width: 200px;">INSTRUMENTOS</th>
                       <th style="width: 50px">ACCIONES</th>
                     </tr>
                   </thead>
@@ -300,7 +316,7 @@
                       <!-- Fila de EXAMEN -->
                       <tr v-if="sesion.esExamen" class="sesion-examen-row">
                         <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)"
-                          v-if="isFirstSesionOfSemana(unidad, sesion)">
+                          v-if="isFirstSesionOfSemana(unidad, sesion)" style="position: sticky; left: 0; z-index: 1; background: white;">
                           <div class="semana-content">
                             <span class="semana-numero">{{ sesion.semana }}</span>
                             <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
@@ -339,7 +355,7 @@
                       <!-- Fila NORMAL -->
                       <tr v-else :class="getSesionRowClass(sesion)">
                         <td class="cell-semana" :rowspan="getSemanaRowspan(unidad, sesion)"
-                          v-if="isFirstSesionOfSemana(unidad, sesion)">
+                          v-if="isFirstSesionOfSemana(unidad, sesion)" style="position: sticky; left: 0; z-index: 1; background: white;">
                           <div class="semana-content">
                             <span class="semana-numero">{{ sesion.semana }}</span>
                             <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
@@ -377,12 +393,17 @@
                             <!-- Select múltiple de contenido_items -->
                             <q-select v-model="sesion.contenido_items_seleccionados"
                               :options="getContenidoItemsOptions(sesion)" multiple use-chips emit-value map-options
-                              dense outlined class="cell-input" label="Contenido" option-value="value"
+                              dense outlined class="cell-input q-mb-xs" label="Seleccionar Items" option-value="value"
                               option-label="label" :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0
                                 " :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0
                                   ? 'Seleccione tema(s) primero'
                                   : ''
                                 " @update:model-value="marcarModificado(sesion)" />
+                            
+                            <!-- Input manual de contenido -->
+                            <q-input v-model="sesion.contenido" outlined dense type="textarea"
+                              autogrow class="cell-input" placeholder="Contenido adicional..."
+                              @update:model-value="marcarModificado(sesion)" />
                           </div>
                           <div v-else class="text-caption text-grey text-center">--</div>
                         </td>
@@ -518,6 +539,58 @@
       </q-tab-panels>
     </q-card>
 
+    <!-- Dialog Importar Cronograma (Standardized) -->
+    <q-dialog v-model="showImportDialog">
+      <q-card style="min-width: 500px;">
+        <div class="dialog-header bg-orange">
+          <h3><q-icon name="upload_file" class="q-mr-sm" />Importar Cronograma (PAC)</h3>
+        </div>
+
+        <q-card-section>
+          <q-banner class="bg-blue-1 text-blue-9 q-mb-md" rounded dense>
+            <template v-slot:avatar>
+              <q-icon name="info" color="blue" />
+            </template>
+            <strong>Formato del Excel (Requerido):</strong>
+            <ul class="q-ma-none q-pl-md text-caption">
+              <li>Columna A: Nro Sesión</li>
+              <li>Columna B: Semana</li>
+              <li>Columna C: Fecha (DD/MM/YYYY)</li>
+              <li>Columna D: Contenido (Solo referencia)</li>
+              <li>Columna F: Conceptual</li>
+              <li>Columna G: Procedimental</li>
+              <li>Columna H: Actitudinal</li>
+              <li>Columna I: Criterios</li>
+              <li>Columna J: Instrumentos</li>
+            </ul>
+          </q-banner>
+
+          <div class="text-center q-pa-lg upload-zone" @dragover.prevent @drop.prevent="onDropCronograma">
+             <input type="file" ref="fileInputCronograma" @change="onFileSelectedCronograma" accept=".xlsx,.xls" style="display: none" />
+            
+            <div v-if="!selectedFile">
+              <q-icon name="cloud_upload" size="64px" color="grey-4" />
+              <p class="text-grey-6 q-mt-md">Arrastra el archivo PAC aquí o</p>
+              <q-btn outline color="orange" label="Seleccionar Excel" no-caps @click="$refs.fileInputCronograma.click()" />
+            </div>
+
+            <div v-else>
+              <q-icon name="description" size="48px" color="green" />
+              <p class="text-subtitle1 q-mt-sm text-weight-medium">{{ selectedFile.name }}</p>
+              <p class="text-caption text-grey-6">{{ (selectedFile.size / 1024).toFixed(2) }} KB</p>
+              <q-btn flat color="red" label="Quitar" no-caps icon="close" @click="selectedFile = null" />
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancelar" @click="showImportDialog = false" />
+          <q-btn unelevated color="orange" label="Importar Cronograma" icon="upload" no-caps :disable="!selectedFile"
+            @click="procesarImportacionCronograma" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Dialog Horario -->
     <q-dialog v-model="showHorarioDialog">
       <q-card class="dialog-card" style="min-width: 400px">
@@ -594,6 +667,7 @@ import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
 import planificacionSemestralService from 'src/services/planificacionSemestralService'
+import asignaturaService from 'src/services/asignaturaService'
 import { useAuthStore } from 'src/stores/auth'
 
 const route = useRoute()
@@ -745,13 +819,11 @@ onMounted(async () => {
     }
   }
 
-  // Cargar planificación
-  await cargarPlanificacion()
-
-  // Cargar horarios desde datos locales
-  // Nota: Al setear grupoSeleccionado arriba, el watcher ya disparó actualizarHorariosDesdeGrupo
-  // Pero por seguridad lo llamamos si hiciera falta, aunque podría ser redundante.
+  // 1. Cargar horarios (Prioridad: Necesario para calcular fechas de planificación)
   await cargarHorariosAsignatura()
+
+  // 2. Cargar planificación (Depende de horarios para asignar fechas)
+  await cargarPlanificacion()
 
   // Cargar rol de exámenes para esta materia
   await cargarExamenesRol()
@@ -841,9 +913,18 @@ async function cargarPlanificacion() {
             sesionView.unidad_id = db.tema.unidad_id
           }
 
-          sesionView.conceptual = db.contenido_conceptual || ''
-          sesionView.procedimental = db.contenido_procedimental || ''
-          sesionView.actitudinal = db.contenido_actitudinal || ''
+          // Convertir arrays a strings para los q-input (textareas)
+          sesionView.conceptual = Array.isArray(db.contenido_conceptual)
+            ? db.contenido_conceptual.join('\n')
+            : db.contenido_conceptual || ''
+
+          sesionView.procedimental = Array.isArray(db.contenido_procedimental)
+            ? db.contenido_procedimental.join('\n')
+            : db.contenido_procedimental || ''
+
+          sesionView.actitudinal = Array.isArray(db.contenido_actitudinal)
+            ? db.contenido_actitudinal.join('\n')
+            : db.contenido_actitudinal || ''
 
           sesionView.criteriosDesempeno = db.criterios_desempeno
           sesionView.criteriosSeleccionados = db.criterios_desempeno
@@ -859,6 +940,8 @@ async function cargarPlanificacion() {
               : db.instrumentos_evaluacion
             : []
           sesionView.contenido_items_seleccionados = db.contenido_items_seleccionados || []
+          // Cargar contenido manual desde observaciones
+          sesionView.contenido = db.observaciones || ''
         }
       })
 
@@ -1094,21 +1177,32 @@ function resolveContenido(sesion) {
     })
     .filter((l) => l)
 
-  return selectedLabels.join('\n')
+  // Combinar etiquetas seleccionadas con contenido manual
+  const combined = [...selectedLabels]
+  if (sesion.contenido && typeof sesion.contenido === 'string' && sesion.contenido.trim()) {
+      // Evitar duplicados si el manual es igual a alguna etiqueta (opcional)
+      if (!combined.includes(sesion.contenido.trim())) {
+          combined.push(sesion.contenido.trim())
+      }
+  }
+
+  return combined.join('\n')
 }
 
 // Lista global de todos los temas de todas las unidades
 const opcionesTemasGlobales = computed(() => {
   const opciones = []
+  let globalIndex = 1
   unidadesDocumentacion.value.forEach((u) => {
     ; (u.temas || []).forEach((t) => {
       const titulo = typeof t === 'string' ? t : t.titulo || t.nombre || ''
       opciones.push({
-        label: titulo,
+        label: `${globalIndex}. ${titulo}`,
         value: t.id || titulo,
         unidad_id: u.id,
         unidad_nombre: u.titulo,
       })
+      globalIndex++
     })
   })
   return opciones
@@ -1601,6 +1695,7 @@ async function guardarTodo(silent = false) {
           ? sesion.temasSeleccionados.filter((v) => typeof v === 'number')
           : [],
         contenido_items_seleccionados: sesion.contenido_items_seleccionados || [],
+        observaciones: sesion.contenido || '', // Guardar contenido manual en observaciones
       }
 
       sDB.grupo_id = targetGrupoId
@@ -1832,6 +1927,71 @@ function exportarPDF() {
     $q.loading.hide()
   }
 }
+
+// Importar Cronograma (Excel) - Ported from AsignaturaEditPage
+// Import logic
+const showImportDialog = ref(false)
+const selectedFile = ref(null)
+
+function abrirDialogoImportarCronograma() {
+  selectedFile.value = null
+  showImportDialog.value = true
+}
+
+function onFileSelectedCronograma(event) {
+  const file = event.target.files[0]
+  if (file) {
+    selectedFile.value = file
+  }
+}
+
+function onDropCronograma(event) {
+  const file = event.dataTransfer.files[0]
+  if (file) {
+    selectedFile.value = file
+  }
+}
+
+async function procesarImportacionCronograma() {
+  if (!selectedFile.value) return
+
+  $q.loading.show({ message: 'Importando y guardando Cronograma...' })
+  try {
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+    
+    // Enviar grupo_id si está seleccionado
+    if (grupoSeleccionado.value) {
+      const gId = grupoSeleccionado.value.value || grupoSeleccionado.value
+      formData.append('grupo_id', gId)
+    }
+
+    // Call service
+    const response = await asignaturaService.importarCronograma(route.params.id, formData)
+
+    // Alert success
+    $q.dialog({
+      title: 'Cronograma Importado',
+      message: response.data.message,
+      ok: 'Entendido'
+    }).onDismiss(() => {
+      // Recargar planificación para ver los cambios
+      cargarPlanificacion()
+      showImportDialog.value = false
+      selectedFile.value = null
+    })
+
+  } catch (error) {
+    console.error('Error importando cronograma:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.error || 'Error al importar cronograma'
+    })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
 </script>
 
 <style scoped>
@@ -2295,9 +2455,51 @@ function exportarPDF() {
 
 .preview-table td {
   border: 1px solid #ddd;
-  padding: 8px 4px;
+  padding: 8px;
   vertical-align: top;
 }
+
+.dialog-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #4338ca, #3730a3);
+  color: white;
+  margin: -16px -16px 16px -16px;
+}
+
+.dialog-header.bg-green {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.dialog-header.bg-primary {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+}
+
+.dialog-header.bg-orange {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+}
+
+.upload-zone {
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.upload-zone:hover {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
 
 .preview-content {
   white-space: pre-wrap;

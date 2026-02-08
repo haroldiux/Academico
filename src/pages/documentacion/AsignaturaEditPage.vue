@@ -63,10 +63,7 @@
               <q-item-section>Importar Excel (Plan de Clase)</q-item-section>
             </q-item>
 
-            <q-item v-if="puedeImportar" clickable v-close-popup @click="abrirDialogoImportarCronograma">
-              <q-item-section avatar><q-icon name="date_range" color="orange" /></q-item-section>
-              <q-item-section>Importar Cronograma (PAC)</q-item-section>
-            </q-item>
+
 
             <q-item clickable v-close-popup @click="generarCarpetaHtml">
               <q-item-section avatar><q-icon name="auto_stories" color="green" /></q-item-section>
@@ -940,7 +937,6 @@ import { useCarrerasStore } from 'src/stores/carreras'
 import { useSedesStore } from 'src/stores/sedes'
 import { ROLES } from 'src/stores/auth'
 import { useAuthStore } from 'src/stores/auth'
-import asignaturaService from 'src/services/asignaturaService'
 
 // Helpers para contar logros e indicadores (consistente con backend/store)
 function countLogros(tema) {
@@ -1942,43 +1938,7 @@ function generarCarpetaHtml() {
 
 
 // Importar Cronograma (PAC)
-function abrirDialogoImportarCronograma() {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.xlsx, .xls'
-  input.onchange = handleImportCronograma
-  input.click()
-}
 
-async function handleImportCronograma(event) {
-  const file = event.target.files[0]
-  if (!file) return
-
-  $q.loading.show({ message: 'Buscando Cronograma...' })
-  try {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    // Call service
-    const response = await asignaturaService.importarCronograma(route.params.id, formData)
-
-    // Alert success with cell
-    $q.dialog({
-      title: 'Cronograma Detectado',
-      message: `El texto "SEMANAS" fue encontrado en la celda: ${response.data.cell_location}`,
-      ok: 'Entendido'
-    })
-
-  } catch (error) {
-    console.error('Error importando cronograma:', error)
-    $q.notify({
-      type: 'negative',
-      message: error.response?.data?.error || 'Error al buscar cronograma'
-    })
-  } finally {
-    $q.loading.hide()
-  }
-}
 
 
 </script>
