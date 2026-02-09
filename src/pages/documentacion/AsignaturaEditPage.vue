@@ -595,12 +595,14 @@
                   </q-item-section>
                   <q-item-section>
                     <q-item-label class="text-weight-medium">{{ tema.titulo }}</q-item-label>
-                    <!-- Mostrar contenidos debajo del tema separados por punto -->
-                    <q-item-label caption v-if="tema.contenido_items?.length">
-                      <span class="text-grey-8">{{ tema.contenido_items.join(' • ') }}</span>
+                    <!-- Mostrar contenidos debajo del tema con formato •contenido -->
+                    <q-item-label caption v-if="tema.contenido_items?.length" class="contenido-lista">
+                      <div v-for="(contenido, idx) in tema.contenido_items" :key="idx" class="text-grey-8">
+                        •{{ contenido }}
+                      </div>
                     </q-item-label>
                     <q-item-label caption v-else-if="tema.descripcion">
-                      <span class="text-grey-8">{{ tema.descripcion }}</span>
+                      <span class="text-grey-8">•{{ tema.descripcion }}</span>
                     </q-item-label>
                     <q-item-label caption class="q-mt-xs">
                       {{ tema.contenido_items?.length || (tema.descripcion ? 1 : 0) }} puntos de contenido •
