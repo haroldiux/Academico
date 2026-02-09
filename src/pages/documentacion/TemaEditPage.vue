@@ -3,12 +3,17 @@
     <!-- Breadcrumb & Header -->
     <div class="row items-center q-mb-lg animate-in">
       <div class="col">
-        <q-breadcrumbs class="q-mb-sm">
-          <q-breadcrumbs-el icon="home" to="/" />
-          <q-breadcrumbs-el label="Documentación" to="/documentacion" />
-          <q-breadcrumbs-el :label="asignatura?.codigo" :to="`/documentacion/${asignatura?.id}`" />
-          <q-breadcrumbs-el :label="tema?.titulo || 'Tema'" />
-        </q-breadcrumbs>
+        <div class="row items-center q-mb-sm">
+          <q-btn flat round icon="arrow_back" color="primary" class="q-mr-sm" @click="volverAAsignatura">
+            <q-tooltip>Volver a la Asignatura</q-tooltip>
+          </q-btn>
+          <q-breadcrumbs>
+            <q-breadcrumbs-el icon="home" to="/" />
+            <q-breadcrumbs-el label="Documentación" to="/documentacion" />
+            <q-breadcrumbs-el :label="asignatura?.codigo" :to="`/documentacion/${asignatura?.id}`" />
+            <q-breadcrumbs-el :label="tema?.titulo || 'Tema'" />
+          </q-breadcrumbs>
+        </div>
         <h4 class="q-ma-none text-weight-bold">
           <q-icon name="topic" size="36px" color="orange" class="q-mr-sm" />
           <span class="text-gradient">{{ tema?.titulo || 'Cargando...' }}</span>
@@ -724,6 +729,14 @@ const tabActual = ref('aprendizaje')
 const asignatura = ref(null)
 const unidad = ref(null)
 const tema = ref(null)
+
+// Función para volver a la página de asignatura
+function volverAAsignatura() {
+  router.push({
+    path: `/documentacion/${route.params.id}`,
+    query: { ...route.query, tab: 'unidades' }
+  })
+}
 
 // ==========================================
 // PERMISOS

@@ -93,11 +93,21 @@
 
     <!-- Tabs -->
     <q-card class="card-main">
+      <!-- Header dinámico según el tab activo -->
+      <div class="q-pa-md text-center" style="background: linear-gradient(135deg, #1976D2 0%, #42A5F5 100%);">
+        <div class="text-h5 text-white text-weight-bold" v-if="tabActual === 'datos' || tabActual === 'programa' || tabActual === 'bibliografia'">
+          PROGRAMA DE ASIGNATURA (PAC)
+        </div>
+        <div class="text-h5 text-white text-weight-bold" v-else-if="tabActual === 'unidades'">
+          PROGRAMA ANALÍTICO
+        </div>
+      </div>
       <q-tabs v-model="tabActual" dense class="text-grey" active-color="primary" indicator-color="primary" align="left">
         <q-tab name="datos" icon="description" label="Datos de Asignatura" no-caps />
         <q-tab name="programa" icon="assignment" label="Programa" no-caps />
         <q-tab name="bibliografia" icon="auto_stories" label="Bibliografía" no-caps />
         <q-tab name="unidades" icon="folder_open" label="Unidades de Aprendizaje" no-caps />
+        <q-tab name="cronograma" icon="calendar_month" label="Cronograma de Asignatura" no-caps />
       </q-tabs>
 
       <q-separator />
@@ -585,7 +595,14 @@
                   </q-item-section>
                   <q-item-section>
                     <q-item-label class="text-weight-medium">{{ tema.titulo }}</q-item-label>
-                    <q-item-label caption>
+                    <!-- Mostrar contenidos debajo del tema separados por punto -->
+                    <q-item-label caption v-if="tema.contenido_items?.length">
+                      <span class="text-grey-8">{{ tema.contenido_items.join(' • ') }}</span>
+                    </q-item-label>
+                    <q-item-label caption v-else-if="tema.descripcion">
+                      <span class="text-grey-8">{{ tema.descripcion }}</span>
+                    </q-item-label>
+                    <q-item-label caption class="q-mt-xs">
                       {{ tema.contenido_items?.length || (tema.descripcion ? 1 : 0) }} puntos de contenido •
                       {{ countLogros(tema) }} logros •
                       {{ countIndicadores(tema) }} indicadores
@@ -635,6 +652,14 @@
               </q-list>
             </q-expansion-item>
           </q-list>
+        </q-tab-panel>
+
+        <!-- Tab: Cronograma de Asignatura (redirige automáticamente) -->
+        <q-tab-panel name="cronograma" class="q-pa-lg">
+          <div class="text-center q-pa-xl">
+            <q-spinner-dots color="primary" size="40px" />
+            <p class="text-grey-6 q-mt-md">Redirigiendo a Planificación Semestral...</p>
+          </div>
         </q-tab-panel>
       </q-tab-panels>
     </q-card>
@@ -962,8 +987,25 @@ const sedesStore = useSedesStore()
 const authStore = useAuthStore()
 
 // Estado
-const tabActual = ref('datos')
+// Leer el tab inicial desde los query params (para volver al tab correcto desde TemaEditPage)
+const tabInicial = route.query.tab && ['datos', 'programa', 'bibliografia', 'unidades', 'cronograma'].includes(route.query.tab)
+  ? route.query.tab
+  : 'datos'
+const tabActual = ref(tabInicial)
 const asignatura = computed(() => store.asignaturaActual)
+
+// Watcher para redirigir a PlanificacionPage cuando se selecciona el tab cronograma
+watch(tabActual, (newTab) => {
+  if (newTab === 'cronograma') {
+    // Redirigir a la página de planificación
+    router.push({
+      path: `/documentacion/${route.params.id}/planificacion`,
+      query: route.query
+    })
+    // Resetear el tab al anterior para evitar estado inconsistente
+    tabActual.value = 'unidades'
+  }
+})
 
 // Estado de auto-guardado
 const saveStatus = ref('idle') // 'idle' | 'saving' | 'saved' | 'error'
