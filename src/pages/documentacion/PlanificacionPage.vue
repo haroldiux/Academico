@@ -9,17 +9,32 @@
             <q-icon name="calendar_month" color="indigo" class="q-mr-sm" />
             Horario y Planificación Semestral
           </h1>
-          <p class="page-subtitle">
+          <div class="page-subtitle">
             <q-chip size="sm" color="primary" text-color="white">{{ asignatura?.codigo }}</q-chip>
             {{ asignatura?.nombre }} |
             {{ asignatura?.carrera?.nombre || asignatura?.carrera || 'Carrera' }}
-          </p>
+          </div>
         </div>
       </div>
       <div class="header-actions">
-        <!-- Group Selector Removed -->
-
-
+        <!-- Group Selector -->
+        <q-select
+          v-if="asignatura && asignatura.horarios_data && asignatura.horarios_data.length > 1"
+          v-model="activeGroupId"
+          :options="gruposOptions"
+          label="Seleccionar Grupo"
+          dense
+          outlined
+          emit-value
+          map-options
+          style="min-width: 200px"
+          bg-color="white"
+          @update:model-value="cargarPlanificacion"
+        >
+          <template v-slot:prepend>
+            <q-icon name="group" color="primary" />
+          </template>
+        </q-select>
         <!-- Auto-save Status Indicator -->
         <transition name="fade">
           <div v-if="saveStatus !== 'idle'" class="auto-save-indicator q-ml-sm">
@@ -189,9 +204,7 @@
                         {{ horario.aula }}
                         <span v-if="horario.grupo">(Grupo {{ horario.grupo }})</span>
                       </div>
-                      <q-btn v-if="!horario.desdeAPI" flat round dense icon="close" size="xs" color="red"
-                        class="delete-btn" @click="eliminarHorario(horario)" />
-                      <q-icon v-else name="lock" size="14px" color="blue" class="lock-icon">
+                      <q-icon name="lock" size="14px" color="blue" class="lock-icon">
                         <q-tooltip>Horario de la API (no editable)</q-tooltip>
                       </q-icon>
                       <!-- DEBUG INFO -->
@@ -281,6 +294,11 @@
              
              <q-btn outline color="grey-6" icon="lock" label="Importar Cronograma Total" no-caps disable>
                 <q-tooltip>Opción habilitada solo cuando el Director suba el Rol de Exámenes</q-tooltip>
+             </q-btn>
+
+             <q-btn unelevated color="indigo" icon="picture_as_pdf" label="Exportar Planificación (PDF)" no-caps
+                @click="exportarPDF" :disable="!planificacionGenerada" >
+                <q-tooltip>Descargar documento oficial de planificación</q-tooltip>
              </q-btn>
           </div>
 
@@ -486,10 +504,12 @@
               </div>
             </div>
 
-            <div v-for="(unidad, uIdx) in planificacion" :key="unidad.id" class="preview-unidad">
-              <div class="preview-unidad-header">UNIDAD {{ uIdx + 1 }}: {{ unidad.nombre }}</div>
-              <div class="preview-competencia">
-                <strong>ELEMENTO DE COMPETENCIA {{ uIdx + 1 }}:</strong>
+            <div v-for="(unidad, uIdx) in planificacionAgrupada" :key="unidad.id" class="preview-unidad">
+              <div class="preview-unidad-header">
+                  {{ unidad.id === 'finales' ? '' : 'UNIDAD ' + (unidad.numero || (uIdx + 1)) + ':' }} {{ unidad.nombre }}
+              </div>
+              <div v-if="unidad.elementoCompetencia" class="preview-competencia">
+                <strong>ELEMENTO DE COMPETENCIA:</strong>
                 {{ unidad.elementoCompetencia }}
               </div>
               <table class="preview-table">
@@ -606,49 +626,7 @@
       </q-card>
     </q-dialog>
 
-    <!-- Dialog Horario -->
-    <q-dialog v-model="showHorarioDialog">
-      <q-card class="dialog-card" style="min-width: 400px">
-        <div class="dialog-header bg-green">
-          <h3><q-icon name="schedule" class="q-mr-sm" /> Agregar Sesión de Clase</h3>
-        </div>
-        <q-card-section class="q-gutter-md">
-          <q-select v-model="horarioForm.dia" :options="diasOptions" outlined label="Día" emit-value map-options />
-          <div class="row q-col-gutter-md">
-            <div class="col-6">
-              <q-input v-model="horarioForm.horaInicio" outlined label="Hora Inicio" type="time" />
-            </div>
-            <div class="col-6">
-              <q-input v-model="horarioForm.horaFin" outlined label="Hora Fin" type="time" />
-            </div>
-          </div>
-          <q-input v-model="horarioForm.aula" outlined label="Aula" placeholder="Ej: Aula 301" />
-        </q-card-section>
-        <q-card-actions align="right" class="dialog-actions">
-          <q-btn flat label="Cancelar" @click="showHorarioDialog = false" />
-          <q-btn unelevated color="green" label="Agregar" @click="confirmarHorario" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
 
-    <!-- Dialog Editar Unidad -->
-    <q-dialog v-model="showUnidadDialog" persistent>
-      <q-card class="dialog-card" style="min-width: 600px">
-        <div class="dialog-header">
-          <h3><q-icon name="edit" class="q-mr-sm" /> Editar Unidad</h3>
-        </div>
-        <q-card-section class="q-gutter-md">
-          <q-input v-model="unidadForm.nombre" outlined label="Nombre de la Unidad" />
-          <q-input v-model="unidadForm.elementoCompetencia" outlined type="textarea" rows="4"
-            label="Elemento de Competencia"
-            hint="Describe la competencia que el estudiante desarrollará en esta unidad" />
-        </q-card-section>
-        <q-card-actions align="right" class="dialog-actions">
-          <q-btn flat label="Cancelar" @click="showUnidadDialog = false" />
-          <q-btn unelevated color="indigo" label="Guardar" @click="guardarUnidad" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
 
     <!-- Dialog Copiar Gestión -->
     <q-dialog v-model="showCopiarDialog">
@@ -694,8 +672,6 @@ const rolExamenesStore = useRolExamenesStore()
 
 const tabActual = ref('horario')
 const gestionSeleccionada = ref('2-2026')
-const showHorarioDialog = ref(false)
-const showUnidadDialog = ref(false)
 const showCopiarDialog = ref(false)
 const planificacionGenerada = ref(false)
 // const guardando = ref(false) // Ya no se usa guardando manual, usamos saveStatus
@@ -704,14 +680,12 @@ let dataLoaded = false
 let lastSavedSnapshot = ''
 
 const gestionACopiar = ref(null)
-const unidadEditando = ref(null)
-const grupoSeleccionado = ref(null) // { label, value, tipo }
 
 // Computed para extraer fechas de exámenes de la planificación generada o del rol oficial
 const fechasExamenes = computed(() => {
     // 1. Prioridad: Rol de Exámenes Oficial (cargado desde Admin)
   if (examenesRol.value.length > 0) {
-    let oficiales = examenesRol.value
+    let oficiales = [...examenesRol.value]
 
     // Mostrar todos los exámenes de la materia, sin filtrar por grupo seleccionado
     // ya que se eliminó el selector.
@@ -749,27 +723,22 @@ const fechasExamenes = computed(() => {
   return []
 })
 
-const gestionesOptions = [
-  { label: 'Gestión 2026-I', value: '2026-I' },
-  { label: 'Gestión 2025-II', value: '2025-II' },
-  { label: 'Gestión 2025-I', value: '2025-I' },
-]
 
-// gruposOptions removed
+
+const gruposOptions = computed(() => {
+    if (!asignatura.value?.horarios_data) return []
+    return asignatura.value.horarios_data.map(g => ({
+        label: `G->${g.grupo} (${g.tipo})`,
+        value: g.id
+    }))
+})
 
 const gestionesAnteriores = [
   { label: 'Gestión 2025-II', value: '2025-II' },
   { label: 'Gestión 2025-I', value: '2025-I' },
 ]
 
-const diasOptions = [
-  { label: 'Lunes', value: 'Lunes' },
-  { label: 'Martes', value: 'Martes' },
-  { label: 'Miércoles', value: 'Miércoles' },
-  { label: 'Jueves', value: 'Jueves' },
-  { label: 'Viernes', value: 'Viernes' },
-  { label: 'Sábado', value: 'Sábado' },
-]
+
 
 const asignatura = computed(() => asignaturasStore.asignaturaActual)
 
@@ -1028,9 +997,7 @@ const totalTemasDocumentacion = computed(() =>
 
 const calendario = ref({ fechaInicio: '2026-02-09', fechaFin: '2026-06-27' })
 const totalSemanas = computed(() => 20)
-
 const horarios = ref([])
-const horarioForm = ref({ dia: 'Martes', horaInicio: '07:00', horaFin: '09:00', aula: '' })
 
 /**
  * Cargar horarios desde los datos locales de la asignatura (pivote docentes)
@@ -1116,12 +1083,10 @@ function asignarHorarios(nuevosHorarios) {
   }
 }
 
-const unidadForm = ref({ nombre: '', elementoCompetencia: '' })
-
 const planificacionSesiones = ref([])
 const planificacion = computed(() => {
-  // Retornar directamente la lista plana
-  return planificacionSesiones.value.sort((a, b) => a.numeroGlobal - b.numeroGlobal)
+  // Retornar directamente la lista plana (copiando para evitar efectos secundarios en el sort)
+  return [...planificacionSesiones.value].sort((a, b) => a.numeroGlobal - b.numeroGlobal)
 })
 
 function resolveContenido(sesion) {
@@ -1183,47 +1148,59 @@ const horariosOrdenados = computed(() => {
   })
 })
 
-const totalSesionesGeneradas = computed(() =>
-  planificacion.value.reduce((sum, u) => sum + (u.sesiones?.length || 0), 0),
-)
+const totalSesionesGeneradas = computed(() => planificacion.value.length)
 
 const progresoTotal = computed(() => {
   if (!totalSesionesGeneradas.value) return 0
-  let completadas = 0
-  planificacion.value.forEach((u) => {
-    u.sesiones?.forEach((s) => {
-      if (s.tema && s.conceptual && s.procedimental) completadas++
-    })
-  })
+  const completadas = planificacion.value.filter((s) => s.tema && s.conceptual && s.procedimental).length
   return Math.round((completadas / totalSesionesGeneradas.value) * 100)
 })
 
-function agregarHorario() {
-  horarioForm.value = { dia: 'Martes', horaInicio: '07:00', horaFin: '09:00', aula: '' }
-  showHorarioDialog.value = true
-}
-
-function confirmarHorario() {
-  const nuevoHorario = { ...horarioForm.value, desdeAPI: false }
-  horarios.value.push(nuevoHorario)
-  showHorarioDialog.value = false
-  $q.notify({ type: 'positive', message: 'Sesión agregada', icon: 'check' })
-}
-
-function eliminarHorario(horario) {
-  if (horario.desdeAPI) {
-    $q.notify({
-      type: 'warning',
-      message: 'Este horario viene de la API y no puede eliminarse',
-      icon: 'warning',
+const planificacionAgrupada = computed(() => {
+    if (!planificacion.value.length) return []
+    
+    // Agrupar las sesiones planas por su unidad_id
+    const grupos = {}
+    
+    // Obtener info de unidades para los nombres
+    const infoUnidades = {}
+    unidadesDocumentacion.value.forEach(u => {
+        infoUnidades[u.id] = { 
+            nombre: u.titulo || u.nombre, 
+            elementoCompetencia: u.elemento_competencia || u.elementoCompetencia,
+            numero: u.numero
+        }
     })
-    return
-  }
-  const idx = horarios.value.indexOf(horario)
-  if (idx !== -1) {
-    horarios.value.splice(idx, 1)
-  }
-}
+
+    planificacion.value.forEach(s => {
+        const uid = s.unidad_id || 'otras'
+        if (!grupos[uid]) {
+            grupos[uid] = {
+                id: uid,
+                nombre: infoUnidades[uid]?.nombre || 'Otras Sesiones / Exámenes',
+                elementoCompetencia: infoUnidades[uid]?.elementoCompetencia || '',
+                numero: infoUnidades[uid]?.numero || '',
+                sesiones: []
+            }
+        }
+        grupos[uid].sesiones.push(s)
+    })
+
+    // Retornar como array ordenado por el ID de unidad (o el orden de las unidades originales)
+    // Para mantener el orden académico:
+    const resultado = []
+    unidadesDocumentacion.value.forEach(u => {
+        if (grupos[u.id]) resultado.push(grupos[u.id])
+    })
+    
+    // Agregar exámenes / otros al final
+    if (grupos['finales']) resultado.push(grupos['finales'])
+    if (grupos['otras'] && !resultado.find(r => r.id === 'otras')) resultado.push(grupos['otras'])
+
+    return resultado
+})
+
+
 
 // Helper para normalizar días (API sin tildes vs App con tildes)
 const getNroDia = (diaStr) => {
@@ -1263,10 +1240,9 @@ function calcularPropuestaPlanificacion() {
   const todasLasSesiones = []
   let sesionGlobal = 1
 
-  // Determinar ID de grupo para las sesiones
-  let targetGrupoId = activeGroupId.value
-
-  // Preparar mapa de exámenes
+  // Determinar número de sesiones por tipo
+  const numTeoricas = parseInt(asignatura.value?.sesiones_semanales_teoricas || 0)
+  const numPracticas = parseInt(asignatura.value?.sesiones_semanales_practicas || 0)
   const fechasExamenMap = {}
   if (examenesRol.value.length > 0) {
     let examenesRelevantes = examenesRol.value
@@ -1278,8 +1254,6 @@ function calcularPropuestaPlanificacion() {
   }
 
   // Bucle de generación (20 semanas)
-  const numTeoricas = parseInt(asignatura.value?.sesiones_semanales_teoricas || 0)
-  const numPracticas = parseInt(asignatura.value?.sesiones_semanales_practicas || 0)
 
   // Validar si hay configuración
   if (numTeoricas === 0 && numPracticas === 0) {
@@ -1298,12 +1272,12 @@ function calcularPropuestaPlanificacion() {
 
     // 1. Generate Theoretical Sessions (Always pass {} for SEMANAS_EXAMEN to NOT auto-mark anything yet)
     for (let t = 1; t <= numTeoricas; t++) {
-        sesionesSemana.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Teórica', t, fechasExamenMap, {}, fechaSemanaInicio))
+        sesionesSemana.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Teórica', t, fechasExamenMap, {}))
     }
 
     // 2. Generate Practical Sessions (Always pass {} for SEMANAS_EXAMEN to NOT auto-mark anything yet)
     for (let p = 1; p <= numPracticas; p++) {
-        sesionesSemana.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Práctica', p, fechasExamenMap, {}, fechaSemanaInicio))
+        sesionesSemana.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Práctica', p, fechasExamenMap, {}))
     }
 
     // 3. Mark the Exam Session ONLY (Last Theoretical Session of the Week)
@@ -1363,7 +1337,7 @@ function calcularPropuestaPlanificacion() {
   return todasLasSesiones
 }
 
-function crearSesionBase(id, semana, semanaFechas, tipo, indiceTipo, fechasExamenMap, SEMANAS_EXAMEN, fechaSemanaInicio) {
+function crearSesionBase(id, semana, semanaFechas, tipo, indiceTipo, fechasExamenMap, SEMANAS_EXAMEN) {
     // Intentar deducir si es semana de examen basándose en la fecha APROXIMADA
     // Como ahora generamos abstractamente, la fecha exacta depende del grupo.
     // Usaremos la fecha del Lunes de la semana como referencia para buscar exámenes.
@@ -1409,8 +1383,6 @@ function crearSesionBase(id, semana, semanaFechas, tipo, indiceTipo, fechasExame
         bloqueado: esExamen || semana >= 18,
         unidad_id: 'finales' // Default, se sobreescribe
     }
-
-  return nuevasSesiones.sort((a, b) => a.numeroGlobal - b.numeroGlobal)
 }
 
 async function generarPlanificacion(silent = false) {
@@ -1517,61 +1489,9 @@ function getContenidoItemsOptions(sesion) {
   return options
 }
 
-function editarUnidad(unidad) {
-  unidadEditando.value = unidad
-  unidadForm.value = { nombre: unidad.nombre, elementoCompetencia: unidad.elementoCompetencia }
-  showUnidadDialog.value = true
-}
 
-function guardarUnidad() {
-  if (unidadEditando.value) {
-    unidadEditando.value.nombre = unidadForm.value.nombre.toUpperCase()
-    unidadEditando.value.elementoCompetencia = unidadForm.value.elementoCompetencia
-  }
-  showUnidadDialog.value = false
-  $q.notify({ type: 'positive', message: 'Unidad actualizada', icon: 'check' })
-}
-
-function agregarSesionManual(unidad) {
-  const lastSesion = unidad.sesiones[unidad.sesiones.length - 1]
-  const newId = Math.max(...planificacionSesiones.value.map((s) => s.id), 0) + 1
-
-  planificacionSesiones.value.push({
-    id: newId,
-    numeroGlobal: newId,
-    unidad_id: unidad.id,
-    semana: lastSesion?.semana || 1,
-    semanaFechas: lastSesion?.semanaFechas || '',
-    dia: lastSesion?.dia || 'Martes',
-    fecha: lastSesion?.fecha || '',
-    periodoExamen: null,
-    tema: '',
-    temasSeleccionados: [],
-    contenido: '',
-    contenido_items_seleccionados: [], // Array de "temaId:itemIndex"
-    conceptual: '',
-    procedimental: '',
-    actitudinal: '',
-    criteriosDesempeno: '',
-    criteriosSeleccionados: [],
-    instrumentosEvaluacion: '',
-    instrumentosSeleccionados: [],
-    modificado: true,
-  })
-  $q.notify({ type: 'positive', message: 'Sesión agregada', icon: 'add' })
-}
 
 import pdfService from 'src/services/pdfService'
-
-function eliminarSesion(unidad, sesion) {
-  $q.dialog({
-    title: 'Confirmar',
-    message: '¿Eliminar esta sesión?',
-    cancel: true,
-  }).onOk(() => {
-    unidad.sesiones = unidad.sesiones.filter((s) => s.id !== sesion.id)
-  })
-}
 
 async function ejecutarCopia() {
   if (!gestionACopiar.value) {
@@ -1899,12 +1819,12 @@ function exportarPDF() {
 
     const asignaturaParaPDF = {
       ...asignatura.value,
-      // Sobreescribimos unidades con la info de la planificación actual (sesiones distribuidas)
-      unidades: planificacion.value.map((p) => ({
-        numero: p.id, // Ojo: id puede no ser numero secuencial
-        titulo: p.nombre,
-        elemento_competencia: p.elementoCompetencia,
-        temas: p.sesiones
+      // Sobreescribimos unidades con la info de la planificación actual (agrupada)
+      unidades: planificacionAgrupada.value.map((u) => ({
+        numero: u.numero,
+        titulo: u.nombre,
+        elemento_competencia: u.elementoCompetencia,
+        temas: (u.sesiones || [])
           .filter((s) => !s.esExamen)
           .map((s, idx) => ({
             numero: idx + 1,
