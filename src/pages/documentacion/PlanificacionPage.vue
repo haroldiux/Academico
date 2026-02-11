@@ -221,6 +221,7 @@
                   color="blue"
                   bg-color="blue-1"
                   min="0"
+                  :disable="planificacionGenerada"
                   @blur="saveAsignaturaConfig"
                   @keyup.enter="saveAsignaturaConfig"
                 >
@@ -239,6 +240,7 @@
                   color="green"
                   bg-color="green-1"
                   min="0"
+                  :disable="planificacionGenerada"
                   @blur="saveAsignaturaConfig"
                   @keyup.enter="saveAsignaturaConfig"
                 >
@@ -330,7 +332,9 @@
                       <!-- Fila de EXAMEN -->
                       <tr v-if="sesion.esExamen" class="sesion-examen-row">
                         <td class="cell-semana" 
-                            style="position: sticky; left: 0; z-index: 1; background: white;">
+                            v-if="isFirstSesionOfSemana(planificacion, sesion)"
+                            :rowspan="getSemanaRowspan(planificacion, sesion)"
+                            style="position: sticky; left: 0; z-index: 1; background: white; border-bottom: 2px solid #ddd;">
                           <div class="semana-content">
                             <span class="semana-numero">{{ sesion.semana }}</span>
                             <!-- <span class="semana-fechas">{{ sesion.semanaFechas }}</span> -->
@@ -352,7 +356,7 @@
                             <div class="fg-fecha" style="font-size: 0.85em;">{{ fg.fecha }}</div>
                           </div>
                         </td>
-                        <td colspan="6" class="examen-cell">
+                        <td colspan="7" class="examen-cell">
                           <div class="examen-banner">
                             <q-icon name="assignment" size="24px" class="q-mr-sm" />
                             <span class="examen-titulo">{{ sesion.tipoExamen }}</span>
@@ -1289,15 +1293,44 @@ function calcularPropuestaPlanificacion() {
     fechaSemanaInicio.setDate(mondayOfFirstWeek.getDate() + (semana - 1) * 7)
     const fechaSemanaInicioStr = formatDate(fechaSemanaInicio)
 
-    // Generar Teóricas
+    // Generate all sessions normally for this week (both Theory and Practice)
+    const sesionesSemana = []
+
+    // 1. Generate Theoretical Sessions (Always pass {} for SEMANAS_EXAMEN to NOT auto-mark anything yet)
     for (let t = 1; t <= numTeoricas; t++) {
-        todasLasSesiones.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Teórica', t, fechasExamenMap, SEMANAS_EXAMEN, fechaSemanaInicio))
+        sesionesSemana.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Teórica', t, fechasExamenMap, {}, fechaSemanaInicio))
     }
 
-    // Generar Prácticas
+    // 2. Generate Practical Sessions (Always pass {} for SEMANAS_EXAMEN to NOT auto-mark anything yet)
     for (let p = 1; p <= numPracticas; p++) {
-        todasLasSesiones.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Práctica', p, fechasExamenMap, SEMANAS_EXAMEN, fechaSemanaInicio))
+        sesionesSemana.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Práctica', p, fechasExamenMap, {}, fechaSemanaInicio))
     }
+
+    // 3. Mark the Exam Session ONLY (Last Theoretical Session of the Week)
+    if (SEMANAS_EXAMEN[semana]) {
+        // Find the LAST Theoretical session
+        let targetSession = sesionesSemana.filter(s => s.tipoClase === 'Teórica').pop()
+        
+        // Fallback: If no Theoretical sessions exist (weird edge case), use the Last Practical (or last session overall)
+        if (!targetSession && sesionesSemana.length > 0) {
+            targetSession = sesionesSemana[sesionesSemana.length - 1]
+        }
+
+        if (targetSession) {
+            const nombreExamen = SEMANAS_EXAMEN[semana]
+            targetSession.esExamen = true
+            targetSession.tipoExamen = nombreExamen
+            targetSession.periodoExamen = nombreExamen
+            targetSession.tema = nombreExamen
+            targetSession.instrumentosEvaluacion = 'Examen escrito'
+            targetSession.instrumentosSeleccionados = ['Examen escrito']
+            targetSession.bloqueado = true
+            targetSession.unidad_id = 'finales'
+        }
+    }
+
+    // Add sessions to global list
+    todasLasSesiones.push(...sesionesSemana)
   }
 
   // Asignar unidades secuencialmente (Lógica antigua simplificada)
