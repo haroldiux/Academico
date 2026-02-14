@@ -200,28 +200,23 @@ const showGroupSelection = ref(false)
 const selectedGroup = ref(null)
 const selectedGroupList = ref([])
 
-// Helper to generate weeks (Mocking a start date of approx 2 months ago for Semester start)
+// Helper to generate weeks (Start date: Feb 9, 2026)
 const weekOptions = computed(() => {
    const options = []
-   // Assume semester started Feb 1st, 2026 (or dynamic) 
-   // For now, let's generate 20 weeks around current date
-   // Ideally this comes from a configuration
-   
-   // Hardcoded semantic "Semester Start" for this example: Jan 20, 2026
-   const semesterStart = new Date(2026, 0, 20) 
-   // Actually, let's just show options relative to current date to be safe if we don't know start
-   // Or better: List weeks for the current year?
-   // Let's generate weeks for the current active semester period
+   // Semester Start: Feb 9, 2026 (Monday)
+   const semesterStart = new Date(2026, 1, 9) 
    
    let d = new Date(semesterStart)
    for (let i = 1; i <= 20; i++) {
       const start = date.formatDate(d, 'YYYY-MM-DD')
-      // week end not needed for value
-      const label = `Semana ${i} (${date.formatDate(d, 'DD/MM')} - ${date.formatDate(date.addToDate(d, { days: 6 }), 'DD/MM')})`
+      // week end: Saturday (Start + 5 days)
+      const end = date.addToDate(d, { days: 5 })
+      
+      const label = `Semana ${i} (${date.formatDate(d, 'DD/MM')} - ${date.formatDate(end, 'DD/MM')})`
       
       options.push({ label, value: start })
       
-      // Next week
+      // Next week starts 7 days later
       d = date.addToDate(d, { days: 7 })
    }
    return options

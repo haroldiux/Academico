@@ -37,7 +37,7 @@
              </div>
              <div class="col-12 col-md-4">
                 <div class="text-caption text-grey-8 text-uppercase">Semana</div>
-                <div class="text-subtitle2 text-weight-medium">{{ report.semana_inicio }}</div>
+                <div class="text-subtitle2 text-weight-medium">{{ weekRangeLabel }}</div>
              </div>
           </div>
        </div>
@@ -154,6 +154,13 @@ const alertColor = computed(() => {
     case 'ROJO': return 'negative'
     default: return 'grey'
   }
+})
+
+const weekRangeLabel = computed(() => {
+   if (!report.value || !report.value.semana_inicio) return '-'
+   const start = new Date(report.value.semana_inicio + 'T00:00:00') // Force local time avoid timezone shifts
+   const end = date.addToDate(start, { days: 5 }) // Mon-Sat
+   return `${date.formatDate(start, 'DD/MM')} - ${date.formatDate(end, 'DD/MM/YYYY')}`
 })
 
 const hasCriteria = computed(() => {
