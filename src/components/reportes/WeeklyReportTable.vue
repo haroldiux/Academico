@@ -155,11 +155,11 @@
     </q-dialog>
 
     <!-- Dialog for Form -->
-    <q-dialog v-model="showForm" maximized transition-show="slide-up" transition-hide="slide-down">
-      <q-card>
+    <q-dialog v-model="showForm" transition-show="scale" transition-hide="scale">
+      <q-card style="width: 900px; max-width: 90vw;">
         <q-toolbar class="bg-primary text-white">
-          <q-btn flat round dense icon="close" v-close-popup />
           <q-toolbar-title>Informe de Cumplimiento Micro-curricular</q-toolbar-title>
+          <q-btn flat round dense icon="close" v-close-popup />
         </q-toolbar>
 
         <q-card-section>
