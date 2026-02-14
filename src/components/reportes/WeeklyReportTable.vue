@@ -12,7 +12,7 @@
             emit-value map-options
             @update:model-value="loadReports"
           >
-            <template v-slot:pretrained>
+            <template v-slot:prepend>
               <q-icon name="event" />
             </template>
           </q-select>
@@ -23,7 +23,7 @@
             :options="statusOptions"
             label="Estado / Alerta"
             outlined dense
-            style="min-width: 180px"
+            style="min-width: 160px"
             emit-value map-options
           >
              <template v-slot:option="scope">
@@ -37,6 +37,31 @@
                 </q-item>
              </template>
           </q-select>
+
+          <!-- Filtros de Texto -->
+          <q-input v-model="filterDocente" outlined dense label="Docente" style="min-width: 150px">
+             <template v-slot:append>
+                <q-icon name="search" v-if="!filterDocente" />
+                <q-icon name="close" v-else @click="filterDocente = ''" class="cursor-pointer" />
+             </template>
+          </q-input>
+
+          <q-input v-model="filterAsignatura" outlined dense label="Asignatura" style="min-width: 150px">
+             <template v-slot:append>
+                <q-icon name="search" v-if="!filterAsignatura" />
+                <q-icon name="close" v-else @click="filterAsignatura = ''" class="cursor-pointer" />
+             </template>
+          </q-input>
+
+          <!-- Buscador General -->
+          <q-input v-model="searchText" outlined dense placeholder="Buscar..." style="min-width: 150px">
+             <template v-slot:prepend>
+                <q-icon name="search" />
+             </template>
+             <template v-slot:append>
+                <q-icon name="close" v-if="searchText" @click="searchText = ''" class="cursor-pointer" />
+             </template>
+          </q-input>
 
           <q-btn icon="refresh" flat round color="primary" @click="loadReports" />
        </div>
@@ -122,10 +147,13 @@ const props = defineProps({
 
 const loading = ref(false)
 const reports = ref([])
-// Default to current week start date
-const currentWeekStart = date.formatDate(date.startOfDate(new Date(), 'week'), 'YYYY-MM-DD')
-const selectedWeek = ref(currentWeekStart)
+// Default to first week instead of current date
+const selectedWeek = ref('')
 const filterStatus = ref('TODOS')
+const filterDocente = ref('')
+const filterAsignatura = ref('')
+const searchText = ref('')
+
 const showForm = ref(false)
 const selectedGroup = ref(null)
 
@@ -173,8 +201,17 @@ const columns = [
 ]
 
 const filteredReports = computed(() => {
-   if (filterStatus.value === 'TODOS') return reports.value
-   return reports.value.filter(r => r.alerta === filterStatus.value)
+   return reports.value.filter(r => {
+      const matchStatus = filterStatus.value === 'TODOS' || r.alerta === filterStatus.value
+      const matchDocente = !filterDocente.value || r.docente.toLowerCase().includes(filterDocente.value.toLowerCase())
+      const matchAsignatura = !filterAsignatura.value || r.asignatura.toLowerCase().includes(filterAsignatura.value.toLowerCase())
+      const matchSearch = !searchText.value || 
+                          r.docente.toLowerCase().includes(searchText.value.toLowerCase()) || 
+                          r.asignatura.toLowerCase().includes(searchText.value.toLowerCase()) || 
+                          r.estado.toLowerCase().includes(searchText.value.toLowerCase())
+      
+      return matchStatus && matchDocente && matchAsignatura && matchSearch
+   })
 })
 
 const computeTechScore = (criterios) => {
@@ -244,6 +281,11 @@ watch(() => [props.sedeId, props.carreraId], () => {
 })
 
 onMounted(() => {
-  loadReports()
+   // Set default week to the first one available
+   if (weekOptions.value.length > 0) {
+      selectedWeek.value = weekOptions.value[0].value
+   }
+   loadReports()
 })
 </script>
+```

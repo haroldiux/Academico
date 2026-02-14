@@ -132,60 +132,7 @@
       </div>
     </div>
 
-    <!-- Docente Ranking -->
-    <div class="row q-col-gutter-md q-mb-xl">
-       <div class="col-12 col-md-6">
-          <q-card flat bordered>
-            <q-card-section class="bg-green-1">
-               <div class="text-h6 text-green-9 text-weight-bold">Top 5 Docentes - Desempeño</div>
-               <div class="text-caption text-green-8">Basado en avance y asistencia</div>
-            </q-card-section>
-            <q-list separator>
-               <q-item v-for="(doc, idx) in chartData.top_docentes" :key="doc.id">
-                  <q-item-section avatar>
-                     <q-avatar color="green" text-color="white" size="sm">{{ idx + 1 }}</q-avatar>
-                  </q-item-section>
-                  <q-item-section>
-                     <q-item-label class="text-weight-bold">{{ doc.nombre }}</q-item-label>
-                     <q-item-label caption>
-                        Avance: {{ doc.avance }}% | Asistencia: {{ doc.asistencia }}%
-                     </q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                     <q-chip size="sm" color="green-2" text-color="green-9">
-                        {{ Math.round(doc.score) }} pts
-                     </q-chip>
-                  </q-item-section>
-               </q-item>
-            </q-list>
-          </q-card>
-       </div>
 
-       <div class="col-12 col-md-6">
-          <q-card flat bordered>
-            <q-card-section class="bg-red-1">
-               <div class="text-h6 text-red-9 text-weight-bold">Atención Requerida - Docentes</div>
-               <div class="text-caption text-red-8">Docentes con indicadores bajos</div>
-            </q-card-section>
-            <q-list separator>
-               <q-item v-for="doc in chartData.bottom_docentes" :key="doc.id">
-                  <q-item-section avatar>
-                     <q-icon name="warning" color="red" />
-                  </q-item-section>
-                  <q-item-section>
-                     <q-item-label class="text-weight-bold">{{ doc.nombre }}</q-item-label>
-                     <q-item-label caption>
-                        Avance: {{ doc.avance }}% | Asistencia: {{ doc.asistencia }}%
-                     </q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                     <q-btn flat round dense icon="visibility" color="grey" size="sm" @click="verDetalleDocente(doc.id)" />
-                  </q-item-section>
-               </q-item>
-            </q-list>
-          </q-card>
-       </div>
-    </div>
 
     <!-- Detailed Tabs Section -->
     <q-card flat bordered>
@@ -377,10 +324,7 @@ const kpis = ref({
    cursos_riesgo_asistencia: 0
 })
 
-const chartData = ref({
-   top_docentes: [],
-   bottom_docentes: []
-})
+
 
 const chartSeries = ref({
    avance: [{ name: 'Asignaturas', data: [] }],
@@ -495,8 +439,7 @@ const loadDashboardData = async () => {
          xaxis: { categories: data.charts.asistencia_trend.map(i => i.x) }
       }
 
-      chartData.value.top_docentes = data.charts.top_docentes
-      chartData.value.bottom_docentes = data.charts.bottom_docentes
+
 
    } catch (error) {
       console.error('Error loading dashboard:', error)
