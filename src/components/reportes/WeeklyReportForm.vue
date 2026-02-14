@@ -126,7 +126,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { api } from 'boot/axios'
-import { useQuasar } from 'quasar'
+import { useQuasar, date } from 'quasar'
 
 const props = defineProps({
   grupoId: {
