@@ -79,6 +79,16 @@
       flat bordered
       :pagination="{ rowsPerPage: 15 }"
     >
+      <template v-slot:body-cell-asignatura="props">
+         <q-td :props="props">
+            {{ props.value }}
+            <q-badge v-if="props.row.subReports && props.row.subReports.length > 1" 
+                     color="blue-grey" text-color="white" class="q-ml-sm">
+               {{ props.row.subReports.length }} Grupos
+            </q-badge>
+         </q-td>
+      </template>
+
       <template v-slot:body-cell-estado="props">
         <q-td :props="props">
           <q-badge :color="getEstadoColor(props.value)">
@@ -105,13 +115,44 @@
             flat round dense 
             icon="edit" 
             color="primary" 
-            @click="openReportForm(props.row)"
+            @click="checkAndOpenReport(props.row)"
           >
             <q-tooltip>Revisar/Editar Informe</q-tooltip>
           </q-btn>
         </q-td>
       </template>
     </q-table>
+
+    <!-- Dialog for Group Selection -->
+    <q-dialog v-model="showGroupSelection">
+       <q-card style="min-width: 350px">
+          <q-card-section>
+             <div class="text-h6">Seleccionar Grupo</div>
+             <div class="text-caption">Esta asignatura tiene múltiples grupos asignados.</div>
+          </q-card-section>
+          
+          <q-list separator>
+             <q-item v-for="rep in selectedGroupList" :key="rep.id" clickable @click="openReportForm(rep)" v-ripple>
+                <q-item-section avatar>
+                   <q-icon name="group" color="primary" />
+                </q-item-section>
+                <q-item-section>
+                   <q-item-label>{{ rep.grupo_nombre || 'Grupo ' + rep.grupo_id }}</q-item-label>
+                   <q-item-label caption>
+                      Estado: <span :class="'text-' + getEstadoColor(rep.estado)">{{ rep.estado }}</span>
+                   </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                   <q-badge :color="getAlertColor(rep.alerta)" rounded />
+                </q-item-section>
+             </q-item>
+          </q-list>
+
+          <q-card-actions align="right">
+             <q-btn flat label="Cancelar" color="primary" v-close-popup />
+          </q-card-actions>
+       </q-card>
+    </q-dialog>
 
     <!-- Dialog for Form -->
     <q-dialog v-model="showForm" maximized transition-show="slide-up" transition-hide="slide-down">
@@ -155,7 +196,9 @@ const filterAsignatura = ref('')
 const searchText = ref('')
 
 const showForm = ref(false)
+const showGroupSelection = ref(false)
 const selectedGroup = ref(null)
+const selectedGroupList = ref([])
 
 // Helper to generate weeks (Mocking a start date of approx 2 months ago for Semester start)
 const weekOptions = computed(() => {
@@ -255,10 +298,31 @@ const loadReports = async () => {
         fecha_inicio: selectedWeek.value // Send selected week start date
       }
     })
-    reports.value = data.map(r => ({
-       ...r,
-       grupo_id: parseInt(r.id.split('-')[0]) // Extract grupo_id from composite ID
-    }))
+    
+    // Grouping by Docente + Asignatura
+    const groups = {}
+    
+    data.forEach(r => {
+       const key = `${r.docente}-${r.asignatura}`
+       if (!groups[key]) {
+          groups[key] = {
+             ...r,
+             subReports: [r],
+             grupo_id: null // clear distinctive ID
+          }
+       } else {
+          groups[key].subReports.push(r)
+          // Prioritize worst status/alert for the group view
+          if (r.alerta === 'ROJO') groups[key].alerta = 'ROJO'
+          else if (r.alerta === 'AMARILLO' && groups[key].alerta !== 'ROJO') groups[key].alerta = 'AMARILLO'
+          
+          if (r.estado === 'Pendiente') groups[key].estado = 'Pendiente'
+          else if (r.estado === 'Borrador' && groups[key].estado !== 'Pendiente') groups[key].estado = 'Borrador'
+       }
+    })
+    
+    reports.value = Object.values(groups)
+    
   } catch (error) {
     console.error('Error loading reports', error)
   } finally {
@@ -266,8 +330,18 @@ const loadReports = async () => {
   }
 }
 
+const checkAndOpenReport = (row) => {
+   if (row.subReports && row.subReports.length > 1) {
+      selectedGroupList.value = row.subReports
+      showGroupSelection.value = true
+   } else {
+      openReportForm(row)
+   }
+}
+
 const openReportForm = (row) => {
   selectedGroup.value = row
+  showGroupSelection.value = false
   showForm.value = true
 }
 

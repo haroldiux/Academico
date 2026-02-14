@@ -490,10 +490,7 @@ const scrollToTab = (tabName) => {
    // Optional: Emit event to child table/component to apply filter metrics
 }
 
-const verDetalleDocente = (id) => {
-   // Verify logic
-   console.log('Ver detalle docente', id)
-}
+
 
 // Lifecycle
 onMounted(async () => {
