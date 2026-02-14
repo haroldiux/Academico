@@ -187,7 +187,6 @@ export function usePermisos() {
         ...itemsBase,
         { label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' },
         { label: 'Control de Clase', icon: 'class', to: '/docente/clase' },
-        { label: 'Reporte Asistencia', icon: 'assessment', to: '/docente/reporte-asistencia' },
         { label: 'Mis Evaluaciones', icon: 'quiz', to: '/docente/evaluaciones' },
         { label: 'Mi Perfil', icon: 'person', to: '/perfil' }
       ]

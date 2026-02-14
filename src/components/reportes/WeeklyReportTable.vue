@@ -1,83 +1,249 @@
 <template>
-  <q-table :rows="rows" :columns="columns" row-key="id" flat bordered :loading="loading"
-    :pagination="{ rowsPerPage: 10 }">
-    <template v-slot:top-right>
-      <q-btn color="primary" icon="add" label="Nuevo Reporte" @click="$emit('create')" />
-    </template>
+  <div class="weekly-report-table">
+    <div class="row q-gutter-sm q-mb-md items-center justify-between">
+       <div class="row q-gutter-sm items-center col-grow">
+          <!-- Week Selector -->
+          <q-select
+            v-model="selectedWeek"
+            :options="weekOptions"
+            label="Semana Académica"
+            outlined dense
+            style="min-width: 250px"
+            emit-value map-options
+            @update:model-value="loadReports"
+          >
+            <template v-slot:pretrained>
+              <q-icon name="event" />
+            </template>
+          </q-select>
 
-    <template v-slot:body-cell-alerta="props">
-      <q-td :props="props">
-        <q-chip :color="getColorAlerta(props.row.alerta)" text-color="white" size="sm">
-          {{ props.row.alerta }}
-        </q-chip>
-      </q-td>
-    </template>
+          <!-- Progress/Alert Filter -->
+          <q-select
+            v-model="filterStatus"
+            :options="statusOptions"
+            label="Estado / Alerta"
+            outlined dense
+            style="min-width: 180px"
+            emit-value map-options
+          >
+             <template v-slot:option="scope">
+                <q-item v-bind="scope.itemProps">
+                   <q-item-section avatar v-if="scope.opt.color">
+                      <q-icon name="circle" :color="scope.opt.color" />
+                   </q-item-section>
+                   <q-item-section>
+                      <q-item-label>{{ scope.opt.label }}</q-item-label>
+                   </q-item-section>
+                </q-item>
+             </template>
+          </q-select>
 
-    <template v-slot:body-cell-criterios="props">
-      <q-td :props="props">
-        <div class="row q-gutter-xs justify-center">
-          <q-icon v-for="(session, index) in props.row.criterios" :key="index"
-            :name="isSessionOk(session) ? 'check_circle' : 'cancel'"
-            :color="isSessionOk(session) ? 'positive' : 'negative'" size="sm">
-            <q-tooltip>
-              <div class="text-caption text-weight-bold">{{ formatDate(session.fecha) }}</div>
-              <div>Asistencia: {{ session.asistencia ? 'OK' : 'Baja' }}</div>
-              <div>Planificación: {{ session.planificacion ? 'OK' : 'Falta' }}</div>
-              <div>Contenido: {{ session.contenido ? 'OK' : 'Falta' }}</div>
-            </q-tooltip>
-          </q-icon>
-        </div>
-      </q-td>
-    </template>
+          <q-btn icon="refresh" flat round color="primary" @click="loadReports" />
+       </div>
+       
+       <div class="text-caption text-grey">
+          Mostrando: {{ filteredReports.length }} registros
+       </div>
+    </div>
 
-    <template v-slot:body-cell-semana="props">
-      <q-td :props="props">
-        {{ formatDate(props.row.semana_inicio) }}
-      </q-td>
-    </template>
-    <template v-slot:body-cell-acciones="props">
-      <q-td :props="props">
-        <q-btn flat round dense icon="rate_review" color="primary" @click="$emit('edit', props.row)">
-          <q-tooltip>Revisar y añadir observaciones</q-tooltip>
-        </q-btn>
-      </q-td>
-    </template>
-  </q-table>
+    <q-table
+      :rows="filteredReports"
+      :columns="columns"
+      row-key="id"
+      :loading="loading"
+      flat bordered
+      :pagination="{ rowsPerPage: 15 }"
+    >
+      <template v-slot:body-cell-estado="props">
+        <q-td :props="props">
+          <q-badge :color="getEstadoColor(props.value)">
+            {{ props.value }}
+          </q-badge>
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-alerta="props">
+        <q-td :props="props">
+          <q-chip
+            :color="getAlertColor(props.value)"
+            text-color="white"
+            size="sm"
+          >
+            {{ props.value }}
+          </q-chip>
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-acciones="props">
+        <q-td :props="props" auto-width>
+          <q-btn 
+            flat round dense 
+            icon="edit" 
+            color="primary" 
+            @click="openReportForm(props.row)"
+          >
+            <q-tooltip>Revisar/Editar Informe</q-tooltip>
+          </q-btn>
+        </q-td>
+      </template>
+    </q-table>
+
+    <!-- Dialog for Form -->
+    <q-dialog v-model="showForm" maximized transition-show="slide-up" transition-hide="slide-down">
+      <q-card>
+        <q-toolbar class="bg-primary text-white">
+          <q-btn flat round dense icon="close" v-close-popup />
+          <q-toolbar-title>Informe de Cumplimiento Micro-curricular</q-toolbar-title>
+        </q-toolbar>
+
+        <q-card-section>
+           <WeeklyReportForm 
+              v-if="selectedGroup"
+              :grupo-id="selectedGroup.grupo_id"
+              :fecha-inicio="selectedWeek"
+              @saved="onReportSaved"
+           />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+  </div>
 </template>
 
 <script setup>
+import { ref, onMounted, computed, watch } from 'vue'
+import { api } from 'boot/axios'
 import { date } from 'quasar'
+import WeeklyReportForm from './WeeklyReportForm.vue'
 
-defineProps({
-  rows: {
-    type: Array,
-    default: () => []
-  },
-  loading: Boolean
+const props = defineProps({
+  sedeId: Number,
+  carreraId: Number
 })
 
-const columns = [
-  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left', sortable: true },
-  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left', sortable: true },
-  { name: 'docente', label: 'Docente', field: 'docente', align: 'left', sortable: true },
-  { name: 'semana', label: 'Semana', field: 'semana_inicio', align: 'left', sortable: true },
-  { name: 'criterios', label: 'Criterios', field: 'criterios', align: 'center' },
-  { name: 'alerta', label: 'Alerta', field: 'alerta', align: 'center', sortable: true },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
+const loading = ref(false)
+const reports = ref([])
+// Default to current week start date
+const currentWeekStart = date.formatDate(date.startOfDate(new Date(), 'week'), 'YYYY-MM-DD')
+const selectedWeek = ref(currentWeekStart)
+const filterStatus = ref('TODOS')
+const showForm = ref(false)
+const selectedGroup = ref(null)
+
+// Helper to generate weeks (Mocking a start date of approx 2 months ago for Semester start)
+const weekOptions = computed(() => {
+   const options = []
+   // Assume semester started Feb 1st, 2026 (or dynamic) 
+   // For now, let's generate 20 weeks around current date
+   // Ideally this comes from a configuration
+   
+   // Hardcoded semantic "Semester Start" for this example: Jan 20, 2026
+   const semesterStart = new Date(2026, 0, 20) 
+   // Actually, let's just show options relative to current date to be safe if we don't know start
+   // Or better: List weeks for the current year?
+   // Let's generate weeks for the current active semester period
+   
+   let d = new Date(semesterStart)
+   for (let i = 1; i <= 20; i++) {
+      const start = date.formatDate(d, 'YYYY-MM-DD')
+      // week end not needed for value
+      const label = `Semana ${i} (${date.formatDate(d, 'DD/MM')} - ${date.formatDate(date.addToDate(d, { days: 6 }), 'DD/MM')})`
+      
+      options.push({ label, value: start })
+      
+      // Next week
+      d = date.addToDate(d, { days: 7 })
+   }
+   return options
+})
+
+const statusOptions = [
+   { label: 'Todos', value: 'TODOS', color: null },
+   { label: 'Cumplimiento Total (Verde)', value: 'VERDE', color: 'positive' },
+   { label: ' Atención (Amarillo)', value: 'AMARILLO', color: 'warning' },
+   { label: 'Crítico / Sin Plan (Rojo)', value: 'ROJO', color: 'negative' }
 ]
 
-const getColorAlerta = (alerta) => {
-  if (alerta === 'VERDE') return 'positive'
-  if (alerta === 'AMARILLO') return 'warning'
-  return 'negative'
+const columns = [
+  { name: 'docente', label: 'Docente', field: 'docente', align: 'left', sortable: true },
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left', sortable: true },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
+  { name: 'criterios', label: 'Cump. Técnico', field: row => computeTechScore(row.criterios), align: 'center' },
+  { name: 'alerta', label: 'Escala Alerta', field: 'alerta', align: 'center', sortable: true },
+  { name: 'acciones', label: 'Acciones', align: 'right' }
+]
+
+const filteredReports = computed(() => {
+   if (filterStatus.value === 'TODOS') return reports.value
+   return reports.value.filter(r => r.alerta === filterStatus.value)
+})
+
+const computeTechScore = (criterios) => {
+   if (!criterios) return 'Sin datos'
+   if (Array.isArray(criterios)) {
+       return criterios.length === 0 ? 'Sin datos' : criterios.length + ' sesiones'
+   }
+   // It's checked object (Saved report)
+   const keys = Object.keys(criterios)
+   const yes = keys.filter(k => criterios[k].cumple).length
+   return `${yes}/${keys.length} Cumplidos`
 }
 
-const formatDate = (fecha) => {
-  return date.formatDate(fecha, 'DD/MM/YYYY')
+const getAlertColor = (alert) => {
+  switch(alert) {
+    case 'VERDE': return 'positive'
+    case 'AMARILLO': return 'warning'
+    case 'ROJO': return 'negative'
+    default: return 'grey'
+  }
 }
 
-const isSessionOk = (session) => {
-  // Define strictness: Must be completed (system status) AND attendance good AND scheduled
-  return session.cumplido && session.asistencia
+const getEstadoColor = (estado) => {
+  switch(estado) {
+    case 'Guardado': return 'positive'
+    case 'Borrador': return 'orange'
+    case 'Pendiente': return 'red'
+    default: return 'grey'
+  }
 }
+
+const loadReports = async () => {
+  if (!props.carreraId || !props.sedeId) return
+
+  loading.value = true
+  try {
+    const { data } = await api.get('/reportes/director/weekly', {
+      params: {
+        sede_id: props.sedeId,
+        carrera_id: props.carreraId,
+        fecha_inicio: selectedWeek.value // Send selected week start date
+      }
+    })
+    reports.value = data.map(r => ({
+       ...r,
+       grupo_id: parseInt(r.id.split('-')[0]) // Extract grupo_id from composite ID
+    }))
+  } catch (error) {
+    console.error('Error loading reports', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const openReportForm = (row) => {
+  selectedGroup.value = row
+  showForm.value = true
+}
+
+const onReportSaved = () => {
+  showForm.value = false
+  loadReports()
+}
+
+watch(() => [props.sedeId, props.carreraId], () => {
+  loadReports()
+})
+
+onMounted(() => {
+  loadReports()
+})
 </script>

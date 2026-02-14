@@ -13,7 +13,7 @@
       <q-card class="main-card">
          <q-tabs v-model="tab" dense class="text-grey" active-color="primary" indicator-color="primary" align="justify"
             narrow-indicator>
-            <q-tab name="asistencia" label="Asistencia" icon="fact_check" />
+            <q-tab v-if="false" name="asistencia" label="Asistencia" icon="fact_check" />
             <q-tab name="seguimiento" label="Seguimiento" icon="analytics" />
          </q-tabs>
 
@@ -542,7 +542,7 @@ import planificacionSemestralService from 'src/services/planificacionSemestralSe
 const $q = useQuasar()
 const gruposStore = useGruposStore()
 
-const tab = ref('asistencia')
+const tab = ref('seguimiento')
 const claseSeleccionada = ref(null)
 const fechaSeguimiento = ref(null)
 const loading = ref(false)

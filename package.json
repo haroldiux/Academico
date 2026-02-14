@@ -17,6 +17,7 @@
   "dependencies": {
     "@quasar/extras": "^1.16.4",
     "@vueuse/core": "^14.2.0",
+    "apexcharts": "^5.3.6",
     "axios": "^1.13.2",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
@@ -24,6 +25,7 @@
     "quasar": "^2.16.0",
     "vue": "3.5.20",
     "vue-router": "^4.0.0",
+    "vue3-apexcharts": "^1.10.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

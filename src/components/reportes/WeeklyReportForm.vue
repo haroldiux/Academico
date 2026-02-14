@@ -1,405 +1,186 @@
 <template>
-  <q-card style="min-width: 900px; max-width: 90vw;">
-    <q-card-section class="row items-center q-pb-none bg-primary text-white">
-      <div class="text-h6">
-        <q-icon name="assessment" class="q-mr-sm" />
-        Informe de Cumplimiento Micro-curricular Semanal
+  <div class="weekly-report-form q-pa-md">
+    <div v-if="loading" class="row justify-center q-pa-lg">
+      <q-spinner color="primary" size="3em" />
+    </div>
+
+    <div v-else-if="!report" class="text-center text-grey q-pa-lg">
+      <q-icon name="warning" size="3em" />
+      <div>No se pudo cargar el informe o no hay clases en esta semana.</div>
+    </div>
+
+    <div v-else>
+      <!-- Header Info -->
+      <div class="row q-col-gutter-md q-mb-md">
+        <div class="col-12 col-md-6">
+          <q-input readonly v-model="report.docente_nombre" label="Docente" dense outlined bg-color="grey-2" />
+        </div>
+        <div class="col-12 col-md-6">
+          <q-input readonly v-model="report.asignatura_nombre" label="Asignatura" dense outlined bg-color="grey-2" />
+        </div>
+        <div class="col-12 col-md-6">
+          <q-input readonly v-model="report.semana_inicio" label="Semana Inicio" dense outlined bg-color="grey-2" />
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="text-subtitle2">Escala de Alerta Calculada:</div>
+          <q-chip :color="alertColor" text-color="white" icon="warning">
+            {{ report.escala_alerta }} ({{ report.cumplimiento_porcentaje }}%)
+          </q-chip>
+        </div>
       </div>
-      <q-space />
-      <q-btn icon="close" flat round dense v-close-popup />
-    </q-card-section>
 
-    <q-card-section class="q-pa-md">
-      <q-form @submit="onSubmit">
+      <!-- Criteria Table -->
+      <div v-if="hasCriteria">
+        <q-markup-table flat bordered dense class="q-mb-md">
+          <thead>
+            <tr class="bg-primary text-white">
+              <th class="text-left">Criterio</th>
+              <th class="text-center" style="width: 100px">Cumple</th>
+              <th class="text-left">Observación / Evidencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(data, key) in report.criterios" :key="key">
+              <td class="text-weight-medium">{{ key }}</td>
+              <td class="text-center">
+                <q-toggle v-model="data.cumple" color="positive" @update:model-value="recalculateAlert" />
+              </td>
+              <td>
+                <q-input v-model="data.obs" dense borderless autogrow placeholder="Agregar observación..." />
+              </td>
+            </tr>
+          </tbody>
+        </q-markup-table>
+      </div>
+      <div v-else class="q-banner bg-red-1 text-red q-pa-md q-mb-md rounded-borders">
+        <q-icon name="error" size="sm" />
+        No se ha registrado planificación (Cronograma) para esta semana. El informe se guardará como <strong>ROJO</strong>.
+      </div>
 
-        <!-- Header Info Grid -->
-        <div class="row q-col-gutter-sm q-mb-lg header-grid">
-          <div class="col-12 col-md-4">
-            <q-select v-model="form.docente_id" :options="docentesOptions" label="DOCENTE" outlined dense emit-value
-              map-options :rules="[val => !!val || 'Requerido']" @update:model-value="onDocenteChange"
-              class="bg-grey-1" />
-          </div>
-          <div class="col-12 col-md-4">
-            <q-select v-model="form.asignatura_id" :options="asignaturasOptions" label="ASIGNATURA" outlined dense
-              emit-value map-options :rules="[val => !!val || 'Requerido']" :disable="!form.docente_id"
-              class="bg-grey-1" />
-          </div>
-          <div class="col-12 col-md-4">
-            <q-input v-model="form.carrera_nombre" label="CARRERA" outlined dense readonly class="bg-grey-2"
-              hint="Auto-generado" />
-          </div>
-          <div class="col-12 col-md-4">
-            <q-select v-model="form.semana_inicio" :options="semanasOptions" label="SEMANA ACADÉMICA" outlined dense
-              :rules="[val => !!val || 'Requerido']" class="bg-grey-1" emit-value map-options
-              :hint="rangoFechas" />
-          </div>
-        </div>
+      <!-- General Observations -->
+      <q-input
+        v-model="report.observaciones"
+        label="Observaciones Generales del Director"
+        type="textarea"
+        outlined
+        rows="3"
+        class="q-mb-md"
+      />
 
-        <!-- Auditoría de Sesiones (NUEVO - Prototipo Estructurado) -->
-        <div class="audit-section q-mb-lg">
-          <div class="row items-center q-mb-sm">
-            <q-icon name="visibility" color="primary" size="sm" class="q-mr-xs" />
-            <div class="text-subtitle1 text-weight-bold">Auditoría de Sesiones (Semana Activa)</div>
-          </div>
-
-          <q-banner v-if="loading" class="bg-grey-2">
-            <template v-slot:avatar><q-spinner-dots color="primary" /></template>
-            Analizando datos del docente para esta semana...
-          </q-banner>
-
-          <q-list v-else bordered separator class="rounded-borders bg-white">
-            <q-item v-for="sesion in sesionesAuditoria" :key="sesion.id">
-              <q-item-section avatar>
-                <q-icon :name="sesion.cumplido ? 'check_circle' : 'warning'"
-                  :color="sesion.cumplido ? 'positive' : 'negative'" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label class="text-weight-bold">{{ sesion.fecha }} - {{ sesion.tema }}</q-item-label>
-                <q-item-label caption>Unidad: {{ sesion.unidad }}</q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <div class="row q-gutter-xs">
-                  <q-badge :color="sesion.estrategias ? 'blue' : 'grey'" label="Estrategias" />
-                  <q-badge :color="sesion.evaluacion ? 'orange' : 'grey'" label="Evaluación" />
-                  <q-badge :color="sesion.secuencia ? 'purple' : 'grey'" label="Secuencia" />
-                </div>
-              </q-item-section>
-            </q-item>
-            <q-item v-if="!sesionesAuditoria.length">
-              <q-item-section class="text-center text-grey italic">No se encontraron sesiones registradas para esta
-                semana.</q-item-section>
-            </q-item>
-          </q-list>
-
-          <div class="text-caption text-grey-7 q-mt-xs">
-            * El cumplimiento Si/No se autocompleta basado en que todas las sesiones tengan sus apartados completos.
-          </div>
-        </div>
-
-        <!-- Compliance Table -->
-        <div class="table-container q-mb-lg">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th rowspan="2" class="text-center bg-blue-grey-1">CRITERIO</th>
-                <th colspan="2" class="text-center bg-blue-grey-1">CUMPLIMIENTO</th>
-                <th colspan="3" class="text-center bg-blue-grey-1">ESCALA DE ALERTA</th>
-              </tr>
-              <tr>
-                <th class="text-center bg-grey-2" style="width: 60px">Si</th>
-                <th class="text-center bg-grey-2" style="width: 60px">No</th>
-                <th class="text-center text-white bg-negative" style="width: 80px">Rojo</th>
-                <th class="text-center text-black bg-warning" style="width: 80px">Amarillo</th>
-                <th class="text-center text-white bg-positive" style="width: 80px">Verde</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(label, key) in criteriosMap" :key="key">
-                <td class="q-pa-sm">{{ label }}</td>
-                <td class="text-center">
-                  <q-radio v-model="form.criterios[key]" :val="true" dense color="primary" />
-                </td>
-                <td class="text-center">
-                  <q-radio v-model="form.criterios[key]" :val="false" dense color="red" />
-                </td>
-                <!-- Empty cells for Alert Scale visualization (merged visually usually, strictly structured here) -->
-                <!-- We will just highlight the relevant cell based on total score logic later?
-                             Or keep them empty as per the form sheet structure -->
-                <td class="bg-grey-1"></td>
-                <td class="bg-grey-1"></td>
-                <td class="bg-grey-1"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Live Alert Status & Scale Legend -->
-        <div class="row items-center justify-between q-mb-md q-gutter-sm">
-             <div class="scale-legend">
-                 <q-badge color="negative" class="q-mr-xs">Rojo: 0-69%</q-badge>
-                 <q-badge color="warning" text-color="black" class="q-mr-xs">Amarillo: 70-89%</q-badge>
-                 <q-badge color="positive">Verde: 90-100%</q-badge>
-             </div>
-             <div class="row items-center q-gutter-sm">
-                <div class="text-subtitle2">Estado Actual:</div>
-                <q-chip 
-                    :color="alertaColor" 
-                    text-color="white" 
-                    :icon="alertaIcon"
-                    :label="computedAlerta + ' (' + Math.round(porcentajeCumplimiento) + '%)'" 
-                    size="lg"
-                />
-             </div>
-        </div>
-
-        <q-separator class="q-mb-md" />
-
-        <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-6">
-            <q-input v-model="form.observaciones_generales" label="Recomendaciones del Director" type="textarea"
-              outlined rows="3"
-              placeholder="Escriba aquí las recomendaciones basadas en los resultados de cumplimiento..." />
-          </div>
-          <div class="col-12 col-md-6">
-            <q-input v-model="form.acciones_mejora" label="Acciones de Mejora (Correctivo)" type="textarea" outlined
-              rows="3" placeholder="Escriba las acciones que el docente tomará para mejorar su desempeño..."
-              bg-color="yellow-1">
-              <template v-slot:prepend>
-                <q-icon name="trending_up" color="warning" />
-              </template>
-            </q-input>
-          </div>
-        </div>
-
-        <div class="row justify-end q-mt-md">
-          <q-btn label="Cancelar" color="grey" flat v-close-popup />
-          <q-btn label="Generar Informe" type="submit" color="primary" :loading="loading" icon="print">
-            <q-tooltip>Guardar y Generar Reporte</q-tooltip>
-          </q-btn>
-        </div>
-      </q-form>
-    </q-card-section>
-  </q-card>
+      <!-- Actions -->
+      <div class="row justify-end q-gutter-sm">
+        <q-btn flat label="Cancelar" v-close-popup color="grey" />
+        <q-btn label="Guardar Informe" color="primary" icon="save" @click="saveReport" :loading="saving" />
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useReportesStore } from 'src/stores/reportes'
-import { useAuthStore } from 'src/stores/auth'
+import { ref, onMounted, computed } from 'vue'
+import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 
 const props = defineProps({
-  reportData: {
-    type: Object,
-    default: null
+  grupoId: {
+    type: Number,
+    required: true
+  },
+  fechaInicio: {
+    type: String, // YYYY-MM-DD
+    required: true
   }
 })
 
 const emit = defineEmits(['saved'])
-const reportesStore = useReportesStore()
-const authStore = useAuthStore()
 const $q = useQuasar()
 
-const loading = ref(false)
-const docentesOptions = ref([])
-const asignaturasOptions = ref([])
-const sesionesAuditoria = ref([])
+const loading = ref(true)
+const saving = ref(false)
+const report = ref(null)
 
-const criteriosMap = {
-  temaImpartido: 'Tema impartido (Debe coincidir con la microcurrícula)',
-  actividadesFormativas: 'Actividades formativas (Alineación enfoque competencias)',
-  secuenciaDidactica: 'Secuencia didáctica (Inicio, desarrollo, cierre)',
-  plataformaVirtual: 'Plataforma virtual (Revisión actividades en plataforma)',
-  evidencias: 'Evidencias (Deben ser reales y verificables)',
-  evaluaciones: 'Evaluaciones (Coherencia banco preguntas/evaluación)',
-  integracionTransversal: 'Integración transversal (Investigación/Interact./Social)'
-}
-
-const form = ref({
-  id: null,
-  semana_inicio: '',
-  docente_id: null,
-  asignatura_id: null,
-  carrera_nombre: '',
-  criterios: {
-    temaImpartido: false,
-    actividadesFormativas: false,
-    secuenciaDidactica: false,
-    plataformaVirtual: false,
-    evidencias: false,
-    evaluaciones: false,
-    integracionTransversal: false
-  },
-  observaciones_generales: '',
-  acciones_mejora: ''
+const alertColor = computed(() => {
+  if (!report.value) return 'grey'
+  switch (report.value.escala_alerta) {
+    case 'VERDE': return 'positive'
+    case 'AMARILLO': return 'warning'
+    case 'ROJO': return 'negative'
+    default: return 'grey'
+  }
 })
 
-// Load Docentes and handle Edit Mode
-onMounted(async () => {
-  // 1. Populate options
-  const materias = reportesStore.reporteMaterias
-  const uniqueDocentes = new Map()
-  materias.forEach(m => {
-    m.docentes.forEach(d => {
-      if (!uniqueDocentes.has(d.id)) {
-        uniqueDocentes.set(d.id, { label: d.nombre, value: d.id })
+const hasCriteria = computed(() => {
+  return report.value && report.value.criterios && (
+    Array.isArray(report.value.criterios) ? report.value.criterios.length > 0 : Object.keys(report.value.criterios).length > 0
+  )
+})
+
+const fetchDraft = async () => {
+  loading.value = true
+  try {
+    const { data } = await api.get('/reportes/semanal/draft', {
+      params: {
+        grupo_id: props.grupoId,
+        fecha_inicio: props.fechaInicio
       }
     })
-  })
-  docentesOptions.value = Array.from(uniqueDocentes.values()).sort((a, b) => a.label.localeCompare(b.label))
-
-  // 2. Handle Edit Mode
-    // 2. Handle Edit Mode
-  if (props.reportData) {
-    form.value = {
-      id: props.reportData.id,
-      semana_inicio: props.reportData.semana_inicio, // TODO: map date to week number if editing legacy
-      docente_id: props.reportData.docente_id,
-      asignatura_id: props.reportData.asignatura_id,
-      carrera_nombre: props.reportData.carrera?.nombre || 'Consultando...',
-      criterios: { ...props.reportData.criterios },
-      observaciones_generales: props.reportData.observaciones_generales || '',
-      acciones_mejora: props.reportData.acciones_mejora || ''
-    }
     
-    // Trigger options update for the selected docente
-    onDocenteChange(form.value.docente_id)
-  }
-})
-
-// Semanas Option 1-20
-const semanasOptions = Array.from({ length: 20 }, (_, i) => ({
-    label: `Semana ${i + 1}`,
-    value: i + 1
-}))
-const rangoFechas = ref('')
-
-const onDocenteChange = (docanteId) => {
-  if (!props.reportData) {
-    form.value.asignatura_id = null
-    form.value.carrera_nombre = ''
-  }
-  asignaturasOptions.value = []
-
-  if (!docanteId) return
-
-  const materias = reportesStore.reporteMaterias
-  const relevantMaterias = materias.filter(m =>
-    m.docentes.some(d => d.id === docanteId)
-  )
-
-  asignaturasOptions.value = relevantMaterias.map(m => ({
-    label: m.nombre + ' (' + m.codigo + ')',
-    value: m.id,
-    carrera: m.carrera // Note: ReporteController didn't pass carrera obj explicitly inside materias, might need adjustment if undefined
-  })).sort((a, b) => a.label.localeCompare(b.label))
-
-  if (props.reportData && form.value.carrera_nombre === 'Consultando...') {
-    const asig = relevantMaterias.find(m => m.id === form.value.asignatura_id)
-    if (asig) form.value.carrera_nombre = 'Ingeniería de Sistemas' // Fallback if data missing
-  }
-}
-
-const checkStatus = async () => {
-  if (form.value.id) return // Don't auto-check if editing existing report
-  // Now using week number (semana_inicio maps to it logic-wise or we rename prop)
-  // Let's assume form.semana_inicio is now the INTEGER week number
-  if (!form.value.docente_id || !form.value.asignatura_id || !form.value.semana_inicio) return
-
-  const selectedAsig = asignaturasOptions.value.find(a => a.value === form.value.asignatura_id)
-  if (selectedAsig) {
-    form.value.carrera_nombre = "Ingeniería de Sistemas" // Mock or get from store
-  }
-
-  loading.value = true
-  sesionesAuditoria.value = []
-  rangoFechas.value = ''
-  
-  try {
-    const data = await reportesStore.checkAuditoriaSemanal({
-        docente_id: form.value.docente_id,
-        asignatura_id: form.value.asignatura_id,
-        semana_numero: form.value.semana_inicio
-    })
-    
-    if (data.sesiones) {
-        sesionesAuditoria.value = data.sesiones
-        if (data.rango) {
-             rangoFechas.value = `(${data.rango.inicio} al ${data.rango.fin})`
-        }
-        
-        // Auto-fill criteria
-        // Logic: If >0 sessions and >50% are compliant -> Check 'temaImpartido', etc.
-        // Or aggregate:
-        const total = sesionesAuditoria.value.length
-        if (total > 0) {
-             const anyCumplido = sesionesAuditoria.value.some(s => s.cumplido)
-             const allEstrategias = sesionesAuditoria.value.every(s => s.estrategias)
-             const allEvaluacion = sesionesAuditoria.value.every(s => s.evaluacion)
-             const allSecuencia = sesionesAuditoria.value.every(s => s.secuencia)
-             
-             form.value.criterios.temaImpartido = anyCumplido
-             form.value.criterios.secuenciaDidactica = allSecuencia
-             form.value.criterios.actividadesFormativas = allEstrategias
-             form.value.criterios.evaluaciones = allEvaluacion
-             form.value.criterios.evidencias = anyCumplido // Proxy
-             form.value.criterios.plataformaVirtual = anyCumplido // Proxy
-        }
-    }
-
-  } catch (e) {
-    console.error('Error checking status', e)
-    $q.notify({type:'negative', message: 'Error consultando auditoría'})
-  } finally {
-    loading.value = false
-  }
-}
-
-watch(
-  () => [form.value.docente_id, form.value.asignatura_id, form.value.semana_inicio],
-  () => {
-    if (!form.value.id) checkStatus()
-  }
-)
-
-const porcentajeCumplimiento = computed(() => {
-  const total = Object.keys(criteriosMap).length
-  const checked = Object.values(form.value.criterios).filter(v => v).length
-  return (checked / total) * 100
-})
-
-const computedAlerta = computed(() => {
-  const p = porcentajeCumplimiento.value
-  if (p >= 90) return 'VERDE'
-  if (p >= 70) return 'AMARILLO'
-  return 'ROJO'
-})
-
-const alertaColor = computed(() => {
-  if (computedAlerta.value === 'VERDE') return 'positive'
-  if (computedAlerta.value === 'AMARILLO') return 'warning'
-  return 'negative'
-})
-
-const alertaIcon = computed(() => {
-  if (computedAlerta.value === 'VERDE') return 'check_circle'
-  if (computedAlerta.value === 'AMARILLO') return 'warning'
-  return 'error'
-})
-
-const onSubmit = async () => {
-  loading.value = true
-  try {
-    const payload = {
-      ...form.value,
-      alerta: computedAlerta.value,
-      sede_id: authStore.sedeId || 1,
-      carrera_id: authStore.usuarioActual?.director?.carrera_id || 1
-    }
-
-    if (form.value.id) {
-      await reportesStore.updateSeguimientoSemanal(form.value.id, payload)
+    if (data.draft === null && data.message) {
+      $q.notify({ type: 'warning', message: data.message })
+      report.value = null
     } else {
-      await reportesStore.createSeguimientoSemanal(payload)
+      report.value = data.report
     }
-    emit('saved')
-  } catch (e) {
-    console.error(e)
+  } catch (error) {
+    console.error('Error fetching draft:', error)
+    $q.notify({ type: 'negative', message: 'Error al cargar borrador del informe' })
   } finally {
     loading.value = false
   }
 }
+
+const recalculateAlert = () => {
+  if (!report.value) return
+  
+  if (!hasCriteria.value) {
+    report.value.cumplimiento_porcentaje = 0
+    report.value.escala_alerta = 'ROJO'
+    return
+  }
+  
+  const criteriaKeys = Object.keys(report.value.criterios)
+  const yesCount = criteriaKeys.filter(k => report.value.criterios[k].cumple).length
+  const percentage = Math.round((yesCount / criteriaKeys.length) * 100)
+  
+  report.value.cumplimiento_porcentaje = percentage
+  
+  if (percentage < 70) report.value.escala_alerta = 'ROJO'
+  else if (percentage < 90) report.value.escala_alerta = 'AMARILLO'
+  else report.value.escala_alerta = 'VERDE'
+}
+
+const saveReport = async () => {
+  saving.value = true
+  try {
+    await api.post('/reportes/semanal', report.value)
+    $q.notify({ type: 'positive', message: 'Informe guardado correctamente' })
+    emit('saved')
+  } catch (error) {
+    console.error('Error saving report:', error)
+    $q.notify({ type: 'negative', message: 'Error al guardar el informe' })
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(() => {
+  fetchDraft()
+})
 </script>
 
 <style scoped>
-.report-table {
-  width: 100%;
-  border-collapse: collapse;
-  border: 1px solid #ccc;
-}
-
-.report-table th,
-.report-table td {
-  border: 1px solid #bdc3c7;
+.weekly-report-form {
+  max-width: 900px;
+  margin: 0 auto;
 }
 </style>

@@ -354,3 +354,4 @@ function getProgresoClass(progreso) {
   background: rgba(0, 0, 0, 0.1);
 }
 </style>
+  
