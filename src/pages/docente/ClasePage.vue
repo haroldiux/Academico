@@ -22,39 +22,35 @@
          <q-tab-panels v-model="tab" animated>
             <q-tab-panel name="asistencia" class="q-pa-none">
                <div class="q-pa-md">
-                  <!-- Selector de Clase Unificada -->
+                  <!-- Selector de Materia y Grupo Hierárquico -->
                   <div class="row q-col-gutter-md q-mb-lg items-center">
-                     <div class="col-12 col-md-6">
-                        <q-select v-model="claseSeleccionada" :options="clasesUnificadas"
-                           label="Seleccionar Clase (Materia Unificada)" outlined dense option-label="nombreDisplay"
-                           option-value="id" emit-value map-options :loading="loading">
+                     <div class="col-12 col-md-5">
+                        <q-select v-model="materiaSeleccionada" :options="materiasDisponibles"
+                           label="Seleccionar Materia" outlined dense option-label="label"
+                           option-value="value" emit-value map-options :loading="loading" />
+                     </div>
+                     <div class="col-12 col-md-5">
+                        <q-select v-model="grupoSeleccionado" :options="gruposDisponibles"
+                           label="Seleccionar Grupo" outlined dense option-label="label"
+                           option-value="value" emit-value map-options :disable="!materiaSeleccionada">
                            <template v-slot:option="scope">
                               <q-item v-bind="scope.itemProps">
                                  <q-item-section>
-                                    <q-item-label>{{ scope.opt.nombreComun }}</q-item-label>
-                                    <q-item-label caption>
-                                       {{scope.opt.carreras.map(c => c.materia).join(' / ')}}
-                                    </q-item-label>
-                                 </q-item-section>
-                              </q-item>
-                           </template>
-                           <template v-slot:no-option>
-                              <q-item>
-                                 <q-item-section class="text-grey">
-                                    {{ loading ? 'Cargando materias...' : 'No se encontraron materias asignadas' }}
+                                    <q-item-label>{{ scope.opt.label }}</q-item-label>
+                                    <q-item-label caption>{{ scope.opt.sublabel }}</q-item-label>
                                  </q-item-section>
                               </q-item>
                            </template>
                         </q-select>
                      </div>
-                     <div class="col-12 col-md-3">
-                        <q-chip v-if="claseSeleccionada" color="primary" text-color="white" icon="schedule">
+                     <div class="col-12 col-md-2">
+                        <q-chip v-if="grupoSeleccionado" color="primary" text-color="white" icon="schedule">
                            {{ claseSeleccionadaObj?.horario }}
                         </q-chip>
                      </div>
                   </div>
 
-                  <div v-if="claseSeleccionada" class="listas-container">
+                  <div v-if="grupoSeleccionado" class="listas-container">
                      <!-- Iterar sobre lo que diga estudiantesVista (pueden ser carreras separadas o una lista unificada) -->
                      <div v-for="grupoVista in estudiantesVista" :key="grupoVista.id" class="q-mb-xl">
                         <div class="text-h6 q-mb-sm flex items-center text-primary">
@@ -118,9 +114,23 @@
             <q-tab-panel name="seguimiento">
                <div class="q-pa-md">
                   <div class="row q-col-gutter-md q-mb-lg">
-                     <div class="col-12 col-md-6">
-                        <q-select v-model="claseSeleccionada" :options="clasesUnificadas" label="Seleccionar Clase"
-                           outlined dense option-label="nombreDisplay" option-value="id" emit-value map-options />
+                     <div class="col-12 col-md-5">
+                        <q-select v-model="materiaSeleccionada" :options="materiasDisponibles" label="Materia"
+                           outlined dense option-label="label" option-value="value" emit-value map-options />
+                     </div>
+                     <div class="col-12 col-md-5">
+                        <q-select v-model="grupoSeleccionado" :options="gruposDisponibles" label="Grupo"
+                           outlined dense option-label="label" option-value="value" emit-value map-options
+                           :disable="!materiaSeleccionada">
+                           <template v-slot:option="scope">
+                              <q-item v-bind="scope.itemProps">
+                                 <q-item-section>
+                                    <q-item-label>{{ scope.opt.label }}</q-item-label>
+                                    <q-item-label caption>{{ scope.opt.sublabel }}</q-item-label>
+                                 </q-item-section>
+                              </q-item>
+                           </template>
+                        </q-select>
                      </div>
                      <div class="col-12 col-md-2">
                         <q-btn-toggle
@@ -144,7 +154,7 @@
                            dense
                            emit-value
                            map-options
-                           :disable="!claseSeleccionada || loadingSesiones"
+                           :disable="!grupoSeleccionado || loadingSesiones"
                         >
                            <template v-slot:no-option>
                               <q-item>
@@ -157,7 +167,7 @@
                      </div>
                   </div>
 
-                  <div v-if="claseSeleccionada" class="seguimiento-content">
+                  <div v-if="sesionActual" class="seguimiento-content">
                      <div v-if="loadingSesiones" class="flex justify-center q-pa-xl">
                         <q-spinner-dots color="primary" size="40px" />
                      </div>
@@ -543,7 +553,8 @@ const $q = useQuasar()
 const gruposStore = useGruposStore()
 
 const tab = ref('seguimiento')
-const claseSeleccionada = ref(null)
+const materiaSeleccionada = ref(null)
+const grupoSeleccionado = ref(null)
 const fechaSeguimiento = ref(null)
 const loading = ref(false)
 const loadingSesiones = ref(false)
@@ -581,59 +592,69 @@ const fetchData = async () => {
    }
 }
 
-// Lógica de Unificación de Clases (Materia + Grupo + Horario)
-const clasesUnificadas = computed(() => {
-   const unificadas = []
-   let idCounter = 1
+// 1. Materias únicas disponibles
+const materiasDisponibles = computed(() => {
+   return materiasReales.value.map(m => ({
+      label: `${m.nombre} (${m.codigo})`,
+      value: m.id,
+      ...m
+   }))
+})
 
-   materiasReales.value.forEach(materia => {
-      if (!Array.isArray(materia.grupos)) return
+// 2. Grupos consolidados para la materia seleccionada
+const gruposDisponibles = computed(() => {
+   if (!materiaSeleccionada.value) return []
+   
+   const materia = materiasDisponibles.value.find(m => m.id === materiaSeleccionada.value)
+   if (!materia || !materia.grupos) return []
 
-      materia.grupos.forEach(descGrupo => {
-         const horarioStr = `${descGrupo.dia} ${descGrupo.hora_inicio}-${descGrupo.hora_fin}`
-         
-         // LÓGICA DE UNIFICACIÓN AVANZADA
-         let key, nombreComun, esFusionada = false
-         
-         if (materia.comun_token && materia.comun_tipo === 'fusionada') {
-            // Si es fusionada, la clave es el token y el horario.
-            // (Asumimos que si están fusionadas es porque comparten el mismo horario físico)
-            key = `token-${materia.comun_token}-${horarioStr}`
-            nombreComun = `${materia.nombre} (Fusionada)`
-            esFusionada = true
-         } else {
-            // Unificamos por nombre/grupo/horario (heurística tradicional)
-            key = `simple-${materia.nombre}-${descGrupo.grupo}-${horarioStr}`
-            nombreComun = `${materia.nombre} (${descGrupo.grupo})`
+   // Consolidar por grupo_id
+   const gruposMap = {}
+   
+   materia.grupos.forEach(g => {
+      if (!gruposMap[g.grupo_id]) {
+         gruposMap[g.grupo_id] = {
+            id: g.grupo_id,
+            nombre: g.grupo,
+            tipo: g.tipo_clase,
+            horarios: []
          }
-
-         let unificada = unificadas.find(u => u.key === key)
-
-         if (!unificada) {
-            unificada = {
-               id: idCounter++,
-               key: key,
-               nombreComun: nombreComun,
-               horario: horarioStr,
-               nombreDisplay: `${nombreComun} - ${horarioStr}`,
-               esFusionada: esFusionada,
-               carreras: []
-            }
-            unificadas.push(unificada)
-         }
-
-         // Agregar esta carrera/materia específica a la clase unificada
-         unificada.carreras.push({
-            id: materia.id,
-            nombreCarrera: materia.carrera,
-            materia: materia.nombre,
-            // Mocking students for now as discussed
-            estudiantes: generateMockStudents(materia.id + descGrupo.grupo)
-         })
-      })
+      }
+      if (g.dia !== '-') {
+         gruposMap[g.grupo_id].horarios.push(`${g.dia} ${g.hora_inicio}-${g.hora_fin}`)
+      }
    })
 
-   return unificadas
+   return Object.values(gruposMap).map(g => ({
+      label: `Grupo ${g.nombre} - ${g.tipo}`,
+      sublabel: g.horarios.length > 0 ? g.horarios.join(', ') : 'Sin horario definido',
+      value: g.id,
+      ...g
+   }))
+})
+
+// Lógica de Unificación de Clases (MANTENIDA para compatibilidad de vista de estudiantes si es necesario, pero simplificada)
+const claseSeleccionadaObj = computed(() => {
+   if (!materiaSeleccionada.value || !grupoSeleccionado.value) return null
+   
+   const materia = materiasDisponibles.value.find(m => m.id === materiaSeleccionada.value)
+   const grupo = gruposDisponibles.value.find(g => g.id === grupoSeleccionado.value)
+   
+   if (!materia || !grupo) return null
+
+   return {
+      id: materia.id,
+      nombreComun: materia.nombre,
+      grupoNombre: grupo.nombre,
+      horario: grupo.sublabel,
+      esFusionada: materia.comun_token && materia.comun_tipo === 'fusionada',
+      carreras: [{
+         id: materia.id,
+         nombreCarrera: materia.carrera,
+         materia: materia.nombre,
+         estudiantes: generateMockStudents(materia.id + grupo.id)
+      }]
+   }
 })
 
 // Toggle between pending and completed sessions
@@ -641,19 +662,30 @@ const vistaHistorial = ref(false)
 
 // Computed options based on vistaHistorial toggle
 const sesionesOptions = computed(() => {
+   const today = new Date().toISOString().split('T')[0]
    const filtered = sesiones.value.filter(s => {
       const isCumplido = s.cumplido === true || s.cumplido === 1 || s.cumplido === '1' || s.cumplido === 'true'
-      return vistaHistorial.value ? isCumplido : !isCumplido
+      
+      if (vistaHistorial.value) {
+         return isCumplido
+      } else {
+         // Pendientes: No cumplidas Y (fecha <= hoy o sin fecha)
+         return !isCumplido && (!s.fecha || s.fecha <= today)
+      }
    })
    
    console.log('sesionesOptions - vistaHistorial:', vistaHistorial.value, 'filtered count:', filtered.length, 'total:', sesiones.value.length)
    
    return filtered.map(s => {
            // Format date for display: DD/MM/YYYY
-           let fechaDisplay = s.fecha
-           if (s.fecha && s.fecha.includes('-')) {
-              const [y, m, d] = s.fecha.split('-')
-              fechaDisplay = `${d}/${m}/${y}`
+           let fechaDisplay = 'Sin fecha'
+           if (s.fecha) {
+              if (s.fecha.includes('-')) {
+                  const [y, m, d] = s.fecha.split('-')
+                  fechaDisplay = `${d}/${m}/${y}`
+              } else {
+                  fechaDisplay = s.fecha
+              }
            }
            
            let label = `${fechaDisplay} - Sesión ${s.numero_sesion}`
@@ -686,32 +718,122 @@ const sesionesPendientesOptions = computed(() => {
 })
 
 const fetchSesiones = async () => {
-   if (!claseSeleccionada.value) return
-
-   const unificada = clasesUnificadas.value.find(u => u.id === claseSeleccionada.value)
-   if (!unificada || !unificada.carreras.length) return
+   if (!materiaSeleccionada.value || !grupoSeleccionado.value) return
 
    loadingSesiones.value = true
-   // Pick first carrera to get planning (assuming all carreras in a unified class share planning)
-   const mainCarreraId = unificada.carreras[0].id
-
    try {
-      const response = await planificacionSemestralService.getPlanificacion(mainCarreraId)
-      sesiones.value = response.data.planificacion || []
+      // 1. Fetch Planificación (Hybrid: Master + Execution)
+      const response = await planificacionSemestralService.getPlanificacion(materiaSeleccionada.value, {
+          grupo_id: grupoSeleccionado.value
+      })
       
-      // DEBUG: Log first session to see pedagogico structure
-      if (sesiones.value.length > 0) {
-         console.log('DEBUG - Primera sesión completa:', JSON.stringify(sesiones.value[0], null, 2))
-         console.log('DEBUG - Pedagogico contenido:', JSON.stringify(sesiones.value[0].pedagogico, null, 2))
-         console.log('DEBUG - Tiene tema?:', !!sesiones.value[0].tema)
-         if (sesiones.value[0].tema) {
-            console.log('DEBUG - Tema:', JSON.stringify(sesiones.value[0].tema, null, 2))
-         }
+      let rawSesiones = response.data.planificacion || []
+      const config = response.data.config || {}
+      const horarios = response.data.horarios || []
+      
+      // 2. Determine Group Type (Theoretical vs Practical)
+      // We need to look up the selected group object to know its type
+      // The grupoSeleccionado value is just the ID.
+      // We can find it in horarios or we need to fetch group details? 
+      // The 'horarios' array contains objects with { grupo_id, grupo: 'A', tipo: 'TEORICA' ... } ideally.
+      // Let's check available data. 'gruposDisponibles' has labels.
+      // Better: Use the schedule data returned from API to find the group's type.
+      
+      // Find one schedule for this group to get its type/name
+      const groupSchedule = horarios.find(h => h.grupo_id === grupoSeleccionado.value)
+      // Fallback: Check if group name is numeric (Theory) or Alpha (Practice)
+      // Or check explicit type if available in response.
+      
+      let esGrupoTeorico = false
+      if (groupSchedule) {
+          if (groupSchedule.tipo) {
+              const t = groupSchedule.tipo.toUpperCase()
+              esGrupoTeorico = ['TEORICA', 'TEÓRICA', 'TEORICO', 'T'].includes(t)
+          } else {
+               // Fallback by name
+               esGrupoTeorico = !isNaN(groupSchedule.grupo) // Numeric = Theory
+          }
       }
+
+      // 3. Filter Sessions by Type
+      // Master sessions should have 'tipo_clase' or 'tipo'
+      // If none, show all (legacy behavior)
+      const filteredSesiones = rawSesiones.filter(s => {
+          // If session has specific type, match it
+          if (s.tipo_clase) {
+              const tipoSesion = s.tipo_clase.toUpperCase() // 'TEÓRICA', 'PRÁCTICA'
+              const isSesionTeorica = ['TEORICA', 'TEÓRICA', 'TEORICO', 'T'].includes(tipoSesion)
+              return esGrupoTeorico === isSesionTeorica
+          }
+          // If no type on session, show it (or default to logic?)
+          // Let's assume Master Plan has type.
+          return true 
+      })
+
+      // 4. Project Dates (The Core Algorithm)
+      // Only project if date is null (Master Record)
+      // We need start date and group schedules
       
-      // Auto-select first pending date if available
+      if (config.fecha_inicio_clases && horarios.length > 0) {
+          const startDate = new Date(config.fecha_inicio_clases + 'T00:00:00')
+          const groupDays = horarios
+              .filter(h => h.grupo_id === grupoSeleccionado.value)
+              .map(h => {
+                  // Map day name to 0-6 (Sun-Sat) or 1-7 (Mon-Sun)
+                  // API returns "Lunes", "Martes"...
+                  const map = { 'Lunes': 1, 'Martes': 2, 'Miercoles': 3, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sabado': 6, 'Sábado': 6, 'Domingo': 0 }
+                  return map[h.dia] 
+              })
+              .sort() // [1, 3] for Mon/Wed
+
+          if (groupDays.length > 0) {
+              let currentDate = new Date(startDate)
+              
+              // We need to iterate sessions and assign dates
+              // Only assign to sessions that don't have execution date
+              // But wait, "Session 1" should be the first class, "Session 2" the second.
+              // Logic: Find the Nth occurence of a class day since start date.
+              
+              // Simpler: Generate a stream of valid class dates
+              const classDates = []
+              // Generate enough dates (e.g. 50)
+              let d = new Date(startDate)
+              let safety = 0
+              while (classDates.length < filteredSesiones.length + 5 && safety < 300) { // 300 days horizon
+                  if (groupDays.includes(d.getDay())) {
+                      classDates.push(new Date(d))
+                  }
+                  d.setDate(d.getDate() + 1)
+                  safety++
+              }
+
+              // Assign dates to sessions based on their index in the FILTERED list.
+              // Important: The "numero_sesion" might be 1, 2, 3 (Global).
+              // But for this group, if it's Practical, maybe it only sees Session 2, 4, 6?
+              // NO. The Master Plan has distinct sessions.
+              // IF we have 40 sessions total (20 T, 20 P).
+              // The filtered list for Theory Group will have 20 sessions.
+              // We map them 1-to-1 to the first 20 class dates.
+              
+              filteredSesiones.forEach((s, index) => {
+                  if (!s.fecha && classDates[index]) {
+                      // Project date!
+                      const pDate = classDates[index]
+                      s.fecha = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}-${String(pDate.getDate()).padStart(2,'0')}`
+                      s._isProjected = true // Flag to UI
+                  }
+              })
+          }
+      }
+
+      sesiones.value = filteredSesiones
+      
+      // Auto-select logic
       if (sesionesPendientesOptions.value.length > 0) {
-          fechaSeguimiento.value = sesionesPendientesOptions.value[0].value
+          // Try to select today's session if exists
+          const today = new Date().toISOString().split('T')[0]
+          const todaySession = sesionesPendientesOptions.value.find(o => o.value === today)
+          fechaSeguimiento.value = todaySession ? todaySession.value : sesionesPendientesOptions.value[0].value
       } else {
           fechaSeguimiento.value = null
       }
@@ -719,6 +841,7 @@ const fetchSesiones = async () => {
       actualizarSesionPorFecha()
    } catch (error) {
       console.error('Error fetching sessions:', error)
+      $q.notify({ type: 'negative', message: 'Error al cargar las sesiones' })
    } finally {
       loadingSesiones.value = false
    }
@@ -1039,9 +1162,18 @@ const resetEvidencias = () => {
    }
 }
 
-watch(claseSeleccionada, () => {
-   if (claseSeleccionada.value) {
+watch(materiaSeleccionada, () => {
+   grupoSeleccionado.value = null
+   sesiones.value = []
+   fechaSeguimiento.value = null
+})
+
+watch(grupoSeleccionado, () => {
+   if (grupoSeleccionado.value) {
       fetchSesiones()
+   } else {
+      sesiones.value = []
+      fechaSeguimiento.value = null
    }
 })
 
@@ -1078,9 +1210,7 @@ const generateMockStudents = (seed) => {
    return students
 }
 
-const claseSeleccionadaObj = computed(() => {
-   return clasesUnificadas.value.find(c => c.id === claseSeleccionada.value)
-})
+// Eliminada duplicidad de computed claseSeleccionadaObj
 
 const estudiantesVista = computed(() => {
    const obj = claseSeleccionadaObj.value

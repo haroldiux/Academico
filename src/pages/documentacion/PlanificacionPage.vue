@@ -17,24 +17,8 @@
         </div>
       </div>
       <div class="header-actions">
-        <!-- Group Selector -->
-        <q-select
-          v-if="asignatura && asignatura.horarios_data && asignatura.horarios_data.length > 1"
-          v-model="activeGroupId"
-          :options="gruposOptions"
-          label="Seleccionar Grupo"
-          dense
-          outlined
-          emit-value
-          map-options
-          style="min-width: 200px"
-          bg-color="white"
-          @update:model-value="cargarPlanificacion"
-        >
-          <template v-slot:prepend>
-            <q-icon name="group" color="primary" />
-          </template>
-        </q-select>
+
+
         <!-- Auto-save Status Indicator -->
         <transition name="fade">
           <div v-if="saveStatus !== 'idle'" class="auto-save-indicator q-ml-sm">
@@ -229,8 +213,8 @@
                   type="number"
                   dense
                   outlined
-                  label="Sem. Teóricas"
-                  style="width: 140px"
+                  label="Sesiones teóricas semanales"
+                  style="width: 250px"
                   color="blue"
                   bg-color="blue-1"
                   min="0"
@@ -241,6 +225,9 @@
                   <template v-slot:prepend>
                     <q-icon name="class" color="blue-9" />
                   </template>
+                  <q-tooltip>
+                    Número de sesiones teóricas semanales de la asignatura, independientemente del número de grupos que tenga el docente.
+                  </q-tooltip>
                 </q-input>
 
                 <q-input
@@ -248,8 +235,8 @@
                   type="number"
                   dense
                   outlined
-                  label="Sem. Prácticas"
-                  style="width: 140px"
+                  label="Sesiones prácticas semanales"
+                  style="width: 250px"
                   color="green"
                   bg-color="green-1"
                   min="0"
@@ -260,6 +247,9 @@
                   <template v-slot:prepend>
                     <q-icon name="science" color="green-9" />
                   </template>
+                  <q-tooltip>
+                    Número de sesiones prácticas semanales de la asignatura, independientemente del número de grupos que tenga el docente.
+                  </q-tooltip>
                 </q-input>
               </div>
 
@@ -271,10 +261,7 @@
                   Configure las sesiones semanales en Datos de Asignatura primero
                 </q-tooltip>
               </q-btn>
-              <p class="text-grey-6 q-mt-sm text-caption">
-                Se distribuirán {{ totalTemasDocumentacion }} temas de
-                {{ unidadesDocumentacion.length }} unidades en {{ totalSemanas }} semanas
-              </p>
+
               <q-banner v-if="planificacionGenerada" class="bg-green-1 text-green-9 q-mt-md inline-block rounded-borders" dense>
                 <q-icon name="check_circle" class="q-mr-sm" />
                 La planificación ya ha sido generada.
@@ -287,6 +274,16 @@
         <q-tab-panel name="planificacion" class="q-pa-lg">
           <!-- Action Buttons Row -->
           <div class="row justify-end q-gutter-sm q-mb-md">
+             <q-btn unelevated outline color="red-5" icon="delete_sweep" label="Vaciar cronograma" no-caps
+                @click="confirmarVaciar" >
+                <q-tooltip>Eliminar todo el contenido actual del cronograma</q-tooltip>
+             </q-btn>
+
+             <q-btn unelevated outline color="indigo-5" icon="rebase_edit" label="Reestructurar cronograma con sesiones oficiales" no-caps
+                @click="confirmarReestructura" >
+                <q-tooltip>Volver a generar la estructura base tras corregir número de sesiones</q-tooltip>
+             </q-btn>
+
              <q-btn unelevated color="orange" icon="upload_file" label="Importar Cronograma Parcial (PAC)" no-caps
                 @click="abrirDialogoImportarCronograma" >
                 <q-tooltip>Importar avance semestral hasta semena 6 (Excel)</q-tooltip>
@@ -295,18 +292,13 @@
              <q-btn outline color="grey-6" icon="lock" label="Importar Cronograma Total" no-caps disable>
                 <q-tooltip>Opción habilitada solo cuando el Director suba el Rol de Exámenes</q-tooltip>
              </q-btn>
-
-             <q-btn unelevated color="indigo" icon="picture_as_pdf" label="Exportar Planificación (PDF)" no-caps
-                @click="exportarPDF" :disable="!planificacionGenerada" >
-                <q-tooltip>Descargar documento oficial de planificación</q-tooltip>
-             </q-btn>
           </div>
 
           <!-- Resumen -->
           <div class="planificacion-resumen q-mb-lg">
             <div class="resumen-item">
               <q-icon name="folder" size="24px" color="indigo" />
-              <span class="resumen-value">{{ planificacion.length }}</span>
+              <span class="resumen-value">{{ unidadesDocumentacion.length }}</span>
               <span class="resumen-label">Unidades</span>
             </div>
             <div class="resumen-item">
@@ -541,8 +533,8 @@
                       }}</small>
                     </td>
                     <td class="cell-fechas bg-grey-1">
-                      <div v-for="(fg, idx) in getFechasGrupos(sesion.numeroGlobal)" :key="idx" class="fecha-grupo-row">
-                        <div class="fg-grupo">{{ fg.grupo }}</div>
+                      <div v-for="(fg, idx) in getFechasGrupos(sesion)" :key="idx" class="fecha-grupo-row">
+                        <div class="fg-grupo" style="font-weight: bold; color: #3f51b5;">{{ fg.grupo }}</div>
                         <div class="fg-fecha">{{ fg.fecha }}</div>
                       </div>
                     </td>
@@ -628,6 +620,48 @@
 
 
 
+    <!-- Dialog Vaciar Cronograma -->
+    <q-dialog v-model="showVaciarDialog" persistent>
+      <q-card style="min-width: 350px">
+        <q-card-section class="row items-center">
+          <q-avatar icon="warning" color="red" text-color="white" />
+          <span class="q-ml-sm text-h6">¿Está seguro de vaciar el cronograma?</span>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <p class="text-caption text-grey-8">Esta acción eliminará todos los temas y contenidos cargados actualmente. No se puede deshacer.</p>
+          <p>Para confirmar, escriba <strong>vaciar</strong> a continuación:</p>
+          <q-input v-model="confirmacionTexto" dense autofocus @keyup.enter="ejecutarVaciar" />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="primary" v-close-popup />
+          <q-btn flat label="Vaciar" color="red" :disable="confirmacionTexto.toLowerCase() !== 'vaciar'" @click="ejecutarVaciar" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Reestructurar Cronograma -->
+    <q-dialog v-model="showReestructuraDialog" persistent>
+      <q-card style="min-width: 350px">
+        <q-card-section class="row items-center">
+          <q-avatar icon="priority_high" color="orange" text-color="white" />
+          <span class="q-ml-sm text-h6">¿Reestructurar cronograma?</span>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <p class="text-caption text-grey-8">Se volverá a generar la estructura base de sesiones según los conteos teóricos/prácticos actuales. Las sesiones existentes intentarán preservarse si su número global coincide.</p>
+          <p>Para confirmar, escriba <strong>reestructura</strong> a continuación:</p>
+          <q-input v-model="confirmacionTexto" dense autofocus @keyup.enter="ejecutarReestructura" />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="primary" v-close-popup />
+          <q-btn flat label="Reestructurar" color="indigo" :disable="confirmacionTexto.toLowerCase() !== 'reestructura'" @click="ejecutarReestructura" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Dialog Copiar Gestión -->
     <q-dialog v-model="showCopiarDialog">
       <q-card class="dialog-card" style="width: 100%; max-width: 400px">
@@ -680,6 +714,9 @@ let dataLoaded = false
 let lastSavedSnapshot = ''
 
 const gestionACopiar = ref(null)
+const showVaciarDialog = ref(false)
+const showReestructuraDialog = ref(false)
+const confirmacionTexto = ref('')
 
 // Computed para extraer fechas de exámenes de la planificación generada o del rol oficial
 const fechasExamenes = computed(() => {
@@ -725,13 +762,7 @@ const fechasExamenes = computed(() => {
 
 
 
-const gruposOptions = computed(() => {
-    if (!asignatura.value?.horarios_data) return []
-    return asignatura.value.horarios_data.map(g => ({
-        label: `G->${g.grupo} (${g.tipo})`,
-        value: g.id
-    }))
-})
+
 
 const gestionesAnteriores = [
   { label: 'Gestión 2025-II', value: '2025-II' },
@@ -786,10 +817,8 @@ onMounted(async () => {
   // IMPORTANTE: Esperar a que se cargue la asignatura antes de buscar horarios
   await asignaturasStore.setAsignaturaActual(id, params)
 
-  // Select first group internally for Planning content
-  if (asignatura.value?.horarios_data?.length > 0) {
-      activeGroupId.value = asignatura.value.horarios_data[0].id
-  }
+  // REMOVED: Auto-select first group. We want to show ALL schedules by default.
+  // activeGroupId.value = ... 
 
   // 1. Cargar horarios (Prioridad: Necesario para calcular fechas de planificación)
   await cargarHorariosAsignatura()
@@ -802,9 +831,8 @@ onMounted(async () => {
 })
 
 async function cargarPlanificacion() {
-  if (!activeGroupId.value) return
-
-  let targetGrupoId = activeGroupId.value
+  // REMOVED: Dependency on activeGroupId. We load Master Plan (group_id = null)
+  let targetGrupoId = null 
   // The 'ALL' option is removed, so this block is no longer needed.
   // if (targetGrupoId === 'ALL') {
   //   if (asignatura.value?.horarios_data?.length > 0) {
@@ -1015,24 +1043,24 @@ function actualizarHorariosDesdeGrupo() {
     return
   }
 
-  // Show ALL schedules (No filter)
+  // const targetId = activeGroupId.value // REMOVED
   const todosLosHorarios = []
 
   asignatura.value.horarios_data.forEach((grupoData) => {
-    // if (grupoData.id !== targetId) return
+    // REMOVED: Filtering by group. Show ALL.
+    // if (targetId && grupoData.id !== targetId) return
+
 
     if (grupoData.horarios && grupoData.horarios.length > 0) {
       const horariosGrupo = grupoData.horarios.map((h) => ({
         dia: h.dia,
         horaInicio: h.hora_inicio?.substring(0, 5),
         horaFin: h.hora_fin?.substring(0, 5),
-        // Mostrar nombre del grupo en el aula si es necesario
         aula: h.aula || 'Sin Aula',
-        grupo: grupoData.grupo, // Para mostrar "Grupo 1" en la tarjeta
-        tipoClase: grupoData.tipo,
+        grupo: grupoData.grupo,
+        tipoClase: grupoData.tipo || (h.tipo === 'T' ? 'Teórica' : 'Práctica'),
         desdeAPI: true,
         docente: grupoData.docente_nombre,
-        // DEBUG FIELDS
         id: h.id,
         id_horario_api: h.id_horario_api,
         asignatura_id: grupoData.asignatura_id,
@@ -1045,7 +1073,6 @@ function actualizarHorariosDesdeGrupo() {
   })
 
   // Ordenar por día y hora
-
   todosLosHorarios.sort((a, b) => {
     const diaA = getNroDia(a.dia)
     const diaB = getNroDia(b.dia)
@@ -1246,46 +1273,112 @@ function calcularPropuestaPlanificacion() {
   const fechasExamenMap = {}
   if (examenesRol.value.length > 0) {
     let examenesRelevantes = examenesRol.value
-    // removed group filter
     examenesRelevantes.forEach((ex) => {
       const raw = ex.fecha_examen || ex.fecha
       if (raw) fechasExamenMap[raw.split('T')[0]] = ex.tipo_examen || ex.tipo
     })
   }
 
-  // Bucle de generación (20 semanas)
-
   // Validar si hay configuración
   if (numTeoricas === 0 && numPracticas === 0) {
-      // Fallback a lo que había antes si no hay config (evitar crash)
-      // O mejor, no generar nada.
       return []
   }
+
+  // Obtener estado actual para PRESERVAR datos
+  const estadoActual = planificacionSesiones.value || []
 
   for (let semana = 1; semana <= totalSemanas.value; semana++) {
     const fechaSemanaInicio = new Date(mondayOfFirstWeek)
     fechaSemanaInicio.setDate(mondayOfFirstWeek.getDate() + (semana - 1) * 7)
     const fechaSemanaInicioStr = formatDate(fechaSemanaInicio)
 
-    // Generate all sessions normally for this week (both Theory and Practice)
     const sesionesSemana = []
 
-    // 1. Generate Theoretical Sessions (Always pass {} for SEMANAS_EXAMEN to NOT auto-mark anything yet)
+    // 1. Sesiones Teóricas
     for (let t = 1; t <= numTeoricas; t++) {
-        sesionesSemana.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Teórica', t, fechasExamenMap, {}))
+        const numG = sesionGlobal++
+        // FIX: Check if we are duplicating sessions.
+        // The loop runs 'numTeoricas' times per week. This is correct if numTeoricas is sessions/week.
+        // Example: 1 theoretical session/week * 20 weeks = 20 total.
+        
+        const existing = estadoActual.find(s => s.numeroGlobal === numG)
+        
+        // Calcular fecha específica si hay horarios
+        const slotHorario = horariosOrdenados.value.filter(h => h.tipoClase === 'Teórica')[t - 1]
+        let fechaCalculada = ''
+        if (slotHorario) {
+            const d = new Date(fechaSemanaInicio)
+            d.setDate(fechaSemanaInicio.getDate() + (getNroDia(slotHorario.dia) - 1))
+            fechaCalculada = d.toISOString().split('T')[0]
+        }
+
+        const sBase = crearSesionBase(numG, semana, fechaSemanaInicioStr, 'Teórica', t, fechasExamenMap, {})
+        sBase.fecha = fechaCalculada
+        
+        // PRESERVAR: Si ya existe y tiene contenido, mantenerlo
+        if (existing && (existing.tema || existing.conceptual || existing.temasSeleccionados?.length > 0)) {
+            Object.assign(sBase, {
+                tema: existing.tema,
+                tema_id: existing.tema_id,
+                temasSeleccionados: existing.temasSeleccionados,
+                conceptual: existing.conceptual,
+                procedimental: existing.procedimental,
+                actitudinal: existing.actitudinal,
+                criteriosDesempeno: existing.criteriosDesempeno,
+                instrumentosEvaluacion: existing.instrumentosEvaluacion,
+                criteriosSeleccionados: existing.criteriosSeleccionados,
+                instrumentosSeleccionados: existing.instrumentosSeleccionados,
+                contenido_items_seleccionados: existing.contenido_items_seleccionados,
+                contenido: existing.contenido, // Observaciones
+                unidad_id: existing.unidad_id,
+                // Conservar fecha si ya tenía una y no queremos recalcularla? 
+                // Por ahora preferimos la recalculada si es nueva generación
+            })
+        }
+        sesionesSemana.push(sBase)
     }
 
-    // 2. Generate Practical Sessions (Always pass {} for SEMANAS_EXAMEN to NOT auto-mark anything yet)
+    // 2. Sesiones Prácticas
     for (let p = 1; p <= numPracticas; p++) {
-        sesionesSemana.push(crearSesionBase(sesionGlobal++, semana, fechaSemanaInicioStr, 'Práctica', p, fechasExamenMap, {}))
+        const numG = sesionGlobal++
+        const existing = estadoActual.find(s => s.numeroGlobal === numG)
+
+        const slotHorario = horariosOrdenados.value.filter(h => h.tipoClase === 'Práctica')[p - 1]
+        let fechaCalculada = ''
+        if (slotHorario) {
+            const d = new Date(fechaSemanaInicio)
+            d.setDate(fechaSemanaInicio.getDate() + (getNroDia(slotHorario.dia) - 1))
+            fechaCalculada = d.toISOString().split('T')[0]
+        }
+
+        const sBase = crearSesionBase(numG, semana, fechaSemanaInicioStr, 'Práctica', p, fechasExamenMap, {})
+        sBase.fecha = fechaCalculada
+        
+        // PRESERVAR
+        if (existing && (existing.tema || existing.conceptual || existing.temasSeleccionados?.length > 0)) {
+            Object.assign(sBase, {
+                tema: existing.tema,
+                tema_id: existing.tema_id,
+                temasSeleccionados: existing.temasSeleccionados,
+                conceptual: existing.conceptual,
+                procedimental: existing.procedimental,
+                actitudinal: existing.actitudinal,
+                criteriosDesempeno: existing.criteriosDesempeno,
+                instrumentosEvaluacion: existing.instrumentosEvaluacion,
+                criteriosSeleccionados: existing.criteriosSeleccionados,
+                instrumentosSeleccionados: existing.instrumentosSeleccionados,
+                contenido_items_seleccionados: existing.contenido_items_seleccionados,
+                contenido: existing.contenido,
+                unidad_id: existing.unidad_id
+            })
+        }
+        sesionesSemana.push(sBase)
     }
 
     // 3. Mark the Exam Session ONLY (Last Theoretical Session of the Week)
     if (SEMANAS_EXAMEN[semana]) {
-        // Find the LAST Theoretical session
         let targetSession = sesionesSemana.filter(s => s.tipoClase === 'Teórica').pop()
         
-        // Fallback: If no Theoretical sessions exist (weird edge case), use the Last Practical (or last session overall)
         if (!targetSession && sesionesSemana.length > 0) {
             targetSession = sesionesSemana[sesionesSemana.length - 1]
         }
@@ -1295,45 +1388,21 @@ function calcularPropuestaPlanificacion() {
             targetSession.esExamen = true
             targetSession.tipoExamen = nombreExamen
             targetSession.periodoExamen = nombreExamen
-            targetSession.tema = nombreExamen
-            targetSession.instrumentosEvaluacion = 'Examen escrito'
-            targetSession.instrumentosSeleccionados = ['Examen escrito']
+            
+            // SOLO sobreescribir tema si está vacío
+            if (!targetSession.tema) targetSession.tema = nombreExamen
+            
             targetSession.bloqueado = true
-            targetSession.unidad_id = 'finales'
+            // targetSession.unidad_id = 'finales' // Conservar si ya tenía unidad? O forzar?
         }
     }
 
-    // Add sessions to global list
     todasLasSesiones.push(...sesionesSemana)
   }
 
-  // Asignar unidades secuencialmente (Lógica antigua simplificada)
-  const sesionesParaContenido = todasLasSesiones.filter((s) => !s.esExamen && s.semana <= 17)
-  
-  if (unidades.length > 0) {
-      const sesionesPorUnidad = Math.floor(sesionesParaContenido.length / unidades.length)
-      const sesionesExtra = sesionesParaContenido.length % unidades.length
-      
-      let currentSesionIdx = 0
-      unidades.forEach((unidad, uIdx) => {
-          const cantidad = sesionesPorUnidad + (uIdx < sesionesExtra ? 1 : 0)
-          for (let i = 0; i < cantidad; i++) {
-              if (currentSesionIdx < sesionesParaContenido.length) {
-                  const s = sesionesParaContenido[currentSesionIdx]
-                  s.unidad_id = unidad.id
-                  // NO Pre-llenar contenido (Solicitud usuario)
-                  s.tema = ''
-                  s.tema_id = null
-                  s.conceptual = ''
-                  s.procedimental = ''
-                  s.actitudinal = ''
-                  currentSesionIdx++
-              }
-          }
-      })
-  }
+  // No automatic topic distribution as requested by the user.
+  // The schedule will be generated empty, preserving only exams.
 
-  // Retornar lista plana
   return todasLasSesiones
 }
 
@@ -1383,6 +1452,61 @@ function crearSesionBase(id, semana, semanaFechas, tipo, indiceTipo, fechasExame
         bloqueado: esExamen || semana >= 18,
         unidad_id: 'finales' // Default, se sobreescribe
     }
+}
+
+function confirmarVaciar() {
+  confirmacionTexto.value = ''
+  showVaciarDialog.value = true
+}
+
+function confirmarReestructura() {
+  confirmacionTexto.value = ''
+  showReestructuraDialog.value = true
+}
+
+async function ejecutarVaciar() {
+  if (confirmacionTexto.value.toLowerCase() !== 'vaciar') return
+  
+  $q.loading.show({ message: 'Vaciando cronograma...' })
+  try {
+    planificacionSesiones.value.forEach(s => {
+      s.tema = s.esExamen ? s.tipoExamen : ''
+      s.tema_id = null
+      s.temasSeleccionados = []
+      s.conceptual = ''
+      s.procedimental = ''
+      s.actitudinal = ''
+      s.criteriosDesempeno = ''
+      s.instrumentosEvaluacion = s.esExamen ? 'Examen escrito' : ''
+      s.criteriosSeleccionados = []
+      s.instrumentosSeleccionados = s.esExamen ? ['Examen escrito'] : []
+      s.contenido_items_seleccionados = []
+      s.contenido = ''
+      s.modificado = true
+      // No quitar unidad_id para que no se pierda la agrupación visual si ya tiene una asignada
+    })
+    
+    await guardarTodo(true)
+    showVaciarDialog.value = false
+    $q.notify({ type: 'positive', message: 'Cronograma vaciado correctamente' })
+  } catch (err) {
+    console.error(err)
+    $q.notify({ type: 'negative', message: 'Error al vaciar cronograma' })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
+async function ejecutarReestructura() {
+  if (confirmacionTexto.value.toLowerCase() !== 'reestructura') return
+  
+  try {
+    // Generar de nuevo usando la lógica actualizada (que preserva contenidos si existen)
+    await generarPlanificacion(false)
+    showReestructuraDialog.value = false
+  } catch (err) {
+    console.error(err)
+  }
 }
 
 async function generarPlanificacion(silent = false) {
@@ -1491,7 +1615,6 @@ function getContenidoItemsOptions(sesion) {
 
 
 
-import pdfService from 'src/services/pdfService'
 
 async function ejecutarCopia() {
   if (!gestionACopiar.value) {
@@ -1502,17 +1625,13 @@ async function ejecutarCopia() {
   $q.loading.show({ message: 'Copiando planificación...' })
   try {
     // 0. Autoseleccionar grupo si no hay uno seleccionado
-    if (!activeGroupId.value && asignatura.value?.horarios_data?.length > 0) {
-       activeGroupId.value = asignatura.value.horarios_data[0].id
-    }
-
-    const grupoId = activeGroupId.value;
-
-    if (!grupoId) return;
+    // REMOVED: No group selection needed for Master Plan copy
+    
+    // const grupoId = activeGroupId.value; // REMOVED
 
     const response = await planificacionSemestralService.copiarPlanificacion(route.params.id, {
       gestion_origen: gestionACopiar.value,
-      grupo_id: grupoId, // Ensure group_id is sent for copying
+      grupo_id: null, // Copy to Master Plan
       docente_id: authStore.user?.docente?.id // Send docent ID for personalized fetching
     })
 
@@ -1535,19 +1654,9 @@ async function ejecutarCopia() {
 async function guardarTodo(silent = false) {
   // if (!silent) guardando.value = true
   try {
-    // Si estamos en modo 'ALL', buscamos un ID de grupo válido para asociar (provisorio)
-    // Si estamos en modo 'ALL', buscamos un ID de grupo válido para asociar (provisorio)
-    let targetGrupoId = activeGroupId.value
-
-    if (!targetGrupoId && asignatura.value?.horarios_data?.length > 0) {
-       // Intentar recuperar del objeto si viene completo
-       targetGrupoId = asignatura.value.horarios_data[0].id
-    }
-
-    if (!targetGrupoId) {
-      if (!silent) $q.notify({ type: 'warning', message: 'Seleccione un grupo', icon: 'warning' })
-      return
-    }
+    // Determine target group ID - NOW OPTIONAL (Masters enabled)
+    // If no group selected, we save to MASTER (grupo_id = null)
+    let targetGrupoId = null // FORCE MASTER PLAN
 
     const sesiones = []
     planificacionSesiones.value.forEach((sesion) => {
@@ -1577,7 +1686,14 @@ async function guardarTodo(silent = false) {
           : [],
         contenido_items_seleccionados: sesion.contenido_items_seleccionados || [],
         observaciones: sesion.contenido || '', // Guardar contenido manual en observaciones
+        tipoClase: sesion.tipoClase // Send type explicitly (Teórica/Práctica)
       }
+
+      // REMOVED: Date saving logic from here. Dates are now projected on the fly or saved via Execution.
+      // We DO NOT save calculated dates to Master.
+      // If a group is selected, we could save execution dates, but for now we follow the new "Projection" paradigm.
+      // IF the user explicitly WANTS to save dates (e.g. manual override), we would add it here.
+      // For now, let's keep sDB.fecha clean for Master.
 
       sDB.grupo_id = targetGrupoId
       sesiones.push(sDB)
@@ -1673,11 +1789,15 @@ function calcularFechasTodosLosGrupos() {
   
   // Agrupar horarios por grupo y ordenarlos
   const gruposConHorarios = asignatura.value.horarios_data.map(g => {
-      // Determinar si el GRUPO es teórico o práctico
-      // Check nombre del grupo (si es numero => teorico ex. "1", si es letra => practico ex "A")
-      // O check g.tipo si existe
-      
-      const esTeorico = !isNaN(g.grupo) && g.grupo.toString().trim() !== ''
+      // Usar el campo 'tipo' si existe, fallback a detección por nombre de grupo
+      // Normalizar comprobación de tipo (TEORICO, Teórica, T, etc)
+      let esTeorico = false
+      if (g.tipo) {
+          const t = g.tipo.toUpperCase()
+          esTeorico = t === 'TEÓRICA' || t === 'TEORICA' || t === 'TEORICO' || t === 'T'
+      } else {
+          esTeorico = !isNaN(g.grupo) && g.grupo.toString().trim() !== ''
+      }
       
       return {
           grupo: g.grupo,
@@ -1803,63 +1923,7 @@ onMounted(() => {
   calcularFechasTodosLosGrupos()
 })
 
-function exportarPDF() {
-  if (!planificacionGenerada.value) {
-    $q.notify({ type: 'warning', message: 'Primero genere la planificación', icon: 'warning' })
-    return
-  }
 
-  $q.loading.show({ message: 'Generando PDF...' })
-  try {
-    // Preparar objeto asignatura enriquecido con la planificación actual para el PDF
-    // El servicio pdfService espera 'unidades' con 'temas', pero nuestra planificación
-    // tiene una estructura ligeramente diferente (unidades con sesiones).
-    // Debemos adaptar los datos para que el reporte salga bonito, o crear un reporte específico.
-    // USaremos generarPlanDeClase pero le pasaremos los datos "reales" de la planificación grid.
-
-    const asignaturaParaPDF = {
-      ...asignatura.value,
-      // Sobreescribimos unidades con la info de la planificación actual (agrupada)
-      unidades: planificacionAgrupada.value.map((u) => ({
-        numero: u.numero,
-        titulo: u.nombre,
-        elemento_competencia: u.elementoCompetencia,
-        temas: (u.sesiones || [])
-          .filter((s) => !s.esExamen)
-          .map((s, idx) => ({
-            numero: idx + 1,
-            titulo: s.tema,
-            resultados_aprendizaje: s.criteriosDesempeno, // Mapeo aproximado
-            contenidos: {
-              conceptual: [
-                ...(resolveContenido(s) ? resolveContenido(s).split('\n') : []),
-                ...(s.conceptual ? s.conceptual.split('\n') : []),
-              ],
-              procedimental: s.procedimental ? s.procedimental.split('\n') : [],
-              actitudinal: s.actitudinal ? s.actitudinal.split('\n') : [],
-            },
-            estrategias: {
-              metodologicas: '', // No está en grid explícito
-              aprendizaje: '',
-              recursos: [],
-            },
-            evaluacion: {
-              formativa: { actividades: [], instrumentos: [s.instrumentosEvaluacion || ''] },
-              sumativa: { actividades: [], instrumentos: [] },
-            },
-          })),
-      })),
-    }
-
-    pdfService.generarPlanDeClase(asignaturaParaPDF, { fecha: new Date().toLocaleDateString() })
-    $q.notify({ type: 'positive', message: 'PDF generado', icon: 'download' })
-  } catch (e) {
-    console.error(e)
-    $q.notify({ type: 'negative', message: 'Error generando PDF', icon: 'error' })
-  } finally {
-    $q.loading.hide()
-  }
-}
 
 // Importar Cronograma (Excel) - Ported from AsignaturaEditPage
 // Import logic
@@ -1894,11 +1958,8 @@ async function procesarImportacionCronograma() {
     formData.append('file', selectedFile.value)
     
     // Enviar grupo_id si está seleccionado
-    // Enviar grupo_id si está seleccionado
-    if (activeGroupId.value) {
-      const gId = activeGroupId.value
-      formData.append('grupo_id', gId)
-    }
+    // REMOVED: Always import to Master Plan
+    // if (activeGroupId.value) { ... }
 
     // Call service
     const response = await asignaturaService.importarCronograma(route.params.id, formData)
@@ -1925,6 +1986,7 @@ async function procesarImportacionCronograma() {
     $q.loading.hide()
   }
 }
+
 
 </script>
 
