@@ -159,7 +159,7 @@
                            <template v-slot:no-option>
                               <q-item>
                                  <q-item-section class="text-grey">
-                                    {{ vistaHistorial ? 'No hay clases completadas' : 'No hay clases pendientes' }}
+                                    {{ sesiones.length === 0 ? 'Debe generar y completar el Cronograma desde Planificación Semestral antes de registrar seguimiento' : (vistaHistorial ? 'No hay clases completadas' : 'No hay clases pendientes') }}
                                  </q-item-section>
                               </q-item>
                            </template>
@@ -318,43 +318,43 @@
 
                         <div class="q-mt-lg">
                            <div class="text-subtitle1 text-weight-bold q-mb-sm">Detalles Pedagógicos</div>
-                           <q-markup-table flat bordered separator="cell">
-                              <thead>
-                                 <tr>
-                                    <th class="text-left bg-grey-2">Estrategias</th>
-                                    <th class="text-left bg-grey-2">Evaluación</th>
-                                    <th class="text-left bg-grey-2">Secuencia</th>
-                                 </tr>
-                              </thead>
-                              <tbody>
-                                 <tr>
-                                    <td class="q-pa-sm" style="vertical-align: top">
-                                       <div v-for="(item, idx) in pedagogico.estrategias" :key="'est-' + idx"
-                                          class="q-mb-xs">
-                                          <div v-if="item.isHeader" class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
-                                          <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
-                                             color="green" :disable="esLecturaSola" />
-                                       </div>
-                                    </td>
-                                    <td class="q-pa-sm" style="vertical-align: top">
-                                       <div v-for="(item, idx) in pedagogico.evaluacion" :key="'eva-' + idx"
-                                          class="q-mb-xs">
-                                          <div v-if="item.isHeader" class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
-                                          <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
-                                             color="green" :disable="esLecturaSola" />
-                                       </div>
-                                    </td>
-                                    <td class="q-pa-sm" style="vertical-align: top">
-                                       <div v-for="(item, idx) in pedagogico.secuencia" :key="'sec-' + idx"
-                                          class="q-mb-xs">
-                                          <div v-if="item.isHeader" class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
-                                          <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
-                                             color="green" :disable="esLecturaSola" />
-                                       </div>
-                                    </td>
-                                 </tr>
-                              </tbody>
-                           </q-markup-table>
+                           <div class="row q-col-gutter-md">
+                              <!-- Estrategias -->
+                              <div class="col-12 col-md-4">
+                                 <q-card flat bordered class="q-pa-sm full-height">
+                                    <div class="text-weight-bold bg-grey-2 q-pa-xs q-mb-sm text-center">Estrategias</div>
+                                    <div v-for="(item, idx) in pedagogico.estrategias" :key="'est-' + idx" class="q-mb-xs">
+                                       <div v-if="item.isHeader" class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
+                                       <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
+                                          color="green" :disable="esLecturaSola" />
+                                    </div>
+                                 </q-card>
+                              </div>
+
+                              <!-- Evaluación -->
+                              <div class="col-12 col-md-4">
+                                 <q-card flat bordered class="q-pa-sm full-height">
+                                    <div class="text-weight-bold bg-grey-2 q-pa-xs q-mb-sm text-center">Evaluación</div>
+                                    <div v-for="(item, idx) in pedagogico.evaluacion" :key="'eva-' + idx" class="q-mb-xs">
+                                       <div v-if="item.isHeader" class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
+                                       <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
+                                          color="green" :disable="esLecturaSola" />
+                                    </div>
+                                 </q-card>
+                              </div>
+
+                              <!-- Secuencia -->
+                              <div class="col-12 col-md-4">
+                                 <q-card flat bordered class="q-pa-sm full-height">
+                                    <div class="text-weight-bold bg-grey-2 q-pa-xs q-mb-sm text-center">Secuencia</div>
+                                    <div v-for="(item, idx) in pedagogico.secuencia" :key="'sec-' + idx" class="q-mb-xs">
+                                       <div v-if="item.isHeader" class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
+                                       <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
+                                          color="green" :disable="esLecturaSola" />
+                                    </div>
+                                 </q-card>
+                              </div>
+                           </div>
                         </div>
 
                         <!-- Sección de Integración Transversal -->
@@ -532,8 +532,9 @@
                   </div>
 
                   <div v-else class="text-center q-pa-xl text-grey-6">
-                     <q-icon name="playlist_add_check" size="64px" />
-                     <div class="text-h6">Selecciona una clase para ver el seguimiento</div>
+                     <q-icon :name="sesiones.length === 0 ? 'warning' : 'playlist_add_check'" :color="sesiones.length === 0 ? 'orange' : 'grey-6'" size="64px" />
+                     <div class="text-h6">{{ sesiones.length === 0 ? 'Primero debe generar el Cronograma en Planificación Semestral' : 'Selecciona una clase para ver el seguimiento' }}</div>
+                     <div v-if="sesiones.length === 0" class="text-body2 text-grey-7 q-mt-sm">Vaya a Planificación Semestral, genere el cronograma y complete al menos hasta la sesión que desea registrar.</div>
                   </div>
 
                </div>
@@ -1338,7 +1339,14 @@ const guardarSeguimiento = async () => {
       formData.append('tema_cumplido', isCumplido ? 'true' : 'false')
       formData.append('observaciones', observacionesClase.value || '')
       
-      console.log('Saving session with tema_cumplido:', isCumplido, 'estado:', estadoCumplimiento.value)
+      console.log('Saving seguimiento - cronograma_id:', sesionActual.value.cronograma_id || sesionActual.value.id, 'grupo_id:', grupoSeleccionado.value, 'estado:', estadoCumplimiento.value)
+       
+       // Send identifiers for the seguimientos table
+       formData.append('cronograma_id', sesionActual.value.cronograma_id || sesionActual.value.id || '')
+       formData.append('grupo_id', grupoSeleccionado.value || '')
+       formData.append('asignatura_id', materiaSeleccionada.value || '')
+       formData.append('numero_sesion', sesionActual.value.numero_sesion || '')
+       formData.append('estado_cumplimiento', estadoCumplimiento.value || 'NO')
       
       // Add pedagogical details (non-file data)
       const pedagogicoData = {
@@ -1381,7 +1389,7 @@ const guardarSeguimiento = async () => {
          formData.append('evidencia_internalizacion', integracionTransversal.value.internalizacion.evidencia)
       }
 
-      await planificacionSemestralService.saveSeguimiento(sesionActual.value.id, formData)
+      await planificacionSemestralService.saveSeguimiento(formData)
 
       $q.notify({
          type: 'positive',

@@ -1019,9 +1019,6 @@ const semanasExamen = computed(() => {
 })
 
 const unidadesDocumentacion = computed(() => asignatura.value?.unidades || [])
-const totalTemasDocumentacion = computed(() =>
-  unidadesDocumentacion.value.reduce((sum, u) => sum + (u.temas?.length || 0), 0),
-)
 
 const calendario = ref({ fechaInicio: '2026-02-09', fechaFin: '2026-06-27' })
 const totalSemanas = computed(() => 20)
@@ -1032,7 +1029,6 @@ const horarios = ref([])
  */
 // Watch para actualizar horarios al cambiar de grupo
 // Watch removed - horarios updated in onMounted or when asignatura changes
-const activeGroupId = ref(null)
 
 /**
  * Actualizar horarios basados en el grupo seleccionado
@@ -1262,7 +1258,6 @@ function calcularPropuestaPlanificacion() {
   if (day !== 1) mondayOfFirstWeek.setDate(inputFecha.getDate() - day + 1)
   mondayOfFirstWeek.setHours(0, 0, 0, 0)
 
-  const unidades = unidadesDocumentacion.value
   const SEMANAS_EXAMEN = semanasExamen.value
   const todasLasSesiones = []
   let sesionGlobal = 1
