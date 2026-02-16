@@ -731,99 +731,85 @@ const fetchSesiones = async () => {
       const config = response.data.config || {}
       const horarios = response.data.horarios || []
       
-      // 2. Determine Group Type (Theoretical vs Practical)
-      // We need to look up the selected group object to know its type
-      // The grupoSeleccionado value is just the ID.
-      // We can find it in horarios or we need to fetch group details? 
-      // The 'horarios' array contains objects with { grupo_id, grupo: 'A', tipo: 'TEORICA' ... } ideally.
-      // Let's check available data. 'gruposDisponibles' has labels.
-      // Better: Use the schedule data returned from API to find the group's type.
-      
-      // Find one schedule for this group to get its type/name
-      const groupSchedule = horarios.find(h => h.grupo_id === grupoSeleccionado.value)
-      // Fallback: Check if group name is numeric (Theory) or Alpha (Practice)
-      // Or check explicit type if available in response.
-      
+      // 1. Determine Group Type
       let esGrupoTeorico = false
-      if (groupSchedule) {
-          if (groupSchedule.tipo) {
-              const t = groupSchedule.tipo.toUpperCase()
-              esGrupoTeorico = ['TEORICA', 'TEÓRICA', 'TEORICO', 'T'].includes(t)
-          } else {
-               // Fallback by name
-               esGrupoTeorico = !isNaN(groupSchedule.grupo) // Numeric = Theory
-          }
+      // Use loose comparison (==) for IDs to handle string/number mismatch
+      const horariosGrupo = horarios.filter(h => h.grupo_id == grupoSeleccionado.value)
+      const grupoDef = gruposDisponibles.value.find(g => g.id == grupoSeleccionado.value)
+      
+      if (grupoDef && grupoDef.tipo) {
+           const t = grupoDef.tipo.toUpperCase()
+           esGrupoTeorico = ['TEORICA', 'TEÓRICA', 'TEORICO', 'T'].includes(t)
+      } else if (horariosGrupo.find(h => h.tipo)) {
+           const t = horariosGrupo.find(h => h.tipo).tipo.toUpperCase()
+           esGrupoTeorico = ['TEORICA', 'TEÓRICA', 'TEORICO', 'T'].includes(t)
       }
 
-      // 3. Filter Sessions by Type
-      // Master sessions should have 'tipo_clase' or 'tipo'
-      // If none, show all (legacy behavior)
-      const filteredSesiones = rawSesiones.filter(s => {
-          // If session has specific type, match it
+      // 2. Filter Sessions
+      let filteredSesiones = rawSesiones.filter(s => {
           if (s.tipo_clase) {
-              const tipoSesion = s.tipo_clase.toUpperCase() // 'TEÓRICA', 'PRÁCTICA'
-              const isSesionTeorica = ['TEORICA', 'TEÓRICA', 'TEORICO', 'T'].includes(tipoSesion)
-              return esGrupoTeorico === isSesionTeorica
+               const tipoSesion = s.tipo_clase.toUpperCase()
+               const isSesionTeorica = ['TEORICA', 'TEÓRICA', 'TEORICO', 'T'].includes(tipoSesion)
+               
+               if ((grupoDef && grupoDef.tipo) || (horariosGrupo.find(h => h.tipo))) {
+                   return esGrupoTeorico === isSesionTeorica
+               }
           }
-          // If no type on session, show it (or default to logic?)
-          // Let's assume Master Plan has type.
-          return true 
+          return true
       })
 
-      // 4. Project Dates (The Core Algorithm)
-      // Only project if date is null (Master Record)
-      // We need start date and group schedules
-      
-      if (config.fecha_inicio_clases && horarios.length > 0) {
-          const startDate = new Date(config.fecha_inicio_clases + 'T00:00:00')
-          const groupDays = horarios
-              .filter(h => h.grupo_id === grupoSeleccionado.value)
+      // 3. Project Dates
+      if (config.fecha_inicio_clases && horariosGrupo.length > 0) {
+          const parts = config.fecha_inicio_clases.split('-')
+          // Note: Month is 0-indexed in JS Date
+          const startDate = new Date(parts[0], parts[1]-1, parts[2])
+          
+          const daysMap = { 'LUNES': 1, 'MARTES': 2, 'MIERCOLES': 3, 'MIÉRCOLES': 3, 'JUEVES': 4, 'VIERNES': 5, 'SABADO': 6, 'SÁBADO': 6, 'DOMINGO': 0 }
+          
+          const groupDays = horariosGrupo
               .map(h => {
-                  // Map day name to 0-6 (Sun-Sat) or 1-7 (Mon-Sun)
-                  // API returns "Lunes", "Martes"...
-                  const map = { 'Lunes': 1, 'Martes': 2, 'Miercoles': 3, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sabado': 6, 'Sábado': 6, 'Domingo': 0 }
-                  return map[h.dia] 
+                  if (!h.dia) return undefined
+                  // Normalize: UpperCase and remove special chars if needed, but generic map should catch it
+                  let d = h.dia.toUpperCase()
+                  // Handle "Lunes" -> "LUNES"
+                  return daysMap[d]
               })
-              .sort() // [1, 3] for Mon/Wed
+              .filter(d => d !== undefined)
+              .sort((a,b) => a - b)
+
+          console.log('StartDate:', startDate, 'GroupDays:', groupDays)
 
           if (groupDays.length > 0) {
               let currentDate = new Date(startDate)
+              const sessionsToDate = [...filteredSesiones].sort((a,b) => a.numero_sesion - b.numero_sesion)
+              let currentSessionIndex = 0
               
-              // We need to iterate sessions and assign dates
-              // Only assign to sessions that don't have execution date
-              // But wait, "Session 1" should be the first class, "Session 2" the second.
-              // Logic: Find the Nth occurence of a class day since start date.
-              
-              // Simpler: Generate a stream of valid class dates
-              const classDates = []
-              // Generate enough dates (e.g. 50)
-              let d = new Date(startDate)
-              let safety = 0
-              while (classDates.length < filteredSesiones.length + 5 && safety < 300) { // 300 days horizon
-                  if (groupDays.includes(d.getDay())) {
-                      classDates.push(new Date(d))
-                  }
-                  d.setDate(d.getDate() + 1)
-                  safety++
+              // Find first valid class day >= startDate
+              while(!groupDays.includes(currentDate.getDay())) {
+                   currentDate.setDate(currentDate.getDate() + 1)
               }
 
-              // Assign dates to sessions based on their index in the FILTERED list.
-              // Important: The "numero_sesion" might be 1, 2, 3 (Global).
-              // But for this group, if it's Practical, maybe it only sees Session 2, 4, 6?
-              // NO. The Master Plan has distinct sessions.
-              // IF we have 40 sessions total (20 T, 20 P).
-              // The filtered list for Theory Group will have 20 sessions.
-              // We map them 1-to-1 to the first 20 class dates.
-              
-              filteredSesiones.forEach((s, index) => {
-                  if (!s.fecha && classDates[index]) {
-                      // Project date!
-                      const pDate = classDates[index]
-                      s.fecha = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}-${String(pDate.getDate()).padStart(2,'0')}`
-                      s._isProjected = true // Flag to UI
+              for (let i = 0; i < 365; i++) {
+                  if (currentSessionIndex >= sessionsToDate.length) break;
+                  
+                  const dayOfWeek = currentDate.getDay()
+                  if (groupDays.includes(dayOfWeek)) {
+                      const session = sessionsToDate[currentSessionIndex]
+                      if (!session.fecha) {
+                          const y = currentDate.getFullYear()
+                          const m = String(currentDate.getMonth() + 1).padStart(2, '0')
+                          const d = String(currentDate.getDate()).padStart(2, '0')
+                          session.fecha = `${y}-${m}-${d}`
+                          session.isCalculated = true
+                      }
+                      currentSessionIndex++
                   }
-              })
+                  currentDate.setDate(currentDate.getDate() + 1)
+              }
           }
+      } else if (!config.fecha_inicio_clases) {
+          console.warn('Falta fecha_inicio_clases en configuración de asignatura')
+          $q.notify({ type: 'warning', message: 'Configure la fecha de inicio de clases para ver las fechas proyectadas' })
       }
 
       sesiones.value = filteredSesiones
