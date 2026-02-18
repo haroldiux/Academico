@@ -947,6 +947,9 @@ async function cargarPlanificacion() {
 
       planificacionGenerada.value = true
 
+      // SORT: Since we now have chronological numbering, we just sort by numeroGlobal
+      planificacionSesiones.value.sort((a, b) => a.numeroGlobal - b.numeroGlobal)
+
       // Inicializar snapshot para auto-guardado
       // IMPORTANTE: Serializar lo mismo que observaremos en el watcher
       const stateToWatch = {
@@ -1108,7 +1111,8 @@ function asignarHorarios(nuevosHorarios) {
 
 const planificacionSesiones = ref([])
 const planificacion = computed(() => {
-  // Retornar directamente la lista plana (copiando para evitar efectos secundarios en el sort)
+  // Las sesiones ya vienen numeradas y ordenadas cronológicamente en la lista plana.
+  // Solo aseguramos un orden estable por número global.
   return [...planificacionSesiones.value].sort((a, b) => a.numeroGlobal - b.numeroGlobal)
 })
 
@@ -1265,6 +1269,10 @@ function calcularPropuestaPlanificacion() {
   // Determinar número de sesiones por tipo
   const numTeoricas = parseInt(asignatura.value?.sesiones_semanales_teoricas || 0)
   const numPracticas = parseInt(asignatura.value?.sesiones_semanales_practicas || 0)
+  
+  console.log('DEBUG GEN - numT:', numTeoricas, 'numP:', numPracticas)
+  console.log('DEBUG GEN - horariosOrdenados:', JSON.stringify(horariosOrdenados.value?.map(h => ({ dia: h.dia, tipo: h.tipoClase }))))
+
   const fechasExamenMap = {}
   if (examenesRol.value.length > 0) {
     let examenesRelevantes = examenesRol.value
@@ -1289,25 +1297,42 @@ function calcularPropuestaPlanificacion() {
 
     const sesionesSemana = []
 
-    // 1. Sesiones Teóricas
-    for (let t = 1; t <= numTeoricas; t++) {
+    // 1. Identificar y ordenar todos los slots de la semana cronológicamente
+    const isTeorico = (t) => {
+        if (!t) return false
+        const s = t.toUpperCase()
+        return s.includes('TEORICA') || s.includes('TEÓRICA') || s.includes('TEORICO') || s === 'T'
+    }
+    const isPractico = (t) => {
+        if (!t) return false
+        const s = t.toUpperCase()
+        return s.includes('PRACTICA') || s.includes('PRÁCTICA') || s.includes('PRACTICO') || s === 'P'
+    }
+
+    const tSlots = (horariosOrdenados.value || []).filter(h => isTeorico(h.tipoClase)).slice(0, numTeoricas)
+    const pSlots = (horariosOrdenados.value || []).filter(h => isPractico(h.tipoClase)).slice(0, numPracticas)
+    const combinedWeeklySlots = [...tSlots, ...pSlots].sort(sortHorariosDiaHora)
+
+    console.log('DEBUG GEN - combinedWeeklySlots size:', combinedWeeklySlots.length)
+
+    let tCounter = 1
+    let pCounter = 1
+
+    combinedWeeklySlots.forEach((slot) => {
         const numG = sesionGlobal++
-        // FIX: Check if we are duplicating sessions.
-        // The loop runs 'numTeoricas' times per week. This is correct if numTeoricas is sessions/week.
-        // Example: 1 theoretical session/week * 20 weeks = 20 total.
+        const isTheory = isTeorico(slot.tipoClase)
+        const currentIndice = isTheory ? tCounter++ : pCounter++
         
         const existing = estadoActual.find(s => s.numeroGlobal === numG)
         
-        // Calcular fecha específica si hay horarios
-        const slotHorario = horariosOrdenados.value.filter(h => h.tipoClase === 'Teórica')[t - 1]
+        // Calcular fecha específica para este slot
         let fechaCalculada = ''
-        if (slotHorario) {
-            const d = new Date(fechaSemanaInicio)
-            d.setDate(fechaSemanaInicio.getDate() + (getNroDia(slotHorario.dia) - 1))
-            fechaCalculada = d.toISOString().split('T')[0]
-        }
+        const d = new Date(fechaSemanaInicio)
+        d.setDate(fechaSemanaInicio.getDate() + (getNroDia(slot.dia) - 1))
+        fechaCalculada = d.toISOString().split('T')[0]
 
-        const sBase = crearSesionBase(numG, semana, fechaSemanaInicioStr, 'Teórica', t, fechasExamenMap, {})
+        const tipoDisplay = isTheory ? 'Teórica' : 'Práctica'
+        const sBase = crearSesionBase(numG, semana, fechaSemanaInicioStr, tipoDisplay, currentIndice, fechasExamenMap, {})
         sBase.fecha = fechaCalculada
         
         // PRESERVAR: Si ya existe y tiene contenido, mantenerlo
@@ -1324,53 +1349,14 @@ function calcularPropuestaPlanificacion() {
                 criteriosSeleccionados: existing.criteriosSeleccionados,
                 instrumentosSeleccionados: existing.instrumentosSeleccionados,
                 contenido_items_seleccionados: existing.contenido_items_seleccionados,
-                contenido: existing.contenido, // Observaciones
-                unidad_id: existing.unidad_id,
-                // Conservar fecha si ya tenía una y no queremos recalcularla? 
-                // Por ahora preferimos la recalculada si es nueva generación
-            })
-        }
-        sesionesSemana.push(sBase)
-    }
-
-    // 2. Sesiones Prácticas
-    for (let p = 1; p <= numPracticas; p++) {
-        const numG = sesionGlobal++
-        const existing = estadoActual.find(s => s.numeroGlobal === numG)
-
-        const slotHorario = horariosOrdenados.value.filter(h => h.tipoClase === 'Práctica')[p - 1]
-        let fechaCalculada = ''
-        if (slotHorario) {
-            const d = new Date(fechaSemanaInicio)
-            d.setDate(fechaSemanaInicio.getDate() + (getNroDia(slotHorario.dia) - 1))
-            fechaCalculada = d.toISOString().split('T')[0]
-        }
-
-        const sBase = crearSesionBase(numG, semana, fechaSemanaInicioStr, 'Práctica', p, fechasExamenMap, {})
-        sBase.fecha = fechaCalculada
-        
-        // PRESERVAR
-        if (existing && (existing.tema || existing.conceptual || existing.temasSeleccionados?.length > 0)) {
-            Object.assign(sBase, {
-                tema: existing.tema,
-                tema_id: existing.tema_id,
-                temasSeleccionados: existing.temasSeleccionados,
-                conceptual: existing.conceptual,
-                procedimental: existing.procedimental,
-                actitudinal: existing.actitudinal,
-                criteriosDesempeno: existing.criteriosDesempeno,
-                instrumentosEvaluacion: existing.instrumentosEvaluacion,
-                criteriosSeleccionados: existing.criteriosSeleccionados,
-                instrumentosSeleccionados: existing.instrumentosSeleccionados,
-                contenido_items_seleccionados: existing.contenido_items_seleccionados,
                 contenido: existing.contenido,
-                unidad_id: existing.unidad_id
+                unidad_id: existing.unidad_id,
             })
         }
         sesionesSemana.push(sBase)
-    }
+    })
 
-    // 3. Mark the Exam Session ONLY (Last Theoretical Session of the Week)
+    // 2. Marcar la Sesión de Examen (Última Sesión Teórica de la semana o última sesión si no hay teoría)
     if (SEMANAS_EXAMEN[semana]) {
         let targetSession = sesionesSemana.filter(s => s.tipoClase === 'Teórica').pop()
         
@@ -1384,16 +1370,14 @@ function calcularPropuestaPlanificacion() {
             targetSession.tipoExamen = nombreExamen
             targetSession.periodoExamen = nombreExamen
             
-            // SOLO sobreescribir tema si está vacío
             if (!targetSession.tema) targetSession.tema = nombreExamen
-            
             targetSession.bloqueado = true
-            // targetSession.unidad_id = 'finales' // Conservar si ya tenía unidad? O forzar?
         }
     }
 
     todasLasSesiones.push(...sesionesSemana)
   }
+
 
   // No automatic topic distribution as requested by the user.
   // The schedule will be generated empty, preserving only exams.
@@ -1511,7 +1495,7 @@ async function generarPlanificacion(silent = false) {
     // 1. Calcular propuesta usando la nueva función pura
     const propuestas = calcularPropuestaPlanificacion()
 
-    // 2. Aplicar a la reactividad
+    // 2. Aplicar a la reactividad (ya vienen ordenadas de calcularPropuestaPlanificacion)
     planificacionSesiones.value = propuestas
 
     // 3. Persistir en DB

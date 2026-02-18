@@ -165,6 +165,16 @@
                            </template>
                         </q-select>
                      </div>
+                     <!-- Semáforo de Puntualidad -->
+                     <div v-if="sesionActual && sesionActual.cumplido" class="col-auto flex items-center q-ml-sm">
+                        <q-icon
+                           :name="getSemaforoStatus(sesionActual).icon"
+                           :color="getSemaforoStatus(sesionActual).color"
+                           size="22px"
+                        >
+                           <q-tooltip>{{ getSemaforoStatus(sesionActual).tooltip }}</q-tooltip>
+                        </q-icon>
+                     </div>
                   </div>
 
                   <div v-if="sesionActual" class="seguimiento-content">
@@ -177,6 +187,9 @@
                            <div class="section-header">
                               <q-icon name="event_note" size="24px" color="primary" class="q-mr-sm" />
                               <span class="text-h6 text-weight-bold">Planificación del Día</span>
+                               <q-chip v-if="sesionActual.seguimiento_created_at" outline color="blue-7" icon="history" size="sm" class="q-ml-auto">
+                                  Registro: {{ formatDateTime(sesionActual.seguimiento_created_at) }}
+                               </q-chip>
                            </div>
 
                            <!-- Tema Principal (Solo título) -->
@@ -376,9 +389,19 @@
                                           <!-- Show saved file if exists (string path) -->
                                           <div v-if="typeof integracionTransversal.investigacion.evidencia === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
                                              <div class="text-caption text-grey-7">Evidencia guardada:</div>
-                                             <a :href="`/storage/${integracionTransversal.investigacion.evidencia}`" target="_blank" class="text-primary">
+                                             <a :href="getStorageUrl(integracionTransversal.investigacion.evidencia)" target="_blank" class="text-primary">
                                                 <q-icon name="download" size="xs" /> Ver archivo
                                              </a>
+                                             <!-- Image Preview -->
+                                             <div v-if="isImage(integracionTransversal.investigacion.evidencia)" class="q-mt-xs">
+                                                <q-img 
+                                                  :src="getStorageUrl(integracionTransversal.investigacion.evidencia)" 
+                                                  style="max-width: 200px; border-radius: 4px; border: 1px solid #ddd;"
+                                                  spinner-color="primary"
+                                                >
+                                                   <q-tooltip>Vista previa de evidencia</q-tooltip>
+                                                </q-img>
+                                             </div>
                                           </div>
                                           <!-- File upload input (only if not completed) -->
                                           <q-file 
@@ -412,9 +435,19 @@
                                           <!-- Show saved file if exists -->
                                           <div v-if="typeof integracionTransversal.interaccion.evidencia === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
                                              <div class="text-caption text-grey-7">Evidencia guardada:</div>
-                                             <a :href="`/storage/${integracionTransversal.interaccion.evidencia}`" target="_blank" class="text-primary">
+                                             <a :href="getStorageUrl(integracionTransversal.interaccion.evidencia)" target="_blank" class="text-primary">
                                                 <q-icon name="download" size="xs" /> Ver archivo
                                              </a>
+                                             <!-- Image Preview -->
+                                             <div v-if="isImage(integracionTransversal.interaccion.evidencia)" class="q-mt-xs">
+                                                <q-img 
+                                                  :src="getStorageUrl(integracionTransversal.interaccion.evidencia)" 
+                                                  style="max-width: 200px; border-radius: 4px; border: 1px solid #ddd;"
+                                                  spinner-color="primary"
+                                                >
+                                                   <q-tooltip>Vista previa de evidencia</q-tooltip>
+                                                </q-img>
+                                             </div>
                                           </div>
                                           <!-- File upload input -->
                                           <q-file 
@@ -448,9 +481,19 @@
                                           <!-- Show saved file if exists -->
                                           <div v-if="typeof integracionTransversal.internalizacion.evidencia === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
                                              <div class="text-caption text-grey-7">Evidencia guardada:</div>
-                                             <a :href="`/storage/${integracionTransversal.internalizacion.evidencia}`" target="_blank" class="text-primary">
+                                             <a :href="getStorageUrl(integracionTransversal.internalizacion.evidencia)" target="_blank" class="text-primary">
                                                 <q-icon name="download" size="xs" /> Ver archivo
                                              </a>
+                                             <!-- Image Preview -->
+                                             <div v-if="isImage(integracionTransversal.internalizacion.evidencia)" class="q-mt-xs">
+                                                <q-img 
+                                                  :src="getStorageUrl(integracionTransversal.internalizacion.evidencia)" 
+                                                  style="max-width: 200px; border-radius: 4px; border: 1px solid #ddd;"
+                                                  spinner-color="primary"
+                                                >
+                                                   <q-tooltip>Vista previa de evidencia</q-tooltip>
+                                                </q-img>
+                                             </div>
                                           </div>
                                           <!-- File upload input -->
                                           <q-file 
@@ -488,9 +531,19 @@
                                              <!-- Show saved file if exists -->
                                              <div v-if="typeof evidencias.aprendizaje_activo === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
                                                 <div class="text-caption text-grey-7">Evidencia guardada:</div>
-                                                <a :href="`/storage/${evidencias.aprendizaje_activo}`" target="_blank" class="text-primary">
+<a :href="getStorageUrl(evidencias.aprendizaje_activo)" target="_blank" class="text-primary">
                                                    <q-icon name="download" size="xs" /> Ver archivo
                                                 </a>
+                                                <!-- Image Preview -->
+                                                <div v-if="isImage(evidencias.aprendizaje_activo)" class="q-mt-sm">
+                                                   <q-img 
+                                                     :src="getStorageUrl(evidencias.aprendizaje_activo)" 
+                                                     style="max-width: 100%; height: 150px; border-radius: 8px; border: 1px solid #e0e0e0;"
+                                                     fit="contain"
+                                                     class="bg-grey-1"
+                                                     spinner-color="primary"
+                                                   />
+                                                </div>
                                              </div>
                                              <!-- File upload -->
                                              <q-file v-else v-model="evidencias.aprendizaje_activo" label="Subir evidencia" outlined dense accept="image/*,video/*" :disable="esLecturaSola">
@@ -502,6 +555,9 @@
                                              <div class="text-caption text-weight-bold text-indigo q-mb-xs">Evaluación Formativa (Link/Evidencia)</div>
                                              <q-input v-model="evidencias.evaluacion_formativa" placeholder="Link o Archivo" outlined dense :readonly="esLecturaSola">
                                                  <template v-slot:prepend><q-icon name="assignment_turned_in" color="indigo" /></template>
+                                                 <template v-slot:append v-if="evidencias.evaluacion_formativa?.includes('http') || evidencias.evaluacion_formativa?.includes('.')">
+                                                     <q-btn flat round icon="open_in_new" color="primary" @click="openUrl(evidencias.evaluacion_formativa)" />
+                                                 </template>
                                              </q-input>
                                          </div>
                                          <!-- Secuencia Didáctica (Diapositivas) -->
@@ -510,9 +566,19 @@
                                              <!-- Show saved file if exists -->
                                              <div v-if="typeof evidencias.secuencia_didactica === 'string'" class="q-pa-sm bg-blue-1 rounded-borders">
                                                 <div class="text-caption text-grey-7">Evidencia guardada:</div>
-                                                <a :href="`/storage/${evidencias.secuencia_didactica}`" target="_blank" class="text-primary">
+<a :href="getStorageUrl(evidencias.secuencia_didactica)" target="_blank" class="text-primary">
                                                    <q-icon name="download" size="xs" /> Ver archivo
                                                 </a>
+                                                <!-- Image Preview -->
+                                                <div v-if="isImage(evidencias.secuencia_didactica)" class="q-mt-sm">
+                                                   <q-img 
+                                                     :src="getStorageUrl(evidencias.secuencia_didactica)" 
+                                                     style="max-width: 100%; height: 150px; border-radius: 8px; border: 1px solid #e0e0e0;"
+                                                     fit="contain"
+                                                     class="bg-grey-1"
+                                                     spinner-color="primary"
+                                                   />
+                                                </div>
                                              </div>
                                              <!-- File upload -->
                                              <q-file v-else v-model="evidencias.secuencia_didactica" label="Subir Archivos" outlined dense accept=".ppt,.pptx,.pdf,.doc,.docx" :disable="esLecturaSola">
@@ -547,6 +613,46 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
+const getStorageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  
+  let baseUrl = '';
+  if (process.env.DEV) {
+    baseUrl = 'http://127.0.0.1:8000';
+  } else if (typeof window !== 'undefined' && window.location.hostname.includes('planificacion.unitepc.edu.bo')) {
+    baseUrl = '';
+  } else {
+    baseUrl = 'https://api.documentacion.xpertiaplus.com';
+  }
+  
+  return `${baseUrl}/storage/${path}`;
+};
+
+const openUrl = (url) => {
+  if (!url) return;
+  const target = url.startsWith('http') ? url : `https://${url}`;
+  window.open(target, '_blank');
+};
+
+const isImage = (path) => {
+  if (!path || typeof path !== 'string') return false;
+  const ext = path.split('.').pop().toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+};
+
+const formatDateTime = (dateTimeStr) => {
+  if (!dateTimeStr) return '';
+  const date = new Date(dateTimeStr);
+  return date.toLocaleString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 import { useGruposStore } from 'src/stores/grupos'
 import planificacionSemestralService from 'src/services/planificacionSemestralService'
 
@@ -568,7 +674,7 @@ const sesionActual = ref(null)
 // Computed: Check if current session is completed (read-only mode)
 const esLecturaSola = computed(() => {
    const cumplido = sesionActual.value?.cumplido
-   const result = cumplido === true || cumplido === 1 || cumplido === '1' || cumplido === 'true'
+   const result = !!sesionActual.value?.seguimiento_id
    console.log('esLecturaSola computed - cumplido:', cumplido, 'type:', typeof cumplido, 'result:', result)
    return result
 })
@@ -661,11 +767,70 @@ const claseSeleccionadaObj = computed(() => {
 // Toggle between pending and completed sessions
 const vistaHistorial = ref(false)
 
+// Store current group's horarios for semáforo calculation
+const horariosGrupoActual = ref([])
+
+/**
+ * Semáforo de Puntualidad
+ * Compara seguimiento.created_at con la fecha/hora programada de la sesión
+ * @returns {Object} { color, icon, tooltip }
+ */
+function getSemaforoStatus(sesion) {
+   if (!sesion.cumplido || !sesion.seguimiento_created_at) {
+      return { color: 'grey-4', icon: 'radio_button_unchecked', tooltip: 'Pendiente' }
+   }
+
+   const createdAt = new Date(sesion.seguimiento_created_at)
+   const fechaSesion = sesion.fecha // YYYY-MM-DD
+   if (!fechaSesion) {
+      return { color: 'blue', icon: 'help', tooltip: 'Sin fecha programada' }
+   }
+   
+   const createdDateStr = createdAt.toISOString().split('T')[0]
+   
+   // RED: saved AFTER the scheduled day
+   if (createdDateStr > fechaSesion) {
+      const diasRetraso = Math.floor((new Date(createdDateStr) - new Date(fechaSesion)) / 86400000)
+      return { color: 'red', icon: 'circle', tooltip: `Registrado ${diasRetraso} día(s) después` }
+   }
+   
+   // Same day - check time range
+   if (createdDateStr === fechaSesion) {
+      // Try to find the horario time range for this session
+      const horario = horariosGrupoActual.value.find(h => {
+         if (!h.hora_inicio) return false
+         // Match by day of week
+         const daysMap = { 'LUNES': 1, 'MARTES': 2, 'MIERCOLES': 3, 'MIÉRCOLES': 3, 'JUEVES': 4, 'VIERNES': 5, 'SABADO': 6, 'SÁBADO': 6, 'DOMINGO': 0 }
+         const sessionDay = new Date(fechaSesion + 'T12:00:00').getDay()
+         const horarioDay = daysMap[(h.dia || '').toUpperCase()]
+         return horarioDay === sessionDay
+      })
+      
+      if (horario && horario.hora_inicio && horario.hora_fin) {
+         const createdTime = createdAt.getHours() * 60 + createdAt.getMinutes()
+         const [hI, mI] = horario.hora_inicio.split(':').map(Number)
+         const [hF, mF] = horario.hora_fin.split(':').map(Number)
+         const startMin = hI * 60 + (mI || 0)
+         const endMin = hF * 60 + (mF || 0) + 30 // 30 min grace period after class ends
+         
+         if (createdTime >= startMin && createdTime <= endMin) {
+            return { color: 'green', icon: 'circle', tooltip: 'Registrado durante la clase ✓' }
+         }
+      }
+      
+      // Same day but outside class time
+      return { color: 'amber', icon: 'circle', tooltip: 'Registrado el mismo día (fuera de horario)' }
+   }
+   
+   // Created BEFORE the scheduled day (early registration)
+   return { color: 'green', icon: 'circle', tooltip: 'Registrado anticipadamente ✓' }
+}
+
 // Computed options based on vistaHistorial toggle
 const sesionesOptions = computed(() => {
    const today = new Date().toISOString().split('T')[0]
    const filtered = sesiones.value.filter(s => {
-      const isCumplido = s.cumplido === true || s.cumplido === 1 || s.cumplido === '1' || s.cumplido === 'true'
+      const isCumplido = !!s.seguimiento_id
       
       if (vistaHistorial.value) {
          return isCumplido
@@ -699,9 +864,14 @@ const sesionesOptions = computed(() => {
               label += ' - (Sin tema asignado)'
           }
           
-          // Add completion indicator for completed sessions
+          // Add semáforo indicator for completed sessions
           if (vistaHistorial.value) {
-             label = '✓ ' + label
+             const sem = getSemaforoStatus(s)
+             const emoji = sem.color === 'green' ? '🟢' : sem.color === 'amber' ? '🟡' : sem.color === 'red' ? '🔴' : '⚪'
+             label = emoji + ' ' + label
+              if (s.seguimiento_created_at) {
+                 label += ` (${formatDateTime(s.seguimiento_created_at)})`;
+              }
           }
           
           return {
@@ -736,6 +906,7 @@ const fetchSesiones = async () => {
       let esGrupoTeorico = false
       // Use loose comparison (==) for IDs to handle string/number mismatch
       const horariosGrupo = horarios.filter(h => h.grupo_id == grupoSeleccionado.value)
+         horariosGrupoActual.value = horariosGrupo // Save for semáforo
       const grupoDef = gruposDisponibles.value.find(g => g.id == grupoSeleccionado.value)
       
       if (grupoDef && grupoDef.tipo) {
@@ -927,20 +1098,22 @@ const actualizarSesionPorFecha = () => {
              resetIntegracion()
          }
          
-         // Load Evidences if saved inside pedagogico
-         if (saved.evidencias) {
-             evidencias.value = saved.evidencias
-         } else {
-             resetEvidencias()
-         }
-         
-         // Load Integración Transversal (new simplified structure)
-         if (saved.integracionTransversal) {
-             integracionTransversal.value = saved.integracionTransversal
-         } else {
-             resetIntegracionTransversalDefault()
-         }
-
+         // Load Evidences (prefer top-level if exists, fallback to pedagogico)
+          if (found.evidencias) {
+              evidencias.value = JSON.parse(JSON.stringify(found.evidencias))
+          } else if (saved.evidencias) {
+              evidencias.value = JSON.parse(JSON.stringify(saved.evidencias))
+          } else {
+              resetEvidencias()
+          }
+          
+          // Load Integración Transversal (prefer top-level if exists)
+          const integracionSaved = found.integracion_transversal || saved.integracionTransversal
+          if (integracionSaved) {
+              integracionTransversal.value = JSON.parse(JSON.stringify(integracionSaved))
+          } else {
+              resetIntegracionTransversalDefault()
+          } 
       } else {
          // Load directly from Planning (Tema)
          const planning = found.tema?.planificacion_personal || found.tema
@@ -1324,6 +1497,11 @@ const integracionTransversal = ref({
 })
 
 const guardarSeguimiento = async () => {
+   if (!estadoCumplimiento.value) {
+      $q.notify({ type: 'warning', message: 'Debe seleccionar el Estado de Cumplimiento (Total, Parcial o No)' })
+      return
+   }
+
    if (!sesionActual.value) {
       $q.notify({ type: 'warning', message: 'No hay una sesión de planificación para esta fecha' })
       return
@@ -1346,9 +1524,9 @@ const guardarSeguimiento = async () => {
        formData.append('grupo_id', grupoSeleccionado.value || '')
        formData.append('asignatura_id', materiaSeleccionada.value || '')
        formData.append('numero_sesion', sesionActual.value.numero_sesion || '')
+       formData.append('fecha', sesionActual.value.fecha || '')
        formData.append('estado_cumplimiento', estadoCumplimiento.value || 'NO')
       
-      // Add pedagogical details (non-file data)
       const pedagogicoData = {
          estrategias: pedagogico.value.estrategias,
          evaluacion: pedagogico.value.evaluacion,
@@ -1359,13 +1537,30 @@ const guardarSeguimiento = async () => {
       
       // Add integración transversal status (without files)
       const integracionData = {
-         investigacion: { cumplido: integracionTransversal.value.investigacion.cumplido },
-         interaccion: { cumplido: integracionTransversal.value.interaccion.cumplido },
-         internalizacion: { cumplido: integracionTransversal.value.internalizacion.cumplido }
+         investigacion: { 
+            cumplido: integracionTransversal.value.investigacion.cumplido,
+            evidencia: typeof integracionTransversal.value.investigacion.evidencia === 'string' ? integracionTransversal.value.investigacion.evidencia : null
+         },
+         interaccion: { 
+            cumplido: integracionTransversal.value.interaccion.cumplido,
+            evidencia: typeof integracionTransversal.value.interaccion.evidencia === 'string' ? integracionTransversal.value.interaccion.evidencia : null
+         },
+         internalizacion: { 
+            cumplido: integracionTransversal.value.internalizacion.cumplido,
+            evidencia: typeof integracionTransversal.value.internalizacion.evidencia === 'string' ? integracionTransversal.value.internalizacion.evidencia : null
+         }
       }
       
       formData.append('pedagogico', JSON.stringify(pedagogicoData))
       formData.append('integracion_transversal', JSON.stringify(integracionData))
+      
+      // Add existing evidence paths to preserve them in backend
+      // Add existing evidence paths to preserve them in backend
+      const existingEvidencias = {}
+      if (typeof evidencias.value?.aprendizaje_activo === 'string') existingEvidencias.aprendizaje_activo = evidencias.value.aprendizaje_activo
+      if (typeof evidencias.value?.evaluacion_formativa === 'string') existingEvidencias.evaluacion_formativa = evidencias.value.evaluacion_formativa
+      if (typeof evidencias.value?.secuencia_didactica === 'string') existingEvidencias.secuencia_didactica = evidencias.value.secuencia_didactica
+      formData.append('evidencias', JSON.stringify(existingEvidencias))
       
       // Add evidence files
       if (evidencias.value.aprendizaje_activo) {
