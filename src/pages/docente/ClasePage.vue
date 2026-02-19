@@ -667,7 +667,7 @@ import planificacionSemestralService from 'src/services/planificacionSemestralSe
 
 const gruposStore = useGruposStore()
 const syncStore = useSyncStore()
-const { isOnline } = useOnline()
+const isOnline = useOnline()
 const $q = useQuasar()
 
 const tab = ref('seguimiento')
