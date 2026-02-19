@@ -222,7 +222,14 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true, usuario: usuarioActual.value, passwordChangeRequired: password_change_required }
     } catch (error) {
-      const mensaje = error.response?.data?.message || error.response?.data?.errors?.username?.[0] || 'Error de autenticación'
+      console.error('Login error detail:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      })
+      const status = error.response?.status ? ` [HTTP ${error.response.status}]` : ''
+      const details = error.response?.data?.message || error.response?.data?.errors?.username?.[0] || error.message || ''
+      const mensaje = `${details}${status}`
       return { success: false, error: mensaje }
     }
   }
@@ -485,4 +492,6 @@ export const useAuthStore = defineStore('auth', () => {
     tieneAccesoMateria,
     puedeEditarMateria
   }
+}, {
+  persist: true
 })

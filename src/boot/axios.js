@@ -7,11 +7,14 @@ import axios from 'axios'
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
+const isNative = typeof window !== 'undefined' &&
+  (window.location.protocol.startsWith('capacitor') || window.location.hostname === 'localhost');
+
 const api = axios.create({
   baseURL: process.env.DEV
     ? 'http://127.0.0.1:8000/api'
-    : (typeof window !== 'undefined' && window.location.hostname.includes('planificacion.unitepc.edu.bo') ? '/api' : 'https://api.documentacion.xpertiaplus.com/api'),
-  withCredentials: true,
+    : 'https://planificacion.unitepc.edu.bo/api',
+  withCredentials: !isNative,
   headers: {
     'Accept': 'application/json'
   }

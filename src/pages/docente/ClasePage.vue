@@ -612,7 +612,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useQuasar } from 'quasar'
+
 const getStorageUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
@@ -623,7 +623,7 @@ const getStorageUrl = (path) => {
   } else if (typeof window !== 'undefined' && window.location.hostname.includes('planificacion.unitepc.edu.bo')) {
     baseUrl = '';
   } else {
-    baseUrl = 'https://api.documentacion.xpertiaplus.com';
+    baseUrl = 'https://planificacion.unitepc.edu.bo';
   }
   
   return `${baseUrl}/storage/${path}`;
@@ -634,6 +634,12 @@ const openUrl = (url) => {
   const target = url.startsWith('http') ? url : `https://${url}`;
   window.open(target, '_blank');
 };
+
+const resolveContentItem = (item) => {
+  if (!item) return ''
+  if (typeof item === 'string') return item
+  return item.titulo || item.nombre || item.label || JSON.stringify(item)
+}
 
 const isImage = (path) => {
   if (!path || typeof path !== 'string') return false;
@@ -654,10 +660,15 @@ const formatDateTime = (dateTimeStr) => {
 };
 
 import { useGruposStore } from 'src/stores/grupos'
+import { useSyncStore } from 'src/stores/sync'
+import { useOnline } from '@vueuse/core'
+import { useQuasar } from 'quasar'
 import planificacionSemestralService from 'src/services/planificacionSemestralService'
 
-const $q = useQuasar()
 const gruposStore = useGruposStore()
+const syncStore = useSyncStore()
+const { isOnline } = useOnline()
+const $q = useQuasar()
 
 const tab = ref('seguimiento')
 const materiaSeleccionada = ref(null)
@@ -670,6 +681,100 @@ const loadingSesiones = ref(false)
 const materiasReales = ref([])
 const sesiones = ref([])
 const sesionActual = ref(null)
+
+// --- Missing Reactive Variables ---
+const temaPlanificado = ref('')
+const contenidoPlanificado = ref('')
+const conceptualPlanificado = ref('')
+const procedimentalPlanificado = ref('')
+const actitudinalPlanificado = ref('')
+const criteriosPlanificado = ref('')
+const instrumentosPlanificado = ref('')
+const contenidoItemsSeleccionados = ref([])
+
+const pedagogico = ref({
+   estrategias: [],
+   evaluacion: [],
+   secuencia: [],
+   integracion: ''
+})
+
+const evidencias = ref({
+   aprendizaje_activo: null,
+   evaluacion_formativa: null,
+   secuencia_didactica: null
+})
+
+const integracionTransversal = ref({
+   investigacion: { cumplido: false, evidencia: null },
+   interaccion: { cumplido: false, evidencia: null },
+   internalizacion: { cumplido: false, evidencia: null }
+})
+
+const temaCumplido = ref(false)
+const estadoCumplimiento = ref(null)
+const observacionesClase = ref('')
+
+// --- Asistencia & UI Helpers ---
+const columnsAsistencia = [
+  { name: 'nombre', label: 'Estudiante', field: row => `${row.nombre || ''} ${row.apellido || ''}`, align: 'left', sortable: true },
+  { name: 'estado', label: 'Asistencia', align: 'center' },
+  { name: 'observacion', label: 'Observación', align: 'left' }
+]
+
+const estudiantesVista = computed(() => {
+  if (!claseSeleccionadaObj.value) return []
+  return claseSeleccionadaObj.value.carreras || []
+})
+
+function generateMockStudents() {
+  // Mock constant for demonstration/fallback
+  return [
+    { id: 101, nombre: 'Ana', apellido: 'García', estado: 'P', observacion: '', carreraOrigen: 'Sistemas' },
+    { id: 102, nombre: 'Luis', apellido: 'Pérez', estado: 'P', observacion: '', carreraOrigen: 'Sistemas' },
+    { id: 103, nombre: 'Marta', apellido: 'Sánchez', estado: 'P', observacion: '', carreraOrigen: 'Sistemas' }
+  ]
+}
+
+// --- Reset & Extraction Helpers ---
+const resetPedagogico = () => {
+   pedagogico.value = {
+      estrategias: [],
+      evaluacion: [],
+      secuencia: [],
+      integracion: ''
+   }
+}
+const resetIntegracion = () => { pedagogico.value.integracion = '' }
+const resetEvidencias = () => {
+   evidencias.value = {
+      aprendizaje_activo: null,
+      evaluacion_formativa: null,
+      secuencia_didactica: null
+   }
+}
+const resetIntegracionTransversalDefault = () => {
+   integracionTransversal.value = {
+      investigacion: { cumplido: false, evidencia: null },
+      interaccion: { cumplido: false, evidencia: null },
+      internalizacion: { cumplido: false, evidencia: null }
+   }
+}
+
+const extractFromTopic = (topic) => {
+   if (!topic) return { estrategias: [], evaluacion: [], secuencia: [] }
+   
+   const e = topic.estrategias || []
+   const v = topic.evaluacion || []
+   const s = topic.secuencia_didactica || []
+   
+   return {
+      estrategias: Array.isArray(e) ? e.map(i => ({ nombre: typeof i === 'string' ? i : (i.nombre || ''), cumplido: false })) : [],
+      evaluacion: Array.isArray(v) ? v.map(i => ({ nombre: typeof i === 'string' ? i : (i.nombre || ''), cumplido: false })) : [],
+      secuencia: Array.isArray(s) ? s.map(i => ({ nombre: typeof i === 'string' ? i : (i.nombre || ''), cumplido: false })) : []
+   }
+}
+
 
 // Computed: Check if current session is completed (read-only mode)
 const esLecturaSola = computed(() => {
@@ -913,7 +1018,7 @@ const fetchSesiones = async () => {
            const t = grupoDef.tipo.toUpperCase()
            esGrupoTeorico = ['TEORICA', 'TEÓRICA', 'TEORICO', 'T'].includes(t)
       } else if (horariosGrupo.find(h => h.tipo)) {
-           const t = horariosGrupo.find(h => h.tipo).tipo.toUpperCase()
+           const t = horariosGrupo.find(h => h.tipo).toUpperCase()
            esGrupoTeorico = ['TEORICA', 'TEÓRICA', 'TEORICO', 'T'].includes(t)
       }
 
@@ -1113,7 +1218,7 @@ const actualizarSesionPorFecha = () => {
               integracionTransversal.value = JSON.parse(JSON.stringify(integracionSaved))
           } else {
               resetIntegracionTransversalDefault()
-          } 
+           } 
       } else {
          // Load directly from Planning (Tema)
          const planning = found.tema?.planificacion_personal || found.tema
@@ -1151,351 +1256,6 @@ const actualizarSesionPorFecha = () => {
    }
 }
 
-// Helper to extract pedagogical data from a Topic/Planning object
-const extractFromTopic = (planning) => {
-    const result = { estrategias: [], evaluacion: [], secuencia: [] }
-    if (!planning) return result
-
-     // ESTRATEGIAS
-     // 1. Metodología Docente
-     if (planning.estrategias_metodologicas && typeof planning.estrategias_metodologicas === 'string') {
-        result.estrategias.push({ nombre: 'METODOLOGÍA (DOCENTE)', isHeader: true })
-        result.estrategias.push({ nombre: planning.estrategias_metodologicas, cumplido: false })
-     }
-     
-     // 2. Estrategias de Aprendizaje (Estudiante)
-     if (planning.estrategias_aprendizaje && typeof planning.estrategias_aprendizaje === 'string') {
-        result.estrategias.push({ nombre: 'APRENDIZAJE (ESTUDIANTE)', isHeader: true })
-        result.estrategias.push({ nombre: planning.estrategias_aprendizaje, cumplido: false })
-     }
-
-     // 3. Recursos
-     if (Array.isArray(planning.estrategias_recursos) && planning.estrategias_recursos.length > 0) {
-        result.estrategias.push({ nombre: 'RECURSOS', isHeader: true })
-        planning.estrategias_recursos.forEach(r => {
-            result.estrategias.push({ nombre: r, cumplido: false })
-        })
-     }
-
-     // Fallback / Legacy (if nothing above found)
-     if (result.estrategias.length === 0) {
-         if (typeof planning.estrategias_recursos === 'string') {
-             try {
-                 const parsed = JSON.parse(planning.estrategias_recursos)
-                 if (Array.isArray(parsed)) {
-                     result.estrategias.push({ nombre: 'RECURSOS', isHeader: true })
-                     parsed.forEach(r => result.estrategias.push({ nombre: r, cumplido: false }))
-                 }
-             } catch(e) {
-                 console.error('Error parsing estrategias_recursos fallback:', e)
-             }
-         }
-     }
-
-     // EVALUACION
-     const extractEval = (obj, typeName) => {
-        if (obj) {
-            // Handle if it's a string (JSON)
-            if (typeof obj === 'string') {
-                try { obj = JSON.parse(obj) } catch(error) { console.error(error); return }
-            }
-            
-            const hasContent = (Array.isArray(obj.actividades) && obj.actividades.length > 0) || 
-                               (Array.isArray(obj.instrumentos) && obj.instrumentos.length > 0) ||
-                               (Array.isArray(obj.evidencias) && obj.evidencias.length > 0);
-                               
-            if (hasContent) {
-                result.evaluacion.push({ nombre: typeName.toUpperCase(), isHeader: true })
-                
-                if (Array.isArray(obj.actividades)) {
-                   obj.actividades.forEach(a => result.evaluacion.push({ nombre: `Actividad: ${a}`, cumplido: false }))
-                }
-                if (Array.isArray(obj.instrumentos)) {
-                   obj.instrumentos.forEach(i => result.evaluacion.push({ nombre: `Instrumento: ${i}`, cumplido: false }))
-                }
-                if (Array.isArray(obj.evidencias)) {
-                   obj.evidencias.forEach(e => result.evaluacion.push({ nombre: `Evidencia: ${e}`, cumplido: false }))
-                }
-            }
-        }
-     }
-     extractEval(planning.evaluacion_formativa, 'Evaluación Formativa')
-     extractEval(planning.evaluacion_sumativa, 'Evaluación Sumativa')
-
-     // SECUENCIA
-     if (Array.isArray(planning.secuencia_didactica)) {
-        // Group by momento
-        const grupos = {}
-        planning.secuencia_didactica.forEach(s => {
-            const momento = s.momento || 'GENERAL'
-            if (!grupos[momento]) grupos[momento] = []
-            grupos[momento].push(s)
-        })
-        
-        // Define order if possible
-        const order = ['Inicio', 'Desarrollo', 'Cierre']
-        
-        // Add specific groups in order
-        order.forEach(m => {
-            if (grupos[m]) {
-                result.secuencia.push({ nombre: m.toUpperCase(), isHeader: true })
-                grupos[m].forEach(s => {
-                     result.secuencia.push({ nombre: s.actividad, cumplido: false })
-                })
-                delete grupos[m]
-            }
-        })
-        // Add remaining groups
-        Object.keys(grupos).forEach(m => {
-            result.secuencia.push({ nombre: m.toUpperCase(), isHeader: true })
-            grupos[m].forEach(s => {
-                 result.secuencia.push({ nombre: s.actividad, cumplido: false })
-            })
-        })
-
-     } else if (typeof planning.secuencia_didactica === 'string') {
-         // Try parse
-         try {
-             const parsed = JSON.parse(planning.secuencia_didactica)
-             if (Array.isArray(parsed)) {
-                 result.secuencia.push({ nombre: 'SECUENCIA', isHeader: true })
-                  parsed.forEach(s => {
-                     result.secuencia.push({ nombre: `${s.momento || ''}: ${s.actividad}`, cumplido: false })
-                  })
-             }
-         } catch(error) { console.error(error) }
-     } else if (planning.secuencias && Array.isArray(planning.secuencias)) {
-        // Direct relation fallback items
-        planning.secuencias.forEach(s => {
-            result.secuencia.push({ nombre: `${s.momento}: ${s.descripcion}`, cumplido: false })
-        })
-     }
-     
-     return result
-}
-
-const resetIntegracionTransversalDefault = () => {
-   integracionTransversal.value = {
-      investigacion: { cumplido: false, evidencia: null },
-      interaccion: { cumplido: false, evidencia: null },
-      internalizacion: { cumplido: false, evidencia: null }
-   }
-}
-
-const resetPedagogico = () => {
-   pedagogico.value.estrategias = [
-      { nombre: 'Clase Magistral', cumplido: false },
-      { nombre: 'Participación Activa', cumplido: false }
-   ]
-   pedagogico.value.evaluacion = [
-      { nombre: 'Evaluación continua', cumplido: false }
-   ]
-   pedagogico.value.secuencia = [
-      { nombre: 'Inicio', cumplido: false },
-      { nombre: 'Desarrollo', cumplido: false },
-      { nombre: 'Cierre', cumplido: false }
-   ]
-}
-
-const resetIntegracion = () => {
-    pedagogico.value.integracion = {
-      investigacion: [
-         { nombre: 'Verificación de investigación', cumplido: false },
-         { nombre: 'Análisis crítico', cumplido: false }
-      ],
-      interaccion: [
-         { nombre: 'Interacción social', cumplido: false },
-         { nombre: 'Trabajo en equipo', cumplido: false }
-      ],
-      internalizacion: [
-         { nombre: 'Internalización de valores', cumplido: false },
-         { nombre: 'Aplicación ética', cumplido: false }
-      ]
-   }
-}
-
-const resetEvidencias = () => {
-   evidencias.value = {
-      aprendizaje_activo: null,
-      evaluacion_formativa: '',
-      secuencia_didactica: null
-   }
-}
-
-watch(materiaSeleccionada, () => {
-   grupoSeleccionado.value = null
-   sesiones.value = []
-   fechaSeguimiento.value = null
-})
-
-watch(grupoSeleccionado, () => {
-   if (grupoSeleccionado.value) {
-      fetchSesiones()
-   } else {
-      sesiones.value = []
-      fechaSeguimiento.value = null
-   }
-})
-
-watch(fechaSeguimiento, () => {
-   actualizarSesionPorFecha()
-})
-
-// Watch for toggle changes to auto-select first available session
-watch(vistaHistorial, () => {
-   if (sesionesOptions.value.length > 0) {
-      fechaSeguimiento.value = sesionesOptions.value[0].value
-   } else {
-      fechaSeguimiento.value = null
-   }
-})
-
-const generateMockStudents = (seed) => {
-   const students = []
-   const baseNombres = ['Juan', 'Maria', 'Carlos', 'Ana', 'Luis', 'Carmen', 'Pedro', 'Laura', 'Miguel', 'Sandra']
-   const baseApellidos = ['Perez', 'Gomez', 'Lopez', 'Torres', 'Ruiz', 'Vargas', 'Mendoza', 'Flores', 'Reyes', 'Rios']
-
-   // Stable random-ish count based on seed
-   const count = 10 + (seed % 15)
-
-   for (let i = 0; i < count; i++) {
-      students.push({
-         id: `${seed}-${i}`,
-         nombre: baseNombres[(seed + i) % 10],
-         apellido: baseApellidos[(seed * i) % 10],
-         estado: 'P',
-         observacion: ''
-      })
-   }
-   return students
-}
-
-// Eliminada duplicidad de computed claseSeleccionadaObj
-
-const estudiantesVista = computed(() => {
-   const obj = claseSeleccionadaObj.value
-   if (!obj) return []
-
-   if (obj.esFusionada) {
-      // Unificar todos los estudiantes en un solo listado
-      const todosEstudiantes = []
-      obj.carreras.forEach(c => {
-         c.estudiantes.forEach(e => {
-            todosEstudiantes.push({
-               ...e,
-               carreraOrigen: c.nombreCarrera
-            })
-         })
-      })
-      
-      // Ordenar por apellido/nombre opcionalmente
-      todosEstudiantes.sort((a, b) => {
-         const nameA = `${a.apellido} ${a.nombre}`.toLowerCase()
-         const nameB = `${b.apellido} ${b.nombre}`.toLowerCase()
-         return nameA.localeCompare(nameB)
-      })
-
-      return [{
-         id: 'fusionada',
-         nombreCarrera: 'Lista Unificada de Estudiantes',
-         materia: obj.nombreComun,
-         estudiantes: todosEstudiantes
-      }]
-   }
-
-   return obj.carreras
-})
-
-// Resolver texto del item de contenido (FORMATO: temaId:index)
-const resolveContentItem = (itemVal) => {
-   if (!itemVal || !itemVal.includes(':')) return itemVal
-   
-   const [temaId, itemIndex] = itemVal.split(':')
-   const index = parseInt(itemIndex)
-   
-   // Buscar en el tema de la sesión actual
-   let tema = null
-   
-   if (sesionActual.value) {
-       // Caso 1: Tema directo en la sesión
-       if (sesionActual.value.tema && sesionActual.value.tema.id == temaId) {
-           tema = sesionActual.value.tema
-       } 
-       // Caso 2: Temas múltiples (si existieran)
-       else if (sesionActual.value.temas) {
-           tema = sesionActual.value.temas.find(t => t.id == temaId)
-       }
-   }
-   
-   if (tema && tema.contenido_items && Array.isArray(tema.contenido_items) && tema.contenido_items[index]) {
-       const contentText = tema.contenido_items[index]
-       // Get topic title, truncated if necessary
-       const topicTitle = tema.titulo 
-           ? (tema.titulo.length > 20 ? tema.titulo.substring(0, 20) + '...' : tema.titulo) 
-           : 'Tema'
-           
-       const displayText = `${topicTitle}: ${contentText}`
-       
-       return displayText.length > 70 ? displayText.substring(0, 70) + '...' : displayText
-   }
-   
-   return itemVal // Fallback si no se encuentra
-}
-
-const temaSeleccionado = ref(null)
-watch(temaSeleccionado, (val) => {
-   if (val) temaPlanificado.value = val.titulo
-})
-
-// Asistencia
-const columnsAsistencia = [
-   { name: 'nombre', label: 'Estudiante', align: 'left', field: 'nombre', sortable: true },
-   { name: 'estado', label: 'Asistencia', align: 'center', field: 'estado' },
-   { name: 'observacion', label: 'Observación', align: 'left', field: 'observacion' }
-]
-
-const guardarAsistencia = () => {
-   $q.notify({
-      type: 'positive',
-      message: 'Asistencia guardada correctamente para todas las carreras',
-      icon: 'check_circle'
-   })
-}
-
-// Seguimiento
-const temaPlanificado = ref('')
-const contenidoPlanificado = ref('')
-const conceptualPlanificado = ref('')
-const procedimentalPlanificado = ref('')
-const actitudinalPlanificado = ref('')
-const criteriosPlanificado = ref('')
-const instrumentosPlanificado = ref('')
-const contenidoItemsSeleccionados = ref([])
-const observacionesClase = ref('')
-const temaCumplido = ref(false)
-const estadoCumplimiento = ref(null)
-
-const pedagogico = ref({
-   estrategias: [],
-   evaluacion: [],
-   secuencia: [],
-   integracion: {}
-})
-
-// Evidencias (Simplified)
-const evidencias = ref({
-   aprendizaje_activo: null,
-   evaluacion_formativa: '',
-   secuencia_didactica: null
-})
-
-// Integración Transversal (Simplified)
-const integracionTransversal = ref({
-   investigacion: { cumplido: false, evidencia: null },
-   interaccion: { cumplido: false, evidencia: null },
-   internalizacion: { cumplido: false, evidencia: null }
-})
-
 const guardarSeguimiento = async () => {
    if (!estadoCumplimiento.value) {
       $q.notify({ type: 'warning', message: 'Debe seleccionar el Estado de Cumplimiento (Total, Parcial o No)' })
@@ -1508,11 +1268,64 @@ const guardarSeguimiento = async () => {
    }
 
    try {
-      // Create FormData to handle file uploads
+      // Logic for OFFLINE mode
+      if (!isOnline.value) {
+         const followupData = {
+            cronograma_id: sesionActual.value.cronograma_id || sesionActual.value.id,
+            grupo_id: grupoSeleccionado.value,
+            asignatura_id: materiaSeleccionada.value,
+            numero_sesion: sesionActual.value.numero_sesion,
+            fecha: sesionActual.value.fecha || new Date().toISOString().split('T')[0],
+            tema_cumplido: estadoCumplimiento.value === 'TOTAL' || estadoCumplimiento.value === 'PARCIAL',
+            estado_cumplimiento: estadoCumplimiento.value,
+            observaciones: observacionesClase.value || '',
+            pedagogico: {
+               estrategias: pedagogico.value.estrategias,
+               evaluacion: pedagogico.value.evaluacion,
+               secuencia: pedagogico.value.secuencia,
+               integracion: pedagogico.value.integracion,
+               estado_cumplimiento: estadoCumplimiento.value
+            },
+            integracion_transversal: {
+               investigacion: { cumplido: integracionTransversal.value.investigacion.cumplido, evidencia: null },
+               interaccion: { cumplido: integracionTransversal.value.interaccion.cumplido, evidencia: null },
+               internalizacion: { cumplido: integracionTransversal.value.internalizacion.cumplido, evidencia: null }
+            }
+         }
+
+         syncStore.addPendingFollowup(followupData)
+         
+         // Visual updates same as online
+         vistaHistorial.value = true
+         if (sesionActual.value) sesionActual.value.cumplido = true
+         
+         // Local storage update for the session list (optimistic)
+         const sIdx = sesiones.value.findIndex(s => s.id === followupData.cronograma_id)
+         if (sIdx !== -1) {
+             sesiones.value[sIdx].seguimiento_id = 'temp-' + Date.now()
+             sesiones.value[sIdx].cumplido = true
+             console.log('Optimistic update for session list offline')
+         }
+
+         $q.notify({
+            type: 'info',
+            message: 'Seguimiento guardado localmente. Se sincronizará cuando haya conexión.',
+            icon: 'cloud_off'
+         })
+         
+         // Refresh data to ensure sync
+         await fetchSesiones()
+         
+         // Re-select the same session in completed view
+         const currentSessionDate = fechaSeguimiento.value
+         await new Promise(resolve => setTimeout(resolve, 100)) // Wait for next tick
+         fechaSeguimiento.value = currentSessionDate
+
+         return
+      }
+
+      // Logic for ONLINE mode
       const formData = new FormData()
-      
-      // Add basic fields
-      // Validar si el estado es TOTAL o PARCIAL para marcar como "cumplido" general
       const isCumplido = estadoCumplimiento.value === 'TOTAL' || estadoCumplimiento.value === 'PARCIAL'
       formData.append('tema_cumplido', isCumplido ? 'true' : 'false')
       formData.append('observaciones', observacionesClase.value || '')
@@ -1563,24 +1376,24 @@ const guardarSeguimiento = async () => {
       formData.append('evidencias', JSON.stringify(existingEvidencias))
       
       // Add evidence files
-      if (evidencias.value.aprendizaje_activo) {
+      if (evidencias.value.aprendizaje_activo && typeof evidencias.value.aprendizaje_activo !== 'string') {
          formData.append('evidencia_aprendizaje', evidencias.value.aprendizaje_activo)
       }
-      if (evidencias.value.evaluacion_formativa) {
+      if (evidencias.value.evaluacion_formativa && typeof evidencias.value.evaluacion_formativa !== 'string') {
          formData.append('evidencia_evaluacion', evidencias.value.evaluacion_formativa)
       }
-      if (evidencias.value.secuencia_didactica) {
+      if (evidencias.value.secuencia_didactica && typeof evidencias.value.secuencia_didactica !== 'string') {
          formData.append('evidencia_secuencia', evidencias.value.secuencia_didactica)
       }
       
       // Add integración transversal evidence files
-      if (integracionTransversal.value.investigacion.evidencia) {
+      if (integracionTransversal.value.investigacion.evidencia && typeof integracionTransversal.value.investigacion.evidencia !== 'string') {
          formData.append('evidencia_investigacion', integracionTransversal.value.investigacion.evidencia)
       }
-      if (integracionTransversal.value.interaccion.evidencia) {
+      if (integracionTransversal.value.interaccion.evidencia && typeof integracionTransversal.value.interaccion.evidencia !== 'string') {
          formData.append('evidencia_interaccion', integracionTransversal.value.interaccion.evidencia)
       }
-      if (integracionTransversal.value.internalizacion.evidencia) {
+      if (integracionTransversal.value.internalizacion.evidencia && typeof integracionTransversal.value.internalizacion.evidencia !== 'string') {
          formData.append('evidencia_internalizacion', integracionTransversal.value.internalizacion.evidencia)
       }
 
@@ -1633,6 +1446,42 @@ const guardarSeguimiento = async () => {
       })
    }
 }
+
+const guardarAsistencia = () => {
+   $q.notify({
+      type: 'info',
+      message: 'Asistencia guardada localmente'
+   })
+}
+
+// --- Watchers for interactivity ---
+watch(materiaSeleccionada, () => {
+   grupoSeleccionado.value = null
+   sesiones.value = []
+   fechaSeguimiento.value = null
+})
+
+watch(grupoSeleccionado, (newVal) => {
+   if (newVal) {
+      fetchSesiones()
+   } else {
+      sesiones.value = []
+      fechaSeguimiento.value = null
+   }
+})
+
+watch(fechaSeguimiento, () => {
+   actualizarSesionPorFecha()
+})
+
+watch(vistaHistorial, () => {
+   // Reset selection when switching views to avoid "session not found" errors
+   if (sesionesOptions.value.length > 0) {
+      fechaSeguimiento.value = sesionesOptions.value[0].value
+   } else {
+      fechaSeguimiento.value = null
+   }
+})
 
 onMounted(() => {
    fetchData()

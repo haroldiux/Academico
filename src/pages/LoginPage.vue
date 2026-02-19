@@ -95,7 +95,7 @@
               </transition>
 
               <div class="text-center q-mt-xl text-caption text-grey-4">
-                &copy; 2026 UNITEPC &bull; v2.0
+                &copy; 2026 UNITEPC &bull; v2.1-DEBUG
               </div>
             </div>
           </div>
@@ -188,6 +188,11 @@ const changingPassword = ref(false)
 const changeError = ref('')
 
 async function handleLogin() {
+  // DEEP DEBUG ALERT
+  if (typeof window !== 'undefined') {
+    alert(`DEBUG v2.1 | Protocol=${window.location.protocol} | Host=${window.location.hostname}`)
+  }
+
   loading.value = true
   error.value = ''
   // Fake UX delay

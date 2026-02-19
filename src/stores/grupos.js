@@ -40,9 +40,9 @@ export const useGruposStore = defineStore('grupos', () => {
       materias.value = response.data.data
 
       if (response.data.meta) {
-          total.value = response.data.meta.total
-          currentPage.value = response.data.meta.current_page
-          lastPage.value = response.data.meta.last_page
+        total.value = response.data.meta.total
+        currentPage.value = response.data.meta.current_page
+        lastPage.value = response.data.meta.last_page
       }
 
       return response.data
@@ -124,4 +124,6 @@ export const useGruposStore = defineStore('grupos', () => {
     refrescarGruposExterno,
     createGrupo
   }
+}, {
+  persist: true
 })

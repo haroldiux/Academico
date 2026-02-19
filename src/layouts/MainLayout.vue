@@ -28,9 +28,20 @@
 
 
         <!-- Connected Badge -->
-        <div class="connected-badge">
-          <span class="connected-dot"></span>
-          Conectado
+        <div 
+          :class="['connected-badge', { 'offline': !isReallyConnected }]"
+          @click="checkActualConnection"
+          style="cursor: pointer;"
+        >
+          <span :class="['connected-dot', { 'offline': !isReallyConnected }]"></span>
+          {{ isReallyConnected ? 'Conectado' : 'Sin conexión' }}
+          
+          <!-- Sync Badge -->
+          <q-badge v-if="syncStore.pendingFollowups.length > 0" color="orange" floating class="q-ml-sm">
+            {{ syncStore.pendingFollowups.length }}
+            <q-tooltip>Sincronizaciones pendientes</q-tooltip>
+          </q-badge>
+          <q-tooltip v-if="!isReallyConnected">Presiona para re-intentar conexión</q-tooltip>
         </div>
 
         <!-- Theme Toggle (Deshabilitado - Solo modo claro) -->
@@ -135,22 +146,76 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-// import { useThemeStore } from 'src/stores/theme' // Deshabilitado - solo modo claro
 import { useAuthStore, ROLES } from 'src/stores/auth'
+import { useSyncStore } from 'src/stores/sync'
 import { usePermisos } from 'src/composables/usePermisos'
-
+import { useOnline } from '@vueuse/core'
 import { useQuasar } from 'quasar'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
 // const themeStore = useThemeStore() // No usado - modo oscuro deshabilitado
 const authStore = useAuthStore()
+const syncStore = useSyncStore()
 const $q = useQuasar()
 const { getMenuItems, sedeActual } = usePermisos()
+const browserOnline = useOnline()
+const isReallyConnected = ref(true)
+
+const checkActualConnection = async () => {
+  try {
+    // Intentar un fetch ligero para confirmar internet real
+    // Usamos el manifest.json o cualquier archivo pequeño
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000)
+    
+    await fetch('/favicon.ico', { 
+      method: 'HEAD', 
+      cache: 'no-store',
+      signal: controller.signal 
+    })
+    
+    clearTimeout(timeoutId)
+    isReallyConnected.value = true
+    return true
+  } catch {
+    isReallyConnected.value = false
+    return false
+  }
+}
 
 const leftDrawerOpen = ref(true)
 const searchQuery = ref('')
+
+// Auto-sync when coming back online
+watch(browserOnline, async (online) => {
+  if (online) {
+    const actuallyOnline = await checkActualConnection()
+    if (actuallyOnline && syncStore.pendingFollowups.length > 0) {
+      syncStore.syncAll()
+    }
+  } else {
+    isReallyConnected.value = false
+  }
+})
+
+// Perodic check if offline
+let connectionInterval = null
+
+onMounted(async () => {
+  await checkActualConnection()
+  connectionInterval = setInterval(async () => {
+    if (!isReallyConnected.value || !browserOnline.value) {
+      await checkActualConnection()
+    }
+  }, 10000) // Cada 10 seg si está offline
+})
+
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  if (connectionInterval) clearInterval(connectionInterval)
+})
 
 // Verificar autenticación al montar
 // Verificar autenticación al montar
@@ -292,6 +357,13 @@ function handleLogout() {
   color: var(--accent-green);
   font-size: 0.875rem;
   margin-right: 12px;
+  transition: all 0.3s ease;
+}
+
+.connected-badge.offline {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--accent-red);
 }
 
 .connected-dot {
@@ -300,6 +372,11 @@ function handleLogout() {
   background: var(--accent-green);
   border-radius: 50%;
   animation: pulse 2s infinite;
+}
+
+.connected-dot.offline {
+  background: var(--accent-red);
+  animation: none;
 }
 
 @keyframes pulse {
