@@ -520,6 +520,19 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     return Math.round((pResultados + pContenidos + pEstrategias + pEvaluacion + pSecuencia) / 5)
   }
 
+  async function getFullTema(id) {
+    loading.value = true
+    try {
+      const response = await asignaturaService.getFullTema(id)
+      return response.data
+    } catch (err) {
+      console.error('Error getting full tema:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Getter para buscar asignatura por ID (usa asignaturaActual o busca en lista)
   async function getAsignaturaById(id, params = {}) {
     // Si hay parámetros específicos (ej: docente_id), forzar recarga para asegurar contexto correcto
@@ -586,6 +599,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     fetchAsignaturas,
     setAsignaturaActual,
     getAsignaturaById,
+    getFullTema,
     createAsignatura,
     updateAsignatura,
     deleteAsignatura,

@@ -1100,6 +1100,16 @@ async function cargarDatos() {
     if (unidad.value) {
       tema.value = unidad.value.temas.find(t => t.id === tId)
       if (tema.value) {
+        try {
+          const fullTemaData = await store.getFullTema(tId)
+          if (fullTemaData) {
+            // Update reactive object with deep data
+            Object.assign(tema.value, fullTemaData)
+          }
+        } catch (e) {
+          console.error('Failed to load full tema details:', e)
+        }
+
         formTema.value = {
           resultado_aprendizaje: tema.value.resultado_aprendizaje || '',
           logros_esperados: (tema.value.logros_esperados || tema.value.logros || []).map((l, index) => ({
