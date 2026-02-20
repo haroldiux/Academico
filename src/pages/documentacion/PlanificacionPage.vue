@@ -191,14 +191,6 @@
                       <q-icon name="lock" size="14px" color="blue" class="lock-icon">
                         <q-tooltip>Horario de la API (no editable)</q-tooltip>
                       </q-icon>
-                      <!-- DEBUG INFO -->
-                      <div class="debug-info q-mt-xs text-caption text-grey-6 bg-grey-2 q-pa-xs rounded-borders" style="font-size: 0.7rem; line-height: 1.1;">
-                          <div>ID Horario: {{ horario.id }}</div>
-                          <div>API ID: {{ horario.id_horario_api || '?' }}</div>
-                          <div>Grupo ID: {{ horario.grupo_id }}</div>
-                          <div>Asig ID: {{ horario.asignatura_id }}</div>
-                          <div>Carrera ID: {{ horario.carrera_id }} | Sede: {{ horario.sede_id }}</div>
-                      </div>
                     </div>
                   </div>
                 </q-card-section>
@@ -1270,11 +1262,9 @@ function calcularPropuestaPlanificacion() {
   const numTeoricas = parseInt(asignatura.value?.sesiones_semanales_teoricas || 0)
   const numPracticas = parseInt(asignatura.value?.sesiones_semanales_practicas || 0)
   
-  console.log('DEBUG GEN - numT:', numTeoricas, 'numP:', numPracticas)
-  console.log('DEBUG GEN - horariosOrdenados:', JSON.stringify(horariosOrdenados.value?.map(h => ({ dia: h.dia, tipo: h.tipoClase }))))
-
+  // 0. Preparar mapeo de exámenes por fecha
   const fechasExamenMap = {}
-  if (examenesRol.value.length > 0) {
+  if (examenesRol.value && examenesRol.value.length > 0) {
     let examenesRelevantes = examenesRol.value
     examenesRelevantes.forEach((ex) => {
       const raw = ex.fecha_examen || ex.fecha
@@ -1312,8 +1302,6 @@ function calcularPropuestaPlanificacion() {
     const tSlots = (horariosOrdenados.value || []).filter(h => isTeorico(h.tipoClase)).slice(0, numTeoricas)
     const pSlots = (horariosOrdenados.value || []).filter(h => isPractico(h.tipoClase)).slice(0, numPracticas)
     const combinedWeeklySlots = [...tSlots, ...pSlots].sort(sortHorariosDiaHora)
-
-    console.log('DEBUG GEN - combinedWeeklySlots size:', combinedWeeklySlots.length)
 
     let tCounter = 1
     let pCounter = 1
@@ -1895,7 +1883,7 @@ watchDebounced(
       saveStatus.value = 'error'
     }
   },
-  { debounce: 2000, maxWait: 10000, deep: true },
+  { debounce: 800, maxWait: 5000, deep: true },
 )
 
 onMounted(() => {
