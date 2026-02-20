@@ -302,6 +302,8 @@ const loadReports = async () => {
        if (!groups[key]) {
           groups[key] = {
              ...r,
+             // Clone the array rather than assigning the reference
+             criterios: Array.isArray(r.criterios) ? [...r.criterios] : r.criterios,
              subReports: [r],
              grupo_id: null // clear distinctive ID
           }
@@ -313,6 +315,13 @@ const loadReports = async () => {
           
           if (r.estado === 'Pendiente') groups[key].estado = 'Pendiente'
           else if (r.estado === 'Borrador' && groups[key].estado !== 'Pendiente') groups[key].estado = 'Borrador'
+
+          // Merge criterios to show total sessions for computeTechScore
+          if (Array.isArray(groups[key].criterios) && Array.isArray(r.criterios)) {
+              groups[key].criterios = [...groups[key].criterios, ...r.criterios]
+          } else if (!groups[key].criterios || (Array.isArray(groups[key].criterios) && groups[key].criterios.length === 0)) {
+              groups[key].criterios = r.criterios
+          }
        }
     })
     

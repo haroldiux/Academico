@@ -56,7 +56,34 @@
             <tr v-for="(data, key) in report.criterios" :key="key">
               <td class="vertical-top">
                  <div class="text-weight-bold text-primary">{{ key }}</div>
-                 <div class="text-caption text-grey-8">{{ getCriteriaDescription(key) }}</div>
+                 <div class="text-caption text-grey-8 q-mb-sm">{{ getCriteriaDescription(key) }}</div>
+                 
+                 <!-- Stat Chips if present -->
+                 <div v-if="data.type === 'cumplimiento'" class="row q-gutter-xs">
+                    <q-chip class="q-ma-xs" dense color="positive" text-color="white" icon="check_circle">Totalmente: {{ data.stats.totalmente }}</q-chip>
+                    <q-chip class="q-ma-xs" dense color="warning" text-color="white" icon="timelapse">Parcial: {{ data.stats.parcialmente }}</q-chip>
+                    <q-chip class="q-ma-xs" dense color="negative" text-color="white" icon="cancel">No Cumplido: {{ data.stats.no_cumplido }}</q-chip>
+                 </div>
+                 <div v-if="data.type === 'planificacion'" class="row q-gutter-xs">
+                    <q-chip class="q-ma-xs" dense outline color="primary">Estrategias: {{ data.stats.estrategias }}</q-chip>
+                    <q-chip class="q-ma-xs" dense outline color="primary">Evaluación: {{ data.stats.evaluacion }}</q-chip>
+                    <q-chip class="q-ma-xs" dense outline color="primary">Secuencia: {{ data.stats.secuencia }}</q-chip>
+                 </div>
+                 <div v-if="data.type === 'integracion'" class="row q-gutter-xs">
+                    <q-chip class="q-ma-xs" dense outline color="secondary">Investigación: {{ data.stats.investigacion }}</q-chip>
+                    <q-chip class="q-ma-xs" dense outline color="secondary">Interacción Social: {{ data.stats.interaccion_social }}</q-chip>
+                    <q-chip class="q-ma-xs" dense outline color="secondary">Internalización: {{ data.stats.internalizacion }}</q-chip>
+                 </div>
+                 <div v-if="data.type === 'evidencias'" class="row q-gutter-xs">
+                    <q-chip class="q-ma-xs" dense outline color="indigo" icon="image">Fotos/Videos: {{ data.stats.fotos_videos }}</q-chip>
+                    <q-chip class="q-ma-xs" dense outline color="indigo" icon="link">Links: {{ data.stats.link_evidencia }}</q-chip>
+                    <q-chip class="q-ma-xs" dense outline color="indigo" icon="description">Docs: {{ data.stats.archivos_secuencia }}</q-chip>
+                 </div>
+                 <div v-if="data.type === 'registro_oportuno'" class="row q-gutter-xs">
+                    <q-chip class="q-ma-xs" dense color="positive" text-color="white" icon="timer">En Hora: {{ data.stats.en_hora_verde }}</q-chip>
+                    <q-chip class="q-ma-xs" dense color="warning" text-color="white" icon="today">En el Día: {{ data.stats.en_el_dia_amarillo }}</q-chip>
+                    <q-chip class="q-ma-xs" dense color="negative" text-color="white" icon="history">Fuera: {{ data.stats.fuera_rojo }}</q-chip>
+                 </div>
               </td>
               <td class="text-center vertical-top">
                  <q-btn-toggle
@@ -171,13 +198,11 @@ const hasCriteria = computed(() => {
 
 const getCriteriaDescription = (key) => {
    const details = {
-      'Tema impartido': 'Debe coincidir con la microcurrícula.',
-      'Actividades formativas': 'Alineadas al enfoque por competencias.',
-      'Secuencia didáctica': 'Inicio, desarrollo, cierre y resultados.',
-      'Plataforma virtual': 'Revisión de actividades en plataforma.',
-      'Evidencias': 'Debe ser reales y verificables (Asistencia/Archivos).',
-      'Evaluaciones': 'Coherencia entre preguntas y resultados de aprendizaje.',
-      'Integración transversal': 'Investigación, interacción social o internacionalización.'
+      'Cumplimiento': 'Estado declarado por el docente sobre la conclusión del tema.',
+      'Planificación por Tema': 'Uso de estrategias metodológicas, tareas y recursos planificados.',
+      'Integración Transversal': 'Inclusión de investigación, interacción social o internacionalización.',
+      'Evidencias': 'Comprobantes tangibles subidos al sistema por la clase.',
+      'Registro Oportuno': 'Semaforización sobre la puntualidad del llenado del seguimiento.'
    }
    return details[key] || 'Verificación técnica.'
 }
