@@ -414,6 +414,12 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
   function calcularProgresoTema(tema) {
     if (!tema) return 0
 
+    // Ocultar logs masivos después de encontrar el problema, pero dejar un logger específico para debug.
+    const isDebug = tema.id === 3 || tema.id === 4 // Tema 3 or 4 based on user screenshots
+    if (isDebug) {
+      console.log(`[Progreso Debug] Tema ID: ${tema.id} | planificacion_personal:`, tema.planificacion_personal, ' | planificacionPersonal:', tema.planificacionPersonal)
+    }
+
     // Helpers para acceder a propiedades anidadas o planas (Legacy support)
     const getDeep = (obj, path) => {
       return path.split('.').reduce((acc, part) => acc && acc[part], obj)
@@ -421,7 +427,10 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     const getAny = (obj, paths) => {
       for (const path of paths) {
         const val = getDeep(obj, path)
-        if (val !== undefined && val !== null) return val
+        if (val !== undefined && val !== null) {
+          if (isDebug) console.log(`[Progreso Debug] Found value on path: ${path}`, val)
+          return val
+        }
       }
       return undefined
     }
@@ -474,10 +483,10 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
 
     // 3. Estrategias
     let pEstrategias = 0
-    // Buscar en: planificacion_personal.estrategias_metodologicas, estrategias.metodologicas, estrategias_metodologicas
-    const metodologicas = getAny(tema, ['planificacion_personal.estrategias_metodologicas', 'estrategias.metodologicas', 'estrategias_metodologicas']) || ''
-    const aprendizaje = getAny(tema, ['planificacion_personal.estrategias_aprendizaje', 'estrategias.aprendizaje', 'estrategias_aprendizaje']) || ''
-    const recursosEst = getAny(tema, ['planificacion_personal.estrategias_recursos', 'estrategias.recursos', 'estrategias_recursos']) || []
+    // Buscar en: planificacionPersonal.estrategias_metodologicas, planificacion_personal.estrategias_metodologicas, estrategias.metodologicas, estrategias_metodologicas
+    const metodologicas = getAny(tema, ['planificacionPersonal.estrategias_metodologicas', 'planificacion_personal.estrategias_metodologicas', 'estrategias.metodologicas', 'estrategias_metodologicas']) || ''
+    const aprendizaje = getAny(tema, ['planificacionPersonal.estrategias_aprendizaje', 'planificacion_personal.estrategias_aprendizaje', 'estrategias.aprendizaje', 'estrategias_aprendizaje']) || ''
+    const recursosEst = getAny(tema, ['planificacionPersonal.estrategias_recursos', 'planificacion_personal.estrategias_recursos', 'estrategias.recursos', 'estrategias_recursos']) || []
 
     let totalCamposEst = 3
     let camposLlenosEst = 0
@@ -489,13 +498,13 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
 
     // 4. Evaluación
     let pEvaluacion = 0
-    // Buscar en: planificacion_personal.evaluacion_formativa.actividades, evaluacion.formativa.actividades, evaluacion_formativa.actividades
-    const fActividades = getAny(tema, ['planificacion_personal.evaluacion_formativa.actividades', 'evaluacion.formativa.actividades', 'evaluacion_formativa.actividades']) || []
-    const fInstrumentos = getAny(tema, ['planificacion_personal.evaluacion_formativa.instrumentos', 'evaluacion.formativa.instrumentos', 'evaluacion_formativa.instrumentos']) || []
-    const fEvidencias = getAny(tema, ['planificacion_personal.evaluacion_formativa.evidencias', 'evaluacion.formativa.evidencias', 'evaluacion_formativa.evidencias']) || []
-    const sActividades = getAny(tema, ['planificacion_personal.evaluacion_sumativa.actividades', 'evaluacion.sumativa.actividades', 'evaluacion_sumativa.actividades']) || []
-    const sInstrumentos = getAny(tema, ['planificacion_personal.evaluacion_sumativa.instrumentos', 'evaluacion.sumativa.instrumentos', 'evaluacion_sumativa.instrumentos']) || []
-    const sEvidencias = getAny(tema, ['planificacion_personal.evaluacion_sumativa.evidencias', 'evaluacion.sumativa.evidencias', 'evaluacion_sumativa.evidencias']) || []
+    // Buscar en: planificacionPersonal.evaluacion_formativa.actividades, planificacion_personal.evaluacion_formativa.actividades, evaluacion.formativa.actividades, evaluacion_formativa.actividades
+    const fActividades = getAny(tema, ['planificacionPersonal.evaluacion_formativa.actividades', 'planificacion_personal.evaluacion_formativa.actividades', 'evaluacion.formativa.actividades', 'evaluacion_formativa.actividades']) || []
+    const fInstrumentos = getAny(tema, ['planificacionPersonal.evaluacion_formativa.instrumentos', 'planificacion_personal.evaluacion_formativa.instrumentos', 'evaluacion.formativa.instrumentos', 'evaluacion_formativa.instrumentos']) || []
+    const fEvidencias = getAny(tema, ['planificacionPersonal.evaluacion_formativa.evidencias', 'planificacion_personal.evaluacion_formativa.evidencias', 'evaluacion.formativa.evidencias', 'evaluacion_formativa.evidencias']) || []
+    const sActividades = getAny(tema, ['planificacionPersonal.evaluacion_sumativa.actividades', 'planificacion_personal.evaluacion_sumativa.actividades', 'evaluacion.sumativa.actividades', 'evaluacion_sumativa.actividades']) || []
+    const sInstrumentos = getAny(tema, ['planificacionPersonal.evaluacion_sumativa.instrumentos', 'planificacion_personal.evaluacion_sumativa.instrumentos', 'evaluacion.sumativa.instrumentos', 'evaluacion_sumativa.instrumentos']) || []
+    const sEvidencias = getAny(tema, ['planificacionPersonal.evaluacion_sumativa.evidencias', 'planificacion_personal.evaluacion_sumativa.evidencias', 'evaluacion.sumativa.evidencias', 'evaluacion_sumativa.evidencias']) || []
 
     let totalCamposEval = 6
     let camposLlenosEval = 0
@@ -509,7 +518,7 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
 
     // 5. Secuencia
     let pSecuencia = 0
-    const secuencia = getAny(tema, ['planificacion_personal.secuencia_didactica', 'secuencia_didactica']) || []
+    const secuencia = getAny(tema, ['planificacionPersonal.secuencia_didactica', 'planificacion_personal.secuencia_didactica', 'secuencia_didactica']) || []
     let totalCamposSec = 3
     let camposLlenosSec = 0
     secuencia.forEach(momento => { if (momento.actividad?.trim()) camposLlenosSec++ })
@@ -520,10 +529,10 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     return Math.round((pResultados + pContenidos + pEstrategias + pEvaluacion + pSecuencia) / 5)
   }
 
-  async function getFullTema(id) {
+  async function getFullTema(id, params = {}) {
     loading.value = true
     try {
-      const response = await asignaturaService.getFullTema(id)
+      const response = await asignaturaService.getFullTema(id, params)
       return response.data
     } catch (err) {
       console.error('Error getting full tema:', err)

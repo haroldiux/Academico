@@ -114,8 +114,8 @@ export default {
     return api.delete(`/planificacion/temas/${id}`)
   },
 
-  getFullTema(id) {
-    return api.get(`/planificacion/temas/${id}/full`)
+  getFullTema(id, params = {}) {
+    return api.get(`/planificacion/temas/${id}/full`, { params })
   },
 
   moveTema(id, direction) {

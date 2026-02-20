@@ -1061,10 +1061,13 @@ onMounted(() => cargarDatos())
 watch(() => route.params, () => cargarDatos())
 
 // Auto-guardado con debounce de 1500ms
+let initialFormHash = ''
+
 watchDebounced(
   () => JSON.stringify(formTema.value),
-  async () => {
+  async (newVal) => {
     if (!dataLoaded) return // No guardar durante la carga inicial
+    if (newVal === initialFormHash) return // Evitar auto-guardado si no hubo cambios reales
     if (!asignatura.value || !unidad.value || !tema.value) return
 
     saveStatus.value = 'saving'
@@ -1101,7 +1104,7 @@ async function cargarDatos() {
       tema.value = unidad.value.temas.find(t => t.id === tId)
       if (tema.value) {
         try {
-          const fullTemaData = await store.getFullTema(tId)
+          const fullTemaData = await store.getFullTema(tId, params)
           if (fullTemaData) {
             // Update reactive object with deep data
             Object.assign(tema.value, fullTemaData)
@@ -1182,6 +1185,7 @@ async function cargarDatos() {
     }
   }
   // Marcar que los datos fueron cargados (habilitar auto-guardado)
+  initialFormHash = JSON.stringify(formTema.value)
   dataLoaded = true
 }
 
