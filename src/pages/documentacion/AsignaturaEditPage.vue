@@ -1676,7 +1676,6 @@ function cargarFormDatos() {
   if (authStore.rol === 'DOCENTE') {
     const u = authStore.usuarioActual
     if (u) {
-      console.log('DEBUG: Cargando datos de docente', u)
       // Email: Priorizar email del usuario
       if (u.email) formDatos.value.docente_email = u.email
 
@@ -1684,7 +1683,6 @@ function cargarFormDatos() {
       const telAuth = u.telefono
       const telDoc = u.docente?.celular
       const telAsig = asignatura.value.docente_telefono
-      console.log('DEBUG: Teléfonos', { telAuth, telDoc, telAsig })
 
       formDatos.value.docente_telefono = telAuth || telDoc || telAsig
 
