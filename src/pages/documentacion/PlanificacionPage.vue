@@ -1883,7 +1883,7 @@ watchDebounced(
       saveStatus.value = 'error'
     }
   },
-  { debounce: 2000, maxWait: 10000, deep: true },
+  { debounce: 800, maxWait: 5000, deep: true },
 )
 
 onMounted(() => {
