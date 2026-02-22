@@ -246,7 +246,7 @@
               </div>
 
               <q-btn unelevated color="indigo" icon="auto_awesome" label="Generar Planificación Automática" size="lg"
-                no-caps @click="generarPlanificacion"
+                no-caps @click="generarPlanificacion(false)"
                 :disable="planificacionGenerada || (!asignatura?.sesiones_semanales_teoricas && !asignatura?.sesiones_semanales_practicas)"
               >
                 <q-tooltip v-if="!asignatura?.sesiones_semanales_teoricas && !asignatura?.sesiones_semanales_practicas">
@@ -311,8 +311,26 @@
           </div>
 
           <!-- Unidades FLATTENED -->
-          <div class="unidades-container">
-            <div class="sesiones-table-container" style="overflow-x: auto; max-width: 100%;">
+          <div class="unidades-container q-pb-xl">
+            
+            <!-- Floating Navigation Buttons (Fixed to Screen) -->
+            <q-page-sticky position="right" :offset="[10, 0]" class="z-top">
+              <div class="flex column q-gutter-y-sm">
+                <q-btn round color="primary" icon="chevron_left" 
+                       @click="scrollTable('left')" 
+                       glossy size="md">
+                  <q-tooltip anchor="center left" self="center right">Desplazar Izquierda</q-tooltip>
+                </q-btn>
+                       
+                <q-btn round color="primary" icon="chevron_right" 
+                       @click="scrollTable('right')" 
+                       glossy size="md">
+                  <q-tooltip anchor="center left" self="center right">Desplazar Derecha</q-tooltip>
+                </q-btn>
+              </div>
+            </q-page-sticky>
+
+            <div class="sesiones-table-container" ref="tableContainerRef" style="overflow-x: auto; max-width: 100%;">
                  <table class="sesiones-table" style="min-width: 1200px;">
                   <thead>
                     <tr>
@@ -402,22 +420,40 @@
                         <td>
                           <div v-if="sesion.semana <= 17">
                             <q-select v-model="sesion.temasSeleccionados" :options="opcionesTemasGlobales" multiple
-                              use-chips use-input new-value-mode="add-unique" emit-value map-options dense outlined
+                              use-input new-value-mode="add-unique" map-options dense outlined
                               class="cell-input" label="Temas" option-value="value" option-label="label"
-                              @update:model-value="(val) => onTemaUpdate(val, sesion)" />
+                              @update:model-value="(val) => onTemaUpdate(val, sesion)">
+                              
+                              <template v-slot:selected-item="scope">
+                                <div class="custom-chip q-mb-xs">
+                                  <div class="custom-chip-text">
+                                    {{ scope.opt.label || scope.opt }}
+                                  </div>
+                                  <q-icon name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
+                                </div>
+                              </template>
+                            </q-select>
                           </div>
                           <div v-else class="text-caption text-grey text-center">--</div>
                         </td>
                         <td>
                           <div v-if="sesion.semana <= 17">
                             <q-select v-model="sesion.contenido_items_seleccionados"
-                              :options="getContenidoItemsOptions(sesion)" multiple use-chips emit-value map-options
+                              :options="getContenidoItemsOptions(sesion)" multiple map-options
                               dense outlined class="cell-input q-mb-xs" label="Seleccionar Items" option-value="value"
-                              option-label="label" :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0
-                                " :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0
-                                  ? 'Seleccione tema(s) primero'
-                                  : ''
-                                " @update:model-value="marcarModificado(sesion)" />
+                              option-label="label" :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0" 
+                              :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0 ? 'Seleccione tema(s) primero' : ''" 
+                              @update:model-value="marcarModificado(sesion)">
+                              
+                              <template v-slot:selected-item="scope">
+                                <div class="custom-chip q-mb-xs">
+                                  <div class="custom-chip-text">
+                                    {{ scope.opt.label || scope.opt }}
+                                  </div>
+                                  <q-icon name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
+                                </div>
+                              </template>
+                            </q-select>
                             
                             <q-input v-model="sesion.contenido" outlined dense type="textarea"
                               autogrow class="cell-input" placeholder="Contenido adicional..."
@@ -709,6 +745,7 @@ const gestionACopiar = ref(null)
 const showVaciarDialog = ref(false)
 const showReestructuraDialog = ref(false)
 const confirmacionTexto = ref('')
+const tableContainerRef = ref(null)
 
 // Computed para extraer fechas de exámenes de la planificación generada o del rol oficial
 const fechasExamenes = computed(() => {
@@ -1469,7 +1506,7 @@ async function ejecutarReestructura() {
   
   try {
     // Generar de nuevo usando la lógica actualizada (que preserva contenidos si existen)
-    await generarPlanificacion(false)
+    await ejecutarGeneracionPlanificacion(false)
     showReestructuraDialog.value = false
   } catch (err) {
     console.error(err)
@@ -1477,6 +1514,36 @@ async function ejecutarReestructura() {
 }
 
 async function generarPlanificacion(silent = false) {
+  if (!silent) {
+    const teoricas = asignatura.value?.sesiones_semanales_teoricas || 0
+    const practicas = asignatura.value?.sesiones_semanales_practicas || 0
+    
+    return new Promise((resolve) => {
+      $q.dialog({
+        title: 'Confirmar Generación',
+        message: `Se generarán <b>${teoricas} sesiones teóricas</b> y <b>${practicas} sesiones prácticas</b> semanales para esta asignatura.<br><br>
+                  <i>Nota: El número de sesiones depende exclusivamente de la configuración de la asignatura y aplica para todo el semestre, sin importar la cantidad de grupos que el docente tenga asignados.</i><br><br>
+                  ¿Desea continuar con la generación automática?`,
+        html: true,
+        cancel: 'Cancelar',
+        ok: {
+          label: 'Generar Planificación',
+          color: 'primary'
+        },
+        persistent: true
+      }).onOk(async () => {
+        await ejecutarGeneracionPlanificacion(silent)
+        resolve()
+      }).onCancel(() => {
+        resolve()
+      })
+    })
+  } else {
+    return ejecutarGeneracionPlanificacion(silent)
+  }
+}
+
+async function ejecutarGeneracionPlanificacion(silent = false) {
   if (!silent) $q.loading.show({ message: 'Generando y persistiendo cronograma...' })
 
   try {
@@ -1518,6 +1585,16 @@ function isFirstSesionOfSemana(list, sesion) {
   return list[idx].semana !== list[idx - 1].semana
 }
 
+function scrollTable(direction) {
+  if (tableContainerRef.value) {
+    const scrollAmount = 400; // Pixels to scroll per click
+    tableContainerRef.value.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    });
+  }
+}
+
 function getSemanaRowspan(list, sesion) {
   return list.filter((s) => s.semana === sesion.semana).length
 }
@@ -1534,6 +1611,7 @@ function getSesionRowClass(sesion) {
   if (sesion.modificado) return 'sesion-modificada'
   return ''
 }
+
 
 function marcarModificado(sesion) {
   sesion.modificado = true
@@ -2202,12 +2280,16 @@ async function procesarImportacionCronograma() {
 .sesiones-table-container {
   padding: 16px;
   overflow-x: auto;
+  width: 100%;
+  display: block;
 }
 
 .sesiones-table {
   width: 100%;
+  min-width: 1300px;
   border-collapse: collapse;
   font-size: 0.75rem;
+  table-layout: fixed;
 }
 
 .sesiones-table th {
@@ -2217,12 +2299,14 @@ async function procesarImportacionCronograma() {
   text-align: center;
   font-size: 0.6rem;
   text-transform: uppercase;
+  word-wrap: break-word;
 }
 
 .sesiones-table td {
   border: 1px solid var(--border-color);
   padding: 4px;
   vertical-align: top;
+  word-wrap: break-word;
 }
 
 .sesion-examen td {
@@ -2501,6 +2585,69 @@ async function procesarImportacionCronograma() {
 .dialog-actions {
   padding: 16px 24px;
   border-top: 1px solid var(--border-color);
+}
+
+/* Sobrevivir truncado (ellipsis) en chips dentros de q-select en la tabla */
+.sesiones-table .q-chip,
+.sesiones-table .q-chip .ellipsis {
+  height: auto !important;
+  white-space: normal !important;
+  text-overflow: clip !important;
+  overflow: visible !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.sesiones-table .q-chip__content {
+  white-space: normal !important;
+  display: flex !important;
+  align-items: center;
+  line-height: 1.2;
+  text-overflow: clip !important;
+  overflow: visible !important;
+  flex-wrap: wrap;
+  width: 100% !important;
+  justify-content: space-between;
+}
+
+/* Estilos de custom chips para solucionar problemas con Quasar */
+.custom-chip {
+  background-color: #f5f5f5; /* equivalente a grey-2 aprox */
+  color: black;
+  border-radius: 12px;
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  width: fit-content;
+  border: 1px solid #ccc;
+  word-break: break-all; /* Fallback for very long text without spaces */
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.custom-chip-text {
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.custom-chip-icon {
+  font-size: 16px;
+  margin-left: 6px;
+  color: #757575; /* grey-6 */
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.custom-chip-icon:hover {
+  color: #c62828;
 }
 
 /* Estilos para contenido_items seleccionables */
