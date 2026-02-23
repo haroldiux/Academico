@@ -81,10 +81,10 @@ export const useAsistenciaStore = defineStore('asistencia', () => {
     const ausentes = registros.filter(r => r.estado === 'ausente').length
     const tardanzas = registros.filter(r => r.estado === 'tardanza').length
     const justificadas = registros.filter(r => r.estado === 'justificada').length
-    
+
     const porcentajeAsistencia = Math.round(((presentes + tardanzas) / total) * 100)
     const porcentajeFaltas = Math.round((ausentes / total) * 100)
-    
+
     // Estado de riesgo
     let estadoRiesgo = 'normal'
     if (porcentajeFaltas > 25) {
@@ -92,7 +92,7 @@ export const useAsistenciaStore = defineStore('asistencia', () => {
     } else if (porcentajeFaltas >= 15) {
       estadoRiesgo = 'advertencia'
     }
-    
+
     return {
       total,
       presentes,
@@ -190,4 +190,6 @@ export const useAsistenciaStore = defineStore('asistencia', () => {
     limpiarSeleccion,
     guardarAsistencia
   }
+}, {
+  persist: true
 })

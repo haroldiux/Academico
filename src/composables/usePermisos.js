@@ -4,6 +4,9 @@ import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 
+// Detectar si estamos corriendo como app nativa (Capacitor)
+const esAppNativa = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.() === true
+
 /**
  * Composable para manejar permisos y filtrado de datos según el rol del usuario
  */
@@ -183,12 +186,17 @@ export function usePermisos() {
 
     // Items según rol
     if (esDocente.value) {
+      // En app móvil solo mostramos Control de Clase
+      if (esAppNativa) {
+        return [
+          { label: 'Control de Clase', icon: 'class', to: '/docente/clase' },
+          { label: 'Mi Perfil', icon: 'person', to: '/perfil' }
+        ]
+      }
+      // En web mostramos todos los módulos
       return [
         ...itemsBase,
         { label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' },
-        // { label: 'Reporte Asistencia', icon: 'bar_chart', to: '/docente/reporte-asistencia' }, // Oculto por requerimiento del usuario
-        // { label: 'Control de Clase', icon: 'class', to: '/docente/clase' },
-        // { label: 'Mis Evaluaciones', icon: 'quiz', to: '/docente/evaluaciones' },
         { label: 'Mi Perfil', icon: 'person', to: '/perfil' }
       ]
     }

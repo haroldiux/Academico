@@ -546,9 +546,18 @@
                                                 </div>
                                              </div>
                                              <!-- File upload -->
-                                             <q-file v-else v-model="evidencias.aprendizaje_activo" label="Subir evidencia" outlined dense accept="image/*,video/*" :disable="esLecturaSola">
-                                                 <template v-slot:prepend><q-icon name="stars" color="indigo" /></template>
-                                             </q-file>
+                                             <div v-else class="row items-center q-col-gutter-sm">
+                                                <div class="col">
+                                                   <q-file v-model="evidencias.aprendizaje_activo" label="Subir evidencia" outlined dense accept="image/*,video/*" :disable="esLecturaSola">
+                                                       <template v-slot:prepend><q-icon name="stars" color="indigo" /></template>
+                                                   </q-file>
+                                                </div>
+                                                <div class="col-auto">
+                                                   <q-btn round color="primary" icon="photo_camera" @click="tomarFoto('aprendizaje_activo')" :disable="esLecturaSola">
+                                                      <q-tooltip>Tomar Foto</q-tooltip>
+                                                   </q-btn>
+                                                </div>
+                                             </div>
                                          </div>
                                          <!-- Evaluación Formativa -->
                                          <div class="col-12 col-md-4">
@@ -664,6 +673,9 @@ import { useSyncStore } from 'src/stores/sync'
 import { useOnline } from '@vueuse/core'
 import { useQuasar } from 'quasar'
 import planificacionSemestralService from 'src/services/planificacionSemestralService'
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
+import { Filesystem, Directory } from '@capacitor/filesystem'
+import imageCompression from 'browser-image-compression'
 
 const gruposStore = useGruposStore()
 const syncStore = useSyncStore()
@@ -774,6 +786,77 @@ const extractFromTopic = (topic) => {
       secuencia: Array.isArray(s) ? s.map(i => ({ nombre: typeof i === 'string' ? i : (i.nombre || ''), cumplido: false })) : []
    }
 }
+
+const tomarFoto = async (campo) => {
+  try {
+    const image = await Camera.getPhoto({
+      quality: 85,
+      allowEditing: false,
+      resultType: CameraResultType.Base64,
+      source: CameraSource.Camera
+    })
+
+    if (image.base64String) {
+      $q.loading.show({ message: 'Procesando imagen...' })
+
+      // Convert base64 → Blob directly (no fetch needed)
+      const byteChars = atob(image.base64String)
+      const byteArr = new Uint8Array(byteChars.length)
+      for (let i = 0; i < byteChars.length; i++) {
+        byteArr[i] = byteChars.charCodeAt(i)
+      }
+      const blob = new Blob([byteArr], { type: 'image/jpeg' })
+
+      // Compress to max 2MB
+      const options = {
+        maxSizeMB: 2,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true
+      }
+      const compressedBlob = await imageCompression(blob, options)
+      $q.loading.hide()
+
+      const finalFile = new File([compressedBlob], `evidencia_${Date.now()}.jpg`, { type: 'image/jpeg' })
+
+      if (campo === 'aprendizaje_activo') {
+        evidencias.value.aprendizaje_activo = finalFile
+      }
+      $q.notify({ type: 'positive', message: 'Foto capturada correctamente', icon: 'photo_camera' })
+    }
+  } catch (error) {
+    $q.loading.hide()
+    const msg = error?.message || ''
+    if (!msg.includes('cancelled') && !msg.includes('cancel')) {
+      console.error('Error al capturar imagen:', error)
+      $q.notify({ type: 'negative', message: `Error cámara: ${msg || 'Permiso denegado o no disponible'}` })
+    }
+  }
+}
+
+const saveFileOffline = async (fileObj, prefix) => {
+    if (!fileObj || typeof fileObj === 'string') return fileObj;
+    
+    const base64Data = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            resolve(reader.result.split(',')[1]);
+        };
+        reader.readAsDataURL(fileObj);
+    });
+    
+    const fileName = `${prefix}_${Date.now()}_${fileObj.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    await Filesystem.writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: Directory.Data
+    });
+    
+    return {
+       path: fileName,
+       type: fileObj.type,
+       name: fileObj.name
+    };
+};
 
 
 // Computed: Check if current session is completed (read-only mode)
@@ -1270,6 +1353,15 @@ const guardarSeguimiento = async () => {
    try {
       // Logic for OFFLINE mode
       if (!isOnline.value) {
+         $q.loading.show({ message: 'Guardando registro offline...' })
+         
+         const off_aprendizaje_activo = await saveFileOffline(evidencias.value.aprendizaje_activo, 'ev_apr')
+         const off_evaluacion_formativa = await saveFileOffline(evidencias.value.evaluacion_formativa, 'ev_eval')
+         const off_secuencia_didactica = await saveFileOffline(evidencias.value.secuencia_didactica, 'ev_sec')
+         const off_inv = await saveFileOffline(integracionTransversal.value.investigacion.evidencia, 'int_inv')
+         const off_inter = await saveFileOffline(integracionTransversal.value.interaccion.evidencia, 'int_inter')
+         const off_inter_n = await saveFileOffline(integracionTransversal.value.internalizacion.evidencia, 'int_intern')
+         
          const followupData = {
             cronograma_id: sesionActual.value.cronograma_id || sesionActual.value.id,
             grupo_id: grupoSeleccionado.value,
@@ -1287,13 +1379,19 @@ const guardarSeguimiento = async () => {
                estado_cumplimiento: estadoCumplimiento.value
             },
             integracion_transversal: {
-               investigacion: { cumplido: integracionTransversal.value.investigacion.cumplido, evidencia: null },
-               interaccion: { cumplido: integracionTransversal.value.interaccion.cumplido, evidencia: null },
-               internalizacion: { cumplido: integracionTransversal.value.internalizacion.cumplido, evidencia: null }
+               investigacion: { cumplido: integracionTransversal.value.investigacion.cumplido, evidencia: off_inv },
+               interaccion: { cumplido: integracionTransversal.value.interaccion.cumplido, evidencia: off_inter },
+               internalizacion: { cumplido: integracionTransversal.value.internalizacion.cumplido, evidencia: off_inter_n }
+            },
+            evidencias_offline: {
+               aprendizaje_activo: off_aprendizaje_activo,
+               evaluacion_formativa: off_evaluacion_formativa,
+               secuencia_didactica: off_secuencia_didactica
             }
          }
 
          syncStore.addPendingFollowup(followupData)
+         $q.loading.hide()
          
          // Visual updates same as online
          vistaHistorial.value = true

@@ -637,4 +637,6 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     opcionesInstrumentosSumativa,
     opcionesEvidenciasSumativa
   }
+}, {
+  persist: true
 })

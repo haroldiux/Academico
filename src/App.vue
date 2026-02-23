@@ -7,6 +7,7 @@ import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth'
 import { useQuasar } from 'quasar'
+import { initNetworkListener, stopNetworkListener } from 'src/services/networkService'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -48,11 +49,16 @@ onMounted(() => {
 
   // Recuperar auth si existe al cargar (opcional si ya no está en authStore)
   authStore.checkAuth()
+
+  // Iniciar listener de red offline/online
+  initNetworkListener()
 })
 
 onUnmounted(() => {
   const events = ['mousemove', 'mousedown', 'keypress', 'touchmove', 'scroll', 'click']
   events.forEach(evt => window.removeEventListener(evt, updateActivity))
   if (checkInterval) clearInterval(checkInterval)
+  
+  stopNetworkListener()
 })
 </script>

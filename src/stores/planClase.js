@@ -247,4 +247,4 @@ export const usePlanClaseStore = defineStore('planClase', () => {
         getSeccionColor,
         esEditable
     }
-})
+}, { persist: true })
