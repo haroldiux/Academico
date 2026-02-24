@@ -64,20 +64,18 @@
                     <q-chip class="q-ma-xs" dense color="warning" text-color="white" icon="timelapse">Parcial: {{ data.stats.parcialmente }}</q-chip>
                     <q-chip class="q-ma-xs" dense color="negative" text-color="white" icon="cancel">No Cumplido: {{ data.stats.no_cumplido }}</q-chip>
                  </div>
-                 <div v-if="data.type === 'planificacion'" class="row q-gutter-xs">
-                    <q-chip class="q-ma-xs" dense outline color="primary">Estrategias: {{ data.stats.estrategias }}</q-chip>
-                    <q-chip class="q-ma-xs" dense outline color="primary">Evaluación: {{ data.stats.evaluacion }}</q-chip>
-                    <q-chip class="q-ma-xs" dense outline color="primary">Secuencia: {{ data.stats.secuencia }}</q-chip>
+                 <div v-if="data.type === 'planificacion_item'" class="row q-gutter-xs">
+                    <q-chip class="q-ma-xs" dense outline color="primary" icon="analytics">Detectados: {{ data.stats.count }}</q-chip>
                  </div>
                  <div v-if="data.type === 'integracion'" class="row q-gutter-xs">
-                    <q-chip class="q-ma-xs" dense outline color="secondary">Investigación: {{ data.stats.investigacion }}</q-chip>
-                    <q-chip class="q-ma-xs" dense outline color="secondary">Interacción Social: {{ data.stats.interaccion_social }}</q-chip>
-                    <q-chip class="q-ma-xs" dense outline color="secondary">Internalización: {{ data.stats.internalizacion }}</q-chip>
+                    <q-chip v-if="data.stats.investigacion" class="q-ma-xs" dense outline color="secondary">Investigación: {{ data.stats.investigacion }}</q-chip>
+                    <q-chip v-if="data.stats.interaccion_social" class="q-ma-xs" dense outline color="secondary">Interacción Social: {{ data.stats.interaccion_social }}</q-chip>
+                    <q-chip v-if="data.stats.internalizacion" class="q-ma-xs" dense outline color="secondary">Internalización: {{ data.stats.internalizacion }}</q-chip>
                  </div>
                  <div v-if="data.type === 'evidencias'" class="row q-gutter-xs">
-                    <q-chip class="q-ma-xs" dense outline color="indigo" icon="image">Fotos/Videos: {{ data.stats.fotos_videos }}</q-chip>
-                    <q-chip class="q-ma-xs" dense outline color="indigo" icon="link">Links: {{ data.stats.link_evidencia }}</q-chip>
-                    <q-chip class="q-ma-xs" dense outline color="indigo" icon="description">Docs: {{ data.stats.archivos_secuencia }}</q-chip>
+                    <q-chip v-if="data.stats.fotos_videos" class="q-ma-xs" dense outline color="indigo" icon="image">Fotos/Videos: {{ data.stats.fotos_videos }}</q-chip>
+                    <q-chip v-if="data.stats.link_evidencia" class="q-ma-xs" dense outline color="indigo" icon="link">Links: {{ data.stats.link_evidencia }}</q-chip>
+                    <q-chip v-if="data.stats.archivos_secuencia" class="q-ma-xs" dense outline color="indigo" icon="description">Docs: {{ data.stats.archivos_secuencia }}</q-chip>
                  </div>
                  <div v-if="data.type === 'registro_oportuno'" class="row q-gutter-xs">
                     <q-chip class="q-ma-xs" dense color="positive" text-color="white" icon="timer">En Hora: {{ data.stats.en_hora_verde }}</q-chip>
@@ -132,19 +130,28 @@
           />
        </div>
 
-       <!-- Footer Info -->
-       <div class="q-mt-lg text-caption text-grey-6 text-center">
-          Escala de Alerta: 
-          <span class="text-positive text-weight-bold">Verde (90-100%)</span> • 
-          <span class="text-warning text-weight-bold">Amarillo (70-89%)</span> • 
-          <span class="text-negative text-weight-bold">Rojo (0-69%)</span>
-       </div>
+        <!-- Footnote / Printing -->
+        <div class="row items-center justify-between q-mt-lg">
+           <div class="text-caption text-grey-6">
+              Escala de Alerta: 
+              <span class="text-positive text-weight-bold">Verde (90-100%)</span> • 
+              <span class="text-warning text-weight-bold">Amarillo (70-89%)</span> • 
+              <span class="text-negative text-weight-bold">Rojo (0-69%)</span>
+           </div>
+           <q-btn 
+              outline 
+              color="primary" 
+              icon="print" 
+              label="Generar Reporte Imprimible" 
+              @click="printOfficialReport"
+           />
+        </div>
 
-      <!-- Actions -->
-      <div class="row justify-end q-gutter-sm q-mt-md">
-        <q-btn flat label="Cancelar" v-close-popup color="grey-8" />
-        <q-btn label="Guardar y Firmar Informe" color="primary"  icon="save" @click="saveReport" :loading="saving" />
-      </div>
+       <!-- Actions -->
+       <div class="row justify-end q-gutter-sm q-mt-md">
+         <q-btn flat label="Cancelar" v-close-popup color="grey-8" />
+         <q-btn label="Guardar y Firmar Informe" color="primary"  icon="save" @click="saveReport" :loading="saving" />
+       </div>
 
     </div>
   </div>
@@ -184,10 +191,18 @@ const alertColor = computed(() => {
 })
 
 const weekRangeLabel = computed(() => {
-   if (!report.value || !report.value.semana_inicio) return '-'
-   const start = new Date(report.value.semana_inicio + 'T00:00:00') // Force local time avoid timezone shifts
-   const end = date.addToDate(start, { days: 5 }) // Mon-Sat
-   return `${date.formatDate(start, 'DD/MM')} - ${date.formatDate(end, 'DD/MM/YYYY')}`
+   if (!report.value || !report.value.semana_inicio) return 'Sin fecha'
+   try {
+      const dataStr = typeof report.value.semana_inicio === 'string' 
+         ? report.value.semana_inicio.split('T')[0] 
+         : report.value.semana_inicio
+      const start = new Date(dataStr + 'T12:00:00') // Force midday avoid TZ
+      if (isNaN(start.getTime())) return 'Fecha inválida'
+      const end = date.addToDate(start, { days: 5 }) // Mon-Sat
+      return `${date.formatDate(start, 'DD/MM')} - ${date.formatDate(end, 'DD/MM/YYYY')}`
+   } catch (e) {
+      return 'Error de formato'
+   }
 })
 
 const hasCriteria = computed(() => {
@@ -198,11 +213,13 @@ const hasCriteria = computed(() => {
 
 const getCriteriaDescription = (key) => {
    const details = {
-      'Cumplimiento': 'Estado declarado por el docente sobre la conclusión del tema.',
-      'Planificación por Tema': 'Uso de estrategias metodológicas, tareas y recursos planificados.',
-      'Integración Transversal': 'Inclusión de investigación, interacción social o internacionalización.',
-      'Evidencias': 'Comprobantes tangibles subidos al sistema por la clase.',
-      'Registro Oportuno': 'Semaforización sobre la puntualidad del llenado del seguimiento.'
+      'Cumplimiento del Tema': 'Estado declarado por el docente (se marca SÍ si es Total o Parcial).',
+      'Estrategias Pedagógicas': 'Verificación del uso de métodos y recursos educativos planificados.',
+      'Evaluación Formativa': 'Uso de instrumentos de evaluación durante la sesión.',
+      'Secuencia Didáctica': 'Cumplimiento de los momentos de la clase (Inicio, Desarrollo, Cierre).',
+      'Integración Transversal': 'Contiene Investigación, Interacción Social o Internacionalización.',
+      'Evidencia de Aprendizaje': 'Respaldo multimedia, enlaces o documentos subidos.',
+      'Registro Oportuno': 'Puntualidad en el registro del seguimiento dentro de los tiempos institucionales.'
    }
    return details[key] || 'Verificación técnica.'
 }
@@ -267,6 +284,14 @@ const saveReport = async () => {
   } finally {
     saving.value = false
   }
+}
+
+const printOfficialReport = () => {
+   if (!report.value || !report.value.grupo_id) return
+   
+   // Construir URL para el reporte HTML imprimible
+   const url = `${api.defaults.baseURL}/reportes/semanal/print?grupo_id=${report.value.grupo_id}&fecha_inicio=${props.fechaInicio}`
+   window.open(url, '_blank')
 }
 
 onMounted(() => {

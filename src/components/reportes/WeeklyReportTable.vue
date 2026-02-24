@@ -2,8 +2,9 @@
   <div class="weekly-report-table">
     <div class="row q-gutter-sm q-mb-md items-center justify-between">
        <div class="row q-gutter-sm items-center col-grow">
-          <!-- Week Selector -->
+          <!-- Week Selector (Only if not provided externally) -->
           <q-select
+            v-if="!externalWeek"
             v-model="selectedWeek"
             :options="weekOptions"
             label="Semana Académica"
@@ -54,7 +55,7 @@
           </q-input>
 
           <!-- Buscador General -->
-          <q-input v-model="searchText" outlined dense placeholder="Buscar..." style="min-width: 150px">
+          <q-input v-model="searchText" outlined dense :placeholder="viewMode === 'docente' ? 'Buscar docente...' : 'Buscar asignatura...'" style="min-width: 150px">
              <template v-slot:prepend>
                 <q-icon name="search" />
              </template>
@@ -183,7 +184,12 @@ import WeeklyReportForm from './WeeklyReportForm.vue'
 
 const props = defineProps({
   sedeId: Number,
-  carreraId: Number
+  carreraId: Number,
+  externalWeek: String, // Optional: if provided, internal selector will be hidden/overridden
+  viewMode: {
+    type: String,
+    default: 'both' // 'materia', 'docente', 'both'
+  }
 })
 
 const loading = ref(false)
@@ -229,14 +235,27 @@ const statusOptions = [
    { label: 'Crítico / Sin Plan (Rojo)', value: 'ROJO', color: 'negative' }
 ]
 
-const columns = [
-  { name: 'docente', label: 'Docente', field: 'docente', align: 'left', sortable: true },
-  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left', sortable: true },
-  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
-  { name: 'criterios', label: 'Cump. Técnico', field: row => computeTechScore(row.criterios), align: 'center' },
-  { name: 'alerta', label: 'Escala Alerta', field: 'alerta', align: 'center', sortable: true },
-  { name: 'acciones', label: 'Acciones', align: 'right' }
-]
+const columns = computed(() => {
+  const baseColumns = [
+    { name: 'docente', label: 'Docente', field: 'docente', align: 'left', sortable: true },
+    { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left', sortable: true },
+    { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
+    { name: 'criterios', label: 'Cump. Técnico', field: row => computeTechScore(row.criterios), align: 'center' },
+    { name: 'alerta', label: 'Escala Alerta', field: 'alerta', align: 'center', sortable: true },
+    { name: 'acciones', label: 'Acciones', align: 'right' }
+  ]
+
+  if (props.viewMode === 'materia') {
+    // Reorder to put asignatura first
+    return [
+      baseColumns[1], // asignatura
+      baseColumns[0], // docente
+      ...baseColumns.slice(2)
+    ]
+  }
+  
+  return baseColumns
+})
 
 const filteredReports = computed(() => {
    return reports.value.filter(r => {
@@ -354,13 +373,17 @@ const onReportSaved = () => {
   loadReports()
 }
 
-watch(() => [props.sedeId, props.carreraId], () => {
+watch(() => [props.sedeId, props.carreraId, props.externalWeek], () => {
+  if (props.externalWeek) {
+    selectedWeek.value = props.externalWeek
+  }
   loadReports()
 })
 
 onMounted(() => {
-   // Set default week to the first one available
-   if (weekOptions.value.length > 0) {
+   if (props.externalWeek) {
+      selectedWeek.value = props.externalWeek
+   } else if (weekOptions.value.length > 0) {
       selectedWeek.value = weekOptions.value[0].value
    }
    loadReports()

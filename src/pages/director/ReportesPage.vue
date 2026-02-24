@@ -39,6 +39,18 @@
           <template v-slot:prepend><q-icon name="school" /></template>
         </q-select>
 
+        <q-select
+          v-model="filtros.semana"
+          :options="weekOptions"
+          label="Semana Académica"
+          dense outlined bg-color="white"
+          style="min-width: 250px"
+          emit-value map-options
+          @update:model-value="reloadAll"
+        >
+          <template v-slot:prepend><q-icon name="event" /></template>
+        </q-select>
+
         <q-btn color="primary" icon="refresh" flat round @click="reloadAll">
           <q-tooltip>Actualizar Datos</q-tooltip>
         </q-btn>
@@ -138,8 +150,9 @@
     <q-card flat bordered>
        <q-tabs v-model="tabActivo" class="text-grey-8" active-color="primary" indicator-color="primary" align="left">
           <q-tab name="materias" label="Detalle por Materia" icon="list" />
-          <q-tab name="asistencias" label="Registro de Asistencias" icon="event_available" />
+          <q-tab name="docentes" label="Detalle por Docente" icon="person" />
           <q-tab name="semanal" label="Informe Semanal" icon="assignment_turned_in" />
+          <q-tab name="asistencias" label="Asistencias" icon="how_to_reg" />
           <q-tab name="auditoria" label="Auditoría 25%" icon="policy" 
                  v-if="rolPermiteAuditoria" />
        </q-tabs>
@@ -147,123 +160,23 @@
        
        <q-tab-panels v-model="tabActivo" animated>
           <!-- Panel Materias -->
-          <q-tab-panel name="materias">
-             <q-inner-loading :showing="loadingDetail">
-                <q-spinner-dots size="40px" color="primary" />
-             </q-inner-loading>
-
-             <div v-if="!loadingDetail && detalleMaterias.length === 0" class="text-center q-pa-lg text-grey">
-                <q-icon name="inbox" size="4rem" />
-                <div class="text-h6">No hay materias registradas</div>
-             </div>
-
-             <q-table
-                v-if="detalleMaterias.length > 0"
-                :rows="detalleMaterias"
-                :columns="columnasMaterias"
-                row-key="id"
-                flat bordered
-                :pagination="{ rowsPerPage: 20 }"
-             >
-                <template v-slot:body="props">
-                   <q-tr :props="props" class="cursor-pointer" @click="props.expand = !props.expand">
-                      <q-td auto-width>
-                         <q-btn flat round dense :icon="props.expand ? 'expand_less' : 'expand_more'" size="sm" />
-                      </q-td>
-                      <q-td key="codigo" :props="props">{{ props.row.codigo }}</q-td>
-                      <q-td key="nombre" :props="props">
-                         <span class="text-weight-bold">{{ props.row.nombre }}</span>
-                      </q-td>
-                      <q-td key="semestre" :props="props">
-                         <q-badge color="blue-grey" :label="'Sem ' + props.row.semestre" />
-                      </q-td>
-                      <q-td key="docentes" :props="props">{{ props.row.docentes.length }}</q-td>
-                      <q-td key="avance" :props="props">
-                         <q-linear-progress :value="props.row.promedioGeneral / 100"
-                            :color="props.row.promedioGeneral >= 80 ? 'positive' : props.row.promedioGeneral >= 50 ? 'warning' : 'negative'"
-                            rounded size="10px" class="q-mb-xs" />
-                         <span class="text-caption">{{ props.row.promedioGeneral }}%</span>
-                      </q-td>
-                   </q-tr>
-                   <!-- Expanded Row: Docentes -->
-                   <q-tr v-show="props.expand" :props="props">
-                      <q-td colspan="100%" class="bg-grey-1 q-pa-md">
-                         <div class="text-subtitle2 q-mb-sm text-grey-8">Docentes asignados:</div>
-                         <q-table
-                            :rows="props.row.docentes"
-                            :columns="columnasDocentes"
-                            row-key="id"
-                            flat bordered dense
-                            hide-pagination
-                            :pagination="{ rowsPerPage: 0 }"
-                         >
-                            <template v-slot:body-cell-estado="scope">
-                               <q-td :props="scope">
-                                  <q-badge
-                                     :color="scope.value === 'Al día' ? 'positive' : scope.value === 'Atrasado' ? 'negative' : 'orange'"
-                                  >
-                                     {{ scope.value }}
-                                  </q-badge>
-                               </q-td>
-                            </template>
-                            <template v-slot:body-cell-avanceTemas="scope">
-                               <q-td :props="scope">
-                                  <q-linear-progress :value="scope.value / 100"
-                                     :color="scope.value >= 80 ? 'positive' : scope.value >= 50 ? 'warning' : 'negative'"
-                                     rounded size="8px" class="q-mb-xs" style="min-width: 60px" />
-                                  <span class="text-caption">{{ scope.value }}%</span>
-                               </q-td>
-                            </template>
-                            <template v-slot:body-cell-pac="scope">
-                               <q-td :props="scope">
-                                  <q-icon :name="scope.value ? 'check_circle' : 'cancel'" 
-                                     :color="scope.value ? 'positive' : 'negative'" size="sm" />
-                               </q-td>
-                            </template>
-                         </q-table>
-                      </q-td>
-                   </q-tr>
-                </template>
-             </q-table>
+          <q-tab-panel name="materias" class="q-pa-md">
+             <WeeklyReportTable 
+                :sede-id="Number(filtros.sede)" 
+                :carrera-id="Number(filtros.carrera)" 
+                :external-week="filtros.semana"
+                view-mode="materia"
+             />
           </q-tab-panel>
 
-          <!-- Panel Asistencias -->
-          <q-tab-panel name="asistencias">
-             <q-inner-loading :showing="loadingDetail">
-                <q-spinner-dots size="40px" color="primary" />
-             </q-inner-loading>
-
-             <div v-if="!loadingDetail && detalleAsistencias.length === 0" class="text-center q-pa-lg text-grey">
-                <q-icon name="event_busy" size="4rem" />
-                <div class="text-h6">No hay datos de asistencia registrados</div>
-             </div>
-
-             <q-table
-                v-if="detalleAsistencias.length > 0"
-                :rows="detalleAsistencias"
-                :columns="columnasAsistencias"
-                row-key="uid"
-                flat bordered
-                :pagination="{ rowsPerPage: 20 }"
-             >
-                <template v-slot:body-cell-asistencia="props">
-                   <q-td :props="props">
-                      <q-linear-progress :value="props.value / 100"
-                         :color="props.value >= 80 ? 'positive' : props.value >= 50 ? 'warning' : 'negative'"
-                         rounded size="10px" class="q-mb-xs" style="min-width: 80px" />
-                      <span class="text-caption">{{ props.value }}%</span>
-                   </q-td>
-                </template>
-                <template v-slot:body-cell-estado="props">
-                   <q-td :props="props">
-                      <q-badge
-                         :color="props.value === 'Al día' ? 'positive' : props.value === 'Atrasado' ? 'negative' : 'orange'"
-                      >
-                         {{ props.value }}
-                      </q-badge>
-                   </q-td>
-                </template>
-             </q-table>
+          <!-- Panel Docentes -->
+          <q-tab-panel name="docentes" class="q-pa-md">
+             <WeeklyReportTable 
+                :sede-id="Number(filtros.sede)" 
+                :carrera-id="Number(filtros.carrera)" 
+                :external-week="filtros.semana"
+                view-mode="docente"
+             />
           </q-tab-panel>
 
           <!-- Panel Semanal -->
@@ -271,7 +184,18 @@
              <WeeklyReportTable 
                 :sede-id="Number(filtros.sede)" 
                 :carrera-id="Number(filtros.carrera)" 
+                :external-week="filtros.semana"
              />
+          </q-tab-panel>
+
+          <!-- Panel Asistencias -->
+          <q-tab-panel name="asistencias">
+              <div class="text-h6 q-mb-md">Reporte de Asistencias por Materia</div>
+              <p>Visualización del porcentaje de asistencia semanal por grupo.</p>
+              <div class="bg-grey-2 q-pa-md rounded-borders text-center">
+                  <q-icon name="analytics" size="60px" color="grey-4" />
+                  <div class="text-grey-6">Módulo de Asistencias Detallado en construcción</div>
+              </div>
           </q-tab-panel>
 
           <!-- Panel Auditoría -->
@@ -297,6 +221,7 @@ import { useAuthStore } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { api } from 'boot/axios'
+import { date } from 'quasar'
 import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
 
 const authStore = useAuthStore()
@@ -305,16 +230,12 @@ const carrerasStore = useCarrerasStore()
 
 // State
 const loading = ref(false)
-const loadingDetail = ref(false)
 const tabActivo = ref('materias')
 const filtros = ref({
   sede: authStore.usuarioActual?.sede_id,
-  carrera: authStore.carreraId || null
+  carrera: authStore.carreraId || null,
+  semana: ''
 })
-
-// Detail data for tabs
-const detalleMaterias = ref([])
-const detalleAsistencias = ref([])
 
 // Data
 const kpis = ref({
@@ -367,39 +288,27 @@ const opcionesSedes = computed(() => {
 })
 
 const carrerasOptions = computed(() => {
-   if (!filtros.value.sede) return []
    return carrerasStore.getCarrerasBySede(filtros.value.sede)
       .map(c => ({ label: c.nombre, value: c.id }))
 })
 
-// Column definitions for Materias tab
-const columnasMaterias = [
-   { name: 'expand', label: '', field: '', align: 'left' },
-   { name: 'codigo', label: 'Código', field: 'codigo', align: 'left', sortable: true },
-   { name: 'nombre', label: 'Materia', field: 'nombre', align: 'left', sortable: true },
-   { name: 'semestre', label: 'Semestre', field: 'semestre', align: 'center', sortable: true },
-   { name: 'docentes', label: 'Docentes', field: row => row.docentes.length, align: 'center' },
-   { name: 'avance', label: 'Avance Promedio', field: 'promedioGeneral', align: 'center', sortable: true }
-]
-
-const columnasDocentes = [
-   { name: 'nombre', label: 'Docente', field: 'nombre', align: 'left', sortable: true },
-   { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
-   { name: 'avanceTemas', label: 'Avance', field: 'avanceTemas', align: 'center', sortable: true },
-   { name: 'clasesImpartidas', label: 'Clases', field: row => `${row.temasCompletados}/${row.temasTotales}`, align: 'center' },
-   { name: 'pac', label: 'PAC', field: 'pac', align: 'center' },
-   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
-   { name: 'ultimaClase', label: 'Última Clase', field: 'ultimaClase', align: 'center' }
-]
-
-const columnasAsistencias = [
-   { name: 'docente', label: 'Docente', field: 'nombre', align: 'left', sortable: true },
-   { name: 'materia', label: 'Materia', field: 'materia', align: 'left', sortable: true },
-   { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
-   { name: 'asistencia', label: 'Asistencia Prom.', field: 'asistencia', align: 'center', sortable: true },
-   { name: 'clasesImpartidas', label: 'Clases', field: row => `${row.temasCompletados}/${row.temasTotales}`, align: 'center' },
-   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true }
-]
+// Helper to generate weeks (Start date: Feb 9, 2026)
+const weekOptions = computed(() => {
+   const options = []
+   // Semester Start: Feb 9, 2026 (Monday)
+   const semesterStart = new Date(2026, 1, 9) 
+   
+   let d = new Date(semesterStart)
+   for (let i = 1; i <= 20; i++) {
+      const start = date.formatDate(d, 'YYYY-MM-DD')
+      // week end: Saturday (Start + 5 days)
+      const end = date.addToDate(d, { days: 5 })
+      const label = `Semana ${i} (${date.formatDate(d, 'DD/MM')} - ${date.formatDate(end, 'DD/MM')})`
+      options.push({ label, value: start })
+      d = date.addToDate(d, { days: 7 })
+   }
+   return options
+})
 
 // Methods
 const loadDashboardData = async () => {
@@ -414,7 +323,8 @@ const loadDashboardData = async () => {
    try {
       const { data } = await api.get('/reportes/metrics', { params: { 
          sede_id: filtros.value.sede,
-         carrera_id: filtros.value.carrera 
+         carrera_id: filtros.value.carrera,
+         fecha_inicio: filtros.value.semana
       }})
 
       // Update KPIs
@@ -448,41 +358,8 @@ const loadDashboardData = async () => {
    }
 }
 
-const loadDetailData = async () => {
-   if (!filtros.value.sede) return
-   
-   loadingDetail.value = true
-   try {
-      const { data } = await api.get('/reportes/director', { params: {
-         sede_id: filtros.value.sede,
-         carrera_id: filtros.value.carrera
-      }})
-
-      detalleMaterias.value = data.reporteMaterias || []
-      
-      // Flatten docentes for asistencias tab
-      const asistencias = []
-      for (const materia of (data.reporteMaterias || [])) {
-         for (const doc of (materia.docentes || [])) {
-            asistencias.push({
-               uid: `${materia.id}-${doc.id}`,
-               ...doc,
-               materia: materia.nombre
-            })
-         }
-      }
-      detalleAsistencias.value = asistencias
-
-   } catch (error) {
-      console.error('Error loading detail data:', error)
-   } finally {
-      loadingDetail.value = false
-   }
-}
-
 const reloadAll = () => {
    loadDashboardData()
-   loadDetailData()
 }
 
 const scrollToTab = (tabName) => {
@@ -499,13 +376,12 @@ onMounted(async () => {
       carrerasStore.fetchCarreras()
    ])
 
-   // Ensure carrera is set for directors
-   if (authStore.rol === 'DIRECTOR_CARRERA' && authStore.carreraId) {
-      filtros.value.carrera = authStore.carreraId
+   // Set default week to the first one available
+   if (weekOptions.value.length > 0) {
+      filtros.value.semana = weekOptions.value[0].value
    }
-   
+
    loadDashboardData()
-   loadDetailData()
 })
 
 // Watchers
@@ -516,12 +392,8 @@ watch(() => filtros.value.sede, () => {
    }
 })
 
-// Reload detail data when tab changes to materias/asistencias
-watch(tabActivo, (newTab) => {
-   if ((newTab === 'materias' || newTab === 'asistencias') && detalleMaterias.value.length === 0) {
-      loadDetailData()
-   }
-})
+// Reload detail data when tab changes isn't strictly needed for WeeklyReportTable component
+// watch(tabActivo, (newTab) => { ... })
 
 </script>
 
