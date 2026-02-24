@@ -1626,8 +1626,11 @@ function getTemasSeleccionados(sesion) {
   const temas = []
   // Buscar los temas completos en las unidades de la DOCUMENTACIÓN (asignatura)
   for (const unidad of asignatura.value?.unidades || []) {
-    for (const temaId of sesion.temasSeleccionados) {
-      const tema = unidad.temas?.find((t) => t.id === temaId)
+    for (const rawVal of sesion.temasSeleccionados) {
+      // rawVal puede ser un número, un string o un objeto {value, label, unidad_id}
+      // dependiendo de si el q-select usa emit-value o no
+      const temaId = rawVal !== null && typeof rawVal === 'object' ? rawVal.value : rawVal
+      const tema = unidad.temas?.find((t) => t.id == temaId)
       if (tema && !temas.find((t) => t.id === tema.id)) {
         temas.push(tema)
       }
@@ -1713,6 +1716,16 @@ async function guardarTodo(silent = false) {
       if (Array.isArray(sesion.instrumentosSeleccionados))
         sesion.instrumentosEvaluacion = sesion.instrumentosSeleccionados.join(', ')
 
+      // Helper to extract numeric ID from either a plain number or a q-select option object
+      const extractTemaId = (v) => {
+        if (v === null || v === undefined) return null
+        if (typeof v === 'object') return typeof v.value === 'number' ? v.value : null
+        return typeof v === 'number' ? v : null
+      }
+      const temasIds = Array.isArray(sesion.temasSeleccionados)
+        ? sesion.temasSeleccionados.map(extractTemaId).filter((id) => id !== null)
+        : []
+
       // Preparar para el backend
       const sDB = {
         ...sesion,
@@ -1722,13 +1735,8 @@ async function guardarTodo(silent = false) {
         numero_sesion: sesion.numeroGlobal,
         tema_id:
           sesion.tema_id ||
-          (Array.isArray(sesion.temasSeleccionados) &&
-            typeof sesion.temasSeleccionados[0] === 'number'
-            ? sesion.temasSeleccionados[0]
-            : null),
-        temas_ids: Array.isArray(sesion.temasSeleccionados)
-          ? sesion.temasSeleccionados.filter((v) => typeof v === 'number')
-          : [],
+          (temasIds.length > 0 ? temasIds[0] : null),
+        temas_ids: temasIds,
         contenido_items_seleccionados: sesion.contenido_items_seleccionados || [],
         observaciones: sesion.contenido || '', // Guardar contenido manual en observaciones
         tipoClase: sesion.tipoClase // Send type explicitly (Teórica/Práctica)

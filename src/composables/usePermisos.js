@@ -197,6 +197,7 @@ export function usePermisos() {
       return [
         ...itemsBase,
         { label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' },
+        { label: 'Control de Clase', icon: 'class', to: '/docente/clase' },
         { label: 'Mi Perfil', icon: 'person', to: '/perfil' }
       ]
     }

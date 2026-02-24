@@ -145,6 +145,44 @@
                            class="full-width"
                         />
                      </div>
+
+                  <!-- Cache status indicator -->
+                  <div class="col-12 q-mb-xs">
+                     <q-chip
+                        v-if="!isOnline"
+                        icon="cloud_off"
+                        color="orange-2"
+                        text-color="orange-9"
+                        size="sm"
+                        dense
+                     >
+                        Modo offline
+                        <span v-if="cacheStatus.materias"> — materias en caché</span>
+                        <span v-else> — sin caché de materias</span>
+                     </q-chip>
+
+                     <q-chip
+                        v-else-if="cacheStatus.sesiones"
+                        icon="verified"
+                        color="green-1"
+                        text-color="green-9"
+                        size="sm"
+                        dense
+                     >
+                        Datos guardados para uso offline
+                     </q-chip>
+
+                     <q-chip
+                        v-else-if="materiaSeleccionada && grupoSeleccionado && !loadingSesiones"
+                        icon="cloud_off"
+                        color="grey-2"
+                        text-color="grey-7"
+                        size="sm"
+                        dense
+                     >
+                        Sin caché offline para este grupo
+                     </q-chip>
+                  </div>
                      <div class="col-12 col-md-4">
                         <q-select
                            v-model="fechaSeguimiento"
@@ -644,10 +682,32 @@ const openUrl = (url) => {
   window.open(target, '_blank');
 };
 
-const resolveContentItem = (item) => {
-  if (!item) return ''
-  if (typeof item === 'string') return item
-  return item.titulo || item.nombre || item.label || JSON.stringify(item)
+const resolveContentItem = (key) => {
+  if (!key || typeof key !== 'string') return key
+  // Format: "temaId:itemIndex" → resolve to actual content text
+  const parts = key.split(':')
+  if (parts.length >= 2) {
+    const temaId = parseInt(parts[0])
+    const itemIndex = parseInt(parts[1])
+    if (!isNaN(temaId) && !isNaN(itemIndex) && sesionActual.value) {
+      const sesion = sesionActual.value
+      const todosLosTemas = [
+        ...(Array.isArray(sesion.temas) ? sesion.temas : []),
+        ...(sesion.tema ? [sesion.tema] : [])
+      ]
+      const tema = todosLosTemas.find(t => t && t.id == temaId)
+      if (tema) {
+        const contenidoItems = tema.contenido_items || []
+        if (itemIndex >= 0 && itemIndex < contenidoItems.length) {
+          const item = contenidoItems[itemIndex]
+          return typeof item === 'string' ? item : (item?.nombre || key)
+        }
+      }
+    }
+  }
+  // Fallback: item is an object with titulo/nombre/label
+  if (typeof key === 'object') return key?.titulo || key?.nombre || key?.label || JSON.stringify(key)
+  return key
 }
 
 const isImage = (path) => {
@@ -673,6 +733,7 @@ import { useSyncStore } from 'src/stores/sync'
 import { useOnline } from '@vueuse/core'
 import { useQuasar } from 'quasar'
 import planificacionSemestralService from 'src/services/planificacionSemestralService'
+import { offlineStorage } from 'src/services/offlineStorage'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import imageCompression from 'browser-image-compression'
@@ -703,6 +764,7 @@ const actitudinalPlanificado = ref('')
 const criteriosPlanificado = ref('')
 const instrumentosPlanificado = ref('')
 const contenidoItemsSeleccionados = ref([])
+
 
 const pedagogico = ref({
    estrategias: [],
@@ -775,15 +837,72 @@ const resetIntegracionTransversalDefault = () => {
 
 const extractFromTopic = (topic) => {
    if (!topic) return { estrategias: [], evaluacion: [], secuencia: [] }
-   
-   const e = topic.estrategias || []
-   const v = topic.evaluacion || []
-   const s = topic.secuencia_didactica || []
-   
+
+   // --- Estrategias ---
+   // planificacion_personal has: estrategias_recursos (array), estrategias_metodologicas (string)
+   // Tema base may also have those fields, or a generic 'estrategias' (array of strings or objects)
+   const estrategiasItems = []
+   const rawRecursos = topic.estrategias_recursos || topic.estrategias || []
+   if (Array.isArray(rawRecursos)) {
+      rawRecursos.forEach(i => {
+         const nombre = typeof i === 'string' ? i : (i.nombre || '')
+         if (nombre) estrategiasItems.push({ nombre, cumplido: false })
+      })
+   }
+   // Add metodologicas as a single item if present and estrategiasItems is still empty
+   if (estrategiasItems.length === 0 && topic.estrategias_metodologicas) {
+      estrategiasItems.push({ nombre: 'Metodología: ' + topic.estrategias_metodologicas.substring(0, 60), cumplido: false })
+   }
+
+   // --- Evaluación ---
+   // planificacion_personal has: evaluacion_formativa: {actividades, instrumentos, evidencias}
+   //                             evaluacion_sumativa: {actividades, instrumentos, evidencias}
+   const evaluacionItems = []
+   const evalSources = [
+      topic.evaluacion_formativa,
+      topic.evaluacion_sumativa,
+      // Fallback: generic 'evaluacion' field (legacy or tema base)
+      ...(Array.isArray(topic.evaluacion) ? [{ actividades: topic.evaluacion }] : [])
+   ]
+   evalSources.forEach(eval_ => {
+      if (!eval_) return
+      if (Array.isArray(eval_)) {
+         // plain array of strings or objects
+         eval_.forEach(i => {
+            const nombre = typeof i === 'string' ? i : (i.nombre || '')
+            if (nombre) evaluacionItems.push({ nombre, cumplido: false })
+         })
+      } else if (eval_.actividades && Array.isArray(eval_.actividades)) {
+         eval_.actividades.forEach(act => {
+            const nombre = typeof act === 'string' ? act : (act.nombre || '')
+            if (nombre) evaluacionItems.push({ nombre, cumplido: false })
+         })
+      }
+   })
+
+   // --- Secuencia Didáctica ---
+   // planificacion_personal.secuencia_didactica is an array of {momento, actividad, duracion_minutos}
+   const secuenciaItems = []
+   const rawSec = topic.secuencia_didactica || []
+   if (Array.isArray(rawSec)) {
+      rawSec.forEach(i => {
+         let nombre = ''
+         if (typeof i === 'string') {
+            nombre = i
+         } else if (i.nombre) {
+            nombre = i.nombre
+         } else if (i.momento || i.actividad) {
+            nombre = i.momento ? i.momento : ''
+            if (i.actividad) nombre += (nombre ? ': ' : '') + i.actividad.substring(0, 60)
+         }
+         if (nombre) secuenciaItems.push({ nombre, cumplido: false })
+      })
+   }
+
    return {
-      estrategias: Array.isArray(e) ? e.map(i => ({ nombre: typeof i === 'string' ? i : (i.nombre || ''), cumplido: false })) : [],
-      evaluacion: Array.isArray(v) ? v.map(i => ({ nombre: typeof i === 'string' ? i : (i.nombre || ''), cumplido: false })) : [],
-      secuencia: Array.isArray(s) ? s.map(i => ({ nombre: typeof i === 'string' ? i : (i.nombre || ''), cumplido: false })) : []
+      estrategias: estrategiasItems,
+      evaluacion: evaluacionItems,
+      secuencia: secuenciaItems
    }
 }
 
@@ -867,21 +986,57 @@ const esLecturaSola = computed(() => {
    return result
 })
 
+const SESIONES_CACHE_KEY = (asigId, grupoId) => `clase_sesiones_${asigId}_${grupoId}`
+const MATERIAS_CACHE_KEY = 'clase_materias_cache'
+
+// Cache status as reactive ref (offlineStorage is async, so can't be a computed)
+const cacheStatus = ref({ materias: false, sesiones: false })
+
+async function refreshCacheStatus() {
+   const tieneMateriasCache = await offlineStorage.has(MATERIAS_CACHE_KEY)
+   let tieneSesionesCache = false
+   if (materiaSeleccionada.value && grupoSeleccionado.value) {
+      const key = SESIONES_CACHE_KEY(materiaSeleccionada.value, grupoSeleccionado.value)
+      tieneSesionesCache = await offlineStorage.has(key)
+   }
+   cacheStatus.value = { materias: tieneMateriasCache, sesiones: tieneSesionesCache }
+}
+
 const fetchData = async () => {
    loading.value = true
+
    try {
-      console.log('fetchData - calling fetchGrupos')
-      const response = await gruposStore.fetchGrupos({
-         gestion: '1-2026'
-      })
-      console.log('fetchData - response received:', response)
-      materiasReales.value = (response && response.data) ? response.data : []
+      if (!isOnline.value) {
+         // OFFLINE: read from native storage (SharedPreferences on Android)
+         const cached = await offlineStorage.get(MATERIAS_CACHE_KEY)
+         if (cached && cached.length > 0) {
+            materiasReales.value = cached
+            $q.notify({ type: 'info', message: 'Modo offline — mostrando materias cacheadas', icon: 'cloud_off', timeout: 2000 })
+         } else {
+            $q.notify({ type: 'warning', message: 'Sin conexión y sin datos en caché. Abre la app con internet al menos una vez.', timeout: 5000 })
+         }
+         return
+      }
+
+      const response = await gruposStore.fetchGrupos({ gestion: '1-2026' })
+      const materias = (response && response.data) ? response.data : []
+      materiasReales.value = materias
+
+      // Save to native storage for reliable offline access
+      if (materias.length > 0) {
+         await offlineStorage.set(MATERIAS_CACHE_KEY, materias)
+         await refreshCacheStatus()
+      }
    } catch (error) {
       console.error('Error fetching real data:', error)
-      $q.notify({
-         type: 'negative',
-         message: 'Error al cargar las materias'
-      })
+      // API failed — try native storage cache
+      const cached = await offlineStorage.get(MATERIAS_CACHE_KEY)
+      if (cached && cached.length > 0) {
+         materiasReales.value = cached
+         $q.notify({ type: 'warning', message: 'Sin conexión — mostrando materias cacheadas', icon: 'cloud_off', timeout: 3000 })
+      } else {
+         $q.notify({ type: 'negative', message: 'Error al cargar las materias. Sin caché disponible.' })
+      }
    } finally {
       loading.value = false
    }
@@ -1079,7 +1234,34 @@ const sesionesPendientesOptions = computed(() => {
 const fetchSesiones = async () => {
    if (!materiaSeleccionada.value || !grupoSeleccionado.value) return
 
+   const cacheKey = SESIONES_CACHE_KEY(materiaSeleccionada.value, grupoSeleccionado.value)
    loadingSesiones.value = true
+
+   // OFFLINE: load from localStorage cache immediately
+   if (!isOnline.value) {
+      try {
+         const cached = await offlineStorage.get(cacheKey)
+         if (cached) {
+            sesiones.value = cached.sesiones || []
+            horariosGrupoActual.value = cached.horarios || []
+            $q.notify({ type: 'info', message: 'Modo offline — mostrando sesiones cacheadas', icon: 'cloud_off', timeout: 2000 })
+            if (sesionesPendientesOptions.value.length > 0) {
+               const today = new Date().toISOString().split('T')[0]
+               const todaySession = sesionesPendientesOptions.value.find(o => o.value === today)
+               fechaSeguimiento.value = todaySession ? todaySession.value : sesionesPendientesOptions.value[0].value
+            }
+            actualizarSesionPorFecha()
+         } else {
+            $q.notify({ type: 'warning', message: 'Sin conexión y sin caché de sesiones. Abre la app con internet al menos una vez.', timeout: 4000 })
+         }
+      } catch (e) {
+         console.error('Error reading sessions cache:', e)
+      } finally {
+         loadingSesiones.value = false
+      }
+      return
+   }
+
    try {
       // 1. Fetch Planificación (Hybrid: Master + Execution)
       const response = await planificacionSemestralService.getPlanificacion(materiaSeleccionada.value, {
@@ -1173,7 +1355,10 @@ const fetchSesiones = async () => {
       }
 
       sesiones.value = filteredSesiones
-      
+
+      // OFFLINE CACHE: save to native storage
+      await offlineStorage.set(cacheKey, { sesiones: filteredSesiones, horarios: horarios, savedAt: new Date().toISOString() })
+      await refreshCacheStatus()
       // Auto-select logic
       if (sesionesPendientesOptions.value.length > 0) {
           // Try to select today's session if exists
@@ -1187,7 +1372,26 @@ const fetchSesiones = async () => {
       actualizarSesionPorFecha()
    } catch (error) {
       console.error('Error fetching sessions:', error)
-      $q.notify({ type: 'negative', message: 'Error al cargar las sesiones' })
+      // Fallback to native storage cache if API fails
+      try {
+         const cached = await offlineStorage.get(cacheKey)
+         if (cached) {
+            sesiones.value = cached.sesiones || []
+            horariosGrupoActual.value = cached.horarios || []
+            $q.notify({ type: 'warning', message: 'Sin conexión — mostrando sesiones cacheadas', icon: 'cloud_off', timeout: 3000 })
+            if (sesionesPendientesOptions.value.length > 0) {
+               const today = new Date().toISOString().split('T')[0]
+               const todaySession = sesionesPendientesOptions.value.find(o => o.value === today)
+               fechaSeguimiento.value = todaySession ? todaySession.value : sesionesPendientesOptions.value[0].value
+            }
+            actualizarSesionPorFecha()
+         } else {
+            const errDetails = error?.message || error?.toString() || 'Error desconocido'
+            $q.notify({ type: 'negative', message: `Error al cargar las sesiones (${errDetails}). Sin caché disponible.`, timeout: 8000 })
+         }
+      } catch {
+         $q.notify({ type: 'negative', message: 'Error al cargar las sesiones' })
+      }
    } finally {
       loadingSesiones.value = false
    }
@@ -1559,12 +1763,14 @@ watch(materiaSeleccionada, () => {
    fechaSeguimiento.value = null
 })
 
-watch(grupoSeleccionado, (newVal) => {
+watch(grupoSeleccionado, async (newVal) => {
    if (newVal) {
       fetchSesiones()
+      await refreshCacheStatus()
    } else {
       sesiones.value = []
       fechaSeguimiento.value = null
+      await refreshCacheStatus()
    }
 })
 
@@ -1581,8 +1787,9 @@ watch(vistaHistorial, () => {
    }
 })
 
-onMounted(() => {
-   fetchData()
+onMounted(async () => {
+   await fetchData()
+   await refreshCacheStatus()
 })
 </script>
 
