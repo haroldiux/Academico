@@ -200,7 +200,7 @@ const weekRangeLabel = computed(() => {
       if (isNaN(start.getTime())) return 'Fecha inválida'
       const end = date.addToDate(start, { days: 5 }) // Mon-Sat
       return `${date.formatDate(start, 'DD/MM')} - ${date.formatDate(end, 'DD/MM/YYYY')}`
-   } catch (e) {
+   } catch {
       return 'Error de formato'
    }
 })
