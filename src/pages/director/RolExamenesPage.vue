@@ -69,6 +69,16 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-semana="props">
+            <q-td :props="props" class="text-center"
+              :class="props.row.conflictos && props.row.conflictos.semana ? 'bg-amber-1 text-amber-9 text-weight-bold' : ''">
+              {{ props.row.semana }}
+              <q-tooltip v-if="props.row.conflictos && props.row.conflictos.semana" class="bg-amber-9">
+                {{ props.row.conflictos.semana }}
+              </q-tooltip>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-tipo_examen="props">
             <q-td :props="props">
               <q-chip :color="getExamenColor(props.row.tipo_examen)" text-color="white" size="sm" dense>
@@ -78,9 +88,21 @@
           </template>
 
           <template v-slot:body-cell-fecha="props">
-            <q-td :props="props">
-              <q-icon name="event" size="xs" class="q-mr-xs" />
-              {{ formatDate(props.row.fecha) }}
+            <q-td :props="props"
+              :class="props.row.conflictos && props.row.conflictos.horario ? 'bg-deep-orange-1 text-deep-orange-9 text-weight-bold' : ''">
+              <div class="row items-center no-wrap justify-center">
+                <q-icon name="event" size="xs" class="q-mr-xs" />
+                {{ formatDate(props.row.fecha) }}
+                <q-icon v-if="props.row.conflictos && (props.row.conflictos.semana || props.row.conflictos.horario)"
+                  :name="props.row.conflictos.horario ? 'error' : 'warning'"
+                  :color="props.row.conflictos.horario ? 'deep-orange-9' : 'amber-9'" size="xs" class="q-ml-xs">
+                  <q-tooltip :class="props.row.conflictos.horario ? 'bg-deep-orange-9' : 'bg-amber-9'" class="text-white">
+                    <div class="text-weight-bold q-mb-xs">Incidencias:</div>
+                    <div v-if="props.row.conflictos.semana">• {{ props.row.conflictos.semana }}</div>
+                    <div v-if="props.row.conflictos.horario">• {{ props.row.conflictos.horario }}</div>
+                  </q-tooltip>
+                </q-icon>
+              </div>
             </q-td>
           </template>
 
@@ -136,14 +158,10 @@
             <strong>Formato del Excel:</strong>
             <ul class="q-ma-none q-pl-md">
               <li>Columna A: Código Materia</li>
-              <li>Columna B: Nombre Materia</li>
-              <li>Columna C: Tipo Examen (1er Parcial, 2do Parcial, Final, 2da Instancia)</li>
-              <li>Columna D: Grupo (Opcional, para validar días de clase)</li>
-              <li>Columna E: Semana (número)</li>
-              <li>Columna F: Fecha (YYYY-MM-DD)</li>
-              <li>Columna G: Hora Inicio (HH:MM)</li>
-              <li>Columna H: Hora Fin (HH:MM)</li>
-              <li>Columna I: Aula (opcional)</li>
+              <li>Columna B: Tipo Examen (1er Parcial, 2do Parcial, Final, 2da Instancia)</li>
+              <li>Columna C: Grupo (Opcional)</li>
+              <li>Columna D: Fecha (YYYY-MM-DD)</li>
+              <li>Columna E: Hora Inicio (HH:MM)</li>
             </ul>
           </q-banner>
 
@@ -310,7 +328,11 @@ const carrerasOptions = computed(() => {
   const user = authStore.usuarioActual
   if (!user || !user.director) return []
 
-  const carreras = user.director.carreras || (user.director.carrera ? [user.director.carrera] : [])
+  // Priorizar carreras (arreglo) sobre carrera (individual)
+  const carreras = user.director.carreras || []
+  if (carreras.length === 0 && user.director.carrera) {
+    carreras.push(user.director.carrera)
+  }
 
   return carreras.map(c => ({
     label: c.nombre,
@@ -379,8 +401,9 @@ function getExamenColor(tipo) {
 }
 
 function formatDate(date) {
-  if (!date) return ''
+  if (!date || date === '0000-00-00') return 'Sin fecha'
   const d = new Date(date)
+  if (isNaN(d.getTime()) || d.getFullYear() <= 1970) return 'Sin fecha'
   return d.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
@@ -540,13 +563,26 @@ function eliminarExamen(examen) {
 }
 
 function eliminarTodo() {
-  if (!filtros.value.carrera_id) return
+  if (!filtros.value.carrera_id) {
+    $q.notify({
+      type: 'warning',
+      message: 'Debe seleccionar una carrera antes de eliminar los registros.',
+      icon: 'warning'
+    })
+    return
+  }
 
   $q.dialog({
     title: '⚠️ Peligro: Eliminar Todo',
-    message: `¿Estás seguro de que quieres ELIMINAR TODOS los exámenes de esta carrera para la gestión ${filtros.value.gestion}? Esta acción no se puede deshacer.`,
+    message: `¿Estás seguro de que quieres ELIMINAR TODOS los exámenes de esta carrera para la gestión <b>${filtros.value.gestion}</b>? Esta acción no se puede deshacer.<br/><br/>Escribe <b>eliminar</b> para confirmar:`,
+    html: true,
+    prompt: {
+      model: '',
+      isValid: val => val.toLowerCase() === 'eliminar',
+      type: 'text'
+    },
     persistent: true,
-    ok: { label: 'Eliminar Todo', color: 'negative', flat: true },
+    ok: { label: 'Confirmar Eliminación', color: 'negative', flat: true },
     cancel: { label: 'Cancelar', color: 'primary' }
   }).onOk(async () => {
     try {
@@ -623,12 +659,15 @@ async function generarReporte() {
 }
 
 onMounted(async () => {
-  // Auto-seleccionar si solo hay una carrera
-  if (carrerasOptions.value.length === 1) {
+  // Auto-seleccionar si hay carreras disponibles y ninguna seleccionada
+  if (!filtros.value.carrera_id && carrerasOptions.value.length > 0) {
     filtros.value.carrera_id = carrerasOptions.value[0].value
   }
 
-  await cargarExamenes()
+  // Solo cargar si hay carrera seleccionada o si es un rol global
+  if (filtros.value.carrera_id || [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.VICERRECTOR_NACIONAL].includes(authStore.rol)) {
+    await cargarExamenes()
+  }
 })
 </script>
 
