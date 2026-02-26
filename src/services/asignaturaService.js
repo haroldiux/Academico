@@ -73,6 +73,18 @@ export default {
     });
   },
 
+  importPersonal(id, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post(`/asignaturas/${id}/import-personal`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+
+  getTemplatePersonalUrl(id) {
+    return `${api.defaults.baseURL}/asignaturas/${id}/template-personal`
+  },
+
   // Bibliografias
   addBibliografia(data) {
     return api.post('/bibliografias', data)
