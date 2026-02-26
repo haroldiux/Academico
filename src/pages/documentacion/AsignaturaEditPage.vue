@@ -327,7 +327,7 @@
                   <q-input v-model="formPrograma.metodologia_aula" label="EN EL AULA" type="textarea" rows="3" outlined
                     :readonly="!puedeEditarCampo()" placeholder="Describa la metodología en aula..." />
 
-                  <q-input v-model="formPrograma.metodologia_simulacion" label="CENTRO DE SIMULACIÓN (Si corresponde)"
+                  <q-input v-model="formPrograma.metodologia_simulacion" label="CENTRO DE SIMULACIÓN Y/O LABORATORIO"
                     type="textarea" rows="2" outlined :readonly="!puedeEditarCampo()"
                     placeholder="Describa la metodología en simulación..." />
 
