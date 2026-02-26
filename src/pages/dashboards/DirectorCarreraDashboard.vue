@@ -16,7 +16,7 @@
         <q-btn flat round icon="notifications" class="notification-btn">
           <q-badge color="red" floating rounded>{{ notificaciones }}</q-badge>
         </q-btn>
-        <q-btn unelevated class="primary-btn" to="/documentacion">
+        <q-btn unelevated class="primary-btn" to="/director/asignaturas">
           <q-icon name="visibility" size="18px" class="q-mr-xs" />
           Ver Asignaturas
         </q-btn>
@@ -86,7 +86,7 @@
             </h2>
             <p class="card-subtitle">Organizadas por semestre</p>
           </div>
-          <q-btn flat class="view-all-btn" to="/documentacion" no-caps>
+          <q-btn flat class="view-all-btn" to="/director/asignaturas" no-caps>
             Ver todas
             <q-icon name="chevron_right" size="18px" />
           </q-btn>
@@ -105,14 +105,19 @@
                 <span class="stat-desc">Materias</span>
               </div>
               <div class="semestre-stat">
-                <span class="stat-num" :class="sem.progreso >= 80 ? 'text-green' : 'text-orange'">{{ sem.progreso
-                  }}%</span>
+                <span class="stat-num" :class="sem.progreso >= 80 ? 'text-green' : 'text-orange'"
+                  >{{ sem.progreso }}%</span
+                >
                 <span class="stat-desc">Progreso</span>
               </div>
             </div>
-            <q-linear-progress :value="sem.progreso / 100"
-              :color="sem.progreso >= 80 ? 'green' : sem.progreso >= 50 ? 'orange' : 'red'" rounded size="6px"
-              class="q-mt-sm" />
+            <q-linear-progress
+              :value="sem.progreso / 100"
+              :color="sem.progreso >= 80 ? 'green' : sem.progreso >= 50 ? 'orange' : 'red'"
+              rounded
+              size="6px"
+              class="q-mt-sm"
+            />
           </div>
         </div>
       </div>
@@ -127,7 +132,11 @@
         </div>
 
         <div class="docentes-list">
-          <div v-for="docente in docentesCarrera.slice(0, 5)" :key="docente.id" class="docente-item">
+          <div
+            v-for="docente in docentesCarrera.slice(0, 5)"
+            :key="docente.id"
+            class="docente-item"
+          >
             <q-avatar size="36px" color="primary" text-color="white">
               {{ docente.avatar }}
             </q-avatar>
@@ -135,9 +144,13 @@
               <span class="docente-nombre">{{ docente.nombre }}</span>
               <span class="docente-materias">{{ docente.materias }} materias</span>
             </div>
-            <q-circular-progress :value="docente.progreso" size="32px" :thickness="0.2"
+            <q-circular-progress
+              :value="docente.progreso"
+              size="32px"
+              :thickness="0.2"
               :color="docente.progreso >= 80 ? 'green' : docente.progreso >= 50 ? 'orange' : 'red'"
-              track-color="grey-8" />
+              track-color="grey-8"
+            />
           </div>
         </div>
 
@@ -152,7 +165,7 @@
     <div class="quick-access-section">
       <h2 class="section-title">Acciones Rápidas</h2>
       <div class="quick-access-grid">
-        <router-link to="/documentacion" class="quick-access-card">
+        <router-link to="/director/asignaturas" class="quick-access-card">
           <div class="quick-icon purple">
             <q-icon name="menu_book" size="28px" />
           </div>
@@ -225,7 +238,7 @@ async function loadStats() {
   try {
     const data = await dashboardService.getDirectorStats({
       carrera_id: carreraId.value,
-      sede_id: sedeId.value
+      sede_id: sedeId.value,
     })
 
     docentesActivos.value = data.stats.docentesActivos
