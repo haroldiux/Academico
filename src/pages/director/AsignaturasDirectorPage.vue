@@ -144,11 +144,48 @@
                         rounded
                         size="10px"
                         class="q-mb-xs"
-                        style="min-width: 80px;"
+                        style="min-width: 100px;"
                       />
                       <span class="progreso-text" :class="getProgresoClass(props.row.progreso_documentacion || 0)">
                         {{ props.row.progreso_documentacion || 0 }}%
                       </span>
+                      <div class="row q-gutter-xs q-mt-xs justify-center">
+                        <q-icon 
+                          name="folder" 
+                          :color="props.row.indicadores_documentacion?.programa_analitico?.color || 'negative'" 
+                          size="20px"
+                        >
+                          <q-tooltip>Programa Analítico - {{ props.row.indicadores_documentacion?.programa_analitico?.porcentaje || 0 }}%</q-tooltip>
+                        </q-icon>
+                        <q-icon 
+                          name="article" 
+                          :color="props.row.indicadores_documentacion?.programa_asignatura?.color || 'negative'" 
+                          size="20px"
+                        >
+                          <q-tooltip>Programa de Asignatura (PAC) - {{ props.row.indicadores_documentacion?.programa_asignatura?.porcentaje || 0 }}%</q-tooltip>
+                        </q-icon>
+                        <q-icon 
+                          name="assignment" 
+                          :color="props.row.indicadores_documentacion?.plan_clase?.color || 'negative'" 
+                          size="20px"
+                        >
+                          <q-tooltip>Plan de Clase (Por Tema) - {{ props.row.indicadores_documentacion?.plan_clase?.porcentaje || 0 }}%</q-tooltip>
+                        </q-icon>
+                        <q-icon 
+                          name="event" 
+                          :color="props.row.indicadores_documentacion?.cronograma?.color || 'negative'" 
+                          size="20px"
+                        >
+                          <q-tooltip>Cronograma - {{ props.row.indicadores_documentacion?.cronograma?.porcentaje || 0 }}%</q-tooltip>
+                        </q-icon>
+                        <q-icon 
+                          name="help_outline" 
+                          :color="props.row.indicadores_documentacion?.preguntas?.color || 'negative'" 
+                          size="20px"
+                        >
+                          <q-tooltip>Preguntas de Evaluación - {{ props.row.indicadores_documentacion?.preguntas?.porcentaje || 0 }}%</q-tooltip>
+                        </q-icon>
+                      </div>
                     </div>
                   </q-td>
                 </template>
@@ -450,7 +487,7 @@ const columnasAsignaturas = [
   { name: 'asignatura', label: 'Asignatura', field: 'nombre', align: 'left', sortable: true },
   { name: 'horas', label: 'Horas', field: 'horas_teoricas', align: 'center', format: (val, row) => ((row.horas_teoricas || 0) * 20) + ((row.horas_practicas || 0) * 20), style: 'width: 80px' }, // Suma x20
   { name: 'docente', label: 'Docente Principal', field: 'docente_nombre', align: 'left' },
-  { name: 'progreso', label: 'Progreso Doc.', field: 'progreso_documentacion', align: 'center', sortable: true, style: 'width: 150px' },
+  { name: 'progreso', label: 'Progreso Doc.', field: 'progreso_documentacion', align: 'center', sortable: true, style: 'width: 180px' },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 100px' },
   { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center', style: 'width: 100px' }
 ]

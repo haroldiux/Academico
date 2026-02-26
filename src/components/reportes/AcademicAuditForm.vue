@@ -3,7 +3,7 @@
     <q-card-section class="row items-center q-pb-none bg-indigo text-white">
       <div class="text-h6">
         <q-icon name="rule" class="q-mr-sm" />
-        NIVEL 3: Auditoría Microcurricular in Situ
+        Auditoría Microcurricular: {{ asignaturaNombre || 'Cargando...' }}
       </div>
       <q-space />
       <q-btn icon="close" flat round dense v-close-popup />
@@ -11,66 +11,43 @@
 
     <q-card-section class="q-pa-md">
       <q-form @submit="onSubmit" class="q-gutter-md">
-
-        <!-- Selección de Clase a Auditar (Imagen A) -->
+        <!-- Detalle de la Auditoría -->
         <div class="row q-col-gutter-sm items-end bg-grey-1 q-pa-sm rounded-borders">
           <div class="col-12 col-md-4">
-            <q-select
-              v-model="form.docente_id"
-              :options="opcionesDocentes"
-              label="Seleccionar Docente"
-              outlined dense emit-value map-options
-              @update:model-value="onDocenteChange"
-            >
-              <template v-slot:prepend><q-icon name="person" /></template>
-            </q-select>
+             <q-input :model-value="docenteNombre" label="Docente" outlined dense readonly />
           </div>
           <div class="col-12 col-md-4">
-            <q-select
-              v-model="form.asignatura_id"
-              :options="opcionesMaterias"
-              label="Elegir Asignatura"
-              outlined dense emit-value map-options
-              :disable="!form.docente_id"
-              @update:model-value="onMateriaChange"
-            >
-              <template v-slot:prepend><q-icon name="menu_book" /></template>
-            </q-select>
+             <q-input :model-value="grupoNombre" label="Grupo" outlined dense readonly />
           </div>
           <div class="col-12 col-md-4">
-            <q-select
-              v-model="form.grupo"
-              :options="opcionesGrupos"
-              label="Grupo"
-              outlined dense
-              :disable="!form.asignatura_id"
-            >
-              <template v-slot:prepend><q-icon name="groups" /></template>
-            </q-select>
-          </div>
-
-          <div class="col-12 col-md-3">
              <q-input v-model="form.fecha" label="Fecha Auditoría" type="date" outlined dense />
           </div>
-          <div class="col-12 col-md-3">
-             <q-input v-model="form.hora" label="Hora de Ingreso" type="time" outlined dense />
-          </div>
-          <div class="col-12 col-md-3">
+          
+          <div class="col-12 col-md-4">
              <q-select
               v-model="form.semana"
-              :options="['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5']"
-              label="Semana"
+              :options="opcionesSemanas"
+              label="Semana Académica"
               outlined dense
              />
           </div>
-          <div class="col-12 col-md-3">
-             <q-input v-model="form.sesion" label="Sesión / Clase #" type="number" outlined dense />
+          <div class="col-12 col-md-4">
+            <q-input
+              :model-value="semaforoVisual.label"
+              label="Alerta / Semáforo (Automático)"
+              outlined dense readonly
+              :input-class="'text-weight-bold text-' + semaforoVisual.color"
+            >
+              <template v-slot:prepend>
+                <q-icon name="circle" :color="semaforoVisual.color" />
+              </template>
+            </q-input>
           </div>
         </div>
 
         <q-separator />
 
-        <!-- Tabla de Criterios (Imagen A) -->
+        <!-- Tabla de Criterios -->
         <div class="text-subtitle2 text-indigo q-mb-sm">Cumplimiento de Criterios Institucionales</div>
         <q-markup-table flat bordered separator="cell">
           <thead class="bg-indigo-1">
@@ -110,11 +87,18 @@
         <!-- Observaciones -->
         <q-input
           v-model="form.observaciones"
-          label="Observaciones y Recomendaciones Generales"
+          label="Observaciones y Hallazgos"
           type="textarea"
           outlined
           rows="2"
-          placeholder="Describa brevemente hallazgos o recomendaciones para el docente..."
+        />
+
+        <q-input
+          v-model="form.acciones_correctivas"
+          label="Acciones Correctivas Dispuestas (Opcional)"
+          type="textarea"
+          outlined
+          rows="2"
         />
 
         <div class="row justify-end q-gutter-sm">
@@ -123,7 +107,7 @@
               Esta auditoría impacta en la Matriz de Control Institucional.
            </q-badge>
           <q-btn label="Cancelar" flat color="grey" v-close-popup />
-          <q-btn label="Finalizar Auditoría" color="indigo" type="submit" />
+          <q-btn label="Finalizar Auditoría" color="indigo" type="submit" :loading="saving" />
         </div>
       </q-form>
     </q-card-section>
@@ -131,18 +115,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
+import { api } from 'boot/axios'
 
 const props = defineProps({
-  auditData: {
-    type: Object,
-    default: () => ({})
-  }
+  asignaturaId: { type: Number, required: true },
+  asignaturaNombre: { type: String, default: '' },
+  docenteId: { type: Number, required: true },
+  docenteNombre: { type: String, default: '' },
+  grupoNombre: { type: String, default: 'G1' }
 })
 
 const emit = defineEmits(['saved'])
 const $q = useQuasar()
+
+const saving = ref(false)
+
+const opcionesSemanas = Array.from({length: 20}, (_, i) => `Semana ${i + 1}`)
 
 const criterios = {
   inicioPuntual: { label: 'Inicio puntual de clase', hint: 'Verificar presencia del docente al toque de timbre.' },
@@ -153,13 +143,8 @@ const criterios = {
 }
 
 const form = ref({
-  docente_id: null,
-  asignatura_id: null,
-  grupo: '',
   fecha: new Date().toISOString().split('T')[0],
-  hora: new Date().toTimeString().slice(0,5),
-  semana: 'Semana 4',
-  sesion: 1,
+  semana: 'Semana 1',
   cumplimiento: {
     inicioPuntual: null,
     secuencialidad: null,
@@ -167,69 +152,61 @@ const form = ref({
     evidenciaMaterial: null,
     asistencia: null
   },
-  observaciones: ''
+  observaciones: '',
+  acciones_correctivas: ''
 })
 
-// Mock Data para el Prototipo
-const opcionesDocentes = [
-  { label: 'KARINA PAOLA LOPEZ', value: 1 },
-  { label: 'HAROLD MARCO ANTONIO ROJAS', value: 2 },
-  { label: 'ROBERTO FERNANDEZ VACA', value: 3 }
-]
+const calcSemaforo = () => {
+  const values = Object.values(form.value.cumplimiento).filter(v => v !== null)
+  if (values.length === 0) return 'verde'
 
-const materiasPorDocente = {
-  1: [{ label: 'Álgebra I', value: 101 }, { label: 'Cálculo I', value: 102 }],
-  2: [{ label: 'Programación II', value: 201 }, { label: 'Base de Datos I', value: 202 }],
-  3: [{ label: 'Anatomía Humana', value: 301 }]
+  const positivos = values.filter(v => v === true).length
+  if (positivos === 5) return 'verde'
+  if (positivos >= 3) return 'amarillo'
+  return 'rojo'
 }
 
-const opcionesMaterias = ref([])
-const opcionesGrupos = ['G1', 'G2', 'G3', 'N1']
-
-const onDocenteChange = (val) => {
-  opcionesMaterias.value = materiasPorDocente[val] || []
-  form.value.asignatura_id = null
-  form.value.grupo = ''
-}
-
-const onMateriaChange = () => {
-  form.value.grupo = 'G1' // Auto-default for prototype
-}
-
-onMounted(() => {
-  if (props.auditData.docente_id) {
-    form.value.docente_id = props.auditData.docente_id
-    onDocenteChange(form.value.docente_id)
-    form.value.asignatura_id = props.auditData.asignatura_id
-    form.value.grupo = props.auditData.grupo
-  }
+const semaforoVisual = computed(() => {
+  const s = calcSemaforo()
+  if (s === 'verde') return { label: 'Normal (Verde)', color: 'positive' }
+  if (s === 'amarillo') return { label: 'Atención (Amarillo)', color: 'warning' }
+  return { label: 'Crítico (Rojo)', color: 'negative' }
 })
 
-const onSubmit = () => {
-    if (!form.value.docente_id || !form.value.asignatura_id || !form.value.grupo) {
-        $q.notify({ type: 'warning', message: 'Seleccione docente, asignatura y grupo' })
-        return
-    }
+// Removed manual load since we get it from props
 
+const onSubmit = async () => {
     const faltantes = Object.values(form.value.cumplimiento).some(v => v === null)
     if (faltantes) {
         $q.notify({ type: 'warning', message: 'Complete todos los criterios de evaluación' })
         return
     }
 
-    $q.loading.show({ message: 'Sincronizando auditoría institucional...' })
-    setTimeout(() => {
-        $q.loading.hide()
+    if (!props.docenteId) {
+        $q.notify({ type: 'warning', message: 'No se encontró un docente asignado a esta asignatura.' })
+        return
+    }
 
-        // Find labels for readable event
-        const docLabel = opcionesDocentes.find(d => d.value === form.value.docente_id)?.label
-        const matLabel = opcionesMaterias.value.find(m => m.value === form.value.asignatura_id)?.label
-
-        emit('saved', {
-            ...form.value,
-            docente: docLabel,
-            asignatura: matLabel
+    saving.value = true
+    try {
+        await api.post('/auditorias', {
+            asignatura_id: props.asignaturaId,
+            docente_id: props.docenteId,
+            semana: form.value.semana,
+            tipo: 'Microcurricular',
+            criterios: form.value.cumplimiento,
+            observaciones: form.value.observaciones,
+            acciones_correctivas: form.value.acciones_correctivas,
+            semaforo: calcSemaforo()
         })
-    }, 1200)
+        
+        $q.notify({ type: 'positive', message: 'Auditoría guardada correctamente' })
+        emit('saved')
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Error al enviar la auditoría' })
+    } finally {
+        saving.value = false
+    }
 }
 </script>

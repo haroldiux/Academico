@@ -130,6 +130,7 @@
         <q-tab name="sedes" label="Por Sede" icon="apartment" />
         <q-tab name="directores" label="Directores de Carrera" icon="person" />
         <q-tab name="academicos" label="Directores Académicos" icon="school" />
+        <q-tab name="auditorias" label="Auditorías Críticas" icon="gavel" />
       </q-tabs>
 
       <q-separator />
@@ -277,6 +278,37 @@
               </q-td>
             </template>
           </q-table>
+        <!-- Tab: Auditorías Críticas -->
+        <q-tab-panel name="auditorias">
+          <q-table
+            :rows="reportesAuditorias"
+            :columns="columnasAuditorias"
+            row-key="id"
+            flat
+            bordered
+            :loading="cargandoAuditorias"
+            :pagination="{ rowsPerPage: 10 }"
+          >
+            <template v-slot:body-cell-semaforo="props">
+              <q-td :props="props">
+                <q-chip
+                  :color="props.row.semaforo"
+                  text-color="white"
+                  size="sm"
+                  class="text-weight-bold"
+                >
+                  {{ props.row.alertaLabel }}
+                </q-chip>
+              </q-td>
+            </template>
+            <template v-slot:body-cell-acciones="props">
+              <q-td :props="props">
+                <q-btn flat round dense icon="visibility" color="primary" @click="verDetalleAuditoria(props.row)">
+                  <q-tooltip>Ver Detalle</q-tooltip>
+                </q-btn>
+              </q-td>
+            </template>
+          </q-table>
         </q-tab-panel>
       </q-tab-panels>
     </q-card>
@@ -292,7 +324,37 @@
         </q-bar>
         <q-card-section class="q-pa-lg">
           <div class="text-h6 q-mb-md">{{ detalleSeleccionado?.subtitulo }}</div>
-          <p class="text-grey-7">Aquí se mostrará el detalle completo del reporte seleccionado.</p>
+          
+          <template v-if="detalleSeleccionado?.tipo === 'auditoria'">
+            <div class="row q-col-gutter-md q-mb-md">
+              <div class="col-12 col-md-6">
+                <strong>Docente:</strong> {{ detalleSeleccionado.data.docente }}
+              </div>
+              <div class="col-12 col-md-6">
+                <strong>Auditor:</strong> {{ detalleSeleccionado.data.auditor }}
+              </div>
+              <div class="col-12 col-md-6">
+                <strong>Fecha:</strong> {{ detalleSeleccionado.data.fecha }}
+              </div>
+              <div class="col-12 col-md-6">
+                <strong>Semana:</strong> {{ detalleSeleccionado.data.semana }}
+              </div>
+            </div>
+            
+            <q-separator class="q-my-md" />
+            
+            <div class="q-mb-md">
+              <strong>Observaciones:</strong>
+              <p class="text-grey-8">{{ detalleSeleccionado.data.observaciones || 'Sin observaciones' }}</p>
+            </div>
+            
+            <div>
+              <strong>Acciones Correctivas:</strong>
+              <p class="text-grey-8">{{ detalleSeleccionado.data.acciones_correctivas || 'Sin acciones correctivas' }}</p>
+            </div>
+          </template>
+          
+          <p v-else class="text-grey-7">Aquí se mostrará el detalle completo del reporte seleccionado.</p>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -303,6 +365,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { api } from 'boot/axios'
 import { useSedesStore } from 'src/stores/sedes'
 
 const $q = useQuasar()
@@ -375,6 +438,16 @@ const columnasAcademicos = [
   { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
 ]
 
+const columnasAuditorias = [
+  { name: 'fecha', label: 'Fecha', field: 'fecha', align: 'left', sortable: true },
+  { name: 'semana', label: 'Semana', field: 'semana', align: 'center' },
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left' },
+  { name: 'docente', label: 'Docente', field: 'docente', align: 'left' },
+  { name: 'semaforo', label: 'Alerta', field: 'semaforo', align: 'center', sortable: true },
+  { name: 'acciones', label: 'Observaciones', field: 'acciones', align: 'center' }
+]
+
 // Mock Data
 const reportesPorSede = ref([
   { id: 1, nombre: 'Cochabamba', carreras: 12, docentes: 180, progreso: 78, estado: 'Al día' },
@@ -403,6 +476,9 @@ const reportesAcademicos = ref([
   { id: 4, nombre: 'Lic. Rosa Mamani', iniciales: 'RM', sede: 'Oruro', carrerasSupervision: 8, docentesTotal: 95, cumplimientoGeneral: 82 }
 ])
 
+const reportesAuditorias = ref([])
+const cargandoAuditorias = ref(false)
+
 // Functions
 onMounted(async () => {
   await sedesStore.fetchSedes()
@@ -418,7 +494,26 @@ onMounted(async () => {
       icon: 'apartment'
     })
   }
+  
+  cargarAuditorias()
 })
+
+const cargarAuditorias = async () => {
+    cargandoAuditorias.value = true
+    try {
+        const params = {}
+        if (filtros.value.sede !== 'todas') {
+            params.sede_id = filtros.value.sede
+        }
+        const { data } = await api.get('/reportes/auditorias-vicerrector', { params })
+        reportesAuditorias.value = data
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Error cargando auditorías críticas' })
+    } finally {
+        cargandoAuditorias.value = false
+    }
+}
 
 const getColorProgreso = (progreso) => {
   if (progreso >= 80) return 'positive'
@@ -428,6 +523,7 @@ const getColorProgreso = (progreso) => {
 
 const actualizarReportes = () => {
   $q.notify({ type: 'info', message: 'Actualizando reportes...', icon: 'sync' })
+  cargarAuditorias()
 }
 
 const exportarPDF = () => {
@@ -453,7 +549,17 @@ const verDetalleDirector = (director) => {
 }
 
 const verDetalleAcademico = (academico) => {
-  detalleSeleccionado.value = { titulo: `Reporte: ${academico.nombre}`, subtitulo: `Dirección Académica - ${academico.sede}` }
+  detalleSeleccionado.value = { titulo: `Reporte: ${academico.nombre}`, subtitulo: `Dirección Académica - ${academico.sede}`, tipo: 'academico', data: academico }
+  dialogDetalle.value = true
+}
+
+const verDetalleAuditoria = (auditoria) => {
+  detalleSeleccionado.value = { 
+      titulo: `Auditoría: ${auditoria.asignatura}`, 
+      subtitulo: auditoria.carrera,
+      tipo: 'auditoria',
+      data: auditoria
+  }
   dialogDetalle.value = true
 }
 </script>

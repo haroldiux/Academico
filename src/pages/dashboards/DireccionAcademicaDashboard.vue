@@ -385,7 +385,7 @@ function navegarACarrera(carrera) {
   router.push({ 
     path: '/director/reportes', 
     query: { 
-      tab: 'materias',
+      tab: 'auditoria',
       carrera: carrera.id,
       sede: sedeSeleccionada.value
     } 

@@ -131,27 +131,6 @@
         </q-card>
       </div>
 
-      <!-- Riesgo Asistencia -->
-      <div class="col-12 col-sm-6 col-md-3">
-        <q-card
-          flat
-          bordered
-          class="kpi-card bg-white cursor-pointer hover-effect"
-          @click="scrollToTab('asistencias', 'riesgo')"
-        >
-          <q-card-section class="row items-center justify-between no-wrap">
-            <div>
-              <div class="text-h4 text-weight-bolder text-orange">
-                {{ kpis.cursos_riesgo_asistencia }}
-              </div>
-              <div class="text-caption text-orange text-uppercase text-weight-medium">
-                Baja Asistencia (&lt;50%)
-              </div>
-            </div>
-            <q-icon name="person_off" size="40px" class="text-orange opacity-20" />
-          </q-card-section>
-        </q-card>
-      </div>
     </div>
 
     <!-- Charts Section (Oculto a petición) -->
@@ -254,9 +233,10 @@
 
         <!-- Panel Auditoría -->
         <q-tab-panel name="auditoria">
-          <div class="text-h6 q-mb-md">Gestión de Auditorías In Situ</div>
-          <p>Selección aleatoria de asignaturas para control de calidad.</p>
-          <div class="bg-grey-2 q-pa-md rounded-borders">Componente de Auditoría</div>
+          <MatrizControlInstitucional 
+            :sede-id="Number(filtros.sede)"
+            :carrera-id="Number(filtros.carrera)"
+          />
         </q-tab-panel>
       </q-tab-panels>
     </q-card>
@@ -270,16 +250,19 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { api } from 'boot/axios'
 import { date } from 'quasar'
 import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
+import MatrizControlInstitucional from 'src/components/reportes/MatrizControlInstitucional.vue'
 
 const authStore = useAuthStore()
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
+const route = useRoute()
 
 // State
 const loading = ref(false)
@@ -431,8 +414,19 @@ const scrollToTab = (tabName) => {
 onMounted(async () => {
   await Promise.all([sedesStore.fetchSedes(), carrerasStore.fetchCarreras()])
 
+  // Read URL params
+  if (route.query.tab) {
+    tabActivo.value = route.query.tab
+  }
+  if (route.query.sede) {
+    filtros.value.sede = parseInt(route.query.sede)
+  }
+  if (route.query.carrera) {
+    filtros.value.carrera = parseInt(route.query.carrera)
+  }
+
   // Set default week to the first one available
-  if (weekOptions.value.length > 0) {
+  if (weekOptions.value.length > 0 && !filtros.value.semana) {
     filtros.value.semana = weekOptions.value[0].value
   }
 
@@ -443,8 +437,8 @@ onMounted(async () => {
 watch(
   () => filtros.value.sede,
   () => {
-    // Only reset carrera on sede change for non-directors
-    if (authStore.rol !== 'DIRECTOR_CARRERA') {
+    // Only reset carrera on sede change for non-directors and if there's no url query for carrera
+    if (authStore.rol !== 'DIRECTOR_CARRERA' && !route.query.carrera) {
       filtros.value.carrera = null
     }
   },

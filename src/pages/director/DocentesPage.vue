@@ -172,7 +172,7 @@
               </div>
               <div class="col">
                 <div class="text-h6 text-weight-bold">
-                  {{ docente.grupos ? docente.grupos.length : 0 }}
+                  {{ docente.gruposLength || 0 }}
                 </div>
                 <div class="text-caption text-grey-7" style="font-size: 10px">Grupos</div>
               </div>
@@ -199,9 +199,12 @@
                 color="purple-1"
                 text-color="purple-9"
                 :label="materia.nombre"
-                class="ellipsis"
+                class="ellipsis cursor-pointer"
                 style="max-width: 100%"
-              />
+                @click="verDetalleMateria(docente, materia)"
+              >
+                <q-tooltip>Ver detalle de {{ materia.nombre }}</q-tooltip>
+              </q-chip>
               <q-chip
                 v-if="docente.materiasData.length > 3"
                 dense
@@ -233,10 +236,32 @@
             icon="visibility"
             color="grey-5"
             class="absolute-bottom-right q-ma-sm"
-            @click="verDetalleMateria(docente, docente.materiasData[0])"
             v-if="docente.materiasData.length > 0"
           >
-            <q-tooltip>Ver Detalle</q-tooltip>
+            <q-tooltip v-if="docente.materiasData.length === 1">Ver Detalle</q-tooltip>
+            <q-tooltip v-else>Elegir Materia</q-tooltip>
+
+            <!-- Menú si hay más de una materia y no le dimos funcionalidad directa a las etiquetas -->
+            <q-menu v-if="docente.materiasData.length > 0" anchor="top right" self="bottom right">
+              <q-list style="min-width: 250px">
+                <q-item-label header class="text-weight-bold">Seleccionar Materia</q-item-label>
+                <q-item
+                  clickable
+                  v-close-popup
+                  v-for="materia in docente.materiasData"
+                  :key="materia.codigo"
+                  @click="verDetalleMateria(docente, materia)"
+                >
+                  <q-item-section>
+                    <q-item-label class="text-weight-medium">{{ materia.nombre }}</q-item-label>
+                    <q-item-label caption>{{ materia.codigo }} • Grupo {{ materia.grupo }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-icon name="chevron_right" size="xs" color="grey-5" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
           </q-btn>
         </q-card>
       </div>
@@ -275,7 +300,7 @@
 
           <div class="text-subtitle2 text-weight-bold q-mb-sm">Seguimiento de la Materia</div>
           <div class="row q-col-gutter-md q-mb-md">
-            <div class="col-6">
+            <div class="col-12">
               <div class="text-caption text-grey-6">Avance de Temas</div>
               <q-linear-progress
                 :value="detalleSeleccionado.materia.avanceTemas / 100"
@@ -286,19 +311,6 @@
               />
               <div class="text-body2 text-weight-bold">
                 {{ detalleSeleccionado.materia.avanceTemas }}%
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-6">Asistencia Promedio</div>
-              <q-linear-progress
-                :value="detalleSeleccionado.materia.asistencia / 100"
-                :color="getColorPorcentaje(detalleSeleccionado.materia.asistencia)"
-                class="q-mb-xs"
-                rounded
-                size="12px"
-              />
-              <div class="text-body2 text-weight-bold">
-                {{ detalleSeleccionado.materia.asistencia }}%
               </div>
             </div>
           </div>
@@ -401,6 +413,13 @@
         <q-card-actions align="right">
           <q-btn flat label="Cerrar" v-close-popup />
           <q-btn
+            color="secondary"
+            icon="menu_book"
+            label="Ver Documentación"
+            v-close-popup
+            @click="irADocumentacion(detalleSeleccionado.materia)"
+          />
+          <q-btn
             color="primary"
             icon="download"
             label="Descargar Reporte"
@@ -418,8 +437,10 @@ import { useQuasar, exportFile } from 'quasar'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useDocentesStore } from 'src/stores/docentes'
 import { useCarrerasStore } from 'src/stores/carreras'
+import { useRouter } from 'vue-router'
 
 const $q = useQuasar()
+const router = useRouter()
 const authStore = useAuthStore()
 const docentesStore = useDocentesStore()
 const carrerasStore = useCarrerasStore()
@@ -523,7 +544,31 @@ watch(
 const docentesFiltrados = computed(() => {
   let lista = docentesStore.docentes || []
 
-  return lista.filter((d) => {
+  return lista.map(docenteOriginal => {
+    // Clonar el docente para no mutar el store directamente (por las dudas)
+    let d = { ...docenteOriginal, materiasData: [...(docenteOriginal.materiasData || [])] }
+    
+    // Si somos director de carrera y tenemos un filtro de carrera activo, filtramos las materiasData
+    if (authStore.rol === 'DIRECTOR_CARRERA' && filtros.value.carrera) {
+      d.materiasData = d.materiasData.filter(m => 
+        m.carreras_ids && m.carreras_ids.includes(filtros.value.carrera)
+      )
+      d.materias_count = d.materiasData.length
+      
+      // Calculate missing details to fix counts inside UI
+      let distinctGroups = [...new Set(d.materiasData.map(m => m.grupo))]; // Count groups just assigned
+      d.gruposLength = distinctGroups.length;
+    } else {
+      d.gruposLength = d.grupos ? d.grupos.length : 0;
+    }
+
+    return d
+  }).filter((d) => {
+    // Escondemos docentes que se hayan quedado sin materias para esta carrera
+    if (authStore.rol === 'DIRECTOR_CARRERA' && filtros.value.carrera && d.materiasData.length === 0) {
+      return false
+    }
+
     // Filtro por búsqueda
     if (filtros.value.buscar) {
       const buscar = filtros.value.buscar.toLowerCase()
@@ -580,6 +625,12 @@ const verDetalleMateria = (docente, materia) => {
   dialogDetalle.value = true
 }
 
+const irADocumentacion = (materia) => {
+  if (materia && materia.id) {
+    router.push(`/documentacion/${materia.id}`)
+  }
+}
+
 const descargarReporteDetalle = () => {
   if (detalleSeleccionado.value) {
     const m = detalleSeleccionado.value.materia
@@ -593,7 +644,6 @@ const descargarReporteDetalle = () => {
       `Docente;${d.nombre_completo || d.nombre}`,
       `Grupo;${m.grupo}`,
       `Avance de Temas;${m.avanceTemas}%`,
-      `Asistencia Promedio;${m.asistencia}%`,
       `Estado Programa Analítico;${m.programaAnalitico ? 'Entregado' : 'Pendiente'}`,
       `Estado Programa de Asignatura (PAC);${m.pac ? 'Entregado' : 'Pendiente'}`,
       `Estado Plan de Clase;${m.planClase ? 'Entregado' : 'Pendiente'}`,
