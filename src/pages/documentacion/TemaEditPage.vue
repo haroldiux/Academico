@@ -384,13 +384,15 @@
               <!-- Banner de campo personal -->
               <q-banner class="bg-teal-1 text-teal-9 q-mb-md rounded-borders" dense>
                 <template v-slot:avatar>
-                  <q-icon name="person" color="teal" />
+                  <q-icon :name="viendoPlanAjeno ? 'visibility' : 'person'" color="teal" />
                 </template>
                 <span class="text-weight-medium">Campo Personal (Docente)</span>
-                <span class="q-ml-sm text-caption">Estas estrategias son tu configuración personal para esta
-                  materia.</span>
-                <template v-slot:action v-if="esSoloLectura">
-                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                <span class="q-ml-sm text-caption" v-if="!viendoPlanAjeno">Estas estrategias son tu configuración personal para esta materia.</span>
+                <span class="q-ml-sm text-caption" v-else>Viendo planificación personalizada de: <b>{{ nombreDocentePlan || 'Docente' }}</b></span>
+                
+                <template v-slot:action>
+                  <q-chip v-if="viendoPlanAjeno" color="orange" text-color="white" size="sm" icon="lock">Modo Vista (Superior)</q-chip>
+                  <q-chip v-else-if="esSoloLectura" color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
                 </template>
               </q-banner>
 
@@ -415,7 +417,7 @@
                     </q-card-section>
                     <q-card-section>
                       <q-input v-model="formTema.estrategias.metodologicas" type="textarea" rows="8" outlined
-                        placeholder="Estrategias de enseñanza..." />
+                        placeholder="Estrategias de enseñanza..." :readonly="!puedeEditarPersonal" />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -427,7 +429,7 @@
                     </q-card-section>
                     <q-card-section>
                       <q-input v-model="formTema.estrategias.aprendizaje" type="textarea" rows="8" outlined
-                        placeholder="Actividades del estudiante..." />
+                        placeholder="Actividades del estudiante..." :readonly="!puedeEditarPersonal" />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -442,12 +444,12 @@
                         <q-item v-for="(item, idx) in formTema.estrategias.recursos" :key="idx" class="q-pa-xs">
                           <q-item-section avatar><q-icon name="check" size="16px" color="orange" /></q-item-section>
                           <q-item-section><q-input v-model="formTema.estrategias.recursos[idx]" dense
-                              borderless /></q-item-section>
-                          <q-item-section side><q-btn flat round dense icon="close" size="xs" color="red"
+                              borderless :readonly="!puedeEditarPersonal" /></q-item-section>
+                          <q-item-section side v-if="puedeEditarPersonal"><q-btn flat round dense icon="close" size="xs" color="red"
                               @click="formTema.estrategias.recursos.splice(idx, 1)" /></q-item-section>
                         </q-item>
                       </q-list>
-                      <q-btn flat color="orange" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width"
+                      <q-btn v-if="puedeEditarPersonal" flat color="orange" icon="add" label="Agregar" size="sm" class="q-mt-sm full-width"
                         @click="formTema.estrategias.recursos.push('')" no-caps />
                     </q-card-section>
                   </q-card>
@@ -460,13 +462,15 @@
               <!-- Banner de campo personal -->
               <q-banner class="bg-teal-1 text-teal-9 q-mb-md rounded-borders" dense>
                 <template v-slot:avatar>
-                  <q-icon name="person" color="teal" />
+                  <q-icon :name="viendoPlanAjeno ? 'visibility' : 'person'" color="teal" />
                 </template>
                 <span class="text-weight-medium">Campo Personal (Docente)</span>
-                <span class="q-ml-sm text-caption">Define tu propia metodología de evaluación formativa y
-                  sumativa.</span>
-                <template v-slot:action v-if="esSoloLectura">
-                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                <span class="q-ml-sm text-caption" v-if="!viendoPlanAjeno">Define tu propia metodología de evaluación formativa y sumativa.</span>
+                <span class="q-ml-sm text-caption" v-else>Viendo evaluación personalizada de: <b>{{ nombreDocentePlan || 'Docente' }}</b></span>
+                
+                <template v-slot:action>
+                  <q-chip v-if="viendoPlanAjeno" color="orange" text-color="white" size="sm" icon="lock">Modo Vista (Superior)</q-chip>
+                  <q-chip v-else-if="esSoloLectura" color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
                 </template>
               </q-banner>
 
@@ -496,15 +500,15 @@
                         :options="optsEvalFormativaActividades"
                         @update:model-value="val => checkOtros(val, 'formativa', 'actividades')"
                         label="Actividades y Técnicas" outlined dense multiple use-chips emit-value map-options
-                        hint="Seleccione una o más actividades" />
+                        hint="Seleccione una o más actividades" :readonly="!puedeEditarPersonal" />
                       <q-select v-model="formTema.evaluacion.formativa.instrumentos"
                         :options="optsEvalFormativaInstrumentos"
                         @update:model-value="val => checkOtros(val, 'formativa', 'instrumentos')" label="Instrumentos"
-                        outlined dense multiple use-chips emit-value map-options />
+                        outlined dense multiple use-chips emit-value map-options :readonly="!puedeEditarPersonal" />
                       <q-select v-model="formTema.evaluacion.formativa.evidencias"
                         :options="optsEvalFormativaEvidencias"
                         @update:model-value="val => checkOtros(val, 'formativa', 'evidencias')" label="Evidencias"
-                        outlined dense multiple use-chips emit-value map-options />
+                        outlined dense multiple use-chips emit-value map-options :readonly="!puedeEditarPersonal" />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -522,14 +526,14 @@
                         :options="optsEvalSumativaActividades"
                         @update:model-value="val => checkOtros(val, 'sumativa', 'actividades')"
                         label="Actividades y Técnicas" outlined dense multiple use-chips emit-value map-options
-                        hint="Seleccione una o más actividades" />
+                        hint="Seleccione una o más actividades" :readonly="!puedeEditarPersonal" />
                       <q-select v-model="formTema.evaluacion.sumativa.instrumentos"
                         :options="optsEvalSumativaInstrumentos"
                         @update:model-value="val => checkOtros(val, 'sumativa', 'instrumentos')" label="Instrumentos"
-                        outlined dense multiple use-chips emit-value map-options />
+                        outlined dense multiple use-chips emit-value map-options :readonly="!puedeEditarPersonal" />
                       <q-select v-model="formTema.evaluacion.sumativa.evidencias" :options="optsEvalSumativaEvidencias"
                         @update:model-value="val => checkOtros(val, 'sumativa', 'evidencias')" label="Evidencias"
-                        outlined dense multiple use-chips emit-value map-options />
+                        outlined dense multiple use-chips emit-value map-options :readonly="!puedeEditarPersonal" />
                     </q-card-section>
                   </q-card>
                 </div>
@@ -541,12 +545,15 @@
               <!-- Banner de campo personal -->
               <q-banner class="bg-teal-1 text-teal-9 q-mb-md rounded-borders" dense>
                 <template v-slot:avatar>
-                  <q-icon name="person" color="teal" />
+                  <q-icon :name="viendoPlanAjeno ? 'visibility' : 'person'" color="teal" />
                 </template>
                 <span class="text-weight-medium">Campo Personal (Docente)</span>
-                <span class="q-ml-sm text-caption">Organiza los momentos de tu clase según tu metodología.</span>
-                <template v-slot:action v-if="esSoloLectura">
-                  <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+                <span class="q-ml-sm text-caption" v-if="!viendoPlanAjeno">Organiza los momentos de tu clase según tu metodología.</span>
+                <span class="q-ml-sm text-caption" v-else>Viendo secuencia personalizada de: <b>{{ nombreDocentePlan || 'Docente' }}</b></span>
+                
+                <template v-slot:action>
+                  <q-chip v-if="viendoPlanAjeno" color="orange" text-color="white" size="sm" icon="lock">Modo Vista (Superior)</q-chip>
+                  <q-chip v-else-if="esSoloLectura" color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
                 </template>
               </q-banner>
 
@@ -566,7 +573,7 @@
                 <span class="text-h6 text-weight-bold"><q-icon name="timeline" color="primary"
                     class="q-mr-sm" />Secuencia
                   Didáctica</span>
-                <q-btn unelevated color="primary" icon="add" label="Agregar Momento" size="sm" no-caps
+                <q-btn v-if="puedeEditarPersonal" unelevated color="primary" icon="add" label="Agregar Momento" size="sm" no-caps
                   @click="abrirDialogSecuencia()" />
               </div>
 
@@ -587,14 +594,14 @@
                           :class="momento.momento.length > 30 ? 'text-caption' : 'text-subtitle1'"
                           style="line-height: 1.2;">{{
                           momento.momento }}</div>
-                        <q-chip clickable ripple :color="getMomentoColor(momento.momento)" text-color="white" dense
+                        <q-chip :clickable="puedeEditarPersonal" :ripple="puedeEditarPersonal" :color="getMomentoColor(momento.momento)" text-color="white" dense
                           size="sm" class="q-mt-sm">
                           <q-icon name="schedule" size="10px" class="q-mr-xs" />
                           {{ momento.duracion }} min
-                          <q-icon name="edit" size="10px" class="q-ml-xs" style="opacity: 0.7;" />
+                          <q-icon v-if="puedeEditarPersonal" name="edit" size="10px" class="q-ml-xs" style="opacity: 0.7;" />
 
-                          <q-tooltip>Clic para cambiar duración</q-tooltip>
-                          <q-popup-edit v-model.number="momento.duracion" auto-save v-slot="scope" anchor="top middle"
+                          <q-tooltip v-if="puedeEditarPersonal">Clic para cambiar duración</q-tooltip>
+                          <q-popup-edit v-if="puedeEditarPersonal" v-model.number="momento.duracion" auto-save v-slot="scope" anchor="top middle"
                             self="bottom middle">
                             <q-input v-model.number="scope.value" dense autofocus borderless type="number"
                               style="width: 60px" @keyup.enter="scope.set" />
@@ -605,10 +612,10 @@
                     <q-separator vertical />
                     <q-card-section class="col">
                       <q-input v-model="momento.actividad" type="textarea" rows="3" borderless
-                        placeholder="Actividades..." />
+                        placeholder="Actividades..." :readonly="!puedeEditarPersonal" />
                     </q-card-section>
                     <q-card-section class="col-auto flex items-start">
-                      <div class="column q-gutter-xs">
+                      <div class="column q-gutter-xs" v-if="puedeEditarPersonal">
                         <q-btn flat round dense icon="edit" size="sm" color="orange"
                           @click="abrirDialogSecuencia(momento)" />
                         <q-btn flat round dense icon="delete" size="sm" color="red"
@@ -743,11 +750,27 @@ function volverAAsignatura() {
 // ==========================================
 const ROLES_SOLO_LECTURA = ['DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL']
 
-// Verifica si es solo lectura
+// Verifica si es solo lectura (Rol Global)
 const esSoloLectura = computed(() => {
   const userRol = authStore.rol
   return ROLES_SOLO_LECTURA.includes(userRol)
+})
 
+// Verifica si está viendo el plan de OTRO docente
+const viendoPlanAjeno = computed(() => {
+  return !!route.query.docente_id
+})
+
+const nombreDocentePlan = computed(() => {
+  if (!route.query.docente_id || !asignatura.value?.docentes) return null
+  const d = asignatura.value.docentes.find(x => x.id == route.query.docente_id)
+  return d ? d.nombre_completo : null
+})
+
+const puedeEditarPersonal = computed(() => {
+  // Solo lectura si el rol lo exige O si es plan de otro docente
+  if (esSoloLectura.value || viendoPlanAjeno.value) return false
+  return true
 })
 
 const puedeEditarCompartido = computed(() => {
@@ -1069,6 +1092,12 @@ watchDebounced(
     if (!dataLoaded) return // No guardar durante la carga inicial
     if (newVal === initialFormHash) return // Evitar auto-guardado si no hubo cambios reales
     if (!asignatura.value || !unidad.value || !tema.value) return
+    
+    // BLOQUEO CRÍTICO: No guardar si es plan de otro docente o rol de solo lectura
+    if (!puedeEditarPersonal.value) {
+      console.warn('Auto-save blocked: Read-only mode active.')
+      return
+    }
 
     saveStatus.value = 'saving'
     try {
