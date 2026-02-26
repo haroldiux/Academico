@@ -167,6 +167,23 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     }
   }
 
+  async function importarPersonal(id, file) {
+    loading.value = true
+    try {
+      const response = await asignaturaService.importPersonal(id, file)
+      return response
+    } catch (err) {
+      console.error('Error importing personal planning:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function getTemplatePersonalUrl(id) {
+    return asignaturaService.getTemplatePersonalUrl(id)
+  }
+
   function updateElementoCompetencia(asigId, unidadId, data) { console.log('updateElemento', asigId, unidadId, data) }
 
   // --- ACTIONS UNIDADES & TEMAS ---
@@ -621,6 +638,8 @@ export const useAsignaturasStore = defineStore('asignaturas', () => {
     importarWord,
     importarExcel,
     importarPlanClase,
+    importarPersonal,
+    getTemplatePersonalUrl,
     createUnidad,
     updateUnidad,
     deleteUnidad,

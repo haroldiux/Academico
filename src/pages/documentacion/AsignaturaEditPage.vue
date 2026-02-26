@@ -63,6 +63,11 @@
               <q-item-section>Importar Excel (Plan de Clase)</q-item-section>
             </q-item>
 
+            <q-item v-if="puedeImportarPersonal" clickable v-close-popup @click="abrirDialogoImportarPersonal">
+              <q-item-section avatar><q-icon name="person_add" color="blue" /></q-item-section>
+              <q-item-section>Importar Planificación Personal</q-item-section>
+            </q-item>
+
 
 
             <q-item clickable v-close-popup @click="generarCarpetaHtml">
@@ -865,6 +870,55 @@
       </q-card>
     </q-dialog>
 
+    <!-- Dialog Importar Planificación Personal -->
+    <q-dialog v-model="dialogImportarPersonal">
+      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-weight-bold row items-center">
+            <q-icon name="person_add" color="blue" class="q-mr-sm" size="28px" />
+            Importar Planificación Personal
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <q-banner rounded class="bg-blue-1 text-black q-mb-md">
+            <template v-slot:avatar>
+              <q-icon name="info" color="blue" />
+            </template>
+            <div class="text-weight-bold">Importación de Datos Propios</div>
+            <div class="q-mt-xs">
+              Esta función permite cargar sus estrategias, evaluaciones y secuencia didáctica desde Excel.
+              <strong>Los datos existentes para sus temas serán actualizados.</strong>
+            </div>
+          </q-banner>
+
+          <div class="q-mb-md">
+            <q-btn flat color="primary" icon="download" label="Descargar Plantilla Excel" 
+              class="full-width" @click="descargarPlantillaPersonal" no-caps />
+          </div>
+
+          <q-file v-model="archivoImportarPersonal" label="Seleccionar Plantilla Completa (.xlsx)" outlined dense
+            accept=".xlsx" counter>
+            <template v-slot:prepend>
+              <q-icon name="attach_file" />
+            </template>
+          </q-file>
+
+          <div class="q-mt-md text-caption text-grey-7 italic">
+            * El sistema identifica los temas por el número de Unidad y Tema especificado en el Excel.
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pt-none q-pb-md q-pr-md">
+          <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
+          <q-btn unelevated label="Subir e Importar" color="primary" :loading="importandoPersonal"
+            :disable="!archivoImportarPersonal" @click="procesarImportacionPersonal" no-caps />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Dialog Unidad -->
     <q-dialog v-model="dialogUnidad" persistent>
       <q-card style="width: 400px; max-width: 95vw;">
@@ -1461,6 +1515,10 @@ const archivoImportarExcel = ref(null)
 const dialogImportarPlanClase = ref(false)
 const archivoImportarPlanClase = ref(null)
 
+const dialogImportarPersonal = ref(false)
+const archivoImportarPersonal = ref(null)
+const importandoPersonal = ref(false)
+
 const puedeImportar = computed(() => {
   // 1. Debe ser Cochabamba (Sede 1)
   // Verificamos la asignatura actual
@@ -1483,6 +1541,20 @@ const puedeImportar = computed(() => {
   const esDocenteCochabamba = authSede === 1
 
   return esDirectorOAdmin.value || esDocenteCochabamba
+})
+
+const puedeImportarPersonal = computed(() => {
+  // Permitir a Directores/Admins de cualquier sede
+  if (esDirectorOAdmin.value) return true
+
+  // Permitir a docentes si están asignados a la asignatura (independiente de sede)
+  if (authStore.rol === ROLES.DOCENTE) {
+    const myDocenteId = authStore.usuarioActual?.docente?.id || authStore.usuarioActual?.docente_id
+    const esAsignado = asignatura.value?.docentes?.some(d => d.id == myDocenteId)
+    return esAsignado || false
+  }
+
+  return false
 })
 
 function abrirDialogoImportar() {
@@ -1569,6 +1641,53 @@ async function procesarImportacionPlanClase() {
       message: 'Error al importar Plan de Clase: ' + (err.response?.data?.error || err.message),
       position: 'top'
     })
+  }
+}
+
+function abrirDialogoImportarPersonal() {
+  archivoImportarPersonal.value = null
+  dialogImportarPersonal.value = true
+}
+
+function descargarPlantillaPersonal() {
+  const url = store.getTemplatePersonalUrl(asignatura.value.id)
+  window.open(url, '_blank')
+}
+
+async function procesarImportacionPersonal() {
+  if (!archivoImportarPersonal.value) return
+
+  importandoPersonal.value = true
+  try {
+    const res = await store.importarPersonal(asignatura.value.id, archivoImportarPersonal.value)
+    
+    // Mostrar estadísticas si están disponibles
+    const stats = res.data?.stats
+    const msg = stats 
+      ? `Proceso finalizado. Actualizados: ${stats.updated}, Errores: ${stats.errors}`
+      : 'Planificación personal importada con éxito.'
+
+    $q.notify({
+      type: stats?.errors > 0 ? 'warning' : 'positive',
+      message: msg,
+      icon: stats?.errors > 0 ? 'warning' : 'check_circle',
+      multiLine: true,
+      actions: [{ label: 'Cerrar', color: 'white' }]
+    })
+
+    if (res.data?.errors?.length > 0) {
+      console.warn('Errores de importación:', res.data.errors)
+    }
+
+    dialogImportarPersonal.value = false
+  } catch (err) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al importar Planificación Personal: ' + (err.response?.data?.error || err.message),
+      position: 'top'
+    })
+  } finally {
+    importandoPersonal.value = false
   }
 }
 
