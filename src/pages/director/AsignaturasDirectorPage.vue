@@ -24,9 +24,17 @@
 
     <!-- Filters -->
     <div class="row q-col-gutter-md q-mb-lg">
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-md-3" v-if="authStore.rol === 'VICERRECTOR_NACIONAL'">
+        <q-select v-model="filtros.sedeId" :options="opcionesSedes" label="Sede Académica" outlined dense bg-color="white"
+          emit-value map-options>
+          <template v-slot:prepend>
+            <q-icon name="apartment" />
+          </template>
+        </q-select>
+      </div>
+      <div :class="authStore.rol === 'VICERRECTOR_NACIONAL' ? 'col-12 col-md-3' : 'col-12 col-md-4'">
         <q-select v-model="filtros.carreraId" :options="carrerasOptions" label="Carrera" outlined dense bg-color="white"
-          emit-value map-options :disable="carrerasOptions.length <= 1">
+          emit-value map-options :disable="carrerasOptions.length === 0">
           <template v-slot:prepend>
             <q-icon name="school" />
           </template>
@@ -221,6 +229,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useCarrerasStore } from 'src/stores/carreras'
+import { useSedesStore } from 'src/stores/sedes'
 
 const authStore = useAuthStore()
 const asignaturasStore = useAsignaturasStore()
@@ -360,12 +369,31 @@ async function processGenerarPDF(rowSummary, docenteId) {
 
 // Filtros
 const filtros = ref({
+  sedeId: authStore.rol === 'VICERRECTOR_NACIONAL' ? null : (authStore.usuarioActual?.director?.sede_id || authStore.sedeId),
   carreraId: null, // ID real
   buscar: ''
 })
 
+// Opciones de Sedes (solo para Vicerrectorado Nacional)
+const sedesStore = useSedesStore()
+const opcionesSedes = computed(() => {
+  return sedesStore.sedes.map(s => ({
+    label: s.nombre,
+    value: s.id
+  }))
+})
+
 // Opciones de Carreras (Dinámicas)
 const carrerasOptions = computed(() => {
+  // Para Vicerrectorado Nacional: Mostrar carreras de la sede seleccionada
+  if (authStore.rol === 'VICERRECTOR_NACIONAL') {
+    if (!filtros.value.sedeId) return []
+    return carrerasStore.getCarrerasBySede(filtros.value.sedeId).map(c => ({
+      label: c.nombre,
+      value: c.id
+    }))
+  }
+
   // Para Vicerrector Sede o Direccion Academica: Mostrar todas las carreras de su sede
   if (authStore.rol === ROLES.VICERRECTOR_SEDE || authStore.rol === ROLES.DIRECCION_ACADEMICA) {
     // Obtener sede del usuario
@@ -410,8 +438,8 @@ const carrerasOptions = computed(() => {
 async function cargarAsignaturas() {
   if (!filtros.value.carreraId) return
 
-  // Usar la sede del director (o del usuario actual)
-  const sedeId = authStore.usuarioActual?.director?.sede_id || authStore.sedeId
+  // Usar la sede de los filtros (manual para Nacional, automática para los demás)
+  const sedeId = filtros.value.sedeId
 
   await asignaturasStore.fetchAsignaturas(
     sedeId,
@@ -421,11 +449,20 @@ async function cargarAsignaturas() {
   )
 }
 
-// Inicialización
 onMounted(async () => {
+  // Cargar sedes si es nacional
+  if (authStore.rol === 'VICERRECTOR_NACIONAL' && sedesStore.sedes.length === 0) {
+    await sedesStore.fetchSedes()
+  }
+
   // Cargar carreras primero
   if (carrerasStore.carreras.length === 0) {
     await carrerasStore.fetchCarreras()
+  }
+
+  // Si es nacional, pre-seleccionar la primera sede
+  if (authStore.rol === 'VICERRECTOR_NACIONAL' && opcionesSedes.value.length > 0 && !filtros.value.sedeId) {
+    filtros.value.sedeId = opcionesSedes.value[0].value
   }
 
   // Pre-seleccionar la primera carrera disponible
@@ -436,6 +473,13 @@ onMounted(async () => {
 })
 
 // Watchers
+watch(() => filtros.value.sedeId, () => {
+  // Al cambiar de sede, limpiar carrera y recargar si hay carreras disponibles
+  filtros.value.carreraId = null
+  if (carrerasOptions.value.length > 0) {
+    filtros.value.carreraId = carrerasOptions.value[0].value
+  }
+})
 watch(() => filtros.value.carreraId, () => {
   cargarAsignaturas()
 })

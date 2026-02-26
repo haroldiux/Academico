@@ -631,7 +631,9 @@ const requiereCarrera = computed(() => {
 
 // Verificar si requiere sede (casi todos menos Admin Global tal vez, pero asumiremos todos para director)
 const requiereSede = computed(() => {
-  return true
+  const rol = rolesStore.getRolById(formUsuario.value.rolId)
+  // Vicerrectorado Nacional tiene acceso global, no requiere sede específica
+  return rol && rol.codigo !== 'VICERRECTORADO_NACIONAL'
 })
 
 const usuariosFiltrados = computed(() => {
@@ -785,6 +787,8 @@ function guardarUsuario() {
   }
 
   const payload = { ...formUsuario.value }
+  if (!requiereSede.value) payload.sedeId = null
+  if (!requiereCarrera.value) payload.carrera = []
 
   if (editando.value && usuarioSeleccionado.value) {
     usuariosStore.updateUsuario(usuarioSeleccionado.value.id, payload)
