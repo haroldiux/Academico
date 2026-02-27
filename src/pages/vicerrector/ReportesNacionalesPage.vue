@@ -278,6 +278,7 @@
               </q-td>
             </template>
           </q-table>
+        </q-tab-panel>
         <!-- Tab: Auditorías Críticas -->
         <q-tab-panel name="auditorias">
           <q-table
