@@ -112,114 +112,234 @@
 
           <q-card>
             <q-card-section class="q-pa-md bg-grey-1">
-              <q-table :rows="semestre.asignaturas" :columns="columnasAsignaturas" row-key="codigo" flat bordered
+              <q-table :rows="semestre.asignaturas" :columns="columnasAsignaturas" row-key="row_key" flat bordered
                 separator="cell" class="bg-white rounded-borders" hide-bottom :pagination="{ rowsPerPage: 0 }">
-                <!-- Columna Asignatura con Indicadores -->
-                <template v-slot:body-cell-asignatura="props">
-                  <q-td :props="props">
-                    <div>{{ props.row.nombre }}</div>
-                    <div v-if="props.row.comun_token" class="q-mt-xs">
-                      <q-chip size="xs" color="indigo-1" text-color="indigo" icon="merge_type" dense>
-                        Materia Común
-                        <q-tooltip>Esta asignatura se comparte con otras carreras.</q-tooltip>
-                      </q-chip>
-                    </div>
-                  </q-td>
-                </template>
-                <!-- Columna Docente -->
-                <template v-slot:body-cell-docente="props">
-                  <q-td :props="props">
-                    <div v-if="props.row.docente_nombre" class="row items-center no-wrap">
-                      <q-avatar size="28px" color="blue-grey-1" text-color="primary" class="q-mr-sm" icon="person" />
-                      <div>
-                        <div class="text-weight-medium text-body2">{{ props.row.docente_nombre }}</div>
-                      </div>
-                    </div>
-                    <div v-else class="text-grey-5 text-italic">
-                      <q-icon name="warning" color="warning" class="q-mr-xs" />
-                      Sin asignar
-                    </div>
-                  </q-td>
+                <template v-slot:header="props">
+                  <q-tr :props="props">
+                    <q-th auto-width />
+                    <q-th v-for="col in props.cols" :key="col.name" :props="props">{{ col.label }}</q-th>
+                  </q-tr>
                 </template>
 
-                <!-- Columna Progreso Documentación -->
-                <template v-slot:body-cell-progreso="props">
-                  <q-td :props="props">
-                    <div class="progreso-cell">
-                      <q-linear-progress
-                        :value="(props.row.progreso_documentacion || 0) / 100"
-                        :color="getProgresoColor(props.row.progreso_documentacion || 0)"
-                        rounded
-                        size="10px"
-                        class="q-mb-xs"
-                        style="min-width: 100px;"
-                      />
-                      <span class="progreso-text" :class="getProgresoClass(props.row.progreso_documentacion || 0)">
-                        {{ props.row.progreso_documentacion || 0 }}%
-                      </span>
-                      <div class="row q-gutter-xs q-mt-xs justify-center">
-                        <q-icon 
-                          name="folder" 
-                          :color="props.row.indicadores_documentacion?.programa_analitico?.color || 'negative'" 
-                          size="20px"
-                        >
-                          <q-tooltip>Programa Analítico - {{ props.row.indicadores_documentacion?.programa_analitico?.porcentaje || 0 }}%</q-tooltip>
-                        </q-icon>
-                        <q-icon 
-                          name="article" 
-                          :color="props.row.indicadores_documentacion?.programa_asignatura?.color || 'negative'" 
-                          size="20px"
-                        >
-                          <q-tooltip>Programa de Asignatura (PAC) - {{ props.row.indicadores_documentacion?.programa_asignatura?.porcentaje || 0 }}%</q-tooltip>
-                        </q-icon>
-                        <q-icon 
-                          name="assignment" 
-                          :color="props.row.indicadores_documentacion?.plan_clase?.color || 'negative'" 
-                          size="20px"
-                        >
-                          <q-tooltip>Plan de Clase (Por Tema) - {{ props.row.indicadores_documentacion?.plan_clase?.porcentaje || 0 }}%</q-tooltip>
-                        </q-icon>
-                        <q-icon 
-                          name="event" 
-                          :color="props.row.indicadores_documentacion?.cronograma?.color || 'negative'" 
-                          size="20px"
-                        >
-                          <q-tooltip>Cronograma - {{ props.row.indicadores_documentacion?.cronograma?.porcentaje || 0 }}%</q-tooltip>
-                        </q-icon>
-                        <q-icon 
-                          name="help_outline" 
-                          :color="props.row.indicadores_documentacion?.preguntas?.color || 'negative'" 
-                          size="20px"
-                        >
-                          <q-tooltip>Preguntas de Evaluación - {{ props.row.indicadores_documentacion?.preguntas?.porcentaje || 0 }}%</q-tooltip>
-                        </q-icon>
-                      </div>
-                    </div>
-                  </q-td>
-                </template>
+                <template v-slot:body="props">
+                  <q-tr :props="props">
+                    <q-td auto-width>
+                      <q-btn v-if="props.row.docentes_data && props.row.docentes_data.length > 1" 
+                             size="sm" color="primary" round dense 
+                             @click="props.expand = !props.expand" 
+                             :icon="props.expand ? 'remove' : 'add'" />
+                    </q-td>
+                    
+                    <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                      <!-- Columna Código / Horas (Default) -->
+                      <template v-if="['codigo', 'horas'].includes(col.name)">
+                        {{ col.value }}
+                      </template>
 
-                <!-- Columna Estado -->
-                <template v-slot:body-cell-estado="props">
-                  <q-td :props="props">
-                    <q-chip :color="props.row.docente_nombre ? 'positive' : 'warning'"
-                      :text-color="props.row.docente_nombre ? 'white' : 'black'" size="sm">
-                      {{ props.row.docente_nombre ? 'Asignada' : 'Vacante' }}
-                    </q-chip>
-                  </q-td>
-                </template>
+                      <!-- Columna Asignatura -->
+                      <template v-else-if="col.name === 'asignatura'">
+                        <div>{{ props.row.nombre }}</div>
+                        <div v-if="props.row.comun_token" class="q-mt-xs">
+                          <q-chip size="xs" color="indigo-1" text-color="indigo" icon="merge_type" dense>
+                            Materia Común
+                            <q-tooltip>Esta asignatura se comparte con otras carreras.</q-tooltip>
+                          </q-chip>
+                        </div>
+                      </template>
 
-                <!-- Columna Acciones -->
-                <template v-slot:body-cell-acciones="props">
-                  <q-td :props="props">
-                    <q-btn flat round dense icon="visibility" color="primary" size="sm"
-                      @click="irADocumentacion(props.row)">
-                      <q-tooltip>Ver Documentación</q-tooltip>
-                    </q-btn>
-                    <q-btn flat round dense icon="picture_as_pdf" color="secondary" size="sm"
-                      @click="generarCarpeta(props.row)">
-                      <q-tooltip>Generar Carpeta Docente</q-tooltip>
-                    </q-btn>
-                  </q-td>
+                      <!-- Columna Docente -->
+                      <template v-else-if="col.name === 'docente'">
+                        <div v-if="props.row.docente_nombre" class="row items-center no-wrap">
+                          <q-avatar size="28px" color="blue-grey-1" text-color="primary" class="q-mr-sm" icon="person" />
+                          <div>
+                            <div class="text-weight-medium text-body2">{{ props.row.docente_nombre_mostrar }}</div>
+                          </div>
+                        </div>
+                        <div v-else class="text-grey-5 text-italic">
+                          <q-icon name="warning" color="warning" class="q-mr-xs" />
+                          Sin asignar
+                        </div>
+                      </template>
+
+                      <!-- Columna Progreso Documentación Global -->
+                      <template v-else-if="col.name === 'progreso'">
+                        <div class="progreso-cell">
+                          <q-linear-progress
+                            :value="(props.row.progreso_mostrar || 0) / 100"
+                            :color="getProgresoColor(props.row.progreso_mostrar || 0)"
+                            rounded
+                            size="10px"
+                            class="q-mb-xs"
+                            style="min-width: 100px;"
+                          />
+                          <span class="progreso-text" :class="getProgresoClass(props.row.progreso_mostrar || 0)">
+                            {{ props.row.progreso_mostrar || 0 }}% <template v-if="props.row.docentes_data?.length > 1">Global</template>
+                          </span>
+                          
+                          <div class="row q-gutter-xs q-mt-xs justify-center" v-if="props.row.docentes_data?.length <= 1">
+                            <q-icon 
+                              name="folder" 
+                              :color="props.row.indicadores_mostrar?.programa_analitico?.color || 'negative'" 
+                              size="18px"
+                            >
+                              <q-tooltip>Programa Analítico - {{ props.row.indicadores_mostrar?.programa_analitico?.porcentaje || 0 }}%</q-tooltip>
+                            </q-icon>
+                            <q-icon 
+                              name="article" 
+                              :color="props.row.indicadores_mostrar?.programa_asignatura?.color || 'negative'" 
+                              size="18px"
+                            >
+                              <q-tooltip>Programa de Asignatura (PAC) - {{ props.row.indicadores_mostrar?.programa_asignatura?.porcentaje || 0 }}%</q-tooltip>
+                            </q-icon>
+                            <q-icon 
+                              name="assignment" 
+                              :color="props.row.indicadores_mostrar?.plan_clase?.color || 'negative'" 
+                              size="18px"
+                            >
+                              <q-tooltip>Plan de Clase - {{ props.row.indicadores_mostrar?.plan_clase?.porcentaje || 0 }}%</q-tooltip>
+                            </q-icon>
+                            <q-icon 
+                              name="event" 
+                              :color="props.row.indicadores_mostrar?.cronograma?.color || 'negative'" 
+                              size="18px"
+                            >
+                              <q-tooltip>Cronograma - {{ props.row.indicadores_mostrar?.cronograma?.porcentaje || 0 }}%</q-tooltip>
+                            </q-icon>
+                            <q-icon 
+                              name="help_outline" 
+                              :color="props.row.indicadores_mostrar?.preguntas?.color || 'negative'" 
+                              size="18px"
+                            >
+                              <q-tooltip>Preguntas - {{ props.row.indicadores_mostrar?.preguntas?.porcentaje || 0 }}%</q-tooltip>
+                            </q-icon>
+                            <q-icon 
+                              v-if="props.row.sede_id !== 1"
+                              name="assignment_ind" 
+                              :color="props.row.indicadores_mostrar?.planificacion_personal?.color || 'negative'" 
+                              size="18px"
+                            >
+                              <q-tooltip>Planificación Personal - {{ props.row.indicadores_mostrar?.planificacion_personal?.porcentaje || 0 }}%</q-tooltip>
+                            </q-icon>
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- Columna Estado -->
+                      <template v-else-if="col.name === 'estado'">
+                        <q-chip :color="props.row.docente_nombre ? 'positive' : 'warning'"
+                          :text-color="props.row.docente_nombre ? 'white' : 'black'" size="sm">
+                          {{ props.row.docente_nombre ? 'Asignada' : 'Vacante' }}
+                        </q-chip>
+                      </template>
+
+                      <!-- Columna Acciones -->
+                      <template v-else-if="col.name === 'acciones'">
+                        <q-btn flat round dense icon="visibility" color="primary" size="sm"
+                          @click="irADocumentacion(props.row)">
+                          <q-tooltip>Ver Documentación <template v-if="props.row.docentes_data?.length > 1">Agrupada</template></q-tooltip>
+                        </q-btn>
+                        <q-btn v-if="props.row.docentes_data?.length <= 1" flat round dense icon="picture_as_pdf" color="secondary" size="sm"
+                          @click="generarCarpeta(props.row)">
+                          <q-tooltip>Generar Carpeta Docente</q-tooltip>
+                        </q-btn>
+                      </template>
+
+                    </q-td>
+                  </q-tr>
+                  
+                  <!-- Fila Expandible para Docentes -->
+                  <q-tr v-show="props.expand" :props="props">
+                    <q-td colspan="100%" class="bg-grey-2 q-pa-md">
+                      <div class="text-weight-bold q-mb-sm text-primary">Progreso Individual por Docente:</div>
+                      <q-list bordered class="bg-white rounded-borders">
+                        <q-item v-for="docente in props.row.docentes_data" :key="docente.id" class="q-py-md">
+                          <q-item-section avatar>
+                            <q-avatar icon="person" color="blue-grey-1" text-color="primary" />
+                          </q-item-section>
+                          
+                          <q-item-section>
+                            <q-item-label class="text-weight-bold">{{ docente.nombre }}</q-item-label>
+                            <q-item-label caption>{{ docente.descripcion_grupos }}</q-item-label>
+                          </q-item-section>
+
+                          <q-item-section>
+                            <div class="progreso-cell align-center">
+                              <q-linear-progress
+                                :value="(docente.progreso_documentacion || 0) / 100"
+                                :color="getProgresoColor(docente.progreso_documentacion || 0)"
+                                rounded
+                                size="8px"
+                                class="q-mb-xs"
+                                style="min-width: 120px;"
+                              />
+                              <span class="progreso-text" :class="getProgresoClass(docente.progreso_documentacion || 0)">
+                                {{ docente.progreso_documentacion || 0 }}%
+                              </span>
+                              
+                              <div class="row q-gutter-xs q-mt-xs justify-center">
+                                <q-icon 
+                                  name="folder" 
+                                  :color="docente.indicadores_documentacion?.programa_analitico?.color || 'negative'" 
+                                  size="18px"
+                                >
+                                  <q-tooltip>Programa Analítico - {{ docente.indicadores_documentacion?.programa_analitico?.porcentaje || 0 }}%</q-tooltip>
+                                </q-icon>
+                                <q-icon 
+                                  name="article" 
+                                  :color="docente.indicadores_documentacion?.programa_asignatura?.color || 'negative'" 
+                                  size="18px"
+                                >
+                                  <q-tooltip>Programa de Asignatura (PAC) - {{ docente.indicadores_documentacion?.programa_asignatura?.porcentaje || 0 }}%</q-tooltip>
+                                </q-icon>
+                                <q-icon 
+                                  name="assignment" 
+                                  :color="docente.indicadores_documentacion?.plan_clase?.color || 'negative'" 
+                                  size="18px"
+                                >
+                                  <q-tooltip>Plan de Clase - {{ docente.indicadores_documentacion?.plan_clase?.porcentaje || 0 }}%</q-tooltip>
+                                </q-icon>
+                                <q-icon 
+                                  name="event" 
+                                  :color="docente.indicadores_documentacion?.cronograma?.color || 'negative'" 
+                                  size="18px"
+                                >
+                                  <q-tooltip>Cronograma - {{ docente.indicadores_documentacion?.cronograma?.porcentaje || 0 }}%</q-tooltip>
+                                </q-icon>
+                                <q-icon 
+                                  name="help_outline" 
+                                  :color="docente.indicadores_documentacion?.preguntas?.color || 'negative'" 
+                                  size="18px"
+                                >
+                                  <q-tooltip>Preguntas - {{ docente.indicadores_documentacion?.preguntas?.porcentaje || 0 }}%</q-tooltip>
+                                </q-icon>
+                                <q-icon 
+                                  v-if="props.row.sede_id !== 1"
+                                  name="assignment_ind" 
+                                  :color="docente.indicadores_documentacion?.planificacion_personal?.color || 'negative'" 
+                                  size="18px"
+                                >
+                                  <q-tooltip>Planificación Personal - {{ docente.indicadores_documentacion?.planificacion_personal?.porcentaje || 0 }}%</q-tooltip>
+                                </q-icon>
+                              </div>
+                            </div>
+                          </q-item-section>
+
+                          <q-item-section side>
+                            <div class="row q-gutter-sm">
+                              <q-btn flat round dense icon="visibility" color="primary"
+                                @click="irADocumentacion({...props.row, docentes_data: [docente], docente_nombre: docente.nombre})">
+                                <q-tooltip>Ver Documentación Individual</q-tooltip>
+                              </q-btn>
+                              <q-btn flat round dense icon="picture_as_pdf" color="secondary"
+                                @click="generarCarpeta({...props.row, docentes_data: [docente], docente_nombre: docente.nombre})">
+                                <q-tooltip>Generar Carpeta Individual</q-tooltip>
+                              </q-btn>
+                            </div>
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-td>
+                  </q-tr>
                 </template>
               </q-table>
             </q-card-section>
@@ -570,8 +690,26 @@ const semestresFiltrados = computed(() => {
         asignaturas: []
       }
     }
-    grupos[sem].asignaturas.push(asig)
+    
+    // Sumar horas
     grupos[sem].horasTotales += ((asig.horas_teoricas || 0) * 20) + ((asig.horas_practicas || 0) * 20)
+
+    let progresoMostrar = asig.progreso_documentacion
+    let indicadoresMostrar = asig.indicadores_documentacion
+    let docenteNombreMostrar = asig.docentes_data?.length > 1 ? `Varios Docentes (${asig.docentes_data.length})` : asig.docente_nombre
+
+    if (asig.docentes_data && asig.docentes_data.length === 1) {
+       progresoMostrar = asig.docentes_data[0].progreso_documentacion
+       indicadoresMostrar = asig.docentes_data[0].indicadores_documentacion
+    }
+
+    grupos[sem].asignaturas.push({
+      ...asig,
+      row_key: asig.id, // Llave única para la tabla
+      progreso_mostrar: progresoMostrar,
+      indicadores_mostrar: indicadoresMostrar,
+      docente_nombre_mostrar: docenteNombreMostrar
+    })
   })
 
   // Convertir objeto a array y ordenar
