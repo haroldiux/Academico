@@ -12,11 +12,12 @@
         </p>
       </div>
       <div class="col-auto row q-gutter-sm">
-        <q-btn v-if="puedeEditar && examenesFiltrados.length > 0" outline color="red" icon="delete_forever" label="Eliminar Todo"
+        <q-btn v-if="puedeEditar && store.examenes.length > 0" outline color="red" icon="delete_forever" label="Borrar Todo"
           no-caps @click="eliminarTodo" />
         <q-btn v-if="authStore.rol === 'VICERRECTOR_SEDE'" outline color="purple" icon="analytics"
           label="Reporte Cumplimiento" no-caps @click="abrirReporte" />
-        <q-btn v-if="puedeEditar" outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" />
+        <!-- Ocultado por solicitud: se usará plantilla institucional externa -->
+        <!-- <q-btn v-if="puedeEditar" outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" /> -->
         <q-btn v-if="puedeEditar" unelevated color="green" icon="upload_file" label="Subir Excel" no-caps
           @click="showUploadDialog = true" />
       </div>
@@ -87,17 +88,28 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-fecha_dia="props">
+            <q-td :props="props"
+              :class="props.row.conflictos ? 'bg-deep-orange-1 text-deep-orange-9 text-weight-bold' : ''">
+              {{ getDayName(props.row.fecha) }}
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-fecha="props">
             <q-td :props="props"
-              :class="props.row.conflictos && props.row.conflictos.horario ? 'bg-deep-orange-1 text-deep-orange-9 text-weight-bold' : ''">
+              :class="props.row.conflictos ? 'bg-deep-orange-1 text-deep-orange-9 text-weight-bold' : ''">
               <div class="row items-center no-wrap justify-center">
                 <q-icon name="event" size="xs" class="q-mr-xs" />
                 {{ formatDate(props.row.fecha) }}
-                <q-icon v-if="props.row.conflictos && (props.row.conflictos.semana || props.row.conflictos.horario)"
-                  :name="props.row.conflictos.horario ? 'error' : 'warning'"
-                  :color="props.row.conflictos.horario ? 'deep-orange-9' : 'amber-9'" size="xs" class="q-ml-xs">
-                  <q-tooltip :class="props.row.conflictos.horario ? 'bg-deep-orange-9' : 'bg-amber-9'" class="text-white">
-                    <div class="text-weight-bold q-mb-xs">Incidencias:</div>
+                <q-icon v-if="props.row.conflictos"
+                  name="error"
+                  :color="props.row.tipo_examen === 'Final' ? 'amber-9' : (props.row.tipo_examen === '2da Instancia' ? 'positive' : 'negative')" 
+                  size="xs" class="q-ml-xs cursor-pointer">
+                  <q-tooltip class="bg-white text-black shadow-4" style="border: 1px solid #ddd">
+                    <div class="text-weight-bold q-mb-xs" 
+                      :class="props.row.tipo_examen === 'Final' ? 'text-amber-9' : (props.row.tipo_examen === '2da Instancia' ? 'text-positive' : 'text-negative')">
+                      Advertencias de Validación:
+                    </div>
                     <div v-if="props.row.conflictos.semana">• {{ props.row.conflictos.semana }}</div>
                     <div v-if="props.row.conflictos.horario">• {{ props.row.conflictos.horario }}</div>
                   </q-tooltip>
@@ -155,13 +167,15 @@
             <template v-slot:avatar>
               <q-icon name="info" color="blue" />
             </template>
-            <strong>Formato del Excel:</strong>
+            <strong>Formato Institucional (SIS):</strong>
             <ul class="q-ma-none q-pl-md">
-              <li>Columna A: Código Materia</li>
-              <li>Columna B: Tipo Examen (1er Parcial, 2do Parcial, Final, 2da Instancia)</li>
-              <li>Columna C: Grupo (Opcional)</li>
-              <li>Columna D: Fecha (YYYY-MM-DD)</li>
-              <li>Columna E: Hora Inicio (HH:MM)</li>
+              <li>Hoja: <b>"Rol de Examenes"</b> (Inicio fila 12)</li>
+              <li>Columna C: Código Materia</li>
+              <li>Columna E: Grupo</li>
+              <li>Col. G/H: 1er Parcial (Fecha/Hora)</li>
+              <li>Col. I/J: 2do Parcial (Fecha/Hora)</li>
+              <li>Col. K/L: Examen Final (Fecha/Hora)</li>
+              <li>Col. AN/AO: 2da Instancia (Fecha/Hora)</li>
             </ul>
           </q-banner>
 
@@ -359,6 +373,7 @@ const columns = [
   { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center', sortable: true },
   { name: 'tipo_examen', label: 'Tipo', field: 'tipo_examen', align: 'center', sortable: true },
   { name: 'semana', label: 'Semana', field: 'semana', align: 'center', sortable: true },
+  { name: 'fecha_dia', label: 'Día', field: 'fecha_dia', align: 'center', sortable: true },
   { name: 'fecha', label: 'Fecha', field: 'fecha', align: 'center', sortable: true },
   { name: 'horario', label: 'Horario', align: 'center' },
   { name: 'actions', label: 'Acciones', align: 'center' }
@@ -402,9 +417,20 @@ function getExamenColor(tipo) {
 
 function formatDate(date) {
   if (!date || date === '0000-00-00') return 'Sin fecha'
-  const d = new Date(date)
+  // Si viene como ISO string (con T o Z), tomar solo la parte de la fecha
+  const datePart = date.includes('T') ? date.split('T')[0] : date
+  const d = new Date(datePart + 'T12:00:00') // Usamos mediodía para evitar problemas de zona horaria
   if (isNaN(d.getTime()) || d.getFullYear() <= 1970) return 'Sin fecha'
   return d.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function getDayName(date) {
+  if (!date || date === '0000-00-00') return '-'
+  const datePart = date.includes('T') ? date.split('T')[0] : date
+  const d = new Date(datePart + 'T12:00:00')
+  if (isNaN(d.getTime()) || d.getFullYear() <= 1970) return '-'
+  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+  return days[d.getDay()]
 }
 
 function formatFileSize(bytes) {
@@ -497,23 +523,6 @@ async function subirExcel() {
   }
 }
 
-async function descargarPlantilla() {
-  console.log('Store:', store)
-  console.log('downloadTemplate:', store.downloadTemplate)
-
-  if (typeof store.downloadTemplate !== 'function') {
-    $q.notify({ type: 'negative', message: 'Error crítico: La acción no se encuentra en el store. Recarga la página.', icon: 'warning' })
-    return
-  }
-
-  $q.notify({ type: 'info', message: 'Descargando plantilla...', icon: 'cloud_download', timeout: 1000 })
-  try {
-    await store.downloadTemplate()
-    $q.notify({ type: 'positive', message: 'Plantilla descargada', icon: 'check_circle' })
-  } catch (error) {
-    $q.notify({ type: 'negative', message: 'Error al descargar: ' + error.message, icon: 'error' })
-  }
-}
 
 function editarExamen(examen) {
   examenForm.value = { ...examen }
