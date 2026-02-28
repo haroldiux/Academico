@@ -71,8 +71,8 @@ export const useProgramaAsignaturaStore = defineStore('programaAsignatura', () =
     const horariosMateria = computed(() => {
         if (!asignaturaId.value) return []
 
-        // Buscar la materia en materiasExterno
-        const materia = gruposStore.materiasExterno?.find(m =>
+        // Buscar la materia en materiasSincronizadas
+        const materia = gruposStore.materiasSincronizadas?.find(m =>
             m.id === asignaturaId.value || m.codigo === asignaturaId.value
         )
 
@@ -97,7 +97,7 @@ export const useProgramaAsignaturaStore = defineStore('programaAsignatura', () =
     const datosGenerales = computed(() => {
         if (!asignaturaId.value) return null
 
-        const materia = gruposStore.materiasExterno?.find(m =>
+        const materia = gruposStore.materiasSincronizadas?.find(m =>
             m.id === asignaturaId.value || m.codigo === asignaturaId.value
         )
 
@@ -127,8 +127,8 @@ export const useProgramaAsignaturaStore = defineStore('programaAsignatura', () =
 
         try {
             // Asegurar que tenemos los datos externos cargados
-            if (!gruposStore.materiasExterno?.length) {
-                await gruposStore.fetchGruposExterno()
+            if (!gruposStore.materiasSincronizadas?.length) {
+                await gruposStore.fetchGruposSincronizados()
             }
 
             // Cargar datos del programa desde API local

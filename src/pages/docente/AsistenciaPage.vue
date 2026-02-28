@@ -10,7 +10,13 @@
         <p class="page-subtitle">Registro de asistencia por materia y grupo</p>
       </div>
       <div class="header-actions">
-        <q-btn unelevated color="green" icon="download" label="Exportar" @click="exportarAsistencia" />
+        <q-btn
+          unelevated
+          color="green"
+          icon="download"
+          label="Exportar"
+          @click="exportarAsistencia"
+        />
       </div>
     </div>
 
@@ -34,9 +40,7 @@
           </div>
           <div class="horario-materia">{{ horario.materiaNombre }}</div>
           <div class="horario-grupo">{{ horario.grupoNombre }}</div>
-          <div class="horario-aula">
-            <q-icon name="room" size="12px" /> {{ horario.aula }}
-          </div>
+          <div class="horario-aula"><q-icon name="room" size="12px" /> {{ horario.aula }}</div>
           <q-chip v-if="horario.esActivo" color="green" text-color="white" size="xs">
             En curso
           </q-chip>
@@ -150,7 +154,9 @@
         <template v-slot:top>
           <div class="table-header">
             <div class="table-title">
-              <span class="text-h6">{{ materiaSeleccionada?.nombre }} - {{ grupoSeleccionado?.nombre }}</span>
+              <span class="text-h6"
+                >{{ materiaSeleccionada?.nombre }} - {{ grupoSeleccionado?.nombre }}</span
+              >
               <q-chip v-if="filtros.sesion" size="sm" color="indigo" text-color="white">
                 {{ horarioSeleccionado?.horaInicio }} - {{ horarioSeleccionado?.horaFin }}
               </q-chip>
@@ -175,7 +181,13 @@
                 @click="limpiarSeleccion"
               />
             </div>
-            <q-input v-model="busqueda" placeholder="Buscar estudiante..." dense outlined style="min-width: 200px">
+            <q-input
+              v-model="busqueda"
+              placeholder="Buscar estudiante..."
+              dense
+              outlined
+              style="min-width: 200px"
+            >
               <template v-slot:prepend><q-icon name="search" /></template>
             </q-input>
           </div>
@@ -263,7 +275,13 @@
 
       <div class="q-pa-md flex justify-end gap-md">
         <q-btn flat color="grey" label="Cancelar" @click="resetear" />
-        <q-btn unelevated color="primary" icon="save" label="Guardar Asistencia" @click="guardarAsistencia" />
+        <q-btn
+          unelevated
+          color="primary"
+          icon="save"
+          label="Guardar Asistencia"
+          @click="guardarAsistencia"
+        />
       </div>
     </q-card>
   </q-page>
@@ -281,7 +299,7 @@ const filtros = ref({
   materia: null,
   grupo: null,
   fecha: new Date().toISOString().split('T')[0],
-  sesion: null
+  sesion: null,
 })
 
 const busqueda = ref('')
@@ -293,29 +311,30 @@ const diaActual = computed(() => diasSemana[new Date().getDay()])
 // Materias y horarios del docente desde API externa
 const materias = computed(() => {
   // Transformar datos de grupos externos a formato compatible
-  return gruposStore.materiasExterno.map((m, idx) => {
+  return gruposStore.materiasSincronizadas.map((m, idx) => {
     // Agrupar los horarios por grupo
-    const gruposUnicos = [...new Set(m.grupos?.map(g => g.grupo) || [])]
+    const gruposUnicos = [...new Set(m.grupos?.map((g) => g.grupo) || [])]
     return {
       id: `ext-${idx}`,
       nombre: m.nombre,
       codigo: m.codigo,
       semestre: m.semestre,
-      horarios: m.grupos?.map(g => ({
-        dia: g.dia,
-        horaInicio: g.hora_inicio,
-        horaFin: g.hora_fin,
-        aula: g.aula,
-        grupo: g.grupo,
-        tipoClase: g.tipo_clase,
-        docente: g.docente,
-        bloque: g.bloque
-      })) || [],
+      horarios:
+        m.grupos?.map((g) => ({
+          dia: g.dia,
+          horaInicio: g.hora_inicio,
+          horaFin: g.hora_fin,
+          aula: g.aula,
+          grupo: g.grupo,
+          tipoClase: g.tipo_clase,
+          docente: g.docente,
+          bloque: g.bloque,
+        })) || [],
       grupos: gruposUnicos.map((gNum, gIdx) => ({
         id: gIdx + 1,
         nombre: `Grupo ${gNum}`,
-        turno: '-'
-      }))
+        turno: '-',
+      })),
     }
   })
 })
@@ -325,8 +344,8 @@ const horariosDelDia = computed(() => {
   const horarios = []
   const horaActual = new Date().getHours() * 60 + new Date().getMinutes()
 
-  materias.value.forEach(materia => {
-    const horariosMateria = materia.horarios?.filter(h => h.dia === diaActual.value) || []
+  materias.value.forEach((materia) => {
+    const horariosMateria = materia.horarios?.filter((h) => h.dia === diaActual.value) || []
     horariosMateria.forEach((h, idx) => {
       const [hIni, mIni] = h.horaInicio.split(':').map(Number)
       const [hFin, mFin] = h.horaFin.split(':').map(Number)
@@ -343,7 +362,7 @@ const horariosDelDia = computed(() => {
         horaFin: h.horaFin,
         aula: h.aula || 'Aula por asignar',
         esActivo: horaActual >= minInicio && horaActual <= minFin,
-        yaPaso: horaActual > minFin
+        yaPaso: horaActual > minFin,
       })
     })
   })
@@ -360,42 +379,154 @@ const horariosDelDia = computed(() => {
 const estudiantes = ref([])
 
 const estudiantesBase = [
-  { id: 1, codigo: '2024001', nombre: 'Juan', apellido: 'Pérez García', estado: null, observacion: '' },
-  { id: 2, codigo: '2024002', nombre: 'María', apellido: 'López Rodríguez', estado: null, observacion: '' },
-  { id: 3, codigo: '2024003', nombre: 'Carlos', apellido: 'Martínez Sánchez', estado: null, observacion: '' },
-  { id: 4, codigo: '2024004', nombre: 'Ana', apellido: 'González Torres', estado: null, observacion: '' },
-  { id: 5, codigo: '2024005', nombre: 'Luis', apellido: 'Hernández Díaz', estado: null, observacion: '' },
-  { id: 6, codigo: '2024006', nombre: 'Carmen', apellido: 'Ruiz Moreno', estado: null, observacion: '' },
-  { id: 7, codigo: '2024007', nombre: 'Pedro', apellido: 'Jiménez Álvarez', estado: null, observacion: '' },
-  { id: 8, codigo: '2024008', nombre: 'Laura', apellido: 'Ramírez Castro', estado: null, observacion: '' },
-  { id: 9, codigo: '2024009', nombre: 'Miguel', apellido: 'Vargas Ortiz', estado: null, observacion: '' },
-  { id: 10, codigo: '2024010', nombre: 'Sandra', apellido: 'Mendoza Ríos', estado: null, observacion: '' },
-  { id: 11, codigo: '2024011', nombre: 'Fernando', apellido: 'Aguilar Peña', estado: null, observacion: '' },
-  { id: 12, codigo: '2024012', nombre: 'Patricia', apellido: 'Flores Vega', estado: null, observacion: '' },
-  { id: 13, codigo: '2024013', nombre: 'Roberto', apellido: 'Suárez Luna', estado: null, observacion: '' },
-  { id: 14, codigo: '2024014', nombre: 'Diana', apellido: 'Medina Campos', estado: null, observacion: '' },
-  { id: 15, codigo: '2024015', nombre: 'Andrés', apellido: 'Reyes Molina', estado: null, observacion: '' }
+  {
+    id: 1,
+    codigo: '2024001',
+    nombre: 'Juan',
+    apellido: 'Pérez García',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 2,
+    codigo: '2024002',
+    nombre: 'María',
+    apellido: 'López Rodríguez',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 3,
+    codigo: '2024003',
+    nombre: 'Carlos',
+    apellido: 'Martínez Sánchez',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 4,
+    codigo: '2024004',
+    nombre: 'Ana',
+    apellido: 'González Torres',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 5,
+    codigo: '2024005',
+    nombre: 'Luis',
+    apellido: 'Hernández Díaz',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 6,
+    codigo: '2024006',
+    nombre: 'Carmen',
+    apellido: 'Ruiz Moreno',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 7,
+    codigo: '2024007',
+    nombre: 'Pedro',
+    apellido: 'Jiménez Álvarez',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 8,
+    codigo: '2024008',
+    nombre: 'Laura',
+    apellido: 'Ramírez Castro',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 9,
+    codigo: '2024009',
+    nombre: 'Miguel',
+    apellido: 'Vargas Ortiz',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 10,
+    codigo: '2024010',
+    nombre: 'Sandra',
+    apellido: 'Mendoza Ríos',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 11,
+    codigo: '2024011',
+    nombre: 'Fernando',
+    apellido: 'Aguilar Peña',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 12,
+    codigo: '2024012',
+    nombre: 'Patricia',
+    apellido: 'Flores Vega',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 13,
+    codigo: '2024013',
+    nombre: 'Roberto',
+    apellido: 'Suárez Luna',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 14,
+    codigo: '2024014',
+    nombre: 'Diana',
+    apellido: 'Medina Campos',
+    estado: null,
+    observacion: '',
+  },
+  {
+    id: 15,
+    codigo: '2024015',
+    nombre: 'Andrés',
+    apellido: 'Reyes Molina',
+    estado: null,
+    observacion: '',
+  },
 ]
 
-const materiasOptions = computed(() => materias.value.map(m => ({ label: `${m.nombre} (${m.codigo})`, value: m.id })))
+const materiasOptions = computed(() =>
+  materias.value.map((m) => ({ label: `${m.nombre} (${m.codigo})`, value: m.id })),
+)
 
-const materiaSeleccionada = computed(() => materias.value.find(m => m.id === filtros.value.materia))
+const materiaSeleccionada = computed(() =>
+  materias.value.find((m) => m.id === filtros.value.materia),
+)
 
 const gruposOptions = computed(() => {
   if (!materiaSeleccionada.value) return []
-  return materiaSeleccionada.value.grupos.map(g => ({ label: `${g.nombre} - ${g.turno}`, value: g.id }))
+  return materiaSeleccionada.value.grupos.map((g) => ({
+    label: `${g.nombre} - ${g.turno}`,
+    value: g.id,
+  }))
 })
 
 const grupoSeleccionado = computed(() => {
   if (!materiaSeleccionada.value) return null
-  return materiaSeleccionada.value.grupos.find(g => g.id === filtros.value.grupo)
+  return materiaSeleccionada.value.grupos.find((g) => g.id === filtros.value.grupo)
 })
 
 const horariosMateria = computed(() => {
   if (!materiaSeleccionada.value) return []
   return (materiaSeleccionada.value.horarios || []).map((h, idx) => ({
     label: `${h.dia} ${h.horaInicio}-${h.horaFin} (${h.aula || 'Sin aula'})`,
-    value: idx
+    value: idx,
   }))
 })
 
@@ -406,16 +537,22 @@ const horarioSeleccionado = computed(() => {
 
 const estudiantesFiltrados = computed(() => estudiantes.value)
 
-const presentes = computed(() => estudiantes.value.filter(e => e.estado === 'presente').length)
-const ausentes = computed(() => estudiantes.value.filter(e => e.estado === 'ausente').length)
-const tardanzas = computed(() => estudiantes.value.filter(e => e.estado === 'tardanza').length)
+const presentes = computed(() => estudiantes.value.filter((e) => e.estado === 'presente').length)
+const ausentes = computed(() => estudiantes.value.filter((e) => e.estado === 'ausente').length)
+const tardanzas = computed(() => estudiantes.value.filter((e) => e.estado === 'tardanza').length)
 
 const columns = [
   { name: 'foto', label: '', field: 'foto', align: 'center', style: 'width: 50px' },
   { name: 'codigo', label: 'Código', field: 'codigo', align: 'left', sortable: true },
-  { name: 'nombre', label: 'Nombre', field: row => `${row.nombre} ${row.apellido}`, align: 'left', sortable: true },
+  {
+    name: 'nombre',
+    label: 'Nombre',
+    field: (row) => `${row.nombre} ${row.apellido}`,
+    align: 'left',
+    sortable: true,
+  },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
-  { name: 'observacion', label: 'Observación', field: 'observacion', align: 'left' }
+  { name: 'observacion', label: 'Observación', field: 'observacion', align: 'left' },
 ]
 
 function seleccionarHorario(horario) {
@@ -432,39 +569,44 @@ function onMateriaChange() {
 
 function cargarEstudiantes() {
   if (filtros.value.materia && filtros.value.grupo) {
-    estudiantes.value = estudiantesBase.map(e => ({ ...e, estado: null, observacion: '' }))
+    estudiantes.value = estudiantesBase.map((e) => ({ ...e, estado: null, observacion: '' }))
   }
 }
 
 function resetear() {
-  estudiantes.value.forEach(e => {
+  estudiantes.value.forEach((e) => {
     e.estado = null
     e.observacion = ''
   })
 }
 
 function marcarTodosPresentes() {
-  estudiantes.value.forEach(e => {
+  estudiantes.value.forEach((e) => {
     e.estado = 'presente'
   })
-  $q.notify({ type: 'positive', message: 'Todos marcados como presentes', icon: 'check_circle', position: 'top' })
+  $q.notify({
+    type: 'positive',
+    message: 'Todos marcados como presentes',
+    icon: 'check_circle',
+    position: 'top',
+  })
 }
 
 function limpiarSeleccion() {
-  estudiantes.value.forEach(e => {
+  estudiantes.value.forEach((e) => {
     e.estado = null
   })
   $q.notify({ type: 'info', message: 'Selección limpiada', icon: 'backspace', position: 'top' })
 }
 
 function guardarAsistencia() {
-  const sinMarcar = estudiantes.value.filter(e => !e.estado).length
+  const sinMarcar = estudiantes.value.filter((e) => !e.estado).length
   if (sinMarcar > 0) {
     $q.dialog({
       title: 'Estudiantes sin marcar',
       message: `Hay ${sinMarcar} estudiantes sin estado de asistencia. ¿Desea continuar?`,
       cancel: true,
-      persistent: true
+      persistent: true,
     }).onOk(() => {
       ejecutarGuardado()
     })
@@ -474,7 +616,11 @@ function guardarAsistencia() {
 }
 
 function ejecutarGuardado() {
-  $q.notify({ type: 'positive', message: 'Asistencia guardada correctamente', icon: 'check_circle' })
+  $q.notify({
+    type: 'positive',
+    message: 'Asistencia guardada correctamente',
+    icon: 'check_circle',
+  })
 }
 
 function exportarAsistencia() {
@@ -484,27 +630,67 @@ function exportarAsistencia() {
 // Lifecycle - Cargar datos de grupos externos
 onMounted(async () => {
   // Si no hay datos cargados, cargarlos
-  if (gruposStore.materiasExterno.length === 0) {
-    await gruposStore.fetchGruposExterno({
+  if (gruposStore.materiasSincronizadas.length === 0) {
+    await gruposStore.fetchGruposSincronizados({
       gestion: '1-2026',
       carrera: 'carsis',
-      sede: 1
+      sede: 1,
     })
   }
 })
 </script>
 
 <style scoped>
-.asistencia-page { padding: 24px; background: var(--bg-primary); min-height: 100vh; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-.page-title { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; }
-.page-subtitle { color: var(--text-secondary); margin: 4px 0 0 0; }
-.header-actions { display: flex; gap: 12px; }
+.asistencia-page {
+  padding: 24px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+.page-subtitle {
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+}
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
 
-.section-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0; display: flex; align-items: center; }
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+}
 
-.horarios-hoy { padding: 20px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color); }
-.horarios-cards { display: flex; gap: 16px; flex-wrap: wrap; }
+.horarios-hoy {
+  padding: 20px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+}
+.horarios-cards {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
 .horario-item {
   background: var(--bg-tertiary);
   border: 2px solid var(--border-color);
@@ -514,25 +700,101 @@ onMounted(async () => {
   cursor: pointer;
   transition: all 0.2s;
 }
-.horario-item:hover { border-color: var(--primary); transform: translateY(-2px); }
-.horario-item.horario-activo { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
-.horario-item.horario-pasado { opacity: 0.6; }
-.horario-hora { font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 4px; }
-.horario-materia { font-weight: 600; color: var(--text-primary); margin-top: 4px; }
-.horario-grupo { font-size: 0.85rem; color: var(--text-secondary); }
-.horario-aula { font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+.horario-item:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.horario-item.horario-activo {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+.horario-item.horario-pasado {
+  opacity: 0.6;
+}
+.horario-hora {
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.horario-materia {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+.horario-grupo {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.horario-aula {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
 
-.filters-section { display: flex; gap: 12px; flex-wrap: wrap; }
+.filters-section {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
-.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
-.stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px; }
-.stat-info { display: flex; flex-direction: column; }
-.stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-.stat-label { font-size: 0.8rem; color: var(--text-muted); }
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+.stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
 
-.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color); }
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+}
 
-.table-card { background: var(--bg-secondary) !important; border: 1px solid var(--border-color); border-radius: 16px; }
-.table-header { display: flex; align-items: center; width: 100%; padding: 8px 0; }
-.table-title { display: flex; align-items: center; gap: 12px; }
+.table-card {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+.table-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+}
+.table-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 </style>
