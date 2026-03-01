@@ -28,8 +28,24 @@ export default boot(({ app }) => {
   //       so you won't necessarily have to import axios in each vue file
 
   app.config.globalProperties.$api = api
-  // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
-  //       so you can easily perform requests against your app's API
+
+  // Interceptor para manejar expiración de sesión (401 Unauthorized)
+  api.interceptors.response.use(
+    response => response,
+    error => {
+      if (error.response && error.response.status === 401) {
+        const { useAuthStore } = require('src/stores/auth')
+        const authStore = useAuthStore()
+        authStore.logout()
+        
+        // Redirigir al login si no estamos ya allí
+        if (window.location.hash !== '#/login' && window.location.pathname !== '/login') {
+          window.location.href = '/#/login?expired=true'
+        }
+      }
+      return Promise.reject(error)
+    }
+  )
 })
 
 export { api }

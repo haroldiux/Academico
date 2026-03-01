@@ -176,10 +176,20 @@
                   <div v-else class="horarios-grid">
                     <div v-for="(horario, idx) in horariosOrdenados" :key="idx" class="horario-card"
                       :class="{ 'horario-api': horario.desdeAPI }">
-                      <q-chip v-if="horario.desdeAPI" color="blue-2" text-color="blue-9" size="xs" dense
-                        class="api-badge">API</q-chip>
+                      <div v-if="horario.desdeAPI" class="api-badge-container">
+                        <q-chip color="blue-2" text-color="blue-9" size="xs" dense class="api-badge">API</q-chip>
+                        <q-chip v-if="horario.esComun" color="purple-2" text-color="purple-9" size="xs" dense class="api-badge">Común</q-chip>
+                        <q-chip 
+                          :color="String(horario.tipoClase).toLowerCase().includes('teor') ? 'indigo-1' : 'green-1'" 
+                          :text-color="String(horario.tipoClase).toLowerCase().includes('teor') ? 'indigo-9' : 'green-9'" 
+                          size="xs" dense class="api-badge"
+                        >
+                          {{ horario.tipoClase }}
+                        </q-chip>
+                      </div>
                       <div class="horario-dia">
                         <q-icon name="event" class="q-mr-xs" />{{ horario.dia }}
+                        <span class="text-weight-bold q-ml-sm text-indigo">{{ horario.codigoAsignatura }}</span>
                       </div>
                       <div class="horario-hora">
                         {{ horario.horaInicio }} - {{ horario.horaFin }}
@@ -199,58 +209,27 @@
 
             <!-- Botón Generar -->
             <div class="col-12 text-center">
-              <div v-if="asignatura" class="q-mb-sm flex flex-center q-gutter-md">
-                <q-input
-                  v-model.number="asignatura.sesiones_semanales_teoricas"
-                  type="number"
-                  dense
-                  outlined
-                  label="Sesiones teóricas semanales"
-                  style="width: 250px"
-                  color="blue"
-                  bg-color="blue-1"
-                  min="0"
-                  :disable="planificacionGenerada"
-                  @blur="saveAsignaturaConfig"
-                  @keyup.enter="saveAsignaturaConfig"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="class" color="blue-9" />
-                  </template>
-                  <q-tooltip>
-                    Número de sesiones teóricas semanales de la asignatura, independientemente del número de grupos que tenga el docente.
-                  </q-tooltip>
-                </q-input>
+              <!-- Resumen de Sesiones Oficiales (Desde Horario) -->
+              <div v-if="asignatura" class="q-mb-md flex flex-center q-gutter-xl">
+                <div class="session-info-box">
+                  <div class="text-overline text-blue-9">Sesiones Teóricas</div>
+                  <div class="text-h3 text-weight-bold text-blue-7">{{ sesionesSugeridas.teoricas }}</div>
+                  <div class="text-caption text-grey-7">Oficiales por semana</div>
+                </div>
 
-                <q-input
-                  v-model.number="asignatura.sesiones_semanales_practicas"
-                  type="number"
-                  dense
-                  outlined
-                  label="Sesiones prácticas semanales"
-                  style="width: 250px"
-                  color="green"
-                  bg-color="green-1"
-                  min="0"
-                  :disable="planificacionGenerada"
-                  @blur="saveAsignaturaConfig"
-                  @keyup.enter="saveAsignaturaConfig"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="science" color="green-9" />
-                  </template>
-                  <q-tooltip>
-                    Número de sesiones prácticas semanales de la asignatura, independientemente del número de grupos que tenga el docente.
-                  </q-tooltip>
-                </q-input>
+                <div class="session-info-box">
+                  <div class="text-overline text-green-9">Sesiones Prácticas</div>
+                  <div class="text-h3 text-weight-bold text-green-7">{{ sesionesSugeridas.practicas }}</div>
+                  <div class="text-caption text-grey-7">Oficiales por semana</div>
+                </div>
               </div>
 
               <q-btn unelevated color="indigo" icon="auto_awesome" label="Generar Planificación Automática" size="lg"
                 no-caps @click="generarPlanificacion(false)"
-                :disable="planificacionGenerada || (!asignatura?.sesiones_semanales_teoricas && !asignatura?.sesiones_semanales_practicas)"
+                :disable="planificacionGenerada || (sesionesSugeridas.teoricas === 0 && sesionesSugeridas.practicas === 0)"
               >
-                <q-tooltip v-if="!asignatura?.sesiones_semanales_teoricas && !asignatura?.sesiones_semanales_practicas">
-                  Configure las sesiones semanales en Datos de Asignatura primero
+                <q-tooltip v-if="sesionesSugeridas.teoricas === 0 && sesionesSugeridas.practicas === 0">
+                  No se detectaron sesiones en el horario. Contacte al Director si esto es un error.
                 </q-tooltip>
               </q-btn>
 
@@ -335,16 +314,15 @@
                   <thead>
                     <tr>
                       <th style="width: 70px; position: sticky; left: 0; z-index: 2;">SEM</th>
-                      <th style="width: 70px; z-index: 1;">SESIÓN</th>
-                      <th style="width: 140px" class="bg-grey-1 text-grey-8">FECHAS / GRUPOS</th>
-                      <th style="width: 250px">TEMAS</th>
+                      <th style="width: 90px; z-index: 1;">SESIÓN</th>
+                      <th style="min-width: 140px" class="bg-grey-1 text-grey-8">FECHAS / GRUPOS</th>
+                      <th style="min-width: 250px">TEMAS</th>
                       <th style="min-width: 300px;">CONTENIDO</th>
                       <th style="min-width: 200px;">CONCEPTUAL</th>
                       <th style="min-width: 200px;">PROCEDIMENTAL</th>
                       <th style="min-width: 200px;">ACTITUDINAL</th>
                       <th style="min-width: 200px;">CRITERIOS</th>
                       <th style="min-width: 200px;">INSTRUMENTOS</th>
-                      <!-- <th style="width: 50px">ACCIONES</th> -->
                     </tr>
                   </thead>
                   <tbody>
@@ -478,15 +456,35 @@
                         </td>
                         <td>
                           <q-select v-if="sesion.semana <= 17" v-model="sesion.criteriosSeleccionados" multiple
-                            use-chips use-input new-value-mode="add-unique" :options="criteriosOptions" outlined dense
+                             use-chips use-input @new-value="updateCriteriosOptions" 
+                             :options="filterCriterios" @filter="filterFnCriterios"
+                             outlined dense
                             class="cell-input" placeholder="Criterios..."
-                            @update:model-value="marcarModificado(sesion)" />
+                            @update:model-value="marcarModificado(sesion)">
+                            <template v-slot:no-option>
+                              <q-item>
+                                <q-item-section class="text-grey">
+                                  Presione Enter para agregar un criterio personalizado
+                                </q-item-section>
+                              </q-item>
+                            </template>
+                          </q-select>
                         </td>
                         <td>
                           <q-select v-if="sesion.semana <= 17" v-model="sesion.instrumentosSeleccionados" multiple
-                            use-chips use-input new-value-mode="add-unique" :options="instrumentosOptions" outlined
+                            use-chips use-input @new-value="updateInstrumentosOptions" 
+                            :options="filterInstrumentos" @filter="filterFnInstrumentos"
+                            outlined
                             dense class="cell-input" placeholder="Instrumentos..."
-                            @update:model-value="marcarModificado(sesion)" />
+                            @update:model-value="marcarModificado(sesion)">
+                            <template v-slot:no-option>
+                              <q-item>
+                                <q-item-section class="text-grey">
+                                  Presione Enter para agregar un instrumento personalizado
+                                </q-item-section>
+                              </q-item>
+                            </template>
+                          </q-select>
                         </td>
                         <!-- <td class="cell-actions">
                           <q-btn flat round dense icon="delete" size="xs" color="red"
@@ -733,7 +731,7 @@ const rolExamenesStore = useRolExamenesStore()
 
 
 const tabActual = ref('horario')
-const gestionSeleccionada = ref('2-2026')
+const gestionSeleccionada = ref('2026-I')
 const showCopiarDialog = ref(false)
 const planificacionGenerada = ref(false)
 // const guardando = ref(false) // Ya no se usa guardando manual, usamos saveStatus
@@ -808,31 +806,8 @@ const horariosAPI = ref([])
 // Exámenes cargados del rol (Director de Carrera)
 const examenesRol = ref([])
 
-async function saveAsignaturaConfig() {
-  if (!asignatura.value) return
-  saveStatus.value = 'saving'
-  try {
-    const data = {
-      sesiones_semanales_teoricas: asignatura.value.sesiones_semanales_teoricas,
-      sesiones_semanales_practicas: asignatura.value.sesiones_semanales_practicas,
-    }
-    await asignaturaService.updateAsignatura(asignatura.value.id, data)
-    saveStatus.value = 'saved'
-    $q.notify({
-      type: 'positive',
-      message: 'Configuración de sesiones guardada',
-      position: 'top-right',
-      timeout: 2000,
-    })
-    setTimeout(() => {
-      if (saveStatus.value === 'saved') saveStatus.value = 'idle'
-    }, 3000)
-  } catch (err) {
-    console.error('Error saving config', err)
-    saveStatus.value = 'error'
-    $q.notify({ type: 'negative', message: 'Error al guardar configuración' })
-  }
-}
+// La función saveAsignaturaConfig fue removida ya que los inputs de sesiones fueron eliminados.
+// El sistema ahora calcula las sesiones automáticamente del horario.
 
 onMounted(async () => {
   const id = parseInt(route.params.id)
@@ -1095,6 +1070,8 @@ function actualizarHorariosDesdeGrupo() {
         carrera_id: grupoData.carrera_id,
         sede_id: grupoData.sede_id,
         grupo_id: grupoData.id,
+        codigoAsignatura: asignatura.value?.codigo,
+        esComun: !!asignatura.value?.comun_token || !!asignatura.value?.comun_tipo,
       }))
       todosLosHorarios.push(...horariosGrupo)
     }
@@ -1206,6 +1183,49 @@ const horariosOrdenados = computed(() => {
 
 const totalSesionesGeneradas = computed(() => planificacion.value.length)
 
+const sesionesSugeridas = computed(() => {
+  if (!horarios.value.length) return { teoricas: 0, practicas: 0 }
+  
+  const esTeorico = (t) => {
+      if (!t) return false
+      const s = String(t).toUpperCase()
+      return s.includes('TEORICA') || s.includes('TEÓRICA') || s.includes('TEORICO') || s === 'T'
+  }
+  const esPractico = (t) => {
+      if (!t) return false
+      const s = String(t).toUpperCase()
+      return s.includes('PRACTICA') || s.includes('PRÁCTICA') || s.includes('PRACTICO') || s === 'P'
+  }
+
+  // Opción 1: Contar BLOQUES ÚNICOS (Mismo día y misma hora de inicio)
+  // Esto funciona si todos los grupos de teoría ocurren al mismo tiempo.
+  // Pero qué si hay Grupo A (Lun 8) y Grupo B (Mar 10) de teoría?
+  // Lo mejor es ver cuántos bloques de cada tipo tiene CADA grupo y tomar el MÁXIMO
+  // (Asumiendo que todos los grupos llevan la misma carga horaria).
+  
+  const conteosPorGrupo = {}
+  horarios.value.forEach(h => {
+    const gid = h.grupo_id || 'default'
+    if (!conteosPorGrupo[gid]) conteosPorGrupo[gid] = { t: 0, p: 0 }
+    
+    if (esTeorico(h.tipoClase)) {
+        conteosPorGrupo[gid].t++
+    } else if (esPractico(h.tipoClase)) {
+        conteosPorGrupo[gid].p++
+    }
+  })
+
+  // Tomamos el MÁXIMO de sesiones de cualquier grupo.
+  // Ejemplo: Si el docente tiene 3 grupos que se reunen 1 vez/semana, el máximo es 1.
+  const gruposList = Object.values(conteosPorGrupo)
+  if (gruposList.length === 0) return { teoricas: 0, practicas: 0 }
+
+  return {
+    teoricas: Math.max(...gruposList.map(g => g.t)),
+    practicas: Math.max(...gruposList.map(g => g.p))
+  }
+})
+
 const progresoTotal = computed(() => {
   if (!totalSesionesGeneradas.value) return 0
   const completadas = planificacion.value.filter((s) => s.tema && s.conceptual && s.procedimental).length
@@ -1295,9 +1315,9 @@ function calcularPropuestaPlanificacion() {
   const todasLasSesiones = []
   let sesionGlobal = 1
 
-  // Determinar número de sesiones por tipo
-  const numTeoricas = parseInt(asignatura.value?.sesiones_semanales_teoricas || 0)
-  const numPracticas = parseInt(asignatura.value?.sesiones_semanales_practicas || 0)
+  // Determinar número de sesiones por tipo basado en el cálculo automático (Sugeridos)
+  const numTeoricas = sesionesSugeridas.value.teoricas
+  const numPracticas = sesionesSugeridas.value.practicas
   
   // 0. Preparar mapeo de exámenes por fecha
   const fechasExamenMap = {}
@@ -1324,7 +1344,7 @@ function calcularPropuestaPlanificacion() {
 
     const sesionesSemana = []
 
-    // 1. Identificar y ordenar todos los slots de la semana cronológicamente
+    // 1. Identificar e identificar slots del horario que sean del tipo correcto
     const isTeorico = (t) => {
         if (!t) return false
         const s = t.toUpperCase()
@@ -1336,6 +1356,7 @@ function calcularPropuestaPlanificacion() {
         return s.includes('PRACTICA') || s.includes('PRÁCTICA') || s.includes('PRACTICO') || s === 'P'
     }
 
+    // Tomamos los slots ordenados del horario pero limitamos a la cantidad oficial por semana
     const tSlots = (horariosOrdenados.value || []).filter(h => isTeorico(h.tipoClase)).slice(0, numTeoricas)
     const pSlots = (horariosOrdenados.value || []).filter(h => isPractico(h.tipoClase)).slice(0, numPracticas)
     const combinedWeeklySlots = [...tSlots, ...pSlots].sort(sortHorariosDiaHora)
@@ -1515,15 +1536,15 @@ async function ejecutarReestructura() {
 
 async function generarPlanificacion(silent = false) {
   if (!silent) {
-    const teoricas = asignatura.value?.sesiones_semanales_teoricas || 0
-    const practicas = asignatura.value?.sesiones_semanales_practicas || 0
+    const teoricas = sesionesSugeridas.value.teoricas
+    const practicas = sesionesSugeridas.value.practicas
     
     return new Promise((resolve) => {
       $q.dialog({
         title: 'Confirmar Generación',
-        message: `Se generarán <b>${teoricas} sesiones teóricas</b> y <b>${practicas} sesiones prácticas</b> semanales para esta asignatura.<br><br>
-                  <i>Nota: El número de sesiones depende exclusivamente de la configuración de la asignatura y aplica para todo el semestre, sin importar la cantidad de grupos que el docente tenga asignados.</i><br><br>
-                  ¿Desea continuar con la generación automática?`,
+        message: `Se generarán <b>${teoricas} sesiones teóricas</b> y <b>${practicas} sesiones prácticas</b> semanales basadas en el horario oficial.<br><br>
+                  <i>Nota: Esta estructura se calcula automáticamente a partir de los horarios de clases asignados.</i><br><br>
+                  ¿Desea continuar con la generación de la planificación?`,
         html: true,
         cancel: 'Cancelar',
         ok: {
@@ -1776,21 +1797,64 @@ async function guardarTodo(silent = false) {
   }
 }
 
-// Opciones recomendadas
-const criteriosOptions = [
+// Opciones recomendadas (ahora reactivas para añadir nuevos valores)
+const criteriosOptions = ref([
   'Analiza componentes',
   'Diseña soluciones',
   'Implementa servicios',
   'Evalúa rendimiento',
   'Documenta procesos',
-]
-const instrumentosOptions = [
+])
+const instrumentosOptions = ref([
   'Lista de cotejo',
   'Rúbrica de evaluación',
   'Prueba escrita',
   'Defensa oral',
   'Informe de laboratorio',
-]
+])
+
+const filterCriterios = ref([...criteriosOptions.value])
+const filterInstrumentos = ref([...instrumentosOptions.value])
+
+function filterFnCriterios(val, update) {
+  update(() => {
+    const needle = val.toLowerCase()
+    let results = criteriosOptions.value.filter(v => v.toLowerCase().indexOf(needle) > -1)
+    if (val && !criteriosOptions.value.some(v => v.toLowerCase() === val.toLowerCase())) {
+        results.unshift(val)
+    }
+    filterCriterios.value = results
+  })
+}
+
+function filterFnInstrumentos(val, update) {
+  update(() => {
+    const needle = val.toLowerCase()
+    let results = instrumentosOptions.value.filter(v => v.toLowerCase().indexOf(needle) > -1)
+    if (val && !instrumentosOptions.value.some(v => v.toLowerCase() === val.toLowerCase())) {
+        results.unshift(val)
+    }
+    filterInstrumentos.value = results
+  })
+}
+
+function updateCriteriosOptions(val, done) {
+  if (val.length > 0) {
+    if (!criteriosOptions.value.some(v => v.toLowerCase() === val.toLowerCase())) {
+      criteriosOptions.value.push(val)
+    }
+    done(val, 'add-unique')
+  }
+}
+
+function updateInstrumentosOptions(val, done) {
+  if (val.length > 0) {
+    if (!instrumentosOptions.value.some(v => v.toLowerCase() === val.toLowerCase())) {
+      instrumentosOptions.value.push(val)
+    }
+    done(val, 'add-unique')
+  }
+}
 
 // Calculo de fechas para todos los grupos
 const fechasGlobales = ref({})
@@ -1899,7 +1963,7 @@ function calcularFechasTodosLosGrupos() {
               
               fechasGrupo.push({
                   grupo: gData.grupo,
-                  fecha: `G->${gData.grupo}, ${dStr} ${timeStr}`
+                  fecha: `G->${gData.grupo}, ${h.dia?.substring(0, 2) || ''} ${dStr} ${timeStr}`
               })
           }
       })
@@ -2178,6 +2242,35 @@ async function procesarImportacionCronograma() {
   right: 8px;
 }
 
+.horario-card .session-info-box {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px 32px;
+  min-width: 200px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+}
+
+.session-info-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.api-badge-container {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.api-badge {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .horario-card .api-badge {
   position: absolute;
   top: -6px;
@@ -2294,10 +2387,9 @@ async function procesarImportacionCronograma() {
 
 .sesiones-table {
   width: 100%;
-  min-width: 1300px;
   border-collapse: collapse;
   font-size: 0.75rem;
-  table-layout: fixed;
+  /* table-layout: fixed; REMOVED to allow auto-sizing */
 }
 
 .sesiones-table th {

@@ -1372,7 +1372,11 @@ const nombreSede = computed(() => {
     if (s) return s.nombre
   }
 
-  // 1. Si es DOCENTE, priorizar SU Sede asignada (Contexto Físico)
+  // 1. Prioridad: Sede resuelta por el Backend (Contextual: Docente + Asignatura)
+  // El backend inyecta 'sede_nombre' basándose en el docente_id de la petición
+  if (asignatura.value?.sede_nombre) return asignatura.value.sede_nombre
+
+  // 2. Si es DOCENTE, priorizar SU Sede asignada (Contexto Físico)
   if (authStore.rol === 'DOCENTE' && authStore.usuarioActual?.docente?.sede?.nombre) {
     return authStore.usuarioActual.docente.sede.nombre
   }

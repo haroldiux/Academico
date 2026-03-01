@@ -296,6 +296,12 @@ export const useAuthStore = defineStore('auth', () => {
     passwordChangeRequired.value = false
     localStorage.removeItem('auth_user')
     localStorage.removeItem('auth_token')
+
+    // Limpiar headers de axios
+    delete api.defaults.headers.common['Authorization']
+
+    // Opcional: Recargar la página para limpiar cualquier estado residual en memoria
+    // window.location.reload()
   }
 
   async function fetchUser() {

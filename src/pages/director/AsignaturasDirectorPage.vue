@@ -403,16 +403,23 @@ const dialogMode = ref('pdf') // 'pdf' | 'nav'
 // Función para ir a documentación (con selección de docente si es materia común)
 function irADocumentacion(row) {
   const docentes = row.docentes_data || []
+  const baseQuery = {
+    sede_id: row.sede_id,
+    nombre_sede: row.sede_nombre
+  }
 
   if (docentes.length === 0) {
     // Sin docentes, ir directamente
-    router.push(`/documentacion/${row.id}`)
+    router.push({ path: `/documentacion/${row.id}`, query: baseQuery })
     return
   }
 
   if (docentes.length === 1) {
-    // Un solo docente, ir con su ID
-    router.push({ path: `/documentacion/${row.id}`, query: { docente_id: docentes[0].id } })
+    // Un solo docente, ir con su ID y sede
+    router.push({ 
+      path: `/documentacion/${row.id}`, 
+      query: { ...baseQuery, docente_id: docentes[0].id } 
+    })
     return
   }
 
@@ -457,10 +464,14 @@ async function seleccionarDocente(docenteId) {
   if (!asignaturaSeleccionada.value) return
 
   if (dialogMode.value === 'nav') {
-    // Navegar a documentación con el docente seleccionado
+    // Navegar a documentación con el docente seleccionado y contexto de sede
     router.push({
       path: `/documentacion/${asignaturaSeleccionada.value.id}`,
-      query: { docente_id: docenteId }
+      query: { 
+        docente_id: docenteId,
+        sede_id: asignaturaSeleccionada.value.sede_id,
+        nombre_sede: asignaturaSeleccionada.value.sede_nombre
+      }
     })
   } else {
     // Generar PDF
