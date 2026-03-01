@@ -255,7 +255,8 @@ export function usePermisos() {
         { label: 'Documentación', icon: 'description', to: '/documentacion' },
         { label: 'Reportes', icon: 'assessment', to: '/admin/reportes' },
         { label: 'Estadísticas', icon: 'analytics', to: '/admin/estadisticas' },
-        { label: 'Configuración', icon: 'settings', to: '/admin/configuracion' }
+        { label: 'Configuración', icon: 'settings', to: '/admin/configuracion' },
+        { label: 'Comparador Backups', icon: 'history_edu', to: '/admin/comparador-backup' }
       ]
     }
 

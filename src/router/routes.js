@@ -231,6 +231,12 @@ const routes = [
             name: 'reportes',
             component: () => import('pages/admin/ReportesPage.vue'),
             meta: { title: 'Reportes' }
+          },
+          {
+            path: 'comparador-backup',
+            name: 'comparador-backup',
+            component: () => import('pages/admin/ComparadorBackupPage.vue'),
+            meta: { title: 'Comparador de Backups', rol: ['SUPER_ADMIN', 'ADMIN'] }
           }
         ]
       },
