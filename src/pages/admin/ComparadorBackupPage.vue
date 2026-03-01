@@ -65,53 +65,230 @@
         </q-banner>
       </div>
 
-      <div class="col-12">
-        <div class="text-subtitle1 text-weight-bold q-mb-sm">Datos Generales de la Asignatura</div>
-        <q-table :rows="resultado.comparison" :columns="columns" row-key="field" flat bordered :pagination="{ rowsPerPage: 0 }" hide-bottom class="q-mb-xl">
-          <template v-slot:body="props">
-            <q-tr :props="props" :class="props.row.different ? 'bg-orange-1' : ''">
-              <q-td key="field" :props="props" class="text-weight-bold text-uppercase">{{ props.row.field.replace(/_/g, ' ') }}</q-td>
-              <q-td key="current" :props="props" class="vertical-top white-space-pre">
-                <div v-if="props.row.current" class="q-pa-xs scroll" style="max-height: 200px; max-width: 400px; font-size: 0.9em;">{{ props.row.current }}</div>
-                <div v-else class="text-grey-5 italic">Vacío</div>
-              </q-td>
-              <q-td key="backup" :props="props" class="vertical-top white-space-pre">
-                <div v-if="props.row.backup" class="q-pa-xs scroll" style="max-height: 200px; max-width: 400px; font-size: 0.9em;">{{ props.row.backup }}</div>
-                <div v-else class="text-grey-5 italic">Vacío</div>
-              </q-td>
-              <q-td key="status" :props="props">
-                <q-icon v-if="props.row.different" name="warning" color="orange" size="sm"><q-tooltip>Diferente</q-tooltip></q-icon>
-                <q-icon v-else name="check_circle" color="positive" size="sm" />
-              </q-td>
-            </q-tr>
-          </template>
-        </q-table>
-      </div>
+      <div class="col-12" v-if="resultado">
+        <q-card flat bordered class="rounded-borders">
+          <q-tabs
+            v-model="tabActual"
+            dense
+            class="text-grey-7 bg-grey-1"
+            active-color="primary"
+            indicator-color="primary"
+            align="justify"
+            narrow-indicator
+          >
+            <q-tab name="general" label="Datos Generales" icon="info" no-caps />
+            <q-tab name="unidades" label="Unidades y Temas" icon="folder" no-caps />
+            <q-tab name="cronograma" label="Cronograma Semestral" icon="event_note" no-caps />
+          </q-tabs>
 
-      <div class="col-12" v-if="resultado.unidades?.length > 0">
-        <div class="text-subtitle1 text-weight-bold q-mb-md">Estructura Detallada (Unidades y Temas)</div>
-        <div v-for="(unidad, uIdx) in resultado.unidades" :key="uIdx" class="q-mb-lg">
-          <q-card flat bordered>
-            <q-item :class="!unidad.found_current ? 'bg-red-1 text-red-9' : 'bg-grey-2'">
-              <q-item-section avatar><q-icon :name="unidad.found_current ? 'folder' : 'folder_off'" /></q-item-section>
-              <q-item-section>
-                <q-item-label class="text-weight-bold">Unidad: {{ unidad.titulo }}</q-item-label>
-              </q-item-section>
-            </q-item>
-            <q-list separator>
-              <q-item v-for="(tema, tIdx) in unidad.temas" :key="tIdx" :class="tema.different ? 'bg-orange-1' : ''">
-                <q-item-section avatar><q-icon :name="tema.found_current ? 'description' : 'error_outline'" :color="tema.different ? 'orange' : 'grey'" /></q-item-section>
-                <q-item-section>
-                  <q-item-label>{{ tema.titulo }}</q-item-label>
-                  <q-item-label caption v-if="!tema.found_current" class="text-negative text-weight-bold">TEMA PERDIDO</q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                   <q-btn flat round icon="visibility" :color="tema.different ? 'orange' : 'grey'" @click="verDiferenciaTema(tema)" />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-card>
-        </div>
+          <q-separator />
+
+          <q-tab-panels v-model="tabActual" animated>
+            <!-- TAB: DATOS GENERALES -->
+            <q-tab-panel name="general" class="q-pa-none">
+              <div class="q-pa-md">
+                <div class="row items-center q-mb-md">
+                  <div class="text-subtitle1 text-weight-bold">Atributos Principales de la Asignatura</div>
+                  <q-space />
+                  <q-btn
+                    v-if="resultado.current_id && resultado.backup_id"
+                    color="orange"
+                    icon="settings_backup_restore"
+                    label="Restaurar Todos los Datos Generales"
+                    no-caps
+                    @click="restaurarSegmento('asignatura', resultado.current_id, resultado.backup_id, 'Todos los Datos Generales')"
+                  />
+                </div>
+                <q-table :rows="resultado.comparison" :columns="columns" row-key="field" flat bordered :pagination="{ rowsPerPage: 0 }" hide-bottom>
+                  <template v-slot:body="props">
+                    <q-tr :props="props" :class="props.row.different ? 'bg-orange-1' : ''">
+                      <q-td key="field" :props="props" class="text-weight-bold text-uppercase">{{ props.row.field.replace(/_/g, ' ') }}</q-td>
+                      <q-td key="current" :props="props" class="vertical-top white-space-pre">
+                        <div v-if="props.row.current" class="q-pa-xs scroll" style="max-height: 200px; max-width: 400px; font-size: 0.9em;">{{ props.row.current }}</div>
+                        <div v-else class="text-grey-5 italic">Vacío</div>
+                      </q-td>
+                      <q-td key="backup" :props="props" class="vertical-top white-space-pre">
+                        <div v-if="props.row.backup" class="q-pa-xs scroll" style="max-height: 200px; max-width: 400px; font-size: 0.9em;">{{ props.row.backup }}</div>
+                        <div v-else class="text-grey-5 italic">Vacío</div>
+                      </q-td>
+                      <q-td key="status" :props="props">
+                        <div class="row no-wrap items-center">
+                          <q-icon v-if="props.row.different" name="warning" color="orange" size="sm" class="q-mr-sm"><q-tooltip>Diferente</q-tooltip></q-icon>
+                          <q-icon v-else name="check_circle" color="positive" size="sm" class="q-mr-sm" />
+                          <q-btn 
+                            v-if="props.row.different" 
+                            flat 
+                            round 
+                            dense 
+                            size="sm"
+                            icon="settings_backup_restore" 
+                            color="orange" 
+                            @click="restaurarSegmento('asignatura', resultado.current_id, resultado.backup_id, props.row.field)"
+                          >
+                            <q-tooltip>Restaurar este campo</q-tooltip>
+                          </q-btn>
+                        </div>
+                      </q-td>
+                    </q-tr>
+                  </template>
+                </q-table>
+              </div>
+            </q-tab-panel>
+
+            <!-- TAB: UNIDADES Y TEMAS -->
+            <q-tab-panel name="unidades">
+              <div v-if="resultado.unidades?.length > 0">
+                <div class="row items-center q-mb-md">
+                  <div class="text-subtitle1 text-weight-bold">Estructura de Unidades y Temas</div>
+                  <q-space />
+                  <q-btn 
+                    v-if="resultado.current_id && resultado.backup_id"
+                    color="orange" 
+                    icon="settings_backup_restore" 
+                    label="Restaurar Todas las Unidades y Temas" 
+                    no-caps
+                    @click="restaurarSegmento('unidades_total', resultado.current_id, resultado.backup_id, 'Todas las Unidades y Temas')"
+                  />
+                </div>
+                <div v-for="(unidad, uIdx) in resultado.unidades" :key="uIdx" class="q-mb-lg">
+                  <q-card flat bordered>
+                    <q-item :class="!unidad.found_current ? 'bg-red-1 text-red-9' : 'bg-grey-2'">
+                      <q-item-section avatar><q-icon :name="unidad.found_current ? 'folder' : 'folder_off'" /></q-item-section>
+                      <q-item-section>
+                        <q-item-label class="text-weight-bold">Unidad: {{ unidad.titulo }}</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-list separator>
+                      <q-item v-for="(tema, tIdx) in unidad.temas" :key="tIdx" :class="tema.different ? 'bg-orange-1' : ''">
+                        <q-item-section avatar><q-icon :name="tema.found_current ? 'description' : 'error_outline'" :color="tema.different ? 'orange' : 'grey'" /></q-item-section>
+                        <q-item-section>
+                          <q-item-label>{{ tema.titulo }}</q-item-label>
+                          <q-item-label caption v-if="!tema.found_current" class="text-negative text-weight-bold">TEMA PERDIDO</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                          <div class="row no-wrap items-center">
+                            <q-btn 
+                              v-if="tema.different && tema.current_id && tema.backup_id" 
+                              flat 
+                              round 
+                              icon="settings_backup_restore" 
+                              color="orange" 
+                              @click="restaurarSegmento('tema', tema.current_id, tema.backup_id, tema.titulo)"
+                            >
+                              <q-tooltip>Restaurar todo el contenido del tema (Saberes + Logros)</q-tooltip>
+                            </q-btn>
+                            <q-btn 
+                              flat 
+                              round 
+                              icon="visibility" 
+                              :color="tema.different ? 'orange' : 'primary'" 
+                              @click="verDiferenciaTema(tema)"
+                            >
+                              <q-tooltip>Ver detalle de diferencias</q-tooltip>
+                            </q-btn>
+                          </div>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-card>
+                </div>
+              </div>
+              <div v-else class="text-center q-pa-xl text-grey-6">
+                No se encontraron unidades para comparar.
+              </div>
+            </q-tab-panel>
+
+            <!-- TAB: CRONOGRAMA -->
+            <q-tab-panel name="cronograma" class="q-pa-md">
+              <div v-if="resultado.cronogramas?.length > 0">
+                <div class="row items-center q-mb-md">
+                  <div class="text-subtitle1 text-weight-bold">Cronograma de Sesiones Académicas</div>
+                  <q-space />
+                  <q-btn 
+                    v-if="resultado.current_id && resultado.backup_id"
+                    color="orange" 
+                    icon="settings_backup_restore" 
+                    label="Restaurar Cronograma Completo" 
+                    no-caps
+                    @click="restaurarSegmento('cronograma_total', resultado.current_id, resultado.backup_id, 'Cronograma Completo')"
+                  />
+                </div>
+                <q-table
+                  :rows="resultado.cronogramas"
+                  :columns="[
+                    { name: 'sesion', label: 'Sesión', field: 'numero_sesion', align: 'center', sortable: true },
+                    { name: 'semana', label: 'Sem.', field: 'semana', align: 'center' },
+                    { name: 'tipo', label: 'Tipo', field: 'tipo_clase', align: 'left' },
+                    { name: 'diff', label: 'Diferencias Pedagógicas', field: 'differences', align: 'left' },
+                    { name: 'acciones', label: 'Acciones', align: 'center' }
+                  ]"
+                  flat bordered
+                  :pagination="{ rowsPerPage: 0 }"
+                  hide-bottom
+                >
+                  <template v-slot:body="props">
+                    <q-tr :props="props" :class="props.row.different ? 'bg-orange-1' : (!props.row.found_current || !props.row.found_backup ? 'bg-red-1' : '')">
+                      <td class="text-center text-weight-bold">#{{ props.row.numero_sesion }}</td>
+                      <td class="text-center">Sem. {{ props.row.semana }}</td>
+                      <td>
+                        <q-chip 
+                          :color="props.row.tipo_clase?.toUpperCase().includes('TEOR') ? 'indigo-1' : 'green-1'" 
+                          :text-color="props.row.tipo_clase?.toUpperCase().includes('TEOR') ? 'indigo-8' : 'green-8'" 
+                          size="sm"
+                          dense
+                        >
+                          {{ props.row.tipo_clase }}
+                        </q-chip>
+                      </td>
+                      <td>
+                        <div v-if="!props.row.found_current" class="text-negative text-weight-bold">SESIÓN ELIMINADA (EXISTE EN BACKUP PERO NO ACTUAL)</div>
+                        <div v-else-if="!props.row.found_backup" class="text-negative text-weight-bold text-primary">SESIÓN NUEVA (NO EXISTE EN BACKUP)</div>
+                        <div v-else-if="props.row.different">
+                          <div v-for="(diff, field) in props.row.differences" :key="field" class="q-mb-sm">
+                            <div class="text-caption text-weight-bold text-uppercase text-grey-7">{{ field.replace(/_/g, ' ') }}:</div>
+                            <div class="row q-col-gutter-sm">
+                              <div class="col-6">
+                                <div class="text-primary text-caption">Actual:</div>
+                                <div class="q-pa-xs bg-white rounded-borders scroll shadow-1" style="max-height: 100px; white-space: pre-wrap; font-size: 0.85em; border: 1px solid #eee;">
+                                  {{ diff.current || '(Vacío)' }}
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="text-orange-9 text-caption">Backup:</div>
+                                <div class="q-pa-xs bg-white rounded-borders scroll shadow-1" style="max-height: 100px; white-space: pre-wrap; font-size: 0.85em; border: 1px solid #eee;">
+                                  {{ diff.backup || '(Vacío)' }}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div v-else class="text-positive text-caption italic"><q-icon name="check_circle" /> Contenido idéntico</div>
+                      </td>
+                      <td class="text-center">
+                        <q-btn 
+                          v-if="props.row.different && props.row.current_id && props.row.backup_id"
+                          color="orange" 
+                          flat 
+                          round 
+                          dense 
+                          icon="settings_backup_restore"
+                          @click="restaurarSegmento('cronograma', props.row.current_id, props.row.backup_id, 'Sesión #' + props.row.numero_sesion)"
+                        >
+                          <q-tooltip>Restaurar esta sesión completa</q-tooltip>
+                        </q-btn>
+                      </td>
+                    </q-tr>
+                  </template>
+                </q-table>
+              </div>
+              <div v-else class="text-center q-pa-xl text-grey-6">
+                <q-icon name="event_busy" size="64px" class="q-mb-md" />
+                <div class="text-h6">No hay datos de cronograma</div>
+                <p>No se encontraron registros en la tabla de cronogramas para esta asignatura en ninguna de las bases comparadas.</p>
+              </div>
+            </q-tab-panel>
+          </q-tab-panels>
+        </q-card>
       </div>
     </div>
 
@@ -130,41 +307,62 @@
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6">Comparación de Tema: {{ selectedTema?.titulo }}</div>
           <q-space />
+          <q-btn 
+            v-if="selectedTema?.different && selectedTema?.id && selectedTema?.backup_id"
+            color="orange" 
+            flat 
+            icon="settings_backup_restore" 
+            label="Restaurar todos los saberes" 
+            no-caps 
+            class="q-mr-sm"
+            @click="restaurarSegmento('tema', selectedTema.current_id, selectedTema.backup_id, selectedTema.titulo)"
+          />
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
 
         <q-card-section class="q-pt-md" style="max-height: 80vh; overflow-y: auto;">
-          <div v-if="(selectedTema?.differences && Object.keys(selectedTema.differences).length > 0) || (selectedTema?.logros && selectedTema.logros.length > 0) || selectedTema?.planificacion_personal">
+          <div v-if="(selectedTema?.differences) || (selectedTema?.logros && selectedTema.logros.length > 0) || selectedTema?.planificacion_personal">
             
             <!-- Sección de Campos de Contenido -->
-            <div v-if="selectedTema?.differences && Object.keys(selectedTema.differences).length > 0">
-            <div v-for="(diff, field) in selectedTema.differences" :key="field" class="q-mb-xl">
-              <div class="text-subtitle1 text-weight-bold text-uppercase text-primary q-mb-sm border-bottom">
-                Campo: {{ formatFieldName(field) }}
+            <div v-if="selectedTema?.differences">
+            <!-- Diferencias en campos de texto (Conceptual, Procedimental, Actitudinal, etc.) -->
+              <div v-for="(diff, field) in selectedTema.differences" :key="field">
+                <template v-if="['contenido_conceptual', 'contenido_procedimental', 'contenido_actitudinal', 'resultado_aprendizaje', 'contenido_items', 'bibliografias'].includes(field)">
+                  <div class="text-subtitle2 text-primary q-mb-xs text-uppercase">Campo: {{ formatFieldName(field) }}</div>
+                  <div class="row q-col-gutter-sm q-mb-lg">
+                    <div class="col-12 col-md-6">
+                      <div class="text-caption text-grey-7">Valor Actual:</div>
+                      <q-field outlined dense bg-color="grey-1" class="full-width">
+                        <div class="q-pa-sm white-space-pre" style="min-height: 40px;">{{ diff.current || '(Vacío en base actual)' }}</div>
+                      </q-field>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <div class="text-caption text-orange-9 text-weight-bold">Valor en Backup:</div>
+                      <q-field outlined dense bg-color="orange-1" class="full-width">
+                        <div class="q-pa-sm white-space-pre" style="min-height: 40px;">{{ diff.backup || '(Vacío en backup)' }}</div>
+                      </q-field>
+                    </div>
+                  </div>
+                </template>
               </div>
-              <div class="row q-col-gutter-md">
-                <div class="col-6">
-                  <div class="text-weight-bold text-blue q-mb-xs">Valor Actual:</div>
-                  <div class="q-pa-sm bg-grey-1 rounded-borders scroll" style="max-height: 300px; white-space: pre-wrap; border: 1px solid #ddd;">
-                    {{ diff.current || '(Vacío en base actual)' }}
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="text-weight-bold text-orange q-mb-xs">Valor en Backup:</div>
-                  <div class="q-pa-sm bg-orange-1 rounded-borders scroll" style="max-height: 300px; white-space: pre-wrap; border: 1px solid #ffcc80;">
-                    {{ diff.backup || '(Vacío en backup)' }}
-                  </div>
-                </div>
-              </div> <!-- end current/backup row -->
-            </div> <!-- end div-if differences -->
-          </div>
+            </div>
           
           <!-- Sección de Logros e Indicadores -->
             <div v-if="selectedTema?.logros && selectedTema.logros.length > 0" class="q-mt-xl">
               <q-separator class="q-mb-lg" />
-              <div class="text-h6 text-grey-8 q-mb-md flex items-center">
-                <q-icon name="emoji_events" color="orange" class="q-mr-sm" />
-                Logros Esperados e Indicadores (Backup)
+              <div class="row items-center q-mb-md">
+                <q-icon name="emoji_events" color="orange" size="sm" class="q-mr-sm" />
+                <div class="text-h6 text-grey-8">Logros Esperados e Indicadores (Backup)</div>
+                <q-space />
+                <q-btn 
+                   v-if="selectedTema.current_id && selectedTema.backup_id"
+                   color="orange" 
+                   flat 
+                   icon="settings_backup_restore" 
+                   label="Restaurar Logros e Indicadores" 
+                   no-caps
+                   @click="restaurarSegmento('tema', selectedTema.current_id, selectedTema.backup_id, 'Logros e Indicadores')"
+                />
               </div>
               <div class="q-pl-md">
                 <div v-for="(logro, lIdx) in selectedTema.logros" :key="lIdx" class="q-mb-lg">
@@ -189,9 +387,19 @@
             <!-- Sección de Planificación Personal -->
             <div v-if="selectedTema?.planificacion_personal" class="q-mt-xl">
               <q-separator class="q-mb-lg" />
-              <div class="text-h6 text-grey-8 q-mb-md flex items-center">
-                <q-icon name="person" color="blue" class="q-mr-sm" />
-                Planificación Personal (Docente)
+              <div class="row items-center q-mb-md">
+                <q-icon name="person" color="blue" size="sm" class="q-mr-sm" />
+                <div class="text-h6 text-grey-8">Planificación Personal (Docente)</div>
+                <q-space />
+                <q-btn 
+                   v-if="selectedTema.planificacion_personal.current_id && selectedTema.planificacion_personal.backup_id"
+                   color="orange" 
+                   flat 
+                   icon="settings_backup_restore" 
+                   label="Restaurar Secuencia y Estrategias" 
+                   no-caps
+                   @click="restaurarSegmento('planificacion_personal', selectedTema.planificacion_personal.current_id, selectedTema.planificacion_personal.backup_id, 'Planificación Personal')"
+                />
               </div>
 
               <!-- Diferencias en campos de texto (Estrategias, Evaluación) -->
@@ -281,6 +489,7 @@ const backupsDisponibles = ref([])
 const loadingBackups = ref(false)
 const loadingComparacion = ref(false)
 const resultado = ref(null)
+const tabActual = ref('general')
 
 // Control de Diálogo de Temas
 const showDiffDialog = ref(false)
@@ -346,6 +555,48 @@ async function buscarYComparar() {
   }
 }
 
+async function restaurarSegmento(type, targetId, backupId, label = '') {
+  if (!targetId || !backupId) return
+
+  const labelMsg = label ? `el campo "${label}"` : 'este segmento'
+  
+  $q.dialog({
+    title: 'Confirmar Restauración',
+    message: `¿Estás seguro de restaurar ${labelMsg} desde el backup? Se sobrescribirá el valor actual.`,
+    cancel: true,
+    persistent: true,
+    ok: { label: 'Restaurar', color: 'orange' }
+  }).onOk(async () => {
+    try {
+      $q.loading.show({ message: 'Restaurando...' })
+      await api.post('/backups/restore', {
+        type,
+        target_id: targetId,
+        backup_id: backupId,
+        backup_db: backupSeleccionado.value,
+        field: label // Enviamos el campo específico para tipo 'asignatura'
+      })
+      
+      $q.notify({ color: 'positive', message: 'Restauración exitosa', icon: 'check' })
+      
+      // En ciertos casos cerramos el diálogo si está abierto
+      if (type === 'tema' || type === 'planificacion_personal') {
+        showDiffDialog.value = false
+      }
+
+      // Recargar para ver cambios
+      await buscarYComparar()
+      
+    } catch (error) {
+      console.error('Error restaurando:', error)
+      const msg = error.response?.data?.error || 'No se pudo completar la restauración'
+      $q.notify({ color: 'negative', message: msg, icon: 'error' })
+    } finally {
+      $q.loading.hide()
+    }
+  })
+}
+
 function verDiferenciaTema(tema) {
   selectedTema.value = tema
   showDiffDialog.value = true
@@ -384,7 +635,7 @@ function parseJSONList(val) {
   try {
     const parsed = JSON.parse(val)
     return Array.isArray(parsed) ? parsed : [val]
-  } catch (e) {
+  } catch {
     return [val]
   }
 }
@@ -395,6 +646,8 @@ function formatFieldName(field) {
     'contenido_procedimental': 'Contenido Procedimental',
     'contenido_actitudinal': 'Contenido Actitudinal',
     'resultado_aprendizaje': 'Resultado de Aprendizaje',
+    'contenido_items': 'Lista de Contenidos',
+    'bibliografias': 'Referencias Bibliográficas',
     'estrategias_metodologicas': 'Estrategias Metodológicas',
     'estrategias_aprendizaje': 'Estrategias de Aprendizaje',
     'estrategias_recursos': 'Recursos Didácticos',
