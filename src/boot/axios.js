@@ -32,14 +32,16 @@ export default boot(({ app }) => {
   // Interceptor para manejar expiración de sesión (401 Unauthorized)
   api.interceptors.response.use(
     response => response,
-    error => {
+    async error => {
       if (error.response && error.response.status === 401) {
-        const { useAuthStore } = require('src/stores/auth')
+        // Importación dinámica para evitar dependencia circular y corregir error 'require' en el navegador
+        const { useAuthStore } = await import('src/stores/auth')
         const authStore = useAuthStore()
         authStore.logout()
-        
+
         // Redirigir al login si no estamos ya allí
-        if (window.location.hash !== '#/login' && window.location.pathname !== '/login') {
+        const currentPath = window.location.hash || window.location.pathname
+        if (!currentPath.includes('/login') && !currentPath.includes('login')) {
           window.location.href = '/#/login?expired=true'
         }
       }

@@ -260,8 +260,9 @@
                 <q-tooltip>Importar avance semestral hasta semena 6 (Excel)</q-tooltip>
              </q-btn>
              
-             <q-btn outline color="grey-6" icon="lock" label="Importar Cronograma Total" no-caps disable>
-                <q-tooltip>Opción habilitada solo cuando el Director suba el Rol de Exámenes</q-tooltip>
+             <q-btn unelevated color="indigo-7" icon="upload_file" label="Importar Cronograma Total" no-caps
+                @click="abrirDialogoImportarCronograma" >
+                <q-tooltip>Importar avance semestral completo de las 20 semanas (Excel)</q-tooltip>
              </q-btn>
           </div>
 
@@ -327,62 +328,16 @@
                   </thead>
                   <tbody>
                     <template v-for="sesion in planificacion" :key="sesion.id">
-                      <!-- Fila de EXAMEN -->
-                      <tr v-if="sesion.esExamen" class="sesion-examen-row">
+                      <tr :class="getSesionRowClass(sesion)">
                         <td class="cell-semana" 
                             v-if="isFirstSesionOfSemana(planificacion, sesion)"
                             :rowspan="getSemanaRowspan(planificacion, sesion)"
                             style="position: sticky; left: 0; z-index: 1; background: white; border-bottom: 2px solid #ddd;">
                           <div class="semana-content">
                             <span class="semana-numero">{{ sesion.semana }}</span>
-                            <!-- <span class="semana-fechas">{{ sesion.semanaFechas }}</span> -->
-                            <q-chip v-if="sesion.periodoExamen" :color="getExamenColor(sesion.periodoExamen)"
-                              text-color="white" size="xs" dense class="q-mt-xs">
-                              {{ sesion.periodoExamen }}
-                            </q-chip>
-                          </div>
-                        </td>
-                        <td class="cell-sesion">
-                          <div class="sesion-content">
-                            <span class="sesion-numero">SESIÓN {{ sesion.numeroGlobal }}</span>
-                            <span class="sesion-fecha">{{ sesion.tipoClase || 'Clase' }}</span>
-                          </div>
-                        </td>
-                        <td class="cell-fechas bg-grey-1">
-                          <div v-for="(fg, idx) in getFechasGrupos(sesion)" :key="idx"
-                            class="fecha-grupo-row">
-                            <div class="fg-fecha" style="font-size: 0.85em;">{{ fg.fecha }}</div>
-                          </div>
-                        </td>
-                        <td colspan="7" class="examen-cell">
-                          <div class="examen-banner">
-                            <q-icon name="assignment" size="24px" class="q-mr-sm" />
-                            <span class="examen-titulo">{{ sesion.tipoExamen }}</span>
-                          </div>
-                        </td>
-                         <!--
-                        <td class="cell-actions">
-                          <q-icon name="lock" size="sm" color="grey-5">
-                            <q-tooltip>Sesión reservada para examen</q-tooltip>
-                          </q-icon>
-                        </td> -->
-                      </tr>
-                      <!-- Fila NORMAL -->
-                      <tr v-else :class="getSesionRowClass(sesion)">
-                         <td class="cell-semana"
-                          v-if="isFirstSesionOfSemana(planificacion, sesion)"
-                          :rowspan="getSemanaRowspan(planificacion, sesion)"
-                          style="position: sticky; left: 0; z-index: 1; background: white; border-bottom: 2px solid #ddd;">
-                          <div class="semana-content">
-                            <span class="semana-numero">{{ sesion.semana }}</span>
                             <span class="semana-fechas">{{ sesion.semanaFechas }}</span>
                           </div>
                         </td>
-                         <!-- Fallback for non-first sessions (hidden but iterating) if logic fails, 
-                              but isFirstSesionOfSemana handles rowspan.
-                              Wait, if we flat 'planificacion', we can implement RowSpan logic on the flat list.
-                          -->
-                        
                         <td class="cell-sesion">
                           <div class="sesion-content">
                             <span class="sesion-numero">SESIÓN {{ sesion.numeroGlobal }}</span>
@@ -391,106 +346,114 @@
                         </td>
                         <td class="cell-fechas bg-grey-1">
                           <div v-for="(fg, idx) in getFechasGrupos(sesion)" :key="idx"
-                            class="fecha-grupo-row">
-                            <div class="fg-fecha" style="font-size: 0.85em;">{{ fg.fecha }}</div>
+                            class="fecha-grupo-row q-pa-xs q-mb-xs rounded-borders"
+                            :class="fg.examen ? 'bg-orange-1 text-bold text-orange-9' : ''"
+                            style="border: 1px solid transparent;"
+                            :style="fg.examen ? 'border-color: #ffe0b2' : ''">
+                            <div class="fg-fecha" style="font-size: 0.85em;">
+                                {{ fg.fecha }}
+                                <q-badge v-if="fg.examen" :color="getExamenColor(fg.examen)" text-color="white" size="sm" dense class="q-ml-xs text-bold">
+                                    {{ fg.examen }}
+                                </q-badge>
+                            </div>
                           </div>
                         </td>
                         <td>
-                          <div v-if="sesion.semana <= 17">
+                          <div v-if="sesion.semana <= 17 || sesion.temasSeleccionados?.length > 0">
                             <q-select v-model="sesion.temasSeleccionados" :options="opcionesTemasGlobales" multiple
-                              use-input new-value-mode="add-unique" map-options dense outlined
-                              class="cell-input" label="Temas" option-value="value" option-label="label"
-                              @update:model-value="(val) => onTemaUpdate(val, sesion)">
-                              
-                              <template v-slot:selected-item="scope">
-                                <div class="custom-chip q-mb-xs">
-                                  <div class="custom-chip-text">
-                                    {{ scope.opt.label || scope.opt }}
-                                  </div>
-                                  <q-icon name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
-                                </div>
-                              </template>
-                            </q-select>
-                          </div>
-                          <div v-else class="text-caption text-grey text-center">--</div>
-                        </td>
-                        <td>
-                          <div v-if="sesion.semana <= 17">
-                            <q-select v-model="sesion.contenido_items_seleccionados"
-                              :options="getContenidoItemsOptions(sesion)" multiple map-options
-                              dense outlined class="cell-input q-mb-xs" label="Seleccionar Items" option-value="value"
-                              option-label="label" :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0" 
-                              :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0 ? 'Seleccione tema(s) primero' : ''" 
-                              @update:model-value="marcarModificado(sesion)">
-                              
-                              <template v-slot:selected-item="scope">
-                                <div class="custom-chip q-mb-xs">
-                                  <div class="custom-chip-text">
-                                    {{ scope.opt.label || scope.opt }}
-                                  </div>
-                                  <q-icon name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
-                                </div>
-                              </template>
-                            </q-select>
-                            
-                            <q-input v-model="sesion.contenido" outlined dense type="textarea"
-                              autogrow class="cell-input" placeholder="Contenido adicional..."
-                              @update:model-value="marcarModificado(sesion)" />
-                          </div>
-                          <div v-else class="text-caption text-grey text-center">--</div>
-                        </td>
-                        <td>
-                          <q-input v-if="sesion.semana <= 17" v-model="sesion.conceptual" outlined dense type="textarea"
-                            autogrow class="cell-input" placeholder="Contenidos..."
-                            @update:model-value="marcarModificado(sesion)" />
-                        </td>
-                        <td>
-                          <q-input v-if="sesion.semana <= 17" v-model="sesion.procedimental" outlined dense
-                            type="textarea" autogrow class="cell-input" placeholder="Habilidades..."
-                            @update:model-value="marcarModificado(sesion)" />
-                        </td>
-                        <td>
-                          <q-input v-if="sesion.semana <= 17" v-model="sesion.actitudinal" outlined dense
-                            type="textarea" autogrow class="cell-input" placeholder="Actitudes..."
-                            @update:model-value="marcarModificado(sesion)" />
-                        </td>
-                        <td>
-                          <q-select v-if="sesion.semana <= 17" v-model="sesion.criteriosSeleccionados" multiple
-                             use-chips use-input @new-value="updateCriteriosOptions" 
-                             :options="filterCriterios" @filter="filterFnCriterios"
-                             outlined dense
-                            class="cell-input" placeholder="Criterios..."
-                            @update:model-value="marcarModificado(sesion)">
-                            <template v-slot:no-option>
-                              <q-item>
-                                <q-item-section class="text-grey">
-                                  Presione Enter para agregar un criterio personalizado
-                                </q-item-section>
-                              </q-item>
-                            </template>
-                          </q-select>
-                        </td>
-                        <td>
-                          <q-select v-if="sesion.semana <= 17" v-model="sesion.instrumentosSeleccionados" multiple
-                            use-chips use-input @new-value="updateInstrumentosOptions" 
-                            :options="filterInstrumentos" @filter="filterFnInstrumentos"
-                            outlined
-                            dense class="cell-input" placeholder="Instrumentos..."
-                            @update:model-value="marcarModificado(sesion)">
-                            <template v-slot:no-option>
-                              <q-item>
-                                <q-item-section class="text-grey">
-                                  Presione Enter para agregar un instrumento personalizado
-                                </q-item-section>
-                              </q-item>
-                            </template>
-                          </q-select>
-                        </td>
+                               use-input new-value-mode="add-unique" map-options dense outlined
+                               class="cell-input" label="Temas" option-value="value" option-label="label"
+                               @update:model-value="(val) => onTemaUpdate(val, sesion)">
+                               
+                               <template v-slot:selected-item="scope">
+                                 <div class="custom-chip q-mb-xs">
+                                   <div class="custom-chip-text">
+                                     {{ scope.opt.label || scope.opt }}
+                                   </div>
+                                   <q-icon name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
+                                 </div>
+                               </template>
+                             </q-select>
+                           </div>
+                           <div v-else class="text-caption text-grey text-center">--</div>
+                         </td>
+                         <td>
+                           <div v-if="sesion.semana <= 17 || sesion.contenido_items_seleccionados?.length > 0 || sesion.contenido">
+                             <q-select v-model="sesion.contenido_items_seleccionados"
+                               :options="getContenidoItemsOptions(sesion)" multiple map-options
+                               dense outlined class="cell-input q-mb-xs" label="Seleccionar Items" option-value="value"
+                               option-label="label" :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0" 
+                               :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0 ? 'Seleccione tema(s) primero' : ''" 
+                               @update:model-value="marcarModificado(sesion)">
+                               
+                               <template v-slot:selected-item="scope">
+                                 <div class="custom-chip q-mb-xs">
+                                   <div class="custom-chip-text">
+                                     {{ scope.opt.label || scope.opt }}
+                                   </div>
+                                   <q-icon name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
+                                 </div>
+                               </template>
+                             </q-select>
+                             
+                             <q-input v-model="sesion.contenido" outlined dense type="textarea"
+                               autogrow class="cell-input" placeholder="Contenido adicional..."
+                               @update:model-value="marcarModificado(sesion)" />
+                           </div>
+                           <div v-else class="text-caption text-grey text-center">--</div>
+                         </td>
+                         <td>
+                           <q-input v-if="sesion.semana <= 17 || sesion.conceptual" v-model="sesion.conceptual" outlined dense type="textarea"
+                             autogrow class="cell-input" placeholder="Contenidos..."
+                             @update:model-value="marcarModificado(sesion)" />
+                         </td>
+                         <td>
+                           <q-input v-if="sesion.semana <= 17 || sesion.procedimental" v-model="sesion.procedimental" outlined dense
+                             type="textarea" autogrow class="cell-input" placeholder="Habilidades..."
+                             @update:model-value="marcarModificado(sesion)" />
+                         </td>
+                         <td>
+                           <q-input v-if="sesion.semana <= 17 || sesion.actitudinal" v-model="sesion.actitudinal" outlined dense
+                             type="textarea" autogrow class="cell-input" placeholder="Actitudes..."
+                             @update:model-value="marcarModificado(sesion)" />
+                         </td>
+                         <td>
+                           <q-select v-if="sesion.semana <= 17 || sesion.criteriosSeleccionados?.length > 0" v-model="sesion.criteriosSeleccionados" multiple
+                              use-chips use-input @new-value="updateCriteriosOptions" 
+                              :options="filterCriterios" @filter="filterFnCriterios"
+                              outlined dense
+                             class="cell-input" placeholder="Criterios..."
+                             @update:model-value="marcarModificado(sesion)">
+                             <template v-slot:no-option>
+                               <q-item>
+                                 <q-item-section class="text-grey">
+                                   Presione Enter para agregar un criterio personalizado
+                                 </q-item-section>
+                               </q-item>
+                             </template>
+                           </q-select>
+                         </td>
+                         <td>
+                           <q-select v-if="sesion.semana <= 17 || sesion.instrumentosSeleccionados?.length > 0" v-model="sesion.instrumentosSeleccionados" multiple
+                             use-chips use-input @new-value="updateInstrumentosOptions" 
+                             :options="filterInstrumentos" @filter="filterFnInstrumentos"
+                             outlined
+                             dense class="cell-input" placeholder="Instrumentos..."
+                             @update:model-value="marcarModificado(sesion)">
+                             <template v-slot:no-option>
+                               <q-item>
+                                 <q-item-section class="text-grey">
+                                   Presione Enter para agregar un instrumento personalizado
+                                 </q-item-section>
+                               </q-item>
+                             </template>
+                           </q-select>
+                         </td>
+                       </tr>
                         <!-- <td class="cell-actions">
                           <q-btn flat round dense icon="delete" size="xs" color="red"
                             @click="eliminarSesion(unidad, sesion)" />
                         </td> -->
-                      </tr>
                     </template>
                   </tbody>
                 </table>
@@ -1003,27 +966,6 @@ async function cargarExamenesRol() {
   }
 }
 
-/**
- * Computed: Semanas con exámenes (dinámico desde rol o por defecto)
- */
-const semanasExamen = computed(() => {
-  // Si hay exámenes cargados del rol, usarlos
-  if (examenesRol.value.length > 0) {
-    const map = {}
-    examenesRol.value.forEach((ex) => {
-      map[ex.semana] = ex.tipo_examen.toUpperCase()
-    })
-    return map
-  }
-
-  // Semanas por defecto si no hay rol
-  return {
-    8: 'EXAMEN PRIMER PARCIAL',
-    15: 'EXAMEN SEGUNDO PARCIAL',
-    19: 'EXAMEN FINAL',
-    20: '2DA INSTANCIA',
-  }
-})
 
 const unidadesDocumentacion = computed(() => asignatura.value?.unidades || [])
 
@@ -1299,6 +1241,22 @@ const getNroDia = (diaStr) => {
   return map[d] || 99
 }
 
+// Mapeo detallado de exámenes por fecha
+const fechasExamenMap = computed(() => {
+  const map = {}
+  if (examenesRol.value && examenesRol.value.length > 0) {
+    examenesRol.value.forEach((ex) => {
+      const raw = ex.fecha_examen || ex.fecha
+      if (raw) {
+        // Robusto: split por T o espacio para obtener solo YYYY-MM-DD
+        const dateOnly = raw.includes('T') ? raw.split('T')[0] : raw.split(' ')[0]
+        map[dateOnly] = ex.tipo_examen || ex.tipo
+      }
+    })
+  }
+  return map
+})
+
 /**
  * Función PURA que calcula la propuesta de planificación basada en horarios y fechas.
  * No tiene efectos secundarios (no guarda en DB, no cambia pestañas).
@@ -1310,8 +1268,7 @@ function calcularPropuestaPlanificacion() {
   const mondayOfFirstWeek = new Date(inputFecha)
   if (day !== 1) mondayOfFirstWeek.setDate(inputFecha.getDate() - day + 1)
   mondayOfFirstWeek.setHours(0, 0, 0, 0)
-
-  const SEMANAS_EXAMEN = semanasExamen.value
+  
   const todasLasSesiones = []
   let sesionGlobal = 1
 
@@ -1319,16 +1276,6 @@ function calcularPropuestaPlanificacion() {
   const numTeoricas = sesionesSugeridas.value.teoricas
   const numPracticas = sesionesSugeridas.value.practicas
   
-  // 0. Preparar mapeo de exámenes por fecha
-  const fechasExamenMap = {}
-  if (examenesRol.value && examenesRol.value.length > 0) {
-    let examenesRelevantes = examenesRol.value
-    examenesRelevantes.forEach((ex) => {
-      const raw = ex.fecha_examen || ex.fecha
-      if (raw) fechasExamenMap[raw.split('T')[0]] = ex.tipo_examen || ex.tipo
-    })
-  }
-
   // Validar si hay configuración
   if (numTeoricas === 0 && numPracticas === 0) {
       return []
@@ -1378,7 +1325,7 @@ function calcularPropuestaPlanificacion() {
         fechaCalculada = d.toISOString().split('T')[0]
 
         const tipoDisplay = isTheory ? 'Teórica' : 'Práctica'
-        const sBase = crearSesionBase(numG, semana, fechaSemanaInicioStr, tipoDisplay, currentIndice, fechasExamenMap, {})
+        const sBase = crearSesionBase(numG, semana, fechaSemanaInicioStr, tipoDisplay, currentIndice)
         sBase.fecha = fechaCalculada
         
         // PRESERVAR: Si ya existe y tiene contenido, mantenerlo
@@ -1402,24 +1349,8 @@ function calcularPropuestaPlanificacion() {
         sesionesSemana.push(sBase)
     })
 
-    // 2. Marcar la Sesión de Examen (Última Sesión Teórica de la semana o última sesión si no hay teoría)
-    if (SEMANAS_EXAMEN[semana]) {
-        let targetSession = sesionesSemana.filter(s => s.tipoClase === 'Teórica').pop()
-        
-        if (!targetSession && sesionesSemana.length > 0) {
-            targetSession = sesionesSemana[sesionesSemana.length - 1]
-        }
-
-        if (targetSession) {
-            const nombreExamen = SEMANAS_EXAMEN[semana]
-            targetSession.esExamen = true
-            targetSession.tipoExamen = nombreExamen
-            targetSession.periodoExamen = nombreExamen
-            
-            if (!targetSession.tema) targetSession.tema = nombreExamen
-            targetSession.bloqueado = true
-        }
-    }
+    // 2. Marcar la Sesión de Examen (A pedido del usuario, no bloqueamos la fila)
+    // Se ha movido la lógica de resaltado visual a getSesionRowClass para mayor precisión con el Rol oficial.
 
     todasLasSesiones.push(...sesionesSemana)
   }
@@ -1431,24 +1362,13 @@ function calcularPropuestaPlanificacion() {
   return todasLasSesiones
 }
 
-function crearSesionBase(id, semana, semanaFechas, tipo, indiceTipo, fechasExamenMap, SEMANAS_EXAMEN) {
+function crearSesionBase(id, semana, semanaFechas, tipo, indiceTipo) {
     // Intentar deducir si es semana de examen basándose en la fecha APROXIMADA
     // Como ahora generamos abstractamente, la fecha exacta depende del grupo.
     // Usaremos la fecha del Lunes de la semana como referencia para buscar exámenes.
-    
-    // Logica examen simplificada: Si la semana esta marcada en el mapa de semanas clave
-    let esExamen = false
-    let nombreExamen = null
-    
-    // Chequear si esta semana tiene examen configurado (Prioridad ROL)
-    // El mapa fechasExamenMap usa fechas exactas YYYY-MM-DD.
-    // Es dificil matchear exacto sin saber el grupo.
-    // Usaremos SEMANAS_EXAMEN por ahora como fallback fuerte.
-    
-    if (SEMANAS_EXAMEN[semana]) {
-        esExamen = true
-        nombreExamen = SEMANAS_EXAMEN[semana]
-    }
+    // La detección de examen ahora se hace dinámicamente en getFechasGrupos para mayor precisión
+    const esExamen = false
+    const nombreExamen = null
 
     return {
         id: id,
@@ -1463,7 +1383,7 @@ function crearSesionBase(id, semana, semanaFechas, tipo, indiceTipo, fechasExame
         tipoExamen: nombreExamen,
         periodoExamen: nombreExamen || (esExamen ? 'Examen' : null),
         grupo_id: null,
-        tema: esExamen ? nombreExamen : '',
+        tema: '', // Libre por defecto
         conceptual: '',
         procedimental: '',
         actitudinal: '',
@@ -1474,7 +1394,7 @@ function crearSesionBase(id, semana, semanaFechas, tipo, indiceTipo, fechasExame
         instrumentosSeleccionados: esExamen ? ['Examen escrito'] : [],
         contenido_items_seleccionados: [],
         modificado: false,
-        bloqueado: esExamen || semana >= 18,
+        bloqueado: false, // Permitir edición siempre
         unidad_id: 'finales' // Default, se sobreescribe
     }
 }
@@ -1628,7 +1548,8 @@ function getExamenColor(periodo) {
 }
 
 function getSesionRowClass(sesion) {
-  if (sesion.periodoExamen) return 'sesion-examen'
+  const fg = getFechasGrupos(sesion)
+  if (fg.some((f) => f.examen)) return 'sesion-examen'
   if (sesion.modificado) return 'sesion-modificada'
   return ''
 }
@@ -1928,7 +1849,7 @@ function calcularFechasTodosLosGrupos() {
   if (!planificacion.value) return 
   
   planificacion.value.forEach(sesion => {
-      if (sesion.esExamen) return 
+      // Calculamos fechas para todas las sesiones
 
       const sem = sesion.semana
       const tipo = sesion.tipoClase // 'Teórica' o 'Práctica'
@@ -1961,9 +1882,17 @@ function calcularFechasTodosLosGrupos() {
               const dStr = `${String(fSesion.getDate())}/${String(fSesion.getMonth() + 1)}/${fSesion.getFullYear()}`
               const timeStr = h.hora_inicio ? h.hora_inicio.substring(0, 5) : ''
               
+              // Calcular fecha exacta YYYY-MM-DD local para matchear con el mapa
+              const year = fSesion.getFullYear()
+              const month = String(fSesion.getMonth() + 1).padStart(2, '0')
+              const dayStr = String(fSesion.getDate()).padStart(2, '0')
+              const fechaKey = `${year}-${month}-${dayStr}`
+              const nombreExamen = fechasExamenMap.value[fechaKey]
+
               fechasGrupo.push({
                   grupo: gData.grupo,
-                  fecha: `G->${gData.grupo}, ${h.dia?.substring(0, 2) || ''} ${dStr} ${timeStr}`
+                  fecha: `G->${gData.grupo}, ${h.dia?.substring(0, 2) || ''} ${dStr} ${timeStr}`,
+                  examen: nombreExamen
               })
           }
       })
@@ -1988,9 +1917,8 @@ function getFechasGrupos(sesion) {
 }
 
 // Recalcular al montar o cambiar
-// Recalcular al montar o cambiar
 watch(
-  [() => asignatura.value, horarios, planificacionSesiones],
+  [() => asignatura.value, horarios, planificacionSesiones, examenesRol, fechasExamenMap],
   () => {
     calcularFechasTodosLosGrupos()
   },
