@@ -213,7 +213,43 @@
                            <q-tooltip>{{ getSemaforoStatus(sesionActual).tooltip }}</q-tooltip>
                         </q-icon>
                      </div>
+                     <div class="col-12 col-md-3 flex items-center">
+                        <q-toggle 
+                           v-model="esExamen" 
+                           label="Modo Examen" 
+                           color="red" 
+                           icon="assignment_late"
+                           :disable="esLecturaSola"
+                        />
+                     </div>
                   </div>
+
+                  <!-- Selector de Tipo de Examen -->
+                  <q-slide-transition>
+                     <div v-if="esExamen" class="q-mb-md">
+                        <q-card flat bordered class="bg-red-0 q-pa-sm border-red">
+                           <div class="row q-col-gutter-sm items-center">
+                              <div class="col-12 col-md-6">
+                                 <q-select 
+                                    v-model="tipoExamen" 
+                                    :options="tiposExamenOptions" 
+                                    label="Tipo de Examen/Evaluación"
+                                    outlined dense emit-value map-options
+                                    placeholder="Seleccionar tipo..."
+                                    :disable="esLecturaSola"
+                                    color="red"
+                                 />
+                              </div>
+                              <div class="col-12 col-md-6">
+                                 <div class="text-caption text-red-9 flex items-center">
+                                    <q-icon name="info" size="xs" class="q-mr-xs" />
+                                    En modo examen se simplifica la planificación del día.
+                                 </div>
+                              </div>
+                           </div>
+                        </q-card>
+                     </div>
+                  </q-slide-transition>
 
                   <div v-if="sesionActual" class="seguimiento-content">
                      <div v-if="loadingSesiones" class="flex justify-center q-pa-xl">
@@ -230,10 +266,12 @@
                                </q-chip>
                            </div>
 
-                           <!-- Tema Principal (Solo título) -->
-                           <div class="q-mb-md">
-                              <div class="text-subtitle1 text-weight-bold text-primary">{{ temaPlanificado || 'Sin tema asignado' }}</div>
-                           </div>
+                           <!-- Planificación del Día (Oculta en Modo Examen) -->
+                           <div v-if="!esExamen">
+                              <!-- Tema Principal (Solo título) -->
+                              <div class="q-mb-md">
+                                 <div class="text-subtitle1 text-weight-bold text-primary">{{ temaPlanificado || 'Sin tema asignado' }}</div>
+                              </div>
 
                            <!-- Contenidos Planificados -->
                            <div class="row q-col-gutter-md q-mb-md">
@@ -246,7 +284,7 @@
                                           <q-icon name="psychology" size="16px" class="q-mr-xs" />
                                           Conceptual
                                        </div>
-                                       <div class="content-text">{{ conceptualPlanificado || '---' }}</div>
+                                       <div class="content-text" style="white-space: pre-line;">{{ formatContent(conceptualPlanificado) }}</div>
                                     </q-card-section>
                                  </q-card>
                               </div>
@@ -258,7 +296,7 @@
                                           <q-icon name="build" size="16px" class="q-mr-xs" />
                                           Procedimental
                                        </div>
-                                       <div class="content-text">{{ procedimentalPlanificado || '---' }}</div>
+                                       <div class="content-text" style="white-space: pre-line;">{{ formatContent(procedimentalPlanificado) }}</div>
                                     </q-card-section>
                                  </q-card>
                               </div>
@@ -270,7 +308,7 @@
                                           <q-icon name="favorite" size="16px" class="q-mr-xs" />
                                           Actitudinal
                                        </div>
-                                       <div class="content-text">{{ actitudinalPlanificado || '---' }}</div>
+                                       <div class="content-text" style="white-space: pre-line;">{{ formatContent(actitudinalPlanificado) }}</div>
                                     </q-card-section>
                                  </q-card>
                               </div>
@@ -308,16 +346,14 @@
                                           Contenido Items Seleccionados
                                        </div>
                                        <div class="q-mt-xs">
-                                          <q-chip
-                                             v-for="(item, idx) in contenidoItemsSeleccionados"
+                                          <div 
+                                             v-for="(item, idx) in contenidoItemsSeleccionados" 
                                              :key="idx"
-                                             size="sm"
-                                             color="primary"
-                                             text-color="white"
-                                             icon="check_circle"
+                                             class="q-mb-xs flex items-center"
                                           >
-                                             {{ resolveContentItem(item) }}
-                                          </q-chip>
+                                             <q-icon name="check_circle" color="primary" size="xs" class="q-mr-sm" />
+                                             <span class="text-body2">{{ resolveContentItem(item) }}</span>
+                                          </div>
                                        </div>
                                     </q-card-section>
                                  </q-card>
@@ -333,7 +369,7 @@
                            </q-card>
 
                            <!-- Estado de Cumplimiento Botones -->
-                           <div class="q-mt-lg">
+                           <div v-if="!esExamen" class="q-mt-lg">
                               <div class="text-subtitle2 q-mb-sm text-grey-8">Estado de Cumplimiento del Tema</div>
                               <div class="row q-gutter-sm">
                                  <q-btn 
@@ -365,9 +401,21 @@
                                  />
                               </div>
                            </div>
+                           </div>
+
+                           <!-- Modo Examen Placeholder -->
+                           <div v-else class="q-mb-md">
+                              <q-banner dense rounded class="bg-red-1 text-red-9 border-red q-pa-md">
+                                 <template v-slot:avatar>
+                                    <q-icon name="assignment" color="red" />
+                                 </template>
+                                 <div class="text-weight-bold">Sesión de Evaluación / Examen</div>
+                                 <div>Esta sesión está marcada como examen. Los campos de avance temático están ocultos para facilitar el registro de evidencias de la evaluación.</div>
+                              </q-banner>
+                           </div>
                         </div>
 
-                        <div class="q-mt-lg">
+                        <div v-if="!esExamen" class="q-mt-lg">
                            <div class="text-subtitle1 text-weight-bold q-mb-sm">Detalles Pedagógicos</div>
                            <div class="row q-col-gutter-md">
                               <!-- Estrategias -->
@@ -409,7 +457,7 @@
                         </div>
 
                         <!-- Sección de Integración Transversal -->
-                        <div class="q-mt-lg">
+                        <div v-if="!esExamen" class="q-mt-lg">
                            <div class="text-subtitle1 text-weight-bold q-mb-sm">Integración Transversal</div>
                            <q-card flat bordered class="q-pa-md">
                               <div class="row q-col-gutter-md">
@@ -636,6 +684,57 @@
                                  </div>
                             </q-card>
                         </div>
+
+                        <!-- Georeferencia Status -->
+                        <div class="q-mt-md">
+                           <q-card flat bordered :class="!habilitarGps ? 'bg-grey-1 border-grey' : (coordenadas ? 'bg-green-0 border-green' : 'bg-orange-0 border-orange')">
+                              <q-card-section class="q-pa-sm flex items-center justify-between">
+                                 <div class="flex items-center">
+                                    <q-icon 
+                                       :name="!habilitarGps ? 'location_off' : (coordenadas ? 'location_on' : 'location_searching')" 
+                                       :color="!habilitarGps ? 'grey-6' : (coordenadas ? 'positive' : 'warning')" 
+                                       size="sm" 
+                                       class="q-mr-sm" 
+                                    />
+                                    <div>
+                                       <div class="text-subtitle2" :class="!habilitarGps ? 'text-grey-8' : (coordenadas ? 'text-green-9' : 'text-orange-9')">
+                                          Georeferencia: {{ !habilitarGps ? 'Desactivada' : (coordenadas ? 'Ubicación registrada' : 'Pendiente de capturar') }}
+                                       </div>
+                                       <div v-if="habilitarGps && coordenadas" class="text-caption text-grey-8">
+                                          Lat: {{ coordenadas.lat.toFixed(6) }}, Lng: {{ coordenadas.lng.toFixed(6) }} 
+                                          <span class="q-ml-sm">±{{ coordenadas.accuracy.toFixed(1) }}m</span>
+                                       </div>
+                                       <div v-else-if="habilitarGps && !coordenadas" class="text-caption text-grey-8 italic">
+                                          Se capturará automáticamente al guardar el seguimiento.
+                                       </div>
+                                       <div v-else class="text-caption text-grey-8 italic">
+                                          No se registrará la ubicación para esta sesión.
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div class="flex items-center">
+                                    <q-toggle
+                                       v-model="habilitarGps"
+                                       label="Activar GPS"
+                                       color="primary"
+                                       class="q-mr-sm"
+                                       :disable="esLecturaSola"
+                                    />
+                                    <q-btn 
+                                       v-if="habilitarGps"
+                                       flat round 
+                                       :color="coordenadas ? 'positive' : 'primary'" 
+                                       icon="my_location" 
+                                       @click="capturarUbicacion"
+                                       :loading="capturandoUbicacion"
+                                       :disable="esLecturaSola"
+                                    >
+                                       <q-tooltip>Actualizar ubicación GPS</q-tooltip>
+                                    </q-btn>
+                                 </div>
+                              </q-card-section>
+                           </q-card>
+                        </div>
                         
                         <div class="flex justify-end q-mt-lg">
                            <q-btn color="secondary" icon="save_as" label="Guardar Seguimiento"
@@ -659,6 +758,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { Geolocation } from '@capacitor/geolocation'
 
 const getStorageUrl = (path) => {
   if (!path) return '';
@@ -676,6 +776,21 @@ const getStorageUrl = (path) => {
   return `${baseUrl}/storage/${path}`;
 };
 
+const formatContent = (val) => {
+  if (!val) return '---'
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val)
+      if (Array.isArray(parsed)) return parsed.join('\n')
+      return val
+    } catch {
+      return val
+    }
+  }
+  if (Array.isArray(val)) return val.join('\n')
+  return val
+}
+
 const openUrl = (url) => {
   if (!url) return;
   const target = url.startsWith('http') ? url : `https://${url}`;
@@ -683,30 +798,48 @@ const openUrl = (url) => {
 };
 
 const resolveContentItem = (key) => {
-  if (!key || typeof key !== 'string') return key
-  // Format: "temaId:itemIndex" → resolve to actual content text
-  const parts = key.split(':')
-  if (parts.length >= 2) {
-    const temaId = parseInt(parts[0])
-    const itemIndex = parseInt(parts[1])
-    if (!isNaN(temaId) && !isNaN(itemIndex) && sesionActual.value) {
-      const sesion = sesionActual.value
-      const todosLosTemas = [
-        ...(Array.isArray(sesion.temas) ? sesion.temas : []),
-        ...(sesion.tema ? [sesion.tema] : [])
-      ]
-      const tema = todosLosTemas.find(t => t && t.id == temaId)
-      if (tema) {
-        const contenidoItems = tema.contenido_items || []
-        if (itemIndex >= 0 && itemIndex < contenidoItems.length) {
-          const item = contenidoItems[itemIndex]
-          return typeof item === 'string' ? item : (item?.nombre || key)
+  if (!key) return ''
+  
+  // Case 1: Already an object with a label or name
+  if (typeof key === 'object') {
+    return key.label || key.nombre || key.titulo || JSON.stringify(key)
+  }
+
+  // Case 2: String that might be JSON
+  if (typeof key === 'string' && (key.startsWith('{') || key.startsWith('['))) {
+    try {
+      const parsed = JSON.parse(key)
+      return parsed.label || parsed.nombre || parsed.titulo || key
+    } catch {
+      // ignore
+    }
+  }
+
+  // Case 3: Format "temaId:itemIndex"
+  if (typeof key === 'string' && key.includes(':')) {
+    const parts = key.split(':')
+    if (parts.length >= 2) {
+      const temaId = parseInt(parts[0])
+      const itemIndex = parseInt(parts[1])
+      if (!isNaN(temaId) && !isNaN(itemIndex) && sesionActual.value) {
+        const sesion = sesionActual.value
+        // Search in main theme and secondary themes
+        const todosLosTemas = [
+          ...(Array.isArray(sesion.temas) ? sesion.temas : []),
+          ...(sesion.tema ? [sesion.tema] : [])
+        ]
+        const tema = todosLosTemas.find(t => t && t.id == temaId)
+        if (tema) {
+          const contenidoItems = tema.contenido_items || []
+          if (itemIndex >= 0 && itemIndex < contenidoItems.length) {
+            const item = contenidoItems[itemIndex]
+            return typeof item === 'string' ? item : (item?.nombre || item?.titulo || key)
+          }
         }
       }
     }
   }
-  // Fallback: item is an object with titulo/nombre/label
-  if (typeof key === 'object') return key?.titulo || key?.nombre || key?.label || JSON.stringify(key)
+  
   return key
 }
 
@@ -789,7 +922,50 @@ const temaCumplido = ref(false)
 const estadoCumplimiento = ref(null)
 const observacionesClase = ref('')
 
+// --- Modo Examen & Georeferencia ---
+const esExamen = ref(false)
+const tipoExamen = ref(null)
+const coordenadas = ref(null)
+const capturandoUbicacion = ref(false)
+
+const tiposExamenOptions = [
+   { label: '1er Parcial', value: '1ER_PARCIAL' },
+   { label: '2do Parcial', value: '2DO_PARCIAL' },
+   { label: 'Examen Final', value: 'FINAL' },
+   { label: '2da Instancia', value: '2DA_INSTANCIA' },
+   { label: 'Otro / Evaluación especial', value: 'ESPECIAL' }
+]
+
+const capturarUbicacion = async () => {
+   if (capturandoUbicacion.value) return
+   capturandoUbicacion.value = true
+   try {
+      const position = await Geolocation.getCurrentPosition({
+         enableHighAccuracy: true,
+         timeout: 10000
+      })
+      coordenadas.value = {
+         lat: position.coords.latitude,
+         lng: position.coords.longitude,
+         accuracy: position.coords.accuracy,
+         timestamp: new Date().toISOString()
+      }
+      console.log('Ubicación capturada:', coordenadas.value)
+   } catch (error) {
+      console.error('Error al capturar ubicación:', error)
+      $q.notify({
+         type: 'warning',
+         message: 'No se pudo obtener la ubicación precisa. Verifique su GPS.',
+         icon: 'location_off'
+      })
+   } finally {
+      capturandoUbicacion.value = false
+   }
+}
+
 // --- Asistencia & UI Helpers ---
+const habilitarGps = ref(true)
+
 const columnsAsistencia = [
   { name: 'nombre', label: 'Estudiante', field: row => `${row.nombre || ''} ${row.apellido || ''}`, align: 'left', sortable: true },
   { name: 'estado', label: 'Asistencia', align: 'center' },
@@ -1426,6 +1602,12 @@ const actualizarSesionPorFecha = () => {
       // Load content items selected
       contenidoItemsSeleccionados.value = found.contenido_items_seleccionados || []
 
+      // Load Exam Mode & Georeference from pedagogico
+      const savedPedagogico = found.pedagogico || {}
+      esExamen.value = savedPedagogico.es_examen || false
+      tipoExamen.value = savedPedagogico.tipo_examen || null
+      coordenadas.value = savedPedagogico.georeferencia || null
+
       observacionesClase.value = found.observaciones || ''
 
       // 3. Pedagogical Details Mapping
@@ -1544,7 +1726,7 @@ const actualizarSesionPorFecha = () => {
 }
 
 const guardarSeguimiento = async () => {
-   if (!estadoCumplimiento.value) {
+   if (!esExamen.value && !estadoCumplimiento.value) {
       $q.notify({ type: 'warning', message: 'Debe seleccionar el Estado de Cumplimiento (Total, Parcial o No)' })
       return
    }
@@ -1580,7 +1762,10 @@ const guardarSeguimiento = async () => {
                evaluacion: pedagogico.value.evaluacion,
                secuencia: pedagogico.value.secuencia,
                integracion: pedagogico.value.integracion,
-               estado_cumplimiento: estadoCumplimiento.value
+               estado_cumplimiento: estadoCumplimiento.value,
+               es_examen: esExamen.value,
+               tipo_examen: tipoExamen.value,
+               georeferencia: habilitarGps.value ? (coordenadas.value || null) : null
             },
             integracion_transversal: {
                investigacion: { cumplido: integracionTransversal.value.investigacion.cumplido, evidencia: off_inv },
@@ -1647,7 +1832,19 @@ const guardarSeguimiento = async () => {
          evaluacion: pedagogico.value.evaluacion,
          secuencia: pedagogico.value.secuencia,
          integracion: pedagogico.value.integracion,
-         estado_cumplimiento: estadoCumplimiento.value // Save the specific status
+         estado_cumplimiento: estadoCumplimiento.value,
+         es_examen: esExamen.value,
+         tipo_examen: tipoExamen.value
+      }
+      
+      // Capturar ubicación si no existe y si el GPS está habilitado por el docente
+      if (habilitarGps.value) {
+         if (!coordenadas.value) {
+            await capturarUbicacion()
+         }
+         pedagogicoData.georeferencia = coordenadas.value
+      } else {
+         pedagogicoData.georeferencia = null
       }
       
       // Add integración transversal status (without files)
