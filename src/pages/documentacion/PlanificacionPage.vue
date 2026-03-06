@@ -316,14 +316,14 @@
                     <tr>
                       <th style="width: 70px; position: sticky; left: 0; z-index: 2;">SEM</th>
                       <th style="width: 90px; z-index: 1;">SESIÓN</th>
-                      <th style="min-width: 140px" class="bg-grey-1 text-grey-8">FECHAS / GRUPOS</th>
-                      <th style="min-width: 250px">TEMAS</th>
-                      <th style="min-width: 300px;">CONTENIDO</th>
-                      <th style="min-width: 200px;">CONCEPTUAL</th>
-                      <th style="min-width: 200px;">PROCEDIMENTAL</th>
-                      <th style="min-width: 200px;">ACTITUDINAL</th>
-                      <th style="min-width: 200px;">CRITERIOS</th>
-                      <th style="min-width: 200px;">INSTRUMENTOS</th>
+                      <th style="width: 180px;" class="bg-grey-1 text-grey-8">FECHAS / GRUPOS</th>
+                      <th style="width: 350px;">TEMAS</th>
+                      <th style="width: 450px;">CONTENIDO</th>
+                      <th style="width: 300px;">CONCEPTUAL</th>
+                      <th style="width: 300px;">PROCEDIMENTAL</th>
+                      <th style="width: 300px;">ACTITUDINAL</th>
+                      <th style="width: 300px;">CRITERIOS</th>
+                      <th style="width: 300px;">INSTRUMENTOS</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -594,8 +594,25 @@
               <q-icon name="description" size="48px" color="green" />
               <p class="text-subtitle1 q-mt-sm text-weight-medium">{{ selectedFile.name }}</p>
               <p class="text-caption text-grey-6">{{ (selectedFile.size / 1024).toFixed(2) }} KB</p>
+
               <q-btn flat color="red" label="Quitar" no-caps icon="close" @click="selectedFile = null" />
             </div>
+          </div>
+
+          <q-separator class="q-my-md" />
+
+          <div class="row justify-center items-center">
+            <q-toggle
+              v-model="soloTeoricas"
+              label="Importar solo en sesiones teóricas"
+              color="indigo"
+              left-label
+            />
+            <q-icon name="info" color="grey-7" size="sm" class="q-ml-xs cursor-pointer">
+              <q-tooltip class="bg-indigo text-white" style="max-width: 250px">
+                Usa esta opción si tu asignatura solo tiene planificación teórica en el PAC (por ejemplo, si las prácticas se realizan en clínica, laboratorios especiales, anfiteatro, etc.).
+              </q-tooltip>
+            </q-icon>
           </div>
         </q-card-section>
 
@@ -1974,6 +1991,7 @@ onMounted(() => {
 // Import logic
 const showImportDialog = ref(false)
 const selectedFile = ref(null)
+const soloTeoricas = ref(false) // Desactivado por defecto
 
 function abrirDialogoImportarCronograma() {
   selectedFile.value = null
@@ -2001,6 +2019,7 @@ async function procesarImportacionCronograma() {
   try {
     const formData = new FormData()
     formData.append('file', selectedFile.value)
+    formData.append('solo_teoricas', soloTeoricas.value ? '1' : '0')
     
     // Enviar grupo_id si está seleccionado
     // REMOVED: Always import to Master Plan
@@ -2317,7 +2336,7 @@ async function procesarImportacionCronograma() {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.75rem;
-  /* table-layout: fixed; REMOVED to allow auto-sizing */
+  table-layout: fixed; /* Re-enabled to enforce strict widths */
 }
 
 .sesiones-table th {
@@ -2335,6 +2354,7 @@ async function procesarImportacionCronograma() {
   padding: 4px;
   vertical-align: top;
   word-wrap: break-word;
+  overflow: hidden; /* Prevent content from pushing width */
 }
 
 .sesion-examen td {
