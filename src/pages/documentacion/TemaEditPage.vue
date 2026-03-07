@@ -770,6 +770,10 @@ const nombreDocentePlan = computed(() => {
 const puedeEditarPersonal = computed(() => {
   // Solo lectura si el rol lo exige O si es plan de otro docente
   if (esSoloLectura.value || viendoPlanAjeno.value) return false
+
+  // RESTRICCIÓN ADICIONAL: Si es docente pero NO es de Cochabamba, no debería estar viendo plan ajeno
+  // (Aunque viendoPlanAjeno ya lo cubriría, reforzamos la lógica de carga si es necesario)
+  
   return true
 })
 
@@ -779,14 +783,15 @@ const puedeEditarCompartido = computed(() => {
   if (!user) return false
 
   // Global Admins
-  if (['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'VICERRECTOR_NACIONAL'].includes(user.rol)) return true
+  if (['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'VICERRECTOR_NACIONAL', 'VICERRECTORADO_NACIONAL'].includes(user.rol)) return true
 
   // Cocha Only (Sede ID 1)
-  // Directores y Docentes de Cocha pueden editar
-  if (user.sede_id === 1) {
+  // Directores y Docentes de Cocha pueden editar campos compartidos
+  if (user.sede_id === 1 || user.sede_id === '1') {
     return ['DIRECTOR_CARRERA', 'DIRECTOR CARRERA', 'DOCENTE'].includes(user.rol)
   }
 
+  // Docentes y Directores de otras sedes NO pueden editar campos compartidos (Resultados, Contenidos, Bibliografía)
   return false
 })
 

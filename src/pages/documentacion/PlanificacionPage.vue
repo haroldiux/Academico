@@ -65,8 +65,8 @@
                     Calendario Académico
                   </div>
                   <div class="q-gutter-md">
-                    <q-input v-model="calendario.fechaInicio" outlined dense label="Inicio de Clases" type="date" />
-                    <q-input v-model="calendario.fechaFin" outlined dense label="Fin de Clases" type="date" />
+                    <q-input v-model="calendario.fechaInicio" outlined dense label="Inicio de Clases" type="date" :readonly="!puedeEditar" />
+                    <q-input v-model="calendario.fechaFin" outlined dense label="Fin de Clases" type="date" :readonly="!puedeEditar" />
                   </div>
                   <q-banner class="bg-blue-1 text-blue-9 q-mt-md" rounded dense>
                     <strong>{{ totalSemanas }} semanas</strong> académicas
@@ -226,9 +226,10 @@
 
               <q-btn unelevated color="indigo" icon="auto_awesome" label="Generar Planificación Automática" size="lg"
                 no-caps @click="generarPlanificacion(false)"
-                :disable="planificacionGenerada || (sesionesSugeridas.teoricas === 0 && sesionesSugeridas.practicas === 0)"
+                :disable="!puedeEditar || planificacionGenerada || (sesionesSugeridas.teoricas === 0 && sesionesSugeridas.practicas === 0)"
               >
-                <q-tooltip v-if="sesionesSugeridas.teoricas === 0 && sesionesSugeridas.practicas === 0">
+                <q-tooltip v-if="!puedeEditar">Edición permitida solo para Sede Cochabamba</q-tooltip>
+                <q-tooltip v-else-if="sesionesSugeridas.teoricas === 0 && sesionesSugeridas.practicas === 0">
                   No se detectaron sesiones en el horario. Contacte al Director si esto es un error.
                 </q-tooltip>
               </q-btn>
@@ -244,7 +245,7 @@
         <!-- TAB 2: PLANIFICACIÓN -->
         <q-tab-panel name="planificacion" class="q-pa-lg">
           <!-- Action Buttons Row -->
-          <div class="row justify-end q-gutter-sm q-mb-md">
+          <div class="row justify-end q-gutter-sm q-mb-md" v-if="puedeEditar">
              <q-btn unelevated outline color="red-5" icon="delete_sweep" label="Vaciar cronograma" no-caps
                 @click="confirmarVaciar" >
                 <q-tooltip>Eliminar todo el contenido actual del cronograma</q-tooltip>
@@ -264,6 +265,9 @@
                 @click="abrirDialogoImportarCronograma" >
                 <q-tooltip>Importar avance semestral completo de las 20 semanas (Excel)</q-tooltip>
              </q-btn>
+          </div>
+          <div v-else class="row justify-end q-mb-md">
+             <q-chip outline color="orange" icon="lock" label="Planificación de solo lectura (Sede)" />
           </div>
 
           <!-- Resumen -->
@@ -363,14 +367,15 @@
                             <q-select v-model="sesion.temasSeleccionados" :options="opcionesTemasGlobales" multiple
                                use-input new-value-mode="add-unique" map-options dense outlined
                                class="cell-input" label="Temas" option-value="value" option-label="label"
-                               @update:model-value="(val) => onTemaUpdate(val, sesion)">
+                               @update:model-value="(val) => onTemaUpdate(val, sesion)"
+                               :readonly="!puedeEditar">
                                
                                <template v-slot:selected-item="scope">
                                  <div class="custom-chip q-mb-xs">
                                    <div class="custom-chip-text">
                                      {{ scope.opt.label || scope.opt }}
                                    </div>
-                                   <q-icon name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
+                                   <q-icon v-if="puedeEditar" name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
                                  </div>
                                </template>
                              </q-select>
@@ -382,7 +387,7 @@
                              <q-select v-model="sesion.contenido_items_seleccionados"
                                :options="getContenidoItemsOptions(sesion)" multiple map-options
                                dense outlined class="cell-input q-mb-xs" label="Seleccionar Items" option-value="value"
-                               option-label="label" :disable="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0" 
+                               option-label="label" :disable="!puedeEditar || !sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0" 
                                :hint="!sesion.temasSeleccionados || sesion.temasSeleccionados.length === 0 ? 'Seleccione tema(s) primero' : ''" 
                                @update:model-value="marcarModificado(sesion)">
                                
@@ -391,31 +396,31 @@
                                    <div class="custom-chip-text">
                                      {{ scope.opt.label || scope.opt }}
                                    </div>
-                                   <q-icon name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
+                                   <q-icon v-if="puedeEditar" name="cancel" class="custom-chip-icon" @click.stop="scope.removeAtIndex(scope.index)"/>
                                  </div>
                                </template>
                              </q-select>
                              
                              <q-input v-model="sesion.contenido" outlined dense type="textarea"
                                autogrow class="cell-input" placeholder="Contenido adicional..."
-                               @update:model-value="marcarModificado(sesion)" />
+                               @update:model-value="marcarModificado(sesion)" :readonly="!puedeEditar" />
                            </div>
                            <div v-else class="text-caption text-grey text-center">--</div>
                          </td>
                          <td>
                            <q-input v-if="sesion.semana <= 17 || sesion.conceptual" v-model="sesion.conceptual" outlined dense type="textarea"
                              autogrow class="cell-input" placeholder="Contenidos..."
-                             @update:model-value="marcarModificado(sesion)" />
+                             @update:model-value="marcarModificado(sesion)" :readonly="!puedeEditar" />
                          </td>
                          <td>
                            <q-input v-if="sesion.semana <= 17 || sesion.procedimental" v-model="sesion.procedimental" outlined dense
                              type="textarea" autogrow class="cell-input" placeholder="Habilidades..."
-                             @update:model-value="marcarModificado(sesion)" />
+                             @update:model-value="marcarModificado(sesion)" :readonly="!puedeEditar" />
                          </td>
                          <td>
                            <q-input v-if="sesion.semana <= 17 || sesion.actitudinal" v-model="sesion.actitudinal" outlined dense
                              type="textarea" autogrow class="cell-input" placeholder="Actitudes..."
-                             @update:model-value="marcarModificado(sesion)" />
+                             @update:model-value="marcarModificado(sesion)" :readonly="!puedeEditar" />
                          </td>
                          <td>
                            <q-select v-if="sesion.semana <= 17 || sesion.criteriosSeleccionados?.length > 0" v-model="sesion.criteriosSeleccionados" multiple
@@ -423,11 +428,11 @@
                               :options="filterCriterios" @filter="filterFnCriterios"
                               outlined dense
                              class="cell-input" placeholder="Criterios..."
-                             @update:model-value="marcarModificado(sesion)">
+                             @update:model-value="marcarModificado(sesion)" :readonly="!puedeEditar">
                              <template v-slot:no-option>
                                <q-item>
                                  <q-item-section class="text-grey">
-                                   Presione Enter para agregar un criterio personalizado
+                                   {{ puedeEditar ? 'Presione Enter para agregar un criterio personalizado' : 'Solo lectura' }}
                                  </q-item-section>
                                </q-item>
                              </template>
@@ -439,11 +444,11 @@
                              :options="filterInstrumentos" @filter="filterFnInstrumentos"
                              outlined
                              dense class="cell-input" placeholder="Instrumentos..."
-                             @update:model-value="marcarModificado(sesion)">
+                             @update:model-value="marcarModificado(sesion)" :readonly="!puedeEditar">
                              <template v-slot:no-option>
                                <q-item>
                                  <q-item-section class="text-grey">
-                                   Presione Enter para agregar un instrumento personalizado
+                                   {{ puedeEditar ? 'Presione Enter para agregar un instrumento personalizado' : 'Solo lectura' }}
                                  </q-item-section>
                                </q-item>
                              </template>
@@ -701,13 +706,37 @@ import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
 import planificacionSemestralService from 'src/services/planificacionSemestralService'
 import asignaturaService from 'src/services/asignaturaService'
-import { useAuthStore } from 'src/stores/auth'
+import { useAuthStore, ROLES } from 'src/stores/auth'
 
 const route = useRoute()
 const $q = useQuasar()
 const authStore = useAuthStore()
 const asignaturasStore = useAsignaturasStore()
 const rolExamenesStore = useRolExamenesStore()
+
+const puedeEditar = computed(() => {
+  const rol = authStore.rol
+  const usuario = authStore.usuarioActual
+
+  // Admins globales siempre editan
+  if ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.VICERRECTOR_NACIONAL, ROLES.DIRECCION_ACADEMICA].includes(rol)) {
+    return true
+  }
+
+  // Docentes
+  if (rol === ROLES.DOCENTE) {
+    const authSede = Number(usuario?.sede_id)
+    // Solo docentes de Cochabamba pueden editar la planificación base
+    if (authSede !== 1) return false
+
+    // Verificar si está asignado a la materia
+    const myDocenteId = usuario?.docente?.id || usuario?.docente_id
+    return asignatura.value?.docentes?.some(d => d.id == myDocenteId) || false
+  }
+
+  // Otros roles (Director de Carrera, etc.) - Por ahora permitimos si son de la sede o similar
+  return true
+})
 
 
 const tabActual = ref('horario')
@@ -1959,6 +1988,7 @@ watchDebounced(
   async (newValue) => {
     if (!dataLoaded) return
     if (!planificacionGenerada.value) return
+    if (!puedeEditar.value) return // No auto-guardar si no tiene permisos
 
     const currentSnapshot = JSON.stringify(newValue)
     if (currentSnapshot === lastSavedSnapshot) return // Sin cambios reales

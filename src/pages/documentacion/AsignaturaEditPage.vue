@@ -414,7 +414,8 @@
               <q-icon name="auto_stories" color="primary" class="q-mr-sm" />
               Referencias Bibliográficas
             </div>
-            <q-btn unelevated color="primary" icon="add" label="Agregar" no-caps @click="abrirDialogBibliografia()" />
+            <q-btn v-if="puedeEditarPlanificacion" unelevated color="primary" icon="add" label="Agregar" no-caps @click="abrirDialogBibliografia()" />
+            <q-chip v-else outline color="orange" icon="lock" label="Solo lectura (Sede)" dense />
           </div>
 
           <div v-if="!asignatura?.bibliografias?.length" class="text-center q-pa-xl">
@@ -442,7 +443,7 @@
                           biblio.anio + ')' : '' }}
                       </div>
                     </div>
-                    <div class="biblio-card__actions">
+                    <div class="biblio-card__actions" v-if="puedeEditarPlanificacion">
                       <q-btn flat round dense icon="edit" size="sm" color="orange"
                         @click="abrirDialogBibliografia(biblio)" />
                       <q-btn flat round dense icon="delete" size="sm" color="red"
@@ -473,7 +474,7 @@
                           biblio.anio + ')' : '' }}
                       </div>
                     </div>
-                    <div class="biblio-card__actions">
+                    <div class="biblio-card__actions" v-if="puedeEditarPlanificacion">
                       <q-btn flat round dense icon="edit" size="sm" color="orange"
                         @click="abrirDialogBibliografia(biblio)" />
                       <q-btn flat round dense icon="delete" size="sm" color="red"
@@ -1285,12 +1286,11 @@ const puedeEditarPlanificacion = computed(() => {
 
   // 4. Docente
   if (rol === ROLES.DOCENTE) {
-    // Si es Cochabamba (Sede 1), permitir editar si no está aprobado
-    // O si está asignado a la materia
     const authSede = Number(authStore.usuarioActual?.sede_id)
-    if (authSede === 1) return true
+    // Los docentes de subsedes (Sede != 1) NO pueden editar campos compartidos/planificación general
+    if (authSede !== 1) return false
 
-    // Fallback: Verificar si está entre los docentes de la asignatura
+    // Si es Cochabamba, permitir si está asignado a la materia
     const esAsignado = asignatura.value?.docentes?.some(d => d.id === authStore.usuarioActual?.docente_id)
     return esAsignado || false
   }
