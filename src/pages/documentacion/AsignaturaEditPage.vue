@@ -1287,12 +1287,11 @@ const puedeEditarPlanificacion = computed(() => {
   // 4. Docente
   if (rol === ROLES.DOCENTE) {
     const authSede = Number(authStore.usuarioActual?.sede_id)
-    // Los docentes de subsedes (Sede != 1) NO pueden editar campos compartidos/planificación general
-    if (authSede !== 1) return false
+    // Los docentes de Cochabamba (Sede 1) pueden editar campos compartidos/planificación general
+    if (authSede === 1) return true
 
-    // Si es Cochabamba, permitir si está asignado a la materia
-    const esAsignado = asignatura.value?.docentes?.some(d => d.id === authStore.usuarioActual?.docente_id)
-    return esAsignado || false
+    // Resto de sedes: No pueden editar campos compartidos
+    return false
   }
 
   return false

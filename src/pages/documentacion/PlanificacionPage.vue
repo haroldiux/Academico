@@ -726,12 +726,11 @@ const puedeEditar = computed(() => {
   // Docentes
   if (rol === ROLES.DOCENTE) {
     const authSede = Number(usuario?.sede_id)
-    // Solo docentes de Cochabamba pueden editar la planificación base
-    if (authSede !== 1) return false
+    // Solo docentes de Cochabamba (ID 1) pueden editar la planificación base / compartida
+    if (authSede === 1) return true
 
-    // Verificar si está asignado a la materia
-    const myDocenteId = usuario?.docente?.id || usuario?.docente_id
-    return asignatura.value?.docentes?.some(d => d.id == myDocenteId) || false
+    // Resto de sedes: Solo lectura para planificación base
+    return false
   }
 
   // Otros roles (Director de Carrera, etc.) - Por ahora permitimos si son de la sede o similar

@@ -723,7 +723,7 @@ import { watchDebounced } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
-import { useAuthStore } from 'src/stores/auth'
+import { useAuthStore, ROLES } from 'src/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -781,17 +781,19 @@ const puedeEditarCompartido = computed(() => {
   if (esSoloLectura.value) return false
   const user = authStore.usuarioActual
   if (!user) return false
+  const rol = authStore.rol
 
   // Global Admins
-  if (['SUPER ADMIN', 'SUPER_ADMIN', 'ADMIN', 'VICERRECTOR_NACIONAL', 'VICERRECTORADO_NACIONAL'].includes(user.rol)) return true
+  if ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.VICERRECTOR_NACIONAL].includes(rol)) return true
 
-  // Cocha Only (Sede ID 1)
+  // Cochabamba Only (Sede ID 1)
   // Directores y Docentes de Cocha pueden editar campos compartidos
-  if (user.sede_id === 1 || user.sede_id === '1') {
-    return ['DIRECTOR_CARRERA', 'DIRECTOR CARRERA', 'DOCENTE'].includes(user.rol)
+  const authSede = Number(user.sede_id)
+  if (authSede === 1) {
+    return [ROLES.DIRECTOR_CARRERA, ROLES.DOCENTE].includes(rol)
   }
 
-  // Docentes y Directores de otras sedes NO pueden editar campos compartidos (Resultados, Contenidos, Bibliografía)
+  // Docentes y Directores de otras sedes NO pueden editar campos compartidos
   return false
 })
 
