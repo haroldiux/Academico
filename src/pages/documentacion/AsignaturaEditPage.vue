@@ -9,16 +9,20 @@
           <q-breadcrumbs-el :label="breadcrumbInfo.label" :to="breadcrumbInfo.to" />
           <q-breadcrumbs-el :label="codigoVisual" />
         </q-breadcrumbs>
-        <h4 class="q-ma-none text-weight-bold" style="line-height: 1.2;">
+        <h4 class="q-ma-none text-weight-bold" style="line-height: 1.2">
           <q-icon name="menu_book" size="36px" color="primary" class="q-mr-sm" />
           <span class="text-gradient">{{ asignatura?.nombre || 'Cargando...' }}</span>
-          <q-chip v-if="asignatura?.estado" :color="asignatura.estado === 'APROBADO' ? 'green-2' : 'orange-2'"
-            :text-color="asignatura.estado === 'APROBADO' ? 'green-9' : 'orange-9'" class="q-ml-sm text-weight-bold"
-            dense>
+          <q-chip
+            v-if="asignatura?.estado"
+            :color="asignatura.estado === 'APROBADO' ? 'green-2' : 'orange-2'"
+            :text-color="asignatura.estado === 'APROBADO' ? 'green-9' : 'orange-9'"
+            class="q-ml-sm text-weight-bold"
+            dense
+          >
             {{ asignatura.estado === 'APROBADO' ? 'APROBADO' : 'EN PROCESO' }}
           </q-chip>
         </h4>
-        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
+        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary)">
           {{ codigoVisual }} - {{ asignatura?.semestre }}° Semestre • {{ nombreCarrera }}
         </p>
         <div class="row items-center q-gutter-sm q-mt-sm">
@@ -31,18 +35,27 @@
         </div>
       </div>
       <div class="col-12 col-md-auto row q-gutter-sm justify-end">
-        <q-btn v-if="puedeAprobarCarpeta"
+        <q-btn
+          v-if="puedeAprobarCarpeta"
           :label="asignatura?.estado === 'APROBADO' ? 'Reabrir Carpeta' : 'Aprobar Carpeta'"
           :color="asignatura?.estado === 'APROBADO' ? 'orange' : 'green'"
-          :icon="asignatura?.estado === 'APROBADO' ? 'lock_open' : 'check_circle'" no-caps unelevated
-          @click="toggleEstadoCarpeta" />
+          :icon="asignatura?.estado === 'APROBADO' ? 'lock_open' : 'check_circle'"
+          no-caps
+          unelevated
+          @click="toggleEstadoCarpeta"
+        />
 
         <!-- Herramientas Dropdown -->
         <q-btn-dropdown outline color="indigo" icon="settings" label="Gestión" no-caps>
           <q-list>
-            <q-item clickable v-close-popup
-              :to="{ path: `/documentacion/${route.params.id}/planificacion`, query: route.query }">
-              <q-item-section avatar><q-icon name="calendar_month" color="indigo" /></q-item-section>
+            <q-item
+              clickable
+              v-close-popup
+              :to="{ path: `/documentacion/${route.params.id}/planificacion`, query: route.query }"
+            >
+              <q-item-section avatar
+                ><q-icon name="calendar_month" color="indigo"
+              /></q-item-section>
               <q-item-section>Planificación Semestral</q-item-section>
             </q-item>
 
@@ -58,17 +71,25 @@
               <q-item-section>Importar Excel (Prog. Asignatura)</q-item-section>
             </q-item>
 
-            <q-item v-if="puedeImportar" clickable v-close-popup @click="abrirDialogoImportarPlanClase">
+            <q-item
+              v-if="puedeImportar"
+              clickable
+              v-close-popup
+              @click="abrirDialogoImportarPlanClase"
+            >
               <q-item-section avatar><q-icon name="table_view" color="purple" /></q-item-section>
               <q-item-section>Importar Excel (Plan de Clase)</q-item-section>
             </q-item>
 
-            <q-item v-if="puedeImportarPersonal" clickable v-close-popup @click="abrirDialogoImportarPersonal">
+            <q-item
+              v-if="puedeImportarPersonal"
+              clickable
+              v-close-popup
+              @click="abrirDialogoImportarPersonal"
+            >
               <q-item-section avatar><q-icon name="person_add" color="blue" /></q-item-section>
               <q-item-section>Importar Planificación Personal</q-item-section>
             </q-item>
-
-
 
             <q-item clickable v-close-popup @click="generarCarpetaHtml">
               <q-item-section avatar><q-icon name="auto_stories" color="green" /></q-item-section>
@@ -85,13 +106,25 @@
     <!-- Auto-save Status Indicator (Flotante estilo Google Docs) -->
     <transition name="fade">
       <div v-if="saveStatus !== 'idle'" class="auto-save-indicator">
-        <q-chip :color="saveStatus === 'saving' ? 'blue-1' : saveStatus === 'saved' ? 'green-1' : 'red-1'"
-          :text-color="saveStatus === 'saving' ? 'blue-8' : saveStatus === 'saved' ? 'green-8' : 'red-8'" size="sm"
-          dense>
+        <q-chip
+          :color="saveStatus === 'saving' ? 'blue-1' : saveStatus === 'saved' ? 'green-1' : 'red-1'"
+          :text-color="
+            saveStatus === 'saving' ? 'blue-8' : saveStatus === 'saved' ? 'green-8' : 'red-8'
+          "
+          size="sm"
+          dense
+        >
           <q-spinner-dots v-if="saveStatus === 'saving'" size="14px" class="q-mr-xs" />
-          <q-icon v-else-if="saveStatus === 'saved'" name="cloud_done" size="16px" class="q-mr-xs" />
+          <q-icon
+            v-else-if="saveStatus === 'saved'"
+            name="cloud_done"
+            size="16px"
+            class="q-mr-xs"
+          />
           <q-icon v-else-if="saveStatus === 'error'" name="cloud_off" size="16px" class="q-mr-xs" />
-          {{ saveStatus === 'saving' ? 'Guardando...' : saveStatus === 'saved' ? 'Guardado' : 'Error' }}
+          {{
+            saveStatus === 'saving' ? 'Guardando...' : saveStatus === 'saved' ? 'Guardado' : 'Error'
+          }}
         </q-chip>
       </div>
     </transition>
@@ -99,15 +132,29 @@
     <!-- Tabs -->
     <q-card class="card-main">
       <!-- Header dinámico según el tab activo -->
-      <div class="q-pa-md text-center" style="background: linear-gradient(135deg, #1976D2 0%, #42A5F5 100%);">
-        <div class="text-h5 text-white text-weight-bold" v-if="tabActual === 'datos' || tabActual === 'programa' || tabActual === 'bibliografia'">
+      <div
+        class="q-pa-md text-center"
+        style="background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)"
+      >
+        <div
+          class="text-h5 text-white text-weight-bold"
+          v-if="tabActual === 'datos' || tabActual === 'programa' || tabActual === 'bibliografia'"
+        >
           PROGRAMA DE ASIGNATURA (PAC)
         </div>
         <div class="text-h5 text-white text-weight-bold" v-else-if="tabActual === 'unidades'">
           PROGRAMA ANALÍTICO
         </div>
       </div>
-      <q-tabs v-model="tabActual" dense class="text-grey" active-color="primary" indicator-color="primary" align="left">
+      <!-- Tabs: solo icono + etiqueta -->
+      <q-tabs
+        ref="tabsRef"
+        v-model="tabActual"
+        class="text-grey"
+        active-color="primary"
+        indicator-color="primary"
+        align="left"
+      >
         <q-tab name="datos" icon="description" label="Datos de Asignatura" no-caps />
         <q-tab name="programa" icon="assignment" label="Programa" no-caps />
         <q-tab name="bibliografia" icon="auto_stories" label="Bibliografía" no-caps />
@@ -115,73 +162,204 @@
         <q-tab name="cronograma" icon="calendar_month" label="Cronograma de Asignatura" no-caps />
       </q-tabs>
 
+      <!-- Strip de progreso alineado con los tabs -->
+      <div class="progress-strip" v-if="asignatura?.indicadores_documentacion">
+        <!-- PAC: 1 barra — abarca Datos + Programa + Bibliografía -->
+        <div class="ps-section ps-pac" :style="{ width: psWidths.pac }">
+          <div class="ps-row">
+            <q-linear-progress
+              :value="
+                (asignatura.indicadores_documentacion.programa_asignatura?.porcentaje || 0) / 100
+              "
+              :color="asignatura.indicadores_documentacion.programa_asignatura?.color || 'negative'"
+              rounded
+              size="7px"
+              class="ps-bar"
+            />
+            <span
+              class="ps-label"
+              :class="`text-${asignatura.indicadores_documentacion.programa_asignatura?.color || 'negative'}`"
+            >
+              PAC: {{ asignatura.indicadores_documentacion.programa_asignatura?.porcentaje || 0 }}%
+            </span>
+          </div>
+        </div>
+
+        <!-- Unidades: 2 barras — Analítico + Plan de Clase -->
+        <div class="ps-section ps-unidades" :style="{ width: psWidths.uni }">
+          <div class="ps-row" v-if="asignatura.indicadores_documentacion.programa_analitico">
+            <q-linear-progress
+              :value="asignatura.indicadores_documentacion.programa_analitico.porcentaje / 100"
+              :color="asignatura.indicadores_documentacion.programa_analitico.color"
+              rounded
+              size="5px"
+              class="ps-bar"
+            />
+            <span
+              class="ps-label"
+              :class="`text-${asignatura.indicadores_documentacion.programa_analitico.color}`"
+            >
+              Analítico: {{ asignatura.indicadores_documentacion.programa_analitico.porcentaje }}%
+            </span>
+          </div>
+          <div class="ps-row" v-if="asignatura.indicadores_documentacion.plan_clase">
+            <q-linear-progress
+              :value="planClasePctLocal / 100"
+              :color="planClaseColor"
+              rounded
+              size="5px"
+              class="ps-bar"
+            />
+            <span class="ps-label" :class="`text-${planClaseColor}`">
+              Plan Clase: {{ planClasePctLocal }}%
+            </span>
+          </div>
+        </div>
+
+        <!-- Cronograma: sin barra -->
+        <div class="ps-section ps-cronograma" :style="{ width: psWidths.cron }" />
+      </div>
+
       <q-separator />
 
       <q-tab-panels v-model="tabActual" animated>
         <!-- Tab: Datos de Asignatura -->
         <!-- Tab: Datos de Asignatura -->
         <q-tab-panel name="datos" class="q-pa-lg">
-
           <q-form class="q-gutter-y-lg">
             <!-- 1. Identificación (Card) -->
             <q-card class="section-card q-mb-lg">
               <q-card-section class="q-pa-lg">
                 <div class="row items-center q-mb-md">
-                  <div class="text-h6 text-primary text-weight-bold">1.- Identificación de la Asignatura</div>
+                  <div class="text-h6 text-primary text-weight-bold">
+                    1.- Identificación de la Asignatura
+                  </div>
                 </div>
 
                 <!-- Row 1: Header Info -->
                 <div class="row q-col-gutter-md q-mb-md">
                   <div class="col-12 col-md-5">
-                    <q-input :model-value="nombreCarrera" label="Carrera" outlined dense readonly bg-color="white" />
+                    <q-input
+                      :model-value="nombreCarrera"
+                      label="Carrera"
+                      outlined
+                      dense
+                      readonly
+                      bg-color="white"
+                    />
                   </div>
                   <div class="col-12 col-md-2">
-                    <q-input :model-value="codigoVisual" label="Código" outlined dense readonly bg-color="white"
-                      input-class="text-weight-bold" />
+                    <q-input
+                      :model-value="codigoVisual"
+                      label="Código"
+                      outlined
+                      dense
+                      readonly
+                      bg-color="white"
+                      input-class="text-weight-bold"
+                    />
                   </div>
                   <div class="col-12 col-md-2">
-                    <q-input :model-value="(asignatura?.semestre || '') + '°'" label="Semestre" outlined dense readonly
-                      bg-color="white" />
+                    <q-input
+                      :model-value="(asignatura?.semestre || '') + '°'"
+                      label="Semestre"
+                      outlined
+                      dense
+                      readonly
+                      bg-color="white"
+                    />
                   </div>
                   <div class="col-12 col-md-3">
-                    <q-select v-model="formDatos.modalidad" :options="['Presencial', 'Semipresencial', 'Virtual']"
-                      label="Modalidad" outlined dense bg-color="white"
-                      :readonly="!puedeEditarCampo('datos_generales')" />
+                    <q-select
+                      v-model="formDatos.modalidad"
+                      :options="['Presencial', 'Semipresencial', 'Virtual']"
+                      label="Modalidad"
+                      outlined
+                      dense
+                      bg-color="white"
+                      :readonly="!puedeEditarCampo('datos_generales')"
+                    />
                   </div>
                 </div>
 
                 <!-- Row 2: Main Subject Info -->
                 <div class="row q-col-gutter-md q-mb-md">
                   <div class="col-12 col-md-6">
-                    <q-input v-model="formDatos.nombre" label="Asignatura" outlined dense readonly bg-color="white"
-                      input-class="text-weight-bold text-uppercase" />
+                    <q-input
+                      v-model="formDatos.nombre"
+                      label="Asignatura"
+                      outlined
+                      dense
+                      readonly
+                      bg-color="white"
+                      input-class="text-weight-bold text-uppercase"
+                    />
                   </div>
                   <div class="col-12 col-md-3">
-                    <q-input v-model="formDatos.tipo_curso" label="Tipo de Curso" outlined dense bg-color="white"
-                      :readonly="!puedeEditarCampo('datos_generales')" />
+                    <q-input
+                      v-model="formDatos.tipo_curso"
+                      label="Tipo de Curso"
+                      outlined
+                      dense
+                      bg-color="white"
+                      :readonly="!puedeEditarCampo('datos_generales')"
+                    />
                   </div>
                   <div class="col-12 col-md-3">
-                    <q-input v-model="formDatos.area_desempenio" label="Área de Desempeño" outlined dense
-                      bg-color="white" :readonly="!puedeEditarCampo('datos_generales')" />
+                    <q-input
+                      v-model="formDatos.area_desempenio"
+                      label="Área de Desempeño"
+                      outlined
+                      dense
+                      bg-color="white"
+                      :readonly="!puedeEditarCampo('datos_generales')"
+                    />
                   </div>
                 </div>
 
                 <!-- Row 3: Metrics & Reqs -->
                 <div class="row q-col-gutter-md q-mb-md">
                   <div class="col-12 col-md-4">
-                    <q-input v-model="formDatos.requisitos" label="Pre-requisito" outlined dense bg-color="white"
-                      :readonly="!puedeEditarCampo('datos_generales')" />
+                    <q-input
+                      v-model="formDatos.requisitos"
+                      label="Pre-requisito"
+                      outlined
+                      dense
+                      bg-color="white"
+                      :readonly="!puedeEditarCampo('datos_generales')"
+                    />
                   </div>
                   <div class="col-12 col-md-2">
-                    <q-input v-model="formDatos.creditos" label="Créditos" outlined dense readonly bg-color="white" />
+                    <q-input
+                      v-model="formDatos.creditos"
+                      label="Créditos"
+                      outlined
+                      dense
+                      readonly
+                      bg-color="white"
+                    />
                   </div>
                   <div class="col-12 col-md-3">
-                    <q-input :model-value="(formDatos.carga_horaria_total || 0) + ' Horas'" label="Carga Total" outlined
-                      dense readonly bg-color="white" input-class="text-weight-bold" />
+                    <q-input
+                      :model-value="(formDatos.carga_horaria_total || 0) + ' Horas'"
+                      label="Carga Total"
+                      outlined
+                      dense
+                      readonly
+                      bg-color="white"
+                      input-class="text-weight-bold"
+                    />
                   </div>
                   <div class="col-12 col-md-3">
-                    <q-input v-model="formDatos.horas_detalle" label="Teóricas / Prácticas" outlined dense readonly
-                      bg-color="white" input-class="text-weight-bold" />
+                    <q-input
+                      v-model="formDatos.horas_detalle"
+                      label="Teóricas / Prácticas"
+                      outlined
+                      dense
+                      readonly
+                      bg-color="white"
+                      input-class="text-weight-bold"
+                    />
                   </div>
                 </div>
 
@@ -189,17 +367,34 @@
                 <div class="bg-grey-1 q-pa-sm rounded-borders border-all">
                   <div class="row q-col-gutter-sm items-center">
                     <div class="col-12 col-md-2">
-                      <div class="text-caption text-weight-bold text-grey-8 text-center" style="line-height: 1.2">
-                        SESIONES<br>SEMANALES
+                      <div
+                        class="text-caption text-weight-bold text-grey-8 text-center"
+                        style="line-height: 1.2"
+                      >
+                        SESIONES<br />SEMANALES
                       </div>
                     </div>
                     <div class="col-6 col-md-2">
-                      <q-input v-model.number="formDatos.sesiones_semanales_teoricas" label="Teóricas" type="number"
-                        outlined dense bg-color="white" :readonly="!puedeEditarCampo('datos_generales')" />
+                      <q-input
+                        v-model.number="formDatos.sesiones_semanales_teoricas"
+                        label="Teóricas"
+                        type="number"
+                        outlined
+                        dense
+                        bg-color="white"
+                        :readonly="!puedeEditarCampo('datos_generales')"
+                      />
                     </div>
                     <div class="col-6 col-md-3">
-                      <q-input v-model.number="formDatos.sesiones_semanales_practicas" label="Prácticas" type="number"
-                        outlined dense bg-color="white" :readonly="!puedeEditarCampo('datos_generales')" />
+                      <q-input
+                        v-model.number="formDatos.sesiones_semanales_practicas"
+                        label="Prácticas"
+                        type="number"
+                        outlined
+                        dense
+                        bg-color="white"
+                        :readonly="!puedeEditarCampo('datos_generales')"
+                      />
                     </div>
                   </div>
                 </div>
@@ -216,20 +411,44 @@
 
                 <div class="row q-col-gutter-md">
                   <div class="col-12 col-md-8">
-                    <q-input :model-value="nombreDocenteCarpeta || 'Por asignar'" label="NOMBRE DEL DOCENTE" outlined
-                      dense readonly bg-color="grey-1" />
+                    <q-input
+                      :model-value="nombreDocenteCarpeta || 'Por asignar'"
+                      label="NOMBRE DEL DOCENTE"
+                      outlined
+                      dense
+                      readonly
+                      bg-color="grey-1"
+                    />
                   </div>
                   <div class="col-12 col-md-4">
-                    <q-input v-model="formDatos.docente_email" label="EMAIL" outlined dense
-                      :readonly="!puedeEditarCampo('datos_generales')" placeholder="email@ejemplo.com" />
+                    <q-input
+                      v-model="formDatos.docente_email"
+                      label="EMAIL"
+                      outlined
+                      dense
+                      :readonly="!puedeEditarCampo('datos_generales')"
+                      placeholder="email@ejemplo.com"
+                    />
                   </div>
                   <div class="col-12 col-md-8">
-                    <q-input v-model="formDatos.docente_formacion" label="FORMACIÓN" outlined dense
-                      :readonly="!puedeEditarCampo('datos_generales')" placeholder="Grados académicos..." />
+                    <q-input
+                      v-model="formDatos.docente_formacion"
+                      label="FORMACIÓN"
+                      outlined
+                      dense
+                      :readonly="!puedeEditarCampo('datos_generales')"
+                      placeholder="Grados académicos..."
+                    />
                   </div>
                   <div class="col-12 col-md-4">
-                    <q-input v-model="formDatos.docente_telefono" label="TELÉFONO" outlined dense
-                      :readonly="!puedeEditarCampo('datos_generales')" placeholder="Celular / Teléfono" />
+                    <q-input
+                      v-model="formDatos.docente_telefono"
+                      label="TELÉFONO"
+                      outlined
+                      dense
+                      :readonly="!puedeEditarCampo('datos_generales')"
+                      placeholder="Celular / Teléfono"
+                    />
                   </div>
                 </div>
               </q-card-section>
@@ -242,9 +461,15 @@
                   <q-icon name="lightbulb" color="primary" size="24px" class="q-mr-sm" />
                   <div class="text-h6 text-primary">3.- Justificación</div>
                 </div>
-                <q-input v-model="formDatos.justificacion" label="JUSTIFICACIÓN" type="textarea" rows="5" outlined
+                <q-input
+                  v-model="formDatos.justificacion"
+                  label="JUSTIFICACIÓN"
+                  type="textarea"
+                  rows="5"
+                  outlined
                   :readonly="!puedeEditarCampo('justificacion')"
-                  placeholder="Describa la relevancia de esta asignatura en el plan de estudios..." />
+                  placeholder="Describa la relevancia de esta asignatura en el plan de estudios..."
+                />
               </q-card-section>
             </q-card>
 
@@ -255,9 +480,15 @@
                   <q-icon name="flag" color="primary" size="24px" class="q-mr-sm" />
                   <div class="text-h6 text-primary">4.- Propósito General</div>
                 </div>
-                <q-input v-model="formDatos.objetivo_general" label="PROPÓSITO GENERAL" type="textarea" rows="4"
-                  outlined :readonly="!puedeEditarCampo('objetivo_general')"
-                  placeholder="Defina el propósito central y las metas de formación..." />
+                <q-input
+                  v-model="formDatos.objetivo_general"
+                  label="PROPÓSITO GENERAL"
+                  type="textarea"
+                  rows="4"
+                  outlined
+                  :readonly="!puedeEditarCampo('objetivo_general')"
+                  placeholder="Defina el propósito central y las metas de formación..."
+                />
               </q-card-section>
             </q-card>
           </q-form>
@@ -274,14 +505,26 @@
                 </div>
                 <div class="row q-col-gutter-lg">
                   <div class="col-12 col-md-6">
-                    <q-input v-model="formPrograma.competencia_global" label="COMPETENCIA GLOBAL ESPECÍFICA"
-                      type="textarea" rows="6" outlined :readonly="!puedeEditarCampo()"
-                      placeholder="Describa la competencia global..." />
+                    <q-input
+                      v-model="formPrograma.competencia_global"
+                      label="COMPETENCIA GLOBAL ESPECÍFICA"
+                      type="textarea"
+                      rows="6"
+                      outlined
+                      :readonly="!puedeEditarCampo()"
+                      placeholder="Describa la competencia global..."
+                    />
                   </div>
                   <div class="col-12 col-md-6">
-                    <q-input v-model="formPrograma.competencia_unidad" label="UNIDAD DE COMPETENCIA ESPECÍFICA"
-                      type="textarea" rows="6" outlined :readonly="!puedeEditarCampo()"
-                      placeholder="Describa la unidad de competencia..." />
+                    <q-input
+                      v-model="formPrograma.competencia_unidad"
+                      label="UNIDAD DE COMPETENCIA ESPECÍFICA"
+                      type="textarea"
+                      rows="6"
+                      outlined
+                      :readonly="!puedeEditarCampo()"
+                      placeholder="Describa la unidad de competencia..."
+                    />
                   </div>
                 </div>
               </q-card-section>
@@ -296,12 +539,21 @@
                 </div>
 
                 <div v-if="asignatura?.unidades?.length" class="q-gutter-y-md">
-                  <div v-for="unidad in asignatura.unidades" :key="unidad.id" class="relative-position">
-                    <q-input v-model="unidad.elemento_competencia"
-                      :label="`ELEMENTO DE COMPETENCIA (UNIDAD ${unidad.numero})`" type="textarea" rows="2" outlined
+                  <div
+                    v-for="unidad in asignatura.unidades"
+                    :key="unidad.id"
+                    class="relative-position"
+                  >
+                    <q-input
+                      v-model="unidad.elemento_competencia"
+                      :label="`ELEMENTO DE COMPETENCIA (UNIDAD ${unidad.numero})`"
+                      type="textarea"
+                      rows="2"
+                      outlined
                       :readonly="!puedeEditarCampo()"
                       placeholder="Describa el elemento de competencia de esta unidad..."
-                      @blur="guardarElementoCompetencia(unidad)">
+                      @blur="guardarElementoCompetencia(unidad)"
+                    >
                       <template v-slot:prepend>
                         <q-badge color="primary" text-color="white" :label="unidad.numero" />
                       </template>
@@ -311,7 +563,9 @@
                 <div v-else class="text-center q-pa-lg text-grey-7 bg-grey-1 rounded-borders">
                   <q-icon name="info" size="24px" class="q-mb-xs" />
                   <div>Las unidades de aprendizaje definen los elementos de competencia.</div>
-                  <div class="text-caption">Configure las unidades en la pestaña correspondiente.</div>
+                  <div class="text-caption">
+                    Configure las unidades en la pestaña correspondiente.
+                  </div>
                 </div>
               </q-card-section>
             </q-card>
@@ -324,16 +578,35 @@
                   <div class="text-h6 text-primary">8.- Metodología General</div>
                 </div>
                 <div class="q-gutter-y-md">
-                  <q-input v-model="formPrograma.metodologia_aula" label="EN EL AULA" type="textarea" rows="3" outlined
-                    :readonly="!puedeEditarCampo()" placeholder="Describa la metodología en aula..." />
+                  <q-input
+                    v-model="formPrograma.metodologia_aula"
+                    label="EN EL AULA"
+                    type="textarea"
+                    rows="3"
+                    outlined
+                    :readonly="!puedeEditarCampo()"
+                    placeholder="Describa la metodología en aula..."
+                  />
 
-                  <q-input v-model="formPrograma.metodologia_simulacion" label="CENTRO DE SIMULACIÓN Y/O LABORATORIO"
-                    type="textarea" rows="2" outlined :readonly="!puedeEditarCampo()"
-                    placeholder="Describa la metodología en simulación..." />
+                  <q-input
+                    v-model="formPrograma.metodologia_simulacion"
+                    label="CENTRO DE SIMULACIÓN Y/O LABORATORIO"
+                    type="textarea"
+                    rows="2"
+                    outlined
+                    :readonly="!puedeEditarCampo()"
+                    placeholder="Describa la metodología en simulación..."
+                  />
 
-                  <q-input v-model="formPrograma.metodologia_hospital"
-                    label="HOSPITAL Y CENTROS DE SALUD (Si corresponde)" type="textarea" rows="2" outlined
-                    :readonly="!puedeEditarCampo()" placeholder="Describa la metodología en centros de salud..." />
+                  <q-input
+                    v-model="formPrograma.metodologia_hospital"
+                    label="HOSPITAL Y CENTROS DE SALUD (Si corresponde)"
+                    type="textarea"
+                    rows="2"
+                    outlined
+                    :readonly="!puedeEditarCampo()"
+                    placeholder="Describa la metodología en centros de salud..."
+                  />
                 </div>
               </q-card-section>
             </q-card>
@@ -348,38 +621,74 @@
 
                 <div class="q-gutter-y-lg">
                   <!-- Bloque 1: Intro -->
-                  <q-input v-model="formPrograma.sistema_evaluacion.intro" label="PROCESO EVALUADOR (INTRODUCCIÓN)"
-                    type="textarea" rows="3" outlined :readonly="!puedeEditarCampo()"
-                    placeholder="El proceso evaluador es único..." />
+                  <q-input
+                    v-model="formPrograma.sistema_evaluacion.intro"
+                    label="PROCESO EVALUADOR (INTRODUCCIÓN)"
+                    type="textarea"
+                    rows="3"
+                    outlined
+                    :readonly="!puedeEditarCampo()"
+                    placeholder="El proceso evaluador es único..."
+                  />
 
                   <!-- Bloque 2: Fases (Side-by-side) -->
                   <div class="row q-col-gutter-md">
                     <div class="col-12 col-md-4">
-                      <q-input v-model="formPrograma.sistema_evaluacion.diagnostica" label="EVALUACIÓN DIAGNÓSTICA"
-                        type="textarea" rows="5" outlined :readonly="!puedeEditarCampo()"
-                        placeholder="a. La evaluación diagnóstica tiene por objeto..." />
+                      <q-input
+                        v-model="formPrograma.sistema_evaluacion.diagnostica"
+                        label="EVALUACIÓN DIAGNÓSTICA"
+                        type="textarea"
+                        rows="5"
+                        outlined
+                        :readonly="!puedeEditarCampo()"
+                        placeholder="a. La evaluación diagnóstica tiene por objeto..."
+                      />
                     </div>
                     <div class="col-12 col-md-4">
-                      <q-input v-model="formPrograma.sistema_evaluacion.formativa" label="EVALUACIÓN FORMATIVA"
-                        type="textarea" rows="5" outlined :readonly="!puedeEditarCampo()"
-                        placeholder="b. La evaluación formativa permitirá medir..." />
+                      <q-input
+                        v-model="formPrograma.sistema_evaluacion.formativa"
+                        label="EVALUACIÓN FORMATIVA"
+                        type="textarea"
+                        rows="5"
+                        outlined
+                        :readonly="!puedeEditarCampo()"
+                        placeholder="b. La evaluación formativa permitirá medir..."
+                      />
                     </div>
                     <div class="col-12 col-md-4">
-                      <q-input v-model="formPrograma.sistema_evaluacion.sumativa" label="EVALUACIÓN SUMATIVA"
-                        type="textarea" rows="5" outlined :readonly="!puedeEditarCampo()"
-                        placeholder="c. La evaluación sumativa está estrechamente relacionada..." />
+                      <q-input
+                        v-model="formPrograma.sistema_evaluacion.sumativa"
+                        label="EVALUACIÓN SUMATIVA"
+                        type="textarea"
+                        rows="5"
+                        outlined
+                        :readonly="!puedeEditarCampo()"
+                        placeholder="c. La evaluación sumativa está estrechamente relacionada..."
+                      />
                     </div>
                   </div>
 
                   <!-- Bloque 3: Ponderación -->
-                  <q-input v-model="formPrograma.sistema_evaluacion.ponderacion" label="PARÁMETROS Y PONDERACIÓN"
-                    type="textarea" rows="4" outlined :readonly="!puedeEditarCampo()"
-                    placeholder="La evaluación considera los siguientes parámetros (Parciales, Examen Final)..." />
+                  <q-input
+                    v-model="formPrograma.sistema_evaluacion.ponderacion"
+                    label="PARÁMETROS Y PONDERACIÓN"
+                    type="textarea"
+                    rows="4"
+                    outlined
+                    :readonly="!puedeEditarCampo()"
+                    placeholder="La evaluación considera los siguientes parámetros (Parciales, Examen Final)..."
+                  />
 
                   <!-- Bloque 4: Aspectos Finales -->
-                  <q-input v-model="formPrograma.sistema_evaluacion.final" label="ASPECTOS DE EVALUACIÓN FINAL"
-                    type="textarea" rows="3" outlined :readonly="!puedeEditarCampo()"
-                    placeholder="La evaluación final se desarrollará considerando..." />
+                  <q-input
+                    v-model="formPrograma.sistema_evaluacion.final"
+                    label="ASPECTOS DE EVALUACIÓN FINAL"
+                    type="textarea"
+                    rows="3"
+                    outlined
+                    :readonly="!puedeEditarCampo()"
+                    placeholder="La evaluación final se desarrollará considerando..."
+                  />
                 </div>
               </q-card-section>
             </q-card>
@@ -389,18 +698,31 @@
               <q-card-section>
                 <div class="row items-center q-mb-md">
                   <q-icon name="gavel" color="primary" size="24px" class="q-mr-sm" />
-                  <div class="text-h6 text-primary">12.- Criterios y Normativa de la Asignatura</div>
+                  <div class="text-h6 text-primary">
+                    12.- Criterios y Normativa de la Asignatura
+                  </div>
                 </div>
 
                 <div class="q-gutter-y-md">
-                  <q-input v-model="formPrograma.reglamento_normativa.clase" label="REGLAMENTO PARA LAS CLASES"
-                    type="textarea" rows="5" outlined :readonly="!puedeEditarCampo()"
-                    placeholder="1. El ingreso se realizará de manera puntual..." />
-
-                  <q-input v-model="formPrograma.reglamento_normativa.laboratorio"
-                    label="NORMAS DE LABORATORIO / PRÁCTICA" type="textarea" rows="4" outlined
+                  <q-input
+                    v-model="formPrograma.reglamento_normativa.clase"
+                    label="REGLAMENTO PARA LAS CLASES"
+                    type="textarea"
+                    rows="5"
+                    outlined
                     :readonly="!puedeEditarCampo()"
-                    placeholder="Además, en laboratorio tomar en cuenta: (PRÁCTICA PRESENCIAL)..." />
+                    placeholder="1. El ingreso se realizará de manera puntual..."
+                  />
+
+                  <q-input
+                    v-model="formPrograma.reglamento_normativa.laboratorio"
+                    label="NORMAS DE LABORATORIO / PRÁCTICA"
+                    type="textarea"
+                    rows="4"
+                    outlined
+                    :readonly="!puedeEditarCampo()"
+                    placeholder="Además, en laboratorio tomar en cuenta: (PRÁCTICA PRESENCIAL)..."
+                  />
                 </div>
               </q-card-section>
             </q-card>
@@ -414,7 +736,15 @@
               <q-icon name="auto_stories" color="primary" class="q-mr-sm" />
               Referencias Bibliográficas
             </div>
-            <q-btn v-if="puedeEditarPlanificacion" unelevated color="primary" icon="add" label="Agregar" no-caps @click="abrirDialogBibliografia()" />
+            <q-btn
+              v-if="puedeEditarPlanificacion"
+              unelevated
+              color="primary"
+              icon="add"
+              label="Agregar"
+              no-caps
+              @click="abrirDialogBibliografia()"
+            />
             <q-chip v-else outline color="orange" icon="lock" label="Solo lectura (Sede)" dense />
           </div>
 
@@ -429,25 +759,44 @@
               <div class="biblio-section__header biblio-section__header--basica q-mb-md">
                 <q-icon name="star" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Básica</span>
-                <q-badge color="blue" text-color="white" class="q-ml-sm">{{ bibliografiasBasicas.length }}</q-badge>
+                <q-badge color="blue" text-color="white" class="q-ml-sm">{{
+                  bibliografiasBasicas.length
+                }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
-                <div v-for="biblio in bibliografiasBasicas" :key="biblio.id" class="col-12 col-md-6">
+                <div
+                  v-for="biblio in bibliografiasBasicas"
+                  :key="biblio.id"
+                  class="col-12 col-md-6"
+                >
                   <div class="biblio-card biblio-card--basica">
                     <div class="biblio-card__content">
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor">{{ biblio.autor }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
-                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio ? ' ('
-                          +
-                          biblio.anio + ')' : '' }}
+                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
+                        }}{{ biblio.anio ? ' (' + biblio.anio + ')' : '' }}
                       </div>
                     </div>
                     <div class="biblio-card__actions" v-if="puedeEditarPlanificacion">
-                      <q-btn flat round dense icon="edit" size="sm" color="orange"
-                        @click="abrirDialogBibliografia(biblio)" />
-                      <q-btn flat round dense icon="delete" size="sm" color="red"
-                        @click="eliminarBibliografia(biblio)" />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="edit"
+                        size="sm"
+                        color="orange"
+                        @click="abrirDialogBibliografia(biblio)"
+                      />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="delete"
+                        size="sm"
+                        color="red"
+                        @click="eliminarBibliografia(biblio)"
+                      />
                     </div>
                   </div>
                 </div>
@@ -459,26 +808,44 @@
               <div class="biblio-section__header biblio-section__header--complementaria q-mb-md">
                 <q-icon name="library_books" size="24px" />
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
-                <q-badge color="grey" text-color="white" class="q-ml-sm">{{ bibliografiasComplementarias.length
-                  }}</q-badge>
+                <q-badge color="grey" text-color="white" class="q-ml-sm">{{
+                  bibliografiasComplementarias.length
+                }}</q-badge>
               </div>
               <div class="row q-col-gutter-md">
-                <div v-for="biblio in bibliografiasComplementarias" :key="biblio.id" class="col-12 col-md-6">
+                <div
+                  v-for="biblio in bibliografiasComplementarias"
+                  :key="biblio.id"
+                  class="col-12 col-md-6"
+                >
                   <div class="biblio-card biblio-card--complementaria">
                     <div class="biblio-card__content">
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
                       <div class="biblio-card__author" v-if="biblio.autor">{{ biblio.autor }}</div>
                       <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
-                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio ? ' ('
-                          +
-                          biblio.anio + ')' : '' }}
+                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
+                        }}{{ biblio.anio ? ' (' + biblio.anio + ')' : '' }}
                       </div>
                     </div>
                     <div class="biblio-card__actions" v-if="puedeEditarPlanificacion">
-                      <q-btn flat round dense icon="edit" size="sm" color="orange"
-                        @click="abrirDialogBibliografia(biblio)" />
-                      <q-btn flat round dense icon="delete" size="sm" color="red"
-                        @click="eliminarBibliografia(biblio)" />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="edit"
+                        size="sm"
+                        color="orange"
+                        @click="abrirDialogBibliografia(biblio)"
+                      />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="delete"
+                        size="sm"
+                        color="red"
+                        @click="eliminarBibliografia(biblio)"
+                      />
                     </div>
                   </div>
                 </div>
@@ -492,33 +859,50 @@
                 <span class="text-subtitle1 text-weight-bold">Bibliografía Programa Analítico</span>
                 <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
                   bibliografiasProgramaAnalitico.length
-                  }}</q-badge>
+                }}</q-badge>
                 <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
                   <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
                   API Externa
                 </q-chip>
               </div>
               <div class="row q-col-gutter-md">
-                <div v-for="biblio in bibliografiasProgramaAnalitico" :key="biblio.id" class="col-12 col-md-6">
+                <div
+                  v-for="biblio in bibliografiasProgramaAnalitico"
+                  :key="biblio.id"
+                  class="col-12 col-md-6"
+                >
                   <div class="biblio-card biblio-card--api">
                     <div class="biblio-card__content">
                       <div class="biblio-card__title">{{ biblio.titulo }}</div>
-                      <div class="biblio-card__author" v-if="biblio.autor && biblio.autor !== 'Ver descripción'">{{
-                        biblio.autor
-                        }}</div>
-                      <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
-                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : '' }}{{ biblio.anio &&
-                          biblio.anio !==
-                          0 ? ' (' + biblio.anio + ')' : '' }}
+                      <div
+                        class="biblio-card__author"
+                        v-if="biblio.autor && biblio.autor !== 'Ver descripción'"
+                      >
+                        {{ biblio.autor }}
                       </div>
-                      <q-chip size="xs" :color="biblio.tipo?.toUpperCase() === 'BASIC' ? 'blue-2' : 'grey-2'"
-                        :text-color="biblio.tipo?.toUpperCase() === 'BASIC' ? 'blue-9' : 'grey-7'" class="q-mt-xs">
+                      <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
+                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
+                        }}{{ biblio.anio && biblio.anio !== 0 ? ' (' + biblio.anio + ')' : '' }}
+                      </div>
+                      <q-chip
+                        size="xs"
+                        :color="biblio.tipo?.toUpperCase() === 'BASIC' ? 'blue-2' : 'grey-2'"
+                        :text-color="biblio.tipo?.toUpperCase() === 'BASIC' ? 'blue-9' : 'grey-7'"
+                        class="q-mt-xs"
+                      >
                         {{ biblio.tipo?.toUpperCase() === 'BASIC' ? 'Básica' : 'Complementaria' }}
                       </q-chip>
                     </div>
                     <div class="biblio-card__actions">
-                      <q-btn flat round dense icon="visibility" size="sm" color="primary"
-                        @click="abrirDialogBibliografia(biblio)">
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="visibility"
+                        size="sm"
+                        color="primary"
+                        @click="abrirDialogBibliografia(biblio)"
+                      >
                         <q-tooltip>Ver detalles</q-tooltip>
                       </q-btn>
                     </div>
@@ -537,14 +921,25 @@
               Unidades de Aprendizaje
             </div>
             <div class="row q-gutter-sm">
-              <q-btn v-if="puedeEditarPlanificacion" unelevated color="primary" icon="add" label="Nueva Unidad" no-caps
-                @click="abrirDialogoUnidad()" />
+              <q-btn
+                v-if="puedeEditarPlanificacion"
+                unelevated
+                color="primary"
+                icon="add"
+                label="Nueva Unidad"
+                no-caps
+                @click="abrirDialogoUnidad()"
+              />
             </div>
           </div>
 
           <q-list separator class="unidades-list">
-            <q-expansion-item v-for="unidad in asignatura?.unidades" :key="unidad.id" group="unidades"
-              class="unidad-item">
+            <q-expansion-item
+              v-for="unidad in asignatura?.unidades"
+              :key="unidad.id"
+              group="unidades"
+              class="unidad-item"
+            >
               <template v-slot:header>
                 <q-item-section avatar>
                   <q-avatar color="primary" text-color="white" size="42px">
@@ -552,24 +947,52 @@
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label class="text-weight-bold text-subtitle1">{{ unidad.titulo }}</q-item-label>
+                  <q-item-label class="text-weight-bold text-subtitle1">{{
+                    unidad.titulo
+                  }}</q-item-label>
                   <q-item-label caption>
                     {{ unidad.temas?.length || 0 }} temas • {{ unidad.horas }} horas
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-linear-progress :value="calcularProgresoUnidad(unidad) / 100"
-                    :color="calcularProgresoUnidad(unidad) >= 80 ? 'green' : calcularProgresoUnidad(unidad) >= 50 ? 'amber' : 'red'"
-                    rounded size="8px" style="width: 100px;" />
-                  <span class="text-caption q-mt-xs">{{ calcularProgresoUnidad(unidad) }}% documentado</span>
+                  <q-linear-progress
+                    :value="calcularProgresoUnidad(unidad) / 100"
+                    :color="
+                      calcularProgresoUnidad(unidad) >= 80
+                        ? 'green'
+                        : calcularProgresoUnidad(unidad) >= 50
+                          ? 'amber'
+                          : 'red'
+                    "
+                    rounded
+                    size="8px"
+                    style="width: 100px"
+                  />
+                  <span class="text-caption q-mt-xs"
+                    >{{ calcularProgresoUnidad(unidad) }}% documentado</span
+                  >
 
                   <div class="row items-center">
-                    <q-btn v-if="puedeEditarPlanificacion" flat round dense icon="edit" color="primary"
-                      @click.stop="abrirDialogoUnidad(unidad)">
+                    <q-btn
+                      v-if="puedeEditarPlanificacion"
+                      flat
+                      round
+                      dense
+                      icon="edit"
+                      color="primary"
+                      @click.stop="abrirDialogoUnidad(unidad)"
+                    >
                       <q-tooltip>Editar Unidad</q-tooltip>
                     </q-btn>
-                    <q-btn v-if="puedeEditarPlanificacion" flat round dense icon="delete" color="red"
-                      @click.stop="confirmarEliminarUnidad(unidad)">
+                    <q-btn
+                      v-if="puedeEditarPlanificacion"
+                      flat
+                      round
+                      dense
+                      icon="delete"
+                      color="red"
+                      @click.stop="confirmarEliminarUnidad(unidad)"
+                    >
                       <q-tooltip>Eliminar Unidad</q-tooltip>
                     </q-btn>
                   </div>
@@ -581,19 +1004,32 @@
                 <q-card-section>
                   <div class="row items-center q-mb-sm">
                     <q-icon name="emoji_events" color="primary" class="q-mr-sm" />
-                    <span class="text-weight-bold text-primary">Elemento de Competencia (Unidad {{ unidad.numero
-                      }})</span>
+                    <span class="text-weight-bold text-primary"
+                      >Elemento de Competencia (Unidad {{ unidad.numero }})</span
+                    >
                   </div>
-                  <q-input v-model="unidad.elemento_competencia" type="textarea" rows="2" outlined dense
+                  <q-input
+                    v-model="unidad.elemento_competencia"
+                    type="textarea"
+                    rows="2"
+                    outlined
+                    dense
                     placeholder="Describe el elemento de competencia para esta unidad..."
-                    @blur="guardarElementoCompetencia(unidad)" :readonly="!puedeEditarPlanificacion" />
+                    @blur="guardarElementoCompetencia(unidad)"
+                    :readonly="!puedeEditarPlanificacion"
+                  />
                 </q-card-section>
               </q-card>
 
               <!-- Lista de Temas -->
               <q-list separator class="q-mx-lg q-mb-md">
-                <q-item v-for="(tema, index) in unidad.temas" :key="tema.id" clickable @click="irATema(unidad, tema)"
-                  class="rounded-borders q-mb-xs tema-item">
+                <q-item
+                  v-for="(tema, index) in unidad.temas"
+                  :key="tema.id"
+                  clickable
+                  @click="irATema(unidad, tema)"
+                  class="rounded-borders q-mb-xs tema-item"
+                >
                   <q-item-section avatar>
                     <q-avatar color="orange-2" text-color="orange-9" size="36px">
                       <span class="text-weight-bold">{{ getTemaGlobalIndex(unidad, tema) }}</span>
@@ -602,8 +1038,16 @@
                   <q-item-section>
                     <q-item-label class="text-weight-medium">{{ tema.titulo }}</q-item-label>
                     <!-- Mostrar contenidos debajo del tema con formato •contenido -->
-                    <q-item-label caption v-if="tema.contenido_items?.length" class="contenido-lista">
-                      <div v-for="(contenido, idx) in tema.contenido_items" :key="idx" class="text-grey-8">
+                    <q-item-label
+                      caption
+                      v-if="tema.contenido_items?.length"
+                      class="contenido-lista"
+                    >
+                      <div
+                        v-for="(contenido, idx) in tema.contenido_items"
+                        :key="idx"
+                        class="text-grey-8"
+                      >
                         •{{ contenido }}
                       </div>
                     </q-item-label>
@@ -611,41 +1055,90 @@
                       <span class="text-grey-8">•{{ tema.descripcion }}</span>
                     </q-item-label>
                     <q-item-label caption class="q-mt-xs">
-                      {{ tema.contenido_items?.length || (tema.descripcion ? 1 : 0) }} puntos de contenido •
-                      {{ countLogros(tema) }} logros •
+                      {{ tema.contenido_items?.length || (tema.descripcion ? 1 : 0) }} puntos de
+                      contenido • {{ countLogros(tema) }} logros •
                       {{ countIndicadores(tema) }} indicadores
-                      <q-icon v-if="!tema.descripcion && !tema.contenido_items?.length" name="warning" color="orange"
-                        size="xs" class="q-ml-sm">
+                      <q-icon
+                        v-if="!tema.descripcion && !tema.contenido_items?.length"
+                        name="warning"
+                        color="orange"
+                        size="xs"
+                        class="q-ml-sm"
+                      >
                         <q-tooltip>Falta Contenido</q-tooltip>
                       </q-icon>
                     </q-item-label>
                   </q-item-section>
                   <q-item-section side>
                     <div class="row items-center q-gutter-sm">
-                      <q-chip size="sm"
-                        :color="calcularProgresoTema(tema) >= 80 ? 'green-2' : calcularProgresoTema(tema) >= 50 ? 'amber-2' : 'red-2'"
-                        :text-color="calcularProgresoTema(tema) >= 80 ? 'green-9' : calcularProgresoTema(tema) >= 50 ? 'amber-9' : 'red-9'"
-                        dense>
+                      <q-chip
+                        size="sm"
+                        :color="
+                          calcularProgresoTema(tema) >= 80
+                            ? 'green-2'
+                            : calcularProgresoTema(tema) >= 50
+                              ? 'amber-2'
+                              : 'red-2'
+                        "
+                        :text-color="
+                          calcularProgresoTema(tema) >= 80
+                            ? 'green-9'
+                            : calcularProgresoTema(tema) >= 50
+                              ? 'amber-9'
+                              : 'red-9'
+                        "
+                        dense
+                      >
                         {{ calcularProgresoTema(tema) }}%
                       </q-chip>
 
                       <!-- Reordering Buttons -->
                       <template v-if="puedeEditarPlanificacion">
-                        <q-btn flat round dense icon="arrow_upward" color="grey-7" size="sm"
-                          @click.stop="moverTema(unidad, tema, 'up')" :disable="index === 0">
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="arrow_upward"
+                          color="grey-7"
+                          size="sm"
+                          @click.stop="moverTema(unidad, tema, 'up')"
+                          :disable="index === 0"
+                        >
                           <q-tooltip>Subir</q-tooltip>
                         </q-btn>
-                        <q-btn flat round dense icon="arrow_downward" color="grey-7" size="sm"
-                          @click.stop="moverTema(unidad, tema, 'down')" :disable="index === unidad.temas.length - 1">
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="arrow_downward"
+                          color="grey-7"
+                          size="sm"
+                          @click.stop="moverTema(unidad, tema, 'down')"
+                          :disable="index === unidad.temas.length - 1"
+                        >
                           <q-tooltip>Bajar</q-tooltip>
                         </q-btn>
 
-                        <q-btn flat round dense icon="edit" color="primary" size="sm"
-                          @click.stop="abrirDialogoTema(unidad, tema)">
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="edit"
+                          color="primary"
+                          size="sm"
+                          @click.stop="abrirDialogoTema(unidad, tema)"
+                        >
                           <q-tooltip>Editar Título</q-tooltip>
                         </q-btn>
-                        <q-btn flat round dense icon="delete" color="red" size="sm"
-                          @click.stop="confirmarEliminarTema(tema)">
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="delete"
+                          color="red"
+                          size="sm"
+                          @click.stop="confirmarEliminarTema(tema)"
+                        >
                           <q-tooltip>Eliminar Tema</q-tooltip>
                         </q-btn>
                       </template>
@@ -654,8 +1147,14 @@
                 </q-item>
 
                 <div class="row justify-center q-mb-md" v-if="puedeEditarPlanificacion">
-                  <q-btn outline color="primary" icon="add" label="Nuevo Tema" size="sm"
-                    @click.stop="abrirDialogoTema(unidad)" />
+                  <q-btn
+                    outline
+                    color="primary"
+                    icon="add"
+                    label="Nuevo Tema"
+                    size="sm"
+                    @click.stop="abrirDialogoTema(unidad)"
+                  />
                 </div>
               </q-list>
             </q-expansion-item>
@@ -674,7 +1173,7 @@
 
     <!-- Dialog Bibliografía -->
     <q-dialog v-model="dialogBibliografia" persistent>
-      <q-card style="width: 550px; max-width: 95vw; border-radius: 16px;">
+      <q-card style="width: 550px; max-width: 95vw; border-radius: 16px">
         <div class="dialog-header">
           <div class="dialog-header-title">
             <q-icon name="auto_stories" size="28px" />
@@ -684,38 +1183,84 @@
         <q-card-section class="q-pt-lg">
           <q-form class="q-gutter-y-md">
             <q-input v-model="formBiblio.titulo" label="Título" outlined dense class="full-width" />
-            <q-input v-model="formBiblio.autor" label="Autor(es)" outlined dense class="full-width" />
+            <q-input
+              v-model="formBiblio.autor"
+              label="Autor(es)"
+              outlined
+              dense
+              class="full-width"
+            />
 
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <q-input v-model="formBiblio.editorial" label="Editorial" outlined dense class="full-width" />
+                <q-input
+                  v-model="formBiblio.editorial"
+                  label="Editorial"
+                  outlined
+                  dense
+                  class="full-width"
+                />
               </div>
               <div class="col-6">
-                <q-input v-model="formBiblio.edicion" label="Edición" outlined dense class="full-width" />
+                <q-input
+                  v-model="formBiblio.edicion"
+                  label="Edición"
+                  outlined
+                  dense
+                  class="full-width"
+                />
               </div>
             </div>
 
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <q-input v-model.number="formBiblio.anio" label="Año" type="number" outlined dense class="full-width" />
+                <q-input
+                  v-model.number="formBiblio.anio"
+                  label="Año"
+                  type="number"
+                  outlined
+                  dense
+                  class="full-width"
+                />
               </div>
               <div class="col-6">
-                <q-select v-model="formBiblio.tipo" label="Tipo"
-                  :options="[{ label: 'Principal', value: 'principal' }, { label: 'Complementario', value: 'complementario' }]"
-                  emit-value map-options outlined dense class="full-width" />
+                <q-select
+                  v-model="formBiblio.tipo"
+                  label="Tipo"
+                  :options="[
+                    { label: 'Principal', value: 'principal' },
+                    { label: 'Complementario', value: 'complementario' },
+                  ]"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  class="full-width"
+                />
               </div>
             </div>
 
             <div class="row q-col-gutter-md">
               <div class="col-12">
-                <q-input v-model="formBiblio.isbn" label="ISBN (Opcional)" outlined dense class="full-width" />
+                <q-input
+                  v-model="formBiblio.isbn"
+                  label="ISBN (Opcional)"
+                  outlined
+                  dense
+                  class="full-width"
+                />
               </div>
             </div>
 
             <div class="row q-col-gutter-md">
               <div class="col-12">
-                <q-input v-model="formBiblio.paginas" label="Páginas (ej: 100-150) (Opcional)" outlined dense
-                  class="full-width" />
+                <q-input
+                  v-model="formBiblio.paginas"
+                  label="Páginas (ej: 100-150) (Opcional)"
+                  outlined
+                  dense
+                  class="full-width"
+                />
               </div>
             </div>
           </q-form>
@@ -729,7 +1274,7 @@
 
     <!-- Dialog Importar Word -->
     <q-dialog v-model="dialogImportar">
-      <q-card style="width: 100%; max-width: 500px; border-radius: 12px;">
+      <q-card style="width: 100%; max-width: 500px; border-radius: 12px">
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6 text-weight-bold row items-center">
             <q-icon name="upload_file" color="teal" class="q-mr-sm" size="28px" />
@@ -746,17 +1291,24 @@
             </template>
             <div class="text-weight-bold">¡Atención! Utilice la Plantilla Oficial</div>
             <div>
-              Esta función requiere estrictamente el <strong>Documento Word Oficial de Programa de Asignatura</strong>
+              Esta función requiere estrictamente el
+              <strong>Documento Word Oficial de Programa de Asignatura</strong>
               proporcionado por Sede Central.
               <br />
               <br />
-              <strong>Nota:</strong> Otros formatos o documentos modificados estructuralmente no serán procesados
-              correctamente.
+              <strong>Nota:</strong> Otros formatos o documentos modificados estructuralmente no
+              serán procesados correctamente.
             </div>
           </q-banner>
 
-          <q-file v-model="archivoImportar" label="Seleccionar Plantilla Oficial Word (.docx)" outlined dense
-            accept=".docx, .doc" counter>
+          <q-file
+            v-model="archivoImportar"
+            label="Seleccionar Plantilla Oficial Word (.docx)"
+            outlined
+            dense
+            accept=".docx, .doc"
+            counter
+          >
             <template v-slot:prepend>
               <q-icon name="attach_file" />
             </template>
@@ -765,8 +1317,13 @@
           <div class="q-mt-md q-gutter-sm bg-grey-1 q-pa-sm rounded-borders">
             <div class="text-subtitle2 text-weight-bold q-mb-xs">¿Qué desea importar?</div>
             <div class="row">
-              <q-checkbox class="col-12" v-model="importOpciones.unidades"
-                label="Programa Analítico (Unidades, Temas y Contenidos)" dense color="teal" />
+              <q-checkbox
+                class="col-12"
+                v-model="importOpciones.unidades"
+                label="Programa Analítico (Unidades, Temas y Contenidos)"
+                dense
+                color="teal"
+              />
             </div>
             <div class="text-caption text-grey-7 q-pl-sm">
               * La bibliografía se actualizará automáticamente con el Programa Analítico.
@@ -776,15 +1333,22 @@
 
         <q-card-actions align="right" class="q-pt-none q-pb-md q-pr-md">
           <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-          <q-btn unelevated label="Procesar Importación" color="teal" :loading="store.loading"
-            :disable="!archivoImportar" @click="procesarImportacion" no-caps />
+          <q-btn
+            unelevated
+            label="Procesar Importación"
+            color="teal"
+            :loading="store.loading"
+            :disable="!archivoImportar"
+            @click="procesarImportacion"
+            no-caps
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
     <!-- Dialog Importar Excel -->
     <q-dialog v-model="dialogImportarExcel">
-      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px;">
+      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px">
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6 text-weight-bold row items-center">
             <q-icon name="table_chart" color="green" class="q-mr-sm" size="28px" />
@@ -801,35 +1365,47 @@
             </template>
             <div class="text-weight-bold">Importación de Metadatos</div>
             <div>
-              Esta función carga los datos generales del programa (Justificación, Objetivos, Competencias, Metodología,
-              etc.) desde un archivo Excel.
+              Esta función carga los datos generales del programa (Justificación, Objetivos,
+              Competencias, Metodología, etc.) desde un archivo Excel.
             </div>
           </q-banner>
 
-          <q-file v-model="archivoImportarExcel" label="Seleccionar Archivo Excel (.xlsx, .xls)" outlined dense
-            accept=".xlsx, .xls" counter>
+          <q-file
+            v-model="archivoImportarExcel"
+            label="Seleccionar Archivo Excel (.xlsx, .xls)"
+            outlined
+            dense
+            accept=".xlsx, .xls"
+            counter
+          >
             <template v-slot:prepend>
               <q-icon name="attach_file" />
             </template>
           </q-file>
 
           <div class="q-mt-md text-caption text-grey-7 italic">
-            * El archivo debe contener las etiquetas exactas en la primera columna (ej: Modalidad, Justificación,
-            Propósito
-            General, etc.)
+            * El archivo debe contener las etiquetas exactas en la primera columna (ej: Modalidad,
+            Justificación, Propósito General, etc.)
           </div>
         </q-card-section>
 
         <q-card-actions align="right" class="q-pt-none q-pb-md q-pr-md">
           <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-          <q-btn unelevated label="Subir e Importar" color="green" :loading="store.loading"
-            :disable="!archivoImportarExcel" @click="procesarImportacionExcel" no-caps />
+          <q-btn
+            unelevated
+            label="Subir e Importar"
+            color="green"
+            :loading="store.loading"
+            :disable="!archivoImportarExcel"
+            @click="procesarImportacionExcel"
+            no-caps
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
     <!-- Dialog Importar Plan de Clase -->
     <q-dialog v-model="dialogImportarPlanClase">
-      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px;">
+      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px">
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6 text-weight-bold row items-center">
             <q-icon name="table_view" color="purple" class="q-mr-sm" size="28px" />
@@ -846,34 +1422,48 @@
             </template>
             <div class="text-weight-bold">Importación de Unidades y Temas</div>
             <div>
-              Esta función carga la planificación detallada (unidades, temas, contenidos, estrategias) desde un archivo
-              Excel.
+              Esta función carga la planificación detallada (unidades, temas, contenidos,
+              estrategias) desde un archivo Excel.
             </div>
           </q-banner>
 
-          <q-file v-model="archivoImportarPlanClase" label="Seleccionar Archivo Excel (.xlsx, .xls)" outlined dense
-            accept=".xlsx, .xls" counter>
+          <q-file
+            v-model="archivoImportarPlanClase"
+            label="Seleccionar Archivo Excel (.xlsx, .xls)"
+            outlined
+            dense
+            accept=".xlsx, .xls"
+            counter
+          >
             <template v-slot:prepend>
               <q-icon name="attach_file" />
             </template>
           </q-file>
 
           <div class="q-mt-md text-caption text-grey-7 italic">
-            * Se espera que el archivo contenga hojas con el formato de Avance Programático o Plan de Clase.
+            * Se espera que el archivo contenga hojas con el formato de Avance Programático o Plan
+            de Clase.
           </div>
         </q-card-section>
 
         <q-card-actions align="right" class="q-pt-none q-pb-md q-pr-md">
           <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-          <q-btn unelevated label="Subir e Importar" color="purple" :loading="store.loading"
-            :disable="!archivoImportarPlanClase" @click="procesarImportacionPlanClase" no-caps />
+          <q-btn
+            unelevated
+            label="Subir e Importar"
+            color="purple"
+            :loading="store.loading"
+            :disable="!archivoImportarPlanClase"
+            @click="procesarImportacionPlanClase"
+            no-caps
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
     <!-- Dialog Importar Planificación Personal -->
     <q-dialog v-model="dialogImportarPersonal">
-      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px;">
+      <q-card style="width: 500px; max-width: 95vw; border-radius: 12px">
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6 text-weight-bold row items-center">
             <q-icon name="person_add" color="blue" class="q-mr-sm" size="28px" />
@@ -890,51 +1480,86 @@
             </template>
             <div class="text-weight-bold">Importación de Datos Propios</div>
             <div class="q-mt-xs">
-              Esta función permite cargar sus estrategias, evaluaciones y secuencia didáctica desde Excel.
+              Esta función permite cargar sus estrategias, evaluaciones y secuencia didáctica desde
+              Excel.
               <strong>Los datos existentes para sus temas serán actualizados.</strong>
             </div>
           </q-banner>
 
           <div class="q-mb-md">
-            <q-btn flat color="primary" icon="download" label="Descargar Plantilla Excel" 
-              class="full-width" @click="descargarPlantillaPersonal" no-caps />
+            <q-btn
+              flat
+              color="primary"
+              icon="download"
+              label="Descargar Plantilla Excel"
+              class="full-width"
+              @click="descargarPlantillaPersonal"
+              no-caps
+            />
           </div>
 
-          <q-file v-model="archivoImportarPersonal" label="Seleccionar Plantilla Completa (.xlsx)" outlined dense
-            accept=".xlsx" counter>
+          <q-file
+            v-model="archivoImportarPersonal"
+            label="Seleccionar Plantilla Completa (.xlsx)"
+            outlined
+            dense
+            accept=".xlsx"
+            counter
+          >
             <template v-slot:prepend>
               <q-icon name="attach_file" />
             </template>
           </q-file>
 
           <div class="q-mt-md text-caption text-grey-7 italic">
-            * El sistema identifica los temas por el número de Unidad y Tema especificado en el Excel.
+            * El sistema identifica los temas por el número de Unidad y Tema especificado en el
+            Excel.
           </div>
         </q-card-section>
 
         <q-card-actions align="right" class="q-pt-none q-pb-md q-pr-md">
           <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-          <q-btn unelevated label="Subir e Importar" color="primary" :loading="importandoPersonal"
-            :disable="!archivoImportarPersonal" @click="procesarImportacionPersonal" no-caps />
+          <q-btn
+            unelevated
+            label="Subir e Importar"
+            color="primary"
+            :loading="importandoPersonal"
+            :disable="!archivoImportarPersonal"
+            @click="procesarImportacionPersonal"
+            no-caps
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
     <!-- Dialog Unidad -->
     <q-dialog v-model="dialogUnidad" persistent>
-      <q-card style="width: 400px; max-width: 95vw;">
+      <q-card style="width: 400px; max-width: 95vw">
         <q-card-section>
           <div class="text-h6">{{ editandoUnidad ? 'Editar Unidad' : 'Nueva Unidad' }}</div>
         </q-card-section>
 
         <q-card-section>
           <q-form @submit="guardarUnidad" class="q-gutter-md">
-            <q-input v-model.number="formUnidad.numero" label="Número" type="number" outlined dense />
+            <q-input
+              v-model.number="formUnidad.numero"
+              label="Número"
+              type="number"
+              outlined
+              dense
+            />
             <q-input v-model="formUnidad.titulo" label="Título" outlined dense autofocus />
 
             <div class="row justify-end q-gutter-sm q-mt-md">
               <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-              <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps />
+              <q-btn
+                unelevated
+                type="submit"
+                label="Guardar"
+                color="primary"
+                :loading="store.loading"
+                no-caps
+              />
             </div>
           </q-form>
         </q-card-section>
@@ -943,7 +1568,7 @@
 
     <!-- Dialog Tema -->
     <q-dialog v-model="dialogTema" persistent>
-      <q-card style="width: 600px; max-width: 95vw;">
+      <q-card style="width: 600px; max-width: 95vw">
         <q-card-section>
           <div class="text-h6">{{ editandoTema ? 'Editar Tema' : 'Nuevo Tema' }}</div>
           <div class="text-caption text-grey" v-if="unidadSeleccionada">
@@ -953,8 +1578,14 @@
 
         <q-card-section>
           <q-form @submit="guardarTema" class="q-gutter-md">
-            <q-input v-model="formTema.titulo" label="Título del Tema" outlined dense autofocus
-              :rules="[val => !!val || 'El título es obligatorio']" />
+            <q-input
+              v-model="formTema.titulo"
+              label="Título del Tema"
+              outlined
+              dense
+              autofocus
+              :rules="[(val) => !!val || 'El título es obligatorio']"
+            />
 
             <!-- Lista de Contenidos -->
             <div class="contenido-list">
@@ -973,13 +1604,33 @@
 
               <!-- Lista de items existentes -->
               <div v-if="formTema.contenido_items?.length" class="q-gutter-sm q-mb-md">
-                <div v-for="(item, index) in formTema.contenido_items" :key="index" class="row items-start q-gutter-sm">
+                <div
+                  v-for="(item, index) in formTema.contenido_items"
+                  :key="index"
+                  class="row items-start q-gutter-sm"
+                >
                   <q-badge color="primary" :label="index + 1" class="q-mt-sm" />
-                  <q-input v-model="formTema.contenido_items[index]" outlined dense class="col" type="textarea" rows="2"
-                    autogrow placeholder="Ej: Principios básicos, definiciones..."
-                    :rules="[val => !!val?.trim() || 'El contenido no puede estar vacío']" />
-                  <q-btn flat round dense icon="delete" color="red" size="sm" class="q-mt-sm"
-                    @click="eliminarContenidoItem(index)">
+                  <q-input
+                    v-model="formTema.contenido_items[index]"
+                    outlined
+                    dense
+                    class="col"
+                    type="textarea"
+                    rows="2"
+                    autogrow
+                    placeholder="Ej: Principios básicos, definiciones..."
+                    :rules="[(val) => !!val?.trim() || 'El contenido no puede estar vacío']"
+                  />
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="delete"
+                    color="red"
+                    size="sm"
+                    class="q-mt-sm"
+                    @click="eliminarContenidoItem(index)"
+                  >
                     <q-tooltip>Eliminar item</q-tooltip>
                   </q-btn>
                 </div>
@@ -993,14 +1644,28 @@
               </div>
 
               <!-- Botón para agregar nuevo item -->
-              <q-btn outline color="primary" icon="add" label="Agregar Punto" size="sm" @click="agregarContenidoItem"
-                no-caps />
+              <q-btn
+                outline
+                color="primary"
+                icon="add"
+                label="Agregar Punto"
+                size="sm"
+                @click="agregarContenidoItem"
+                no-caps
+              />
             </div>
 
             <div class="row justify-end q-gutter-sm q-mt-md">
               <q-btn flat label="Cancelar" color="grey" v-close-popup no-caps />
-              <q-btn unelevated type="submit" label="Guardar" color="primary" :loading="store.loading" no-caps
-                :disable="!formTema.contenido_items?.length" />
+              <q-btn
+                unelevated
+                type="submit"
+                label="Guardar"
+                color="primary"
+                :loading="store.loading"
+                no-caps
+                :disable="!formTema.contenido_items?.length"
+              />
             </div>
           </q-form>
         </q-card-section>
@@ -1010,7 +1675,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -1045,11 +1710,55 @@ const authStore = useAuthStore()
 
 // Estado
 // Leer el tab inicial desde los query params (para volver al tab correcto desde TemaEditPage)
-const tabInicial = route.query.tab && ['datos', 'programa', 'bibliografia', 'unidades', 'cronograma'].includes(route.query.tab)
-  ? route.query.tab
-  : 'datos'
+const tabInicial =
+  route.query.tab &&
+  ['datos', 'programa', 'bibliografia', 'unidades', 'cronograma'].includes(route.query.tab)
+    ? route.query.tab
+    : 'datos'
 const tabActual = ref(tabInicial)
 const asignatura = computed(() => store.asignaturaActual)
+
+// ── Medición real de tabs para alinear el progress-strip ──
+const tabsRef = ref(null)
+const psWidths = ref({ pac: '60%', uni: '26%', cron: '14%' })
+
+function measureTabWidths() {
+  nextTick(() => {
+    const el = tabsRef.value?.$el
+    if (!el) return
+    const tabs = el.querySelectorAll('.q-tab')
+    if (tabs.length < 5) return
+    const w = (i) => tabs[i].getBoundingClientRect().width
+    const pacW = w(0) + w(1) + w(2)
+    const uniW = w(3)
+    const cronW = w(4)
+    const total = pacW + uniW + cronW
+    if (total === 0) return
+    psWidths.value = {
+      pac: `${pacW}px`,
+      uni: `${uniW}px`,
+      cron: `${cronW}px`,
+    }
+  })
+}
+
+onMounted(measureTabWidths)
+
+// ── Plan de Clase: calculado igual que por-unidad (garantiza coherencia) ──
+const planClasePctLocal = computed(() => {
+  const unidades = asignatura.value?.unidades?.filter((u) => u.temas?.length) ?? []
+  if (!unidades.length) return 0
+  const suma = unidades.reduce((acc, u) => acc + calcularProgresoUnidad(u), 0)
+  return Math.round(suma / unidades.length)
+})
+
+const planClaseColor = computed(() =>
+  planClasePctLocal.value >= 80
+    ? 'positive'
+    : planClasePctLocal.value >= 50
+      ? 'warning'
+      : 'negative',
+)
 
 // Watcher para redirigir a PlanificacionPage cuando se selecciona el tab cronograma
 watch(tabActual, (newTab) => {
@@ -1057,7 +1766,7 @@ watch(tabActual, (newTab) => {
     // Redirigir a la página de planificación
     router.push({
       path: `/documentacion/${route.params.id}/planificacion`,
-      query: route.query
+      query: route.query,
     })
     // Resetear el tab al anterior para evitar estado inconsistente
     tabActual.value = 'unidades'
@@ -1069,14 +1778,11 @@ const saveStatus = ref('idle') // 'idle' | 'saving' | 'saved' | 'error'
 let dataLoaded = false // Flag para evitar guardar durante carga inicial
 let lastSavedSnapshot = '' // Snapshot del último estado guardado
 
-
 // Opciones de Importación
 const importOpciones = ref({
   datos: false,
-  unidades: true
+  unidades: true,
 })
-
-
 
 // --- CRUD Unidades & Temas ---
 const dialogUnidad = ref(false)
@@ -1089,9 +1795,9 @@ const unidadSeleccionada = ref(null)
 const formTema = ref({
   id: null,
   titulo: '',
-  contenido_items: [],  // Changed from descripcion to array
+  contenido_items: [], // Changed from descripcion to array
   horas_teoricas: 0,
-  horas_practicas: 0
+  horas_practicas: 0,
 })
 
 // Unidades
@@ -1128,7 +1834,7 @@ function confirmarEliminarUnidad(unidad) {
     title: 'Eliminar Unidad',
     message: `¿Estás seguro de eliminar la Unidad ${unidad.numero}: ${unidad.titulo}? Se eliminarán también sus temas.`,
     cancel: true,
-    persistent: true
+    persistent: true,
   }).onOk(async () => {
     try {
       await store.deleteUnidad(unidad.id)
@@ -1150,28 +1856,29 @@ function abrirDialogoTema(unidad, tema = null) {
       // Convertir descripcion (texto libre) a array de items
       const items = tema.descripcion
         .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
 
       formTema.value = {
         ...tema,
-        contenido_items: items.length > 0 ? items : ['']
+        contenido_items: items.length > 0 ? items : [''],
       }
     } else {
       formTema.value = {
         ...tema,
-        contenido_items: tema.contenido_items && tema.contenido_items.length > 0
-          ? [...tema.contenido_items]
-          : ['']  // Al menos un item vacío
+        contenido_items:
+          tema.contenido_items && tema.contenido_items.length > 0
+            ? [...tema.contenido_items]
+            : [''], // Al menos un item vacío
       }
     }
   } else {
     formTema.value = {
       id: null,
       titulo: '',
-      contenido_items: [''],  // Iniciar con un item vacío
+      contenido_items: [''], // Iniciar con un item vacío
       horas_teoricas: 0,
-      horas_practicas: 0
+      horas_practicas: 0,
     }
   }
   dialogTema.value = true
@@ -1189,7 +1896,7 @@ function eliminarContenidoItem(index) {
     $q.notify({
       type: 'warning',
       message: 'Debe haber al menos un punto de contenido',
-      icon: 'warning'
+      icon: 'warning',
     })
   }
 }
@@ -1213,14 +1920,14 @@ async function guardarTema() {
 
 function confirmarEliminarTema(tema) {
   if (!tema || !tema.id) {
-    console.error("Tema inválido para eliminar:", tema)
+    console.error('Tema inválido para eliminar:', tema)
     return
   }
   $q.dialog({
     title: 'Eliminar Tema',
     message: `¿Estás seguro de eliminar el tema "${tema.titulo}"?`,
     cancel: true,
-    persistent: true
+    persistent: true,
   }).onOk(async () => {
     try {
       await store.deleteTema(tema.id)
@@ -1254,7 +1961,7 @@ const esDirectorOAdmin = computed(() => {
     ROLES.DIRECTOR_CARRERA,
     ROLES.VICERRECTOR_SEDE,
     ROLES.VICERRECTOR_NACIONAL,
-    ROLES.DIRECCION_ACADEMICA // Added explicit check
+    ROLES.DIRECCION_ACADEMICA, // Added explicit check
   ]
   return rolesPermitidos.includes(rol)
 })
@@ -1265,7 +1972,6 @@ const puedeAprobarCarpeta = computed(() => {
 })
 
 const puedeEditarPlanificacion = computed(() => {
-
   const rol = authStore.rol
   // const esCocha = usuario?.sede_id === 1 // removed specific sede constraint if desired, or keep logic
 
@@ -1273,7 +1979,14 @@ const puedeEditarPlanificacion = computed(() => {
   if (asignatura.value?.estado === 'APROBADO') return false
 
   // 2. Global Admins
-  if ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.VICERRECTOR_NACIONAL, ROLES.DIRECCION_ACADEMICA].includes(rol)) {
+  if (
+    [
+      ROLES.SUPER_ADMIN,
+      ROLES.ADMIN,
+      ROLES.VICERRECTOR_NACIONAL,
+      ROLES.DIRECCION_ACADEMICA,
+    ].includes(rol)
+  ) {
     return true
   }
 
@@ -1309,7 +2022,10 @@ async function toggleEstadoCarpeta() {
   const nuevoEstado = asignatura.value.estado === 'APROBADO' ? 'EN_PROCESO' : 'APROBADO'
   try {
     await store.cambiarEstado(asignatura.value.id, nuevoEstado)
-    $q.notify({ type: 'positive', message: `Carpeta ${nuevoEstado === 'APROBADO' ? 'Aprobada' : 'Reabierta'}` })
+    $q.notify({
+      type: 'positive',
+      message: `Carpeta ${nuevoEstado === 'APROBADO' ? 'Aprobada' : 'Reabierta'}`,
+    })
   } catch (e) {
     console.error(e)
     $q.notify({ type: 'negative', message: 'Error al cambiar estado' })
@@ -1317,12 +2033,13 @@ async function toggleEstadoCarpeta() {
 }
 
 const nombreDocenteCarpeta = computed(() => {
-  if (!asignatura.value || !asignatura.value.docentes || asignatura.value.docentes.length === 0) return null
+  if (!asignatura.value || !asignatura.value.docentes || asignatura.value.docentes.length === 0)
+    return null
 
   // 1. Si hay un ID en la URL (seleccionado previamente)
   const docenteIdParam = route.query.docente_id
   if (docenteIdParam) {
-    const docente = asignatura.value.docentes.find(d => d.id == docenteIdParam)
+    const docente = asignatura.value.docentes.find((d) => d.id == docenteIdParam)
     if (docente) return docente.nombre_completo
   }
 
@@ -1337,11 +2054,11 @@ const nombreDocenteCarpeta = computed(() => {
     const myUserId = authStore.usuarioActual?.id
 
     // Intento 1: Buscar por ID de docente
-    let me = asignatura.value.docentes.find(d => d.id == myDocenteId)
+    let me = asignatura.value.docentes.find((d) => d.id == myDocenteId)
 
     // Intento 2: Buscar por ID de usuario (si el objeto docente tiene user_id)
     if (!me && myUserId) {
-      me = asignatura.value.docentes.find(d => d.user_id == myUserId || d.usuario_id == myUserId)
+      me = asignatura.value.docentes.find((d) => d.user_id == myUserId || d.usuario_id == myUserId)
     }
 
     // Intento 3: Si no encuentro match pero SOY docente, asumimos que soy yo (Fallback visual)
@@ -1354,7 +2071,9 @@ const nombreDocenteCarpeta = computed(() => {
 
   // 4. Si hay varios, intentar filtrar por sede del usuario actual (show first match)
   if (authStore.usuarioActual?.sede_id) {
-    const matches = asignatura.value.docentes.filter(d => d.sede_id == authStore.usuarioActual.sede_id)
+    const matches = asignatura.value.docentes.filter(
+      (d) => d.sede_id == authStore.usuarioActual.sede_id,
+    )
     if (matches.length > 0) return matches[0].nombre_completo
   }
 
@@ -1367,7 +2086,7 @@ const nombreSede = computed(() => {
   if (route.query.nombre_sede) return route.query.nombre_sede
   const querySedeId = route.query.sede_id
   if (querySedeId) {
-    const s = sedesStore.sedes.find(x => x.id == querySedeId)
+    const s = sedesStore.sedes.find((x) => x.id == querySedeId)
     if (s) return s.nombre
   }
 
@@ -1387,14 +2106,14 @@ const nombreSede = computed(() => {
     // Intentar buscar la carrera que coincida con la sede del usuario (si es docente)
     if (authStore.rol === 'DOCENTE') {
       const docenteSedeId = authStore.sedeId
-      const carreraSede = asignatura.value.carreras.find(c => c.sede_id == docenteSedeId)
+      const carreraSede = asignatura.value.carreras.find((c) => c.sede_id == docenteSedeId)
       if (carreraSede?.sede?.nombre) return carreraSede.sede.nombre
     }
 
     const c = asignatura.value.carreras[0]
     if (c.sede?.nombre) return c.sede.nombre
     if (c.sede_id) {
-      const s = sedesStore.sedes.find(x => x.id == c.sede_id)
+      const s = sedesStore.sedes.find((x) => x.id == c.sede_id)
       return s ? s.nombre : null
     }
   }
@@ -1430,13 +2149,11 @@ const codigoVisual = computed(() => {
   return asignatura.value.codigo.replace(/-[A-Z]{3}-[A-Z0-9-]+$/, '')
 })
 
-
-
 // Computed para bibliografías separadas por tipo
 // Bibliografías del Word (tipos en español)
 const bibliografiasBasicas = computed(() => {
   if (!asignatura.value?.bibliografias) return []
-  return asignatura.value.bibliografias.filter(b => {
+  return asignatura.value.bibliografias.filter((b) => {
     if (!b.tipo) return false
     const tipo = b.tipo.toUpperCase()
     return tipo === 'BASICA' || tipo === 'PRINCIPAL'
@@ -1445,7 +2162,7 @@ const bibliografiasBasicas = computed(() => {
 
 const bibliografiasComplementarias = computed(() => {
   if (!asignatura.value?.bibliografias) return []
-  return asignatura.value.bibliografias.filter(b => {
+  return asignatura.value.bibliografias.filter((b) => {
     if (!b.tipo) return false
     const tipo = b.tipo.toUpperCase()
     return tipo === 'COMPLEMENTARIA' || tipo === 'COMPLEMENTARIO'
@@ -1455,7 +2172,7 @@ const bibliografiasComplementarias = computed(() => {
 // Bibliografías de la API Externa (Programa Analítico - tipos en inglés)
 const bibliografiasProgramaAnalitico = computed(() => {
   if (!asignatura.value?.bibliografias) return []
-  return asignatura.value.bibliografias.filter(b => {
+  return asignatura.value.bibliografias.filter((b) => {
     if (!b.tipo) return false
     const tipo = b.tipo.toUpperCase()
     return tipo === 'BASIC' || tipo === 'COMPLEMENTARY'
@@ -1467,30 +2184,34 @@ const datosOriginales = ref({})
 const formDatos = ref({})
 
 // --- Cálculo Automático Reactivado (Basado en Horas y Sesiones) ---
-watch(() => [
-  formDatos.value.sesiones_semanales_teoricas,
-  formDatos.value.sesiones_semanales_practicas,
-  formDatos.value.horas_teoricas,
-  formDatos.value.horas_practicas
-], ([teoricasSem, practicasSem, hTeo, hPrac]) => {
-  // 1. Calculate Total Weekly Sessions
-  formDatos.value.sesiones_semanales = (Number(teoricasSem) || 0) + (Number(practicasSem) || 0)
+watch(
+  () => [
+    formDatos.value.sesiones_semanales_teoricas,
+    formDatos.value.sesiones_semanales_practicas,
+    formDatos.value.horas_teoricas,
+    formDatos.value.horas_practicas,
+  ],
+  ([teoricasSem, practicasSem, hTeo, hPrac]) => {
+    // 1. Calculate Total Weekly Sessions
+    formDatos.value.sesiones_semanales = (Number(teoricasSem) || 0) + (Number(practicasSem) || 0)
 
-  // 2. Update Carga Horaria Total
-  // Formula: (HT * 20) + (HP * 20)
-  const ht = Number(hTeo) || 0
-  const hp = Number(hPrac) || 0
-  formDatos.value.carga_horaria_total = (ht * 20) + (hp * 20)
+    // 2. Update Carga Horaria Total
+    // Formula: (HT * 20) + (HP * 20)
+    const ht = Number(hTeo) || 0
+    const hp = Number(hPrac) || 0
+    formDatos.value.carga_horaria_total = ht * 20 + hp * 20
 
-  // 3. Format visual detail (Grey Box in Row 5)
-  let detalle = ''
-  if (ht > 0) detalle += `${ht} T`
-  if (hp > 0) {
-    if (detalle) detalle += ' / '
-    detalle += `${hp} P`
-  }
-  formDatos.value.horas_detalle = detalle
-}, { immediate: true })
+    // 3. Format visual detail (Grey Box in Row 5)
+    let detalle = ''
+    if (ht > 0) detalle += `${ht} T`
+    if (hp > 0) {
+      if (detalle) detalle += ' / '
+      detalle += `${hp} P`
+    }
+    formDatos.value.horas_detalle = detalle
+  },
+  { immediate: true },
+)
 const formPrograma = ref({
   competencia_global: '',
   competencia_unidad: '',
@@ -1499,16 +2220,12 @@ const formPrograma = ref({
   metodologia_simulacion: '',
   metodologia_hospital: '',
   reglamento_normativa: [],
-  sistema_evaluacion: ''
+  sistema_evaluacion: '',
 })
 const formBiblio = ref({})
 const dialogBibliografia = ref(false)
 const editandoBiblio = ref(false)
 const biblioSeleccionada = ref(null)
-
-
-
-
 
 // Importación
 const dialogImportar = ref(false)
@@ -1531,7 +2248,7 @@ const puedeImportar = computed(() => {
   if (asignatura.value?.carrera?.sede_id == 1) esSedeCochabamba = true
 
   // Check 'carreras' array
-  if (asignatura.value?.carreras?.some(c => c.sede_id == 1)) esSedeCochabamba = true
+  if (asignatura.value?.carreras?.some((c) => c.sede_id == 1)) esSedeCochabamba = true
 
   // Check direct prop
   if (asignatura.value?.sede_id == 1) esSedeCochabamba = true
@@ -1553,7 +2270,7 @@ const puedeImportarPersonal = computed(() => {
   // Permitir a docentes si están asignados a la asignatura (independiente de sede)
   if (authStore.rol === ROLES.DOCENTE) {
     const myDocenteId = authStore.usuarioActual?.docente?.id || authStore.usuarioActual?.docente_id
-    const esAsignado = asignatura.value?.docentes?.some(d => d.id == myDocenteId)
+    const esAsignado = asignatura.value?.docentes?.some((d) => d.id == myDocenteId)
     return esAsignado || false
   }
 
@@ -1573,21 +2290,21 @@ async function procesarImportacion() {
     const opcionesEnvio = {
       datos: false,
       unidades: true,
-      bibliografia: false
+      bibliografia: false,
     }
 
     await store.importarWord(asignatura.value.id, archivoImportar.value, opcionesEnvio)
     $q.notify({
       type: 'positive',
       message: 'Programa Analítico importado con éxito.',
-      icon: 'check_circle'
+      icon: 'check_circle',
     })
     dialogImportar.value = false
   } catch (err) {
     $q.notify({
       type: 'negative',
       message: 'Error al importar Word: ' + (err.response?.data?.error || err.message),
-      position: 'top'
+      position: 'top',
     })
   }
 }
@@ -1608,14 +2325,14 @@ async function procesarImportacionExcel() {
     $q.notify({
       type: 'positive',
       message: 'Programa de Asignatura actualizado desde Excel.',
-      icon: 'check_circle'
+      icon: 'check_circle',
     })
     dialogImportarExcel.value = false
   } catch (err) {
     $q.notify({
       type: 'negative',
       message: 'Error al importar Excel: ' + (err.response?.data?.error || err.message),
-      position: 'top'
+      position: 'top',
     })
   }
 }
@@ -1635,14 +2352,14 @@ async function procesarImportacionPlanClase() {
     $q.notify({
       type: 'positive',
       message: 'Plan de Clase importado con éxito (Unidades y Temas actualizados).',
-      icon: 'check_circle'
+      icon: 'check_circle',
     })
     dialogImportarPlanClase.value = false
   } catch (err) {
     $q.notify({
       type: 'negative',
       message: 'Error al importar Plan de Clase: ' + (err.response?.data?.error || err.message),
-      position: 'top'
+      position: 'top',
     })
   }
 }
@@ -1663,10 +2380,10 @@ async function procesarImportacionPersonal() {
   importandoPersonal.value = true
   try {
     const res = await store.importarPersonal(asignatura.value.id, archivoImportarPersonal.value)
-    
+
     // Mostrar estadísticas si están disponibles
     const stats = res.data?.stats
-    const msg = stats 
+    const msg = stats
       ? `Proceso finalizado. Actualizados: ${stats.updated}, Errores: ${stats.errors}`
       : 'Planificación personal importada con éxito.'
 
@@ -1675,7 +2392,7 @@ async function procesarImportacionPersonal() {
       message: msg,
       icon: stats?.errors > 0 ? 'warning' : 'check_circle',
       multiLine: true,
-      actions: [{ label: 'Cerrar', color: 'white' }]
+      actions: [{ label: 'Cerrar', color: 'white' }],
     })
 
     if (res.data?.errors?.length > 0) {
@@ -1686,8 +2403,9 @@ async function procesarImportacionPersonal() {
   } catch (err) {
     $q.notify({
       type: 'negative',
-      message: 'Error al importar Planificación Personal: ' + (err.response?.data?.error || err.message),
-      position: 'top'
+      message:
+        'Error al importar Planificación Personal: ' + (err.response?.data?.error || err.message),
+      position: 'top',
     })
   } finally {
     importandoPersonal.value = false
@@ -1696,18 +2414,25 @@ async function procesarImportacionPersonal() {
 
 const breadcrumbInfo = computed(() => {
   const rol = authStore.rol
-  const rolesDirectivos = ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER ADMIN']
+  const rolesDirectivos = [
+    'DIRECTOR_CARRERA',
+    'DIRECCION_ACADEMICA',
+    'VICERRECTOR_SEDE',
+    'VICERRECTOR_NACIONAL',
+    'ADMIN',
+    'SUPER ADMIN',
+  ]
 
   if (rolesDirectivos.includes(rol)) {
     return {
       label: 'Plan de Estudios',
-      to: '/director/asignaturas'
+      to: '/director/asignaturas',
     }
   }
 
   return {
     label: 'Documentación',
-    to: '/documentacion'
+    to: '/documentacion',
   }
 })
 
@@ -1722,12 +2447,15 @@ onMounted(() => {
   }
 
   // Watch for query param changes
-  watch(() => route.query.docente_id, (newId) => {
-    const id = parseInt(route.params.id)
-    const params = {}
-    if (newId) params.docente_id = newId
-    store.setAsignaturaActual(id, params)
-  })
+  watch(
+    () => route.query.docente_id,
+    (newId) => {
+      const id = parseInt(route.params.id)
+      const params = {}
+      if (newId) params.docente_id = newId
+      store.setAsignaturaActual(id, params)
+    },
+  )
 
   // Garantizar que existen sedes cargadas para resolver IDs si es necesario
   if (sedesStore.sedes.length === 0) {
@@ -1760,7 +2488,6 @@ function cargarFormDatos() {
   // Values from DB/API
   // hTeoricas and hPracticas removed as they are no longer used for inference
 
-
   formDatos.value = {
     codigo: asignatura.value.codigo,
     sigla: asignatura.value.sigla,
@@ -1784,13 +2511,13 @@ function cargarFormDatos() {
     carga_horaria_total: asignatura.value.carga_horaria_total || 0,
     requisitos: asignatura.value.requisitos || '',
     horas_detalle: '', // Se autocalcula o carga abajo
-    sesiones_semanales: (sTeoricas + sPracticas),
+    sesiones_semanales: sTeoricas + sPracticas,
     sesiones_semanales_teoricas: sTeoricas,
     sesiones_semanales_practicas: sPracticas,
     // Docente info
     docente_formacion: asignatura.value.docente_formacion || '',
     docente_telefono: asignatura.value.docente_telefono || '',
-    docente_email: asignatura.value.docente_email || ''
+    docente_email: asignatura.value.docente_email || '',
   }
 
   // Lógica para priorizar datos del DOCENTE actual (Perfil) sobre los datos guardados en la asignatura
@@ -1817,7 +2544,7 @@ function cargarFormDatos() {
   const ht = Number(asignatura.value.horas_teoricas) || 0
   const hp = Number(asignatura.value.horas_practicas) || 0
 
-  formDatos.value.carga_horaria_total = (ht * 20) + (hp * 20)
+  formDatos.value.carga_horaria_total = ht * 20 + hp * 20
 
   let detalle = ''
   if (ht > 0) detalle += `${ht} T`
@@ -1840,9 +2567,10 @@ function cargarFormDatos() {
     if (Array.isArray(elementosRaw)) {
       elementosArray = elementosRaw
     } else if (typeof elementosRaw === 'string') {
-      elementosArray = elementosRaw.split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
+      elementosArray = elementosRaw
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
     }
   }
   // Si no hay elementos, inicializar con uno vacío para la UI
@@ -1856,19 +2584,26 @@ function cargarFormDatos() {
     metodologia_simulacion: met.simulacion || '',
     metodologia_hospital: met.hospital || '',
     reglamento_normativa: {
-      clase: typeof asignatura.value.reglamento_normativa === 'object' && !Array.isArray(asignatura.value.reglamento_normativa)
-        ? (asignatura.value.reglamento_normativa?.clase || '')
-        : (Array.isArray(asignatura.value.reglamento_normativa) ? asignatura.value.reglamento_normativa.join('\n') : (asignatura.value.reglamento_normativa || '')),
-      laboratorio: asignatura.value.reglamento_normativa?.laboratorio || ''
+      clase:
+        typeof asignatura.value.reglamento_normativa === 'object' &&
+        !Array.isArray(asignatura.value.reglamento_normativa)
+          ? asignatura.value.reglamento_normativa?.clase || ''
+          : Array.isArray(asignatura.value.reglamento_normativa)
+            ? asignatura.value.reglamento_normativa.join('\n')
+            : asignatura.value.reglamento_normativa || '',
+      laboratorio: asignatura.value.reglamento_normativa?.laboratorio || '',
     },
     sistema_evaluacion: {
-      intro: typeof asignatura.value.sistema_evaluacion === 'object' ? (asignatura.value.sistema_evaluacion?.intro || '') : (asignatura.value.sistema_evaluacion || ''),
+      intro:
+        typeof asignatura.value.sistema_evaluacion === 'object'
+          ? asignatura.value.sistema_evaluacion?.intro || ''
+          : asignatura.value.sistema_evaluacion || '',
       diagnostica: asignatura.value.sistema_evaluacion?.diagnostica || '',
       formativa: asignatura.value.sistema_evaluacion?.formativa || '',
       sumativa: asignatura.value.sistema_evaluacion?.sumativa || '',
       ponderacion: asignatura.value.sistema_evaluacion?.ponderacion || '',
-      final: asignatura.value.sistema_evaluacion?.final || ''
-    }
+      final: asignatura.value.sistema_evaluacion?.final || '',
+    },
   }
 
   // Inicializar snapshot DESPUÉS de cargar todos los datos
@@ -1901,7 +2636,7 @@ watchDebounced(
       saveStatus.value = 'error'
     }
   },
-  { debounce: 2000, maxWait: 10000 }
+  { debounce: 2000, maxWait: 10000 },
 )
 
 // Función interna de guardado (sin notificaciones)
@@ -1910,14 +2645,14 @@ async function guardadoInterno() {
   if (asignatura.value?.unidades) {
     formPrograma.value.elementos_competencia = asignatura.value.unidades
       .sort((a, b) => a.numero - b.numero)
-      .map(u => u.elemento_competencia || '')
+      .map((u) => u.elemento_competencia || '')
   }
 
   // Estructurar la metodología para el backend
   const metodologia_general = {
     aula: formPrograma.value.metodologia_aula,
     simulacion: formPrograma.value.metodologia_simulacion,
-    hospital: formPrograma.value.metodologia_hospital
+    hospital: formPrograma.value.metodologia_hospital,
   }
 
   // Combinar datos de ambos formularios
@@ -1927,7 +2662,7 @@ async function guardadoInterno() {
     metodologia_general,
     metodologia_ensenanza: metodologia_general,
     competencia_asignatura: formPrograma.value.competencia_unidad,
-    criterios_evaluacion: formPrograma.value.sistema_evaluacion
+    criterios_evaluacion: formPrograma.value.sistema_evaluacion,
   }
 
   // 1. Guardar en la Asignatura (Base de datos compartida)
@@ -1944,7 +2679,7 @@ async function guardadoInterno() {
       // Asumimos que el backend acepta 'docente' object nested o campos planos
       // Ajustar según la estructura de updateProfile en auth store
       telefono: formDatos.value.docente_telefono,
-      formacion: formDatos.value.docente_formacion
+      formacion: formDatos.value.docente_formacion,
     }
 
     // Intentar actualizar perfil silenciosamente (sin bloquear)
@@ -1957,8 +2692,6 @@ async function guardadoInterno() {
   }
 }
 
-
-
 // Función de guardado manual (backup, disponible para uso futuro)
 // eslint-disable-next-line no-unused-vars
 async function guardarCambios() {
@@ -1966,7 +2699,9 @@ async function guardarCambios() {
   try {
     await guardadoInterno()
     saveStatus.value = 'saved'
-    setTimeout(() => { if (saveStatus.value === 'saved') saveStatus.value = 'idle' }, 2000)
+    setTimeout(() => {
+      if (saveStatus.value === 'saved') saveStatus.value = 'idle'
+    }, 2000)
   } catch (e) {
     console.error(e)
     saveStatus.value = 'error'
@@ -2001,12 +2736,13 @@ function getTemaGlobalIndex(unidad, tema) {
 
 function guardarElementoCompetencia(unidad) {
   // Update unit with new element competence data
-  store.updateUnidad(unidad.id, { elemento_competencia: unidad.elemento_competencia })
+  store
+    .updateUnidad(unidad.id, { elemento_competencia: unidad.elemento_competencia })
     .then(() => {
       // Optional: Notify success small toast?
       // $q.notify({ type: 'positive', message: 'Elemento guardado', position: 'top', timeout: 500 })
     })
-    .catch(err => {
+    .catch((err) => {
       $q.notify({ type: 'negative', message: 'Error guardando elemento: ' + err.message })
     })
 }
@@ -2014,7 +2750,7 @@ function guardarElementoCompetencia(unidad) {
 function irATema(unidad, tema) {
   router.push({
     path: `/documentacion/${asignatura.value.id}/unidad/${unidad.id}/tema/${tema.id}`,
-    query: route.query // Sincronía: Preservar docente_id para que el Director vea los datos correctos
+    query: route.query, // Sincronía: Preservar docente_id para que el Director vea los datos correctos
   })
 }
 
@@ -2064,7 +2800,7 @@ function generarCarpetaHtml() {
   // 1. Si hay docentes asignados, suelen tener el grupo en el pivot o estructura
   if (asig.docentes && asig.docentes.length > 0) {
     // Intentar buscar el primer docente con grupo_id en pivot
-    const docConGrupo = asig.docentes.find(d => d.pivot && d.pivot.grupo_id)
+    const docConGrupo = asig.docentes.find((d) => d.pivot && d.pivot.grupo_id)
     if (docConGrupo) {
       grupoId = docConGrupo.pivot.grupo_id
     }
@@ -2087,7 +2823,7 @@ function generarCarpetaHtml() {
   if (grupoId) {
     const routeData = router.resolve({
       name: 'docente-carpeta',
-      params: { id: grupoId }
+      params: { id: grupoId },
     })
     window.open(routeData.href, '_blank')
   } else {
@@ -2095,16 +2831,12 @@ function generarCarpetaHtml() {
       type: 'warning',
       message: 'No se encontró un grupo asociado para esta asignatura/docente.',
       caption: 'Verifique que la asignatura tenga un grupo y docente asignado.',
-      timeout: 5000
+      timeout: 5000,
     })
   }
 }
 
-
 // Importar Cronograma (PAC)
-
-
-
 </script>
 
 <style scoped>
@@ -2735,5 +3467,61 @@ function generarCarpetaHtml() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* ── Progress Strip (fila de barras debajo de los tabs) ── */
+.progress-strip {
+  display: flex;
+  align-items: stretch;
+  padding: 4px 0 6px 0; /* Sin padding lateral para que pegue justo con el inicio de los tabs */
+  gap: 0;
+  background: var(--bg-card, #fff);
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+/* Sección genérica */
+.ps-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 12px;
+  flex: none; /* Forzamos tamaño con style width, NO estirar con flex */
+}
+
+/* PAC abarca 3 tabs */
+.ps-pac {
+  border-right: 1.5px solid rgba(0, 0, 0, 0.1);
+  padding-right: 16px;
+}
+
+/* Unidades abarca 1 tab (con 2 barras) */
+.ps-unidades {
+  border-right: 1.5px solid rgba(0, 0, 0, 0.1);
+  padding: 4px 16px;
+  gap: 4px;
+}
+
+/* Cronograma sin barras */
+/* Cronograma sin barras de progreso */
+
+/* Fila individual de barra + label */
+.ps-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-bar {
+  flex: 1;
+  border-radius: 4px;
+}
+
+.ps-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 100px;
+  text-align: right;
 }
 </style>

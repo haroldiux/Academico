@@ -7,7 +7,7 @@
           <q-icon name="menu_book" size="36px" color="primary" class="q-mr-sm" />
           <span class="text-gradient">Documentación Académica</span>
         </h4>
-        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
+        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary)">
           Gestiona la planificación y documentación de asignaturas
         </p>
       </div>
@@ -17,8 +17,17 @@
     <div v-if="authStore.rol !== 'DOCENTE'" class="row q-col-gutter-md q-mb-lg">
       <!-- Filtro de Sede - Solo para roles con acceso global -->
       <div v-if="!esDirectorCarrera" class="col-12 col-md-3">
-        <q-select v-model="filtros.sede" :options="sedesOptions" label="Sede" outlined dense bg-color="white" emit-value
-          map-options clearable>
+        <q-select
+          v-model="filtros.sede"
+          :options="sedesOptions"
+          label="Sede"
+          outlined
+          dense
+          bg-color="white"
+          emit-value
+          map-options
+          clearable
+        >
           <template v-slot:prepend>
             <q-icon name="apartment" />
           </template>
@@ -26,16 +35,33 @@
       </div>
       <!-- Filtro de Carrera -->
       <div :class="esDirectorCarrera ? 'col-12 col-md-4' : 'col-12 col-md-3'">
-        <q-select v-model="filtros.carrera" :options="carrerasOptions" label="Carrera" outlined dense bg-color="white"
-          emit-value map-options clearable :disable="!esDirectorCarrera && !filtros.sede">
+        <q-select
+          v-model="filtros.carrera"
+          :options="carrerasOptions"
+          label="Carrera"
+          outlined
+          dense
+          bg-color="white"
+          emit-value
+          map-options
+          clearable
+          :disable="!esDirectorCarrera && !filtros.sede"
+        >
           <template v-slot:prepend>
             <q-icon name="school" />
           </template>
         </q-select>
       </div>
       <div :class="esDirectorCarrera ? 'col-12 col-md-8' : 'col-12 col-md-6'">
-        <q-input v-model="filtros.search" label="Buscar materia (Nombre o Código)..." outlined dense bg-color="white"
-          debounce="300" clearable>
+        <q-input
+          v-model="filtros.search"
+          label="Buscar materia (Nombre o Código)..."
+          outlined
+          dense
+          bg-color="white"
+          debounce="300"
+          clearable
+        >
           <template v-slot:prepend>
             <q-icon name="search" />
           </template>
@@ -52,7 +78,9 @@
             <q-icon name="menu_book" size="28px" />
           </div>
           <div class="stat-value">{{ asignaturasVisibles.length }}</div>
-          <div class="stat-label">{{ authStore.rol === 'DOCENTE' ? 'Mis Asignaturas' : 'Total Asignaturas' }}</div>
+          <div class="stat-label">
+            {{ authStore.rol === 'DOCENTE' ? 'Mis Asignaturas' : 'Total Asignaturas' }}
+          </div>
         </div>
       </div>
       <!-- Stats adicionales (Solo para Admin/Directores) -->
@@ -89,9 +117,16 @@
 
     <!-- Asignaturas Grid -->
     <div class="row q-col-gutter-lg">
-      <div v-for="(asignatura, index) in asignaturasVisibles" :key="asignatura.id" class="col-12 col-md-6 col-lg-4">
-        <q-card class="card-main cursor-pointer animate-in" :style="{ animationDelay: `${0.3 + index * 0.05}s` }"
-          @click="irADocumentacion(asignatura.id)">
+      <div
+        v-for="(asignatura, index) in asignaturasVisibles"
+        :key="asignatura.id"
+        class="col-12 col-md-6 col-lg-4"
+      >
+        <q-card
+          class="card-main cursor-pointer animate-in"
+          :style="{ animationDelay: `${0.3 + index * 0.05}s` }"
+          @click="irADocumentacion(asignatura.id)"
+        >
           <q-card-section>
             <!-- Header -->
             <div class="row items-start no-wrap q-mb-md">
@@ -99,35 +134,54 @@
                 <q-icon name="menu_book" size="28px" />
               </q-avatar>
               <div class="col">
-                <div class="text-h6 text-weight-bold" style="line-height: 1.2;">
+                <div class="text-h6 text-weight-bold" style="line-height: 1.2">
                   {{ asignatura.nombre }}
                 </div>
-                <div class="text-caption" style="color: var(--text-secondary);">
+                <div class="text-caption" style="color: var(--text-secondary)">
                   <q-chip size="sm" color="blue-1" text-color="blue-9" dense class="q-mr-xs">
                     {{ asignatura.codigo }}
                   </q-chip>
                   <q-chip size="sm" color="grey-3" text-color="grey-8" dense class="q-mr-xs">
                     {{ asignatura.semestre }}° Semestre
                   </q-chip>
-                  <q-chip size="sm" color="purple-1" text-color="purple-9" dense v-if="asignatura.sede_nombre">
+                  <q-chip
+                    size="sm"
+                    color="purple-1"
+                    text-color="purple-9"
+                    dense
+                    v-if="asignatura.sede_nombre"
+                  >
                     <q-icon name="place" size="12px" class="q-mr-xs" />
                     {{ asignatura.sede_nombre }}
                   </q-chip>
                   <!-- Grupos asignados (para docentes) -->
                   <!-- Grupos asignados (para docentes) -->
-                  <q-chip v-if="authStore.rol === 'DOCENTE' && getGruposCount(asignatura.id) > 0" size="sm"
-                    color="orange-2" text-color="orange-9" dense icon="groups">
-                    {{ getGruposCount(asignatura.id) }} Grupo{{ getGruposCount(asignatura.id) > 1 ? 's' : '' }}
+                  <q-chip
+                    v-if="authStore.rol === 'DOCENTE' && getGruposCount(asignatura.id) > 0"
+                    size="sm"
+                    color="orange-2"
+                    text-color="orange-9"
+                    dense
+                    icon="groups"
+                  >
+                    {{ getGruposCount(asignatura.id) }} Grupo{{
+                      getGruposCount(asignatura.id) > 1 ? 's' : ''
+                    }}
                   </q-chip>
                 </div>
                 <!-- Docente -->
                 <div class="text-caption text-weight-medium text-grey-8 q-mt-xs">
                   <q-icon name="person" size="14px" class="q-mr-xs text-primary" />
-                  {{ asignatura.docente_nombre || (authStore.rol === 'DOCENTE' ? 'Tú' : 'Sin asignar') }}
+                  {{
+                    asignatura.docente_nombre ||
+                    (authStore.rol === 'DOCENTE' ? 'Tú' : 'Sin asignar')
+                  }}
                 </div>
                 <!-- Aula/Horario (para docentes) -->
-                <div v-if="authStore.rol === 'DOCENTE' && asignatura.pivot?.aula"
-                  class="text-caption text-grey-6 q-mt-xs">
+                <div
+                  v-if="authStore.rol === 'DOCENTE' && asignatura.pivot?.aula"
+                  class="text-caption text-grey-6 q-mt-xs"
+                >
                   <q-icon name="room" size="12px" class="q-mr-xs" />
                   {{ asignatura.pivot.aula }}
                   <span v-if="asignatura.pivot?.horario" class="q-ml-sm">
@@ -141,21 +195,28 @@
             <!-- Info Grid -->
             <div class="row q-col-gutter-sm q-mb-md">
               <div class="col-4">
-                <div class="text-center q-pa-sm rounded-borders" style="background: var(--primary-50);">
+                <div
+                  class="text-center q-pa-sm rounded-borders"
+                  style="background: var(--primary-50)"
+                >
                   <div class="text-h6 text-weight-bold text-primary">{{ asignatura.creditos }}</div>
-                  <div class="text-caption" style="color: var(--text-secondary);">Créditos</div>
+                  <div class="text-caption" style="color: var(--text-secondary)">Créditos</div>
                 </div>
               </div>
               <div class="col-4">
-                <div class="text-center q-pa-sm rounded-borders" style="background: #e8f5e9;">
-                  <div class="text-h6 text-weight-bold text-green-8">{{ asignatura.unidades?.length || 0 }}</div>
-                  <div class="text-caption" style="color: var(--text-secondary);">Unidades</div>
+                <div class="text-center q-pa-sm rounded-borders" style="background: #e8f5e9">
+                  <div class="text-h6 text-weight-bold text-green-8">
+                    {{ asignatura.unidades?.length || 0 }}
+                  </div>
+                  <div class="text-caption" style="color: var(--text-secondary)">Unidades</div>
                 </div>
               </div>
               <div class="col-4">
-                <div class="text-center q-pa-sm rounded-borders" style="background: #fff3e0;">
-                  <div class="text-h6 text-weight-bold text-orange-8">{{ getTotalTemasAsignatura(asignatura) }}</div>
-                  <div class="text-caption" style="color: var(--text-secondary);">Temas</div>
+                <div class="text-center q-pa-sm rounded-borders" style="background: #fff3e0">
+                  <div class="text-h6 text-weight-bold text-orange-8">
+                    {{ getTotalTemasAsignatura(asignatura) }}
+                  </div>
+                  <div class="text-caption" style="color: var(--text-secondary)">Temas</div>
                 </div>
               </div>
             </div>
@@ -173,25 +234,96 @@
               </q-chip>
             </div>
 
+            <!-- Indicadores de Documentación (iconos por estado) -->
+            <div class="row q-gutter-xs q-mb-sm">
+              <!-- PAC -->
+              <q-chip
+                dense
+                size="sm"
+                :color="getIndicadorColor(asignatura, 'programa_asignatura')"
+                text-color="white"
+                icon="assignment"
+              >
+                PAC
+                <q-tooltip
+                  >Programa de Asignatura (PAC):
+                  {{ getIndicadorPct(asignatura, 'programa_asignatura') }}%</q-tooltip
+                >
+              </q-chip>
+              <!-- Analítico -->
+              <q-chip
+                dense
+                size="sm"
+                :color="getIndicadorColor(asignatura, 'programa_analitico')"
+                text-color="white"
+                icon="menu_book"
+              >
+                Analítico
+                <q-tooltip
+                  >Programa Analítico:
+                  {{ getIndicadorPct(asignatura, 'programa_analitico') }}%</q-tooltip
+                >
+              </q-chip>
+              <!-- Plan de Clase -->
+              <q-chip
+                dense
+                size="sm"
+                :color="getIndicadorColor(asignatura, 'plan_clase')"
+                text-color="white"
+                icon="edit_note"
+              >
+                Plan Clase
+                <q-tooltip
+                  >Plan de Clase: {{ getIndicadorPct(asignatura, 'plan_clase') }}%</q-tooltip
+                >
+              </q-chip>
+              <!-- Bibliografía (usando programa_asignatura como proxy para biblío) -->
+              <q-chip
+                v-if="authStore.rol !== 'DOCENTE'"
+                dense
+                size="sm"
+                :color="getIndicadorColor(asignatura, 'preguntas')"
+                text-color="white"
+                icon="quiz"
+              >
+                Preguntas
+                <q-tooltip
+                  >Banco de Preguntas: {{ getIndicadorPct(asignatura, 'preguntas') }}%</q-tooltip
+                >
+              </q-chip>
+            </div>
+
             <!-- Progreso de documentación -->
             <div class="q-mb-sm">
               <div class="row items-center justify-between q-mb-xs">
-                <span class="text-caption text-weight-medium" style="color: var(--text-secondary);">
+                <span class="text-caption text-weight-medium" style="color: var(--text-secondary)">
                   Progreso de Documentación
                 </span>
                 <span class="text-caption text-weight-bold text-primary">
-                  {{ calcularProgreso(asignatura) }}%
+                  {{ asignatura.progreso_documentacion ?? 0 }}%
                 </span>
               </div>
-              <q-linear-progress :value="calcularProgreso(asignatura) / 100" color="primary" rounded size="8px" />
+              <q-linear-progress
+                :value="(asignatura.progreso_documentacion ?? 0) / 100"
+                :color="getProgresoColor(asignatura.progreso_documentacion ?? 0)"
+                rounded
+                size="8px"
+              />
             </div>
           </q-card-section>
 
           <q-separator />
 
           <q-card-actions>
-            <q-btn flat color="primary" icon="edit_document" label="Documentar" no-caps class="full-width"
-              @click.stop="irADocumentacion(asignatura.id)" />
+            <q-btn
+              flat
+              color="primary"
+              icon="edit_document"
+              label="Documentar"
+              no-caps
+              class="full-width"
+              @click.stop="irADocumentacion(asignatura.id)"
+            />
           </q-card-actions>
         </q-card>
       </div>
@@ -201,13 +333,20 @@
       <q-card style="min-width: 350px">
         <q-card-section>
           <div class="text-h6">Seleccionar Docente</div>
-          <div class="text-caption">Esta materia tiene múltiples grupos asignados. Elige qué carpeta deseas ver.</div>
+          <div class="text-caption">
+            Esta materia tiene múltiples grupos asignados. Elige qué carpeta deseas ver.
+          </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
           <q-list bordered separator>
-            <q-item v-for="docente in asignaturaSeleccionada?.docentes_data" :key="docente.id" clickable v-ripple
-              @click="seleccionarDocente(docente.id)">
+            <q-item
+              v-for="docente in asignaturaSeleccionada?.docentes_data"
+              :key="docente.id"
+              clickable
+              v-ripple
+              @click="seleccionarDocente(docente.id)"
+            >
               <q-item-section avatar>
                 <q-avatar color="primary" text-color="white" icon="person" />
               </q-item-section>
@@ -255,17 +394,14 @@ const esDirectorCarrera = computed(() => authStore.rol === ROLES.DIRECTOR_CARRER
 const filtros = ref({
   sede: '',
   carrera: '',
-  search: ''
+  search: '',
 })
 
 // Lifecycle
 import { onMounted } from 'vue'
 
 onMounted(async () => {
-  await Promise.all([
-    sedesStore.fetchSedes(),
-    carrerasStore.fetchCarreras()
-  ])
+  await Promise.all([sedesStore.fetchSedes(), carrerasStore.fetchCarreras()])
 
   // Si es Director de Carrera, auto-configurar su sede y carrera
   if (esDirectorCarrera.value) {
@@ -299,7 +435,7 @@ async function fetchData() {
         if (response.data) {
           return {
             ...response.data,
-            pivot: materiaBase.pivot || null
+            pivot: materiaBase.pivot || null,
           }
         }
         return null
@@ -310,7 +446,7 @@ async function fetchData() {
     })
 
     const resultados = await Promise.all(promesas)
-    asignaturasStore.asignaturas = resultados.filter(a => a !== null)
+    asignaturasStore.asignaturas = resultados.filter((a) => a !== null)
     return
   }
 
@@ -319,36 +455,45 @@ async function fetchData() {
     filtros.value.sede,
     filtros.value.carrera,
     null, // Fix: semestre param should be null
-    filtros.value.search
+    filtros.value.search,
   )
 }
 
 // Watchers
-watch(() => filtros.value.sede, () => {
-  filtros.value.carrera = '' // Reset carrera when sede changes
-  fetchData()
-})
+watch(
+  () => filtros.value.sede,
+  () => {
+    filtros.value.carrera = '' // Reset carrera when sede changes
+    fetchData()
+  },
+)
 
-watch(() => filtros.value.carrera, () => fetchData())
+watch(
+  () => filtros.value.carrera,
+  () => fetchData(),
+)
 
 // Debounce para búsqueda
 let searchTimeout
-watch(() => filtros.value.search, () => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    fetchData()
-  }, 500)
-})
+watch(
+  () => filtros.value.search,
+  () => {
+    clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(() => {
+      fetchData()
+    }, 500)
+  },
+)
 
 // Computed Options
 const sedesOptions = computed(() => {
-  return sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
+  return sedesStore.sedes.map((s) => ({ label: s.nombre, value: s.id }))
 })
 
 const carrerasOptions = computed(() => {
   // Usar la función robusta del store para filtrar por sede
   const list = carrerasStore.getCarrerasBySede(filtros.value.sede)
-  return list.map(c => ({ label: c.nombre, value: c.id }))
+  return list.map((c) => ({ label: c.nombre, value: c.id }))
 })
 
 // Computed Asignaturas Visibles (Filtered by Role)
@@ -356,8 +501,8 @@ const asignaturasVisibles = computed(() => {
   // Si es DOCENTE, solo mostramos las que tiene asignadas
   if (authStore.rol === ROLES.DOCENTE) {
     if (!authStore.usuarioActual?.materias_asignadas?.length) return []
-    const misIds = authStore.usuarioActual.materias_asignadas.map(m => m.id)
-    return asignaturasStore.asignaturas.filter(a => misIds.includes(a.id))
+    const misIds = authStore.usuarioActual.materias_asignadas.map((m) => m.id)
+    return asignaturasStore.asignaturas.filter((a) => misIds.includes(a.id))
   }
   // Si no, mostramos todas (Admin, Directores, etc.)
   return asignaturasStore.asignaturas
@@ -383,53 +528,36 @@ function getTotalTemasAsignatura(asignatura) {
   return asignatura.unidades?.reduce((sum, u) => sum + (u.temas?.length || 0), 0) || 0
 }
 
-function calcularProgreso(asignatura) {
-  let total = 0
-  let completado = 0
-
-  // Datos básicos (peso 20%)
-  const camposRequeridos = ['nombre', 'codigo', 'objetivo_general', 'justificacion', 'metodologia_ensenanza']
-  const camposCompletos = camposRequeridos.filter(c => asignatura[c]?.length > 0).length
-  total += 20
-  completado += (camposCompletos / camposRequeridos.length) * 20
-
-  // Bibliografía (peso 20%)
-  total += 20
-  if (asignatura.bibliografias?.length >= 2) completado += 20
-  else if (asignatura.bibliografias?.length >= 1) completado += 10
-
-  // Unidades (peso 20%)
-  total += 20
-  if (asignatura.unidades?.length >= 3) completado += 20
-  else if (asignatura.unidades?.length >= 1) completado += 10
-
-  // Temas (peso 20%)
-  total += 20
-  const temas = getTotalTemasAsignatura(asignatura)
-  if (temas >= 5) completado += 20
-  else if (temas >= 2) completado += 10
-
-  // Logros e indicadores (peso 20%)
-  total += 20
-  const logros = asignatura.unidades?.reduce((s, u) => {
-    return s + (u.temas?.reduce((st, t) => st + (t.logros?.length || 0), 0) || 0)
-  }, 0) || 0
-  if (logros >= 5) completado += 20
-  else if (logros >= 2) completado += 10
-
-  return Math.round((completado / total) * 100)
-}
-
 function getGruposCount(asignaturaId) {
   // Access groups from auth store directly
   const grupos = authStore.usuarioActual?.grupos || []
   // Filter by asignatura_id
-  return grupos.filter(g => g.asignatura_id == asignaturaId).length
+  return grupos.filter((g) => g.asignatura_id == asignaturaId).length
+}
+
+/**
+ * Retorna el color Quasar (positive/warning/negative) para un indicador de documentación.
+ * Usa indicadores_documentacion del backend.
+ */
+function getIndicadorColor(asignatura, indicador) {
+  const ind = asignatura.indicadores_documentacion?.[indicador]
+  if (ind) return ind.color
+  return 'grey'
+}
+
+function getIndicadorPct(asignatura, indicador) {
+  return asignatura.indicadores_documentacion?.[indicador]?.porcentaje ?? 0
+}
+
+function getProgresoColor(pct) {
+  if (pct >= 100) return 'positive'
+  if (pct >= 60) return 'warning'
+  return 'negative'
 }
 
 function irADocumentacion(id) {
   // Buscar asignatura
-  const asignatura = asignaturasStore.asignaturas.find(a => a.id === id)
+  const asignatura = asignaturasStore.asignaturas.find((a) => a.id === id)
   if (!asignatura) return
 
   const rolActual = authStore.rol
@@ -437,16 +565,16 @@ function irADocumentacion(id) {
   // CASO 1: Es DOCENTE -> Navega directo a su propia "carpeta"
   if (rolActual === ROLES.DOCENTE) {
     // Intentar obtener carrera_id del primer grupo asignado de esta materia
-    const miMateria = authStore.usuarioActual?.materias_asignadas?.find(m => m.id === id)
+    const miMateria = authStore.usuarioActual?.materias_asignadas?.find((m) => m.id === id)
     const careerId = miMateria?.grupos?.[0]?.carrera_id || ''
     const sedeId = miMateria?.grupos?.[0]?.sede_id || ''
-    
-    router.push({ 
-      path: `/documentacion/${id}`, 
-      query: { 
+
+    router.push({
+      path: `/documentacion/${id}`,
+      query: {
         carrera_id: careerId,
-        sede_id: sedeId
-      } 
+        sede_id: sedeId,
+      },
     })
     return
   }
@@ -456,27 +584,27 @@ function irADocumentacion(id) {
 
   // Contexto de sede para directores
   const baseQuery = {
-    sede_id: filtros.value.sede || asignatura.sede_id
+    sede_id: filtros.value.sede || asignatura.sede_id,
   }
 
   if (docentes.length === 0) {
     // Sin docente asignado -> Entrar modo genérico con contexto base
-    router.push({ 
-      path: `/documentacion/${id}`, 
-      query: { ...baseQuery, carrera_id: filtros.value.carrera } 
+    router.push({
+      path: `/documentacion/${id}`,
+      query: { ...baseQuery, carrera_id: filtros.value.carrera },
     })
   } else if (docentes.length === 1) {
     // Un solo docente -> Entrar directo seleccionando a ese docente
     // Intentar inferir carrera_id de los grupos del docente o de los filtros
     const careerId = docentes[0].carrera_id || filtros.value.carrera || ''
-    
+
     router.push({
       path: `/documentacion/${id}`,
       query: {
         ...baseQuery,
         docente_id: docentes[0].id,
-        carrera_id: careerId
-      }
+        carrera_id: careerId,
+      },
     })
   } else {
     // Múltiples docentes -> Mostrar diálogo
@@ -489,19 +617,17 @@ function seleccionarDocente(docenteId) {
   if (asignaturaSeleccionada.value) {
     const query = {
       ...(asignaturaSeleccionada.value.overrideQuery || {}),
-      docente_id: docenteId
+      docente_id: docenteId,
     }
     router.push({
       path: `/documentacion/${asignaturaSeleccionada.value.id}`,
-      query
+      query,
     })
     showDocenteDialog.value = false
     asignaturaSeleccionada.value = null
   }
 }
 </script>
-
-
 
 <style scoped>
 .q-page {

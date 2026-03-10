@@ -98,7 +98,10 @@
             class="list-item"
             @click="$router.push(`/documentacion/${asig.id}`)"
           >
-            <div class="item-icon" style="background: rgba(124, 58, 237, 0.15); color: var(--primary);">
+            <div
+              class="item-icon"
+              style="background: rgba(124, 58, 237, 0.15); color: var(--primary)"
+            >
               <q-icon name="description" size="20px" />
             </div>
             <div class="item-info">
@@ -107,13 +110,15 @@
             </div>
             <div class="item-progress">
               <q-circular-progress
-                :value="asig.progreso || 0"
+                :value="getProgreso(asig)"
                 size="36px"
                 :thickness="0.15"
-                :color="(asig.progreso || 0) >= 80 ? 'green' : (asig.progreso || 0) >= 50 ? 'orange' : 'red'"
+                :color="
+                  getProgreso(asig) >= 80 ? 'green' : getProgreso(asig) >= 50 ? 'orange' : 'red'
+                "
                 track-color="grey-8"
               />
-              <span class="progress-text">{{ asig.progreso || 0 }}%</span>
+              <span class="progress-text">{{ getProgreso(asig) }}%</span>
             </div>
             <q-icon name="edit" size="20px" color="primary" />
           </div>
@@ -189,12 +194,14 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue' // Vue composition API
 import { useAuthStore } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
+import { useAsignaturasStore } from 'src/stores/asignaturas'
 
 const authStore = useAuthStore()
 const sedesStore = useSedesStore()
+const asignaturasStore = useAsignaturasStore()
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -203,19 +210,47 @@ const greeting = computed(() => {
   return 'Buenas noches'
 })
 
+// Cargar datos completos de asignaturas (con progreso_documentacion) en segundo plano
+// Se usa watchEffect para que ESLint reconozca el uso de las dependencias correctamente
+let cargaIniciada = false
+watchEffect(async () => {
+  const materias = authStore.usuarioActual?.materias_asignadas || []
+  if (materias.length === 0 || cargaIniciada) return
+  cargaIniciada = true
+
+  const { default: asignaturaService } = await import('src/services/asignaturaService')
+
+  const promesas = materias.map(async (m) => {
+    const id = typeof m === 'object' ? m.id : m
+    try {
+      const params = {}
+      if (m?.pivot?.sede_id) params.sede_id = m.pivot.sede_id
+      const res = await asignaturaService.getAsignatura(id, params)
+      return res.data ? { ...res.data, pivot: m.pivot || null } : null
+    } catch {
+      return null
+    }
+  })
+  const resultados = (await Promise.all(promesas)).filter(Boolean)
+  if (resultados.length > 0) {
+    asignaturasStore.asignaturas = resultados
+  }
+})
+
 // Datos directamente del usuario logueado
 const misAsignaturas = computed(() => {
-    // Check nested first
-    if (authStore.usuarioActual?.docente?.asignaturas) return authStore.usuarioActual.docente.asignaturas;
-    // Fallback?
-    return authStore.usuarioActual?.materias_asignadas || [];
+  // Check nested first
+  if (authStore.usuarioActual?.docente?.asignaturas)
+    return authStore.usuarioActual.docente.asignaturas
+  // Fallback?
+  return authStore.usuarioActual?.materias_asignadas || []
 })
 
 const misGrupos = computed(() => {
-    // Check nested first
-    if (authStore.usuarioActual?.docente?.grupos) return authStore.usuarioActual.docente.grupos;
-    // Fallback
-    return authStore.usuarioActual?.grupos || [];
+  // Check nested first
+  if (authStore.usuarioActual?.docente?.grupos) return authStore.usuarioActual.docente.grupos
+  // Fallback
+  return authStore.usuarioActual?.grupos || []
 })
 
 // Sede del docente
@@ -228,18 +263,35 @@ const sedeActual = computed(() => {
   // Fallback to store logic
   const sedeId = authStore.usuarioActual?.sede_id
   if (!sedeId) return null
-  return sedesStore.sedes.find(s => s.id === sedeId)
+  return sedesStore.sedes.find((s) => s.id === sedeId)
 })
 
 // Estadísticas
 const materiasAsignadas = computed(() => misAsignaturas.value.length)
 const grupos = computed(() => misGrupos.value)
 const notificaciones = ref(2)
-const documentacionPendiente = computed(() => misAsignaturas.value.filter(a => (a.progreso || 0) < 100).length)
+
+// Para el listado: priorizar datos con progreso_documentacion del store si están cargados
+const asignaturasFiltradas = computed(() => {
+  const misIds = misAsignaturas.value.map((a) => a.id)
+  const storeAsigs = asignaturasStore.asignaturas.filter((a) => misIds.includes(a.id))
+  if (storeAsigs.length > 0) return storeAsigs
+  return misAsignaturas.value
+})
+
+/** Obtiene el porcentaje de progreso correcto para una asignatura */
+function getProgreso(asig) {
+  if (typeof asig.progreso_documentacion === 'number') return asig.progreso_documentacion
+  return asig.progreso || 0
+}
+
+const documentacionPendiente = computed(
+  () => asignaturasFiltradas.value.filter((a) => getProgreso(a) < 100).length,
+)
 const progresoGeneral = computed(() => {
-  if (misAsignaturas.value.length === 0) return 0
-  const total = misAsignaturas.value.reduce((sum, a) => sum + (a.progreso || 0), 0)
-  return Math.round(total / misAsignaturas.value.length)
+  if (asignaturasFiltradas.value.length === 0) return 0
+  const total = asignaturasFiltradas.value.reduce((sum, a) => sum + getProgreso(a), 0)
+  return Math.round(total / asignaturasFiltradas.value.length)
 })
 const temasCompletados = computed(() => {
   return misAsignaturas.value.reduce((sum, a) => sum + (a.estadisticas?.completados || 0), 0)
@@ -247,9 +299,6 @@ const temasCompletados = computed(() => {
 const temasPendientes = computed(() => {
   return misAsignaturas.value.reduce((sum, a) => sum + (a.estadisticas?.pendientes || 0), 0)
 })
-
-// Para el listado (usamos directamente las del authStore)
-const asignaturasFiltradas = misAsignaturas
 
 function generarPDF() {
   // TODO: Implementar generación de PDF
@@ -308,11 +357,15 @@ function generarPDF() {
 }
 
 @media (max-width: 1200px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
-  .stats-grid { grid-template-columns: 1fr; }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stat-card {
@@ -338,10 +391,22 @@ function generarPDF() {
   margin-bottom: 16px;
 }
 
-.stat-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
-.stat-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.stat-icon.purple {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary-light);
+}
+.stat-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+.stat-icon.orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+.stat-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
 
 .stat-label {
   color: var(--text-secondary);
@@ -367,9 +432,15 @@ function generarPDF() {
   font-weight: 500;
 }
 
-.stat-trend.positive { color: var(--accent-green); }
-.stat-trend.negative { color: var(--accent-red); }
-.stat-trend.neutral { color: var(--text-secondary); }
+.stat-trend.positive {
+  color: var(--accent-green);
+}
+.stat-trend.negative {
+  color: var(--accent-red);
+}
+.stat-trend.neutral {
+  color: var(--text-secondary);
+}
 
 /* Content Grid */
 .content-grid {
@@ -380,10 +451,13 @@ function generarPDF() {
 }
 
 @media (max-width: 1024px) {
-  .content-grid { grid-template-columns: 1fr; }
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.main-card, .side-card {
+.main-card,
+.side-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 16px;
@@ -528,8 +602,12 @@ function generarPDF() {
   margin: 0;
 }
 
-.mini-stat-value.green { color: var(--accent-green); }
-.mini-stat-value.orange { color: var(--accent-orange); }
+.mini-stat-value.green {
+  color: var(--accent-green);
+}
+.mini-stat-value.orange {
+  color: var(--accent-orange);
+}
 
 .mini-stat-label {
   color: var(--text-muted);
@@ -556,7 +634,9 @@ function generarPDF() {
 }
 
 @media (max-width: 600px) {
-  .quick-access-grid-3 { grid-template-columns: 1fr; }
+  .quick-access-grid-3 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .quick-access-card {
@@ -587,9 +667,18 @@ function generarPDF() {
   margin-bottom: 12px;
 }
 
-.quick-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
-.quick-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.quick-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.quick-icon.purple {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary-light);
+}
+.quick-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+.quick-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
 
 .quick-label {
   color: var(--text-secondary);
