@@ -121,6 +121,9 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(username, password) {
     try {
       const response = await api.post('/login', { username, password })
+      if (!response.data.user) {
+        throw new Error('API returned 200 but user is missing: ' + JSON.stringify(response.data).substring(0, 100))
+      }
       const { token: authToken, user, password_change_required } = response.data
 
       // Guardar token
