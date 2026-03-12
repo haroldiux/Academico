@@ -204,10 +204,17 @@ watch(browserOnline, async (online) => {
 let connectionInterval = null
 
 onMounted(async () => {
-  await checkActualConnection()
+  const actuallyOnline = await checkActualConnection()
+  if (actuallyOnline && syncStore.pendingFollowups.length > 0) {
+    syncStore.syncAll()
+  }
+  
   connectionInterval = setInterval(async () => {
     if (!isReallyConnected.value || !browserOnline.value) {
-      await checkActualConnection()
+      const reconnected = await checkActualConnection()
+      if (reconnected && syncStore.pendingFollowups.length > 0) {
+        syncStore.syncAll()
+      }
     }
   }, 10000) // Cada 10 seg si está offline
 })
