@@ -186,7 +186,9 @@
         <q-tab name="materias" label="Detalle por Materia" icon="list" v-if="false" />
         <q-tab name="docentes" label="Detalle por Docente" icon="person" v-if="false" />
         <q-tab name="semanal" label="Informe Semanal" icon="assignment_turned_in" />
-        <q-tab name="asistencias" label="Asistencias" icon="how_to_reg" v-if="false" />
+        <q-tab name="resumen" label="Resumen de Carrera" icon="pie_chart" />
+        <q-tab name="reincidentes" label="Reincidentes con Acciones" icon="warning" />
+<!--         <q-tab name="asistencias" label="Asistencias" icon="how_to_reg" v-if="false" /> -->
         <q-tab name="auditoria" label="Auditoría 25%" icon="policy" v-if="rolPermiteAuditoria" />
       </q-tabs>
       <q-separator />
@@ -212,12 +214,28 @@
           />
         </q-tab-panel>
 
+        <!-- Panel Resumen de Carrera -->
+        <q-tab-panel name="resumen" class="q-pa-none">
+          <ResumenCarreraTab
+            :carrera-id="Number(filtros.carrera)"
+            :semana="filtros.semana"
+          />
+        </q-tab-panel>
+
         <!-- Panel Semanal -->
         <q-tab-panel name="semanal">
           <WeeklyReportTable
             :sede-id="Number(filtros.sede)"
             :carrera-id="Number(filtros.carrera)"
             :external-week="filtros.semana"
+          />
+        </q-tab-panel>
+
+        <!-- Panel Reincidentes -->
+        <q-tab-panel name="reincidentes" class="q-pa-none">
+          <ReincidentesTab
+            :carrera-id="Number(filtros.carrera)"
+            :semana="filtros.semana"
           />
         </q-tab-panel>
 
@@ -257,6 +275,8 @@ import { useCarrerasStore } from 'src/stores/carreras'
 import { api } from 'boot/axios'
 import { date } from 'quasar'
 import WeeklyReportTable from 'src/components/reportes/WeeklyReportTable.vue'
+import ResumenCarreraTab from 'src/components/reportes/ResumenCarreraTab.vue'
+import ReincidentesTab from 'src/components/reportes/ReincidentesTab.vue'
 import MatrizControlInstitucional from 'src/components/reportes/MatrizControlInstitucional.vue'
 
 const authStore = useAuthStore()
@@ -266,7 +286,7 @@ const route = useRoute()
 
 // State
 const loading = ref(false)
-const tabActivo = ref('semanal')
+const tabActivo = ref('resumen')
 const filtros = ref({
   sede: authStore.usuarioActual?.sede_id,
   carrera: authStore.carreraId || null,

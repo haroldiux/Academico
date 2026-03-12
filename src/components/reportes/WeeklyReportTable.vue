@@ -64,7 +64,10 @@
              </template>
           </q-input>
 
-          <q-btn icon="refresh" flat round color="primary" @click="loadReports" />
+<!--           <q-btn icon="filter_alt" outline color="warning" label="Pendientes (Rojos/Amarillos)" @click="filterStatus = 'PENDIENTES'" v-if="filterStatus !== 'PENDIENTES'" /> -->
+<!--           <q-btn icon="playlist_add_check" outline color="primary" label="Con Acciones Tomadas" @click="filterStatus = 'GESTIONADOS'" v-if="filterStatus !== 'GESTIONADOS'" /> -->
+          <q-btn icon="check_circle" color="positive" label="Autogenerar Verdes" @click="confirmarAutogenerarVerdes" :loading="isGenerating" />
+          <q-btn icon="refresh" flat round color="primary" @click="loadReports" :disable="isGenerating" />
        </div>
        
        <div class="text-caption text-grey">
@@ -230,6 +233,8 @@ const weekOptions = computed(() => {
 
 const statusOptions = [
    { label: 'Todos', value: 'TODOS', color: null },
+   { label: 'Pendientes (Rojo/Amarillos)', value: 'PENDIENTES', color: 'orange' },
+   { label: 'Gestionados (Con Acciones)', value: 'GESTIONADOS', color: 'primary' },
    { label: 'Cumplimiento Total (Verde)', value: 'VERDE', color: 'positive' },
    { label: ' Atención (Amarillo)', value: 'AMARILLO', color: 'warning' },
    { label: 'Crítico / Sin Plan (Rojo)', value: 'ROJO', color: 'negative' }
@@ -259,7 +264,22 @@ const columns = computed(() => {
 
 const filteredReports = computed(() => {
    return reports.value.filter(r => {
-      const matchStatus = filterStatus.value === 'TODOS' || r.alerta === filterStatus.value
+      let matchStatus = false
+      if (filterStatus.value === 'TODOS') matchStatus = true;
+      else if (filterStatus.value === 'PENDIENTES') {
+          // Pendientes son los que aún no se han gestionado (no están guardados todavía o no tienen acción real)
+          matchStatus = (r.alerta === 'ROJO' || r.alerta === 'AMARILLO') && r.estado !== 'Guardado';
+      }
+      else if (filterStatus.value === 'GESTIONADOS') {
+          const checkGestionado = (rep) => (rep.alerta === 'ROJO' || rep.alerta === 'AMARILLO') && rep.estado === 'Guardado' && rep.acciones && rep.acciones.trim() !== '';
+          if (r.subReports && r.subReports.length > 0) {
+              matchStatus = r.subReports.some(checkGestionado);
+          } else {
+              matchStatus = checkGestionado(r);
+          }
+      }
+      else matchStatus = r.alerta === filterStatus.value;
+
       const matchDocente = !filterDocente.value || r.docente.toLowerCase().includes(filterDocente.value.toLowerCase())
       const matchAsignatura = !filterAsignatura.value || r.asignatura.toLowerCase().includes(filterAsignatura.value.toLowerCase())
       const matchSearch = !searchText.value || 
@@ -357,6 +377,9 @@ const checkAndOpenReport = (row) => {
    if (row.subReports && row.subReports.length > 1) {
       selectedGroupList.value = row.subReports
       showGroupSelection.value = true
+   } else if (row.subReports && row.subReports.length === 1) {
+      // Use the original subReport so grupo_id is not null
+      openReportForm(row.subReports[0])
    } else {
       openReportForm(row)
    }
@@ -371,6 +394,81 @@ const openReportForm = (row) => {
 const onReportSaved = () => {
   showForm.value = false
   loadReports()
+}
+
+import { useQuasar } from 'quasar'
+const $q = useQuasar()
+const isGenerating = ref(false)
+
+const confirmarAutogenerarVerdes = () => {
+  // Find all completely pending reports that are supposed to be green.
+  const greenGroups = []
+  reports.value.forEach(r => {
+      if (r.subReports) {
+          r.subReports.forEach(sr => {
+              if (sr.alerta === 'VERDE' && sr.estado !== 'Guardado') {
+                  greenGroups.push(sr.grupo_id)
+              }
+          })
+      } else {
+         if (r.alerta === 'VERDE' && r.estado !== 'Guardado') {
+            greenGroups.push(r.grupo_id)
+         }
+      }
+  })
+
+  // Deduplicate grouping
+  const uniqueGroups = [...new Set(greenGroups.filter(id => id !== null))]
+
+  if (uniqueGroups.length === 0) {
+      $q.notify({
+        color: 'info',
+        icon: 'info',
+        message: 'No hay reportes en estado Verde pendientes de guardar.'
+      })
+      return
+  }
+
+  $q.dialog({
+    title: 'Confirmar Autogeneración',
+    message: `Se han detectado ${uniqueGroups.length} asignaturas/grupos en la semana seleccionada con cumplimiento Verde. ¿Deseas aprobar y guardar sus reportes automáticamente?`,
+    cancel: true,
+    persistent: true,
+    ok: {
+      label: 'Generar y Guardar',
+      color: 'positive'
+    }
+  }).onOk(() => {
+    autogenerarVerdes(uniqueGroups)
+  })
+}
+
+const autogenerarVerdes = async (gruposIds) => {
+    isGenerating.value = true
+    try {
+        const { data } = await api.post('/reportes/semanal/bulk-verdes', {
+            grupos: gruposIds,
+            fecha_inicio: selectedWeek.value
+        })
+        
+        $q.notify({
+            color: 'positive',
+            icon: 'check_circle',
+            message: data.message || `Mostrando ${data.generated_count} reportes generados exitosamente.`
+        })
+        
+        // Reload table
+        await loadReports()
+    } catch (e) {
+        console.error("Error bulk generating: ", e)
+        $q.notify({
+            color: 'negative',
+            icon: 'error',
+            message: 'Ocurrió un error al intentar autogenerar los reportes.'
+        })
+    } finally {
+        isGenerating.value = false
+    }
 }
 
 watch(() => [props.sedeId, props.carreraId, props.externalWeek], () => {
