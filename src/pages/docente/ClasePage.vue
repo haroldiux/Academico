@@ -179,7 +179,7 @@
                            <template v-slot:no-option>
                               <q-item>
                                  <q-item-section class="text-grey">
-                                    {{ sesiones.length === 0 ? 'Debe generar y completar el Cronograma desde Planificación Semestral antes de registrar seguimiento' : (vistaHistorial ? 'No hay clases completadas' : 'No hay clases pendientes') }}
+                                    {{ msgNoSessions }}
                                  </q-item-section>
                               </q-item>
                            </template>
@@ -193,8 +193,8 @@
                         </q-icon>
                      </div>
                      <div class="col-12 col-md-3 flex items-center">
-                        <q-toggle v-model="esExamen" label="Modo Examen" color="red" icon="assignment_late"
-                           :disable="esLecturaSola" />
+                        <q-toggle v-model="esExamen" label="Sesión Práctica (con planificación diferente) / Examen"
+                           color="red" icon="assignment_late" :disable="esLecturaSola" />
                      </div>
                   </div>
 
@@ -211,7 +211,7 @@
                               <div class="col-12 col-md-6">
                                  <div class="text-caption text-red-9 flex items-center">
                                     <q-icon name="info" size="xs" class="q-mr-xs" />
-                                    En modo examen se simplifica la planificación del día.
+                                    En modo sesión especial / examen se simplifica la planificación del día.
                                  </div>
                               </div>
                            </div>
@@ -239,7 +239,8 @@
                            <div v-if="!esExamen">
                               <!-- Tema Principal (Solo título) -->
                               <div class="q-mb-md">
-                                 <div class="text-subtitle1 text-weight-bold text-primary">{{ temaPlanificado || 'Sin tema asignado' }}</div>
+                                 <div class="text-subtitle1 text-weight-bold text-primary">{{ msgTemaPlanificado }}
+                                 </div>
                               </div>
 
                               <!-- Contenidos Planificados -->
@@ -253,7 +254,8 @@
                                              <q-icon name="psychology" size="16px" class="q-mr-xs" />
                                              Conceptual
                                           </div>
-                                          <div class="content-text" style="white-space: pre-line;">{{ formatContent(conceptualPlanificado) }}</div>
+                                          <div class="content-text" style="white-space: pre-line;">{{
+                                             formatContent(conceptualPlanificado) }}</div>
                                        </q-card-section>
                                     </q-card>
                                  </div>
@@ -265,7 +267,8 @@
                                              <q-icon name="build" size="16px" class="q-mr-xs" />
                                              Procedimental
                                           </div>
-                                          <div class="content-text" style="white-space: pre-line;">{{ formatContent(procedimentalPlanificado) }}</div>
+                                          <div class="content-text" style="white-space: pre-line;">{{
+                                             formatContent(procedimentalPlanificado) }}</div>
                                        </q-card-section>
                                     </q-card>
                                  </div>
@@ -277,7 +280,8 @@
                                              <q-icon name="favorite" size="16px" class="q-mr-xs" />
                                              Actitudinal
                                           </div>
-                                          <div class="content-text" style="white-space: pre-line;">{{ formatContent(actitudinalPlanificado) }}</div>
+                                          <div class="content-text" style="white-space: pre-line;">{{
+                                             formatContent(actitudinalPlanificado) }}</div>
                                        </q-card-section>
                                     </q-card>
                                  </div>
@@ -360,10 +364,10 @@
                                  <template v-slot:avatar>
                                     <q-icon name="assignment" color="red" />
                                  </template>
-                                 <div class="text-weight-bold">Sesión de Evaluación / Examen</div>
-                                 <div>Esta sesión está marcada como examen. Los campos de avance temático están ocultos
-                                    para facilitar el
-                                    registro de evidencias de la evaluación.</div>
+                                 <div class="text-weight-bold">Sesión Práctica Especial / Examen</div>
+                                 <div>Esta sesión está marcada como práctica especial o examen. Los campos de avance
+                                    temático están ocultos
+                                    para facilitar el registro de evidencias.</div>
                               </q-banner>
                            </div>
                         </div>
@@ -379,7 +383,8 @@
                                     <div v-for="(item, idx) in pedagogico.estrategias" :key="'est-' + idx"
                                        class="q-mb-xs">
                                        <div v-if="item.isHeader"
-                                          class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
+                                          class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{
+                                             item.nombre }}</div>
                                        <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
                                           color="green" :disable="esLecturaSola" />
                                     </div>
@@ -393,7 +398,8 @@
                                     <div v-for="(item, idx) in pedagogico.evaluacion" :key="'eva-' + idx"
                                        class="q-mb-xs">
                                        <div v-if="item.isHeader"
-                                          class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
+                                          class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{
+                                             item.nombre }}</div>
                                        <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
                                           color="green" :disable="esLecturaSola" />
                                     </div>
@@ -407,7 +413,8 @@
                                     <div v-for="(item, idx) in pedagogico.secuencia" :key="'sec-' + idx"
                                        class="q-mb-xs">
                                        <div v-if="item.isHeader"
-                                          class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{ item.nombre }}</div>
+                                          class="text-weight-bold text-caption q-mt-sm q-mb-xs text-primary">{{
+                                             item.nombre }}</div>
                                        <q-checkbox v-else v-model="item.cumplido" :label="item.nombre" dense
                                           color="green" :disable="esLecturaSola" />
                                     </div>
@@ -648,7 +655,7 @@
                                     <div>
                                        <div class="text-subtitle2"
                                           :class="!habilitarGps ? 'text-grey-8' : (coordenadas ? 'text-green-9' : 'text-orange-9')">
-                                          Georeferencia: {{ !habilitarGps ? 'Desactivada' : (coordenadas ? 'Ubicación registrada' : 'Pendiente de capturar') }}
+                                          Georeferencia: {{ msgGeoreferencia }}
                                        </div>
                                        <div v-if="habilitarGps && coordenadas" class="text-caption text-grey-8">
                                           Lat: {{ coordenadas.lat.toFixed(6) }}, Lng: {{ coordenadas.lng.toFixed(6) }}
@@ -686,7 +693,7 @@
                   <div v-else class="text-center q-pa-xl text-grey-6">
                      <q-icon :name="sesiones.length === 0 ? 'warning' : 'playlist_add_check'"
                         :color="sesiones.length === 0 ? 'orange' : 'grey-6'" size="64px" />
-                     <div class="text-h6">{{ sesiones.length === 0 ? 'Primero debe generar el Cronograma en Planificación Semestral' : 'Selecciona una clase para ver el seguimiento' }}</div>
+                     <div class="text-h6">{{ msgPlanificacionVacia }}</div>
                      <div v-if="sesiones.length === 0" class="text-body2 text-grey-7 q-mt-sm">Vaya a Planificación
                         Semestral, genere el
                         cronograma y complete al menos hasta la sesión que desea registrar.</div>
@@ -930,7 +937,7 @@ const tiposExamenOptions = [
    { label: '2do Parcial', value: '2DO_PARCIAL' },
    { label: 'Examen Final', value: 'FINAL' },
    { label: '2da Instancia', value: '2DA_INSTANCIA' },
-   { label: 'Otro / Evaluación especial', value: 'ESPECIAL' }
+   { label: 'Práctica (Clínica, Anfiteatro, Lab, Otros)', value: 'PRACTICA_ESPECIAL' }
 ]
 
 const capturarUbicacion = async () => {
@@ -968,6 +975,24 @@ const columnsAsistencia = [
    { name: 'estado', label: 'Asistencia', align: 'center' },
    { name: 'observacion', label: 'Observación', align: 'left' }
 ]
+
+// Mensajes UI para evitar interpolaciones de texto largas en la plantilla
+const msgNoSessions = computed(() => {
+   if (sesiones.value.length === 0) return 'Debe generar y completar el Cronograma desde Planificación Semestral antes de registrar seguimiento'
+   return vistaHistorial.value ? 'No hay clases completadas' : 'No hay clases pendientes'
+})
+
+const msgGeoreferencia = computed(() => {
+   if (!habilitarGps.value) return 'Desactivada'
+   return coordenadas.value ? 'Ubicación registrada' : 'Pendiente de capturar'
+})
+
+const msgPlanificacionVacia = computed(() => {
+   if (sesiones.value.length === 0) return 'Primero debe generar el Cronograma en Planificación Semestral'
+   return 'Selecciona una clase para ver el seguimiento'
+})
+
+const msgTemaPlanificado = computed(() => temaPlanificado.value || 'Sin tema asignado')
 
 const estudiantesVista = computed(() => {
    if (!claseSeleccionadaObj.value) return []
@@ -2004,8 +2029,12 @@ onMounted(async () => {
 
 const mostrarGuia = ref(false)
 const descargarApk = () => {
-   const url = process.env.API_URL || 'http://localhost:8000'
-   window.open(`${url}/descargas/planificacion.apk`, '_blank')
+   // Obtener la URL base dinámicamente del navegador o usar la de la API
+   let baseUrl = window.location.origin
+   if (baseUrl.includes('localhost') && !baseUrl.includes(':8000')) {
+      baseUrl = 'http://localhost:8000'
+   }
+   window.open(`${baseUrl}/descargas/planificacion.apk`, '_blank')
 }
 </script>
 
