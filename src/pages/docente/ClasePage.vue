@@ -2029,11 +2029,23 @@ onMounted(async () => {
 
 const mostrarGuia = ref(false)
 const descargarApk = () => {
-   // Obtener la URL base dinámicamente del navegador o usar la de la API
+   // Priorizar el origen actual, pero asegurar que sea el de producción si no es localhost
    let baseUrl = window.location.origin
-   if (baseUrl.includes('localhost') && !baseUrl.includes(':8000')) {
-      baseUrl = 'http://localhost:8000'
+
+   // Si estamos en la App (Capacitor) o el navegador no reporta el dominio correcto
+   if (baseUrl.includes('localhost')) {
+      // Si el puerto es el de Vite (5173 o similar) pero la API está en 8000
+      if (!baseUrl.includes(':8000')) {
+         baseUrl = 'http://localhost:8000'
+      }
+   } else if (baseUrl.includes('unitepc.edu.bo')) {
+      // Estamos en el servidor oficial
+      baseUrl = 'https://planificacion.unitepc.edu.bo'
+   } else {
+      // Fallback seguro al servidor de producción si no estamos en local
+      baseUrl = 'https://planificacion.unitepc.edu.bo'
    }
+
    window.open(`${baseUrl}/descargas/planificacion.apk`, '_blank')
 }
 </script>
