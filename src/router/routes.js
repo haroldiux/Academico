@@ -146,7 +146,7 @@ const routes = [
             path: 'asignaturas',
             name: 'director-asignaturas',
             component: () => import('pages/director/AsignaturasDirectorPage.vue'),
-            meta: { title: 'Plan de Estudios', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+            meta: { title: 'Plan de Estudios', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'] }
           },
           {
             path: 'materias-comunes',
@@ -159,6 +159,12 @@ const routes = [
             name: 'director-contexto',
             component: () => import('pages/director/CarreraContextoPage.vue'),
             meta: { title: 'Información de la Carrera', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+          },
+          {
+            path: 'mallas-curriculares',
+            name: 'mallas-curriculares',
+            component: () => import('pages/director/MallasCurricularesPage.vue'),
+            meta: { title: 'Mallas Curriculares', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'] }
           }
         ]
       },
