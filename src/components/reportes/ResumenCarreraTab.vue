@@ -32,7 +32,7 @@
             <div class="col">
               <div class="text-h4 text-weight-bolder text-positive">{{ datosPorcentajes.verde }}%</div>
               <div class="text-caption text-weight-bold text-grey-8">Visto Bueno (67-100%)</div>
-              <div class="text-caption text-grey">{{ datosTotales.verde }} reportes — <span class="text-positive text-weight-medium">clic para ver lista</span></div>
+              <div class="text-caption text-grey">{{ datosTotales.verde }} informes<span v-if="datosTotales.docentes_verde !== datosTotales.verde"> · {{ datosTotales.docentes_verde }} docente{{ datosTotales.docentes_verde !== 1 ? 's' : '' }}</span> — <span class="text-positive text-weight-medium">clic para ver lista</span></div>
             </div>
             <q-icon :name="filtroColor === 'verde' ? 'expand_less' : 'expand_more'" color="positive" size="24px" />
           </q-card-section>
@@ -49,7 +49,7 @@
             <div class="col">
               <div class="text-h4 text-weight-bolder text-warning">{{ datosPorcentajes.amarillo }}%</div>
               <div class="text-caption text-weight-bold text-grey-8">Atención (34-66%)</div>
-              <div class="text-caption text-grey">{{ datosTotales.amarillo }} reportes — <span class="text-warning text-weight-medium">clic para ver lista</span></div>
+              <div class="text-caption text-grey">{{ datosTotales.amarillo }} informes<span v-if="datosTotales.docentes_amarillo !== datosTotales.amarillo"> · {{ datosTotales.docentes_amarillo }} docente{{ datosTotales.docentes_amarillo !== 1 ? 's' : '' }}</span> — <span class="text-warning text-weight-medium">clic para ver lista</span></div>
             </div>
             <q-icon :name="filtroColor === 'amarillo' ? 'expand_less' : 'expand_more'" color="warning" size="24px" />
           </q-card-section>
@@ -66,7 +66,7 @@
             <div class="col">
               <div class="text-h4 text-weight-bolder text-negative">{{ datosPorcentajes.rojo }}%</div>
               <div class="text-caption text-weight-bold text-grey-8">Crítico (0-33%)</div>
-              <div class="text-caption text-grey">{{ datosTotales.rojo }} reportes — <span class="text-negative text-weight-medium">clic para ver lista</span></div>
+              <div class="text-caption text-grey">{{ datosTotales.rojo }} informes<span v-if="datosTotales.docentes_rojo !== datosTotales.rojo"> · {{ datosTotales.docentes_rojo }} docente{{ datosTotales.docentes_rojo !== 1 ? 's' : '' }}</span> — <span class="text-negative text-weight-medium">clic para ver lista</span></div>
             </div>
             <q-icon :name="filtroColor === 'rojo' ? 'expand_less' : 'expand_more'" color="negative" size="24px" />
           </q-card-section>
@@ -97,7 +97,14 @@
             <q-item-section>
               <q-item-label class="text-weight-bold">{{ d.nombre }}</q-item-label>
               <q-item-label caption>
-                <q-badge v-for="(m, i) in d.materias" :key="i" color="grey-3" text-color="grey-9" class="q-mr-xs">{{ m }}</q-badge>
+                <q-chip dense square size="sm" icon="calendar_today"
+                  outline :color="colorAvatar" class="q-mr-xs text-caption">
+                  {{ d.fecha }}
+                </q-chip>
+                <q-badge :color="colorAvatar === 'positive' ? 'green-2' : colorAvatar === 'warning' ? 'amber-2' : 'red-2'"
+                  :text-color="colorAvatar === 'positive' ? 'green-9' : colorAvatar === 'warning' ? 'amber-9' : 'red-9'">
+                  {{ d.materia }}
+                </q-badge>
               </q-item-label>
               <q-item-label caption v-if="d.accion_director" class="text-italic text-grey-8 q-mt-xs">
                 <q-icon name="comment" size="12px" class="q-mr-xs" />{{ d.accion_director }}
@@ -171,7 +178,7 @@ const $q = useQuasar()
 const loading    = ref(false)
 const exportando = ref(false)
 
-const datosTotales      = ref({ rojo: 0, amarillo: 0, verde: 0, total: 0 })
+const datosTotales      = ref({ rojo: 0, amarillo: 0, verde: 0, total: 0, docentes_rojo: 0, docentes_amarillo: 0, docentes_verde: 0 })
 const datosPorcentajes  = ref({ rojo: 0, amarillo: 0, verde: 0 })
 const docentesRojo      = ref([])
 const docentesAmarillo  = ref([])
@@ -269,15 +276,16 @@ const exportarPDF = () => {
       }
       autoTable(doc, {
         startY: startY + 2,
-        head: [['Docente', 'Asignaturas', 'Observación / Acción del Director']],
+        head: [['Fecha', 'Docente', 'Materia', 'Observación / Acción del Director']],
         body: lista.map(d => [
+          d.fecha ?? '—',
           d.nombre,
-          (d.materias || []).join(', '),
+          d.materia,
           d.accion_director || '—'
         ]),
         headStyles: { fillColor: colorH, textColor: 255, fontSize: 9, fontStyle: 'bold' },
         bodyStyles: { fontSize: 8, valign: 'top' },
-        columnStyles: { 0: { cellWidth: 65 }, 1: { cellWidth: 60 } },
+        columnStyles: { 0: { cellWidth: 22 }, 1: { cellWidth: 58 }, 2: { cellWidth: 50 } },
         margin: { left: 14, right: 14 }
       })
     }
