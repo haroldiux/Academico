@@ -24,7 +24,7 @@
 
     <!-- Filters -->
     <div class="row q-col-gutter-md q-mb-lg">
-      <div class="col-12 col-md-3" v-if="authStore.rol === 'VICERRECTOR_NACIONAL'">
+      <div class="col-12 col-md-3" v-if="['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)">
         <q-select v-model="filtros.sedeId" :options="opcionesSedes" label="Sede Académica" outlined dense bg-color="white"
           emit-value map-options>
           <template v-slot:prepend>
@@ -32,7 +32,7 @@
           </template>
         </q-select>
       </div>
-      <div :class="authStore.rol === 'VICERRECTOR_NACIONAL' ? 'col-12 col-md-3' : 'col-12 col-md-4'">
+      <div :class="['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) ? 'col-12 col-md-3' : 'col-12 col-md-4'">
         <q-select v-model="filtros.carreraId" :options="carrerasOptions" label="Carrera" outlined dense bg-color="white"
           emit-value map-options :disable="carrerasOptions.length === 0">
           <template v-slot:prepend>
@@ -40,12 +40,31 @@
           </template>
         </q-select>
       </div>
-      <div class="col-12 col-md-8">
+      <div class="col-12 col-md-4">
         <q-input v-model="filtros.buscar" label="Buscar asignatura..." outlined dense bg-color="white" clearable>
           <template v-slot:prepend>
             <q-icon name="search" />
           </template>
         </q-input>
+      </div>
+      <div class="col-12 col-md-3">
+        <q-select
+          v-model="filtros.planEstudios"
+          :options="opcionesPlanes"
+          label="Plan Curricular"
+          outlined dense bg-color="white"
+          emit-value map-options clearable
+        >
+          <template v-slot:prepend><q-icon name="layers" /></template>
+        </q-select>
+      </div>
+      <div class="col-12 col-md-auto q-pt-xs">
+        <q-toggle
+          v-model="filtros.ocultarSinAsignar"
+          label="Ocultar sin asignar"
+          color="warning"
+          dense
+        />
       </div>
     </div>
 
@@ -537,12 +556,21 @@ async function processGenerarPDF(rowSummary, docenteId) {
 
 // Filtros
 const filtros = ref({
-  sedeId: authStore.rol === 'VICERRECTOR_NACIONAL' ? null : (authStore.usuarioActual?.director?.sede_id || authStore.sedeId),
-  carreraId: null, // ID real
-  buscar: ''
+  sedeId: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'].includes(authStore.rol)
+    ? null
+    : (authStore.usuarioActual?.director?.sede_id || authStore.sedeId),
+  carreraId: null,
+  buscar: '',
+  ocultarSinAsignar: true,
+  planEstudios: null   // null = todos, 'N' = Plan Nuevo, 'A' = Plan Antiguo
 })
 
-// Opciones de Sedes (solo para Vicerrectorado Nacional)
+const opcionesPlanes = [
+  { label: 'Plan Nuevo (N)',   value: 'N' },
+  { label: 'Plan Antiguo (A)', value: 'A' },
+]
+
+// Opciones de Sedes (solo para roles que necesitan selector de sede)
 const sedesStore = useSedesStore()
 const opcionesSedes = computed(() => {
   return sedesStore.sedes.map(s => ({
@@ -553,8 +581,8 @@ const opcionesSedes = computed(() => {
 
 // Opciones de Carreras (Dinámicas)
 const carrerasOptions = computed(() => {
-  // Para Vicerrectorado Nacional: Mostrar carreras de la sede seleccionada
-  if (authStore.rol === 'VICERRECTOR_NACIONAL') {
+  // Para Vicerrectorado Nacional, Admin, Super Admin: Mostrar carreras de la sede seleccionada
+  if (['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)) {
     if (!filtros.value.sedeId) return []
     return carrerasStore.getCarrerasBySede(filtros.value.sedeId).map(c => ({
       label: c.nombre,
@@ -618,8 +646,8 @@ async function cargarAsignaturas() {
 }
 
 onMounted(async () => {
-  // Cargar sedes si es nacional
-  if (authStore.rol === 'VICERRECTOR_NACIONAL' && sedesStore.sedes.length === 0) {
+  // Cargar sedes si es nacional, admin o super admin
+  if (['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) && sedesStore.sedes.length === 0) {
     await sedesStore.fetchSedes()
   }
 
@@ -628,8 +656,8 @@ onMounted(async () => {
     await carrerasStore.fetchCarreras()
   }
 
-  // Si es nacional, pre-seleccionar la primera sede
-  if (authStore.rol === 'VICERRECTOR_NACIONAL' && opcionesSedes.value.length > 0 && !filtros.value.sedeId) {
+  // Si es nacional/admin, pre-seleccionar la primera sede
+  if (['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) && opcionesSedes.value.length > 0 && !filtros.value.sedeId) {
     filtros.value.sedeId = opcionesSedes.value[0].value
   }
 
@@ -684,6 +712,23 @@ const semestresFiltrados = computed(() => {
       a.codigo.toLowerCase().includes(busqueda) ||
       (a.docente_nombre && a.docente_nombre.toLowerCase().includes(busqueda))
     )
+  }
+
+  // 2. Filtro por Plan Curricular (N / A)
+  if (filtros.value.planEstudios) {
+    lista = lista.filter(a => (a.plan_estudios || 'N') === filtros.value.planEstudios)
+  }
+
+  // 3. Filtro: ocultar sin docente asignado o con nombre inválido (ej. 'A A A')
+  if (filtros.value.ocultarSinAsignar) {
+    lista = lista.filter(a => {
+      const tieneDocente = a.docentes_data && a.docentes_data.length > 0
+      if (!tieneDocente) return false
+      // Excluir nombres que son solo letras sueltas: 'A A A', 'B B', etc.
+      const nombre = (a.docente_nombre || '').trim()
+      const esPlaceholder = nombre.length > 0 && nombre.split(' ').every(w => w.length <= 1)
+      return !esPlaceholder
+    })
   }
 
   // 2. Agrupación por Semestre

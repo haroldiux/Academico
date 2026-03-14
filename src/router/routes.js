@@ -54,6 +54,12 @@ const routes = [
         meta: { title: 'Panel Nacional', rol: 'VICERRECTOR_NACIONAL' }
       },
       {
+        path: 'evaluaciones/dashboard',
+        name: 'evaluaciones-dashboard',
+        component: () => import('pages/dashboards/EvaluacionesDashboard.vue'),
+        meta: { title: 'Panel Evaluaciones', rol: 'EVALUACIONES' }
+      },
+      {
         path: 'admin/dashboard',
         name: 'admin-dashboard',
         component: () => import('pages/dashboards/AdminDashboard.vue'),
@@ -146,7 +152,7 @@ const routes = [
             path: 'asignaturas',
             name: 'director-asignaturas',
             component: () => import('pages/director/AsignaturasDirectorPage.vue'),
-            meta: { title: 'Plan de Estudios', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+            meta: { title: 'Plan de Estudios', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'] }
           },
           {
             path: 'materias-comunes',
@@ -159,6 +165,12 @@ const routes = [
             name: 'director-contexto',
             component: () => import('pages/director/CarreraContextoPage.vue'),
             meta: { title: 'Información de la Carrera', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+          },
+          {
+            path: 'mallas-curriculares',
+            name: 'mallas-curriculares',
+            component: () => import('pages/director/MallasCurricularesPage.vue'),
+            meta: { title: 'Mallas Curriculares', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'] }
           }
         ]
       },
@@ -227,6 +239,12 @@ const routes = [
             meta: { title: 'Gestión de Evaluaciones' }
           },
           {
+            path: 'administracion-evaluaciones',
+            name: 'administracion-evaluaciones',
+            component: () => import('pages/admin/AdministracionEvaluacionPage.vue'),
+            meta: { title: 'Administración de Evaluaciones', rol: ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'] }
+          },
+          {
             path: 'reportes',
             name: 'reportes',
             component: () => import('pages/admin/ReportesPage.vue'),
@@ -282,6 +300,13 @@ const routes = [
         name: 'preguntas',
         component: () => import('pages/preguntas/PreguntasPage.vue'),
         meta: { title: 'Banco de Preguntas' }
+      },
+      // Evaluaciones — Rol de Exámenes
+      {
+        path: 'evaluaciones/rol-examenes',
+        name: 'evaluaciones-rol-examenes',
+        component: () => import('pages/evaluaciones/RolExamenesEvaluacionPage.vue'),
+        meta: { title: 'Rol de Exámenes', rol: ['EVALUACIONES', 'ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'] }
       }
     ],
   },

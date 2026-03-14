@@ -1,25 +1,13 @@
 <template>
   <q-page class="dashboard-page">
-    <!-- Header con badge de Solo Lectura -->
+    <!-- Header -->
     <div class="dashboard-header">
       <div class="header-left">
         <p class="greeting">{{ greeting }}</p>
         <h1 class="page-title">Dirección Académica</h1>
         <p class="welcome-text">
-          Sede: 
-          <q-select 
-            v-if="!sedeAsignada"
-            v-model="sedeSeleccionada" 
-            :options="opcionesSedes" 
-            label="Seleccionar Sede"
-            outlined 
-            dense
-            emit-value
-            map-options
-            style="min-width: 200px; display: inline-block;"
-            @update:model-value="onSedeChange"
-          />
-          <span v-else class="highlight">{{ sedeNombre }}</span>
+          <q-icon name="apartment" size="16px" class="q-mr-xs" style="color: var(--primary)" />
+          Sede: <span class="highlight">{{ sedeNombre }}</span>
           <q-chip size="sm" color="amber" text-color="black" class="q-ml-sm">
             <q-icon name="visibility" size="14px" class="q-mr-xs" />
             Solo Lectura
@@ -240,7 +228,6 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { usePermisos } from 'src/composables/usePermisos'
 import { useAuthStore } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { getDashboardStats } from 'src/services/direccionService'
@@ -249,30 +236,17 @@ const $q = useQuasar()
 const router = useRouter()
 const authStore = useAuthStore()
 const sedesStore = useSedesStore()
-const { sedeActual } = usePermisos()
 
 // Estado
 const loading = ref(false)
 const notificaciones = ref(0)
-const sedeSeleccionada = ref(null)
-
-// Computed para saber si tiene sede asignada
-const sedeAsignada = computed(() => {
-  return !!(sedeActual.value?.id || authStore.sedeId || authStore.usuarioActual?.sede_id)
-})
+const sedeIdActual = ref(null)
 
 // Nombre de sede para mostrar
 const sedeNombre = computed(() => {
-  if (sedeSeleccionada.value) {
-    const sede = sedesStore.sedes.find(s => s.id === sedeSeleccionada.value)
-    return sede?.nombre || 'Sede'
-  }
-  return sedeActual.value?.nombre || 'Sede'
-})
-
-// Opciones de sedes para el selector
-const opcionesSedes = computed(() => {
-  return sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
+  if (!sedeIdActual.value) return 'Sin sede asignada'
+  const sede = sedesStore.sedes.find(s => s.id == sedeIdActual.value)
+  return sede?.nombre || `Sede ${sedeIdActual.value}`
 })
 
 // Estadísticas
@@ -330,32 +304,21 @@ async function loadDashboard(sedeId) {
   }
 }
 
-// Cuando cambia la sede seleccionada
-function onSedeChange(nuevoSedeId) {
-  if (nuevoSedeId) {
-    loadDashboard(nuevoSedeId)
-  }
-}
-
 onMounted(async () => {
-  // Cargar sedes si no están cargadas
+  // Cargar sedes para poder mostrar el nombre
   if (sedesStore.sedes.length === 0) {
     await sedesStore.fetchSedes()
   }
 
-  // Determinar sede a usar
-  let sedeIdToUse = sedeActual.value?.id || authStore.sedeId || authStore.usuarioActual?.sede_id
-
-  // Si no hay sede asignada, usar la primera disponible
-  if (!sedeIdToUse && sedesStore.sedes.length > 0) {
-    sedeIdToUse = sedesStore.sedes[0].id
-    sedeSeleccionada.value = sedeIdToUse
-  } else if (sedeIdToUse) {
-    sedeSeleccionada.value = sedeIdToUse
-  }
-
-  if (sedeIdToUse) {
-    loadDashboard(sedeIdToUse)
+  // El Director Académico SIEMPRE tiene sede asignada - usarla directamente
+  const sedeId = authStore.sedeId || authStore.usuarioActual?.sede_id || 
+                 authStore.usuarioActual?.docente?.sede_id
+  
+  if (sedeId) {
+    sedeIdActual.value = sedeId
+    loadDashboard(sedeId)
+  } else {
+    $q.notify({ type: 'warning', message: 'No se encontró sede asignada para este usuario' })
   }
 })
 
@@ -387,7 +350,7 @@ function navegarACarrera(carrera) {
     query: { 
       tab: 'auditoria',
       carrera: carrera.id,
-      sede: sedeSeleccionada.value
+      sede: sedeIdActual.value
     } 
   })
 }
