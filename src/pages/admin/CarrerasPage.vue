@@ -7,12 +7,17 @@
           <span class="text-gradient">Gestión de Carreras</span>
         </h4>
         <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
-          Administra las carreras por sede
+          {{ esDireccionAcademica ? 'Carreras de tu sede' : 'Administra las carreras por sede' }}
         </p>
       </div>
-      <div class="col-auto">
+      <div class="col-auto" v-if="!esDireccionAcademica">
         <q-select v-model="sedeSeleccionada" :options="opcionesSedes" label="Filtrar por Sede" outlined dense
           style="width: 100%; max-width: 200px; min-width: 150px;" />
+      </div>
+      <div class="col-auto" v-else>
+        <q-chip color="primary" text-color="white" icon="apartment">
+          {{ sedeNombreDirector }}
+        </q-chip>
       </div>
     </div>
 
@@ -34,8 +39,9 @@
       <div 
         v-for="carrera in carrerasFiltradas" 
         :key="carrera.id" 
-        class="carrera-card clickable"
-        @click="navegarACarrera(carrera)"
+        class="carrera-card"
+        :class="{ 'clickable': !esDireccionAcademica }"
+        @click="!esDireccionAcademica && navegarACarrera(carrera)"
       >
         <div class="carrera-header">
           <div class="carrera-icon"
@@ -78,8 +84,30 @@
           </div>
         </div>
         
-        <!-- Indicador de click -->
-        <div class="carrera-action">
+        <!-- Botones del Director Académico -->
+        <div v-if="esDireccionAcademica" class="carrera-buttons q-mt-md row q-gutter-sm">
+          <q-btn
+            color="indigo"
+            icon="menu_book"
+            label="Asignaturas"
+            size="sm"
+            no-caps
+            class="col"
+            @click.stop="irAAsignaturas(carrera)"
+          />
+          <q-btn
+            color="teal"
+            icon="assessment"
+            label="Reportes"
+            size="sm"
+            no-caps
+            class="col"
+            @click.stop="irAReportes(carrera)"
+          />
+        </div>
+
+        <!-- Indicador de click (solo para no directores) -->
+        <div class="carrera-action" v-if="!esDireccionAcademica">
           <q-icon name="chevron_right" size="20px" color="grey-5" />
         </div>
       </div>
@@ -92,17 +120,33 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
+import { useAuthStore } from 'src/stores/auth'
 
 const router = useRouter()
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
+const authStore = useAuthStore()
 
 onMounted(() => {
   sedesStore.fetchSedes()
   carrerasStore.fetchCarreras()
 })
 
+// Detectar si es Director Académico
+const esDireccionAcademica = computed(() => 
+  authStore.rol === 'DIRECCION_ACADEMICA'
+)
+
+// Para no-directores: selector de sede manual
 const sedeSeleccionada = ref(null)
+
+// Nombre de sede del director
+const sedeNombreDirector = computed(() => {
+  const sedeId = authStore.sedeId || authStore.usuarioActual?.sede_id
+  if (!sedeId) return 'Sin sede'
+  const sede = sedesStore.sedes.find(s => s.id == sedeId)
+  return sede?.nombre || `Sede ${sedeId}`
+})
 
 const opcionesSedes = computed(() => [
   { label: 'Todas las sedes', value: null },
@@ -110,6 +154,13 @@ const opcionesSedes = computed(() => [
 ])
 
 const carrerasFiltradas = computed(() => {
+  // Director Académico: solo ve carreras de su sede
+  if (esDireccionAcademica.value) {
+    const sedeId = authStore.sedeId || authStore.usuarioActual?.sede_id
+    if (!sedeId) return carrerasStore.carreras
+    return carrerasStore.getCarrerasBySede(sedeId)
+  }
+  // Otros roles: según selector
   if (!sedeSeleccionada.value?.value) {
     return carrerasStore.carreras
   }
@@ -134,15 +185,33 @@ function getSedeName(sedeId) {
   return sede?.nombre || 'Sin sede'
 }
 
-// Navegación a la carrera seleccionada
+// Navegación para roles no directores (click en card)
 function navegarACarrera(carrera) {
+  const sede = carrera.sede_id || authStore.sedeId
   router.push({
     path: '/director/reportes',
     query: {
       tab: 'materias',
       carrera: carrera.id,
-      sede: carrera.sede_id
+      sede
     }
+  })
+}
+
+// Botones del Director Académico
+function irAAsignaturas(carrera) {
+  const sede = carrera.sede_id || authStore.sedeId || authStore.usuarioActual?.sede_id
+  router.push({
+    path: '/director/asignaturas',
+    query: { carrera: carrera.id, sede }
+  })
+}
+
+function irAReportes(carrera) {
+  const sede = carrera.sede_id || authStore.sedeId || authStore.usuarioActual?.sede_id
+  router.push({
+    path: '/director/reportes',
+    query: { tab: 'auditoria', carrera: carrera.id, sede }
   })
 }
 
@@ -165,6 +234,7 @@ function getProgresoClass(progreso) {
 .text-gradient {
   background: linear-gradient(135deg, var(--secondary), var(--primary));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -352,6 +422,10 @@ function getProgresoClass(progreso) {
 
 .progreso-bar {
   background: rgba(0, 0, 0, 0.1);
+}.carrera-buttons {
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
 }
+
 </style>
   

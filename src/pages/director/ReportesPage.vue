@@ -254,6 +254,7 @@
           <MatrizControlInstitucional 
             :sede-id="Number(filtros.sede)"
             :carrera-id="Number(filtros.carrera)"
+            :semana-inicio="filtros.semana"
           />
         </q-tab-panel>
       </q-tab-panels>
