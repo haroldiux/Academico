@@ -8,13 +8,13 @@
                     Materias Comunes
                 </div>
                 <div class="text-caption text-grey-7">
-                    Vincule asignaturas de diferentes carreras para compartir planificación
+                    Vincule asignaturas equivalentes de diferentes carreras como materias comunes
                 </div>
             </div>
-            <q-btn 
-                label="Vincular Materias" 
-                color="primary" 
-                icon="add_link" 
+            <q-btn
+                label="Vincular Materias"
+                color="primary"
+                icon="add_link"
                 @click="abrirDialogoLink"
                 unelevated
                 class="q-px-md"
@@ -44,8 +44,8 @@
 
                 <template v-slot:body-cell-tipo="props">
                     <q-td :props="props">
-                        <q-chip 
-                            :color="props.row.comun_tipo === 'fusionada' ? 'primary' : 'orange'" 
+                        <q-chip
+                            :color="props.row.comun_tipo === 'fusionada' ? 'primary' : 'orange'"
                             text-color="white"
                             size="sm"
                             dense
@@ -58,19 +58,19 @@
                 <template v-slot:body-cell-vinculadas="props">
                     <q-td :props="props" style="max-width: 400px;">
                         <div class="row q-gutter-xs" style="flex-wrap: wrap;">
-                            <q-chip 
-                                v-for="v in props.row.vinculadas?.slice(0, 3)" 
+                            <q-chip
+                                v-for="v in props.row.vinculadas?.slice(0, 3)"
                                 :key="v.id"
-                                size="sm" 
-                                color="grey-3" 
+                                size="sm"
+                                color="grey-3"
                                 text-color="grey-9"
                                 dense
                             >
                                 {{ v.nombre }} ({{ v.carrera_nombre?.split(',')[0] }})
                             </q-chip>
-                            <q-chip 
-                                v-if="props.row.vinculadas?.length > 3" 
-                                size="sm" 
+                            <q-chip
+                                v-if="props.row.vinculadas?.length > 3"
+                                size="sm"
                                 color="blue-grey-2"
                                 text-color="blue-grey-8"
                                 dense
@@ -96,9 +96,9 @@
             </q-table>
         </q-card>
 
-        <!-- Diálogo para Vincular (Más compacto) -->
+        <!-- Diálogo para Vincular -->
         <q-dialog v-model="dialogLink" persistent :maximized="$q.screen.lt.md">
-            <q-card :style="$q.screen.gt.sm ? 'width: 900px; max-width: 95vw;' : ''">
+            <q-card :style="$q.screen.gt.sm ? 'width: 950px; max-width: 95vw;' : ''">
                 <q-card-section class="row items-center q-py-sm bg-primary text-white">
                     <q-icon name="add_link" size="sm" class="q-mr-sm" />
                     <div class="text-subtitle1">Vincular Materias Comunes</div>
@@ -141,57 +141,48 @@
                                 </template>
                             </q-select>
 
-                            <div class="text-subtitle2 text-grey-8 q-mt-md q-mb-sm" v-if="materiaBase">
-                                <q-icon name="tune" size="xs" /> Tipo de Vinculación
-                            </div>
-                            <q-btn-toggle
-                                v-if="materiaBase"
-                                v-model="tipoVinculacion"
-                                spread
-                                no-caps
-                                rounded
-                                unelevated
-                                toggle-color="primary"
-                                color="grey-3"
-                                text-color="grey-8"
-                                :options="[
-                                    {label: 'Fusionada', value: 'fusionada'},
-                                    {label: 'Espejo', value: 'espejo'}
-                                ]"
-                                class="q-mb-sm"
-                            />
-                            <div v-if="materiaBase" class="text-caption text-grey-6">
-                                {{ tipoVinculacion === 'fusionada' ? 'Lista unificada, mismo horario' : 'Listas separadas, comparten planificación' }}
-                            </div>
                         </div>
 
-                        <!-- Columna Derecha: Materias a Vincular -->
+                        <!-- Columna Derecha: Buscar y seleccionar candidatas -->
                         <div class="col-12 col-md-7" v-if="materiaBase">
                             <div class="row items-center q-mb-sm">
                                 <div class="text-subtitle2 text-grey-8">
-                                    <q-icon name="playlist_add" size="xs" /> Materias a Vincular
+                                    <q-icon name="search" size="xs" /> Buscar materia a vincular
                                 </div>
                                 <q-space />
                                 <q-badge v-if="materiasSeleccionadas.length" color="teal">
                                     {{ materiasSeleccionadas.length }} seleccionadas
                                 </q-badge>
                             </div>
-                            
+
                             <q-input
-                                v-model="busquedaCandidatos"
+                                v-model="searchCandidatos"
                                 outlined
                                 dense
-                                placeholder="Buscar materias..."
-                                @update:model-value="buscarCandidatos"
+                                placeholder="Buscar por nombre o código..."
+                                clearable
+                                @update:model-value="onSearchCandidatos"
                                 class="q-mb-sm"
                             >
                                 <template v-slot:prepend>
-                                    <q-icon name="search" size="xs" />
+                                    <q-icon name="search" />
                                 </template>
                             </q-input>
 
-                            <div class="candidatos-list" style="max-height: 250px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
-                                <q-list dense separator v-if="candidatos.length">
+                            <!-- Loading -->
+                            <div v-if="loadingCandidatos" class="text-center q-pa-lg">
+                                <q-spinner color="primary" size="md" />
+                            </div>
+
+                            <!-- Sin resultados -->
+                            <div v-else-if="!loadingCandidatos && candidatos.length === 0 && searchCandidatos" class="text-center text-grey-5 q-pa-md">
+                                <q-icon name="search_off" size="md" color="grey-4" />
+                                <div class="text-caption q-mt-xs">No se encontraron materias con ese criterio.</div>
+                            </div>
+
+                            <!-- Lista plana de candidatos -->
+                            <div v-else-if="candidatos.length > 0" class="candidatos-scroll">
+                                <q-list dense separator>
                                     <q-item
                                         v-for="c in candidatos"
                                         :key="c.id"
@@ -213,27 +204,27 @@
                                         </q-item-section>
                                     </q-item>
                                 </q-list>
-                                <div v-else-if="loadingCandidatos" class="text-center q-pa-md">
-                                    <q-spinner color="teal" size="sm" />
-                                </div>
-                                <div v-else class="text-center text-grey-5 q-pa-md text-caption">
-                                    Escriba para buscar materias
-                                </div>
                             </div>
+                        </div>
+
+                        <!-- Mensaje inicial antes de seleccionar materia -->
+                        <div class="col-12 col-md-7 text-center text-grey-5 q-pa-xl" v-else>
+                            <q-icon name="school" size="lg" color="grey-3" />
+                            <div class="text-caption q-mt-sm">Seleccione una materia base para ver las opciones disponibles</div>
                         </div>
                     </div>
                 </q-card-section>
 
                 <q-separator v-if="materiaBase && materiasSeleccionadas.length" />
-                
+
                 <q-card-actions align="right" class="q-pa-md" v-if="materiaBase && materiasSeleccionadas.length">
                     <div class="text-caption text-grey-7 q-mr-auto">
                         Vincular <strong>{{ materiaBase.nombre }}</strong> con {{ materiasSeleccionadas.length }} materia(s)
                     </div>
                     <q-btn flat label="Cancelar" v-close-popup />
-                    <q-btn 
+                    <q-btn
                         unelevated
-                        color="primary" 
+                        color="primary"
                         label="Confirmar"
                         icon="check"
                         @click="vincularMultiple"
@@ -276,7 +267,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 
@@ -294,18 +285,18 @@ const saving = ref(false)
 const dialogDetalle = ref(false)
 const grupoDetalle = ref(null)
 
-// Step 1: Mi materia base
+// Mi materia base
 const misAsignaturas = ref([])
 const misAsignaturasFiltered = ref([])
 const materiaBase = ref(null)
 const loadingMisAsignaturas = ref(false)
 
-// Step 2: Tipo
+// Tipo (siempre fusionada)
 const tipoVinculacion = ref('fusionada')
 
-// Step 3: Candidatos multi-select
-const busquedaCandidatos = ref('')
+// Candidatas
 const candidatos = ref([])
+const searchCandidatos = ref('')
 const loadingCandidatos = ref(false)
 const materiasSeleccionadas = ref([])
 
@@ -316,6 +307,15 @@ const columns = [
     { name: 'vinculadas', label: 'Vinculadas', field: 'vinculadas', align: 'left' },
     { name: 'acciones', label: '', field: 'acciones', align: 'right', style: 'width: 100px' }
 ]
+
+// --- Watchers ---
+
+// Al cambiar la materia base, limpiar candidatas y búsqueda
+watch(materiaBase, () => {
+    candidatos.value = []
+    searchCandidatos.value = ''
+    materiasSeleccionadas.value = []
+})
 
 // --- API Calls ---
 
@@ -351,27 +351,36 @@ const filterMisAsignaturas = (val, update) => {
     }
     update(() => {
         const needle = val.toLowerCase()
-        misAsignaturasFiltered.value = misAsignaturas.value.filter(v => 
+        misAsignaturasFiltered.value = misAsignaturas.value.filter(v =>
             v.nombre.toLowerCase().includes(needle) || v.codigo.toLowerCase().includes(needle)
         )
     })
 }
 
-const buscarCandidatos = async () => {
+let searchTimeout = null
+const onSearchCandidatos = (val) => {
+    clearTimeout(searchTimeout)
+    if (!val) {
+        candidatos.value = []
+        return
+    }
+    searchTimeout = setTimeout(() => buscarCandidatos(val), 350)
+}
+
+const buscarCandidatos = async (search) => {
     if (!materiaBase.value) return
     loadingCandidatos.value = true
     try {
-        const res = await api.get('/materias-comunes/candidates', { params: { search: busquedaCandidatos.value } })
+        const res = await api.get('/materias-comunes/candidates', {
+            params: { asignatura_id: materiaBase.value.id, search }
+        })
         candidatos.value = res.data
-            .filter(c => c.id !== materiaBase.value.id)
-            .map(c => ({
-                id: c.id,
-                nombre: c.nombre,
-                codigo: c.codigo,
-                carrera_nombre: c.carreras?.map(cr => cr.nombre).filter((v, i, a) => a.indexOf(v) === i).join(', ') || 'Sin carrera'
-            }))
-    } catch (e) { console.error(e) }
-    finally { loadingCandidatos.value = false }
+    } catch (e) {
+        console.error(e)
+        candidatos.value = []
+    } finally {
+        loadingCandidatos.value = false
+    }
 }
 
 const isSelected = (id) => materiasSeleccionadas.value.some(m => m.id === id)
@@ -422,9 +431,8 @@ const verDetalleGrupo = (row) => {
 
 const abrirDialogoLink = async () => {
     materiaBase.value = null
-    tipoVinculacion.value = 'fusionada'
-    busquedaCandidatos.value = ''
     candidatos.value = []
+    searchCandidatos.value = ''
     materiasSeleccionadas.value = []
     dialogLink.value = true
     await fetchMisAsignaturas()
@@ -443,7 +451,11 @@ onMounted(() => { fetchMateriasComunes() })
     text-transform: uppercase;
     color: #666;
 }
-.candidatos-list {
+.candidatos-scroll {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
     background: #fafafa;
 }
 </style>

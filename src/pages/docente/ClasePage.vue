@@ -130,7 +130,27 @@
                   <div class="row q-col-gutter-md q-mb-lg">
                      <div class="col-12 col-md-5">
                         <q-select v-model="materiaSeleccionada" :options="materiasDisponibles" label="Materia" outlined
-                           dense option-label="label" option-value="value" emit-value map-options />
+                           dense option-label="label" option-value="value" emit-value map-options>
+                           <template v-slot:option="scope">
+                              <q-item v-bind="scope.itemProps">
+                                 <q-item-section>
+                                    <q-item-label>
+                                       {{ scope.opt.label }}
+                                       <q-badge v-if="scope.opt.esComunAgrupada" color="indigo" label="Común" class="q-ml-xs" />
+                                    </q-item-label>
+                                    <q-item-label v-if="scope.opt.esComunAgrupada" caption class="text-indigo">
+                                       {{ scope.opt.sublabel }}
+                                    </q-item-label>
+                                 </q-item-section>
+                              </q-item>
+                           </template>
+                           <template v-slot:selected-item="scope">
+                              <span v-if="scope.opt">
+                                 {{ scope.opt.label }}
+                                 <q-badge v-if="scope.opt.esComunAgrupada" color="indigo" label="Común" class="q-ml-xs" />
+                              </span>
+                           </template>
+                        </q-select>
                      </div>
                      <div class="col-12 col-md-5">
                         <q-select v-model="grupoSeleccionado" :options="gruposDisponibles" label="Grupo" outlined dense
@@ -1253,12 +1273,43 @@ const fetchData = async () => {
 }
 
 // 1. Materias únicas disponibles
+// Si varias materias comparten comun_token, se muestran como UNA SOLA entrada
+// con un badge que indica las carreras vinculadas.
 const materiasDisponibles = computed(() => {
-   return materiasReales.value.map(m => ({
-      label: `${m.nombre} (${m.codigo})`,
-      value: m.id,
-      ...m
-   }))
+   const materias = materiasReales.value
+   const result = []
+   const tokensSeen = new Set()
+
+   materias.forEach(m => {
+      if (m.comun_token) {
+         if (tokensSeen.has(m.comun_token)) return
+         tokensSeen.add(m.comun_token)
+
+         const vinculadas = materias.filter(x => x.comun_token === m.comun_token)
+         if (vinculadas.length > 1) {
+            const codigos = vinculadas.map(x => x.codigo).join(' · ')
+            result.push({
+               label: m.nombre,
+               sublabel: `Común: ${codigos}`,
+               value: m.id,
+               esComunAgrupada: true,
+               comunToken: m.comun_token,
+               materiasVinculadas: vinculadas,
+               ...m
+            })
+            return
+         }
+      }
+      result.push({
+         label: `${m.nombre} (${m.codigo})`,
+         sublabel: null,
+         value: m.id,
+         esComunAgrupada: false,
+         ...m
+      })
+   })
+
+   return result
 })
 
 // 2. Grupos consolidados para la materia seleccionada
