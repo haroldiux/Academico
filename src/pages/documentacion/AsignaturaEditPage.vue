@@ -160,7 +160,7 @@
         <q-tab name="bibliografia" icon="auto_stories" label="Bibliografía" no-caps />
         <q-tab name="unidades" icon="folder_open" label="Unidades de Aprendizaje" no-caps />
         <q-tab name="cronograma" icon="calendar_month" label="Cronograma de Asignatura" no-caps />
-        <q-tab name="banco" icon="help_outline" label="Banco de Preguntas" no-caps />
+        <q-tab v-if="authStore.rol !== ROLES.DOCENTE" name="banco" icon="help_outline" label="Banco de Preguntas" no-caps />
       </q-tabs>
 
       <!-- Strip de progreso alineado con los tabs -->
@@ -1173,7 +1173,7 @@
         <!-- ============================================================ -->
         <!-- Tab: Banco de Preguntas -->
         <!-- ============================================================ -->
-        <q-tab-panel name="banco" class="q-pa-none">
+        <q-tab-panel v-if="authStore.rol !== ROLES.DOCENTE" name="banco" class="q-pa-none">
 
           <!-- ── Header principal ── -->
           <div class="banco-header">
