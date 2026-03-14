@@ -455,15 +455,30 @@
                                              </div>
                                           </div>
                                           <!-- File upload input (only if not completed) -->
-                                          <q-file v-model="integracionTransversal.investigacion.evidencia"
-                                             label="Subir evidencia Max 2mb" outlined dense
-                                             accept="image/*,video/*,.pdf,.doc,.docx" :disable="esLecturaSola"
-                                             max-file-size="2097152" @rejected="archivoRechazado">
-                                             <template v-slot:prepend>
-                                                <q-icon name="science" color="primary" />
-                                             </template>
-                                          </q-file>
-                                       </div>
+                                           <!-- File upload with camera button -->
+                                           <div class="row items-center q-col-gutter-xs">
+                                              <div class="col">
+                                                 <q-file v-model="integracionTransversal.investigacion.evidencia"
+                                                    label="Subir evidencia Max 2mb" outlined dense
+                                                    accept="image/*,video/*,.pdf,.doc,.docx" :disable="esLecturaSola"
+                                                    max-file-size="2097152" @rejected="archivoRechazado"
+                                                    @update:model-value="comprimirImagenSiNecesario(integracionTransversal.investigacion, $event)">
+                                                    <template v-slot:prepend><q-icon name="science" color="primary" /></template>
+                                                    <template v-slot:append v-if="isFileObject(integracionTransversal.investigacion.evidencia)">
+                                                       <span :class="getFileSize(integracionTransversal.investigacion.evidencia) > 2097152 ? 'text-negative' : 'text-positive'" class="text-caption">
+                                                          {{ formatFileSize(getFileSize(integracionTransversal.investigacion.evidencia)) }}
+                                                       </span>
+                                                    </template>
+                                                 </q-file>
+                                              </div>
+                                              <div class="col-auto">
+                                                 <q-btn round dense color="primary" icon="photo_camera"
+                                                    @click="tomarFotoIntegracion('investigacion')" :disable="esLecturaSola">
+                                                    <q-tooltip>Tomar Foto</q-tooltip>
+                                                 </q-btn>
+                                              </div>
+                                           </div>
+                                        </div>
                                     </q-slide-transition>
                                  </div>
 
@@ -493,15 +508,29 @@
                                                 </q-img>
                                              </div>
                                           </div>
-                                          <!-- File upload input -->
-                                          <q-file v-model="integracionTransversal.interaccion.evidencia"
-                                             label="Subir evidencia Max 2mb" outlined dense
-                                             accept="image/*,video/*,.pdf,.doc,.docx" :disable="esLecturaSola"
-                                             max-file-size="2097152" @rejected="archivoRechazado">
-                                             <template v-slot:prepend>
-                                                <q-icon name="groups" color="primary" />
-                                             </template>
-                                          </q-file>
+                                           <!-- File upload with camera button -->
+                                           <div class="row items-center q-col-gutter-xs">
+                                              <div class="col">
+                                                 <q-file v-model="integracionTransversal.interaccion.evidencia"
+                                                    label="Subir evidencia Max 2mb" outlined dense
+                                                    accept="image/*,video/*,.pdf,.doc,.docx" :disable="esLecturaSola"
+                                                    max-file-size="2097152" @rejected="archivoRechazado"
+                                                    @update:model-value="comprimirImagenSiNecesario(integracionTransversal.interaccion, $event)">
+                                                    <template v-slot:prepend><q-icon name="groups" color="primary" /></template>
+                                                    <template v-slot:append v-if="isFileObject(integracionTransversal.interaccion.evidencia)">
+                                                       <span :class="getFileSize(integracionTransversal.interaccion.evidencia) > 2097152 ? 'text-negative' : 'text-positive'" class="text-caption">
+                                                          {{ formatFileSize(getFileSize(integracionTransversal.interaccion.evidencia)) }}
+                                                       </span>
+                                                    </template>
+                                                 </q-file>
+                                              </div>
+                                              <div class="col-auto">
+                                                 <q-btn round dense color="primary" icon="photo_camera"
+                                                    @click="tomarFotoIntegracion('interaccion')" :disable="esLecturaSola">
+                                                    <q-tooltip>Tomar Foto</q-tooltip>
+                                                 </q-btn>
+                                              </div>
+                                           </div>
                                        </div>
                                     </q-slide-transition>
                                  </div>
@@ -533,16 +562,30 @@
                                                 </q-img>
                                              </div>
                                           </div>
-                                          <!-- File upload input -->
-                                          <q-file v-model="integracionTransversal.internalizacion.evidencia"
-                                             label="Subir evidencia Max 2mb" outlined dense
-                                             accept="image/*,video/*,.pdf,.doc,.docx" :disable="esLecturaSola"
-                                             max-file-size="2097152" @rejected="archivoRechazado">
-                                             <template v-slot:prepend>
-                                                <q-icon name="psychology" color="primary" />
-                                             </template>
-                                          </q-file>
-                                       </div>
+                                           <!-- File upload with camera button -->
+                                           <div class="row items-center q-col-gutter-xs">
+                                              <div class="col">
+                                                 <q-file v-model="integracionTransversal.internalizacion.evidencia"
+                                                    label="Subir evidencia Max 2mb" outlined dense
+                                                    accept="image/*,video/*,.pdf,.doc,.docx" :disable="esLecturaSola"
+                                                    max-file-size="2097152" @rejected="archivoRechazado"
+                                                    @update:model-value="comprimirImagenSiNecesario(integracionTransversal.internalizacion, $event)">
+                                                    <template v-slot:prepend><q-icon name="psychology" color="primary" /></template>
+                                                    <template v-slot:append v-if="isFileObject(integracionTransversal.internalizacion.evidencia)">
+                                                       <span :class="getFileSize(integracionTransversal.internalizacion.evidencia) > 2097152 ? 'text-negative' : 'text-positive'" class="text-caption">
+                                                          {{ formatFileSize(getFileSize(integracionTransversal.internalizacion.evidencia)) }}
+                                                       </span>
+                                                    </template>
+                                                 </q-file>
+                                              </div>
+                                              <div class="col-auto">
+                                                 <q-btn round dense color="primary" icon="photo_camera"
+                                                    @click="tomarFotoIntegracion('internalizacion')" :disable="esLecturaSola">
+                                                    <q-tooltip>Tomar Foto</q-tooltip>
+                                                 </q-btn>
+                                              </div>
+                                           </div>
+                                        </div>
                                     </q-slide-transition>
                                  </div>
                               </div>
@@ -690,14 +733,25 @@
                      </template>
                   </div>
 
-                  <div v-else class="text-center q-pa-xl text-grey-6">
-                     <q-icon :name="sesiones.length === 0 ? 'warning' : 'playlist_add_check'"
-                        :color="sesiones.length === 0 ? 'orange' : 'grey-6'" size="64px" />
-                     <div class="text-h6">{{ msgPlanificacionVacia }}</div>
-                     <div v-if="sesiones.length === 0" class="text-body2 text-grey-7 q-mt-sm">Vaya a Planificación
-                        Semestral, genere el
-                        cronograma y complete al menos hasta la sesión que desea registrar.</div>
-                  </div>
+                   <div v-else class="text-center q-pa-xl text-grey-6">
+                      <template v-if="sesiones.length > 0 && !fechaSeguimiento">
+                         <q-icon name="playlist_add_check" color="grey-5" size="56px" />
+                         <div class="text-h6 text-grey-7">Selecciona una sesion</div>
+                         <div class="text-body2 text-grey-6 q-mt-sm">Elige una sesion pendiente del selector para registrar el seguimiento.</div>
+                      </template>
+                      <template v-else-if="sesiones.length > 0 && fechaSeguimiento">
+                         <q-spinner-dots color="primary" size="40px" />
+                      </template>
+                      <template v-else-if="materiaSeleccionada && grupoSeleccionado">
+                         <q-icon name="event_busy" color="orange-4" size="56px" />
+                         <div class="text-h6 text-grey-7">{{ msgPlanificacionVacia }}</div>
+                         <div class="text-body2 text-grey-7 q-mt-sm">Para registrar seguimiento, genere el cronograma en <b>Planificacion Semestral</b>.</div>
+                      </template>
+                      <template v-else>
+                         <q-icon name="school" color="grey-4" size="56px" />
+                         <div class="text-h6 text-grey-7">Selecciona materia y grupo</div>
+                      </template>
+                   </div>
 
                </div>
             </q-tab-panel>
@@ -852,6 +906,107 @@ const isImage = (path) => {
    const ext = path.split('.').pop().toLowerCase();
    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
 };
+
+/**
+ * Formatea el tamaño de un archivo en KB o MB legible
+ */
+const formatFileSize = (bytes) => {
+   if (!bytes) return ''
+   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+/**
+ * Helper accesible en el template para verificar si un valor es un File objeto
+ * (instanceof File no está expuesto en el scope de Vue templates con script setup)
+ */
+const isFileObject = (val) => val instanceof File
+
+/**
+ * Helper para obtener el tamaño de un File con validación
+ */
+const getFileSize = (val) => (val instanceof File) ? val.size : 0
+
+/**
+ * Comprime automáticamente una imagen si supera 2MB (solo para imágenes de galería)
+ * @param {Object} targetObj - El objeto reactivo que tiene la propiedad 'evidencia'
+ * @param {File} file - El archivo seleccionado
+ */
+const comprimirImagenSiNecesario = async (targetObj, file) => {
+   if (!file || !(file instanceof File)) return
+   // Solo comprimir imágenes
+   if (!file.type.startsWith('image/')) return
+   // Si ya está dentro del límite, no comprimir
+   if (file.size <= 2 * 1024 * 1024) return
+
+   try {
+      // Leer como dataURL y comprimir con canvas
+      const bitmap = await createImageBitmap(file)
+      const canvas = document.createElement('canvas')
+      // Reducir dimensiones si es necesario (máx 1920px)
+      const maxDim = 1920
+      let { width, height } = bitmap
+      if (width > maxDim || height > maxDim) {
+         const ratio = Math.min(maxDim / width, maxDim / height)
+         width = Math.round(width * ratio)
+         height = Math.round(height * ratio)
+      }
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(bitmap, 0, 0, width, height)
+
+      // Comprimir a JPEG 0.8
+      const compressed = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8))
+      if (compressed && compressed.size < file.size) {
+         // Crear nuevo File con el mismo nombre
+         const newFile = new File([compressed], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })
+         targetObj.evidencia = newFile
+         console.log(`Imagen comprimida: ${formatFileSize(file.size)} → ${formatFileSize(newFile.size)}`)
+      }
+   } catch (e) {
+      console.warn('No se pudo comprimir la imagen:', e)
+   }
+}
+
+/**
+ * Tomar foto para las secciones de integración transversal
+ * @param {string} campo - 'investigacion' | 'interaccion' | 'internalizacion'
+ */
+const tomarFotoIntegracion = async (campo) => {
+   try {
+      const { Camera } = await import('@capacitor/camera')
+      const photo = await Camera.getPhoto({
+         quality: 60,
+         allowEditing: false,
+         resultType: 'dataUrl',
+         source: 'CAMERA'
+      })
+      if (photo.dataUrl) {
+         const res = await fetch(photo.dataUrl)
+         const blob = await res.blob()
+         const file = new File([blob], `integracion_${campo}_${Date.now()}.jpg`, { type: 'image/jpeg' })
+         integracionTransversal.value[campo].evidencia = file
+      }
+   } catch (err) {
+      if (err?.message?.includes('cancelled') || err?.message?.includes('cancel')) return
+      // Fallback para navegador web
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.capture = 'environment'
+      input.onchange = async (e) => {
+         const file = e.target.files[0]
+         if (file) {
+            await comprimirImagenSiNecesario(integracionTransversal.value[campo], file)
+            if (!(integracionTransversal.value[campo].evidencia instanceof File)) {
+               integracionTransversal.value[campo].evidencia = file
+            }
+         }
+      }
+      input.click()
+   }
+}
 
 const formatDateTime = (dateTimeStr) => {
    if (!dateTimeStr) return '';
@@ -1339,7 +1494,10 @@ function getSemaforoStatus(sesion) {
       return { color: 'blue', icon: 'help', tooltip: 'Sin fecha programada' }
    }
 
-   const createdDateStr = createdAt.toISOString().split('T')[0]
+   // CORRECCIÓN: Usar hora local del servidor (Bolivia UTC-4) para evitar desfases
+   // El string de seguimiento_created_at puede venir en UTC del servidor
+   // Usamos toLocaleDateString con 'sv-SE' para obtener YYYY-MM-DD en horario local
+   const createdDateStr = createdAt.toLocaleDateString('sv-SE')
 
    // RED: saved AFTER the scheduled day
    if (createdDateStr > fechaSesion) {
@@ -1360,19 +1518,26 @@ function getSemaforoStatus(sesion) {
       })
 
       if (horario && horario.hora_inicio && horario.hora_fin) {
-         const createdTime = createdAt.getHours() * 60 + createdAt.getMinutes()
+         // Usar hora local (no getHours que es UTC en algunos entornos)
+         const hours = createdAt.getHours()
+         const minutes = createdAt.getMinutes()
+         const createdTime = hours * 60 + minutes
+
          const [hI, mI] = horario.hora_inicio.split(':').map(Number)
          const [hF, mF] = horario.hora_fin.split(':').map(Number)
-         const startMin = hI * 60 + (mI || 0)
-         const endMin = hF * 60 + (mF || 0) + 30 // 30 min grace period after class ends
+         // 30 min antes como tolerancia de inicio + 60 min de gracia al final
+         const startMin = hI * 60 + (mI || 0) - 30
+         const endMin = hF * 60 + (mF || 0) + 60
 
          if (createdTime >= startMin && createdTime <= endMin) {
             return { color: 'green', icon: 'circle', tooltip: 'Registrado durante la clase ✓' }
          }
+         // Fuera del rango de horario - amarillo (no rojo, puede haber diferencias)
+         return { color: 'amber', icon: 'circle', tooltip: 'Registrado el mismo día (fuera de horario)' }
       }
 
-      // Same day but outside class time
-      return { color: 'amber', icon: 'circle', tooltip: 'Registrado el mismo día (fuera de horario)' }
+      // Sin horario disponible para el día: no marcar en rojo, marcar verde
+      return { color: 'green', icon: 'circle', tooltip: 'Registrado el mismo día ✓' }
    }
 
    // Created BEFORE the scheduled day (early registration)
@@ -1390,10 +1555,10 @@ const sesionesOptions = computed(() => {
       if (s.fecha && s.fecha < minDate) return false
 
       if (vistaHistorial.value) {
-         return isCumplido
+         return isCumplido && !!s.fecha // Completadas: solo las que tienen fecha
       } else {
-         // Pendientes: No cumplidas Y (fecha <= hoy o sin fecha)
-         return !isCumplido && (!s.fecha || s.fecha <= today)
+         // Pendientes: No cumplidas Y con fecha (excluir sesiones sin fecha) Y fecha <= hoy
+         return !isCumplido && !!s.fecha && s.fecha <= today
       }
    })
 
@@ -1433,9 +1598,8 @@ const sesionesOptions = computed(() => {
 
       return {
          label: label,
-         value: s.fecha,
-         // Extra data if needed
-         sesionId: s.id
+         value: s.id,  // Usar ID único en lugar de fecha (puede haber varias sesiones el mismo día)
+         sesionFecha: s.fecha
       }
    })
 })
@@ -1461,7 +1625,7 @@ const fetchSesiones = async () => {
             $q.notify({ type: 'info', message: 'Modo offline — mostrando sesiones cacheadas', icon: 'cloud_off', timeout: 2000 })
             if (sesionesPendientesOptions.value.length > 0) {
                const today = new Date().toISOString().split('T')[0]
-               const todaySession = sesionesPendientesOptions.value.find(o => o.value === today)
+               const todaySession = sesionesPendientesOptions.value.find(o => o.sesionFecha === today)
                fechaSeguimiento.value = todaySession ? todaySession.value : sesionesPendientesOptions.value[0].value
             }
             actualizarSesionPorFecha()
@@ -1570,14 +1734,45 @@ const fetchSesiones = async () => {
 
       sesiones.value = filteredSesiones
 
-      // OFFLINE CACHE: save to native storage
-      await offlineStorage.set(cacheKey, { sesiones: filteredSesiones, horarios: horarios, savedAt: new Date().toISOString() })
+      // OFFLINE CACHE: guardar solo campos esenciales para minimizar el uso de storage
+      try {
+         const sesionesParaCache = filteredSesiones.map(s => ({
+            id: s.id,
+            fecha: s.fecha,
+            numero_sesion: s.numero_sesion,
+            seguimiento_id: s.seguimiento_id,
+            cumplido: s.cumplido,
+            cronograma_id: s.cronograma_id,
+            tema: s.tema ? { id: s.tema.id, titulo: s.tema.titulo } : null,
+            contenido_conceptual: s.contenido_conceptual,
+            contenido_procedimental: s.contenido_procedimental,
+            contenido_actitudinal: s.contenido_actitudinal,
+            criterios_desempeno: s.criterios_desempeno,
+            instrumentos_evaluacion: s.instrumentos_evaluacion,
+            contenido_items_seleccionados: s.contenido_items_seleccionados,
+            pedagogico: s.pedagogico,
+            observaciones: s.observaciones,
+            seguimiento_created_at: s.seguimiento_created_at,
+            isCalculated: s.isCalculated
+         }))
+         await offlineStorage.set(cacheKey, { sesiones: sesionesParaCache, horarios: horarios, savedAt: new Date().toISOString() })
+      } catch (storageErr) {
+         // Si falla por cuota, solo notificar con advertencia suave (no bloquea la funcionalidad online)
+         console.warn('No se pudo guardar caché offline (cuota de storage superada):', storageErr?.message)
+         $q.notify({
+            type: 'warning',
+            message: 'Sin caché offline disponible para este grupo (datos muy grandes).',
+            caption: 'Solo funcionará con conexión a internet.',
+            icon: 'cloud_off',
+            timeout: 4000
+         })
+      }
       await refreshCacheStatus()
       // Auto-select logic
       if (sesionesPendientesOptions.value.length > 0) {
          // Try to select today's session if exists
          const today = new Date().toISOString().split('T')[0]
-         const todaySession = sesionesPendientesOptions.value.find(o => o.value === today)
+         const todaySession = sesionesPendientesOptions.value.find(o => o.sesionFecha === today)
          fechaSeguimiento.value = todaySession ? todaySession.value : sesionesPendientesOptions.value[0].value
       } else {
          fechaSeguimiento.value = null
@@ -1595,7 +1790,7 @@ const fetchSesiones = async () => {
             $q.notify({ type: 'warning', message: 'Sin conexión — mostrando sesiones cacheadas', icon: 'cloud_off', timeout: 3000 })
             if (sesionesPendientesOptions.value.length > 0) {
                const today = new Date().toISOString().split('T')[0]
-               const todaySession = sesionesPendientesOptions.value.find(o => o.value === today)
+               const todaySession = sesionesPendientesOptions.value.find(o => o.sesionFecha === today)
                fechaSeguimiento.value = todaySession ? todaySession.value : sesionesPendientesOptions.value[0].value
             }
             actualizarSesionPorFecha()
@@ -1617,8 +1812,8 @@ const actualizarSesionPorFecha = () => {
       return
    }
 
-   // Find session for the current date
-   const found = sesiones.value.find(s => s.fecha === fechaSeguimiento.value)
+   // Find session by unique ID (not by fecha, there can be multiple sessions on the same day)
+   const found = sesiones.value.find(s => s.id === fechaSeguimiento.value)
    if (found) {
       sesionActual.value = found
 
@@ -1936,10 +2131,18 @@ const guardarSeguimiento = async () => {
 
       await planificacionSemestralService.saveSeguimiento(formData)
 
-      $q.notify({
-         type: 'positive',
-         message: 'Seguimiento de clase actualizado correctamente',
-         icon: 'save'
+      // Mostrar diálogo de éxito prominente
+      $q.dialog({
+         title: '✅ ¡Seguimiento Registrado!',
+         message: `El seguimiento de la sesión ha sido guardado correctamente en el sistema.`,
+         html: true,
+         ok: {
+            label: 'Entendido',
+            color: 'positive',
+            unelevated: true,
+            size: 'md'
+         },
+         persistent: false
       })
 
       if (!estadoCumplimiento.value) {
