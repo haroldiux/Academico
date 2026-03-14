@@ -210,7 +210,8 @@ export function usePermisos() {
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
-        { label: 'Información Carrera', icon: 'business', to: '/director/contexto' }
+        { label: 'Información Carrera', icon: 'business', to: '/director/contexto' },
+        { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' }
       ]
     }
 
@@ -223,6 +224,7 @@ export function usePermisos() {
         // { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
+        { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' }
       ]
     }
@@ -236,6 +238,7 @@ export function usePermisos() {
         { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
+        { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
         { label: 'Reportes Nacionales', icon: 'analytics', to: '/vicerrector/reportes' }
       ]
@@ -249,8 +252,10 @@ export function usePermisos() {
         { label: 'Sedes', icon: 'location_city', to: '/admin/sedes' },
         { label: 'Carreras', icon: 'school', to: '/admin/carreras' },
         { label: 'Asignaturas', icon: 'menu_book', to: '/admin/asignaturas' },
+        { label: 'Plan de Estudios', icon: 'layers', to: '/director/asignaturas' },
         { label: 'Grupos', icon: 'groups', to: '/admin/grupos' },
         { label: 'Docentes', icon: 'person', to: '/admin/docentes' },
+        { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
         { label: 'Evaluaciones', icon: 'quiz', to: '/admin/evaluaciones' },
         { label: 'Documentación', icon: 'description', to: '/documentacion' },
         { label: 'Reportes', icon: 'assessment', to: '/admin/reportes' },
