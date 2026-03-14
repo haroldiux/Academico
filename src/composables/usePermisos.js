@@ -229,6 +229,13 @@ export function usePermisos() {
       ]
     }
 
+    if (esEvaluaciones.value) {
+      return [
+        ...itemsBase,
+        { label: 'Rol de Exámenes', icon: 'fact_check', to: '/evaluaciones/rol-examenes' }
+      ]
+    }
+
     if (esVicerrectorNacional.value) {
       return [
         ...itemsBase,
@@ -240,6 +247,8 @@ export function usePermisos() {
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Adm. Evaluaciones', icon: 'manage_accounts', to: '/admin/administracion-evaluaciones' },
+        { label: 'Rol Exámenes (Eval)', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
         { label: 'Reportes Nacionales', icon: 'analytics', to: '/vicerrector/reportes' }
       ]
     }
@@ -257,6 +266,8 @@ export function usePermisos() {
         { label: 'Docentes', icon: 'person', to: '/admin/docentes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
         { label: 'Evaluaciones', icon: 'quiz', to: '/admin/evaluaciones' },
+        { label: 'Adm. Evaluaciones', icon: 'manage_accounts', to: '/admin/administracion-evaluaciones' },
+        { label: 'Rol Exámenes (Eval)', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
         { label: 'Documentación', icon: 'description', to: '/documentacion' },
         { label: 'Reportes', icon: 'assessment', to: '/admin/reportes' },
         { label: 'Estadísticas', icon: 'analytics', to: '/admin/estadisticas' },
