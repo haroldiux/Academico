@@ -18,7 +18,14 @@
         <q-btn flat round icon="notifications" class="notification-btn">
           <q-badge color="red" floating rounded>{{ notificaciones }}</q-badge>
         </q-btn>
-        <q-btn outline color="primary" icon="assessment" label="Generar Reporte" no-caps @click="generarReporte" />
+        <q-btn
+          outline
+          color="primary"
+          icon="assessment"
+          label="Generar Reporte"
+          no-caps
+          @click="generarReporte"
+        />
       </div>
     </div>
 
@@ -86,31 +93,41 @@
         </div>
 
         <div class="carreras-list">
-          <div 
-            v-for="carrera in carrerasSede" 
-            :key="carrera.id" 
+          <div
+            v-for="carrera in carrerasSede"
+            :key="carrera.id"
             class="carrera-item clickable"
             @click="navegarACarrera(carrera)"
           >
             <div class="carrera-info">
-              <div class="carrera-icon" :style="{ background: carrera.color + '20', color: carrera.color }">
+              <div
+                class="carrera-icon"
+                :style="{ background: carrera.color + '20', color: carrera.color }"
+              >
                 <q-icon name="school" size="20px" />
               </div>
               <div class="carrera-details">
                 <span class="carrera-nombre">{{ carrera.nombre }}</span>
-                <span class="carrera-stats">{{ carrera.asignaturas }} asignaturas • {{ carrera.docentes }} docentes</span>
+                <span class="carrera-stats"
+                  >{{ carrera.asignaturas }} asignaturas • {{ carrera.docentes }} docentes</span
+                >
               </div>
             </div>
             <div class="carrera-progress">
               <div class="progress-bar-container">
                 <q-linear-progress
                   :value="carrera.progreso / 100"
-                  :color="carrera.progreso >= 80 ? 'green' : carrera.progreso >= 50 ? 'orange' : 'red'"
+                  :color="
+                    carrera.progreso >= 80 ? 'green' : carrera.progreso >= 50 ? 'orange' : 'red'
+                  "
                   rounded
                   size="8px"
                 />
               </div>
-              <span class="progress-value" :class="carrera.progreso >= 80 ? 'text-green' : 'text-orange'">
+              <span
+                class="progress-value"
+                :class="carrera.progreso >= 80 ? 'text-green' : 'text-orange'"
+              >
                 {{ carrera.progreso }}%
               </span>
               <q-icon name="chevron_right" size="20px" color="grey-5" class="q-ml-sm" />
@@ -162,7 +179,7 @@
         <!-- Mini Chart Placeholder -->
         <div class="chart-placeholder">
           <q-icon name="bar_chart" size="48px" color="grey-6" />
-          <p class="text-grey-6 q-mt-sm text-center">Gráfico de tendencia<br>mensual</p>
+          <p class="text-grey-6 q-mt-sm text-center">Gráfico de tendencia<br />mensual</p>
         </div>
       </div>
     </div>
@@ -245,7 +262,7 @@ const sedeIdActual = ref(null)
 // Nombre de sede para mostrar
 const sedeNombre = computed(() => {
   if (!sedeIdActual.value) return 'Sin sede asignada'
-  const sede = sedesStore.sedes.find(s => s.id == sedeIdActual.value)
+  const sede = sedesStore.sedes.find((s) => s.id == sedeIdActual.value)
   return sede?.nombre || `Sede ${sedeIdActual.value}`
 })
 
@@ -281,19 +298,19 @@ async function loadDashboard(sedeId) {
   loading.value = true
   try {
     const data = await getDashboardStats(sedeId)
-    
+
     // Stats
     totalCarreras.value = data.stats?.totalCarreras || 0
     totalAsignaturas.value = data.stats?.totalAsignaturas || 0
     docentesActivos.value = data.stats?.docentesActivos || 0
     progresoGeneral.value = data.stats?.progresoGeneral || 0
-    
+
     // KPIs
     asignaturasCompletas.value = data.kpis?.asignaturasCompletas || 0
     asignaturasPendientes.value = data.kpis?.asignaturasEnProgreso || 0
     asignaturasAtrasadas.value = data.kpis?.asignaturasAtrasadas || 0
     directoresCarrera.value = data.kpis?.directoresCarrera || 0
-    
+
     // Carreras
     carrerasSede.value = data.carreras || []
   } catch (error) {
@@ -311,9 +328,11 @@ onMounted(async () => {
   }
 
   // El Director Académico SIEMPRE tiene sede asignada - usarla directamente
-  const sedeId = authStore.sedeId || authStore.usuarioActual?.sede_id || 
-                 authStore.usuarioActual?.docente?.sede_id
-  
+  const sedeId =
+    authStore.sedeId ||
+    authStore.usuarioActual?.sede_id ||
+    authStore.usuarioActual?.docente?.sede_id
+
   if (sedeId) {
     sedeIdActual.value = sedeId
     loadDashboard(sedeId)
@@ -345,13 +364,13 @@ function generarReportePendientes() {
 
 // Navegar al reporte detallado de una carrera
 function navegarACarrera(carrera) {
-  router.push({ 
-    path: '/director/reportes', 
-    query: { 
+  router.push({
+    path: '/director/reportes',
+    query: {
       tab: 'auditoria',
       carrera: carrera.id,
-      sede: sedeIdActual.value
-    } 
+      sede: sedeIdActual.value,
+    },
   })
 }
 </script>
@@ -413,7 +432,9 @@ function navegarACarrera(carrera) {
 }
 
 @media (max-width: 1200px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .stat-card {
@@ -433,10 +454,22 @@ function navegarACarrera(carrera) {
   margin-bottom: 16px;
 }
 
-.stat-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
-.stat-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.stat-icon.purple {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary-light);
+}
+.stat-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+.stat-icon.orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+.stat-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
 
 .stat-label {
   color: var(--text-secondary);
@@ -462,8 +495,12 @@ function navegarACarrera(carrera) {
   font-weight: 500;
 }
 
-.stat-trend.positive { color: var(--accent-green); }
-.stat-trend.neutral { color: var(--text-secondary); }
+.stat-trend.positive {
+  color: var(--accent-green);
+}
+.stat-trend.neutral {
+  color: var(--text-secondary);
+}
 
 /* Content Grid */
 .content-grid {
@@ -474,10 +511,13 @@ function navegarACarrera(carrera) {
 }
 
 @media (max-width: 1024px) {
-  .content-grid { grid-template-columns: 1fr; }
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.main-card, .side-card {
+.main-card,
+.side-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 16px;
@@ -530,7 +570,7 @@ function navegarACarrera(carrera) {
 .carrera-item.clickable:hover {
   background: var(--bg-hover, #f0f4ff);
   transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .carrera-info {
@@ -582,8 +622,12 @@ function navegarACarrera(carrera) {
   text-align: right;
 }
 
-.text-green { color: var(--accent-green); }
-.text-orange { color: var(--accent-orange); }
+.text-green {
+  color: var(--accent-green);
+}
+.text-orange {
+  color: var(--accent-orange);
+}
 
 /* KPI Grid */
 .kpi-grid {
@@ -648,7 +692,9 @@ function navegarACarrera(carrera) {
 }
 
 @media (max-width: 900px) {
-  .reports-grid { grid-template-columns: 1fr; }
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .report-card {
@@ -678,10 +724,22 @@ function navegarACarrera(carrera) {
   flex-shrink: 0;
 }
 
-.report-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--primary-light); }
-.report-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.report-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.report-icon.red { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+.report-icon.purple {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--primary-light);
+}
+.report-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+.report-icon.orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+.report-icon.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+}
 
 .report-info {
   flex: 1;

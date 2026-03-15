@@ -35,5 +35,5 @@ export default {
   // Seguimiento de Clase (Control de Clase) - uses seguimientos table
   saveSeguimiento(data) {
     return api.post('/planificacion-semestral/seguimiento', data)
-  }
+  },
 }

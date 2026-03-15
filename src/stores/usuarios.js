@@ -9,14 +9,14 @@ export const useUsuariosStore = defineStore('usuarios', () => {
   const error = ref(null)
 
   // Getters
-  const usuariosActivos = computed(() => usuarios.value.filter(u => u.estado === 'activo'))
-  const usuariosInactivos = computed(() => usuarios.value.filter(u => u.estado !== 'activo'))
+  const usuariosActivos = computed(() => usuarios.value.filter((u) => u.estado === 'activo'))
+  const usuariosInactivos = computed(() => usuarios.value.filter((u) => u.estado !== 'activo'))
   const totalUsuarios = computed(() => usuarios.value.length)
 
   // Note: usuariosPorRol calculation might needs to wait for data, or be done in backend
   const usuariosPorRol = computed(() => {
     const grupos = {}
-    usuarios.value.forEach(u => {
+    usuarios.value.forEach((u) => {
       const rolName = u.rol ? u.rol.nombre : 'Sin Rol'
       if (!grupos[rolName]) {
         grupos[rolName] = []
@@ -33,21 +33,24 @@ export const useUsuariosStore = defineStore('usuarios', () => {
       const response = await userService.getUsuarios(search)
       // Map response to match expected format if needed, OR user backend format directly
       // Backend returns User models with 'rol' relation
-      usuarios.value = response.data.map(u => {
+      usuarios.value = response.data.map((u) => {
         // Logic to extract career IDs
-        let cIds = [];
+        let cIds = []
         if (u.director) {
-            if (u.director.carreras && u.director.carreras.length > 0) {
-                cIds = u.director.carreras.map(c => c.id);
-            } else if (u.director.carrera) {
-                cIds = [u.director.carrera.id];
-            }
+          if (u.director.carreras && u.director.carreras.length > 0) {
+            cIds = u.director.carreras.map((c) => c.id)
+          } else if (u.director.carrera) {
+            cIds = [u.director.carrera.id]
+          }
         }
         // Fallback to legacy string if empty and it looks like IDs
         if (cIds.length === 0 && u.carrera && typeof u.carrera === 'string') {
-             if (/^[\d,\s]+$/.test(u.carrera)) {
-                 cIds = u.carrera.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-             }
+          if (/^[\d,\s]+$/.test(u.carrera)) {
+            cIds = u.carrera
+              .split(',')
+              .map((s) => parseInt(s.trim()))
+              .filter((n) => !isNaN(n))
+          }
         }
 
         return {
@@ -59,7 +62,7 @@ export const useUsuariosStore = defineStore('usuarios', () => {
           // Map Resolved Names
           carrera: u.carrera_nombre || u.carrera,
           carreraIds: cIds, // New field for edit form
-          sedeNombre: u.sede_nombre || (u.sede ? u.sede.nombre : 'N/A')
+          sedeNombre: u.sede_nombre || (u.sede ? u.sede.nombre : 'N/A'),
         }
       })
     } catch (err) {
@@ -71,7 +74,7 @@ export const useUsuariosStore = defineStore('usuarios', () => {
   }
 
   function getUsuarioById(id) {
-    return usuarios.value.find(u => u.id === id)
+    return usuarios.value.find((u) => u.id === id)
   }
 
   async function addUsuario(usuario) {
@@ -86,7 +89,7 @@ export const useUsuariosStore = defineStore('usuarios', () => {
         rol_id: usuario.rolId,
         sede_id: usuario.sedeId,
         carrera: Array.isArray(usuario.carrera) ? usuario.carrera.join(', ') : usuario.carrera,
-        estado: usuario.estado === 'activo'
+        estado: usuario.estado === 'activo',
       }
       const response = await userService.createUsuario(payload)
       usuarios.value.push(response.data)
@@ -98,21 +101,21 @@ export const useUsuariosStore = defineStore('usuarios', () => {
 
   async function updateUsuario(id, datosActualizados) {
     try {
-       const payload = { ...datosActualizados }
-       if (payload.rolId) payload.rol_id = payload.rolId;
-       if (payload.sedeId) payload.sede_id = payload.sedeId;
-       if (payload.carrera && Array.isArray(payload.carrera)) {
-           payload.carrera = payload.carrera.join(', ');
-       }
-       if (payload.estado) payload.estado = payload.estado === 'activo';
+      const payload = { ...datosActualizados }
+      if (payload.rolId) payload.rol_id = payload.rolId
+      if (payload.sedeId) payload.sede_id = payload.sedeId
+      if (payload.carrera && Array.isArray(payload.carrera)) {
+        payload.carrera = payload.carrera.join(', ')
+      }
+      if (payload.estado) payload.estado = payload.estado === 'activo'
 
-       await userService.updateUsuario(id, payload)
-       // Refresh local
-       fetchUsuarios()
-       return true
+      await userService.updateUsuario(id, payload)
+      // Refresh local
+      fetchUsuarios()
+      return true
     } catch (err) {
-       console.error(err)
-       return false
+      console.error(err)
+      return false
     }
   }
 
@@ -121,31 +124,31 @@ export const useUsuariosStore = defineStore('usuarios', () => {
       await userService.deleteUsuario(id)
       fetchUsuarios()
       return true
-    } catch(err) {
+    } catch (err) {
       console.error(err)
       return false
     }
   }
 
   async function toggleUsuarioEstado(id) {
-    const usuario = usuarios.value.find(u => u.id === id)
+    const usuario = usuarios.value.find((u) => u.id === id)
     if (usuario) {
-       const nuevoEstado = usuario.estado !== 'activo' // bool
-       // ... optimistic update and API call
-       await userService.updateUsuario(id, { estado: nuevoEstado })
-       fetchUsuarios()
-       return true
+      const nuevoEstado = usuario.estado !== 'activo' // bool
+      // ... optimistic update and API call
+      await userService.updateUsuario(id, { estado: nuevoEstado })
+      fetchUsuarios()
+      return true
     }
     return false
   }
 
   async function resetPasswordUsuario(id) {
     try {
-        await userService.resetPassword(id)
-        return true
-    } catch(err) {
-        console.error(err)
-        throw err
+      await userService.resetPassword(id)
+      return true
+    } catch (err) {
+      console.error(err)
+      throw err
     }
   }
 
@@ -171,6 +174,6 @@ export const useUsuariosStore = defineStore('usuarios', () => {
     deleteUsuario,
     toggleUsuarioEstado,
     resetPasswordUsuario,
-    buscarUsuarios
+    buscarUsuarios,
   }
 })

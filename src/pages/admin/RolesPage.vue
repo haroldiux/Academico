@@ -7,13 +7,20 @@
           <q-icon name="admin_panel_settings" size="36px" color="primary" class="q-mr-sm" />
           <span class="text-gradient">Gestión de Roles</span>
         </h4>
-        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
+        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary)">
           Administra los roles y permisos del sistema académico
         </p>
       </div>
       <div class="col-auto">
-        <q-btn unelevated color="primary" icon="add" label="Nuevo Rol" class="btn-primary-gradient"
-          @click="showDialogNuevoRol = true" no-caps />
+        <q-btn
+          unelevated
+          color="primary"
+          icon="add"
+          label="Nuevo Rol"
+          class="btn-primary-gradient"
+          @click="showDialogNuevoRol = true"
+          no-caps
+        />
       </div>
     </div>
 
@@ -57,27 +64,49 @@
       </div>
     </div>
 
-
     <!-- Roles Cards Grid -->
     <div class="row q-col-gutter-lg">
-      <div v-for="(rol, index) in rolesStore.rolesOrdenados" :key="rol.id" class="col-12 col-md-6 col-lg-4">
-        <div class="role-card animate-in"
-          :style="{ animationDelay: `${0.3 + index * 0.05}s`, opacity: rol.activo ? 1 : 0.6 }">
+      <div
+        v-for="(rol, index) in rolesStore.rolesOrdenados"
+        :key="rol.id"
+        class="col-12 col-md-6 col-lg-4"
+      >
+        <div
+          class="role-card animate-in"
+          :style="{ animationDelay: `${0.3 + index * 0.05}s`, opacity: rol.activo ? 1 : 0.6 }"
+        >
           <!-- Card Header -->
-          <div class="role-card-header"
-            :style="{ background: `linear-gradient(135deg, ${rol.color}15 0%, ${rol.color}30 100%)` }">
+          <div
+            class="role-card-header"
+            :style="{
+              background: `linear-gradient(135deg, ${rol.color}15 0%, ${rol.color}30 100%)`,
+            }"
+          >
             <div class="row items-center no-wrap">
-              <q-avatar size="56px" :style="{ background: `linear-gradient(135deg, ${rol.color}, ${rol.color}dd)` }"
-                text-color="white">
+              <q-avatar
+                size="56px"
+                :style="{ background: `linear-gradient(135deg, ${rol.color}, ${rol.color}dd)` }"
+                text-color="white"
+              >
                 <q-icon :name="rol.icono" size="28px" />
               </q-avatar>
               <div class="q-ml-md col">
-                <div class="text-subtitle1 text-weight-bold" style="color: var(--text-primary);">{{ rol.nombre }}</div>
-                <div class="text-caption" style="font-family: monospace; color: var(--text-secondary);">{{ rol.codigo }}
+                <div class="text-subtitle1 text-weight-bold" style="color: var(--text-primary)">
+                  {{ rol.nombre }}
+                </div>
+                <div
+                  class="text-caption"
+                  style="font-family: monospace; color: var(--text-secondary)"
+                >
+                  {{ rol.codigo }}
                 </div>
               </div>
-              <q-chip :color="rol.activo ? 'green-2' : 'grey-4'" :text-color="rol.activo ? 'green-9' : 'grey-7'" dense
-                class="text-weight-bold">
+              <q-chip
+                :color="rol.activo ? 'green-2' : 'grey-4'"
+                :text-color="rol.activo ? 'green-9' : 'grey-7'"
+                dense
+                class="text-weight-bold"
+              >
                 {{ rol.activo ? 'Activo' : 'Inactivo' }}
               </q-chip>
             </div>
@@ -85,29 +114,43 @@
 
           <!-- Card Body -->
           <div class="role-card-body">
-            <p class="text-body2 q-mb-md" style="color: var(--text-secondary); min-height: 40px;">
+            <p class="text-body2 q-mb-md" style="color: var(--text-secondary); min-height: 40px">
               {{ rol.descripcion }}
             </p>
 
             <!-- Permisos Preview -->
             <div class="q-mb-md">
-              <div class="text-caption text-weight-bold q-mb-xs"
-                style="color: var(--text-secondary); letter-spacing: 1px;">
+              <div
+                class="text-caption text-weight-bold q-mb-xs"
+                style="color: var(--text-secondary); letter-spacing: 1px"
+              >
                 PERMISOS
               </div>
               <div class="row q-gutter-xs">
-                <q-chip v-for="(permiso, idx) in rol.permisos.slice(0, 3)" :key="idx" size="sm" color="blue-1"
-                  text-color="blue-9" dense>
+                <q-chip
+                  v-for="(permiso, idx) in rol.permisos.slice(0, 3)"
+                  :key="idx"
+                  size="sm"
+                  color="blue-1"
+                  text-color="blue-9"
+                  dense
+                >
                   {{ permiso === '*' ? 'Todos' : permiso }}
                 </q-chip>
-                <q-chip v-if="rol.permisos.length > 3" size="sm" color="grey-3" text-color="grey-7" dense>
+                <q-chip
+                  v-if="rol.permisos.length > 3"
+                  size="sm"
+                  color="grey-3"
+                  text-color="grey-7"
+                  dense
+                >
                   +{{ rol.permisos.length - 3 }} más
                 </q-chip>
               </div>
             </div>
 
             <!-- Users Count -->
-            <div class="row items-center" style="color: var(--text-secondary);">
+            <div class="row items-center" style="color: var(--text-secondary)">
               <q-icon name="people" size="18px" class="q-mr-xs" />
               <span class="text-caption">{{ getUsuariosPorRol(rol.id) }} usuarios asignados</span>
             </div>
@@ -115,19 +158,41 @@
 
           <!-- Card Actions -->
           <div class="role-card-actions row justify-end q-gutter-xs">
-            <q-btn flat round icon="visibility" size="sm" color="primary" @click="verDetalleRol(rol)">
+            <q-btn
+              flat
+              round
+              icon="visibility"
+              size="sm"
+              color="primary"
+              @click="verDetalleRol(rol)"
+            >
               <q-tooltip>Ver detalles</q-tooltip>
             </q-btn>
             <q-btn flat round icon="edit" size="sm" color="orange" @click="editarRol(rol)">
               <q-tooltip>Editar</q-tooltip>
             </q-btn>
-            <q-btn flat round :icon="rol.activo ? 'toggle_on' : 'toggle_off'" size="sm"
-              :color="rol.activo ? 'green' : 'grey'" @click="toggleEstadoRol(rol)">
+            <q-btn
+              flat
+              round
+              :icon="rol.activo ? 'toggle_on' : 'toggle_off'"
+              size="sm"
+              :color="rol.activo ? 'green' : 'grey'"
+              @click="toggleEstadoRol(rol)"
+            >
               <q-tooltip>{{ rol.activo ? 'Desactivar' : 'Activar' }}</q-tooltip>
             </q-btn>
-            <q-btn flat round icon="delete" size="sm" color="red" @click="confirmarEliminarRol(rol)"
-              :disable="rol.codigo === 'SUPER_ADMIN'">
-              <q-tooltip>{{ rol.codigo === 'SUPER_ADMIN' ? 'No se puede eliminar' : 'Eliminar' }}</q-tooltip>
+            <q-btn
+              flat
+              round
+              icon="delete"
+              size="sm"
+              color="red"
+              @click="confirmarEliminarRol(rol)"
+              :disable="rol.codigo === 'SUPER_ADMIN'"
+            >
+              <q-tooltip>{{
+                rol.codigo === 'SUPER_ADMIN' ? 'No se puede eliminar' : 'Eliminar'
+              }}</q-tooltip>
             </q-btn>
           </div>
         </div>
@@ -136,7 +201,7 @@
 
     <!-- Dialog Nuevo/Editar Rol -->
     <q-dialog v-model="showDialogNuevoRol" persistent>
-      <q-card style="width: 100%; max-width: 550px; border-radius: 16px;">
+      <q-card style="width: 100%; max-width: 550px; border-radius: 16px">
         <div class="dialog-header">
           <div class="dialog-header-title">
             <q-icon :name="editandoRol ? 'edit' : 'add_circle'" size="28px" />
@@ -146,21 +211,39 @@
 
         <q-card-section class="q-pt-lg">
           <q-form @submit.prevent="guardarRol" class="q-gutter-md">
-            <q-input v-model="formRol.nombre" label="Nombre del Rol" outlined dense
-              :rules="[val => !!val || 'El nombre es requerido']">
+            <q-input
+              v-model="formRol.nombre"
+              label="Nombre del Rol"
+              outlined
+              dense
+              :rules="[(val) => !!val || 'El nombre es requerido']"
+            >
               <template v-slot:prepend>
                 <q-icon name="badge" color="primary" />
               </template>
             </q-input>
 
-            <q-input v-model="formRol.codigo" label="Código" outlined dense hint="Identificador único en mayúsculas"
-              :rules="[val => !!val || 'El código es requerido']">
+            <q-input
+              v-model="formRol.codigo"
+              label="Código"
+              outlined
+              dense
+              hint="Identificador único en mayúsculas"
+              :rules="[(val) => !!val || 'El código es requerido']"
+            >
               <template v-slot:prepend>
                 <q-icon name="code" color="primary" />
               </template>
             </q-input>
 
-            <q-input v-model="formRol.descripcion" label="Descripción" outlined dense type="textarea" rows="2">
+            <q-input
+              v-model="formRol.descripcion"
+              label="Descripción"
+              outlined
+              dense
+              type="textarea"
+              rows="2"
+            >
               <template v-slot:prepend>
                 <q-icon name="description" color="primary" />
               </template>
@@ -182,8 +265,15 @@
                 </q-input>
               </div>
               <div class="col-6">
-                <q-select v-model="formRol.icono" label="Ícono" outlined dense :options="iconoOptions" emit-value
-                  map-options>
+                <q-select
+                  v-model="formRol.icono"
+                  label="Ícono"
+                  outlined
+                  dense
+                  :options="iconoOptions"
+                  emit-value
+                  map-options
+                >
                   <template v-slot:prepend>
                     <q-icon :name="formRol.icono" color="primary" />
                   </template>
@@ -191,8 +281,17 @@
               </div>
             </div>
 
-            <q-select v-model="formRol.permisos" label="Permisos" outlined dense multiple use-chips
-              :options="permisosOptions" emit-value map-options>
+            <q-select
+              v-model="formRol.permisos"
+              label="Permisos"
+              outlined
+              dense
+              multiple
+              use-chips
+              :options="permisosOptions"
+              emit-value
+              map-options
+            >
               <template v-slot:prepend>
                 <q-icon name="security" color="primary" />
               </template>
@@ -211,9 +310,13 @@
 
     <!-- Dialog Ver Detalle -->
     <q-dialog v-model="showDialogDetalle">
-      <q-card style="width: 550px; max-width: 95vw; border-radius: 16px;">
-        <div class="dialog-header"
-          :style="{ background: `linear-gradient(135deg, ${rolSeleccionado?.color || '#1976d2'} 0%, ${rolSeleccionado?.color || '#1976d2'}dd 100%)` }">
+      <q-card style="width: 550px; max-width: 95vw; border-radius: 16px">
+        <div
+          class="dialog-header"
+          :style="{
+            background: `linear-gradient(135deg, ${rolSeleccionado?.color || '#1976d2'} 0%, ${rolSeleccionado?.color || '#1976d2'}dd 100%)`,
+          }"
+        >
           <div class="dialog-header-title">
             <q-avatar size="40px" color="white" text-color="primary">
               <q-icon :name="rolSeleccionado?.icono" :style="{ color: rolSeleccionado?.color }" />
@@ -226,28 +329,47 @@
           <div class="q-gutter-md">
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">CÓDIGO</div>
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  CÓDIGO
+                </div>
                 <div class="text-body1 text-weight-medium">{{ rolSeleccionado?.codigo }}</div>
               </div>
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">ESTADO</div>
-                <q-chip :color="rolSeleccionado?.activo ? 'green-2' : 'grey-4'"
-                  :text-color="rolSeleccionado?.activo ? 'green-9' : 'grey-7'" dense>
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  ESTADO
+                </div>
+                <q-chip
+                  :color="rolSeleccionado?.activo ? 'green-2' : 'grey-4'"
+                  :text-color="rolSeleccionado?.activo ? 'green-9' : 'grey-7'"
+                  dense
+                >
                   {{ rolSeleccionado?.activo ? 'Activo' : 'Inactivo' }}
                 </q-chip>
               </div>
             </div>
 
             <div>
-              <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">DESCRIPCIÓN</div>
+              <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                DESCRIPCIÓN
+              </div>
               <div class="text-body2">{{ rolSeleccionado?.descripcion }}</div>
             </div>
 
             <div>
-              <div class="text-caption text-weight-bold q-mb-sm" style="color: var(--text-secondary);">PERMISOS</div>
+              <div
+                class="text-caption text-weight-bold q-mb-sm"
+                style="color: var(--text-secondary)"
+              >
+                PERMISOS
+              </div>
               <div class="row q-gutter-xs">
-                <q-chip v-for="(permiso, index) in rolSeleccionado?.permisos" :key="index" color="blue-1"
-                  text-color="blue-9" dense>
+                <q-chip
+                  v-for="(permiso, index) in rolSeleccionado?.permisos"
+                  :key="index"
+                  color="blue-1"
+                  text-color="blue-9"
+                  dense
+                >
                   {{ permiso === '*' ? 'Acceso Total' : permiso }}
                 </q-chip>
               </div>
@@ -255,12 +377,17 @@
 
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">USUARIOS ASIGNADOS
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  USUARIOS ASIGNADOS
                 </div>
-                <div class="text-body1 text-weight-medium">{{ getUsuariosPorRol(rolSeleccionado?.id) }}</div>
+                <div class="text-body1 text-weight-medium">
+                  {{ getUsuariosPorRol(rolSeleccionado?.id) }}
+                </div>
               </div>
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">FECHA CREACIÓN</div>
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  FECHA CREACIÓN
+                </div>
                 <div class="text-body1">{{ rolSeleccionado?.fechaCreacion }}</div>
               </div>
             </div>
@@ -275,15 +402,16 @@
 
     <!-- Dialog Confirmar Eliminar -->
     <q-dialog v-model="showDialogEliminar">
-      <q-card style="width: 400px; border-radius: 16px;">
+      <q-card style="width: 400px; border-radius: 16px">
         <q-card-section class="text-center q-pt-lg">
           <q-avatar icon="warning" color="red" text-color="white" size="60px" class="q-mb-md" />
           <div class="text-h6 text-weight-bold q-mb-sm">¿Eliminar rol?</div>
           <p class="text-body1">
             ¿Estás seguro de que deseas eliminar el rol
-            <strong>{{ rolAEliminar?.nombre }}</strong>?
+            <strong>{{ rolAEliminar?.nombre }}</strong
+            >?
           </p>
-          <p class="text-caption" style="color: var(--text-secondary);">
+          <p class="text-caption" style="color: var(--text-secondary)">
             Esta acción no se puede deshacer.
           </p>
         </q-card-section>
@@ -308,10 +436,7 @@ const rolesStore = useRolesStore()
 const usuariosStore = useUsuariosStore()
 
 onMounted(async () => {
-  await Promise.all([
-    rolesStore.fetchRoles(),
-    usuariosStore.fetchUsuarios()
-  ])
+  await Promise.all([rolesStore.fetchRoles(), usuariosStore.fetchUsuarios()])
 })
 
 // Dialogs state
@@ -330,7 +455,7 @@ const formRolInicial = {
   color: '#1976d2',
   icono: 'badge',
   permisos: [],
-  activo: true
+  activo: true,
 }
 
 const formRol = ref({ ...formRolInicial })
@@ -346,7 +471,7 @@ const iconoOptions = [
   { label: 'Quiz', value: 'quiz' },
   { label: 'Insignia', value: 'badge' },
   { label: 'Seguridad', value: 'security' },
-  { label: 'Verificado', value: 'verified_user' }
+  { label: 'Verificado', value: 'verified_user' },
 ]
 
 const permisosOptions = [
@@ -368,13 +493,13 @@ const permisosOptions = [
   { label: 'Materiales', value: 'materiales' },
   { label: 'Evaluaciones', value: 'evaluaciones' },
   { label: 'Exámenes', value: 'examenes' },
-  { label: 'Resultados', value: 'resultados' }
+  { label: 'Resultados', value: 'resultados' },
 ]
 
 // Computed
 const totalPermisos = computed(() => {
   let total = 0
-  rolesStore.roles.forEach(rol => {
+  rolesStore.roles.forEach((rol) => {
     total += rol.permisos.length
   })
   return total
@@ -382,7 +507,7 @@ const totalPermisos = computed(() => {
 
 // Methods
 function getUsuariosPorRol(rolId) {
-  return usuariosStore.usuarios.filter(u => u.rolId === rolId).length
+  return usuariosStore.usuarios.filter((u) => u.rolId === rolId).length
 }
 
 function verDetalleRol(rol) {
@@ -400,7 +525,7 @@ function editarRol(rol) {
     color: rol.color,
     icono: rol.icono,
     permisos: [...rol.permisos],
-    activo: rol.activo
+    activo: rol.activo,
   }
   showDialogNuevoRol.value = true
 }
@@ -417,7 +542,7 @@ function guardarRol() {
     $q.notify({
       type: 'warning',
       message: 'Por favor completa los campos requeridos',
-      position: 'top'
+      position: 'top',
     })
     return
   }
@@ -428,7 +553,7 @@ function guardarRol() {
       type: 'positive',
       message: 'Rol actualizado exitosamente',
       icon: 'check_circle',
-      position: 'top'
+      position: 'top',
     })
   } else {
     rolesStore.addRol(formRol.value)
@@ -436,7 +561,7 @@ function guardarRol() {
       type: 'positive',
       message: 'Rol creado exitosamente',
       icon: 'check_circle',
-      position: 'top'
+      position: 'top',
     })
   }
 
@@ -449,7 +574,7 @@ function toggleEstadoRol(rol) {
     type: 'info',
     message: `Rol ${!rol.activo ? 'activado' : 'desactivado'}`,
     icon: !rol.activo ? 'toggle_on' : 'toggle_off',
-    position: 'top'
+    position: 'top',
   })
 }
 
@@ -465,7 +590,7 @@ function eliminarRol() {
       type: 'positive',
       message: 'Rol eliminado exitosamente',
       icon: 'delete',
-      position: 'top'
+      position: 'top',
     })
   }
   showDialogEliminar.value = false

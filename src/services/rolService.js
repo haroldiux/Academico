@@ -24,5 +24,5 @@ export default {
   // Eliminar un rol
   deleteRol(id) {
     return api.delete(`/roles/${id}`)
-  }
+  },
 }

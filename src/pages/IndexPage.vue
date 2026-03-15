@@ -20,12 +20,20 @@ const authStore = useAuthStore()
 const dashboards = {
   SuperAdminDashboard: defineAsyncComponent(() => import('pages/dashboards/AdminDashboard.vue')), // Reutilizamos Admin por ahora o crear SuperAdmin específico
   AdminDashboard: defineAsyncComponent(() => import('pages/dashboards/AdminDashboard.vue')),
-  VicerrectorNacionalDashboard: defineAsyncComponent(() => import('pages/dashboards/VicerrectorNacionalDashboard.vue')),
-  VicerrectorSedeDashboard: defineAsyncComponent(() => import('pages/dashboards/VicerrectorSedeDashboard.vue')),
-  DireccionAcademicaDashboard: defineAsyncComponent(() => import('pages/dashboards/DireccionAcademicaDashboard.vue')),
-  DirectorCarreraDashboard: defineAsyncComponent(() => import('pages/dashboards/DirectorCarreraDashboard.vue')),
+  VicerrectorNacionalDashboard: defineAsyncComponent(
+    () => import('pages/dashboards/VicerrectorNacionalDashboard.vue'),
+  ),
+  VicerrectorSedeDashboard: defineAsyncComponent(
+    () => import('pages/dashboards/VicerrectorSedeDashboard.vue'),
+  ),
+  DireccionAcademicaDashboard: defineAsyncComponent(
+    () => import('pages/dashboards/DireccionAcademicaDashboard.vue'),
+  ),
+  DirectorCarreraDashboard: defineAsyncComponent(
+    () => import('pages/dashboards/DirectorCarreraDashboard.vue'),
+  ),
   DocenteDashboard: defineAsyncComponent(() => import('pages/dashboards/DocenteDashboard.vue')),
-  EvaluacionesDashboard: defineAsyncComponent(() => import('pages/dashboards/AdminDashboard.vue')) // Fallback o específico
+  EvaluacionesDashboard: defineAsyncComponent(() => import('pages/dashboards/AdminDashboard.vue')), // Fallback o específico
 }
 
 const currentDashboardComponent = computed(() => {

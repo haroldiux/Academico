@@ -38,10 +38,28 @@
 
     <!-- Filtros -->
     <div class="filters-section q-mb-lg">
-      <q-select v-model="filtros.materia" :options="materiasOptions" label="Materia" outlined dense emit-value
-        map-options clearable style="width: 100%; max-width: 200px; min-width: 150px" />
-      <q-select v-model="filtros.parcial" :options="parcialOptions" label="Parcial" outlined dense emit-value
-        map-options clearable style="width: 100%; max-width: 150px; min-width: 120px" />
+      <q-select
+        v-model="filtros.materia"
+        :options="materiasOptions"
+        label="Materia"
+        outlined
+        dense
+        emit-value
+        map-options
+        clearable
+        style="width: 100%; max-width: 200px; min-width: 150px"
+      />
+      <q-select
+        v-model="filtros.parcial"
+        :options="parcialOptions"
+        label="Parcial"
+        outlined
+        dense
+        emit-value
+        map-options
+        clearable
+        style="width: 100%; max-width: 150px; min-width: 120px"
+      />
     </div>
 
     <!-- Lista de Evaluaciones -->
@@ -52,8 +70,12 @@
             <q-chip :color="getParcialColor(evaluacion.parcial)" text-color="white" size="sm">
               {{ getParcialLabel(evaluacion.parcial) }}
             </q-chip>
-            <q-chip :color="getEstadoColor(evaluacion.estado)" text-color="white" size="sm"
-              :icon="getEstadoIcon(evaluacion.estado)">
+            <q-chip
+              :color="getEstadoColor(evaluacion.estado)"
+              text-color="white"
+              size="sm"
+              :icon="getEstadoIcon(evaluacion.estado)"
+            >
               {{ evaluacion.estado }}
             </q-chip>
           </div>
@@ -85,10 +107,21 @@
         <q-separator />
 
         <q-card-actions>
-          <q-btn flat color="primary" icon="visibility" label="Ver Detalles" @click="verDetalles(evaluacion)" />
+          <q-btn
+            flat
+            color="primary"
+            icon="visibility"
+            label="Ver Detalles"
+            @click="verDetalles(evaluacion)"
+          />
           <q-space />
-          <q-btn v-if="evaluacion.estado === 'Completada'" flat color="green" icon="fact_check"
-            @click="verPatron(evaluacion)">
+          <q-btn
+            v-if="evaluacion.estado === 'Completada'"
+            flat
+            color="green"
+            icon="fact_check"
+            @click="verPatron(evaluacion)"
+          >
             <q-tooltip>Ver Patrón</q-tooltip>
           </q-btn>
         </q-card-actions>
@@ -99,7 +132,9 @@
     <div v-if="evaluacionesFiltradas.length === 0" class="empty-state">
       <q-icon name="event_busy" size="80px" color="grey-4" />
       <p class="text-h6 text-grey-6 q-mt-md">No hay evaluaciones</p>
-      <p class="text-caption text-grey-5">No tienes exámenes programados para las materias seleccionadas</p>
+      <p class="text-caption text-grey-5">
+        No tienes exámenes programados para las materias seleccionadas
+      </p>
     </div>
 
     <!-- Dialog Detalles -->
@@ -186,7 +221,7 @@ async function cargarEvaluaciones() {
     console.error('Error cargando evaluaciones:', error)
     $q.notify({
       type: 'negative',
-      message: 'Error al cargar las evaluaciones programadas'
+      message: 'Error al cargar las evaluaciones programadas',
     })
   } finally {
     loading.value = false
@@ -194,34 +229,43 @@ async function cargarEvaluaciones() {
 }
 
 const materiasOptions = computed(() => {
-  const materias = [...new Set(evaluaciones.value.map(e => e.materia))]
-  return materias.map(m => ({ label: m, value: m }))
+  const materias = [...new Set(evaluaciones.value.map((e) => e.materia))]
+  return materias.map((m) => ({ label: m, value: m }))
 })
 
 const parcialOptions = [
   { label: '1° Parcial', value: '1° Parcial' }, // Adjusted to match backend string
   { label: '2° Parcial', value: '2° Parcial' },
   { label: 'Final', value: 'Final' },
-  { label: '2da Instancia', value: '2da Instancia' }
+  { label: '2da Instancia', value: '2da Instancia' },
 ]
 
 const evaluacionesFiltradas = computed(() => {
-  return evaluaciones.value.filter(e => {
+  return evaluaciones.value.filter((e) => {
     if (filtros.value.materia && e.materia !== filtros.value.materia) return false
     if (filtros.value.parcial && e.parcial !== filtros.value.parcial) return false
     return true
   })
 })
 
-const evaluacionesProgramadas = computed(() => evaluaciones.value.filter(e => e.estado === 'Programada').length)
-const evaluacionesEnCurso = computed(() => evaluaciones.value.filter(e => e.estado === 'En Curso').length)
-const evaluacionesCompletadas = computed(() => evaluaciones.value.filter(e => e.estado === 'Completada').length)
+const evaluacionesProgramadas = computed(
+  () => evaluaciones.value.filter((e) => e.estado === 'Programada').length,
+)
+const evaluacionesEnCurso = computed(
+  () => evaluaciones.value.filter((e) => e.estado === 'En Curso').length,
+)
+const evaluacionesCompletadas = computed(
+  () => evaluaciones.value.filter((e) => e.estado === 'Completada').length,
+)
 
 function getParcialColor(parcial) {
   const colors = {
-    '1° Parcial': 'blue', '2° Parcial': 'orange',
-    '1er Parcial': 'blue', '2do Parcial': 'orange',
-    'Final': 'purple', '2da Instancia': 'red'
+    '1° Parcial': 'blue',
+    '2° Parcial': 'orange',
+    '1er Parcial': 'blue',
+    '2do Parcial': 'orange',
+    Final: 'purple',
+    '2da Instancia': 'red',
   }
   return colors[parcial] || 'grey'
 }
@@ -232,12 +276,12 @@ function getParcialLabel(parcial) {
 }
 
 function getEstadoColor(estado) {
-  const colors = { 'Programada': 'blue', 'En Curso': 'green', 'Completada': 'purple' }
+  const colors = { Programada: 'blue', 'En Curso': 'green', Completada: 'purple' }
   return colors[estado] || 'grey'
 }
 
 function getEstadoIcon(estado) {
-  const icons = { 'Programada': 'schedule', 'En Curso': 'play_circle', 'Completada': 'check_circle' }
+  const icons = { Programada: 'schedule', 'En Curso': 'play_circle', Completada: 'check_circle' }
   return icons[estado] || 'info'
 }
 
@@ -327,7 +371,9 @@ function verPatron(eval_) {
   background: var(--bg-secondary) !important;
   border: 1px solid var(--border-color);
   border-radius: 16px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .eval-card:hover {

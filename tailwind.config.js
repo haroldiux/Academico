@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    './index.html',
-    './src/**/*.{vue,js,ts,jsx,tsx}',
-  ],
+  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -33,25 +30,25 @@ export default {
           red: '#EF4444',
           yellow: '#EAB308',
           pink: '#EC4899',
-        }
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       borderRadius: {
-        'xl': '12px',
+        xl: '12px',
         '2xl': '16px',
         '3xl': '24px',
       },
       boxShadow: {
-        'glow': '0 0 20px rgba(124, 58, 237, 0.3)',
+        glow: '0 0 20px rgba(124, 58, 237, 0.3)',
         'glow-orange': '0 0 20px rgba(249, 115, 22, 0.3)',
-      }
+      },
     },
   },
   plugins: [],
   // Importante: no usar Tailwind para clases base que interfieran con Quasar
   corePlugins: {
     preflight: false,
-  }
+  },
 }

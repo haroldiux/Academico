@@ -8,11 +8,16 @@
           <span class="text-gradient">Plan de Estudios</span>
         </h4>
         <div class="row items-center q-gutter-sm q-mt-xs">
-          <p class="q-ma-none" style="color: var(--text-secondary);">
+          <p class="q-ma-none" style="color: var(--text-secondary)">
             Vista general de asignaturas por semestre
           </p>
-          <q-chip v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol === 'VICERRECTOR_SEDE'" color="primary"
-            text-color="white" size="sm" icon="apartment">
+          <q-chip
+            v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol === 'VICERRECTOR_SEDE'"
+            color="primary"
+            text-color="white"
+            size="sm"
+            icon="apartment"
+          >
             Sede: Cochabamba
           </q-chip>
         </div>
@@ -24,24 +29,57 @@
 
     <!-- Filters -->
     <div class="row q-col-gutter-md q-mb-lg">
-      <div class="col-12 col-md-3" v-if="['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)">
-        <q-select v-model="filtros.sedeId" :options="opcionesSedes" label="Sede Académica" outlined dense bg-color="white"
-          emit-value map-options>
+      <div
+        class="col-12 col-md-3"
+        v-if="['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)"
+      >
+        <q-select
+          v-model="filtros.sedeId"
+          :options="opcionesSedes"
+          label="Sede Académica"
+          outlined
+          dense
+          bg-color="white"
+          emit-value
+          map-options
+        >
           <template v-slot:prepend>
             <q-icon name="apartment" />
           </template>
         </q-select>
       </div>
-      <div :class="['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) ? 'col-12 col-md-3' : 'col-12 col-md-4'">
-        <q-select v-model="filtros.carreraId" :options="carrerasOptions" label="Carrera" outlined dense bg-color="white"
-          emit-value map-options :disable="carrerasOptions.length === 0">
+      <div
+        :class="
+          ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)
+            ? 'col-12 col-md-3'
+            : 'col-12 col-md-4'
+        "
+      >
+        <q-select
+          v-model="filtros.carreraId"
+          :options="carrerasOptions"
+          label="Carrera"
+          outlined
+          dense
+          bg-color="white"
+          emit-value
+          map-options
+          :disable="carrerasOptions.length === 0"
+        >
           <template v-slot:prepend>
             <q-icon name="school" />
           </template>
         </q-select>
       </div>
       <div class="col-12 col-md-4">
-        <q-input v-model="filtros.buscar" label="Buscar asignatura..." outlined dense bg-color="white" clearable>
+        <q-input
+          v-model="filtros.buscar"
+          label="Buscar asignatura..."
+          outlined
+          dense
+          bg-color="white"
+          clearable
+        >
           <template v-slot:prepend>
             <q-icon name="search" />
           </template>
@@ -52,8 +90,12 @@
           v-model="filtros.planEstudios"
           :options="opcionesPlanes"
           label="Plan Curricular"
-          outlined dense bg-color="white"
-          emit-value map-options clearable
+          outlined
+          dense
+          bg-color="white"
+          emit-value
+          map-options
+          clearable
         >
           <template v-slot:prepend><q-icon name="layers" /></template>
         </q-select>
@@ -114,8 +156,11 @@
     <!-- Semesters List -->
     <div class="q-gutter-md">
       <div v-for="semestre in semestresFiltrados" :key="semestre.id">
-        <q-expansion-item header-class="bg-white text-primary text-weight-bold shadow-1"
-          style="border-radius: 8px; overflow: hidden;" default-opened>
+        <q-expansion-item
+          header-class="bg-white text-primary text-weight-bold shadow-1"
+          style="border-radius: 8px; overflow: hidden"
+          default-opened
+        >
           <template v-slot:header>
             <q-item-section avatar>
               <q-avatar color="primary" text-color="white" size="32px" font-size="14px">
@@ -124,31 +169,49 @@
             </q-item-section>
             <q-item-section>
               <q-item-label class="text-h6">{{ semestre.nombre }}</q-item-label>
-              <q-item-label caption>{{ semestre.asignaturas.length }} asignaturas - {{ semestre.horasTotales }}
-                horas</q-item-label>
+              <q-item-label caption
+                >{{ semestre.asignaturas.length }} asignaturas -
+                {{ semestre.horasTotales }} horas</q-item-label
+              >
             </q-item-section>
           </template>
 
           <q-card>
             <q-card-section class="q-pa-md bg-grey-1">
-              <q-table :rows="semestre.asignaturas" :columns="columnasAsignaturas" row-key="row_key" flat bordered
-                separator="cell" class="bg-white rounded-borders" hide-bottom :pagination="{ rowsPerPage: 0 }">
+              <q-table
+                :rows="semestre.asignaturas"
+                :columns="columnasAsignaturas"
+                row-key="row_key"
+                flat
+                bordered
+                separator="cell"
+                class="bg-white rounded-borders"
+                hide-bottom
+                :pagination="{ rowsPerPage: 0 }"
+              >
                 <template v-slot:header="props">
                   <q-tr :props="props">
                     <q-th auto-width />
-                    <q-th v-for="col in props.cols" :key="col.name" :props="props">{{ col.label }}</q-th>
+                    <q-th v-for="col in props.cols" :key="col.name" :props="props">{{
+                      col.label
+                    }}</q-th>
                   </q-tr>
                 </template>
 
                 <template v-slot:body="props">
                   <q-tr :props="props">
                     <q-td auto-width>
-                      <q-btn v-if="props.row.docentes_data && props.row.docentes_data.length > 1" 
-                             size="sm" color="primary" round dense 
-                             @click="props.expand = !props.expand" 
-                             :icon="props.expand ? 'remove' : 'add'" />
+                      <q-btn
+                        v-if="props.row.docentes_data && props.row.docentes_data.length > 1"
+                        size="sm"
+                        color="primary"
+                        round
+                        dense
+                        @click="props.expand = !props.expand"
+                        :icon="props.expand ? 'remove' : 'add'"
+                      />
                     </q-td>
-                    
+
                     <q-td v-for="col in props.cols" :key="col.name" :props="props">
                       <!-- Columna Código / Horas (Default) -->
                       <template v-if="['codigo', 'horas'].includes(col.name)">
@@ -159,7 +222,13 @@
                       <template v-else-if="col.name === 'asignatura'">
                         <div>{{ props.row.nombre }}</div>
                         <div v-if="props.row.comun_token" class="q-mt-xs">
-                          <q-chip size="xs" color="indigo-1" text-color="indigo" icon="merge_type" dense>
+                          <q-chip
+                            size="xs"
+                            color="indigo-1"
+                            text-color="indigo"
+                            icon="merge_type"
+                            dense
+                          >
                             Materia Común
                             <q-tooltip>Esta asignatura se comparte con otras carreras.</q-tooltip>
                           </q-chip>
@@ -169,9 +238,17 @@
                       <!-- Columna Docente -->
                       <template v-else-if="col.name === 'docente'">
                         <div v-if="props.row.docente_nombre" class="row items-center no-wrap">
-                          <q-avatar size="28px" color="blue-grey-1" text-color="primary" class="q-mr-sm" icon="person" />
+                          <q-avatar
+                            size="28px"
+                            color="blue-grey-1"
+                            text-color="primary"
+                            class="q-mr-sm"
+                            icon="person"
+                          />
                           <div>
-                            <div class="text-weight-medium text-body2">{{ props.row.docente_nombre_mostrar }}</div>
+                            <div class="text-weight-medium text-body2">
+                              {{ props.row.docente_nombre_mostrar }}
+                            </div>
                           </div>
                         </div>
                         <div v-else class="text-grey-5 text-italic">
@@ -189,55 +266,108 @@
                             rounded
                             size="10px"
                             class="q-mb-xs"
-                            style="min-width: 100px;"
+                            style="min-width: 100px"
                           />
-                          <span class="progreso-text" :class="getProgresoClass(props.row.progreso_mostrar || 0)">
-                            {{ props.row.progreso_mostrar || 0 }}% <template v-if="props.row.docentes_data?.length > 1">Global</template>
+                          <span
+                            class="progreso-text"
+                            :class="getProgresoClass(props.row.progreso_mostrar || 0)"
+                          >
+                            {{ props.row.progreso_mostrar || 0 }}%
+                            <template v-if="props.row.docentes_data?.length > 1">Global</template>
                           </span>
-                          
-                          <div class="row q-gutter-xs q-mt-xs justify-center" v-if="props.row.docentes_data?.length <= 1">
-                            <q-icon 
-                              name="folder" 
-                              :color="props.row.indicadores_mostrar?.programa_analitico?.color || 'negative'" 
+
+                          <div
+                            class="row q-gutter-xs q-mt-xs justify-center"
+                            v-if="props.row.docentes_data?.length <= 1"
+                          >
+                            <q-icon
+                              name="folder"
+                              :color="
+                                props.row.indicadores_mostrar?.programa_analitico?.color ||
+                                'negative'
+                              "
                               size="18px"
                             >
-                              <q-tooltip>Programa Analítico - {{ props.row.indicadores_mostrar?.programa_analitico?.porcentaje || 0 }}%</q-tooltip>
+                              <q-tooltip
+                                >Programa Analítico -
+                                {{
+                                  props.row.indicadores_mostrar?.programa_analitico?.porcentaje ||
+                                  0
+                                }}%</q-tooltip
+                              >
                             </q-icon>
-                            <q-icon 
-                              name="article" 
-                              :color="props.row.indicadores_mostrar?.programa_asignatura?.color || 'negative'" 
+                            <q-icon
+                              name="article"
+                              :color="
+                                props.row.indicadores_mostrar?.programa_asignatura?.color ||
+                                'negative'
+                              "
                               size="18px"
                             >
-                              <q-tooltip>Programa de Asignatura (PAC) - {{ props.row.indicadores_mostrar?.programa_asignatura?.porcentaje || 0 }}%</q-tooltip>
+                              <q-tooltip
+                                >Programa de Asignatura (PAC) -
+                                {{
+                                  props.row.indicadores_mostrar?.programa_asignatura?.porcentaje ||
+                                  0
+                                }}%</q-tooltip
+                              >
                             </q-icon>
-                            <q-icon 
-                              name="assignment" 
-                              :color="props.row.indicadores_mostrar?.plan_clase?.color || 'negative'" 
+                            <q-icon
+                              name="assignment"
+                              :color="
+                                props.row.indicadores_mostrar?.plan_clase?.color || 'negative'
+                              "
                               size="18px"
                             >
-                              <q-tooltip>Plan de Clase - {{ props.row.indicadores_mostrar?.plan_clase?.porcentaje || 0 }}%</q-tooltip>
+                              <q-tooltip
+                                >Plan de Clase -
+                                {{
+                                  props.row.indicadores_mostrar?.plan_clase?.porcentaje || 0
+                                }}%</q-tooltip
+                              >
                             </q-icon>
-                            <q-icon 
-                              name="event" 
-                              :color="props.row.indicadores_mostrar?.cronograma?.color || 'negative'" 
+                            <q-icon
+                              name="event"
+                              :color="
+                                props.row.indicadores_mostrar?.cronograma?.color || 'negative'
+                              "
                               size="18px"
                             >
-                              <q-tooltip>Cronograma - {{ props.row.indicadores_mostrar?.cronograma?.porcentaje || 0 }}%</q-tooltip>
+                              <q-tooltip
+                                >Cronograma -
+                                {{
+                                  props.row.indicadores_mostrar?.cronograma?.porcentaje || 0
+                                }}%</q-tooltip
+                              >
                             </q-icon>
-                            <q-icon 
-                              name="help_outline" 
-                              :color="props.row.indicadores_mostrar?.preguntas?.color || 'negative'" 
+                            <q-icon
+                              name="help_outline"
+                              :color="props.row.indicadores_mostrar?.preguntas?.color || 'negative'"
                               size="18px"
                             >
-                              <q-tooltip>Preguntas - {{ props.row.indicadores_mostrar?.preguntas?.porcentaje || 0 }}%</q-tooltip>
+                              <q-tooltip
+                                >Preguntas -
+                                {{
+                                  props.row.indicadores_mostrar?.preguntas?.porcentaje || 0
+                                }}%</q-tooltip
+                              >
                             </q-icon>
-                            <q-icon 
+                            <q-icon
                               v-if="props.row.sede_id !== 1"
-                              name="assignment_ind" 
-                              :color="props.row.indicadores_mostrar?.planificacion_personal?.color || 'negative'" 
+                              name="assignment_ind"
+                              :color="
+                                props.row.indicadores_mostrar?.planificacion_personal?.color ||
+                                'negative'
+                              "
                               size="18px"
                             >
-                              <q-tooltip>Planificación Personal - {{ props.row.indicadores_mostrar?.planificacion_personal?.porcentaje || 0 }}%</q-tooltip>
+                              <q-tooltip
+                                >Planificación Personal -
+                                {{
+                                  props.row.indicadores_mostrar?.planificacion_personal
+                                    ?.porcentaje || 0
+                                }}%</q-tooltip
+                              >
                             </q-icon>
                           </div>
                         </div>
@@ -245,39 +375,69 @@
 
                       <!-- Columna Estado -->
                       <template v-else-if="col.name === 'estado'">
-                        <q-chip :color="props.row.docente_nombre ? 'positive' : 'warning'"
-                          :text-color="props.row.docente_nombre ? 'white' : 'black'" size="sm">
+                        <q-chip
+                          :color="props.row.docente_nombre ? 'positive' : 'warning'"
+                          :text-color="props.row.docente_nombre ? 'white' : 'black'"
+                          size="sm"
+                        >
                           {{ props.row.docente_nombre ? 'Asignada' : 'Vacante' }}
                         </q-chip>
                       </template>
 
                       <!-- Columna Acciones -->
                       <template v-else-if="col.name === 'acciones'">
-                        <q-btn flat round dense icon="visibility" color="primary" size="sm"
-                          @click="irADocumentacion(props.row)">
-                          <q-tooltip>Ver Documentación <template v-if="props.row.docentes_data?.length > 1">Agrupada</template></q-tooltip>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="visibility"
+                          color="primary"
+                          size="sm"
+                          @click="irADocumentacion(props.row)"
+                        >
+                          <q-tooltip
+                            >Ver Documentación
+                            <template v-if="props.row.docentes_data?.length > 1"
+                              >Agrupada</template
+                            ></q-tooltip
+                          >
                         </q-btn>
-                        <q-btn v-if="props.row.docentes_data?.length <= 1" flat round dense icon="picture_as_pdf" color="secondary" size="sm"
-                          @click="generarCarpeta(props.row)">
+                        <q-btn
+                          v-if="props.row.docentes_data?.length <= 1"
+                          flat
+                          round
+                          dense
+                          icon="picture_as_pdf"
+                          color="secondary"
+                          size="sm"
+                          @click="generarCarpeta(props.row)"
+                        >
                           <q-tooltip>Generar Carpeta Docente</q-tooltip>
                         </q-btn>
                       </template>
-
                     </q-td>
                   </q-tr>
-                  
+
                   <!-- Fila Expandible para Docentes -->
                   <q-tr v-show="props.expand" :props="props">
                     <q-td colspan="100%" class="bg-grey-2 q-pa-md">
-                      <div class="text-weight-bold q-mb-sm text-primary">Progreso Individual por Docente:</div>
+                      <div class="text-weight-bold q-mb-sm text-primary">
+                        Progreso Individual por Docente:
+                      </div>
                       <q-list bordered class="bg-white rounded-borders">
-                        <q-item v-for="docente in props.row.docentes_data" :key="docente.id" class="q-py-md">
+                        <q-item
+                          v-for="docente in props.row.docentes_data"
+                          :key="docente.id"
+                          class="q-py-md"
+                        >
                           <q-item-section avatar>
                             <q-avatar icon="person" color="blue-grey-1" text-color="primary" />
                           </q-item-section>
-                          
+
                           <q-item-section>
-                            <q-item-label class="text-weight-bold">{{ docente.nombre }}</q-item-label>
+                            <q-item-label class="text-weight-bold">{{
+                              docente.nombre
+                            }}</q-item-label>
                             <q-item-label caption>{{ docente.descripcion_grupos }}</q-item-label>
                           </q-item-section>
 
@@ -289,55 +449,111 @@
                                 rounded
                                 size="8px"
                                 class="q-mb-xs"
-                                style="min-width: 120px;"
+                                style="min-width: 120px"
                               />
-                              <span class="progreso-text" :class="getProgresoClass(docente.progreso_documentacion || 0)">
+                              <span
+                                class="progreso-text"
+                                :class="getProgresoClass(docente.progreso_documentacion || 0)"
+                              >
                                 {{ docente.progreso_documentacion || 0 }}%
                               </span>
-                              
+
                               <div class="row q-gutter-xs q-mt-xs justify-center">
-                                <q-icon 
-                                  name="folder" 
-                                  :color="docente.indicadores_documentacion?.programa_analitico?.color || 'negative'" 
+                                <q-icon
+                                  name="folder"
+                                  :color="
+                                    docente.indicadores_documentacion?.programa_analitico?.color ||
+                                    'negative'
+                                  "
                                   size="18px"
                                 >
-                                  <q-tooltip>Programa Analítico - {{ docente.indicadores_documentacion?.programa_analitico?.porcentaje || 0 }}%</q-tooltip>
+                                  <q-tooltip
+                                    >Programa Analítico -
+                                    {{
+                                      docente.indicadores_documentacion?.programa_analitico
+                                        ?.porcentaje || 0
+                                    }}%</q-tooltip
+                                  >
                                 </q-icon>
-                                <q-icon 
-                                  name="article" 
-                                  :color="docente.indicadores_documentacion?.programa_asignatura?.color || 'negative'" 
+                                <q-icon
+                                  name="article"
+                                  :color="
+                                    docente.indicadores_documentacion?.programa_asignatura?.color ||
+                                    'negative'
+                                  "
                                   size="18px"
                                 >
-                                  <q-tooltip>Programa de Asignatura (PAC) - {{ docente.indicadores_documentacion?.programa_asignatura?.porcentaje || 0 }}%</q-tooltip>
+                                  <q-tooltip
+                                    >Programa de Asignatura (PAC) -
+                                    {{
+                                      docente.indicadores_documentacion?.programa_asignatura
+                                        ?.porcentaje || 0
+                                    }}%</q-tooltip
+                                  >
                                 </q-icon>
-                                <q-icon 
-                                  name="assignment" 
-                                  :color="docente.indicadores_documentacion?.plan_clase?.color || 'negative'" 
+                                <q-icon
+                                  name="assignment"
+                                  :color="
+                                    docente.indicadores_documentacion?.plan_clase?.color ||
+                                    'negative'
+                                  "
                                   size="18px"
                                 >
-                                  <q-tooltip>Plan de Clase - {{ docente.indicadores_documentacion?.plan_clase?.porcentaje || 0 }}%</q-tooltip>
+                                  <q-tooltip
+                                    >Plan de Clase -
+                                    {{
+                                      docente.indicadores_documentacion?.plan_clase?.porcentaje ||
+                                      0
+                                    }}%</q-tooltip
+                                  >
                                 </q-icon>
-                                <q-icon 
-                                  name="event" 
-                                  :color="docente.indicadores_documentacion?.cronograma?.color || 'negative'" 
+                                <q-icon
+                                  name="event"
+                                  :color="
+                                    docente.indicadores_documentacion?.cronograma?.color ||
+                                    'negative'
+                                  "
                                   size="18px"
                                 >
-                                  <q-tooltip>Cronograma - {{ docente.indicadores_documentacion?.cronograma?.porcentaje || 0 }}%</q-tooltip>
+                                  <q-tooltip
+                                    >Cronograma -
+                                    {{
+                                      docente.indicadores_documentacion?.cronograma?.porcentaje ||
+                                      0
+                                    }}%</q-tooltip
+                                  >
                                 </q-icon>
-                                <q-icon 
-                                  name="help_outline" 
-                                  :color="docente.indicadores_documentacion?.preguntas?.color || 'negative'" 
+                                <q-icon
+                                  name="help_outline"
+                                  :color="
+                                    docente.indicadores_documentacion?.preguntas?.color ||
+                                    'negative'
+                                  "
                                   size="18px"
                                 >
-                                  <q-tooltip>Preguntas - {{ docente.indicadores_documentacion?.preguntas?.porcentaje || 0 }}%</q-tooltip>
+                                  <q-tooltip
+                                    >Preguntas -
+                                    {{
+                                      docente.indicadores_documentacion?.preguntas?.porcentaje || 0
+                                    }}%</q-tooltip
+                                  >
                                 </q-icon>
-                                <q-icon 
+                                <q-icon
                                   v-if="props.row.sede_id !== 1"
-                                  name="assignment_ind" 
-                                  :color="docente.indicadores_documentacion?.planificacion_personal?.color || 'negative'" 
+                                  name="assignment_ind"
+                                  :color="
+                                    docente.indicadores_documentacion?.planificacion_personal
+                                      ?.color || 'negative'
+                                  "
                                   size="18px"
                                 >
-                                  <q-tooltip>Planificación Personal - {{ docente.indicadores_documentacion?.planificacion_personal?.porcentaje || 0 }}%</q-tooltip>
+                                  <q-tooltip
+                                    >Planificación Personal -
+                                    {{
+                                      docente.indicadores_documentacion?.planificacion_personal
+                                        ?.porcentaje || 0
+                                    }}%</q-tooltip
+                                  >
                                 </q-icon>
                               </div>
                             </div>
@@ -345,12 +561,36 @@
 
                           <q-item-section side>
                             <div class="row q-gutter-sm">
-                              <q-btn flat round dense icon="visibility" color="primary"
-                                @click="irADocumentacion({...props.row, docentes_data: [docente], docente_nombre: docente.nombre})">
+                              <q-btn
+                                flat
+                                round
+                                dense
+                                icon="visibility"
+                                color="primary"
+                                @click="
+                                  irADocumentacion({
+                                    ...props.row,
+                                    docentes_data: [docente],
+                                    docente_nombre: docente.nombre,
+                                  })
+                                "
+                              >
                                 <q-tooltip>Ver Documentación Individual</q-tooltip>
                               </q-btn>
-                              <q-btn flat round dense icon="picture_as_pdf" color="secondary"
-                                @click="generarCarpeta({...props.row, docentes_data: [docente], docente_nombre: docente.nombre})">
+                              <q-btn
+                                flat
+                                round
+                                dense
+                                icon="picture_as_pdf"
+                                color="secondary"
+                                @click="
+                                  generarCarpeta({
+                                    ...props.row,
+                                    docentes_data: [docente],
+                                    docente_nombre: docente.nombre,
+                                  })
+                                "
+                              >
                                 <q-tooltip>Generar Carpeta Individual</q-tooltip>
                               </q-btn>
                             </div>
@@ -375,8 +615,13 @@
 
         <q-card-section class="q-pt-none">
           <q-list bordered separator>
-            <q-item v-for="docente in docentesDialogOptions" :key="docente.id" clickable v-ripple
-              @click="seleccionarDocente(docente.id)">
+            <q-item
+              v-for="docente in docentesDialogOptions"
+              :key="docente.id"
+              clickable
+              v-ripple
+              @click="seleccionarDocente(docente.id)"
+            >
               <q-item-section avatar>
                 <q-avatar icon="person" color="primary" text-color="white" />
               </q-item-section>
@@ -424,7 +669,7 @@ function irADocumentacion(row) {
   const docentes = row.docentes_data || []
   const baseQuery = {
     sede_id: row.sede_id,
-    nombre_sede: row.sede_nombre
+    nombre_sede: row.sede_nombre,
   }
 
   if (docentes.length === 0) {
@@ -435,9 +680,9 @@ function irADocumentacion(row) {
 
   if (docentes.length === 1) {
     // Un solo docente, ir con su ID y sede
-    router.push({ 
-      path: `/documentacion/${row.id}`, 
-      query: { ...baseQuery, docente_id: docentes[0].id } 
+    router.push({
+      path: `/documentacion/${row.id}`,
+      query: { ...baseQuery, docente_id: docentes[0].id },
     })
     return
   }
@@ -459,7 +704,7 @@ async function generarCarpeta(row) {
     // Warning the user
     $q.notify({
       type: 'warning',
-      message: 'Esta asignatura no tiene docentes asignados. Se generará una carpeta vacía.'
+      message: 'Esta asignatura no tiene docentes asignados. Se generará una carpeta vacía.',
     })
     await processGenerarPDF(row, null)
     return
@@ -486,11 +731,11 @@ async function seleccionarDocente(docenteId) {
     // Navegar a documentación con el docente seleccionado y contexto de sede
     router.push({
       path: `/documentacion/${asignaturaSeleccionada.value.id}`,
-      query: { 
+      query: {
         docente_id: docenteId,
         sede_id: asignaturaSeleccionada.value.sede_id,
-        nombre_sede: asignaturaSeleccionada.value.sede_nombre
-      }
+        nombre_sede: asignaturaSeleccionada.value.sede_nombre,
+      },
     })
   } else {
     // Generar PDF
@@ -505,7 +750,7 @@ async function processGenerarPDF(rowSummary, docenteId) {
   $q.loading.show({
     message: 'Generando Carpeta Docente...',
     boxClass: 'bg-grey-2 text-grey-9',
-    spinnerColor: 'primary'
+    spinnerColor: 'primary',
   })
 
   try {
@@ -524,13 +769,13 @@ async function processGenerarPDF(rowSummary, docenteId) {
     // AsignaturaController returns 'carrera' object with 'sede' inside.
     const carrera = asignaturaFull.carrera || {
       nombre: rowSummary.carrera_nombre || 'Desconocida',
-      id: rowSummary.carrera_id
+      id: rowSummary.carrera_id,
     }
 
     // Ensure sede exists
     const sede = carrera.sede || {
       nombre: rowSummary.sede_nombre || 'Sede Central',
-      id: rowSummary.sede_id
+      id: rowSummary.sede_id,
     }
 
     if (!carrera.sede) carrera.sede = sede // Link them if missing
@@ -540,14 +785,13 @@ async function processGenerarPDF(rowSummary, docenteId) {
 
     $q.notify({
       type: 'positive',
-      message: 'Carpeta generada exitosamente'
+      message: 'Carpeta generada exitosamente',
     })
-
   } catch (error) {
     console.error('Error generando PDF:', error)
     $q.notify({
       type: 'negative',
-      message: 'Error al generar la carpeta docente.'
+      message: 'Error al generar la carpeta docente.',
     })
   } finally {
     $q.loading.hide()
@@ -558,24 +802,24 @@ async function processGenerarPDF(rowSummary, docenteId) {
 const filtros = ref({
   sedeId: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'].includes(authStore.rol)
     ? null
-    : (authStore.usuarioActual?.director?.sede_id || authStore.sedeId),
+    : authStore.usuarioActual?.director?.sede_id || authStore.sedeId,
   carreraId: null,
   buscar: '',
   ocultarSinAsignar: true,
-  planEstudios: null   // null = todos, 'N' = Plan Nuevo, 'A' = Plan Antiguo
+  planEstudios: null, // null = todos, 'N' = Plan Nuevo, 'A' = Plan Antiguo
 })
 
 const opcionesPlanes = [
-  { label: 'Plan Nuevo (N)',   value: 'N' },
+  { label: 'Plan Nuevo (N)', value: 'N' },
   { label: 'Plan Antiguo (A)', value: 'A' },
 ]
 
 // Opciones de Sedes (solo para roles que necesitan selector de sede)
 const sedesStore = useSedesStore()
 const opcionesSedes = computed(() => {
-  return sedesStore.sedes.map(s => ({
+  return sedesStore.sedes.map((s) => ({
     label: s.nombre,
-    value: s.id
+    value: s.id,
   }))
 })
 
@@ -584,9 +828,9 @@ const carrerasOptions = computed(() => {
   // Para Vicerrectorado Nacional, Admin, Super Admin: Mostrar carreras de la sede seleccionada
   if (['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)) {
     if (!filtros.value.sedeId) return []
-    return carrerasStore.getCarrerasBySede(filtros.value.sedeId).map(c => ({
+    return carrerasStore.getCarrerasBySede(filtros.value.sedeId).map((c) => ({
       label: c.nombre,
-      value: c.id
+      value: c.id,
     }))
   }
 
@@ -597,16 +841,16 @@ const carrerasOptions = computed(() => {
 
     if (!sedeId) {
       // Si no hay sede asignada, mostrar todas las carreras
-      return carrerasStore.carreras.map(c => ({
+      return carrerasStore.carreras.map((c) => ({
         label: c.nombre,
-        value: c.id
+        value: c.id,
       }))
     }
 
     // Mostrar carreras de la sede del usuario
-    return carrerasStore.getCarrerasBySede(sedeId).map(c => ({
+    return carrerasStore.getCarrerasBySede(sedeId).map((c) => ({
       label: c.nombre,
-      value: c.id
+      value: c.id,
     }))
   }
 
@@ -616,9 +860,9 @@ const carrerasOptions = computed(() => {
 
   // Opción 1: Director con múltiples carreras
   if (director.carreras && director.carreras.length > 0) {
-    return director.carreras.map(c => ({
+    return director.carreras.map((c) => ({
       label: c.nombre,
-      value: c.id
+      value: c.id,
     }))
   }
 
@@ -641,13 +885,16 @@ async function cargarAsignaturas() {
     sedeId,
     filtros.value.carreraId,
     null, // Todos los semestres
-    filtros.value.buscar // Búsqueda backend (opcional, o filtrar en frontend)
+    filtros.value.buscar, // Búsqueda backend (opcional, o filtrar en frontend)
   )
 }
 
 onMounted(async () => {
   // Cargar sedes si es nacional, admin o super admin
-  if (['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) && sedesStore.sedes.length === 0) {
+  if (
+    ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) &&
+    sedesStore.sedes.length === 0
+  ) {
     await sedesStore.fetchSedes()
   }
 
@@ -657,7 +904,11 @@ onMounted(async () => {
   }
 
   // Si es nacional/admin, pre-seleccionar la primera sede
-  if (['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) && opcionesSedes.value.length > 0 && !filtros.value.sedeId) {
+  if (
+    ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) &&
+    opcionesSedes.value.length > 0 &&
+    !filtros.value.sedeId
+  ) {
     filtros.value.sedeId = opcionesSedes.value[0].value
   }
 
@@ -669,16 +920,22 @@ onMounted(async () => {
 })
 
 // Watchers
-watch(() => filtros.value.sedeId, () => {
-  // Al cambiar de sede, limpiar carrera y recargar si hay carreras disponibles
-  filtros.value.carreraId = null
-  if (carrerasOptions.value.length > 0) {
-    filtros.value.carreraId = carrerasOptions.value[0].value
-  }
-})
-watch(() => filtros.value.carreraId, () => {
-  cargarAsignaturas()
-})
+watch(
+  () => filtros.value.sedeId,
+  () => {
+    // Al cambiar de sede, limpiar carrera y recargar si hay carreras disponibles
+    filtros.value.carreraId = null
+    if (carrerasOptions.value.length > 0) {
+      filtros.value.carreraId = carrerasOptions.value[0].value
+    }
+  },
+)
+watch(
+  () => filtros.value.carreraId,
+  () => {
+    cargarAsignaturas()
+  },
+)
 
 // Debounce para búsqueda si queremos búsqueda backend,
 // pero como la lista no es gigante, el filtrado frontend computed es más fluido para UX.
@@ -686,18 +943,47 @@ watch(() => filtros.value.carreraId, () => {
 
 // Columnas
 const columnasAsignaturas = [
-  { name: 'codigo', label: 'Código', field: 'codigo', align: 'left', sortable: true, style: 'width: 100px' },
+  {
+    name: 'codigo',
+    label: 'Código',
+    field: 'codigo',
+    align: 'left',
+    sortable: true,
+    style: 'width: 100px',
+  },
   { name: 'asignatura', label: 'Asignatura', field: 'nombre', align: 'left', sortable: true },
-  { name: 'horas', label: 'Horas', field: 'horas_teoricas', align: 'center', format: (val, row) => ((row.horas_teoricas || 0) * 20) + ((row.horas_practicas || 0) * 20), style: 'width: 80px' }, // Suma x20
+  {
+    name: 'horas',
+    label: 'Horas',
+    field: 'horas_teoricas',
+    align: 'center',
+    format: (val, row) => (row.horas_teoricas || 0) * 20 + (row.horas_practicas || 0) * 20,
+    style: 'width: 80px',
+  }, // Suma x20
   { name: 'docente', label: 'Docente Principal', field: 'docente_nombre', align: 'left' },
-  { name: 'progreso', label: 'Progreso Doc.', field: 'progreso_documentacion', align: 'center', sortable: true, style: 'width: 180px' },
+  {
+    name: 'progreso',
+    label: 'Progreso Doc.',
+    field: 'progreso_documentacion',
+    align: 'center',
+    sortable: true,
+    style: 'width: 180px',
+  },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 100px' },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center', style: 'width: 100px' }
+  {
+    name: 'acciones',
+    label: 'Acciones',
+    field: 'acciones',
+    align: 'center',
+    style: 'width: 100px',
+  },
 ]
 
 // Computed: Estadísticas
 const totalAsignaturas = computed(() => asignaturasStore.asignaturas.length)
-const asignadasCount = computed(() => asignaturasStore.asignaturas.filter(a => a.docentes && a.docentes.length > 0).length)
+const asignadasCount = computed(
+  () => asignaturasStore.asignaturas.filter((a) => a.docentes && a.docentes.length > 0).length,
+)
 const vacantesCount = computed(() => totalAsignaturas.value - asignadasCount.value)
 
 // ComputedPrincipal: Semestres Agrupados
@@ -707,26 +993,27 @@ const semestresFiltrados = computed(() => {
 
   // 1. Filtrado por búsqueda
   if (busqueda) {
-    lista = lista.filter(a =>
-      a.nombre.toLowerCase().includes(busqueda) ||
-      a.codigo.toLowerCase().includes(busqueda) ||
-      (a.docente_nombre && a.docente_nombre.toLowerCase().includes(busqueda))
+    lista = lista.filter(
+      (a) =>
+        a.nombre.toLowerCase().includes(busqueda) ||
+        a.codigo.toLowerCase().includes(busqueda) ||
+        (a.docente_nombre && a.docente_nombre.toLowerCase().includes(busqueda)),
     )
   }
 
   // 2. Filtro por Plan Curricular (N / A)
   if (filtros.value.planEstudios) {
-    lista = lista.filter(a => (a.plan_estudios || 'N') === filtros.value.planEstudios)
+    lista = lista.filter((a) => (a.plan_estudios || 'N') === filtros.value.planEstudios)
   }
 
   // 3. Filtro: ocultar sin docente asignado o con nombre inválido (ej. 'A A A')
   if (filtros.value.ocultarSinAsignar) {
-    lista = lista.filter(a => {
+    lista = lista.filter((a) => {
       const tieneDocente = a.docentes_data && a.docentes_data.length > 0
       if (!tieneDocente) return false
       // Excluir nombres que son solo letras sueltas: 'A A A', 'B B', etc.
       const nombre = (a.docente_nombre || '').trim()
-      const esPlaceholder = nombre.length > 0 && nombre.split(' ').every(w => w.length <= 1)
+      const esPlaceholder = nombre.length > 0 && nombre.split(' ').every((w) => w.length <= 1)
       return !esPlaceholder
     })
   }
@@ -735,7 +1022,7 @@ const semestresFiltrados = computed(() => {
   // Estructura deseada: [{ id: 1, nombre: 'Primer Semestre', asignaturas: [...] }, ...]
   const grupos = {}
 
-  lista.forEach(asig => {
+  lista.forEach((asig) => {
     const sem = asig.semestre || 0
     if (!grupos[sem]) {
       grupos[sem] = {
@@ -743,20 +1030,23 @@ const semestresFiltrados = computed(() => {
         numero: sem,
         nombre: getNemotecnicoSemestre(sem),
         horasTotales: 0,
-        asignaturas: []
+        asignaturas: [],
       }
     }
-    
+
     // Sumar horas
-    grupos[sem].horasTotales += ((asig.horas_teoricas || 0) * 20) + ((asig.horas_practicas || 0) * 20)
+    grupos[sem].horasTotales += (asig.horas_teoricas || 0) * 20 + (asig.horas_practicas || 0) * 20
 
     let progresoMostrar = asig.progreso_documentacion
     let indicadoresMostrar = asig.indicadores_documentacion
-    let docenteNombreMostrar = asig.docentes_data?.length > 1 ? `Varios Docentes (${asig.docentes_data.length})` : asig.docente_nombre
+    let docenteNombreMostrar =
+      asig.docentes_data?.length > 1
+        ? `Varios Docentes (${asig.docentes_data.length})`
+        : asig.docente_nombre
 
     if (asig.docentes_data && asig.docentes_data.length === 1) {
-       progresoMostrar = asig.docentes_data[0].progreso_documentacion
-       indicadoresMostrar = asig.docentes_data[0].indicadores_documentacion
+      progresoMostrar = asig.docentes_data[0].progreso_documentacion
+      indicadoresMostrar = asig.docentes_data[0].indicadores_documentacion
     }
 
     grupos[sem].asignaturas.push({
@@ -764,7 +1054,7 @@ const semestresFiltrados = computed(() => {
       row_key: asig.id, // Llave única para la tabla
       progreso_mostrar: progresoMostrar,
       indicadores_mostrar: indicadoresMostrar,
-      docente_nombre_mostrar: docenteNombreMostrar
+      docente_nombre_mostrar: docenteNombreMostrar,
     })
   })
 
@@ -774,7 +1064,19 @@ const semestresFiltrados = computed(() => {
 
 // Helper para nombres de semestre
 function getNemotecnicoSemestre(n) {
-  const maps = ['Cero', 'Primer', 'Segundo', 'Tercer', 'Cuarto', 'Quinto', 'Sexto', 'Séptimo', 'Octavo', 'Noveno', 'Décimo']
+  const maps = [
+    'Cero',
+    'Primer',
+    'Segundo',
+    'Tercer',
+    'Cuarto',
+    'Quinto',
+    'Sexto',
+    'Séptimo',
+    'Octavo',
+    'Noveno',
+    'Décimo',
+  ]
   return (maps[n] || n) + ' Semestre'
 }
 
@@ -822,7 +1124,13 @@ function getProgresoClass(progreso) {
   font-weight: 600;
 }
 
-.progreso-text.text-green { color: #22c55e; }
-.progreso-text.text-orange { color: #f97316; }
-.progreso-text.text-red { color: #ef4444; }
+.progreso-text.text-green {
+  color: #22c55e;
+}
+.progreso-text.text-orange {
+  color: #f97316;
+}
+.progreso-text.text-red {
+  color: #ef4444;
+}
 </style>

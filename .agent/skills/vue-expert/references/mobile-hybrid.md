@@ -24,12 +24,12 @@ import { quasar, transformAssetUrls } from '@quasar/vite-plugin'
 export default defineConfig({
   plugins: [
     vue({
-      template: { transformAssetUrls }
+      template: { transformAssetUrls },
     }),
     quasar({
-      sassVariables: 'src/quasar-variables.scss'
-    })
-  ]
+      sassVariables: 'src/quasar-variables.scss',
+    }),
+  ],
 })
 ```
 
@@ -43,23 +43,20 @@ export default configure((ctx) => ({
 
   css: ['app.scss'],
 
-  extras: [
-    'roboto-font',
-    'material-icons'
-  ],
+  extras: ['roboto-font', 'material-icons'],
 
   framework: {
     plugins: ['Notify', 'Dialog', 'Loading', 'LocalStorage'],
     config: {
       notify: { position: 'top-right' },
-      loading: { spinnerColor: 'primary' }
-    }
+      loading: { spinnerColor: 'primary' },
+    },
   },
 
   build: {
     target: { browser: ['es2022', 'firefox115', 'chrome115', 'safari14'] },
-    vueRouterMode: 'history'
-  }
+    vueRouterMode: 'history',
+  },
 }))
 ```
 
@@ -76,7 +73,7 @@ function showNotification() {
     message: 'Action completed successfully',
     type: 'positive',
     position: 'top',
-    timeout: 3000
+    timeout: 3000,
   })
 }
 
@@ -85,7 +82,7 @@ function showConfirmDialog() {
     title: 'Confirm',
     message: 'Are you sure you want to proceed?',
     cancel: true,
-    persistent: true
+    persistent: true,
   }).onOk(() => {
     // User confirmed
   })
@@ -205,17 +202,17 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
     // For development
     url: 'http://192.168.1.100:9000',
-    cleartext: true
+    cleartext: true,
   },
   plugins: {
     SplashScreen: {
       launchAutoHide: false,
-      showSpinner: true
+      showSpinner: true,
     },
     PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert']
-    }
-  }
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+  },
 }
 
 export default config
@@ -237,7 +234,7 @@ export function useCamera() {
       const image = await Camera.getPhoto({
         resultType: CameraResultType.Uri,
         source: CameraSource.Camera,
-        quality: 90
+        quality: 90,
       })
       photo.value = image.webPath ?? null
     } catch (e) {
@@ -250,7 +247,7 @@ export function useCamera() {
       const image = await Camera.getPhoto({
         resultType: CameraResultType.Uri,
         source: CameraSource.Photos,
-        quality: 90
+        quality: 90,
       })
       photo.value = image.webPath ?? null
     } catch (e) {
@@ -275,7 +272,7 @@ export function useGeolocation() {
   async function getCurrentPosition() {
     try {
       position.value = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true
+        enableHighAccuracy: true,
       })
     } catch (e) {
       error.value = (e as Error).message
@@ -283,16 +280,13 @@ export function useGeolocation() {
   }
 
   async function watchPosition() {
-    watchId = await Geolocation.watchPosition(
-      { enableHighAccuracy: true },
-      (pos, err) => {
-        if (err) {
-          error.value = err.message
-        } else if (pos) {
-          position.value = pos
-        }
+    watchId = await Geolocation.watchPosition({ enableHighAccuracy: true }, (pos, err) => {
+      if (err) {
+        error.value = err.message
+      } else if (pos) {
+        position.value = pos
       }
-    )
+    })
   }
 
   function stopWatching() {
@@ -415,9 +409,9 @@ export default configure((ctx) => ({
             networkTimeoutSeconds: 10,
             expiration: {
               maxEntries: 100,
-              maxAgeSeconds: 60 * 60 * 24 // 24 hours
-            }
-          }
+              maxAgeSeconds: 60 * 60 * 24, // 24 hours
+            },
+          },
         },
         {
           // Cache images
@@ -427,9 +421,9 @@ export default configure((ctx) => ({
             cacheName: 'image-cache',
             expiration: {
               maxEntries: 50,
-              maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-            }
-          }
+              maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+            },
+          },
         },
         {
           // Cache fonts
@@ -438,13 +432,13 @@ export default configure((ctx) => ({
           options: {
             cacheName: 'font-cache',
             expiration: {
-              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-            }
-          }
-        }
-      ]
-    }
-  }
+              maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+            },
+          },
+        },
+      ],
+    },
+  },
 }))
 ```
 
@@ -467,16 +461,16 @@ export default configure((ctx) => ({
         {
           src: 'icons/icon-128x128.png',
           sizes: '128x128',
-          type: 'image/png'
+          type: 'image/png',
         },
         {
           src: 'icons/icon-512x512.png',
           sizes: '512x512',
-          type: 'image/png'
-        }
-      ]
-    }
-  }
+          type: 'image/png',
+        },
+      ],
+    },
+  },
 }))
 ```
 
@@ -569,13 +563,13 @@ export function usePWAUpdate() {
         {
           label: 'Update',
           color: 'white',
-          handler: updateApp
+          handler: updateApp,
         },
         {
           label: 'Later',
-          color: 'white'
-        }
-      ]
+          color: 'white',
+        },
+      ],
     })
   }
 
@@ -621,16 +615,16 @@ export function useOnlineStatus() {
 
 ## Quick Reference
 
-| Pattern | Use Case |
-|---------|----------|
-| `useQuasar()` | Access Quasar plugins ($q) |
-| `$q.platform.is.*` | Platform detection |
-| `$q.notify()` | Toast notifications |
-| `$q.dialog()` | Modal dialogs |
-| `@capacitor/camera` | Native camera access |
-| `@capacitor/geolocation` | GPS location |
-| `@capacitor/push-notifications` | Push notifications |
-| `workboxMode: 'GenerateSW'` | Auto-generate service worker |
-| `runtimeCaching` | Workbox cache strategies |
-| `beforeinstallprompt` | PWA install prompt |
-| `navigator.serviceWorker.ready` | Service worker lifecycle |
+| Pattern                         | Use Case                     |
+| ------------------------------- | ---------------------------- |
+| `useQuasar()`                   | Access Quasar plugins ($q)   |
+| `$q.platform.is.*`              | Platform detection           |
+| `$q.notify()`                   | Toast notifications          |
+| `$q.dialog()`                   | Modal dialogs                |
+| `@capacitor/camera`             | Native camera access         |
+| `@capacitor/geolocation`        | GPS location                 |
+| `@capacitor/push-notifications` | Push notifications           |
+| `workboxMode: 'GenerateSW'`     | Auto-generate service worker |
+| `runtimeCaching`                | Workbox cache strategies     |
+| `beforeinstallprompt`           | PWA install prompt           |
+| `navigator.serviceWorker.ready` | Service worker lifecycle     |

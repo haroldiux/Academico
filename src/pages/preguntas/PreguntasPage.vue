@@ -15,11 +15,30 @@
         </div>
       </div>
       <div class="header-actions">
-        <q-btn outline color="primary" icon="download" label="Descargar Plantilla" no-caps
-          @click="descargarPlantilla" />
-        <q-btn unelevated color="primary" icon="upload_file" label="Importar Excel" no-caps
-          @click="showImportDialog = true" />
-        <q-btn unelevated color="green" icon="add" label="Nueva Pregunta" no-caps @click="showAddDialog = true" />
+        <q-btn
+          outline
+          color="primary"
+          icon="download"
+          label="Descargar Plantilla"
+          no-caps
+          @click="descargarPlantilla"
+        />
+        <q-btn
+          unelevated
+          color="primary"
+          icon="upload_file"
+          label="Importar Excel"
+          no-caps
+          @click="showImportDialog = true"
+        />
+        <q-btn
+          unelevated
+          color="green"
+          icon="add"
+          label="Nueva Pregunta"
+          no-caps
+          @click="showAddDialog = true"
+        />
       </div>
     </div>
 
@@ -57,15 +76,39 @@
 
     <!-- Filtros -->
     <div class="filters-row">
-      <q-input v-model="filtro.busqueda" outlined dense placeholder="Buscar pregunta..." class="search-input">
+      <q-input
+        v-model="filtro.busqueda"
+        outlined
+        dense
+        placeholder="Buscar pregunta..."
+        class="search-input"
+      >
         <template v-slot:prepend>
           <q-icon name="search" />
         </template>
       </q-input>
-      <q-select v-model="filtro.tipo" :options="opcionesTipo" outlined dense label="Tipo" emit-value map-options
-        clearable style="min-width: 180px;" />
-      <q-select v-model="filtro.dificultad" :options="opcionesDificultad" outlined dense label="Dificultad" emit-value
-        map-options clearable style="width: 100%; max-width: 150px;" />
+      <q-select
+        v-model="filtro.tipo"
+        :options="opcionesTipo"
+        outlined
+        dense
+        label="Tipo"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 180px"
+      />
+      <q-select
+        v-model="filtro.dificultad"
+        :options="opcionesDificultad"
+        outlined
+        dense
+        label="Dificultad"
+        emit-value
+        map-options
+        clearable
+        style="width: 100%; max-width: 150px"
+      />
     </div>
 
     <!-- Lista de Preguntas -->
@@ -74,8 +117,14 @@
         <q-icon name="quiz" size="80px" color="grey-5" />
         <h3>No hay preguntas</h3>
         <p>Importa preguntas desde un Excel o crea una nueva manualmente</p>
-        <q-btn unelevated color="primary" icon="upload_file" label="Importar Excel" no-caps
-          @click="showImportDialog = true" />
+        <q-btn
+          unelevated
+          color="primary"
+          icon="upload_file"
+          label="Importar Excel"
+          no-caps
+          @click="showImportDialog = true"
+        />
       </div>
 
       <div v-for="(pregunta, index) in preguntasFiltradas" :key="pregunta.id" class="pregunta-card">
@@ -84,16 +133,27 @@
             <q-chip :color="getTipoColor(pregunta.tipo)" text-color="white" size="sm" dense>
               {{ getTipoLabel(pregunta.tipo) }}
             </q-chip>
-            <q-chip :color="getDificultadColor(pregunta.nivel_dificultad)" text-color="white" size="sm" dense>
+            <q-chip
+              :color="getDificultadColor(pregunta.nivel_dificultad)"
+              text-color="white"
+              size="sm"
+              dense
+            >
               {{ pregunta.nivel_dificultad }}
             </q-chip>
-            <q-chip outline size="sm" dense>
-              Peso: {{ pregunta.peso }}
-            </q-chip>
+            <q-chip outline size="sm" dense> Peso: {{ pregunta.peso }} </q-chip>
           </div>
           <div class="pregunta-actions">
             <q-btn flat round dense icon="edit" size="sm" @click="editarPregunta(pregunta)" />
-            <q-btn flat round dense icon="delete" size="sm" color="red" @click="eliminarPregunta(pregunta)" />
+            <q-btn
+              flat
+              round
+              dense
+              icon="delete"
+              size="sm"
+              color="red"
+              @click="eliminarPregunta(pregunta)"
+            />
           </div>
         </div>
 
@@ -102,11 +162,18 @@
 
         <div class="pregunta-opciones">
           <template v-for="(opcion, letra) in pregunta.opciones" :key="letra">
-            <div v-if="opcion" :class="['opcion-item', { 'correcta': pregunta.respuesta_correcta.includes(letra) }]">
+            <div
+              v-if="opcion"
+              :class="['opcion-item', { correcta: pregunta.respuesta_correcta.includes(letra) }]"
+            >
               <span class="opcion-letra">{{ letra }}</span>
               <span class="opcion-texto">{{ opcion }}</span>
-              <q-icon v-if="pregunta.respuesta_correcta.includes(letra)" name="check_circle" color="green"
-                size="18px" />
+              <q-icon
+                v-if="pregunta.respuesta_correcta.includes(letra)"
+                name="check_circle"
+                color="green"
+                size="18px"
+              />
             </div>
           </template>
         </div>
@@ -168,12 +235,30 @@
             </div>
           </div>
 
-          <div class="upload-area" @dragover.prevent @drop.prevent="handleDrop" :class="{ 'dragging': isDragging }"
-            @dragenter="isDragging = true" @dragleave="isDragging = false">
-            <input type="file" ref="fileInput" accept=".xlsx,.xls" @change="handleFileSelect" style="display: none;" />
+          <div
+            class="upload-area"
+            @dragover.prevent
+            @drop.prevent="handleDrop"
+            :class="{ dragging: isDragging }"
+            @dragenter="isDragging = true"
+            @dragleave="isDragging = false"
+          >
+            <input
+              type="file"
+              ref="fileInput"
+              accept=".xlsx,.xls"
+              @change="handleFileSelect"
+              style="display: none"
+            />
             <q-icon name="cloud_upload" size="48px" color="primary" />
             <p>Arrastra tu archivo Excel aquí o</p>
-            <q-btn outline color="primary" label="Seleccionar Archivo" no-caps @click="$refs.fileInput.click()" />
+            <q-btn
+              outline
+              color="primary"
+              label="Seleccionar Archivo"
+              no-caps
+              @click="$refs.fileInput.click()"
+            />
             <p v-if="selectedFile" class="file-name">
               <q-icon name="description" /> {{ selectedFile.name }}
             </p>
@@ -182,7 +267,7 @@
           <!-- Preview de datos -->
           <div v-if="previewData.length > 0" class="preview-section">
             <h4>Vista Previa ({{ previewData.length }} preguntas)</h4>
-            <q-scroll-area style="height: 200px;">
+            <q-scroll-area style="height: 200px">
               <div v-for="(item, idx) in previewData.slice(0, 5)" :key="idx" class="preview-item">
                 <span class="preview-num">{{ idx + 1 }}.</span>
                 <span class="preview-text">{{ item.enunciado }}</span>
@@ -199,8 +284,14 @@
 
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="cancelarImport" />
-          <q-btn unelevated color="primary" label="Importar Preguntas" :disable="previewData.length === 0"
-            :loading="importing" @click="confirmarImport" />
+          <q-btn
+            unelevated
+            color="primary"
+            label="Importar Preguntas"
+            :disable="previewData.length === 0"
+            :loading="importing"
+            @click="confirmarImport"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -209,56 +300,106 @@
     <q-dialog v-model="showAddDialog" persistent>
       <q-card class="add-dialog">
         <div class="dialog-header">
-          <h3><q-icon name="add_circle" class="q-mr-sm" /> {{ editMode ? 'Editar' : 'Nueva' }} Pregunta</h3>
+          <h3>
+            <q-icon name="add_circle" class="q-mr-sm" />
+            {{ editMode ? 'Editar' : 'Nueva' }} Pregunta
+          </h3>
         </div>
 
         <q-card-section>
-          <q-input v-model="nuevaPregunta.enunciado" outlined type="textarea" label="Enunciado de la pregunta" rows="3"
-            class="q-mb-md" />
+          <q-input
+            v-model="nuevaPregunta.enunciado"
+            outlined
+            type="textarea"
+            label="Enunciado de la pregunta"
+            rows="3"
+            class="q-mb-md"
+          />
 
           <div class="row q-col-gutter-md q-mb-md">
             <div class="col-6">
-              <q-select v-model="nuevaPregunta.tipo" :options="opcionesTipoCompleto" outlined label="Tipo de pregunta"
-                emit-value map-options />
+              <q-select
+                v-model="nuevaPregunta.tipo"
+                :options="opcionesTipoCompleto"
+                outlined
+                label="Tipo de pregunta"
+                emit-value
+                map-options
+              />
             </div>
             <div class="col-3">
-              <q-select v-model="nuevaPregunta.nivel_dificultad" :options="opcionesDificultadCompleto" outlined
-                label="Dificultad" emit-value map-options />
+              <q-select
+                v-model="nuevaPregunta.nivel_dificultad"
+                :options="opcionesDificultadCompleto"
+                outlined
+                label="Dificultad"
+                emit-value
+                map-options
+              />
             </div>
             <div class="col-3">
-              <q-input v-model.number="nuevaPregunta.peso" outlined type="number" label="Peso" 
-                min="1" max="10" :rules="[val => val >= 1 && val <= 10 || 'Peso debe ser 1-10']" />
+              <q-input
+                v-model.number="nuevaPregunta.peso"
+                outlined
+                type="number"
+                label="Peso"
+                min="1"
+                max="10"
+                :rules="[(val) => (val >= 1 && val <= 10) || 'Peso debe ser 1-10']"
+              />
             </div>
           </div>
 
           <div class="opciones-section">
-            <h4>Opciones de respuesta <span v-if="nuevaPregunta.tipo === 'SELECCION_UNICA'" class="text-caption text-grey">(selecciona UNA correcta)</span><span v-else-if="nuevaPregunta.tipo === 'SELECCION_MULTIPLE'" class="text-caption text-grey">(selecciona VARIAS correctas)</span></h4>
+            <h4>
+              Opciones de respuesta
+              <span v-if="nuevaPregunta.tipo === 'SELECCION_UNICA'" class="text-caption text-grey"
+                >(selecciona UNA correcta)</span
+              ><span
+                v-else-if="nuevaPregunta.tipo === 'SELECCION_MULTIPLE'"
+                class="text-caption text-grey"
+                >(selecciona VARIAS correctas)</span
+              >
+            </h4>
             <div v-for="letra in ['A', 'B', 'C', 'D', 'E']" :key="letra" class="opcion-input-row">
               <!-- Radio para selección única -->
-              <q-radio 
-                v-if="nuevaPregunta.tipo === 'SELECCION_UNICA' || nuevaPregunta.tipo === 'FALSO_VERDADERO'"
-                v-model="respuestaUnica" 
+              <q-radio
+                v-if="
+                  nuevaPregunta.tipo === 'SELECCION_UNICA' ||
+                  nuevaPregunta.tipo === 'FALSO_VERDADERO'
+                "
+                v-model="respuestaUnica"
                 :val="letra"
-                :disable="nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'"
+                :disable="
+                  nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'
+                "
                 @update:model-value="actualizarRespuestaUnica"
               />
               <!-- Checkbox para selección múltiple -->
-              <q-checkbox 
-                v-else
-                v-model="nuevaPregunta.respuesta_correcta" 
-                :val="letra"
-              />
+              <q-checkbox v-else v-model="nuevaPregunta.respuesta_correcta" :val="letra" />
               <span class="opcion-letra-input">{{ letra }}.</span>
-              <q-input v-model="nuevaPregunta.opciones[letra]" outlined dense :placeholder="getPlaceholderOpcion(letra)"
-                :disable="nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'" class="flex-1" />
+              <q-input
+                v-model="nuevaPregunta.opciones[letra]"
+                outlined
+                dense
+                :placeholder="getPlaceholderOpcion(letra)"
+                :disable="
+                  nuevaPregunta.tipo === 'FALSO_VERDADERO' && letra !== 'A' && letra !== 'B'
+                "
+                class="flex-1"
+              />
             </div>
           </div>
         </q-card-section>
 
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="cancelarAdd" />
-          <q-btn unelevated color="primary" :label="editMode ? 'Guardar Cambios' : 'Crear Pregunta'"
-            @click="guardarPregunta" />
+          <q-btn
+            unelevated
+            color="primary"
+            :label="editMode ? 'Guardar Cambios' : 'Crear Pregunta'"
+            @click="guardarPregunta"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -292,7 +433,7 @@ const editMode = ref(false)
 const filtro = ref({
   busqueda: '',
   tipo: null,
-  dificultad: null
+  dificultad: null,
 })
 
 // Import Excel
@@ -309,7 +450,7 @@ const nuevaPreguntaDefault = {
   opciones: { A: '', B: '', C: '', D: '', E: '' },
   respuesta_correcta: [],
   nivel_dificultad: 'MEDIO',
-  peso: 10
+  peso: 10,
 }
 const nuevaPregunta = ref({ ...nuevaPreguntaDefault })
 
@@ -325,7 +466,7 @@ function actualizarRespuestaUnica(val) {
 const opcionesTipo = [
   { label: 'Selección Única', value: TIPOS_PREGUNTA.SELECCION_UNICA },
   { label: 'Selección Múltiple', value: TIPOS_PREGUNTA.SELECCION_MULTIPLE },
-  { label: 'Falso/Verdadero', value: TIPOS_PREGUNTA.FALSO_VERDADERO }
+  { label: 'Falso/Verdadero', value: TIPOS_PREGUNTA.FALSO_VERDADERO },
 ]
 
 const opcionesTipoCompleto = opcionesTipo
@@ -333,7 +474,7 @@ const opcionesTipoCompleto = opcionesTipo
 const opcionesDificultad = [
   { label: 'Fácil', value: 'FACIL' },
   { label: 'Medio', value: 'MEDIO' },
-  { label: 'Difícil', value: 'DIFICIL' }
+  { label: 'Difícil', value: 'DIFICIL' },
 ]
 
 const opcionesDificultadCompleto = opcionesDificultad
@@ -346,15 +487,15 @@ const preguntasFiltradas = computed(() => {
 
   if (filtro.value.busqueda) {
     const busqueda = filtro.value.busqueda.toLowerCase()
-    resultado = resultado.filter(p => p.enunciado.toLowerCase().includes(busqueda))
+    resultado = resultado.filter((p) => p.enunciado.toLowerCase().includes(busqueda))
   }
 
   if (filtro.value.tipo) {
-    resultado = resultado.filter(p => p.tipo === filtro.value.tipo)
+    resultado = resultado.filter((p) => p.tipo === filtro.value.tipo)
   }
 
   if (filtro.value.dificultad) {
-    resultado = resultado.filter(p => p.nivel_dificultad === filtro.value.dificultad)
+    resultado = resultado.filter((p) => p.nivel_dificultad === filtro.value.dificultad)
   }
 
   return resultado
@@ -363,27 +504,32 @@ const preguntasFiltradas = computed(() => {
 const estadisticas = computed(() => preguntasStore.getEstadisticasByLogro(logroId.value))
 
 // Watchers
-watch(() => nuevaPregunta.value.tipo, (newTipo) => {
-  if (newTipo === TIPOS_PREGUNTA.FALSO_VERDADERO) {
-    nuevaPregunta.value.opciones = { A: 'Verdadero', B: 'Falso', C: null, D: null, E: null }
-    nuevaPregunta.value.respuesta_correcta = nuevaPregunta.value.respuesta_correcta.filter(r => ['A', 'B'].includes(r))
-  }
-  // Resetear respuesta cuando cambia el tipo
-  if (newTipo === TIPOS_PREGUNTA.SELECCION_UNICA || newTipo === TIPOS_PREGUNTA.FALSO_VERDADERO) {
-    // Mantener solo una respuesta
-    if (nuevaPregunta.value.respuesta_correcta.length > 1) {
-      nuevaPregunta.value.respuesta_correcta = [nuevaPregunta.value.respuesta_correcta[0]]
+watch(
+  () => nuevaPregunta.value.tipo,
+  (newTipo) => {
+    if (newTipo === TIPOS_PREGUNTA.FALSO_VERDADERO) {
+      nuevaPregunta.value.opciones = { A: 'Verdadero', B: 'Falso', C: null, D: null, E: null }
+      nuevaPregunta.value.respuesta_correcta = nuevaPregunta.value.respuesta_correcta.filter((r) =>
+        ['A', 'B'].includes(r),
+      )
     }
-    respuestaUnica.value = nuevaPregunta.value.respuesta_correcta[0] || ''
-  }
-})
+    // Resetear respuesta cuando cambia el tipo
+    if (newTipo === TIPOS_PREGUNTA.SELECCION_UNICA || newTipo === TIPOS_PREGUNTA.FALSO_VERDADERO) {
+      // Mantener solo una respuesta
+      if (nuevaPregunta.value.respuesta_correcta.length > 1) {
+        nuevaPregunta.value.respuesta_correcta = [nuevaPregunta.value.respuesta_correcta[0]]
+      }
+      respuestaUnica.value = nuevaPregunta.value.respuesta_correcta[0] || ''
+    }
+  },
+)
 
 // Métodos
 function getTipoColor(tipo) {
   const colores = {
     [TIPOS_PREGUNTA.SELECCION_UNICA]: 'blue',
     [TIPOS_PREGUNTA.SELECCION_MULTIPLE]: 'purple',
-    [TIPOS_PREGUNTA.FALSO_VERDADERO]: 'orange'
+    [TIPOS_PREGUNTA.FALSO_VERDADERO]: 'orange',
   }
   return colores[tipo] || 'grey'
 }
@@ -392,7 +538,7 @@ function getTipoLabel(tipo) {
   const labels = {
     [TIPOS_PREGUNTA.SELECCION_UNICA]: 'Única',
     [TIPOS_PREGUNTA.SELECCION_MULTIPLE]: 'Múltiple',
-    [TIPOS_PREGUNTA.FALSO_VERDADERO]: 'V/F'
+    [TIPOS_PREGUNTA.FALSO_VERDADERO]: 'V/F',
   }
   return labels[tipo] || tipo
 }
@@ -443,7 +589,7 @@ function procesarExcel(file) {
     const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
     // Procesar y validar datos
-    previewData.value = jsonData.map(row => {
+    previewData.value = jsonData.map((row) => {
       const pregunta = {
         enunciado: row.ENUNCIADO || '',
         tipo: row.TIPO || TIPOS_PREGUNTA.SELECCION_UNICA,
@@ -452,11 +598,11 @@ function procesarExcel(file) {
           B: row.B || null,
           C: row.C || null,
           D: row.D || null,
-          E: row.E || null
+          E: row.E || null,
         },
         nivel_dificultad: row.DIFICULTAD || 'MEDIO',
         peso: parseInt(row.PESO) || 10,
-        respuesta_correcta: (row.RESPUESTA || '').split(';').filter(r => r.trim())
+        respuesta_correcta: (row.RESPUESTA || '').split(';').filter((r) => r.trim()),
       }
 
       const validacion = preguntasStore.validarPreguntaExcel(pregunta)
@@ -476,7 +622,7 @@ function cancelarImport() {
 function confirmarImport() {
   importing.value = true
 
-  const preguntasValidas = previewData.value.filter(p => p.valido)
+  const preguntasValidas = previewData.value.filter((p) => p.valido)
   const docenteId = authStore.usuarioActual?.id || 7
   const grupos = authStore.usuarioActual?.grupos || ['A', 'B']
 
@@ -486,7 +632,7 @@ function confirmarImport() {
     asignaturaId.value,
     temaId.value,
     docenteId,
-    grupos
+    grupos,
   )
 
   setTimeout(() => {
@@ -514,7 +660,7 @@ function guardarPregunta() {
       asignatura_id: asignaturaId.value,
       tema_id: temaId.value,
       docente_id: docenteId,
-      grupos: grupos
+      grupos: grupos,
     })
   }
 
@@ -523,9 +669,16 @@ function guardarPregunta() {
 
 function editarPregunta(pregunta) {
   editMode.value = true
-  nuevaPregunta.value = { ...pregunta, opciones: { ...pregunta.opciones }, respuesta_correcta: [...pregunta.respuesta_correcta] }
+  nuevaPregunta.value = {
+    ...pregunta,
+    opciones: { ...pregunta.opciones },
+    respuesta_correcta: [...pregunta.respuesta_correcta],
+  }
   // Sincronizar respuestaUnica para selección única/V.F
-  if (pregunta.tipo === TIPOS_PREGUNTA.SELECCION_UNICA || pregunta.tipo === TIPOS_PREGUNTA.FALSO_VERDADERO) {
+  if (
+    pregunta.tipo === TIPOS_PREGUNTA.SELECCION_UNICA ||
+    pregunta.tipo === TIPOS_PREGUNTA.FALSO_VERDADERO
+  ) {
     respuestaUnica.value = pregunta.respuesta_correcta[0] || ''
   }
   showAddDialog.value = true
@@ -540,7 +693,11 @@ function eliminarPregunta(pregunta) {
 function cancelarAdd() {
   showAddDialog.value = false
   editMode.value = false
-  nuevaPregunta.value = { ...nuevaPreguntaDefault, opciones: { A: '', B: '', C: '', D: '', E: '' }, respuesta_correcta: [] }
+  nuevaPregunta.value = {
+    ...nuevaPreguntaDefault,
+    opciones: { A: '', B: '', C: '', D: '', E: '' },
+    respuesta_correcta: [],
+  }
 }
 </script>
 

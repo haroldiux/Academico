@@ -9,5 +9,5 @@ export default {
   // Obtener detalle
   getCarrera(id) {
     return api.get(`/carreras/${id}`)
-  }
+  },
 }

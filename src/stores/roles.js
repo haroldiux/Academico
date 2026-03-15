@@ -9,7 +9,7 @@ export const useRolesStore = defineStore('roles', () => {
   const error = ref(null)
 
   // Getters
-  const rolesActivos = computed(() => roles.value.filter(r => r.activo))
+  const rolesActivos = computed(() => roles.value.filter((r) => r.activo))
   const totalRoles = computed(() => roles.value.length)
   const rolesOrdenados = computed(() => [...roles.value].sort((a, b) => a.orden - b.orden))
 
@@ -29,7 +29,7 @@ export const useRolesStore = defineStore('roles', () => {
   }
 
   function getRolById(id) {
-    return roles.value.find(r => r.id === id)
+    return roles.value.find((r) => r.id === id)
   }
 
   async function addRol(rol) {
@@ -50,7 +50,7 @@ export const useRolesStore = defineStore('roles', () => {
     loading.value = true
     try {
       const response = await rolService.updateRol(id, datosActualizados)
-      const index = roles.value.findIndex(r => r.id === id)
+      const index = roles.value.findIndex((r) => r.id === id)
       if (index !== -1) {
         roles.value[index] = response.data
       }
@@ -67,7 +67,7 @@ export const useRolesStore = defineStore('roles', () => {
     loading.value = true
     try {
       await rolService.deleteRol(id)
-      const index = roles.value.findIndex(r => r.id === id)
+      const index = roles.value.findIndex((r) => r.id === id)
       if (index !== -1) {
         roles.value.splice(index, 1)
       }
@@ -81,7 +81,7 @@ export const useRolesStore = defineStore('roles', () => {
   }
 
   async function toggleRolActivo(id) {
-    const rol = roles.value.find(r => r.id === id)
+    const rol = roles.value.find((r) => r.id === id)
     if (rol) {
       const nuevoEstado = !rol.activo
       // Optimistic update
@@ -113,6 +113,6 @@ export const useRolesStore = defineStore('roles', () => {
     addRol,
     updateRol,
     deleteRol,
-    toggleRolActivo
+    toggleRolActivo,
   }
 })

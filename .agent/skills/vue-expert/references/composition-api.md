@@ -15,7 +15,7 @@ interface Props {
   optional?: string
 }
 const props = withDefaults(defineProps<Props>(), {
-  optional: 'default value'
+  optional: 'default value',
 })
 
 // Emits with TypeScript
@@ -29,7 +29,7 @@ const emit = defineEmits<Emits>()
 const count = ref(0)
 const user = reactive({
   name: 'John',
-  age: 30
+  age: 30,
 })
 
 // Computed
@@ -67,8 +67,8 @@ const state = reactive({
   count: 0,
   user: {
     name: 'John',
-    email: 'john@example.com'
-  }
+    email: 'john@example.com',
+  },
 })
 
 // No .value needed for reactive
@@ -102,13 +102,13 @@ const fullNameWritable = computed({
     const [first, last] = value.split(' ')
     firstName.value = first
     lastName.value = last
-  }
+  },
 })
 
 // Computed with complex logic (cached until dependencies change)
 const filteredItems = computed(() => {
-  return items.value.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  return items.value.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.value.toLowerCase()),
   )
 })
 ```
@@ -139,8 +139,8 @@ watch(
   },
   {
     immediate: true, // Run immediately
-    deep: true // Deep watch for objects
-  }
+    deep: true, // Deep watch for objects
+  },
 )
 
 // watchEffect - automatically tracks dependencies
@@ -172,7 +172,7 @@ import {
   onUpdated,
   onBeforeUnmount,
   onUnmounted,
-  onErrorCaptured
+  onErrorCaptured,
 } from 'vue'
 
 // Before component is mounted
@@ -287,13 +287,13 @@ useEventListener(window, 'click', handleClick)
 
 ## Quick Reference
 
-| Pattern | Use Case |
-|---------|----------|
-| `ref()` | Primitives (string, number, boolean) |
-| `reactive()` | Objects and arrays |
-| `computed()` | Derived state (cached) |
-| `watch()` | Side effects on specific changes |
-| `watchEffect()` | Auto-tracked side effects |
-| `onMounted()` | DOM-dependent operations |
-| `onUnmounted()` | Cleanup (timers, listeners) |
-| Composables | Reusable stateful logic |
+| Pattern         | Use Case                             |
+| --------------- | ------------------------------------ |
+| `ref()`         | Primitives (string, number, boolean) |
+| `reactive()`    | Objects and arrays                   |
+| `computed()`    | Derived state (cached)               |
+| `watch()`       | Side effects on specific changes     |
+| `watchEffect()` | Auto-tracked side effects            |
+| `onMounted()`   | DOM-dependent operations             |
+| `onUnmounted()` | Cleanup (timers, listeners)          |
+| Composables     | Reusable stateful logic              |

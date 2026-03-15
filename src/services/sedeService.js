@@ -9,5 +9,5 @@ export default {
   // Obtener detalle de una sede
   getSede(id) {
     return api.get(`/sedes/${id}`)
-  }
+  },
 }

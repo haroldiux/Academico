@@ -9,7 +9,13 @@
         </div>
         <div class="row q-gutter-sm">
           <q-btn color="primary" icon="download" label="Exportar PDF" @click="exportarPDF" />
-          <q-btn outline color="primary" icon="table_chart" label="Exportar Excel" @click="exportarExcel" />
+          <q-btn
+            outline
+            color="primary"
+            icon="table_chart"
+            label="Exportar Excel"
+            @click="exportarExcel"
+          />
         </div>
       </div>
     </div>
@@ -126,7 +132,13 @@
 
     <!-- Tabs de Reportes -->
     <q-card flat bordered>
-      <q-tabs v-model="tabActivo" class="text-grey" active-color="primary" indicator-color="primary" align="left">
+      <q-tabs
+        v-model="tabActivo"
+        class="text-grey"
+        active-color="primary"
+        indicator-color="primary"
+        align="left"
+      >
         <q-tab name="sedes" label="Por Sede" icon="apartment" />
         <q-tab name="directores" label="Directores de Carrera" icon="person" />
         <q-tab name="academicos" label="Directores Académicos" icon="school" />
@@ -163,7 +175,13 @@
             <template v-slot:body-cell-estado="props">
               <q-td :props="props">
                 <q-chip
-                  :color="props.row.estado === 'Al día' ? 'positive' : props.row.estado === 'Retraso' ? 'warning' : 'negative'"
+                  :color="
+                    props.row.estado === 'Al día'
+                      ? 'positive'
+                      : props.row.estado === 'Retraso'
+                        ? 'warning'
+                        : 'negative'
+                  "
                   text-color="white"
                   size="sm"
                 >
@@ -173,10 +191,24 @@
             </template>
             <template v-slot:body-cell-acciones="props">
               <q-td :props="props">
-                <q-btn flat round dense icon="visibility" color="primary" @click="verDetalleSede(props.row)">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="visibility"
+                  color="primary"
+                  @click="verDetalleSede(props.row)"
+                >
                   <q-tooltip>Ver Detalle</q-tooltip>
                 </q-btn>
-                <q-btn flat round dense icon="download" color="grey" @click="descargarReporteSede(props.row)">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="download"
+                  color="grey"
+                  @click="descargarReporteSede(props.row)"
+                >
                   <q-tooltip>Descargar Reporte</q-tooltip>
                 </q-btn>
               </q-td>
@@ -210,7 +242,13 @@
             <template v-slot:body-cell-cumplimiento="props">
               <q-td :props="props">
                 <q-chip
-                  :color="props.row.cumplimiento >= 80 ? 'positive' : props.row.cumplimiento >= 60 ? 'warning' : 'negative'"
+                  :color="
+                    props.row.cumplimiento >= 80
+                      ? 'positive'
+                      : props.row.cumplimiento >= 60
+                        ? 'warning'
+                        : 'negative'
+                  "
                   text-color="white"
                   size="sm"
                 >
@@ -220,7 +258,14 @@
             </template>
             <template v-slot:body-cell-acciones="props">
               <q-td :props="props">
-                <q-btn flat round dense icon="visibility" color="primary" @click="verDetalleDirector(props.row)">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="visibility"
+                  color="primary"
+                  @click="verDetalleDirector(props.row)"
+                >
                   <q-tooltip>Ver Detalle</q-tooltip>
                 </q-btn>
               </q-td>
@@ -272,7 +317,14 @@
             </template>
             <template v-slot:body-cell-acciones="props">
               <q-td :props="props">
-                <q-btn flat round dense icon="visibility" color="primary" @click="verDetalleAcademico(props.row)">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="visibility"
+                  color="primary"
+                  @click="verDetalleAcademico(props.row)"
+                >
                   <q-tooltip>Ver Detalle</q-tooltip>
                 </q-btn>
               </q-td>
@@ -304,7 +356,14 @@
             </template>
             <template v-slot:body-cell-acciones="props">
               <q-td :props="props">
-                <q-btn flat round dense icon="visibility" color="primary" @click="verDetalleAuditoria(props.row)">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="visibility"
+                  color="primary"
+                  @click="verDetalleAuditoria(props.row)"
+                >
                   <q-tooltip>Ver Detalle</q-tooltip>
                 </q-btn>
               </q-td>
@@ -325,7 +384,7 @@
         </q-bar>
         <q-card-section class="q-pa-lg">
           <div class="text-h6 q-mb-md">{{ detalleSeleccionado?.subtitulo }}</div>
-          
+
           <template v-if="detalleSeleccionado?.tipo === 'auditoria'">
             <div class="row q-col-gutter-md q-mb-md">
               <div class="col-12 col-md-6">
@@ -341,21 +400,27 @@
                 <strong>Semana:</strong> {{ detalleSeleccionado.data.semana }}
               </div>
             </div>
-            
+
             <q-separator class="q-my-md" />
-            
+
             <div class="q-mb-md">
               <strong>Observaciones:</strong>
-              <p class="text-grey-8">{{ detalleSeleccionado.data.observaciones || 'Sin observaciones' }}</p>
+              <p class="text-grey-8">
+                {{ detalleSeleccionado.data.observaciones || 'Sin observaciones' }}
+              </p>
             </div>
-            
+
             <div>
               <strong>Acciones Correctivas:</strong>
-              <p class="text-grey-8">{{ detalleSeleccionado.data.acciones_correctivas || 'Sin acciones correctivas' }}</p>
+              <p class="text-grey-8">
+                {{ detalleSeleccionado.data.acciones_correctivas || 'Sin acciones correctivas' }}
+              </p>
             </div>
           </template>
-          
-          <p v-else class="text-grey-7">Aquí se mostrará el detalle completo del reporte seleccionado.</p>
+
+          <p v-else class="text-grey-7">
+            Aquí se mostrará el detalle completo del reporte seleccionado.
+          </p>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -383,25 +448,25 @@ const sedeSeleccionadaNombre = ref(null)
 const filtros = ref({
   sede: 'todas',
   periodo: '2026-1',
-  tipoReporte: 'todos'
+  tipoReporte: 'todos',
 })
 
 const opcionesSedes = computed(() => [
   { label: 'Todas las Sedes', value: 'todas' },
-  ...sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
+  ...sedesStore.sedes.map((s) => ({ label: s.nombre, value: s.id })),
 ])
 
 const opcionesPeriodo = [
   { label: 'Gestión 2026 - I', value: '2026-1' },
   { label: 'Gestión 2025 - II', value: '2025-2' },
-  { label: 'Gestión 2025 - I', value: '2025-1' }
+  { label: 'Gestión 2025 - I', value: '2025-1' },
 ]
 
 const opcionesTipoReporte = [
   { label: 'Todos los Reportes', value: 'todos' },
   { label: 'Documentación', value: 'documentacion' },
   { label: 'Asistencias', value: 'asistencias' },
-  { label: 'Avance Temático', value: 'avance' }
+  { label: 'Avance Temático', value: 'avance' },
 ]
 
 // KPIs
@@ -409,7 +474,7 @@ const kpis = ref({
   progresoGeneral: 72,
   sedesAlDia: 5,
   sedesConRetraso: 4,
-  totalDocentes: 890
+  totalDocentes: 890,
 })
 
 // Columnas
@@ -419,7 +484,7 @@ const columnasSedes = [
   { name: 'docentes', label: 'Docentes', field: 'docentes', align: 'center' },
   { name: 'progreso', label: 'Progreso', field: 'progreso', align: 'center', sortable: true },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
+  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
 ]
 
 const columnasDirectores = [
@@ -427,16 +492,28 @@ const columnasDirectores = [
   { name: 'sede', label: 'Sede', field: 'sede', align: 'left' },
   { name: 'asignaturas', label: 'Asignaturas', field: 'asignaturas', align: 'center' },
   { name: 'docentesCargo', label: 'Docentes', field: 'docentesCargo', align: 'center' },
-  { name: 'cumplimiento', label: 'Cumplimiento', field: 'cumplimiento', align: 'center', sortable: true },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
+  {
+    name: 'cumplimiento',
+    label: 'Cumplimiento',
+    field: 'cumplimiento',
+    align: 'center',
+    sortable: true,
+  },
+  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
 ]
 
 const columnasAcademicos = [
   { name: 'director', label: 'Director Académico', field: 'nombre', align: 'left' },
   { name: 'carrerasSupervision', label: 'Carreras', field: 'carrerasSupervision', align: 'center' },
   { name: 'docentesTotal', label: 'Docentes', field: 'docentesTotal', align: 'center' },
-  { name: 'cumplimientoGeneral', label: 'Cumplimiento', field: 'cumplimientoGeneral', align: 'center', sortable: true },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
+  {
+    name: 'cumplimientoGeneral',
+    label: 'Cumplimiento',
+    field: 'cumplimientoGeneral',
+    align: 'center',
+    sortable: true,
+  },
+  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
 ]
 
 const columnasAuditorias = [
@@ -446,7 +523,7 @@ const columnasAuditorias = [
   { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left' },
   { name: 'docente', label: 'Docente', field: 'docente', align: 'left' },
   { name: 'semaforo', label: 'Alerta', field: 'semaforo', align: 'center', sortable: true },
-  { name: 'acciones', label: 'Observaciones', field: 'acciones', align: 'center' }
+  { name: 'acciones', label: 'Observaciones', field: 'acciones', align: 'center' },
 ]
 
 // Mock Data
@@ -459,22 +536,99 @@ const reportesPorSede = ref([
   { id: 6, nombre: 'Potosí', carreras: 6, docentes: 70, progreso: 65, estado: 'Retraso' },
   { id: 7, nombre: 'Tarija', carreras: 7, docentes: 80, progreso: 70, estado: 'Al día' },
   { id: 8, nombre: 'Trinidad', carreras: 5, docentes: 55, progreso: 58, estado: 'Retraso' },
-  { id: 9, nombre: 'Cobija', carreras: 4, docentes: 45, progreso: 52, estado: 'Crítico' }
+  { id: 9, nombre: 'Cobija', carreras: 4, docentes: 45, progreso: 52, estado: 'Crítico' },
 ])
 
 const reportesDirectores = ref([
-  { id: 1, nombre: 'Dr. Juan Carlos Mendoza', iniciales: 'JM', carrera: 'Medicina', sede: 'Cochabamba', asignaturas: 45, docentesCargo: 28, cumplimiento: 85 },
-  { id: 2, nombre: 'Lic. María Elena Vargas', iniciales: 'MV', carrera: 'Odontología', sede: 'Cochabamba', asignaturas: 38, docentesCargo: 22, cumplimiento: 78 },
-  { id: 3, nombre: 'Ing. Roberto Paz', iniciales: 'RP', carrera: 'Ingeniería Civil', sede: 'La Paz', asignaturas: 42, docentesCargo: 25, cumplimiento: 72 },
-  { id: 4, nombre: 'Lic. Ana Gutiérrez', iniciales: 'AG', carrera: 'Derecho', sede: 'Santa Cruz', asignaturas: 35, docentesCargo: 20, cumplimiento: 65 },
-  { id: 5, nombre: 'Dr. Pedro Rojas', iniciales: 'PR', carrera: 'Medicina', sede: 'La Paz', asignaturas: 45, docentesCargo: 30, cumplimiento: 82 }
+  {
+    id: 1,
+    nombre: 'Dr. Juan Carlos Mendoza',
+    iniciales: 'JM',
+    carrera: 'Medicina',
+    sede: 'Cochabamba',
+    asignaturas: 45,
+    docentesCargo: 28,
+    cumplimiento: 85,
+  },
+  {
+    id: 2,
+    nombre: 'Lic. María Elena Vargas',
+    iniciales: 'MV',
+    carrera: 'Odontología',
+    sede: 'Cochabamba',
+    asignaturas: 38,
+    docentesCargo: 22,
+    cumplimiento: 78,
+  },
+  {
+    id: 3,
+    nombre: 'Ing. Roberto Paz',
+    iniciales: 'RP',
+    carrera: 'Ingeniería Civil',
+    sede: 'La Paz',
+    asignaturas: 42,
+    docentesCargo: 25,
+    cumplimiento: 72,
+  },
+  {
+    id: 4,
+    nombre: 'Lic. Ana Gutiérrez',
+    iniciales: 'AG',
+    carrera: 'Derecho',
+    sede: 'Santa Cruz',
+    asignaturas: 35,
+    docentesCargo: 20,
+    cumplimiento: 65,
+  },
+  {
+    id: 5,
+    nombre: 'Dr. Pedro Rojas',
+    iniciales: 'PR',
+    carrera: 'Medicina',
+    sede: 'La Paz',
+    asignaturas: 45,
+    docentesCargo: 30,
+    cumplimiento: 82,
+  },
 ])
 
 const reportesAcademicos = ref([
-  { id: 1, nombre: 'Dr. Carlos Fernández', iniciales: 'CF', sede: 'Cochabamba', carrerasSupervision: 12, docentesTotal: 180, cumplimientoGeneral: 78 },
-  { id: 2, nombre: 'Lic. Patricia Sandoval', iniciales: 'PS', sede: 'La Paz', carrerasSupervision: 10, docentesTotal: 150, cumplimientoGeneral: 72 },
-  { id: 3, nombre: 'Ing. Mario Delgado', iniciales: 'MD', sede: 'Santa Cruz', carrerasSupervision: 11, docentesTotal: 165, cumplimientoGeneral: 68 },
-  { id: 4, nombre: 'Lic. Rosa Mamani', iniciales: 'RM', sede: 'Oruro', carrerasSupervision: 8, docentesTotal: 95, cumplimientoGeneral: 82 }
+  {
+    id: 1,
+    nombre: 'Dr. Carlos Fernández',
+    iniciales: 'CF',
+    sede: 'Cochabamba',
+    carrerasSupervision: 12,
+    docentesTotal: 180,
+    cumplimientoGeneral: 78,
+  },
+  {
+    id: 2,
+    nombre: 'Lic. Patricia Sandoval',
+    iniciales: 'PS',
+    sede: 'La Paz',
+    carrerasSupervision: 10,
+    docentesTotal: 150,
+    cumplimientoGeneral: 72,
+  },
+  {
+    id: 3,
+    nombre: 'Ing. Mario Delgado',
+    iniciales: 'MD',
+    sede: 'Santa Cruz',
+    carrerasSupervision: 11,
+    docentesTotal: 165,
+    cumplimientoGeneral: 68,
+  },
+  {
+    id: 4,
+    nombre: 'Lic. Rosa Mamani',
+    iniciales: 'RM',
+    sede: 'Oruro',
+    carrerasSupervision: 8,
+    docentesTotal: 95,
+    cumplimientoGeneral: 82,
+  },
 ])
 
 const reportesAuditorias = ref([])
@@ -483,37 +637,37 @@ const cargandoAuditorias = ref(false)
 // Functions
 onMounted(async () => {
   await sedesStore.fetchSedes()
-  
+
   // Leer query params para preseleccionar sede
   if (route.query.sedeId) {
     filtros.value.sede = parseInt(route.query.sedeId)
     sedeSeleccionadaNombre.value = route.query.sedeName || null
-    
+
     $q.notify({
       type: 'info',
       message: `Mostrando reportes de: ${sedeSeleccionadaNombre.value || 'Sede seleccionada'}`,
-      icon: 'apartment'
+      icon: 'apartment',
     })
   }
-  
+
   cargarAuditorias()
 })
 
 const cargarAuditorias = async () => {
-    cargandoAuditorias.value = true
-    try {
-        const params = {}
-        if (filtros.value.sede !== 'todas') {
-            params.sede_id = filtros.value.sede
-        }
-        const { data } = await api.get('/reportes/auditorias-vicerrector', { params })
-        reportesAuditorias.value = data
-    } catch (e) {
-        console.error(e)
-        $q.notify({ type: 'negative', message: 'Error cargando auditorías críticas' })
-    } finally {
-        cargandoAuditorias.value = false
+  cargandoAuditorias.value = true
+  try {
+    const params = {}
+    if (filtros.value.sede !== 'todas') {
+      params.sede_id = filtros.value.sede
     }
+    const { data } = await api.get('/reportes/auditorias-vicerrector', { params })
+    reportesAuditorias.value = data
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Error cargando auditorías críticas' })
+  } finally {
+    cargandoAuditorias.value = false
+  }
 }
 
 const getColorProgreso = (progreso) => {
@@ -536,7 +690,10 @@ const exportarExcel = () => {
 }
 
 const verDetalleSede = (sede) => {
-  detalleSeleccionado.value = { titulo: `Reporte de Sede: ${sede.nombre}`, subtitulo: `${sede.carreras} carreras, ${sede.docentes} docentes` }
+  detalleSeleccionado.value = {
+    titulo: `Reporte de Sede: ${sede.nombre}`,
+    subtitulo: `${sede.carreras} carreras, ${sede.docentes} docentes`,
+  }
   dialogDetalle.value = true
 }
 
@@ -545,21 +702,29 @@ const descargarReporteSede = (sede) => {
 }
 
 const verDetalleDirector = (director) => {
-  detalleSeleccionado.value = { titulo: `Reporte: ${director.nombre}`, subtitulo: `${director.carrera} - ${director.sede}` }
+  detalleSeleccionado.value = {
+    titulo: `Reporte: ${director.nombre}`,
+    subtitulo: `${director.carrera} - ${director.sede}`,
+  }
   dialogDetalle.value = true
 }
 
 const verDetalleAcademico = (academico) => {
-  detalleSeleccionado.value = { titulo: `Reporte: ${academico.nombre}`, subtitulo: `Dirección Académica - ${academico.sede}`, tipo: 'academico', data: academico }
+  detalleSeleccionado.value = {
+    titulo: `Reporte: ${academico.nombre}`,
+    subtitulo: `Dirección Académica - ${academico.sede}`,
+    tipo: 'academico',
+    data: academico,
+  }
   dialogDetalle.value = true
 }
 
 const verDetalleAuditoria = (auditoria) => {
-  detalleSeleccionado.value = { 
-      titulo: `Auditoría: ${auditoria.asignatura}`, 
-      subtitulo: auditoria.carrera,
-      tipo: 'auditoria',
-      data: auditoria
+  detalleSeleccionado.value = {
+    titulo: `Auditoría: ${auditoria.asignatura}`,
+    subtitulo: auditoria.carrera,
+    tipo: 'auditoria',
+    data: auditoria,
   }
   dialogDetalle.value = true
 }

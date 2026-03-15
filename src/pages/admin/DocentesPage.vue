@@ -1,4 +1,5 @@
-º <template>
+º
+<template>
   <q-page class="docentes-page">
     <!-- Header -->
     <div class="page-header">
@@ -11,19 +12,60 @@
       </div>
       <div class="header-actions">
         <q-btn outline color="primary" icon="download" label="Exportar" no-caps />
-        <q-btn unelevated color="green" icon="person_add" label="Nuevo Docente" no-caps @click="openDialog()" />
+        <q-btn
+          unelevated
+          color="green"
+          icon="person_add"
+          label="Nuevo Docente"
+          no-caps
+          @click="openDialog()"
+        />
       </div>
     </div>
 
     <!-- Filtros -->
     <div class="filters-section">
-      <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
-        clearable style="min-width: 200px;" />
-      <q-select v-model="filtros.carrera" :options="carrerasFiltradas" outlined dense label="Carrera" emit-value
-        map-options clearable style="min-width: 250px;" :disable="!filtros.sede" />
-      <q-select v-model="filtros.estado" :options="estadosOptions" outlined dense label="Estado" emit-value map-options
-        clearable style="min-width: 150px;" />
-      <q-input v-model="filtros.busqueda" outlined dense placeholder="Buscar docente..." class="search-input">
+      <q-select
+        v-model="filtros.sede"
+        :options="sedesOptions"
+        outlined
+        dense
+        label="Sede"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 200px"
+      />
+      <q-select
+        v-model="filtros.carrera"
+        :options="carrerasFiltradas"
+        outlined
+        dense
+        label="Carrera"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 250px"
+        :disable="!filtros.sede"
+      />
+      <q-select
+        v-model="filtros.estado"
+        :options="estadosOptions"
+        outlined
+        dense
+        label="Estado"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 150px"
+      />
+      <q-input
+        v-model="filtros.busqueda"
+        outlined
+        dense
+        placeholder="Buscar docente..."
+        class="search-input"
+      >
         <template v-slot:prepend>
           <q-icon name="search" />
         </template>
@@ -66,15 +108,24 @@
     <div class="docentes-grid">
       <div v-for="docente in docentesFiltrados" :key="docente.id" class="docente-card">
         <div class="docente-header">
-          <q-avatar size="60px" :color="docente.activo ? 'green' : 'grey'" text-color="white" class="docente-avatar">
+          <q-avatar
+            size="60px"
+            :color="docente.activo ? 'green' : 'grey'"
+            text-color="white"
+            class="docente-avatar"
+          >
             {{ docente.iniciales }}
           </q-avatar>
           <div class="docente-info">
             <h3 class="docente-nombre">{{ docente.titulo }} {{ docente.nombre }}</h3>
             <p class="docente-email">{{ docente.email }}</p>
             <div class="docente-badges">
-              <q-chip :color="docente.activo ? 'green-2' : 'grey-2'" :text-color="docente.activo ? 'green-9' : 'grey-9'"
-                size="sm" dense>
+              <q-chip
+                :color="docente.activo ? 'green-2' : 'grey-2'"
+                :text-color="docente.activo ? 'green-9' : 'grey-9'"
+                size="sm"
+                dense
+              >
                 {{ docente.activo ? 'Activo' : 'Inactivo' }}
               </q-chip>
               <q-chip color="blue-2" text-color="blue-9" size="sm" dense>
@@ -100,8 +151,11 @@
                 <q-separator />
                 <q-item clickable v-close-popup @click="toggleEstado(docente)">
                   <q-item-section avatar>
-                    <q-icon :name="docente.activo ? 'block' : 'check_circle'" size="sm"
-                      :color="docente.activo ? 'orange' : 'green'" />
+                    <q-icon
+                      :name="docente.activo ? 'block' : 'check_circle'"
+                      size="sm"
+                      :color="docente.activo ? 'orange' : 'green'"
+                    />
                   </q-item-section>
                   <q-item-section>{{ docente.activo ? 'Desactivar' : 'Activar' }}</q-item-section>
                 </q-item>
@@ -130,11 +184,23 @@
         <div class="docente-materias q-mt-md">
           <p class="section-title">Materias Asignadas</p>
           <div class="materias-chips">
-            <q-chip v-for="materia in docente.materias?.slice(0, 3)" :key="materia" size="sm" color="purple-2"
-              text-color="purple-9" dense>
+            <q-chip
+              v-for="materia in docente.materias?.slice(0, 3)"
+              :key="materia"
+              size="sm"
+              color="purple-2"
+              text-color="purple-9"
+              dense
+            >
               {{ materia }}
             </q-chip>
-            <q-chip v-if="docente.materias?.length > 3" size="sm" color="grey-3" text-color="grey-7" dense>
+            <q-chip
+              v-if="docente.materias?.length > 3"
+              size="sm"
+              color="grey-3"
+              text-color="grey-7"
+              dense
+            >
               +{{ docente.materias.length - 3 }} más
             </q-chip>
             <span v-if="!docente.materias?.length" class="text-grey-5 text-caption">
@@ -159,14 +225,21 @@
         <q-icon name="school" size="80px" color="grey-4" />
         <h3>No hay docentes</h3>
         <p>Registra un nuevo docente para comenzar</p>
-        <q-btn unelevated color="green" icon="person_add" label="Nuevo Docente" no-caps @click="openDialog()" />
+        <q-btn
+          unelevated
+          color="green"
+          icon="person_add"
+          label="Nuevo Docente"
+          no-caps
+          @click="openDialog()"
+        />
       </div>
     </div>
 
     <!-- Dialog Crear/Editar Docente -->
     <q-dialog v-model="showDialog" persistent>
-      <q-card class="dialog-card" style="width: 100%; max-width: 650px;">
-        <div class="dialog-header" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+      <q-card class="dialog-card" style="width: 100%; max-width: 650px">
+        <div class="dialog-header" style="background: linear-gradient(135deg, #22c55e, #16a34a)">
           <h3>
             <q-icon :name="editMode ? 'edit' : 'person_add'" class="q-mr-sm" />
             {{ editMode ? 'Editar' : 'Nuevo' }} Docente
@@ -174,8 +247,14 @@
         </div>
 
         <q-card-section>
-          <q-tabs v-model="formTab" dense class="text-grey" active-color="primary" indicator-color="primary"
-            align="left">
+          <q-tabs
+            v-model="formTab"
+            dense
+            class="text-grey"
+            active-color="primary"
+            indicator-color="primary"
+            align="left"
+          >
             <q-tab name="personal" label="Datos Personales" no-caps />
             <q-tab name="academico" label="Información Académica" no-caps />
             <q-tab name="contacto" label="Contacto" no-caps />
@@ -187,8 +266,14 @@
             <q-tab-panel name="personal" class="q-gutter-md q-pa-none q-pt-md">
               <div class="row q-col-gutter-md">
                 <div class="col-3">
-                  <q-select v-model="form.titulo" :options="titulosOptions" outlined label="Título" emit-value
-                    map-options />
+                  <q-select
+                    v-model="form.titulo"
+                    :options="titulosOptions"
+                    outlined
+                    label="Título"
+                    emit-value
+                    map-options
+                  />
                 </div>
                 <div class="col-9">
                   <q-input v-model="form.nombre" outlined label="Nombre Completo *" />
@@ -200,18 +285,35 @@
                   <q-input v-model="form.ci" outlined label="CI *" />
                 </div>
                 <div class="col-6">
-                  <q-input v-model="form.fecha_nacimiento" outlined type="date" label="Fecha de Nacimiento" />
+                  <q-input
+                    v-model="form.fecha_nacimiento"
+                    outlined
+                    type="date"
+                    label="Fecha de Nacimiento"
+                  />
                 </div>
               </div>
 
               <div class="row q-col-gutter-md">
                 <div class="col-6">
-                  <q-select v-model="form.genero" :options="generosOptions" outlined label="Género" emit-value
-                    map-options />
+                  <q-select
+                    v-model="form.genero"
+                    :options="generosOptions"
+                    outlined
+                    label="Género"
+                    emit-value
+                    map-options
+                  />
                 </div>
                 <div class="col-6">
-                  <q-select v-model="form.estado_civil" :options="estadoCivilOptions" outlined label="Estado Civil"
-                    emit-value map-options />
+                  <q-select
+                    v-model="form.estado_civil"
+                    :options="estadoCivilOptions"
+                    outlined
+                    label="Estado Civil"
+                    emit-value
+                    map-options
+                  />
                 </div>
               </div>
             </q-tab-panel>
@@ -219,36 +321,76 @@
             <q-tab-panel name="academico" class="q-gutter-md q-pa-none q-pt-md">
               <div class="row q-col-gutter-md">
                 <div class="col-6">
-                  <q-select v-model="form.tipo" :options="tiposDocenteOptions" outlined label="Tipo de Contrato *"
-                    emit-value map-options />
+                  <q-select
+                    v-model="form.tipo"
+                    :options="tiposDocenteOptions"
+                    outlined
+                    label="Tipo de Contrato *"
+                    emit-value
+                    map-options
+                  />
                 </div>
                 <div class="col-6">
-                  <q-select v-model="form.grado_academico" :options="gradosAcademicosOptions" outlined
-                    label="Grado Académico" emit-value map-options />
+                  <q-select
+                    v-model="form.grado_academico"
+                    :options="gradosAcademicosOptions"
+                    outlined
+                    label="Grado Académico"
+                    emit-value
+                    map-options
+                  />
                 </div>
               </div>
 
               <div class="row q-col-gutter-md">
                 <div class="col-6">
-                  <q-select v-model="form.sede_id" :options="sedesOptions" outlined label="Sede *" emit-value
-                    map-options />
+                  <q-select
+                    v-model="form.sede_id"
+                    :options="sedesOptions"
+                    outlined
+                    label="Sede *"
+                    emit-value
+                    map-options
+                  />
                 </div>
                 <div class="col-6">
-                  <q-select v-model="form.carreras" :options="carrerasOptions" outlined label="Carreras" emit-value
-                    map-options multiple use-chips />
+                  <q-select
+                    v-model="form.carreras"
+                    :options="carrerasOptions"
+                    outlined
+                    label="Carreras"
+                    emit-value
+                    map-options
+                    multiple
+                    use-chips
+                  />
                 </div>
               </div>
 
-              <q-input v-model="form.especialidad" outlined label="Especialidad"
-                placeholder="Ej: Inteligencia Artificial, Bases de Datos" />
+              <q-input
+                v-model="form.especialidad"
+                outlined
+                label="Especialidad"
+                placeholder="Ej: Inteligencia Artificial, Bases de Datos"
+              />
 
               <div class="row q-col-gutter-md">
                 <div class="col-6">
-                  <q-input v-model="form.fecha_ingreso" outlined type="date" label="Fecha de Ingreso" />
+                  <q-input
+                    v-model="form.fecha_ingreso"
+                    outlined
+                    type="date"
+                    label="Fecha de Ingreso"
+                  />
                 </div>
                 <div class="col-6">
-                  <q-input v-model.number="form.horas_semanales" outlined type="number" label="Horas Semanales Máx."
-                    min="0" />
+                  <q-input
+                    v-model.number="form.horas_semanales"
+                    outlined
+                    type="number"
+                    label="Horas Semanales Máx."
+                    min="0"
+                  />
                 </div>
               </div>
             </q-tab-panel>
@@ -265,7 +407,13 @@
                 </div>
               </div>
 
-              <q-input v-model="form.direccion" outlined type="textarea" rows="2" label="Dirección" />
+              <q-input
+                v-model="form.direccion"
+                outlined
+                type="textarea"
+                rows="2"
+                label="Dirección"
+              />
             </q-tab-panel>
           </q-tab-panels>
 
@@ -274,8 +422,12 @@
 
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="closeDialog" />
-          <q-btn unelevated color="green" :label="editMode ? 'Guardar Cambios' : 'Registrar Docente'"
-            @click="guardarDocente" />
+          <q-btn
+            unelevated
+            color="green"
+            :label="editMode ? 'Guardar Cambios' : 'Registrar Docente'"
+            @click="guardarDocente"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -299,14 +451,14 @@ const formTab = ref('personal')
 // Pagination
 const pagination = ref({
   currentPage: 1,
-  rowsPerPage: 20
+  rowsPerPage: 20,
 })
 
 const filtros = ref({
   sede: null,
   carrera: null,
   estado: null,
-  busqueda: ''
+  busqueda: '',
 })
 
 // Stats Refs
@@ -314,7 +466,7 @@ const stats = ref({
   total_docentes: 0,
   activos: 0,
   total_materias: 0,
-  total_grupos: 0
+  total_grupos: 0,
 })
 
 // Fetch function
@@ -324,7 +476,7 @@ async function fetchData() {
     sede_id: filtros.value.sede,
     carrera_id: filtros.value.carrera, // Add carrera filter
     estado: filtros.value.estado,
-    page: pagination.value.currentPage
+    page: pagination.value.currentPage,
   }
 
   const response = await docentesStore.fetchDocentes(params)
@@ -336,19 +488,19 @@ async function fetchData() {
 }
 
 // Watch filters to reload data
-watch(filtros, () => {
-  pagination.value.currentPage = 1 // Reset to page 1 on filter change
-  fetchData()
-}, { deep: true })
+watch(
+  filtros,
+  () => {
+    pagination.value.currentPage = 1 // Reset to page 1 on filter change
+    fetchData()
+  },
+  { deep: true },
+)
 
 // Load data on mount
 onMounted(async () => {
   // Load initial data
-  await Promise.all([
-    sedesStore.fetchSedes(),
-    carrerasStore.fetchCarreras(),
-    fetchData()
-  ])
+  await Promise.all([sedesStore.fetchSedes(), carrerasStore.fetchCarreras(), fetchData()])
 
   // Attempt background sync to get new records
   // We do not await this block to block UI, letting it run in background
@@ -383,27 +535,27 @@ const form = ref({
   telefono: '',
   celular: '',
   direccion: '',
-  activo: true
+  activo: true,
 })
 
 // Computed Options
-const sedesOptions = computed(() =>
-  sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
-)
+const sedesOptions = computed(() => sedesStore.sedes.map((s) => ({ label: s.nombre, value: s.id })))
 
 const carrerasFiltradas = computed(() => {
   if (!filtros.value.sede) return []
-  return carrerasStore.getCarrerasBySede(filtros.value.sede).map(c => ({ label: c.nombre, value: c.id }))
+  return carrerasStore
+    .getCarrerasBySede(filtros.value.sede)
+    .map((c) => ({ label: c.nombre, value: c.id }))
 })
 
 const carrerasOptions = computed(() =>
-  carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id }))
+  carrerasStore.carreras.map((c) => ({ label: c.nombre, value: c.id })),
 )
 
 // Options Arrays
 const estadosOptions = [
   { label: 'Activo', value: true },
-  { label: 'Inactivo', value: false }
+  { label: 'Inactivo', value: false },
 ]
 
 const titulosOptions = [
@@ -412,33 +564,33 @@ const titulosOptions = [
   { label: 'Dr.', value: 'Dr.' },
   { label: 'Dra.', value: 'Dra.' },
   { label: 'Msc.', value: 'Msc.' },
-  { label: 'PhD.', value: 'PhD.' }
+  { label: 'PhD.', value: 'PhD.' },
 ]
 
 const generosOptions = [
   { label: 'Masculino', value: 'M' },
-  { label: 'Femenino', value: 'F' }
+  { label: 'Femenino', value: 'F' },
 ]
 
 const estadoCivilOptions = [
   { label: 'Soltero/a', value: 'soltero' },
   { label: 'Casado/a', value: 'casado' },
   { label: 'Divorciado/a', value: 'divorciado' },
-  { label: 'Viudo/a', value: 'viudo' }
+  { label: 'Viudo/a', value: 'viudo' },
 ]
 
 const tiposDocenteOptions = [
   { label: 'Tiempo Completo', value: 'Tiempo Completo' },
   { label: 'Medio Tiempo', value: 'Medio Tiempo' },
   { label: 'Por Horas', value: 'Por Horas' },
-  { label: 'Invitado', value: 'Invitado' }
+  { label: 'Invitado', value: 'Invitado' },
 ]
 
 const gradosAcademicosOptions = [
   { label: 'Licenciatura', value: 'Licenciatura' },
   { label: 'Maestría', value: 'Maestría' },
   { label: 'Doctorado', value: 'Doctorado' },
-  { label: 'Post-Doctorado', value: 'Post-Doctorado' }
+  { label: 'Post-Doctorado', value: 'Post-Doctorado' },
 ]
 
 // Computed Stats (Now using Backend Data)
@@ -449,24 +601,32 @@ const totalDocentes = computed(() => stats.value.total_docentes)
 
 // Mapping store data to component view
 const docentesFiltrados = computed(() => {
-  return docentesStore.docentes.map(d => {
-    const nombreCompleto = d.nombre_completo || 'Sin Nombre';
+  return docentesStore.docentes.map((d) => {
+    const nombreCompleto = d.nombre_completo || 'Sin Nombre'
 
     return {
       id: d.id,
       titulo: d.grado_academico || '',
-      nombre: nombreCompleto.split(' ').filter(p => !['Lic.', 'Ing.', 'Dr.', 'MSc.', 'PhD.', 'Lic', 'Ing', 'Dr'].includes(p)).join(' '),
-      iniciales: nombreCompleto.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+      nombre: nombreCompleto
+        .split(' ')
+        .filter((p) => !['Lic.', 'Ing.', 'Dr.', 'MSc.', 'PhD.', 'Lic', 'Ing', 'Dr'].includes(p))
+        .join(' '),
+      iniciales: nombreCompleto
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase(),
       email: d.email || '',
       ci: d.ci || '',
       telefono: d.celular || d.telefono || '',
       tipo: d.tipo_dedicacion || 'Desconocido',
       sede_id: d.sede_id,
       sede_nombre: d.sede?.nombre || 'Sin Sede',
-      materias: [...new Set(d.grupos?.map(g => g.asignatura?.nombre).filter(n => n) || [])],
-      grupos: d.grupos?.map(g => g.nombre).filter(n => n) || [],
+      materias: [...new Set(d.grupos?.map((g) => g.asignatura?.nombre).filter((n) => n) || [])],
+      grupos: d.grupos?.map((g) => g.nombre).filter((n) => n) || [],
       horas_semanales: 40,
-      activo: !!d.estado
+      activo: !!d.estado,
     }
   })
 })
@@ -475,12 +635,15 @@ function openDialog(docente = null) {
   formTab.value = 'personal'
   if (docente) {
     editMode.value = true
-    const rawDocente = docentesStore.docentes.find(d => d.id === docente.id)
+    const rawDocente = docentesStore.docentes.find((d) => d.id === docente.id)
     if (rawDocente) {
       form.value = {
         ...rawDocente,
         titulo: rawDocente.grado_academico || '',
-        nombre: rawDocente.nombre_completo.split(' ').filter(p => !['Lic.', 'Ing.', 'Dr.', 'MSc.', 'PhD.', 'Lic', 'Ing', 'Dr'].includes(p)).join(' '),
+        nombre: rawDocente.nombre_completo
+          .split(' ')
+          .filter((p) => !['Lic.', 'Ing.', 'Dr.', 'MSc.', 'PhD.', 'Lic', 'Ing', 'Dr'].includes(p))
+          .join(' '),
         carreras: [],
       }
     } else {
@@ -508,7 +671,7 @@ function openDialog(docente = null) {
       telefono: '',
       celular: '',
       direccion: '',
-      activo: true
+      activo: true,
     }
   }
   showDialog.value = true
@@ -521,7 +684,7 @@ function closeDialog() {
 async function guardarDocente() {
   const dataToSave = {
     ...form.value,
-    nombre_completo: `${form.value.titulo} ${form.value.nombre}`.trim()
+    nombre_completo: `${form.value.titulo} ${form.value.nombre}`.trim(),
   }
 
   if (editMode.value) {

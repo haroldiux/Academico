@@ -10,5 +10,5 @@ export const getDashboardStats = async (sedeId) => {
 }
 
 export default {
-  getDashboardStats
+  getDashboardStats,
 }

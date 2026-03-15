@@ -17,7 +17,14 @@
         <q-btn flat round icon="notifications" class="notification-btn">
           <q-badge color="red" floating rounded>{{ notificaciones }}</q-badge>
         </q-btn>
-        <q-btn outline color="primary" icon="picture_as_pdf" label="Informe Ejecutivo" no-caps @click="generarInforme" />
+        <q-btn
+          outline
+          color="primary"
+          icon="picture_as_pdf"
+          label="Informe Ejecutivo"
+          no-caps
+          @click="generarInforme"
+        />
       </div>
     </div>
 
@@ -78,10 +85,14 @@
             <div class="ranking-position" :class="'pos-' + (idx + 1)">{{ idx + 1 }}</div>
             <div class="ranking-info">
               <span class="ranking-nombre">{{ carrera.nombre }}</span>
-              <q-linear-progress 
-                :value="carrera.progreso / 100" 
-                :color="carrera.progreso >= 80 ? 'green' : carrera.progreso >= 60 ? 'orange' : 'red'"
-                rounded size="6px" class="q-mt-xs"
+              <q-linear-progress
+                :value="carrera.progreso / 100"
+                :color="
+                  carrera.progreso >= 80 ? 'green' : carrera.progreso >= 60 ? 'orange' : 'red'
+                "
+                rounded
+                size="6px"
+                class="q-mt-xs"
               />
             </div>
             <span class="ranking-value">{{ carrera.progreso }}%</span>
@@ -146,7 +157,12 @@
           </h2>
         </div>
         <div class="alerts-list">
-          <div v-for="alerta in alertas" :key="alerta.id" class="alert-item" :class="'alert-' + alerta.tipo">
+          <div
+            v-for="alerta in alertas"
+            :key="alerta.id"
+            class="alert-item"
+            :class="'alert-' + alerta.tipo"
+          >
             <q-icon :name="alerta.icono" size="20px" />
             <div class="alert-content">
               <span class="alert-title">{{ alerta.titulo }}</span>
@@ -166,7 +182,7 @@
           <span>Gestión Docentes</span>
           <small class="text-grey-6">Ver Staff de Sede</small>
         </div>
-        
+
         <div class="action-card" @click="$router.push('/carreras')">
           <q-icon name="school" size="32px" color="indigo" />
           <span>Carreras</span>
@@ -219,37 +235,37 @@ const carrerasRanking = ref([])
 // Alertas (calculadas dinámicamente)
 const alertas = computed(() => {
   const items = []
-  
+
   if (asignaturasAtrasadas.value > 10) {
     items.push({
       id: 1,
       tipo: 'warning',
       icono: 'warning',
       titulo: `${asignaturasAtrasadas.value} asignaturas atrasadas`,
-      descripcion: 'Requieren atención inmediata'
+      descripcion: 'Requieren atención inmediata',
     })
   }
-  
+
   if (progresoSede.value >= 80) {
     items.push({
       id: 2,
       tipo: 'success',
       icono: 'check',
       titulo: 'Excelente progreso',
-      descripcion: `Sede al ${progresoSede.value}% completado`
+      descripcion: `Sede al ${progresoSede.value}% completado`,
     })
   }
-  
+
   if (items.length === 0) {
     items.push({
       id: 3,
       tipo: 'info',
       icono: 'info',
       titulo: 'Sin alertas pendientes',
-      descripcion: 'Todo funciona correctamente'
+      descripcion: 'Todo funciona correctamente',
     })
   }
-  
+
   return items
 })
 
@@ -264,28 +280,27 @@ const greeting = computed(() => {
 async function fetchDashboardData() {
   loading.value = true
   error.value = null
-  
+
   try {
     const { data } = await reporteService.getDireccionStats(sedeId.value)
-    
+
     // Poblar estadísticas generales
     progresoSede.value = data.stats?.progresoGeneral || 0
     totalCarreras.value = data.stats?.totalCarreras || 0
     totalAsignaturas.value = data.stats?.totalAsignaturas || 0
     totalDocentes.value = data.stats?.docentesActivos || 0
-    
+
     // Poblar KPIs
     asignaturasCompletas.value = data.kpis?.asignaturasCompletas || 0
     asignaturasEnProgreso.value = data.kpis?.asignaturasEnProgreso || 0
     asignaturasAtrasadas.value = data.kpis?.asignaturasAtrasadas || 0
-    
+
     // Ranking de carreras (top 5)
-    carrerasRanking.value = (data.carreras || []).slice(0, 5).map(c => ({
+    carrerasRanking.value = (data.carreras || []).slice(0, 5).map((c) => ({
       id: c.id,
       nombre: c.nombre,
-      progreso: c.progreso
+      progreso: c.progreso,
     }))
-    
   } catch (err) {
     console.error('Error cargando stats de dirección:', err)
     error.value = 'Error al cargar datos del dashboard'
@@ -300,8 +315,8 @@ onMounted(() => {
   }
 })
 
-function generarInforme() { 
-  console.log('Generando informe ejecutivo...') 
+function generarInforme() {
+  console.log('Generando informe ejecutivo...')
 }
 </script>
 
@@ -319,12 +334,34 @@ function generarInforme() {
   margin-bottom: 32px;
 }
 
-.greeting { color: var(--text-muted); font-size: 0.875rem; margin: 0 0 4px 0; }
-.page-title { color: var(--text-primary); font-size: 2rem; font-weight: 700; margin: 0 0 8px 0; }
-.welcome-text { color: var(--text-secondary); font-size: 0.875rem; margin: 0; }
-.highlight { color: var(--primary); font-weight: 600; }
-.header-right { display: flex; align-items: center; gap: 12px; }
-.notification-btn { color: var(--text-secondary); }
+.greeting {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0 0 4px 0;
+}
+.page-title {
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+.welcome-text {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+.highlight {
+  color: var(--primary);
+  font-weight: 600;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.notification-btn {
+  color: var(--text-secondary);
+}
 
 /* KPI Executive Grid */
 .kpi-executive-grid {
@@ -335,7 +372,9 @@ function generarInforme() {
 }
 
 @media (max-width: 1200px) {
-  .kpi-executive-grid { grid-template-columns: 1fr 1fr; }
+  .kpi-executive-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .kpi-executive-card {
@@ -352,13 +391,38 @@ function generarInforme() {
   justify-content: space-between;
 }
 
-.kpi-content { display: flex; flex-direction: column; }
-.kpi-title { color: var(--text-muted); font-size: 0.875rem; }
-.kpi-big-value { color: var(--text-primary); font-size: 3rem; font-weight: 700; line-height: 1; }
-.kpi-description { color: var(--text-secondary); font-size: 0.875rem; margin-top: 4px; }
-.kpi-data { display: flex; flex-direction: column; }
-.kpi-value { color: var(--text-primary); font-size: 1.75rem; font-weight: 700; }
-.kpi-label { color: var(--text-muted); font-size: 0.875rem; }
+.kpi-content {
+  display: flex;
+  flex-direction: column;
+}
+.kpi-title {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+.kpi-big-value {
+  color: var(--text-primary);
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.kpi-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+.kpi-data {
+  display: flex;
+  flex-direction: column;
+}
+.kpi-value {
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+.kpi-label {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
 
 /* Content Grid 3 columns */
 .content-grid-3 {
@@ -369,7 +433,9 @@ function generarInforme() {
 }
 
 @media (max-width: 1200px) {
-  .content-grid-3 { grid-template-columns: 1fr; }
+  .content-grid-3 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .panel-card {
@@ -379,57 +445,197 @@ function generarInforme() {
   padding: 24px;
 }
 
-.card-header { margin-bottom: 20px; }
-.card-title { color: var(--text-primary); font-size: 1rem; font-weight: 600; margin: 0; display: flex; align-items: center; }
+.card-header {
+  margin-bottom: 20px;
+}
+.card-title {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
 
 /* Ranking */
-.ranking-list { display: flex; flex-direction: column; gap: 12px; }
-.ranking-item { display: flex; align-items: center; gap: 12px; }
-.ranking-position {
-  width: 28px; height: 28px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 0.875rem;
-  background: var(--bg-tertiary); color: var(--text-secondary);
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.ranking-position.pos-1 { background: rgba(255, 215, 0, 0.2); color: #FFD700; }
-.ranking-position.pos-2 { background: rgba(192, 192, 192, 0.2); color: #C0C0C0; }
-.ranking-position.pos-3 { background: rgba(205, 127, 50, 0.2); color: #CD7F32; }
-.ranking-info { flex: 1; }
-.ranking-nombre { font-size: 0.875rem; color: var(--text-primary); font-weight: 500; }
-.ranking-value { font-weight: 700; color: var(--accent-green); font-size: 0.875rem; }
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ranking-position {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+.ranking-position.pos-1 {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+}
+.ranking-position.pos-2 {
+  background: rgba(192, 192, 192, 0.2);
+  color: #c0c0c0;
+}
+.ranking-position.pos-3 {
+  background: rgba(205, 127, 50, 0.2);
+  color: #cd7f32;
+}
+.ranking-info {
+  flex: 1;
+}
+.ranking-nombre {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.ranking-value {
+  font-weight: 700;
+  color: var(--accent-green);
+  font-size: 0.875rem;
+}
 
 /* Indicators */
-.indicators-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.indicator-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-tertiary); border-radius: 10px; }
-.indicator-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-.indicator-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-.indicator-icon.orange { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); }
-.indicator-icon.red { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
-.indicator-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
-.indicator-data { display: flex; flex-direction: column; }
-.indicator-value { font-size: 1.125rem; font-weight: 700; color: var(--text-primary); }
-.indicator-label { font-size: 0.75rem; color: var(--text-muted); }
+.indicators-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.indicator-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+}
+.indicator-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.indicator-icon.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+.indicator-icon.orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+}
+.indicator-icon.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+}
+.indicator-icon.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
+.indicator-data {
+  display: flex;
+  flex-direction: column;
+}
+.indicator-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.indicator-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
 
 /* Alerts */
-.alerts-list { display: flex; flex-direction: column; gap: 10px; }
-.alert-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 10px; }
-.alert-item.alert-warning { background: rgba(249, 115, 22, 0.1); color: var(--accent-orange); }
-.alert-item.alert-info { background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); }
-.alert-item.alert-success { background: rgba(34, 197, 94, 0.1); color: var(--accent-green); }
-.alert-content { display: flex; flex-direction: column; }
-.alert-title { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
-.alert-desc { font-size: 0.75rem; color: var(--text-secondary); }
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+}
+.alert-item.alert-warning {
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--accent-orange);
+}
+.alert-item.alert-info {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-blue);
+}
+.alert-item.alert-success {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--accent-green);
+}
+.alert-content {
+  display: flex;
+  flex-direction: column;
+}
+.alert-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.alert-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
 
 /* Actions */
-.actions-section { margin-top: 8px; }
-.section-title { color: var(--text-primary); font-size: 1.125rem; font-weight: 600; margin: 0 0 16px 0; }
-.actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-@media (max-width: 900px) { .actions-grid { grid-template-columns: repeat(2, 1fr); } }
-.action-card {
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-  padding: 24px; background: var(--bg-secondary); border: 1px solid var(--border-color);
-  border-radius: 16px; cursor: pointer; transition: all 0.2s ease;
+.actions-section {
+  margin-top: 8px;
 }
-.action-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-.action-card span { color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; }
+.section-title {
+  color: var(--text-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+}
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.action-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.action-card span {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
 </style>

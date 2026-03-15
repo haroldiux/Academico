@@ -13,7 +13,7 @@
           <q-icon name="description" size="36px" color="indigo" class="q-mr-sm" />
           <span class="text-gradient">Programa de Asignatura</span>
         </h4>
-        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
+        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary)">
           {{ datosGenerales?.asignatura || 'Cargando...' }} • {{ datosGenerales?.carrera }}
         </p>
       </div>
@@ -22,7 +22,14 @@
         <q-chip v-if="esSoloLectura" color="orange" text-color="white" icon="visibility">
           Solo Lectura
         </q-chip>
-        <q-btn outline color="green" icon="picture_as_pdf" label="Exportar PDF" no-caps @click="exportarPDF" />
+        <q-btn
+          outline
+          color="green"
+          icon="picture_as_pdf"
+          label="Exportar PDF"
+          no-caps
+          @click="exportarPDF"
+        />
         <q-btn
           unelevated
           color="primary"
@@ -41,8 +48,12 @@
       <q-card-section class="bg-indigo-1">
         <div class="row items-center">
           <q-icon name="info" color="indigo" size="24px" class="q-mr-sm" />
-          <span class="text-subtitle1 text-weight-bold text-indigo-9">1. Datos Generales de la Asignatura</span>
-          <q-chip size="xs" color="blue-2" text-color="blue-9" dense class="q-ml-sm">API Externa</q-chip>
+          <span class="text-subtitle1 text-weight-bold text-indigo-9"
+            >1. Datos Generales de la Asignatura</span
+          >
+          <q-chip size="xs" color="blue-2" text-color="blue-9" dense class="q-ml-sm"
+            >API Externa</q-chip
+          >
         </div>
       </q-card-section>
       <q-card-section>
@@ -51,7 +62,13 @@
             <q-input v-model="datosGenerales.carrera" label="Carrera" outlined dense readonly />
           </div>
           <div class="col-12 col-md-4">
-            <q-input v-model="datosGenerales.asignatura" label="Asignatura" outlined dense readonly />
+            <q-input
+              v-model="datosGenerales.asignatura"
+              label="Asignatura"
+              outlined
+              dense
+              readonly
+            />
           </div>
           <div class="col-12 col-md-2">
             <q-input v-model="datosGenerales.codigo" label="Código" outlined dense readonly />
@@ -69,7 +86,9 @@
         <div class="row items-center">
           <q-icon name="schedule" color="teal" size="24px" class="q-mr-sm" />
           <span class="text-subtitle1 text-weight-bold text-teal-9">Horario de Clases</span>
-          <q-chip size="xs" color="blue-2" text-color="blue-9" dense class="q-ml-sm">API Externa</q-chip>
+          <q-chip size="xs" color="blue-2" text-color="blue-9" dense class="q-ml-sm"
+            >API Externa</q-chip
+          >
         </div>
       </q-card-section>
       <q-card-section>
@@ -87,7 +106,14 @@
 
     <!-- Tabs de Contenido -->
     <q-card class="card-main">
-      <q-tabs v-model="tabActual" dense class="text-grey" active-color="indigo" indicator-color="indigo" align="left">
+      <q-tabs
+        v-model="tabActual"
+        dense
+        class="text-grey"
+        active-color="indigo"
+        indicator-color="indigo"
+        align="left"
+      >
         <q-tab name="justificacion" icon="article" label="Justificación" no-caps />
         <q-tab name="competencias" icon="emoji_events" label="Competencias" no-caps />
         <q-tab name="metodologia" icon="psychology" label="Metodología" no-caps />
@@ -106,7 +132,9 @@
             </template>
             <span class="text-weight-medium">Campo Compartido (Materia)</span>
             <template v-slot:action v-if="esSoloLectura">
-              <q-chip color="orange" text-color="white" size="sm" icon="visibility">Solo lectura</q-chip>
+              <q-chip color="orange" text-color="white" size="sm" icon="visibility"
+                >Solo lectura</q-chip
+              >
             </template>
           </q-banner>
 
@@ -131,7 +159,9 @@
           <div>
             <div class="row items-center q-mb-md">
               <q-icon name="flag" color="green" size="28px" class="q-mr-sm" />
-              <span class="text-h6 text-weight-bold">4. Propósito General de la Unidad de Formación</span>
+              <span class="text-h6 text-weight-bold"
+                >4. Propósito General de la Unidad de Formación</span
+              >
             </div>
             <q-input
               v-model="programa.proposito_general"
@@ -206,13 +236,20 @@
               />
             </div>
 
-            <div v-if="!programa.elementos_competencia.length" class="text-center q-pa-lg text-grey-6">
+            <div
+              v-if="!programa.elementos_competencia.length"
+              class="text-center q-pa-lg text-grey-6"
+            >
               <q-icon name="playlist_add" size="48px" />
               <p>No hay elementos de competencia. Agrega el primero.</p>
             </div>
 
             <q-list separator v-else>
-              <q-item v-for="(ec, idx) in programa.elementos_competencia" :key="idx" class="q-pa-md">
+              <q-item
+                v-for="(ec, idx) in programa.elementos_competencia"
+                :key="idx"
+                class="q-pa-md"
+              >
                 <q-item-section avatar>
                   <q-chip color="blue" text-color="white" dense>{{ ec.codigo }}</q-chip>
                 </q-item-section>
@@ -226,7 +263,14 @@
                   />
                 </q-item-section>
                 <q-item-section side v-if="!esSoloLectura">
-                  <q-btn flat round dense icon="delete" color="red" @click="eliminarElementoCompetencia(idx)" />
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="delete"
+                    color="red"
+                    @click="eliminarElementoCompetencia(idx)"
+                  />
                 </q-item-section>
               </q-item>
             </q-list>
@@ -263,19 +307,29 @@
           <div class="q-mb-xl">
             <div class="row items-center q-mb-md">
               <q-icon name="gavel" color="primary" size="28px" class="q-mr-sm" />
-              <span class="text-h6 text-weight-bold">12. Criterios y Normativa de la Asignatura</span>
+              <span class="text-h6 text-weight-bold"
+                >12. Criterios y Normativa de la Asignatura</span
+              >
             </div>
 
             <div class="q-mb-md">
               <div class="text-subtitle2 text-grey-7 q-mb-xs">Normas Generales de Clase:</div>
-              <div class="q-pa-md bg-grey-1 rounded-borders border-grey-4" style="white-space: pre-wrap;">
+              <div
+                class="q-pa-md bg-grey-1 rounded-borders border-grey-4"
+                style="white-space: pre-wrap"
+              >
                 {{ programa.reglamento_normativa.clase || 'No definido' }}
               </div>
             </div>
 
             <div v-if="programa.reglamento_normativa.laboratorio">
-              <div class="text-subtitle2 text-grey-7 q-mb-xs">Normas de Laboratorio / Práctica:</div>
-              <div class="q-pa-md bg-grey-1 rounded-borders border-grey-4" style="white-space: pre-wrap;">
+              <div class="text-subtitle2 text-grey-7 q-mb-xs">
+                Normas de Laboratorio / Práctica:
+              </div>
+              <div
+                class="q-pa-md bg-grey-1 rounded-borders border-grey-4"
+                style="white-space: pre-wrap"
+              >
                 {{ programa.reglamento_normativa.laboratorio }}
               </div>
             </div>
@@ -287,7 +341,10 @@
               <q-icon name="calendar_month" color="teal" size="28px" class="q-mr-sm" />
               <span class="text-h6 text-weight-bold">13. Organización y Calendario</span>
             </div>
-            <div class="q-pa-md bg-grey-1 rounded-borders border-grey-4" style="white-space: pre-wrap;">
+            <div
+              class="q-pa-md bg-grey-1 rounded-borders border-grey-4"
+              style="white-space: pre-wrap"
+            >
               {{ programa.organizacion_calendario || 'Cronograma a definir por el docente' }}
             </div>
           </div>
@@ -309,17 +366,21 @@
           </div>
 
           <div class="q-mb-md">
-             <div class="text-subtitle2 text-grey-7 q-mb-xs">Introducción:</div>
-             <div class="q-pa-sm bg-grey-1 rounded-borders border-grey-4">{{ programa.sistema_evaluacion.intro }}</div>
+            <div class="text-subtitle2 text-grey-7 q-mb-xs">Introducción:</div>
+            <div class="q-pa-sm bg-grey-1 rounded-borders border-grey-4">
+              {{ programa.sistema_evaluacion.intro }}
+            </div>
           </div>
 
           <div class="row q-col-gutter-lg q-mb-md">
             <div class="col-12 col-md-4">
               <q-card flat bordered>
                 <q-card-section class="bg-blue-1">
-                  <span class="text-subtitle1 text-weight-bold text-blue-9">Evaluación Diagnóstica</span>
+                  <span class="text-subtitle1 text-weight-bold text-blue-9"
+                    >Evaluación Diagnóstica</span
+                  >
                 </q-card-section>
-                <q-card-section class="q-pa-sm" style="white-space: pre-wrap;">
+                <q-card-section class="q-pa-sm" style="white-space: pre-wrap">
                   {{ programa.sistema_evaluacion.diagnostica }}
                 </q-card-section>
               </q-card>
@@ -327,9 +388,11 @@
             <div class="col-12 col-md-4">
               <q-card flat bordered>
                 <q-card-section class="bg-green-1">
-                  <span class="text-subtitle1 text-weight-bold text-green-9">Evaluación Formativa</span>
+                  <span class="text-subtitle1 text-weight-bold text-green-9"
+                    >Evaluación Formativa</span
+                  >
                 </q-card-section>
-                <q-card-section class="q-pa-sm" style="white-space: pre-wrap;">
+                <q-card-section class="q-pa-sm" style="white-space: pre-wrap">
                   {{ programa.sistema_evaluacion.formativa }}
                 </q-card-section>
               </q-card>
@@ -337,9 +400,11 @@
             <div class="col-12 col-md-4">
               <q-card flat bordered>
                 <q-card-section class="bg-orange-1">
-                  <span class="text-subtitle1 text-weight-bold text-orange-9">Evaluación Sumativa</span>
+                  <span class="text-subtitle1 text-weight-bold text-orange-9"
+                    >Evaluación Sumativa</span
+                  >
                 </q-card-section>
-                <q-card-section class="q-pa-sm" style="white-space: pre-wrap;">
+                <q-card-section class="q-pa-sm" style="white-space: pre-wrap">
                   {{ programa.sistema_evaluacion.sumativa }}
                 </q-card-section>
               </q-card>
@@ -347,13 +412,20 @@
           </div>
 
           <div class="q-mb-md">
-             <div class="text-subtitle2 text-grey-7 q-mb-xs">Ponderación y Parámetros:</div>
-             <div class="q-pa-md bg-grey-1 rounded-borders border-grey-4" style="white-space: pre-wrap; font-family: monospace;">{{ programa.sistema_evaluacion.ponderacion }}</div>
+            <div class="text-subtitle2 text-grey-7 q-mb-xs">Ponderación y Parámetros:</div>
+            <div
+              class="q-pa-md bg-grey-1 rounded-borders border-grey-4"
+              style="white-space: pre-wrap; font-family: monospace"
+            >
+              {{ programa.sistema_evaluacion.ponderacion }}
+            </div>
           </div>
 
           <div>
-             <div class="text-subtitle2 text-grey-7 q-mb-xs">Aspectos de Evaluación Final:</div>
-             <div class="q-pa-sm bg-grey-1 rounded-borders border-grey-4">{{ programa.sistema_evaluacion.final }}</div>
+            <div class="text-subtitle2 text-grey-7 q-mb-xs">Aspectos de Evaluación Final:</div>
+            <div class="q-pa-sm bg-grey-1 rounded-borders border-grey-4">
+              {{ programa.sistema_evaluacion.final }}
+            </div>
           </div>
         </q-tab-panel>
 
@@ -388,33 +460,77 @@
             />
           </div>
 
-          <div v-if="!programa.bibliografia_complementaria.length" class="text-center q-pa-lg text-grey-6">
+          <div
+            v-if="!programa.bibliografia_complementaria.length"
+            class="text-center q-pa-lg text-grey-6"
+          >
             <q-icon name="library_books" size="48px" />
             <p>No hay bibliografía complementaria. Agrega la primera referencia.</p>
           </div>
 
           <div v-else class="row q-col-gutter-md">
-            <div v-for="(bib, idx) in programa.bibliografia_complementaria" :key="idx" class="col-12">
+            <div
+              v-for="(bib, idx) in programa.bibliografia_complementaria"
+              :key="idx"
+              class="col-12"
+            >
               <q-card flat bordered>
                 <q-card-section>
                   <div class="row q-col-gutter-sm items-center">
                     <div class="col-12 col-md-3">
-                      <q-input v-model="bib.autor" outlined dense label="Autor" :readonly="esSoloLectura" />
+                      <q-input
+                        v-model="bib.autor"
+                        outlined
+                        dense
+                        label="Autor"
+                        :readonly="esSoloLectura"
+                      />
                     </div>
                     <div class="col-12 col-md-4">
-                      <q-input v-model="bib.titulo" outlined dense label="Título" :readonly="esSoloLectura" />
+                      <q-input
+                        v-model="bib.titulo"
+                        outlined
+                        dense
+                        label="Título"
+                        :readonly="esSoloLectura"
+                      />
                     </div>
                     <div class="col-12 col-md-2">
-                      <q-input v-model="bib.editorial" outlined dense label="Editorial" :readonly="esSoloLectura" />
+                      <q-input
+                        v-model="bib.editorial"
+                        outlined
+                        dense
+                        label="Editorial"
+                        :readonly="esSoloLectura"
+                      />
                     </div>
                     <div class="col-6 col-md-1">
-                      <q-input v-model="bib.anio" outlined dense label="Año" :readonly="esSoloLectura" />
+                      <q-input
+                        v-model="bib.anio"
+                        outlined
+                        dense
+                        label="Año"
+                        :readonly="esSoloLectura"
+                      />
                     </div>
                     <div class="col-6 col-md-1">
-                      <q-input v-model="bib.edicion" outlined dense label="Edición" :readonly="esSoloLectura" />
+                      <q-input
+                        v-model="bib.edicion"
+                        outlined
+                        dense
+                        label="Edición"
+                        :readonly="esSoloLectura"
+                      />
                     </div>
                     <div class="col-auto" v-if="!esSoloLectura">
-                      <q-btn flat round dense icon="delete" color="red" @click="eliminarBibliografiaComplementaria(idx)" />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="delete"
+                        color="red"
+                        @click="eliminarBibliografiaComplementaria(idx)"
+                      />
                     </div>
                   </div>
                 </q-card-section>
@@ -442,12 +558,15 @@ const tabActual = ref('justificacion')
 
 // Computed del store
 const programa = computed(() => store.programa)
-const datosGenerales = computed(() => store.datosGenerales || {
-  carrera: '',
-  asignatura: '',
-  codigo: '',
-  semestre: ''
-})
+const datosGenerales = computed(
+  () =>
+    store.datosGenerales || {
+      carrera: '',
+      asignatura: '',
+      codigo: '',
+      semestre: '',
+    },
+)
 const horariosMateria = computed(() => store.horariosMateria)
 const esSoloLectura = computed(() => store.esSoloLectura)
 const guardando = computed(() => store.guardando)
@@ -475,13 +594,13 @@ async function guardarCambios() {
     $q.notify({
       type: 'positive',
       message: 'Programa guardado correctamente',
-      icon: 'check_circle'
+      icon: 'check_circle',
     })
   } catch (error) {
     $q.notify({
       type: 'negative',
       message: 'Error al guardar: ' + error.message,
-      icon: 'error'
+      icon: 'error',
     })
   }
 }
@@ -491,18 +610,18 @@ function exportarPDF() {
     generarProgramaAsignatura({
       ...datosGenerales.value,
       programa: programa.value,
-      horarios: horariosMateria.value
+      horarios: horariosMateria.value,
     })
     $q.notify({
       type: 'positive',
       message: 'PDF generado correctamente',
-      icon: 'picture_as_pdf'
+      icon: 'picture_as_pdf',
     })
   } catch (error) {
     $q.notify({
       type: 'negative',
       message: 'Error al generar PDF: ' + error.message,
-      icon: 'error'
+      icon: 'error',
     })
   }
 }

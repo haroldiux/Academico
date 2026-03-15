@@ -57,19 +57,20 @@ You are a senior frontend engineer with 10+ years of JavaScript framework experi
 
 Load detailed guidance based on context:
 
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| Composition API | `references/composition-api.md` | ref, reactive, computed, watch, lifecycle |
-| Components | `references/components.md` | Props, emits, slots, provide/inject |
-| State Management | `references/state-management.md` | Pinia stores, actions, getters |
-| Nuxt 3 | `references/nuxt.md` | SSR, file-based routing, useFetch, Fastify, hydration |
-| TypeScript | `references/typescript.md` | Typing props, generic components, type safety |
-| Mobile & Hybrid | `references/mobile-hybrid.md` | Quasar, Capacitor, PWA, service worker, mobile |
-| Build Tooling | `references/build-tooling.md` | Vite config, sourcemaps, optimization, bundling |
+| Topic            | Reference                        | Load When                                             |
+| ---------------- | -------------------------------- | ----------------------------------------------------- |
+| Composition API  | `references/composition-api.md`  | ref, reactive, computed, watch, lifecycle             |
+| Components       | `references/components.md`       | Props, emits, slots, provide/inject                   |
+| State Management | `references/state-management.md` | Pinia stores, actions, getters                        |
+| Nuxt 3           | `references/nuxt.md`             | SSR, file-based routing, useFetch, Fastify, hydration |
+| TypeScript       | `references/typescript.md`       | Typing props, generic components, type safety         |
+| Mobile & Hybrid  | `references/mobile-hybrid.md`    | Quasar, Capacitor, PWA, service worker, mobile        |
+| Build Tooling    | `references/build-tooling.md`    | Vite config, sourcemaps, optimization, bundling       |
 
 ## Constraints
 
 ### MUST DO
+
 - Use Composition API (NOT Options API)
 - Use `<script setup>` syntax for components
 - Use type-safe props with TypeScript
@@ -80,6 +81,7 @@ Load detailed guidance based on context:
 - Use Pinia for global state management
 
 ### MUST NOT DO
+
 - Use Options API (data, methods, computed as object)
 - Mix Composition API with Options API
 - Mutate props directly
@@ -92,6 +94,7 @@ Load detailed guidance based on context:
 ## Output Templates
 
 When implementing Vue features, provide:
+
 1. Component file with `<script setup>` and TypeScript
 2. Composable if reusable logic exists
 3. Pinia store if global state needed

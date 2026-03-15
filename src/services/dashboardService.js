@@ -12,5 +12,5 @@ export const getDirectorStats = async (params) => {
 
 export default {
   getAdminStats,
-  getDirectorStats
+  getDirectorStats,
 }

@@ -19,5 +19,5 @@ export default {
 
   deleteGrupo(id) {
     return api.delete(`/grupos/${id}`)
-  }
+  },
 }

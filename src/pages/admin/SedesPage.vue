@@ -6,15 +6,19 @@
           <q-icon name="map" size="36px" color="primary" class="q-mr-sm" />
           <span class="text-gradient">Mapa de Sedes</span>
         </h4>
-        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
+        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary)">
           Visualización geográfica del progreso por departamento
         </p>
       </div>
       <div class="col-auto">
-        <q-btn-toggle v-model="viewMode" toggle-color="primary" :options="[
-          { label: 'Mapa', value: 'map', icon: 'map' },
-          { label: 'Lista', value: 'list', icon: 'list' }
-        ]" />
+        <q-btn-toggle
+          v-model="viewMode"
+          toggle-color="primary"
+          :options="[
+            { label: 'Mapa', value: 'map', icon: 'map' },
+            { label: 'Lista', value: 'list', icon: 'list' },
+          ]"
+        />
       </div>
     </div>
 
@@ -34,8 +38,15 @@
     <!-- Tabs de Tipo de Reporte -->
     <div class="row q-mb-lg">
       <div class="col-12">
-        <q-tabs v-model="selectedReportType" dense class="text-grey-7 bg-white rounded-borders shadow-1"
-          active-color="primary" indicator-color="primary" align="justify" narrow-indicator>
+        <q-tabs
+          v-model="selectedReportType"
+          dense
+          class="text-grey-7 bg-white rounded-borders shadow-1"
+          active-color="primary"
+          indicator-color="primary"
+          align="justify"
+          narrow-indicator
+        >
           <q-tab name="doc" icon="description" label="Documentación" />
           <q-tab name="seg" icon="analytics" label="Seguimiento Docente" />
           <q-tab name="ast" icon="how_to_reg" label="Asistencia Estudiantes" />
@@ -49,8 +60,12 @@
         <div class="col-12 col-md-7">
           <q-card flat bordered class="map-card">
             <q-card-section>
-              <BoliviaMapSVG :sedes-data="sedesPorDepartamento" :title="getReportLabel(selectedReportType)"
-                @select-department="onSelectDepartment" @select-sede="onSelectSede" />
+              <BoliviaMapSVG
+                :sedes-data="sedesPorDepartamento"
+                :title="getReportLabel(selectedReportType)"
+                @select-department="onSelectDepartment"
+                @select-sede="onSelectSede"
+              />
             </q-card-section>
           </q-card>
         </div>
@@ -62,10 +77,18 @@
                 Resumen por Departamento
               </div>
               <q-list separator>
-                <q-item v-for="(sedes, deptId) in deptsConSedes" :key="deptId" clickable
-                  @click="handleDeptClick(deptId, sedes)">
+                <q-item
+                  v-for="(sedes, deptId) in deptsConSedes"
+                  :key="deptId"
+                  clickable
+                  @click="handleDeptClick(deptId, sedes)"
+                >
                   <q-item-section avatar>
-                    <q-avatar :color="getAvatarColor(getAvgProgress(sedes))" text-color="white" size="40px">
+                    <q-avatar
+                      :color="getAvatarColor(getAvgProgress(sedes))"
+                      text-color="white"
+                      size="40px"
+                    >
                       {{ getDeptAbbr(deptId) }}
                     </q-avatar>
                   </q-item-section>
@@ -74,7 +97,12 @@
                     <q-item-label caption>{{ sedes.length }} sede(s)</q-item-label>
                   </q-item-section>
                   <q-item-section side>
-                    <q-chip :color="getAvatarColor(getAvgProgress(sedes))" text-color="white" dense size="sm">
+                    <q-chip
+                      :color="getAvatarColor(getAvgProgress(sedes))"
+                      text-color="white"
+                      dense
+                      size="sm"
+                    >
                       {{ getAvgProgress(sedes) }}%
                     </q-chip>
                   </q-item-section>
@@ -95,8 +123,11 @@
             <h3 class="sede-nombre">{{ sede.nombre }}</h3>
             <span class="sede-codigo">Código: {{ sede.codigo }}</span>
           </div>
-          <q-chip :color="sede.activo ? 'green-2' : 'grey-2'" :text-color="sede.activo ? 'green-9' : 'grey-9'"
-            size="sm">
+          <q-chip
+            :color="sede.activo ? 'green-2' : 'grey-2'"
+            :text-color="sede.activo ? 'green-9' : 'grey-9'"
+            size="sm"
+          >
             {{ sede.activo ? 'Activo' : 'Inactivo' }}
           </q-chip>
         </div>
@@ -114,8 +145,12 @@
             <span class="stat-label">Progreso</span>
           </div>
         </div>
-        <q-linear-progress :value="getProgresoSede(sede.id) / 100"
-          :color="getProgresoSede(sede.id) >= 70 ? 'green' : 'orange'" rounded size="6px" />
+        <q-linear-progress
+          :value="getProgresoSede(sede.id) / 100"
+          :color="getProgresoSede(sede.id) >= 70 ? 'green' : 'orange'"
+          rounded
+          size="6px"
+        />
       </div>
     </div>
 
@@ -130,8 +165,18 @@
           <div class="text-caption">Seleccione una sede para ver reportes</div>
         </q-card-section>
 
-        <q-tabs v-model="selectedSedeTab" class="text-grey" active-color="primary" indicator-color="primary">
-          <q-tab v-for="sede in selectedDepartment?.sedes" :key="sede.id" :name="sede.id" :label="sede.nombre" />
+        <q-tabs
+          v-model="selectedSedeTab"
+          class="text-grey"
+          active-color="primary"
+          indicator-color="primary"
+        >
+          <q-tab
+            v-for="sede in selectedDepartment?.sedes"
+            :key="sede.id"
+            :name="sede.id"
+            :label="sede.nombre"
+          />
         </q-tabs>
 
         <q-separator />
@@ -139,16 +184,31 @@
         <q-tab-panels v-model="selectedSedeTab" animated>
           <q-tab-panel v-for="sede in selectedDepartment?.sedes" :key="sede.id" :name="sede.id">
             <div class="text-center q-pa-md">
-              <q-avatar size="80px" :color="getAvatarColor(sede.progreso)" text-color="white" class="q-mb-md">
+              <q-avatar
+                size="80px"
+                :color="getAvatarColor(sede.progreso)"
+                text-color="white"
+                class="q-mb-md"
+              >
                 {{ sede.codigo }}
               </q-avatar>
               <div class="text-h6">{{ sede.nombre }}</div>
-              <div class="text-caption text-grey q-mb-md">{{ sede.carreras || 0 }} carreras • {{ sede.docentes || 0 }}
-                docentes</div>
-              <q-linear-progress :value="sede.progreso / 100" :color="getAvatarColor(sede.progreso)" rounded size="10px"
-                class="q-mb-md" />
-              <div class="text-h4 text-weight-bold" :class="'text-' + getAvatarColor(sede.progreso)">{{ sede.progreso
-                }}%</div>
+              <div class="text-caption text-grey q-mb-md">
+                {{ sede.carreras || 0 }} carreras • {{ sede.docentes || 0 }} docentes
+              </div>
+              <q-linear-progress
+                :value="sede.progreso / 100"
+                :color="getAvatarColor(sede.progreso)"
+                rounded
+                size="10px"
+                class="q-mb-md"
+              />
+              <div
+                class="text-h4 text-weight-bold"
+                :class="'text-' + getAvatarColor(sede.progreso)"
+              >
+                {{ sede.progreso }}%
+              </div>
             </div>
           </q-tab-panel>
         </q-tab-panels>
@@ -189,12 +249,19 @@ const departmentNames = {
   potosi: 'Potosí',
   santa_cruz: 'Santa Cruz',
   chuquisaca: 'Chuquisaca',
-  tarija: 'Tarija'
+  tarija: 'Tarija',
 }
 
 const departmentAbbrs = {
-  pando: 'PND', beni: 'BNI', la_paz: 'LPZ', cochabamba: 'CBB',
-  oruro: 'ORU', potosi: 'PTS', santa_cruz: 'SCZ', chuquisaca: 'SUC', tarija: 'TJA'
+  pando: 'PND',
+  beni: 'BNI',
+  la_paz: 'LPZ',
+  cochabamba: 'CBB',
+  oruro: 'ORU',
+  potosi: 'PTS',
+  santa_cruz: 'SCZ',
+  chuquisaca: 'SUC',
+  tarija: 'TJA',
 }
 
 // Mock: Mapeo de sedes por departamento
@@ -208,16 +275,16 @@ const sedesPorDepartamento = computed(() => {
     potosi: [],
     santa_cruz: [],
     chuquisaca: [],
-    tarija: []
+    tarija: [],
   }
 
   // Mapear sedes del store a departamentos
-  sedesStore.sedes.forEach(sede => {
+  sedesStore.sedes.forEach((sede) => {
     const deptId = getDepartmentForSede(sede.nombre)
     if (deptId && mapping[deptId]) {
       mapping[deptId].push({
         ...sede,
-        progreso: getProgresoSede(sede.id, selectedReportType.value)
+        progreso: getProgresoSede(sede.id, selectedReportType.value),
       })
     }
   })
@@ -237,7 +304,8 @@ const deptsConSedes = computed(() => {
 
 function getDepartmentForSede(sedeName) {
   const name = sedeName.toLowerCase()
-  if (name.includes('cochabamba') || name.includes('cercado') || name.includes('ivirga')) return 'cochabamba'
+  if (name.includes('cochabamba') || name.includes('cercado') || name.includes('ivirga'))
+    return 'cochabamba'
   if (name.includes('la paz') || name.includes('el alto')) return 'la_paz'
   if (name.includes('santa cruz')) return 'santa_cruz'
   if (name.includes('oruro')) return 'oruro'
@@ -257,18 +325,38 @@ onMounted(() => {
 })
 
 const estadisticas = computed(() => [
-  { label: 'Total Sedes', value: sedesStore.stats.total_sedes, icon: 'location_city', color: 'purple' },
-  { label: 'Sedes Activas', value: sedesStore.stats.sedes_activas, icon: 'check_circle', color: 'green' },
-  { label: 'Total Carreras', value: sedesStore.stats.total_carreras, icon: 'school', color: 'orange' },
-  { label: 'Total Docentes', value: sedesStore.stats.total_docentes, icon: 'people', color: 'blue' }
+  {
+    label: 'Total Sedes',
+    value: sedesStore.stats.total_sedes,
+    icon: 'location_city',
+    color: 'purple',
+  },
+  {
+    label: 'Sedes Activas',
+    value: sedesStore.stats.sedes_activas,
+    icon: 'check_circle',
+    color: 'green',
+  },
+  {
+    label: 'Total Carreras',
+    value: sedesStore.stats.total_carreras,
+    icon: 'school',
+    color: 'orange',
+  },
+  {
+    label: 'Total Docentes',
+    value: sedesStore.stats.total_docentes,
+    icon: 'people',
+    color: 'blue',
+  },
 ])
 
 function getProgresoSede(sedeId, type = 'doc') {
   // Generar variaciones según el tipo para demostración
   const variations = {
-    'doc': { 1: 78, 2: 72, 3: 45, 4: 82, 5: 75, 6: 65, 7: 70, 8: 58, 9: 52, 10: 82, 11: 40, 12: 35 },
-    'seg': { 1: 65, 2: 80, 3: 40, 4: 70, 5: 92, 6: 85, 7: 60, 8: 45, 9: 78, 10: 65, 11: 35, 12: 25 },
-    'ast': { 1: 90, 2: 85, 3: 88, 4: 95, 5: 82, 6: 78, 7: 85, 8: 72, 9: 80, 10: 92, 11: 85, 12: 90 }
+    doc: { 1: 78, 2: 72, 3: 45, 4: 82, 5: 75, 6: 65, 7: 70, 8: 58, 9: 52, 10: 82, 11: 40, 12: 35 },
+    seg: { 1: 65, 2: 80, 3: 40, 4: 70, 5: 92, 6: 85, 7: 60, 8: 45, 9: 78, 10: 65, 11: 35, 12: 25 },
+    ast: { 1: 90, 2: 85, 3: 88, 4: 95, 5: 82, 6: 78, 7: 85, 8: 72, 9: 80, 10: 92, 11: 85, 12: 90 },
   }
 
   const dataset = variations[type] || variations['doc']
@@ -277,9 +365,9 @@ function getProgresoSede(sedeId, type = 'doc') {
 
 function getReportLabel(type) {
   const labels = {
-    'doc': 'Progreso en Documentación',
-    'seg': 'Seguimiento Docente',
-    'ast': 'Asistencia de Estudiantes'
+    doc: 'Progreso en Documentación',
+    seg: 'Seguimiento Docente',
+    ast: 'Asistencia de Estudiantes',
   }
   return labels[type] || ''
 }
@@ -296,8 +384,12 @@ function getAvatarColor(progress) {
   return 'negative'
 }
 
-function getDeptName(deptId) { return departmentNames[deptId] || deptId }
-function getDeptAbbr(deptId) { return departmentAbbrs[deptId] || '?' }
+function getDeptName(deptId) {
+  return departmentNames[deptId] || deptId
+}
+function getDeptAbbr(deptId) {
+  return departmentAbbrs[deptId] || '?'
+}
 
 function handleDeptClick(deptId, sedes) {
   if (sedes.length === 1) {
@@ -320,7 +412,7 @@ function onSelectSede(sede) {
 }
 
 function navigateToSelectedSede() {
-  const sede = selectedDepartment.value?.sedes.find(s => s.id === selectedSedeTab.value)
+  const sede = selectedDepartment.value?.sedes.find((s) => s.id === selectedSedeTab.value)
   if (sede) {
     showSedeSelector.value = false
     irASede(sede)
@@ -330,7 +422,7 @@ function navigateToSelectedSede() {
 function irASede(sede) {
   router.push({
     path: '/vicerrector/reportes',
-    query: { sedeId: sede.id, sedeName: sede.nombre }
+    query: { sedeId: sede.id, sedeName: sede.nombre },
   })
 }
 </script>

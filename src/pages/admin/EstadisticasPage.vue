@@ -10,18 +10,43 @@
         <p class="page-subtitle">Análisis y métricas académicas en tiempo real</p>
       </div>
       <div class="header-actions">
-        <q-select v-model="periodoSeleccionado" :options="periodosOptions" outlined dense emit-value map-options
-          style="width: 100%; max-width: 150px; min-width: 120px;" />
+        <q-select
+          v-model="periodoSeleccionado"
+          :options="periodosOptions"
+          outlined
+          dense
+          emit-value
+          map-options
+          style="width: 100%; max-width: 150px; min-width: 120px"
+        />
         <q-btn outline color="primary" icon="download" label="Exportar" no-caps />
       </div>
     </div>
 
     <!-- Filtros principales -->
     <div class="filters-section">
-      <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
-        clearable style="min-width: 180px;" />
-      <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
-        map-options clearable style="min-width: 220px;" />
+      <q-select
+        v-model="filtros.sede"
+        :options="sedesOptions"
+        outlined
+        dense
+        label="Sede"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 180px"
+      />
+      <q-select
+        v-model="filtros.carrera"
+        :options="carrerasOptions"
+        outlined
+        dense
+        label="Carrera"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 220px"
+      />
     </div>
 
     <!-- KPIs Principales -->
@@ -97,7 +122,10 @@
               <div v-for="sede in estudiantesPorSede" :key="sede.nombre" class="bar-item">
                 <div class="bar-label">{{ sede.nombre }}</div>
                 <div class="bar-container">
-                  <div class="bar-fill" :style="{ width: sede.porcentaje + '%', background: sede.color }"></div>
+                  <div
+                    class="bar-fill"
+                    :style="{ width: sede.porcentaje + '%', background: sede.color }"
+                  ></div>
                 </div>
                 <div class="bar-value">{{ sede.cantidad.toLocaleString() }}</div>
               </div>
@@ -116,10 +144,19 @@
           <div class="chart-content donut-wrapper">
             <div class="donut-chart">
               <svg viewBox="0 0 100 100" class="donut">
-                <circle v-for="carrera in carrerasDistribucion" :key="carrera.nombre" cx="50" cy="50" r="40"
-                  fill="transparent" :stroke="carrera.color" stroke-width="15" :stroke-dasharray="carrera.dasharray"
+                <circle
+                  v-for="carrera in carrerasDistribucion"
+                  :key="carrera.nombre"
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  fill="transparent"
+                  :stroke="carrera.color"
+                  stroke-width="15"
+                  :stroke-dasharray="carrera.dasharray"
                   :stroke-dashoffset="carrera.offset"
-                  :style="{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }" />
+                  :style="{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }"
+                />
               </svg>
               <div class="donut-center">
                 <span class="donut-value">{{ stats.totalEstudiantes.toLocaleString() }}</span>
@@ -127,7 +164,11 @@
               </div>
             </div>
             <div class="donut-legend">
-              <div v-for="carrera in carrerasDistribucion" :key="carrera.nombre" class="legend-item">
+              <div
+                v-for="carrera in carrerasDistribucion"
+                :key="carrera.nombre"
+                class="legend-item"
+              >
                 <span class="legend-color" :style="{ background: carrera.color }"></span>
                 <span class="legend-name">{{ carrera.nombre }}</span>
                 <span class="legend-value">{{ carrera.porcentaje }}%</span>
@@ -142,7 +183,9 @@
         <q-card-section>
           <div class="chart-header">
             <h3>Progreso de Documentación</h3>
-            <q-chip size="sm" color="green-2" text-color="green-9">{{ progresoGeneral }}% completado</q-chip>
+            <q-chip size="sm" color="green-2" text-color="green-9"
+              >{{ progresoGeneral }}% completado</q-chip
+            >
           </div>
           <div class="chart-content">
             <div class="progress-list">
@@ -151,8 +194,12 @@
                   <span class="progress-name">{{ item.carrera }}</span>
                   <span class="progress-percent">{{ item.progreso }}%</span>
                 </div>
-                <q-linear-progress :value="item.progreso / 100" :color="getProgressColor(item.progreso)" rounded
-                  size="8px" />
+                <q-linear-progress
+                  :value="item.progreso / 100"
+                  :color="getProgressColor(item.progreso)"
+                  rounded
+                  size="8px"
+                />
               </div>
             </div>
           </div>
@@ -201,20 +248,39 @@
           <template v-slot:body-cell-progreso="props">
             <q-td :props="props">
               <div class="flex items-center gap-2">
-                <q-linear-progress :value="props.row.progreso / 100" :color="getProgressColor(props.row.progreso)"
-                  style="width: 80px;" rounded />
+                <q-linear-progress
+                  :value="props.row.progreso / 100"
+                  :color="getProgressColor(props.row.progreso)"
+                  style="width: 80px"
+                  rounded
+                />
                 <span>{{ props.row.progreso }}%</span>
               </div>
             </q-td>
           </template>
           <template v-slot:body-cell-tendencia="props">
             <q-td :props="props">
-              <q-chip :color="props.row.tendencia > 0 ? 'green-2' : props.row.tendencia < 0 ? 'red-2' : 'grey-3'"
-                :text-color="props.row.tendencia > 0 ? 'green-9' : props.row.tendencia < 0 ? 'red-9' : 'grey-7'"
-                size="sm" dense>
+              <q-chip
+                :color="
+                  props.row.tendencia > 0 ? 'green-2' : props.row.tendencia < 0 ? 'red-2' : 'grey-3'
+                "
+                :text-color="
+                  props.row.tendencia > 0 ? 'green-9' : props.row.tendencia < 0 ? 'red-9' : 'grey-7'
+                "
+                size="sm"
+                dense
+              >
                 <q-icon
-                  :name="props.row.tendencia > 0 ? 'trending_up' : props.row.tendencia < 0 ? 'trending_down' : 'remove'"
-                  size="14px" class="q-mr-xs" />
+                  :name="
+                    props.row.tendencia > 0
+                      ? 'trending_up'
+                      : props.row.tendencia < 0
+                        ? 'trending_down'
+                        : 'remove'
+                  "
+                  size="14px"
+                  class="q-mr-xs"
+                />
                 {{ props.row.tendencia > 0 ? '+' : '' }}{{ props.row.tendencia }}%
               </q-chip>
             </q-td>
@@ -236,21 +302,19 @@ const carrerasStore = useCarrerasStore()
 const periodoSeleccionado = ref('2026-1')
 const filtros = ref({
   sede: null,
-  carrera: null
+  carrera: null,
 })
 
 const periodosOptions = [
   { label: 'Gestión 2026-I', value: '2026-1' },
   { label: 'Gestión 2025-II', value: '2025-2' },
-  { label: 'Gestión 2025-I', value: '2025-1' }
+  { label: 'Gestión 2025-I', value: '2025-1' },
 ]
 
-const sedesOptions = computed(() =>
-  sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
-)
+const sedesOptions = computed(() => sedesStore.sedes.map((s) => ({ label: s.nombre, value: s.id })))
 
 const carrerasOptions = computed(() =>
-  carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id }))
+  carrerasStore.carreras.map((c) => ({ label: c.nombre, value: c.id })),
 )
 
 // Estadísticas generales
@@ -262,7 +326,7 @@ const stats = ref({
   promedioGruposPorDocente: 3.2,
   promedioHorasSemanales: 28,
   promedioEstudiantesPorDocente: 35,
-  promedioMateriasPorDocente: 2.4
+  promedioMateriasPorDocente: 2.4,
 })
 
 // Estudiantes por sede
@@ -272,7 +336,7 @@ const estudiantesPorSede = ref([
   { nombre: 'Santa Cruz', cantidad: 1450, porcentaje: 45, color: '#10b981' },
   { nombre: 'Ivirgarzama', cantidad: 890, porcentaje: 27, color: '#f59e0b' },
   { nombre: 'El Alto', cantidad: 580, porcentaje: 18, color: '#ef4444' },
-  { nombre: 'Oruro', cantidad: 197, porcentaje: 6, color: '#ec4899' }
+  { nombre: 'Oruro', cantidad: 197, porcentaje: 6, color: '#ec4899' },
 ])
 
 // Distribución por carrera (para gráfico donut)
@@ -282,16 +346,16 @@ const carrerasDistribucion = computed(() => {
     { nombre: 'Ing. Sistemas', porcentaje: 22, color: '#3b82f6' },
     { nombre: 'Derecho', porcentaje: 18, color: '#10b981' },
     { nombre: 'Administración', porcentaje: 15, color: '#f59e0b' },
-    { nombre: 'Otros', porcentaje: 10, color: '#6b7280' }
+    { nombre: 'Otros', porcentaje: 10, color: '#6b7280' },
   ]
 
   let offset = 0
-  return data.map(item => {
+  return data.map((item) => {
     const dasharray = (item.porcentaje / 100) * 251.2 // 2 * PI * 40
     const result = {
       ...item,
       dasharray: `${dasharray} ${251.2 - dasharray}`,
-      offset: -offset
+      offset: -offset,
     }
     offset += dasharray
     return result
@@ -304,7 +368,7 @@ const progresoDocumentacion = ref([
   { carrera: 'Ing. de Sistemas', progreso: 72 },
   { carrera: 'Derecho', progreso: 68 },
   { carrera: 'Administración', progreso: 54 },
-  { carrera: 'Contaduría', progreso: 45 }
+  { carrera: 'Contaduría', progreso: 45 },
 ])
 
 const progresoGeneral = computed(() => {
@@ -319,16 +383,23 @@ const rendimientoPorSede = ref([
   { sede: 'Santa Cruz', estudiantes: 1450, docentes: 42, grupos: 68, progreso: 65, tendencia: 5 },
   { sede: 'Ivirgarzama', estudiantes: 890, docentes: 24, grupos: 42, progreso: 58, tendencia: -2 },
   { sede: 'El Alto', estudiantes: 580, docentes: 12, grupos: 35, progreso: 45, tendencia: 15 },
-  { sede: 'Oruro', estudiantes: 197, docentes: 4, grupos: 18, progreso: 35, tendencia: 0 }
+  { sede: 'Oruro', estudiantes: 197, docentes: 4, grupos: 18, progreso: 35, tendencia: 0 },
 ])
 
 const columnsRendimiento = [
   { name: 'sede', label: 'Sede', field: 'sede', align: 'left', sortable: true },
-  { name: 'estudiantes', label: 'Estudiantes', field: 'estudiantes', align: 'right', sortable: true, format: val => val.toLocaleString() },
+  {
+    name: 'estudiantes',
+    label: 'Estudiantes',
+    field: 'estudiantes',
+    align: 'right',
+    sortable: true,
+    format: (val) => val.toLocaleString(),
+  },
   { name: 'docentes', label: 'Docentes', field: 'docentes', align: 'right', sortable: true },
   { name: 'grupos', label: 'Grupos', field: 'grupos', align: 'right', sortable: true },
   { name: 'progreso', label: 'Documentación', field: 'progreso', align: 'left', sortable: true },
-  { name: 'tendencia', label: 'Tendencia', field: 'tendencia', align: 'center', sortable: true }
+  { name: 'tendencia', label: 'Tendencia', field: 'tendencia', align: 'center', sortable: true },
 ]
 
 function getProgressColor(value) {

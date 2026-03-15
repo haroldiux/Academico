@@ -85,18 +85,23 @@
         align="justify"
         narrow-indicator
       >
-        <q-tab 
-          v-for="(materias, planName) in mallasData" 
-          :key="planName" 
-          :name="planName" 
-          :label="planName" 
+        <q-tab
+          v-for="(materias, planName) in mallasData"
+          :key="planName"
+          :name="planName"
+          :label="planName"
         />
       </q-tabs>
 
       <q-separator />
 
       <q-tab-panels v-model="tab" animated>
-        <q-tab-panel v-for="(materias, planName) in mallasData" :key="planName" :name="planName" class="q-pa-none">
+        <q-tab-panel
+          v-for="(materias, planName) in mallasData"
+          :key="planName"
+          :name="planName"
+          class="q-pa-none"
+        >
           <q-table
             :rows="materias"
             :columns="columns"
@@ -118,7 +123,9 @@
             <template v-slot:body-cell-docentes="props">
               <q-td :props="props">
                 <span v-if="props.row.docentes" class="text-body2">{{ props.row.docentes }}</span>
-                <q-chip v-else dense color="grey-3" text-color="grey-6" size="sm" icon="person_off">No asignado</q-chip>
+                <q-chip v-else dense color="grey-3" text-color="grey-6" size="sm" icon="person_off"
+                  >No asignado</q-chip
+                >
               </q-td>
             </template>
           </q-table>
@@ -130,9 +137,11 @@
     <q-card flat bordered v-else-if="searched && !hasData" class="q-mt-md text-center q-pa-xl">
       <q-icon name="warning" size="4rem" color="warning" class="q-mb-md" />
       <div class="text-h6 text-grey-8">No se encontraron asignaturas.</div>
-      <div class="text-body2 text-grey-6">Verifica que esta carrera contenga materias en la sede seleccionada, o corre el comando de extracción.</div>
+      <div class="text-body2 text-grey-6">
+        Verifica que esta carrera contenga materias en la sede seleccionada, o corre el comando de
+        extracción.
+      </div>
     </q-card>
-
   </q-page>
 </template>
 
@@ -150,13 +159,13 @@ const carrerasStore = useCarrerasStore()
 const filtro = ref({
   sede: null,
   carrera: null,
-  plan: null  // null = Todos, 'N' = Plan Nuevo, 'A' = Plan Antiguo
+  plan: null, // null = Todos, 'N' = Plan Nuevo, 'A' = Plan Antiguo
 })
 
 const planesOptions = [
   { label: 'Todos los planes', value: null },
-  { label: 'Plan Nuevo (N)',   value: 'N'  },
-  { label: 'Plan Antiguo (A)', value: 'A'  },
+  { label: 'Plan Nuevo (N)', value: 'N' },
+  { label: 'Plan Antiguo (A)', value: 'A' },
 ]
 
 const loading = ref(false)
@@ -165,20 +174,37 @@ const mallasData = ref({})
 const tab = ref('')
 
 const columns = [
-  { name: 'codigo', label: 'CÓDIGO', field: 'codigo', align: 'left', sortable: true, style: 'font-weight: bold; width: 100px;' },
+  {
+    name: 'codigo',
+    label: 'CÓDIGO',
+    field: 'codigo',
+    align: 'left',
+    sortable: true,
+    style: 'font-weight: bold; width: 100px;',
+  },
   { name: 'nombre', label: 'ASIGNATURA', field: 'nombre', align: 'left', sortable: true },
-  { name: 'semestre', label: 'SEMESTRE', field: 'semestre', align: 'center', sortable: true, style: 'width: 120px;' },
-  { name: 'docentes', label: 'DOCENTE', field: 'docentes', align: 'left', sortable: true }
+  {
+    name: 'semestre',
+    label: 'SEMESTRE',
+    field: 'semestre',
+    align: 'center',
+    sortable: true,
+    style: 'width: 120px;',
+  },
+  { name: 'docentes', label: 'DOCENTE', field: 'docentes', align: 'left', sortable: true },
 ]
 
 const sedesOptions = computed(() => sedesStore.sedes)
 
 const carrerasOptions = computed(() => {
   if (!filtro.value.sede) return []
-  return carrerasStore.carreras.filter(c => {
-    return c.sede_id === filtro.value.sede || 
-           (c.sedes_ids && c.sedes_ids.includes(filtro.value.sede))
-  }).sort((a, b) => a.nombre.localeCompare(b.nombre))
+  return carrerasStore.carreras
+    .filter((c) => {
+      return (
+        c.sede_id === filtro.value.sede || (c.sedes_ids && c.sedes_ids.includes(filtro.value.sede))
+      )
+    })
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
 })
 
 const hasData = computed(() => Object.keys(mallasData.value).length > 0)
@@ -200,14 +226,14 @@ const fetchMallas = async () => {
   loading.value = true
   searched.value = true
   mallasData.value = {}
-  
+
   try {
     const response = await api.get('/mallas-curriculares', {
       params: {
-        sede_id:      filtro.value.sede,
-        carrera_id:   filtro.value.carrera,
-        plan_estudios: filtro.value.plan || undefined
-      }
+        sede_id: filtro.value.sede,
+        carrera_id: filtro.value.carrera,
+        plan_estudios: filtro.value.plan || undefined,
+      },
     })
 
     if (response.data.success) {
@@ -228,7 +254,7 @@ const fetchMallas = async () => {
     $q.notify({
       type: 'negative',
       message: 'Error al cargar las mallas curriculares',
-      position: 'top-right'
+      position: 'top-right',
     })
   } finally {
     loading.value = false

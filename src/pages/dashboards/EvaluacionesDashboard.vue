@@ -56,17 +56,29 @@
             <q-list separator>
               <q-item v-for="examen in proximosExamenes" :key="examen.id" class="exam-item">
                 <q-item-section avatar>
-                  <q-avatar :color="getEstadoColor(examen.estado)" text-color="white" size="40px" icon="quiz" />
+                  <q-avatar
+                    :color="getEstadoColor(examen.estado)"
+                    text-color="white"
+                    size="40px"
+                    icon="quiz"
+                  />
                 </q-item-section>
                 <q-item-section>
                   <q-item-label class="text-weight-medium">{{ examen.materia }}</q-item-label>
-                  <q-item-label caption>{{ examen.carrera }} • Grupo {{ examen.grupo }}</q-item-label>
+                  <q-item-label caption
+                    >{{ examen.carrera }} • Grupo {{ examen.grupo }}</q-item-label
+                  >
                 </q-item-section>
                 <q-item-section side>
                   <div class="text-right">
                     <div class="text-caption text-weight-bold">{{ examen.fecha }}</div>
                     <div class="text-caption text-grey-6">{{ examen.hora }}</div>
-                    <q-chip :color="getEstadoColor(examen.estado)" text-color="white" size="xs" dense>
+                    <q-chip
+                      :color="getEstadoColor(examen.estado)"
+                      text-color="white"
+                      size="xs"
+                      dense
+                    >
                       {{ examen.estado }}
                     </q-chip>
                   </div>
@@ -75,8 +87,14 @@
             </q-list>
           </q-card-section>
           <q-card-actions>
-            <q-btn flat color="primary" label="Ver todos los exámenes" icon-right="arrow_forward"
-              to="/evaluaciones/rol-examenes" no-caps />
+            <q-btn
+              flat
+              color="primary"
+              label="Ver todos los exámenes"
+              icon-right="arrow_forward"
+              to="/evaluaciones/rol-examenes"
+              no-caps
+            />
           </q-card-actions>
         </q-card>
       </div>
@@ -100,8 +118,10 @@
                   <q-item-label caption>{{ carrera.examenes }} exámenes programados</q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-badge :color="carrera.examenes > 0 ? 'orange' : 'grey-4'"
-                    :text-color="carrera.examenes > 0 ? 'white' : 'grey-7'">
+                  <q-badge
+                    :color="carrera.examenes > 0 ? 'orange' : 'grey-4'"
+                    :text-color="carrera.examenes > 0 ? 'white' : 'grey-7'"
+                  >
                     {{ carrera.examenes }}
                   </q-badge>
                 </q-item-section>
@@ -118,8 +138,15 @@
             </div>
           </q-card-section>
           <q-card-section class="q-pt-none q-gutter-sm">
-            <q-btn unelevated color="primary" icon="list_alt" label="Rol de Exámenes"
-              to="/evaluaciones/rol-examenes" no-caps class="full-width" />
+            <q-btn
+              unelevated
+              color="primary"
+              icon="list_alt"
+              label="Rol de Exámenes"
+              to="/evaluaciones/rol-examenes"
+              no-caps
+              class="full-width"
+            />
           </q-card-section>
         </q-card>
       </div>
@@ -135,13 +162,37 @@ const stats = ref({
   pendientes: 12,
   enProceso: 3,
   entregados: 8,
-  calificados: 5
+  calificados: 5,
 })
 
 const proximosExamenes = ref([
-  { id: 1, materia: 'Anatomía I', carrera: 'MEDICINA', grupo: 'A', fecha: '14/03/2026', hora: '08:00', estado: 'Pendiente' },
-  { id: 2, materia: 'Bioquímica', carrera: 'ENFERMERÍA', grupo: 'B', fecha: '15/03/2026', hora: '10:00', estado: 'Pendiente' },
-  { id: 3, materia: 'Fisiología', carrera: 'MEDICINA', grupo: 'A', fecha: '16/03/2026', hora: '14:00', estado: 'En Proceso' },
+  {
+    id: 1,
+    materia: 'Anatomía I',
+    carrera: 'MEDICINA',
+    grupo: 'A',
+    fecha: '14/03/2026',
+    hora: '08:00',
+    estado: 'Pendiente',
+  },
+  {
+    id: 2,
+    materia: 'Bioquímica',
+    carrera: 'ENFERMERÍA',
+    grupo: 'B',
+    fecha: '15/03/2026',
+    hora: '10:00',
+    estado: 'Pendiente',
+  },
+  {
+    id: 3,
+    materia: 'Fisiología',
+    carrera: 'MEDICINA',
+    grupo: 'A',
+    fecha: '16/03/2026',
+    hora: '14:00',
+    estado: 'En Proceso',
+  },
 ])
 
 const carrerasAsignadas = ref([
@@ -152,10 +203,10 @@ const carrerasAsignadas = ref([
 
 function getEstadoColor(estado) {
   const colors = {
-    'Pendiente': 'orange',
+    Pendiente: 'orange',
     'En Proceso': 'blue',
-    'Entregado': 'green',
-    'Calificado': 'purple'
+    Entregado: 'green',
+    Calificado: 'purple',
   }
   return colors[estado] || 'grey'
 }
@@ -200,7 +251,9 @@ function getEstadoColor(estado) {
   align-items: center;
   gap: 16px;
   border: 1px solid var(--border-color);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .stat-card:hover {
@@ -208,10 +261,18 @@ function getEstadoColor(estado) {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-.stat-card--orange .stat-icon { color: #f57c00; }
-.stat-card--blue .stat-icon { color: #1976d2; }
-.stat-card--green .stat-icon { color: #388e3c; }
-.stat-card--purple .stat-icon { color: #7b1fa2; }
+.stat-card--orange .stat-icon {
+  color: #f57c00;
+}
+.stat-card--blue .stat-icon {
+  color: #1976d2;
+}
+.stat-card--green .stat-icon {
+  color: #388e3c;
+}
+.stat-card--purple .stat-icon {
+  color: #7b1fa2;
+}
 
 .stat-info {
   display: flex;

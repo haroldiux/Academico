@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 // Aplicar el plugin al prototipo de jsPDF
-jsPDF.prototype.autoTable = function(options) {
+jsPDF.prototype.autoTable = function (options) {
   return autoTable(this, options)
 }
 
@@ -20,7 +20,7 @@ export function generarPlanDeClase(asignatura, options = {}) {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: 'letter'
+      format: 'letter',
     })
 
     const pageWidth = doc.internal.pageSize.getWidth()
@@ -39,16 +39,28 @@ export function generarPlanDeClase(asignatura, options = {}) {
     // Manejo de docentes (puede ser array o no existir)
     let docenteNombre = 'Por asignar'
     if (asignatura.docentes && asignatura.docentes.length > 0) {
-      docenteNombre = asignatura.docentes.map(d => d.nombre_completo || `${d.nombre || ''} ${d.apellido || ''}`.trim() || 'Sin nombre').join(', ')
-    } else if (asignatura.docente) { // Fallback por si acaso
-      docenteNombre = typeof asignatura.docente === 'object' ? (asignatura.docente.nombre_completo || 'Sin nombre') : asignatura.docente
+      docenteNombre = asignatura.docentes
+        .map(
+          (d) =>
+            d.nombre_completo || `${d.nombre || ''} ${d.apellido || ''}`.trim() || 'Sin nombre',
+        )
+        .join(', ')
+    } else if (asignatura.docente) {
+      // Fallback por si acaso
+      docenteNombre =
+        typeof asignatura.docente === 'object'
+          ? asignatura.docente.nombre_completo || 'Sin nombre'
+          : asignatura.docente
     }
 
     const nombreAsignatura = asignatura.nombre || 'Asignatura'
     const fecha = options.fecha || new Date().toLocaleDateString('es-BO')
 
     // Manejo de carrera (puede ser objeto o string)
-    const carreraNombre = typeof asignatura.carrera === 'object' ? (asignatura.carrera.nombre || 'Sin Carrera') : (asignatura.carrera || 'Sin Carrera')
+    const carreraNombre =
+      typeof asignatura.carrera === 'object'
+        ? asignatura.carrera.nombre || 'Sin Carrera'
+        : asignatura.carrera || 'Sin Carrera'
 
     autoTable(doc, {
       startY: y,
@@ -57,18 +69,27 @@ export function generarPlanDeClase(asignatura, options = {}) {
       styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: {
         0: { cellWidth: 85 },
-        1: { cellWidth: 85 }
+        1: { cellWidth: 85 },
       },
       body: [
         [
-          { content: `Docente: ${docenteNombre}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } },
-          { content: `Asignatura: ${nombreAsignatura}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } }
+          {
+            content: `Docente: ${docenteNombre}`,
+            styles: { fillColor: [204, 204, 204], fontStyle: 'bold' },
+          },
+          {
+            content: `Asignatura: ${nombreAsignatura}`,
+            styles: { fillColor: [204, 204, 204], fontStyle: 'bold' },
+          },
         ],
         [
           { content: `Fecha: ${fecha}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } },
-          { content: `Carrera: ${carreraNombre}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } }
-        ]
-      ]
+          {
+            content: `Carrera: ${carreraNombre}`,
+            styles: { fillColor: [204, 204, 204], fontStyle: 'bold' },
+          },
+        ],
+      ],
     })
     y = doc.lastAutoTable.finalY + 5
 
@@ -92,8 +113,13 @@ export function generarPlanDeClase(asignatura, options = {}) {
           theme: 'grid',
           styles: { fontSize: 9, cellPadding: 3 },
           body: [
-            [{ content: `Unidad # ${unidad.numero}: ${unidad.titulo}`, styles: { fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' } }]
-          ]
+            [
+              {
+                content: `Unidad # ${unidad.numero}: ${unidad.titulo}`,
+                styles: { fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' },
+              },
+            ],
+          ],
         })
         y = doc.lastAutoTable.finalY
 
@@ -104,8 +130,13 @@ export function generarPlanDeClase(asignatura, options = {}) {
           theme: 'grid',
           styles: { fontSize: 9, cellPadding: 3 },
           body: [
-            [{ content: `Elemento de Competencia # ${unidad.numero}: ${unidad.elemento_competencia || ''}`, styles: { fillColor: [204, 204, 204], fontStyle: 'bold' } }]
-          ]
+            [
+              {
+                content: `Elemento de Competencia # ${unidad.numero}: ${unidad.elemento_competencia || ''}`,
+                styles: { fillColor: [204, 204, 204], fontStyle: 'bold' },
+              },
+            ],
+          ],
         })
         y = doc.lastAutoTable.finalY
 
@@ -116,8 +147,13 @@ export function generarPlanDeClase(asignatura, options = {}) {
           theme: 'grid',
           styles: { fontSize: 9, cellPadding: 3 },
           body: [
-            [{ content: `Tema # ${tema.numero}: ${tema.titulo}`, styles: { fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' } }]
-          ]
+            [
+              {
+                content: `Tema # ${tema.numero}: ${tema.titulo}`,
+                styles: { fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' },
+              },
+            ],
+          ],
         })
         y = doc.lastAutoTable.finalY
 
@@ -129,35 +165,54 @@ export function generarPlanDeClase(asignatura, options = {}) {
           theme: 'grid',
           styles: { fontSize: 9, cellPadding: 3 },
           body: [
-            [{ content: `Resultados de Aprendizaje:\n${resultadosAprendizaje}`, styles: { fillColor: [255, 255, 255] } }]
-          ]
+            [
+              {
+                content: `Resultados de Aprendizaje:\n${resultadosAprendizaje}`,
+                styles: { fillColor: [255, 255, 255] },
+              },
+            ],
+          ],
         })
         y = doc.lastAutoTable.finalY
 
         // --- LOGROS ESPERADOS ---
         const logros = tema.logros_esperados || []
-        const logrosText = logros.map(l => `• ${l.descripcion || l}`).join('\n') || ''
+        const logrosText = logros.map((l) => `• ${l.descripcion || l}`).join('\n') || ''
         autoTable(doc, {
           startY: y,
           margin: { left: margin, right: margin },
           theme: 'grid',
           styles: { fontSize: 9, cellPadding: 3 },
           body: [
-            [{ content: `Logros Esperados:\n${logrosText}`, styles: { fillColor: [255, 255, 255] } }]
-          ]
+            [
+              {
+                content: `Logros Esperados:\n${logrosText}`,
+                styles: { fillColor: [255, 255, 255] },
+              },
+            ],
+          ],
         })
         y = doc.lastAutoTable.finalY
 
         // --- INDICADORES DE LOGRO ---
-        const indicadores = logros.flatMap(l => l.indicadores || []).map(i => `• ${i}`).join('\n') || ''
+        const indicadores =
+          logros
+            .flatMap((l) => l.indicadores || [])
+            .map((i) => `• ${i}`)
+            .join('\n') || ''
         autoTable(doc, {
           startY: y,
           margin: { left: margin, right: margin },
           theme: 'grid',
           styles: { fontSize: 9, cellPadding: 3 },
           body: [
-            [{ content: `Indicadores de Logro:\n${indicadores}`, styles: { fillColor: [255, 255, 255] } }]
-          ]
+            [
+              {
+                content: `Indicadores de Logro:\n${indicadores}`,
+                styles: { fillColor: [255, 255, 255] },
+              },
+            ],
+          ],
         })
         y = doc.lastAutoTable.finalY
 
@@ -168,8 +223,8 @@ export function generarPlanDeClase(asignatura, options = {}) {
         }
 
         // --- CONTENIDOS ---
-        const conceptual = tema.contenidos?.conceptual?.map(c => `• ${c}`).join('\n') || ''
-        const actitudinal = tema.contenidos?.actitudinal?.map(c => `• ${c}`).join('\n') || ''
+        const conceptual = tema.contenidos?.conceptual?.map((c) => `• ${c}`).join('\n') || ''
+        const actitudinal = tema.contenidos?.actitudinal?.map((c) => `• ${c}`).join('\n') || ''
         autoTable(doc, {
           startY: y,
           margin: { left: margin, right: margin },
@@ -179,13 +234,19 @@ export function generarPlanDeClase(asignatura, options = {}) {
           body: [
             [
               { content: 'Contenidos:', styles: { fillColor: [255, 255, 255], fontStyle: 'bold' } },
-              { content: `Saber Conceptual:\n${conceptual}`, styles: { fillColor: [255, 255, 255] } }
+              {
+                content: `Saber Conceptual:\n${conceptual}`,
+                styles: { fillColor: [255, 255, 255] },
+              },
             ],
             [
               { content: '', styles: { fillColor: [255, 255, 255] } },
-              { content: `Saber Actitudinal:\n${actitudinal}`, styles: { fillColor: [255, 255, 255] } }
-            ]
-          ]
+              {
+                content: `Saber Actitudinal:\n${actitudinal}`,
+                styles: { fillColor: [255, 255, 255] },
+              },
+            ],
+          ],
         })
         y = doc.lastAutoTable.finalY
 
@@ -196,20 +257,55 @@ export function generarPlanDeClase(asignatura, options = {}) {
           theme: 'grid',
           styles: { fontSize: 9, cellPadding: 3, halign: 'center' },
           head: [
-            [{ content: 'ESTRATEGIAS DIDACTICAS', colSpan: 3, styles: { halign: 'center', fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' } }],
             [
-              { content: 'Metodologicas', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } },
-              { content: 'De Aprendizaje', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } },
-              { content: 'Recursos de Enseñanza', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } }
-            ]
+              {
+                content: 'ESTRATEGIAS DIDACTICAS',
+                colSpan: 3,
+                styles: {
+                  halign: 'center',
+                  fillColor: [67, 56, 202],
+                  textColor: 255,
+                  fontStyle: 'bold',
+                },
+              },
+            ],
+            [
+              {
+                content: 'Metodologicas',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+              {
+                content: 'De Aprendizaje',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+              {
+                content: 'Recursos de Enseñanza',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+            ],
           ],
           body: [
             [
               tema.estrategias?.metodologicas || '',
               tema.estrategias?.aprendizaje || '',
-              (tema.estrategias?.recursos || []).join(', ')
-            ]
-          ]
+              (tema.estrategias?.recursos || []).join(', '),
+            ],
+          ],
         })
         y = doc.lastAutoTable.finalY
 
@@ -229,28 +325,77 @@ export function generarPlanDeClase(asignatura, options = {}) {
           theme: 'grid',
           styles: { fontSize: 8, cellPadding: 2 },
           head: [
-            [{ content: 'EVALUACION DE LOS APRENDIZAJES', colSpan: 4, styles: { halign: 'center', fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' } }],
             [
-              { content: 'TIPO DE EVALUACION', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } },
-              { content: 'Actividades y Tecnicas', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } },
-              { content: 'Instrumentos', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } },
-              { content: 'Evidencias de Evaluación', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } }
-            ]
+              {
+                content: 'EVALUACION DE LOS APRENDIZAJES',
+                colSpan: 4,
+                styles: {
+                  halign: 'center',
+                  fillColor: [67, 56, 202],
+                  textColor: 255,
+                  fontStyle: 'bold',
+                },
+              },
+            ],
+            [
+              {
+                content: 'TIPO DE EVALUACION',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+              {
+                content: 'Actividades y Tecnicas',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+              {
+                content: 'Instrumentos',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+              {
+                content: 'Evidencias de Evaluación',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+            ],
           ],
           body: [
             [
-              { content: 'FORMATIVA', styles: { fontStyle: 'bold', halign: 'center', fillColor: [240, 240, 240] } },
+              {
+                content: 'FORMATIVA',
+                styles: { fontStyle: 'bold', halign: 'center', fillColor: [240, 240, 240] },
+              },
               (evalFormativa.actividades || []).join('\n'),
               (evalFormativa.instrumentos || []).join('\n'),
-              (evalFormativa.evidencias || []).join('\n')
+              (evalFormativa.evidencias || []).join('\n'),
             ],
             [
-              { content: 'SUMATIVA', styles: { fontStyle: 'bold', halign: 'center', fillColor: [240, 240, 240] } },
+              {
+                content: 'SUMATIVA',
+                styles: { fontStyle: 'bold', halign: 'center', fillColor: [240, 240, 240] },
+              },
               (evalSumativa.actividades || []).join('\n'),
               (evalSumativa.instrumentos || []).join('\n'),
-              (evalSumativa.evidencias || []).join('\n')
-            ]
-          ]
+              (evalSumativa.evidencias || []).join('\n'),
+            ],
+          ],
         })
         y = doc.lastAutoTable.finalY
 
@@ -265,20 +410,27 @@ export function generarPlanDeClase(asignatura, options = {}) {
         const secuenciaArray = tema.secuencia_didactica || []
 
         // Mapear los momentos del array a filas
-        const momentosDefault = ['INTRODUCCION', 'RESULTADOS DE APRENDIZAJE / LOGROS ESPERADOS', 'CONTENIDOS DE LA CLASE', 'CUERPO DE CONTENIDOS', 'CONCLUSION O CIERRE']
+        const momentosDefault = [
+          'INTRODUCCION',
+          'RESULTADOS DE APRENDIZAJE / LOGROS ESPERADOS',
+          'CONTENIDOS DE LA CLASE',
+          'CUERPO DE CONTENIDOS',
+          'CONCLUSION O CIERRE',
+        ]
 
         // Crear filas dinámicamente desde el array de secuencia
-        const filasSecuencia = secuenciaArray.length > 0
-          ? secuenciaArray.map(s => [
-              { content: (s.momento || '').toUpperCase(), styles: { fontStyle: 'bold' } },
-              s.actividad || '',
-              s.duracion ? `${s.duracion} min` : ''
-            ])
-          : momentosDefault.map(momento => [
-              { content: momento, styles: { fontStyle: 'bold' } },
-              '',
-              ''
-            ])
+        const filasSecuencia =
+          secuenciaArray.length > 0
+            ? secuenciaArray.map((s) => [
+                { content: (s.momento || '').toUpperCase(), styles: { fontStyle: 'bold' } },
+                s.actividad || '',
+                s.duracion ? `${s.duracion} min` : '',
+              ])
+            : momentosDefault.map((momento) => [
+                { content: momento, styles: { fontStyle: 'bold' } },
+                '',
+                '',
+              ])
 
         autoTable(doc, {
           startY: y,
@@ -287,21 +439,57 @@ export function generarPlanDeClase(asignatura, options = {}) {
           styles: { fontSize: 8, cellPadding: 2 },
           columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 100 }, 2: { cellWidth: 25 } },
           head: [
-            [{ content: 'SECUENCIA DIDACTICA', colSpan: 3, styles: { halign: 'center', fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' } }],
             [
-              { content: 'MOMENTOS', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } },
-              { content: 'ACTIVIDAD', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } },
-              { content: 'DURACIÓN', styles: { fillColor: [204, 204, 204], textColor: 0, fontStyle: 'bold', halign: 'center' } }
-            ]
+              {
+                content: 'SECUENCIA DIDACTICA',
+                colSpan: 3,
+                styles: {
+                  halign: 'center',
+                  fillColor: [67, 56, 202],
+                  textColor: 255,
+                  fontStyle: 'bold',
+                },
+              },
+            ],
+            [
+              {
+                content: 'MOMENTOS',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+              {
+                content: 'ACTIVIDAD',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+              {
+                content: 'DURACIÓN',
+                styles: {
+                  fillColor: [204, 204, 204],
+                  textColor: 0,
+                  fontStyle: 'bold',
+                  halign: 'center',
+                },
+              },
+            ],
           ],
-          body: filasSecuencia
+          body: filasSecuencia,
         })
         y = doc.lastAutoTable.finalY + 10
       })
     })
 
     // Guardar PDF con nombre descriptivo
-    const nombreArchivo = 'Plan_de_Clase_' + (asignatura.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
+    const nombreArchivo =
+      'Plan_de_Clase_' + (asignatura.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
     doc.save(nombreArchivo)
 
     return doc
@@ -320,7 +508,7 @@ export function generarProgramaAsignatura(asignatura) {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: 'letter'
+      format: 'letter',
     })
 
     const pageWidth = doc.internal.pageSize.getWidth()
@@ -344,10 +532,13 @@ export function generarProgramaAsignatura(asignatura) {
     // Recalcular nombres para este PDF también
     let docenteNombre = 'Por asignar'
     if (asignatura.docentes && asignatura.docentes.length > 0) {
-      docenteNombre = asignatura.docentes.map(d => d.nombre_completo || 'Sin nombre').join(', ')
+      docenteNombre = asignatura.docentes.map((d) => d.nombre_completo || 'Sin nombre').join(', ')
     }
 
-    const carreraNombre = typeof asignatura.carrera === 'object' ? (asignatura.carrera.nombre || 'Sin Carrera') : (asignatura.carrera || 'Sin Carrera')
+    const carreraNombre =
+      typeof asignatura.carrera === 'object'
+        ? asignatura.carrera.nombre || 'Sin Carrera'
+        : asignatura.carrera || 'Sin Carrera'
 
     autoTable(doc, {
       startY: y,
@@ -361,10 +552,12 @@ export function generarProgramaAsignatura(asignatura) {
         [`Codigo: ${asignatura.codigo}`],
         [`Carrera: ${carreraNombre}`],
         [`Semestre: ${asignatura.semestre}`],
-        [`Horas Teoricas: ${asignatura.horas_teoricas} | Horas Practicas: ${asignatura.horas_practicas} | Horas Laboratorio: ${asignatura.horas_laboratorio || 0}`],
+        [
+          `Horas Teoricas: ${asignatura.horas_teoricas} | Horas Practicas: ${asignatura.horas_practicas} | Horas Laboratorio: ${asignatura.horas_laboratorio || 0}`,
+        ],
         [`Creditos: ${asignatura.creditos}`],
-        [`Docente: ${docenteNombre}`]
-      ]
+        [`Docente: ${docenteNombre}`],
+      ],
     })
     y = doc.lastAutoTable.finalY + 5
 
@@ -376,7 +569,7 @@ export function generarProgramaAsignatura(asignatura) {
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' },
       head: [['JUSTIFICACION']],
-      body: [[asignatura.justificacion || '']]
+      body: [[asignatura.justificacion || '']],
     })
     y = doc.lastAutoTable.finalY + 5
 
@@ -388,7 +581,7 @@ export function generarProgramaAsignatura(asignatura) {
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' },
       head: [['OBJETIVO GENERAL']],
-      body: [[asignatura.objetivo_general || '']]
+      body: [[asignatura.objetivo_general || '']],
     })
     y = doc.lastAutoTable.finalY + 5
 
@@ -400,7 +593,7 @@ export function generarProgramaAsignatura(asignatura) {
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' },
       head: [['SABERES PREVIOS']],
-      body: [[asignatura.saberes_previos || '']]
+      body: [[asignatura.saberes_previos || '']],
     })
     y = doc.lastAutoTable.finalY + 5
 
@@ -416,7 +609,7 @@ export function generarProgramaAsignatura(asignatura) {
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' },
       head: [['CONTENIDO MINIMO']],
-      body: [[asignatura.contenido_minimo || '']]
+      body: [[asignatura.contenido_minimo || '']],
     })
     y = doc.lastAutoTable.finalY + 5
 
@@ -442,21 +635,21 @@ export function generarProgramaAsignatura(asignatura) {
         head: [[`UNIDAD ${unidad.numero}: ${unidad.titulo}`]],
         body: [
           [`Elemento de Competencia: ${unidad.elemento_competencia || ''}`],
-          [`Horas: ${unidad.horas || ''}`]
-        ]
+          [`Horas: ${unidad.horas || ''}`],
+        ],
       })
       y = doc.lastAutoTable.finalY
 
       // Temas de la unidad
       const temas = unidad.temas || []
       if (temas.length > 0) {
-        const temasBody = temas.map(t => [`Tema ${t.numero}: ${t.titulo}`])
+        const temasBody = temas.map((t) => [`Tema ${t.numero}: ${t.titulo}`])
         autoTable(doc, {
           startY: y,
           margin: { left: margin + 5, right: margin },
           theme: 'plain',
           styles: { fontSize: 8, cellPadding: 2 },
-          body: temasBody
+          body: temasBody,
         })
         y = doc.lastAutoTable.finalY + 3
       }
@@ -478,12 +671,15 @@ export function generarProgramaAsignatura(asignatura) {
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [67, 56, 202], textColor: 255, fontStyle: 'bold' },
         head: [['BIBLIOGRAFIA']],
-        body: biblios.map(b => [`${b.autor} (${b.anio}). ${b.titulo}. ${b.editorial}. ${b.edicion || ''}`])
+        body: biblios.map((b) => [
+          `${b.autor} (${b.anio}). ${b.titulo}. ${b.editorial}. ${b.edicion || ''}`,
+        ]),
       })
     }
 
     // Guardar PDF con nombre descriptivo
-    const nombreArchivo = 'Programa_Asignatura_' + (asignatura.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
+    const nombreArchivo =
+      'Programa_Asignatura_' + (asignatura.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
     doc.save(nombreArchivo)
 
     return doc
@@ -495,5 +691,5 @@ export function generarProgramaAsignatura(asignatura) {
 
 export default {
   generarPlanDeClase,
-  generarProgramaAsignatura
+  generarProgramaAsignatura,
 }
