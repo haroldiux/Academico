@@ -14,8 +14,8 @@
     <div class="config-layout">
       <!-- Sidebar de navegación -->
       <div class="config-nav">
-        <div 
-          v-for="section in sections" 
+        <div
+          v-for="section in sections"
           :key="section.id"
           :class="['nav-item', { active: activeSection === section.id }]"
           @click="activeSection = section.id"
@@ -30,7 +30,7 @@
         <!-- Gestión Académica -->
         <div v-if="activeSection === 'academico'" class="config-section">
           <h2 class="section-title">Gestión Académica</h2>
-          
+
           <q-card class="config-card">
             <q-card-section>
               <h3 class="card-title">Gestión Actual</h3>
@@ -41,11 +41,21 @@
                 </div>
                 <div class="config-field">
                   <label>Semestre</label>
-                  <q-select v-model="config.gestion.semestre" :options="['I', 'II']" outlined dense />
+                  <q-select
+                    v-model="config.gestion.semestre"
+                    :options="['I', 'II']"
+                    outlined
+                    dense
+                  />
                 </div>
                 <div class="config-field">
                   <label>Estado</label>
-                  <q-select v-model="config.gestion.estado" :options="['Activa', 'Planificación', 'Cerrada']" outlined dense />
+                  <q-select
+                    v-model="config.gestion.estado"
+                    :options="['Activa', 'Planificación', 'Cerrada']"
+                    outlined
+                    dense
+                  />
                 </div>
               </div>
             </q-card-section>
@@ -83,14 +93,29 @@
               <div class="config-row">
                 <div class="config-field">
                   <label>Nota Mínima de Aprobación</label>
-                  <q-input v-model.number="config.evaluacion.notaMinima" outlined dense type="number" min="0" max="100" />
+                  <q-input
+                    v-model.number="config.evaluacion.notaMinima"
+                    outlined
+                    dense
+                    type="number"
+                    min="0"
+                    max="100"
+                  />
                 </div>
                 <div class="config-field">
                   <label>Escala de Notas</label>
-                  <q-select v-model="config.evaluacion.escala" :options="['0-100', '0-10', '1-7']" outlined dense />
+                  <q-select
+                    v-model="config.evaluacion.escala"
+                    :options="['0-100', '0-10', '1-7']"
+                    outlined
+                    dense
+                  />
                 </div>
               </div>
-              <q-toggle v-model="config.evaluacion.permitirRecuperacion" label="Permitir exámenes de recuperación" />
+              <q-toggle
+                v-model="config.evaluacion.permitirRecuperacion"
+                label="Permitir exámenes de recuperación"
+              />
             </q-card-section>
           </q-card>
         </div>
@@ -98,7 +123,7 @@
         <!-- Notificaciones -->
         <div v-if="activeSection === 'notificaciones'" class="config-section">
           <h2 class="section-title">Notificaciones</h2>
-          
+
           <q-card class="config-card">
             <q-card-section>
               <h3 class="card-title">Canales de Notificación</h3>
@@ -106,7 +131,9 @@
                 <div class="toggle-item">
                   <div class="toggle-info">
                     <span class="toggle-label">Notificaciones por Email</span>
-                    <span class="toggle-desc">Enviar alertas y recordatorios por correo electrónico</span>
+                    <span class="toggle-desc"
+                      >Enviar alertas y recordatorios por correo electrónico</span
+                    >
                   </div>
                   <q-toggle v-model="config.notificaciones.email" color="primary" />
                 </div>
@@ -120,7 +147,9 @@
                 <div class="toggle-item">
                   <div class="toggle-info">
                     <span class="toggle-label">Recordatorios de Documentación</span>
-                    <span class="toggle-desc">Notificar a docentes sobre documentación pendiente</span>
+                    <span class="toggle-desc"
+                      >Notificar a docentes sobre documentación pendiente</span
+                    >
                   </div>
                   <q-toggle v-model="config.notificaciones.recordatorios" color="primary" />
                 </div>
@@ -132,18 +161,31 @@
         <!-- Seguridad -->
         <div v-if="activeSection === 'seguridad'" class="config-section">
           <h2 class="section-title">Seguridad</h2>
-          
+
           <q-card class="config-card">
             <q-card-section>
               <h3 class="card-title">Política de Contraseñas</h3>
               <div class="config-row">
                 <div class="config-field">
                   <label>Longitud Mínima</label>
-                  <q-input v-model.number="config.seguridad.longitudMinima" outlined dense type="number" min="6" max="20" />
+                  <q-input
+                    v-model.number="config.seguridad.longitudMinima"
+                    outlined
+                    dense
+                    type="number"
+                    min="6"
+                    max="20"
+                  />
                 </div>
                 <div class="config-field">
                   <label>Expiración (días)</label>
-                  <q-input v-model.number="config.seguridad.expiracionDias" outlined dense type="number" min="0" />
+                  <q-input
+                    v-model.number="config.seguridad.expiracionDias"
+                    outlined
+                    dense
+                    type="number"
+                    min="0"
+                  />
                 </div>
               </div>
               <div class="toggle-list q-mt-md">
@@ -175,11 +217,23 @@
               <div class="config-row">
                 <div class="config-field">
                   <label>Tiempo de Inactividad (minutos)</label>
-                  <q-input v-model.number="config.seguridad.tiempoInactividad" outlined dense type="number" min="5" />
+                  <q-input
+                    v-model.number="config.seguridad.tiempoInactividad"
+                    outlined
+                    dense
+                    type="number"
+                    min="5"
+                  />
                 </div>
                 <div class="config-field">
                   <label>Intentos de Login Máximos</label>
-                  <q-input v-model.number="config.seguridad.intentosMaximos" outlined dense type="number" min="3" />
+                  <q-input
+                    v-model.number="config.seguridad.intentosMaximos"
+                    outlined
+                    dense
+                    type="number"
+                    min="3"
+                  />
                 </div>
               </div>
             </q-card-section>
@@ -189,13 +243,15 @@
         <!-- Apariencia -->
         <div v-if="activeSection === 'apariencia'" class="config-section">
           <h2 class="section-title">Apariencia</h2>
-          
+
           <q-card class="config-card">
             <q-card-section>
               <h3 class="card-title">Tema</h3>
               <div class="text-grey-6 q-pa-md text-center">
                 <q-icon name="light_mode" size="32px" color="primary" class="q-mb-sm" />
-                <p class="q-mb-none">El sistema utiliza el <strong>modo claro</strong> por defecto.</p>
+                <p class="q-mb-none">
+                  El sistema utiliza el <strong>modo claro</strong> por defecto.
+                </p>
               </div>
               <!-- Selector de tema deshabilitado
               <div class="theme-options">
@@ -226,13 +282,21 @@
                   <label>Color Principal</label>
                   <q-input v-model="config.apariencia.colorPrimario" outlined dense>
                     <template v-slot:prepend>
-                      <div class="color-preview" :style="{ background: config.apariencia.colorPrimario }"></div>
+                      <div
+                        class="color-preview"
+                        :style="{ background: config.apariencia.colorPrimario }"
+                      ></div>
                     </template>
                   </q-input>
                 </div>
                 <div class="config-field">
                   <label>Logo (URL)</label>
-                  <q-input v-model="config.apariencia.logoUrl" outlined dense placeholder="URL del logo" />
+                  <q-input
+                    v-model="config.apariencia.logoUrl"
+                    outlined
+                    dense
+                    placeholder="URL del logo"
+                  />
                 </div>
               </div>
             </q-card-section>
@@ -242,7 +306,7 @@
         <!-- Respaldos -->
         <div v-if="activeSection === 'respaldos'" class="config-section">
           <h2 class="section-title">Respaldos</h2>
-          
+
           <q-card class="config-card">
             <q-card-section>
               <h3 class="card-title">Respaldo Automático</h3>
@@ -258,11 +322,22 @@
               <div class="config-row q-mt-md" v-if="config.respaldos.automatico">
                 <div class="config-field">
                   <label>Frecuencia</label>
-                  <q-select v-model="config.respaldos.frecuencia" :options="['Diario', 'Semanal', 'Mensual']" outlined dense />
+                  <q-select
+                    v-model="config.respaldos.frecuencia"
+                    :options="['Diario', 'Semanal', 'Mensual']"
+                    outlined
+                    dense
+                  />
                 </div>
                 <div class="config-field">
                   <label>Retención (días)</label>
-                  <q-input v-model.number="config.respaldos.retencion" outlined dense type="number" min="7" />
+                  <q-input
+                    v-model.number="config.respaldos.retencion"
+                    outlined
+                    dense
+                    type="number"
+                    min="7"
+                  />
                 </div>
               </div>
             </q-card-section>
@@ -272,7 +347,14 @@
             <q-card-section>
               <h3 class="card-title">Respaldo Manual</h3>
               <p class="text-grey-6 q-mb-md">Última copia: {{ config.respaldos.ultimaCopia }}</p>
-              <q-btn unelevated color="primary" icon="backup" label="Crear Respaldo Ahora" no-caps @click="crearRespaldo" />
+              <q-btn
+                unelevated
+                color="primary"
+                icon="backup"
+                label="Crear Respaldo Ahora"
+                no-caps
+                @click="crearRespaldo"
+              />
             </q-card-section>
           </q-card>
         </div>
@@ -280,7 +362,14 @@
         <!-- Botón Guardar -->
         <div class="config-actions">
           <q-btn flat label="Cancelar Cambios" @click="resetConfig" />
-          <q-btn unelevated color="primary" icon="save" label="Guardar Configuración" no-caps @click="guardarConfig" />
+          <q-btn
+            unelevated
+            color="primary"
+            icon="save"
+            label="Guardar Configuración"
+            no-caps
+            @click="guardarConfig"
+          />
         </div>
       </div>
     </div>
@@ -302,30 +391,30 @@ const sections = [
   { id: 'notificaciones', label: 'Notificaciones', icon: 'notifications' },
   { id: 'seguridad', label: 'Seguridad', icon: 'security' },
   { id: 'apariencia', label: 'Apariencia', icon: 'palette' },
-  { id: 'respaldos', label: 'Respaldos', icon: 'backup' }
+  { id: 'respaldos', label: 'Respaldos', icon: 'backup' },
 ]
 
 const config = ref({
   gestion: {
     anio: 2026,
     semestre: 'I',
-    estado: 'Activa'
+    estado: 'Activa',
   },
   fechas: {
     inicioClases: '2026-02-03',
     finClases: '2026-06-30',
     inicioInscripciones: '2026-01-15',
-    finInscripciones: '2026-01-31'
+    finInscripciones: '2026-01-31',
   },
   evaluacion: {
     notaMinima: 51,
     escala: '0-100',
-    permitirRecuperacion: true
+    permitirRecuperacion: true,
   },
   notificaciones: {
     email: true,
     push: true,
-    recordatorios: true
+    recordatorios: true,
   },
   seguridad: {
     longitudMinima: 8,
@@ -334,25 +423,25 @@ const config = ref({
     numeros: true,
     especiales: false,
     tiempoInactividad: 30,
-    intentosMaximos: 5
+    intentosMaximos: 5,
   },
   apariencia: {
     colorPrimario: '#7c3aed',
-    logoUrl: ''
+    logoUrl: '',
   },
   respaldos: {
     automatico: true,
     frecuencia: 'Diario',
     retencion: 30,
-    ultimaCopia: '2026-01-09 23:00:00'
-  }
+    ultimaCopia: '2026-01-09 23:00:00',
+  },
 })
 
 function guardarConfig() {
   $q.notify({
     type: 'positive',
     message: 'Configuración guardada exitosamente',
-    icon: 'check_circle'
+    icon: 'check_circle',
   })
 }
 
@@ -360,7 +449,7 @@ function resetConfig() {
   $q.notify({
     type: 'info',
     message: 'Cambios descartados',
-    icon: 'undo'
+    icon: 'undo',
   })
 }
 
@@ -368,7 +457,7 @@ function crearRespaldo() {
   $q.notify({
     type: 'positive',
     message: 'Respaldo creado exitosamente',
-    icon: 'backup'
+    icon: 'backup',
   })
   config.value.respaldos.ultimaCopia = new Date().toLocaleString()
 }
@@ -565,14 +654,14 @@ function crearRespaldo() {
   .config-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .config-nav {
     position: static;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
-  
+
   .nav-item {
     flex: 1;
     min-width: 120px;

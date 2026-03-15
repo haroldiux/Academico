@@ -4,7 +4,7 @@ const routes = [
     path: '/login',
     name: 'login',
     component: () => import('pages/LoginPage.vue'),
-    meta: { title: 'Iniciar Sesión', public: true }
+    meta: { title: 'Iniciar Sesión', public: true },
   },
   {
     path: '/',
@@ -14,62 +14,65 @@ const routes = [
         path: '',
         name: 'dashboard',
         component: () => import('pages/IndexPage.vue'),
-        meta: { title: 'Dashboard' }
+        meta: { title: 'Dashboard' },
       },
       {
         path: 'perfil',
         name: 'perfil',
         component: () => import('pages/perfil/PerfilPage.vue'),
-        meta: { title: 'Mi Perfil' }
+        meta: { title: 'Mi Perfil' },
       },
       // Dashboards por Rol
       {
         path: 'docente/dashboard',
         name: 'docente-dashboard',
         component: () => import('pages/dashboards/DocenteDashboard.vue'),
-        meta: { title: 'Panel Docente', rol: 'DOCENTE' }
+        meta: { title: 'Panel Docente', rol: 'DOCENTE' },
       },
       {
         path: 'carrera/dashboard',
         name: 'director-carrera-dashboard',
         component: () => import('pages/dashboards/DirectorCarreraDashboard.vue'),
-        meta: { title: 'Panel Director de Carrera', rol: 'DIRECTOR_CARRERA' }
+        meta: { title: 'Panel Director de Carrera', rol: 'DIRECTOR_CARRERA' },
       },
       {
         path: 'direccion/dashboard',
         name: 'direccion-academica-dashboard',
         component: () => import('pages/dashboards/DireccionAcademicaDashboard.vue'),
-        meta: { title: 'Panel Dirección Académica', rol: 'DIRECCION_ACADEMICA' }
+        meta: { title: 'Panel Dirección Académica', rol: 'DIRECCION_ACADEMICA' },
       },
       {
         path: 'vicerrector-sede/dashboard',
         name: 'vicerrector-sede-dashboard',
         component: () => import('pages/dashboards/VicerrectorSedeDashboard.vue'),
-        meta: { title: 'Panel Vicerrector Sede', rol: 'VICERRECTOR_SEDE' }
+        meta: { title: 'Panel Vicerrector Sede', rol: 'VICERRECTOR_SEDE' },
       },
       {
         path: 'vicerrector/dashboard',
         name: 'vicerrector-nacional-dashboard',
         component: () => import('pages/dashboards/VicerrectorNacionalDashboard.vue'),
-        meta: { title: 'Panel Nacional', rol: 'VICERRECTOR_NACIONAL' }
+        meta: { title: 'Panel Nacional', rol: 'VICERRECTOR_NACIONAL' },
       },
       {
         path: 'evaluaciones/dashboard',
         name: 'evaluaciones-dashboard',
         component: () => import('pages/dashboards/EvaluacionesDashboard.vue'),
-        meta: { title: 'Panel Evaluaciones', rol: 'EVALUACIONES' }
+        meta: { title: 'Panel Evaluaciones', rol: 'EVALUACIONES' },
       },
       {
         path: 'admin/dashboard',
         name: 'admin-dashboard',
         component: () => import('pages/dashboards/AdminDashboard.vue'),
-        meta: { title: 'Panel Administrativo', rol: 'ADMIN' }
+        meta: { title: 'Panel Administrativo', rol: 'ADMIN' },
       },
       {
         path: 'admin/explorador',
         name: 'explorador-academico',
         component: () => import('pages/admin/ExploradorAcademicoPage.vue'),
-        meta: { title: 'Explorador Académico', rol: ['SUPER_ADMIN', 'VICERRECTOR_NACIONAL', 'ADMIN'] }
+        meta: {
+          title: 'Explorador Académico',
+          rol: ['SUPER_ADMIN', 'VICERRECTOR_NACIONAL', 'ADMIN'],
+        },
       },
       // Docente Routes
       {
@@ -79,40 +82,43 @@ const routes = [
             path: 'clase',
             name: 'docente-clase',
             component: () => import('pages/docente/ClasePage.vue'),
-            meta: { title: 'Control de Clase', rol: 'DOCENTE' }
+            meta: { title: 'Control de Clase', rol: 'DOCENTE' },
           },
           {
             path: 'asistencia-general',
             name: 'asistencia-general',
             component: () => import('pages/docente/AsistenciaGeneralPage.vue'),
-            meta: { title: 'Vista General Asistencia' }
+            meta: { title: 'Vista General Asistencia' },
           },
           {
             path: 'evaluaciones',
             name: 'docente-evaluaciones',
             component: () => import('pages/docente/MisEvaluacionesPage.vue'),
-            meta: { title: 'Mis Evaluaciones', rol: 'DOCENTE' }
+            meta: { title: 'Mis Evaluaciones', rol: 'DOCENTE' },
           },
           {
             path: 'reporte-asistencia',
             name: 'reporte-asistencia',
             component: () => import('pages/docente/ReporteAsistenciaPage.vue'),
-            meta: { title: 'Reporte de Asistencias', rol: 'DOCENTE' }
+            meta: { title: 'Reporte de Asistencias', rol: 'DOCENTE' },
           },
           {
             path: 'carpeta/:id',
             name: 'docente-carpeta',
             component: () => import('pages/docente/CarpetaPagina.vue'),
-            meta: { title: 'Carpeta Docente', rol: 'DOCENTE' }
-          }
-        ]
+            meta: { title: 'Carpeta Docente', rol: 'DOCENTE' },
+          },
+        ],
       },
       // Shared Routes
       {
         path: 'carreras',
         name: 'carreras-list',
         component: () => import('pages/admin/CarrerasPage.vue'),
-        meta: { title: 'Carreras', rol: ['DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+        meta: {
+          title: 'Carreras',
+          rol: ['DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'],
+        },
       },
       // Vicerrector Nacional Routes
       {
@@ -122,9 +128,9 @@ const routes = [
             path: 'reportes',
             name: 'reportes-nacionales',
             component: () => import('pages/vicerrector/ReportesNacionalesPage.vue'),
-            meta: { title: 'Reportes Nacionales', rol: 'VICERRECTOR_NACIONAL' }
-          }
-        ]
+            meta: { title: 'Reportes Nacionales', rol: 'VICERRECTOR_NACIONAL' },
+          },
+        ],
       },
       // Director de Carrera Routes
       {
@@ -134,45 +140,105 @@ const routes = [
             path: 'docentes',
             name: 'director-docentes',
             component: () => import('pages/director/DocentesPage.vue'),
-            meta: { title: 'Gestión de Docentes', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+            meta: {
+              title: 'Gestión de Docentes',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+              ],
+            },
           },
           {
             path: 'rol-examenes',
             name: 'rol-examenes',
             component: () => import('pages/director/RolExamenesPage.vue'),
-            meta: { title: 'Rol de Exámenes', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+            meta: {
+              title: 'Rol de Exámenes',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+              ],
+            },
           },
           {
             path: 'reportes',
             name: 'director-reportes',
             component: () => import('pages/director/ReportesPage.vue'),
-            meta: { title: 'Centro de Reportes', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+            meta: {
+              title: 'Centro de Reportes',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+              ],
+            },
           },
           {
             path: 'asignaturas',
             name: 'director-asignaturas',
             component: () => import('pages/director/AsignaturasDirectorPage.vue'),
-            meta: { title: 'Plan de Estudios', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'] }
+            meta: {
+              title: 'Plan de Estudios',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
+            },
           },
           {
             path: 'materias-comunes',
             name: 'director-materias-comunes',
             component: () => import('pages/director/MateriasComunesPage.vue'),
-            meta: { title: 'Materias Comunes', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+            meta: {
+              title: 'Materias Comunes',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+              ],
+            },
           },
           {
             path: 'contexto',
             name: 'director-contexto',
             component: () => import('pages/director/CarreraContextoPage.vue'),
-            meta: { title: 'Información de la Carrera', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL'] }
+            meta: {
+              title: 'Información de la Carrera',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+              ],
+            },
           },
           {
             path: 'mallas-curriculares',
             name: 'mallas-curriculares',
             component: () => import('pages/director/MallasCurricularesPage.vue'),
-            meta: { title: 'Mallas Curriculares', rol: ['DIRECTOR_CARRERA', 'DIRECCION_ACADEMICA', 'VICERRECTOR_SEDE', 'VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'] }
-          }
-        ]
+            meta: {
+              title: 'Mallas Curriculares',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
+            },
+          },
+        ],
       },
       // Admin Routes
       {
@@ -182,73 +248,76 @@ const routes = [
             path: 'usuarios',
             name: 'usuarios',
             component: () => import('pages/admin/UsuariosPage.vue'),
-            meta: { title: 'Gestión de Usuarios' }
+            meta: { title: 'Gestión de Usuarios' },
           },
           {
             path: 'roles',
             name: 'roles',
             component: () => import('pages/admin/RolesPage.vue'),
-            meta: { title: 'Gestión de Roles' }
+            meta: { title: 'Gestión de Roles' },
           },
           {
             path: 'sedes',
             name: 'sedes',
             component: () => import('pages/admin/SedesPage.vue'),
-            meta: { title: 'Gestión de Sedes' }
+            meta: { title: 'Gestión de Sedes' },
           },
           {
             path: 'carreras',
             name: 'carreras',
             component: () => import('pages/admin/CarrerasPage.vue'),
-            meta: { title: 'Gestión de Carreras' }
+            meta: { title: 'Gestión de Carreras' },
           },
           {
             path: 'asignaturas',
             name: 'asignaturas',
             component: () => import('pages/admin/AsignaturasPage.vue'),
-            meta: { title: 'Gestión de Asignaturas' }
+            meta: { title: 'Gestión de Asignaturas' },
           },
           {
             path: 'grupos',
             name: 'grupos',
             component: () => import('pages/admin/GruposPage.vue'),
-            meta: { title: 'Gestión de Grupos' }
+            meta: { title: 'Gestión de Grupos' },
           },
           {
             path: 'docentes',
             name: 'docentes',
             component: () => import('pages/admin/DocentesPage.vue'),
-            meta: { title: 'Gestión de Docentes' }
+            meta: { title: 'Gestión de Docentes' },
           },
           {
             path: 'estadisticas',
             name: 'estadisticas',
             component: () => import('pages/admin/EstadisticasPage.vue'),
-            meta: { title: 'Estadísticas' }
+            meta: { title: 'Estadísticas' },
           },
           {
             path: 'configuracion',
             name: 'configuracion',
             component: () => import('pages/admin/ConfiguracionPage.vue'),
-            meta: { title: 'Configuración' }
+            meta: { title: 'Configuración' },
           },
           {
             path: 'evaluaciones',
             name: 'evaluaciones',
             component: () => import('pages/admin/EvaluacionesPage.vue'),
-            meta: { title: 'Gestión de Evaluaciones' }
+            meta: { title: 'Gestión de Evaluaciones' },
           },
           {
             path: 'administracion-evaluaciones',
             name: 'administracion-evaluaciones',
             component: () => import('pages/admin/AdministracionEvaluacionPage.vue'),
-            meta: { title: 'Administración de Evaluaciones', rol: ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'] }
+            meta: {
+              title: 'Administración de Evaluaciones',
+              rol: ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'],
+            },
           },
           {
             path: 'reportes',
             name: 'reportes',
             component: () => import('pages/admin/ReportesPage.vue'),
-            meta: { title: 'Reportes' }
+            meta: { title: 'Reportes' },
           },
           {
             path: 'comparador-backup',
@@ -272,48 +341,51 @@ const routes = [
             path: '',
             name: 'documentacion',
             component: () => import('pages/documentacion/DocumentacionPage.vue'),
-            meta: { title: 'Documentación Académica' }
+            meta: { title: 'Documentación Académica' },
           },
           {
             path: ':id',
             name: 'asignatura-edit',
             component: () => import('pages/documentacion/AsignaturaEditPage.vue'),
-            meta: { title: 'Editar Asignatura' }
+            meta: { title: 'Editar Asignatura' },
           },
           {
             path: ':id/unidad/:unidadId/tema/:temaId',
             name: 'tema-edit',
             component: () => import('pages/documentacion/TemaEditPage.vue'),
-            meta: { title: 'Documentar Tema' }
+            meta: { title: 'Documentar Tema' },
           },
           {
             path: ':id/planificacion',
             name: 'asignatura-planificacion',
             component: () => import('pages/documentacion/PlanificacionPage.vue'),
-            meta: { title: 'Planificación Semestral' }
+            meta: { title: 'Planificación Semestral' },
           },
           {
             path: ':id/programa',
             name: 'programa-asignatura',
             component: () => import('pages/documentacion/ProgramaAsignaturaPage.vue'),
-            meta: { title: 'Programa de Asignatura' }
-          }
-        ]
+            meta: { title: 'Programa de Asignatura' },
+          },
+        ],
       },
       // Preguntas (Banco de preguntas por logro)
       {
         path: 'preguntas/:asignaturaId/:temaId/:logroId',
         name: 'preguntas',
         component: () => import('pages/preguntas/PreguntasPage.vue'),
-        meta: { title: 'Banco de Preguntas' }
+        meta: { title: 'Banco de Preguntas' },
       },
       // Evaluaciones — Rol de Exámenes
       {
         path: 'evaluaciones/rol-examenes',
         name: 'evaluaciones-rol-examenes',
         component: () => import('pages/evaluaciones/RolExamenesEvaluacionPage.vue'),
-        meta: { title: 'Rol de Exámenes', rol: ['EVALUACIONES', 'ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'] }
-      }
+        meta: {
+          title: 'Rol de Exámenes',
+          rol: ['EVALUACIONES', 'ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'],
+        },
+      },
     ],
   },
 

@@ -2,7 +2,6 @@
   <q-layout view="lHh Lpr fff">
     <q-page-container>
       <q-page class="fullscreen-bg flex flex-center">
-
         <!-- Dynamic Background Elements -->
         <div class="absolute-full overflow-hidden">
           <div class="blob blob-1"></div>
@@ -13,9 +12,10 @@
 
         <!-- Main Card Container -->
         <div class="login-card shadow-24 relative-position row overflow-hidden animate-pop-in">
-
           <!-- BRANDING PANEL (Left/Top) -->
-          <div class="col-md-5 col-xs-12 branding-panel relative-position flex flex-center q-pa-lg text-white">
+          <div
+            class="col-md-5 col-xs-12 branding-panel relative-position flex flex-center q-pa-lg text-white"
+          >
             <div class="absolute-full overlay-gradient"></div>
 
             <div class="relative-position z-top text-center" style="width: 100%">
@@ -43,43 +43,70 @@
           <!-- FORM PANEL (Right/Bottom) -->
           <div class="col-md-7 col-xs-12 form-panel bg-white flex flex-center relative-position">
             <div class="form-content full-width q-pa-xl">
-
               <div class="text-left q-mb-lg">
                 <h4 class="text-primary text-weight-bold q-mb-xs">Bienvenido</h4>
                 <p class="text-grey-7">Ingresa tus credenciales para continuar.</p>
               </div>
 
               <q-form @submit.prevent="handleLogin" class="q-gutter-y-md">
-
-                <q-input v-model="username" filled label="Usuario / CI" class="input-premium" color="primary"
-                  bg-color="grey-1" :rules="[val => !!val || 'El usuario es requerido']">
+                <q-input
+                  v-model="username"
+                  filled
+                  label="Usuario / CI"
+                  class="input-premium"
+                  color="primary"
+                  bg-color="grey-1"
+                  :rules="[(val) => !!val || 'El usuario es requerido']"
+                >
                   <template v-slot:prepend>
                     <q-icon name="account_circle" color="primary" />
                   </template>
                 </q-input>
 
-                <q-input v-model="password" filled :type="showPassword ? 'text' : 'password'" label="Contraseña"
-                  class="input-premium" color="primary" bg-color="grey-1"
-                  :rules="[val => !!val || 'La contraseña es requerida']">
+                <q-input
+                  v-model="password"
+                  filled
+                  :type="showPassword ? 'text' : 'password'"
+                  label="Contraseña"
+                  class="input-premium"
+                  color="primary"
+                  bg-color="grey-1"
+                  :rules="[(val) => !!val || 'La contraseña es requerida']"
+                >
                   <template v-slot:prepend>
                     <q-icon name="lock" color="primary" />
                   </template>
                   <template v-slot:append>
-                    <q-icon :name="showPassword ? 'visibility_off' : 'visibility'"
-                      class="cursor-pointer opacity-50 hover-opacity-100" @click="showPassword = !showPassword" />
+                    <q-icon
+                      :name="showPassword ? 'visibility_off' : 'visibility'"
+                      class="cursor-pointer opacity-50 hover-opacity-100"
+                      @click="showPassword = !showPassword"
+                    />
                   </template>
                 </q-input>
 
                 <div class="row items-center justify-between q-mt-sm">
-                  <q-checkbox v-model="rememberMe" label="Recordarme" color="primary" dense
-                    class="text-body2 text-grey-8" />
+                  <q-checkbox
+                    v-model="rememberMe"
+                    label="Recordarme"
+                    color="primary"
+                    dense
+                    class="text-body2 text-grey-8"
+                  />
                   <a href="#" class="link-forget text-primary text-weight-bold text-caption">
                     ¿Olvidaste tu contraseña?
                   </a>
                 </div>
 
-                <q-btn type="submit" color="primary" class="full-width btn-hero shadow-3 q-mt-lg" label="INICIAR SESIÓN"
-                  :loading="loading" unelevated size="lg" />
+                <q-btn
+                  type="submit"
+                  color="primary"
+                  class="full-width btn-hero shadow-3 q-mt-lg"
+                  label="INICIAR SESIÓN"
+                  :loading="loading"
+                  unelevated
+                  size="lg"
+                />
               </q-form>
 
               <!-- Error Banner -->
@@ -103,14 +130,21 @@
 
         <!-- Dialog: Change Password (FIXED CLEAN DESIGN) -->
         <q-dialog v-model="showChangePassword" persistent backdrop-filter="blur(4px)">
-          <q-card class="bg-white shadow-24 rounded-borders" style="width: 100%; max-width: 450px;">
-
+          <q-card class="bg-white shadow-24 rounded-borders" style="width: 100%; max-width: 450px">
             <q-card-section class="bg-primary text-white q-py-lg text-center">
               <div class="q-mb-sm">
-                <q-avatar color="white" text-color="primary" icon="lock_reset" size="50px" class="shadow-2" />
+                <q-avatar
+                  color="white"
+                  text-color="primary"
+                  icon="lock_reset"
+                  size="50px"
+                  class="shadow-2"
+                />
               </div>
               <div class="text-h6 text-weight-bold">Actualización de Seguridad</div>
-              <div class="text-caption opacity-90">Tu contraseña ha expirado o es el primer acceso</div>
+              <div class="text-caption opacity-90">
+                Tu contraseña ha expirado o es el primer acceso
+              </div>
             </q-card-section>
 
             <q-card-section class="q-px-lg q-pt-lg q-pb-md">
@@ -119,42 +153,81 @@
               </p>
 
               <q-form @submit.prevent="handleChangePassword" class="q-gutter-y-md">
-                <q-input outlined v-model="currentPasswordChange" label="Usuario / CI" readonly bg-color="grey-1" dense>
+                <q-input
+                  outlined
+                  v-model="currentPasswordChange"
+                  label="Usuario / CI"
+                  readonly
+                  bg-color="grey-1"
+                  dense
+                >
                   <template v-slot:prepend><q-icon name="person" color="grey-6" /></template>
                 </q-input>
 
-                <q-input outlined v-model="newPassword" :type="showNewPwd ? 'text' : 'password'"
-                  label="Nueva Contraseña" :rules="[val => val.length >= 6 || 'Mínimo 6 caracteres']" bg-color="white">
+                <q-input
+                  outlined
+                  v-model="newPassword"
+                  :type="showNewPwd ? 'text' : 'password'"
+                  label="Nueva Contraseña"
+                  :rules="[(val) => val.length >= 6 || 'Mínimo 6 caracteres']"
+                  bg-color="white"
+                >
                   <template v-slot:prepend><q-icon name="vpn_key" color="primary" /></template>
                   <template v-slot:append>
-                    <q-btn flat round dense :icon="showNewPwd ? 'visibility_off' : 'visibility'"
-                      @click="showNewPwd = !showNewPwd" color="grey-7" />
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      :icon="showNewPwd ? 'visibility_off' : 'visibility'"
+                      @click="showNewPwd = !showNewPwd"
+                      color="grey-7"
+                    />
                   </template>
                 </q-input>
 
-                <q-input outlined v-model="confirmPassword" :type="showConfirmPwd ? 'text' : 'password'"
-                  label="Confirmar Contraseña" :rules="[val => val === newPassword || 'No coinciden']" bg-color="white">
+                <q-input
+                  outlined
+                  v-model="confirmPassword"
+                  :type="showConfirmPwd ? 'text' : 'password'"
+                  label="Confirmar Contraseña"
+                  :rules="[(val) => val === newPassword || 'No coinciden']"
+                  bg-color="white"
+                >
                   <template v-slot:prepend><q-icon name="check_circle" color="primary" /></template>
                   <template v-slot:append>
-                    <q-btn flat round dense :icon="showConfirmPwd ? 'visibility_off' : 'visibility'"
-                      @click="showConfirmPwd = !showConfirmPwd" color="grey-7" />
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      :icon="showConfirmPwd ? 'visibility_off' : 'visibility'"
+                      @click="showConfirmPwd = !showConfirmPwd"
+                      color="grey-7"
+                    />
                   </template>
                 </q-input>
 
-                <div v-if="changeError" class="q-pa-sm bg-red-1 text-red-9 rounded-borders text-center text-caption">
+                <div
+                  v-if="changeError"
+                  class="q-pa-sm bg-red-1 text-red-9 rounded-borders text-center text-caption"
+                >
                   <q-icon name="warning" class="q-mr-xs" /> {{ changeError }}
                 </div>
 
                 <div class="row q-mt-md">
-                  <q-btn type="submit" color="primary" label="Confirmar Cambio"
-                    class="full-width q-py-sm text-weight-bold shadow-2 btn-rounded" :loading="changingPassword"
-                    unelevated no-caps />
+                  <q-btn
+                    type="submit"
+                    color="primary"
+                    label="Confirmar Cambio"
+                    class="full-width q-py-sm text-weight-bold shadow-2 btn-rounded"
+                    :loading="changingPassword"
+                    unelevated
+                    no-caps
+                  />
                 </div>
               </q-form>
             </q-card-section>
           </q-card>
         </q-dialog>
-
       </q-page>
     </q-page-container>
   </q-layout>
@@ -191,7 +264,7 @@ async function handleLogin() {
   loading.value = true
   error.value = ''
   // Fake UX delay
-  await new Promise(resolve => setTimeout(resolve, 800))
+  await new Promise((resolve) => setTimeout(resolve, 800))
 
   const result = await authStore.login(username.value, password.value)
   loading.value = false
@@ -205,7 +278,7 @@ async function handleLogin() {
         type: 'positive',
         message: `Bienvenido, ${result.usuario.nombre}`,
         position: 'top',
-        timeout: 2500
+        timeout: 2500,
       })
       router.push('/')
     }

@@ -10,7 +10,13 @@
         <p class="page-subtitle">Resumen y estadísticas de asistencia por materia</p>
       </div>
       <div class="header-actions">
-        <q-btn outline color="primary" icon="picture_as_pdf" label="Exportar PDF" @click="exportarPDF" />
+        <q-btn
+          outline
+          color="primary"
+          icon="picture_as_pdf"
+          label="Exportar PDF"
+          @click="exportarPDF"
+        />
       </div>
     </div>
 
@@ -74,15 +80,9 @@
 
     <!-- Leyenda -->
     <div v-if="estudiantesConStats.length > 0" class="leyenda q-mb-md">
-      <span class="leyenda-item">
-        <q-badge color="green" /> Normal (&lt;15% faltas)
-      </span>
-      <span class="leyenda-item">
-        <q-badge color="orange" /> Advertencia (15-25% faltas)
-      </span>
-      <span class="leyenda-item">
-        <q-badge color="red" /> En Riesgo (&gt;25% faltas)
-      </span>
+      <span class="leyenda-item"> <q-badge color="green" /> Normal (&lt;15% faltas) </span>
+      <span class="leyenda-item"> <q-badge color="orange" /> Advertencia (15-25% faltas) </span>
+      <span class="leyenda-item"> <q-badge color="red" /> En Riesgo (&gt;25% faltas) </span>
     </div>
 
     <!-- Empty State -->
@@ -106,7 +106,13 @@
           <div class="table-header">
             <span class="text-h6">{{ materiaInfo?.nombre || 'Estudiantes' }}</span>
             <q-space />
-            <q-input v-model="busqueda" placeholder="Buscar estudiante..." dense outlined style="min-width: 200px">
+            <q-input
+              v-model="busqueda"
+              placeholder="Buscar estudiante..."
+              dense
+              outlined
+              style="min-width: 200px"
+            >
               <template v-slot:prepend><q-icon name="search" /></template>
             </q-input>
           </div>
@@ -138,7 +144,9 @@
                 class="q-mr-sm"
                 style="width: 80px"
               />
-              <span :class="'text-' + getColorPorcentaje(props.row.estadisticas.porcentajeAsistencia)">
+              <span
+                :class="'text-' + getColorPorcentaje(props.row.estadisticas.porcentajeAsistencia)"
+              >
                 {{ props.row.estadisticas.porcentajeAsistencia }}%
               </span>
             </div>
@@ -147,9 +155,9 @@
 
         <template v-slot:body-cell-faltas="props">
           <q-td :props="props">
-            <q-chip 
-              :color="props.row.estadisticas.ausentes > 2 ? 'red' : 'grey'" 
-              text-color="white" 
+            <q-chip
+              :color="props.row.estadisticas.ausentes > 2 ? 'red' : 'grey'"
+              text-color="white"
               size="sm"
             >
               {{ props.row.estadisticas.ausentes }}
@@ -159,9 +167,9 @@
 
         <template v-slot:body-cell-tardanzas="props">
           <q-td :props="props">
-            <q-chip 
-              :color="props.row.estadisticas.tardanzas > 0 ? 'orange' : 'grey'" 
-              text-color="white" 
+            <q-chip
+              :color="props.row.estadisticas.tardanzas > 0 ? 'orange' : 'grey'"
+              text-color="white"
               size="sm"
             >
               {{ props.row.estadisticas.tardanzas }}
@@ -171,9 +179,9 @@
 
         <template v-slot:body-cell-justificadas="props">
           <q-td :props="props">
-            <q-chip 
-              :color="props.row.estadisticas.justificadas > 0 ? 'blue' : 'grey'" 
-              text-color="white" 
+            <q-chip
+              :color="props.row.estadisticas.justificadas > 0 ? 'blue' : 'grey'"
+              text-color="white"
               size="sm"
             >
               {{ props.row.estadisticas.justificadas }}
@@ -183,7 +191,7 @@
 
         <template v-slot:body-cell-estado="props">
           <q-td :props="props">
-            <q-badge 
+            <q-badge
               :color="getColorEstado(props.row.estadisticas.estadoRiesgo)"
               :label="getLabelEstado(props.row.estadisticas.estadoRiesgo)"
             />
@@ -192,7 +200,14 @@
 
         <template v-slot:body-cell-acciones="props">
           <q-td :props="props">
-            <q-btn flat round size="sm" color="primary" icon="visibility" @click="verDetalle(props.row)">
+            <q-btn
+              flat
+              round
+              size="sm"
+              color="primary"
+              icon="visibility"
+              @click="verDetalle(props.row)"
+            >
               <q-tooltip>Ver detalle</q-tooltip>
             </q-btn>
           </q-td>
@@ -233,7 +248,9 @@
             </div>
             <div class="detalle-item">
               <span class="label">% Asistencia:</span>
-              <span class="value text-primary text-bold">{{ estudianteDetalle.estadisticas.porcentajeAsistencia }}%</span>
+              <span class="value text-primary text-bold"
+                >{{ estudianteDetalle.estadisticas.porcentajeAsistencia }}%</span
+              >
             </div>
           </div>
         </q-card-section>
@@ -260,21 +277,21 @@ const estudianteDetalle = ref(null)
 
 // Opciones de materias
 const materiasOptions = computed(() => {
-  return asignaturasStore.asignaturas.map(a => ({
+  return asignaturasStore.asignaturas.map((a) => ({
     label: `${a.nombre} (${a.codigo})`,
-    value: a.id
+    value: a.id,
   }))
 })
 
 const materiaInfo = computed(() => {
-  return asignaturasStore.asignaturas.find(a => a.id === materiaSeleccionada.value)
+  return asignaturasStore.asignaturas.find((a) => a.id === materiaSeleccionada.value)
 })
 
 const gruposOptions = computed(() => {
   if (!materiaInfo.value) return []
-  return (materiaInfo.value.grupos || []).map(g => ({
+  return (materiaInfo.value.grupos || []).map((g) => ({
     label: `${g.nombre} - ${g.turno}`,
-    value: g.id
+    value: g.id,
   }))
 })
 
@@ -287,28 +304,61 @@ const estudiantesConStats = computed(() => {
 // Stats resumen
 const promedioAsistencia = computed(() => {
   if (estudiantesConStats.value.length === 0) return 0
-  const suma = estudiantesConStats.value.reduce((acc, e) => acc + e.estadisticas.porcentajeAsistencia, 0)
+  const suma = estudiantesConStats.value.reduce(
+    (acc, e) => acc + e.estadisticas.porcentajeAsistencia,
+    0,
+  )
   return Math.round(suma / estudiantesConStats.value.length)
 })
 
 const estudiantesRiesgo = computed(() => {
-  return estudiantesConStats.value.filter(e => e.estadisticas.estadoRiesgo === 'riesgo').length
+  return estudiantesConStats.value.filter((e) => e.estadisticas.estadoRiesgo === 'riesgo').length
 })
 
 const estudiantesAdvertencia = computed(() => {
-  return estudiantesConStats.value.filter(e => e.estadisticas.estadoRiesgo === 'advertencia').length
+  return estudiantesConStats.value.filter((e) => e.estadisticas.estadoRiesgo === 'advertencia')
+    .length
 })
 
 // Columnas de la tabla
 const columns = [
   { name: 'foto', label: '', field: 'foto', align: 'center', style: 'width: 50px' },
   { name: 'nombre', label: 'Estudiante', field: 'nombreCompleto', align: 'left', sortable: true },
-  { name: 'porcentaje', label: '% Asistencia', field: row => row.estadisticas.porcentajeAsistencia, align: 'center', sortable: true },
-  { name: 'faltas', label: 'Faltas', field: row => row.estadisticas.ausentes, align: 'center', sortable: true },
-  { name: 'tardanzas', label: 'Tardanzas', field: row => row.estadisticas.tardanzas, align: 'center', sortable: true },
-  { name: 'justificadas', label: 'Justificadas', field: row => row.estadisticas.justificadas, align: 'center', sortable: true },
-  { name: 'estado', label: 'Estado', field: row => row.estadisticas.estadoRiesgo, align: 'center' },
-  { name: 'acciones', label: '', field: 'acciones', align: 'center' }
+  {
+    name: 'porcentaje',
+    label: '% Asistencia',
+    field: (row) => row.estadisticas.porcentajeAsistencia,
+    align: 'center',
+    sortable: true,
+  },
+  {
+    name: 'faltas',
+    label: 'Faltas',
+    field: (row) => row.estadisticas.ausentes,
+    align: 'center',
+    sortable: true,
+  },
+  {
+    name: 'tardanzas',
+    label: 'Tardanzas',
+    field: (row) => row.estadisticas.tardanzas,
+    align: 'center',
+    sortable: true,
+  },
+  {
+    name: 'justificadas',
+    label: 'Justificadas',
+    field: (row) => row.estadisticas.justificadas,
+    align: 'center',
+    sortable: true,
+  },
+  {
+    name: 'estado',
+    label: 'Estado',
+    field: (row) => row.estadisticas.estadoRiesgo,
+    align: 'center',
+  },
+  { name: 'acciones', label: '', field: 'acciones', align: 'center' },
 ]
 
 function cargarEstadisticas() {
@@ -323,17 +373,23 @@ function getColorPorcentaje(porcentaje) {
 
 function getColorEstado(estado) {
   switch (estado) {
-    case 'riesgo': return 'red'
-    case 'advertencia': return 'orange'
-    default: return 'green'
+    case 'riesgo':
+      return 'red'
+    case 'advertencia':
+      return 'orange'
+    default:
+      return 'green'
   }
 }
 
 function getLabelEstado(estado) {
   switch (estado) {
-    case 'riesgo': return 'En Riesgo'
-    case 'advertencia': return 'Advertencia'
-    default: return 'Normal'
+    case 'riesgo':
+      return 'En Riesgo'
+    case 'advertencia':
+      return 'Advertencia'
+    default:
+      return 'Normal'
   }
 }
 
@@ -343,21 +399,57 @@ function verDetalle(estudiante) {
 }
 
 function exportarPDF() {
-  $q.notify({ type: 'info', message: 'Exportando reporte de asistencia...', icon: 'picture_as_pdf' })
+  $q.notify({
+    type: 'info',
+    message: 'Exportando reporte de asistencia...',
+    icon: 'picture_as_pdf',
+  })
 }
 </script>
 
 <style scoped>
-.asistencia-general-page { padding: 24px; background: var(--bg-primary); min-height: 100vh; }
+.asistencia-general-page {
+  padding: 24px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
 
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-.page-title { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; }
-.page-subtitle { color: var(--text-secondary); margin: 4px 0 0 0; }
-.header-actions { display: flex; gap: 12px; }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+.page-subtitle {
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+}
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
 
-.filters-section { display: flex; gap: 16px; flex-wrap: wrap; }
+.filters-section {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
 
-.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
 .stat-card {
   display: flex;
   align-items: center;
@@ -367,27 +459,87 @@ function exportarPDF() {
   border-radius: 16px;
   border: 1px solid var(--border-color);
 }
-.stat-card.warning { border-left: 4px solid var(--warning); }
-.stat-card.danger { border-left: 4px solid var(--error); }
-.stat-info { display: flex; flex-direction: column; }
-.stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-.stat-label { font-size: 0.85rem; color: var(--text-secondary); }
+.stat-card.warning {
+  border-left: 4px solid var(--warning);
+}
+.stat-card.danger {
+  border-left: 4px solid var(--error);
+}
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
 
-.leyenda { display: flex; gap: 24px; flex-wrap: wrap; }
-.leyenda-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary); }
+.leyenda {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
 
-.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; }
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+}
 
-.table-card { border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); }
-.table-header { display: flex; align-items: center; width: 100%; padding: 8px 0; }
+.table-card {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+.table-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+}
 
-.estudiante-nombre { font-weight: 600; color: var(--text-primary); }
-.estudiante-codigo { font-size: 0.8rem; }
+.estudiante-nombre {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.estudiante-codigo {
+  font-size: 0.8rem;
+}
 
-.porcentaje-cell { display: flex; align-items: center; }
+.porcentaje-cell {
+  display: flex;
+  align-items: center;
+}
 
-.detalle-stats { display: flex; flex-direction: column; gap: 12px; }
-.detalle-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); }
-.detalle-item .label { color: var(--text-secondary); }
-.detalle-item .value { font-weight: 600; }
+.detalle-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.detalle-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.detalle-item .label {
+  color: var(--text-secondary);
+}
+.detalle-item .value {
+  font-weight: 600;
+}
 </style>

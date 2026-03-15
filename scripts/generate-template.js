@@ -14,8 +14,8 @@ const plantilla = [
     E: '',
     DIFICULTAD: '',
     PESO: '',
-    RESPUESTA: ''
-  }
+    RESPUESTA: '',
+  },
 ]
 
 // Crear libro de trabajo
@@ -25,16 +25,16 @@ XLSX.utils.book_append_sheet(wb, ws, 'Preguntas')
 
 // Ajustar anchos de columna
 ws['!cols'] = [
-  { wch: 60 },  // ENUNCIADO
-  { wch: 20 },  // TIPO
-  { wch: 30 },  // A
-  { wch: 30 },  // B
-  { wch: 30 },  // C
-  { wch: 30 },  // D
-  { wch: 30 },  // E
-  { wch: 12 },  // DIFICULTAD
-  { wch: 8 },   // PESO
-  { wch: 12 }   // RESPUESTA
+  { wch: 60 }, // ENUNCIADO
+  { wch: 20 }, // TIPO
+  { wch: 30 }, // A
+  { wch: 30 }, // B
+  { wch: 30 }, // C
+  { wch: 30 }, // D
+  { wch: 30 }, // E
+  { wch: 12 }, // DIFICULTAD
+  { wch: 8 }, // PESO
+  { wch: 12 }, // RESPUESTA
 ]
 
 // Escribir a buffer y luego a archivo

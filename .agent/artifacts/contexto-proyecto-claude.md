@@ -53,15 +53,15 @@ SisAcad/
 
 ## 3. Roles del Sistema
 
-| Rol | Descripción |
-|-----|-------------|
-| DOCENTE | Gestiona sus asignaturas, documenta temas, crea evaluaciones |
-| DIRECTOR_CARRERA | Supervisa docentes y asignaturas de su carrera |
-| DIRECCION_ACADEMICA | Vista de carreras y reportes de sede |
-| VICERRECTOR_SEDE | Vista general de sede |
-| VICERRECTOR_NACIONAL | Vista de todas las sedes |
-| ADMIN | Administración completa del sistema |
-| SUPER_ADMIN | Acceso total |
+| Rol                  | Descripción                                                  |
+| -------------------- | ------------------------------------------------------------ |
+| DOCENTE              | Gestiona sus asignaturas, documenta temas, crea evaluaciones |
+| DIRECTOR_CARRERA     | Supervisa docentes y asignaturas de su carrera               |
+| DIRECCION_ACADEMICA  | Vista de carreras y reportes de sede                         |
+| VICERRECTOR_SEDE     | Vista general de sede                                        |
+| VICERRECTOR_NACIONAL | Vista de todas las sedes                                     |
+| ADMIN                | Administración completa del sistema                          |
+| SUPER_ADMIN          | Acceso total                                                 |
 
 ---
 
@@ -135,27 +135,30 @@ El servicio `carpetaDocenteService.js` genera un PDF completo con:
 formTema = {
   resultado_aprendizaje: '',
   logros_esperados: [
-    { 
-      id, codigo, descripcion, parcial,
-      indicadores: [{ id, codigo, descripcion }]
-    }
+    {
+      id,
+      codigo,
+      descripcion,
+      parcial,
+      indicadores: [{ id, codigo, descripcion }],
+    },
   ],
   contenidos: {
-    conceptual: [],      // Array de strings
-    procedimental: [],   // Array de strings
-    actitudinal: []      // Array de strings
+    conceptual: [], // Array de strings
+    procedimental: [], // Array de strings
+    actitudinal: [], // Array de strings
   },
   estrategias: {
     metodologicas: '',
     aprendizaje: '',
-    recursos: []
+    recursos: [],
   },
   evaluacion: {
     formativa: { actividades: [], instrumentos: [], evidencias: [] },
-    sumativa: { actividades: [], instrumentos: [], evidencias: [] }
+    sumativa: { actividades: [], instrumentos: [], evidencias: [] },
   },
   secuencia_didactica: [],
-  referencias_bibliograficas: []
+  referencias_bibliograficas: [],
 }
 ```
 
@@ -164,6 +167,7 @@ formTema = {
 ## 7. Rutas Principales
 
 ### Admin
+
 - `/admin/usuarios` - Gestión de usuarios
 - `/admin/roles` - Gestión de roles
 - `/admin/sedes` - Gestión de sedes
@@ -175,12 +179,14 @@ formTema = {
 - `/admin/configuracion` - Configuración
 
 ### Documentación
+
 - `/documentacion` - Lista de asignaturas
 - `/documentacion/:id` - Editar asignatura (AsignaturaEditPage.vue)
 - `/documentacion/:id/unidad/:unidadId/tema/:temaId` - Editar tema (TemaEditPage.vue)
 - `/documentacion/:id/planificacion` - Planificación semestral
 
 ### Docente
+
 - `/docente/asistencia` - Llamar lista
 - `/docente/reporte-asistencia` - Reporte grid
 - `/docente/evaluaciones` - Mis evaluaciones
@@ -191,9 +197,9 @@ formTema = {
 
 ```javascript
 const COLORS = {
-  morado: [102, 51, 153],    // #663399 - Encabezados
-  turquesa: [0, 128, 128],   // #008080 - Acentos
-  gris: [200, 200, 200]      // Fondos alternos
+  morado: [102, 51, 153], // #663399 - Encabezados
+  turquesa: [0, 128, 128], // #008080 - Acentos
+  gris: [200, 200, 200], // Fondos alternos
 }
 ```
 
@@ -234,6 +240,7 @@ npm run build
 ## 11. Trabajo Reciente (Última Sesión)
 
 ### Mejoras al PDF del PAC:
+
 1. Estructura de tabla de Datos Generales con 5 columnas y colSpan
 2. Eliminación de textos de relleno (campos vacíos = en blanco)
 3. Mapeo de datos reales desde la estructura del tema:
@@ -243,6 +250,7 @@ npm run build
 4. Corrección de errores de ESLint (variables no utilizadas)
 
 ### Archivos Modificados:
+
 - `src/services/carpetaDocenteService.js` - Reescrita función `generarPAC()`
 - `src/stores/asignaturas.js` - Mock data actualizado
 
@@ -258,4 +266,4 @@ npm run build
 
 ---
 
-*Documento generado el 16/01/2026. Para compartir con otro asistente de IA.*
+_Documento generado el 16/01/2026. Para compartir con otro asistente de IA._

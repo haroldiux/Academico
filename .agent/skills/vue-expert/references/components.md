@@ -16,24 +16,24 @@ const props = defineProps<Props>()
 // Props with defaults
 const propsWithDefaults = withDefaults(defineProps<Props>(), {
   count: 0,
-  items: () => []
+  items: () => [],
 })
 
 // Runtime props (without TypeScript)
 const runtimeProps = defineProps({
   title: {
     type: String,
-    required: true
+    required: true,
   },
   count: {
     type: Number,
     default: 0,
-    validator: (value: number) => value >= 0
+    validator: (value: number) => value >= 0,
   },
   items: {
     type: Array as PropType<string[]>,
-    default: () => []
-  }
+    default: () => [],
+  },
 })
 
 // Access props
@@ -82,7 +82,7 @@ const runtimeEmit = defineEmits({
   },
   delete: (id: number) => {
     return id > 0
-  }
+  },
 })
 </script>
 
@@ -109,10 +109,7 @@ const filters = ref({ category: '', price: 0 })
   <CustomInput v-model="searchQuery" />
 
   <!-- Multiple v-models -->
-  <FilterPanel
-    v-model:category="filters.category"
-    v-model:price="filters.price"
-  />
+  <FilterPanel v-model:category="filters.category" v-model:price="filters.price" />
 </template>
 
 <!-- CustomInput.vue -->
@@ -212,11 +209,13 @@ function close() {
     </div>
 
     <div class="card-body">
-      <slot></slot> <!-- Default slot -->
+      <slot></slot>
+      <!-- Default slot -->
     </div>
 
     <div v-if="hasFooter" class="card-footer">
-      <slot name="footer" :close="close"></slot> <!-- Scoped slot -->
+      <slot name="footer" :close="close"></slot>
+      <!-- Scoped slot -->
     </div>
   </div>
 </template>
@@ -269,7 +268,7 @@ export const userKey = Symbol() as InjectionKey<UserData>
 
 const user = ref<UserData>({
   name: 'John Doe',
-  email: 'john@example.com'
+  email: 'john@example.com',
 })
 
 function updateUser(newUser: UserData) {
@@ -379,7 +378,7 @@ const currentView = shallowRef<Component>(HomeView)
 const components = {
   home: HomeView,
   about: AboutView,
-  contact: ContactView
+  contact: ContactView,
 }
 
 function switchView(view: keyof typeof components) {
@@ -406,9 +405,7 @@ function switchView(view: keyof typeof components) {
 import { defineAsyncComponent } from 'vue'
 
 // Lazy load component
-const HeavyComponent = defineAsyncComponent(() =>
-  import('./HeavyComponent.vue')
-)
+const HeavyComponent = defineAsyncComponent(() => import('./HeavyComponent.vue'))
 
 // With loading and error states
 const AdminPanel = defineAsyncComponent({
@@ -416,7 +413,7 @@ const AdminPanel = defineAsyncComponent({
   loadingComponent: () => import('./LoadingSpinner.vue'),
   errorComponent: () => import('./ErrorDisplay.vue'),
   delay: 200, // Delay before showing loading component
-  timeout: 3000 // Timeout before showing error
+  timeout: 3000, // Timeout before showing error
 })
 </script>
 
@@ -434,15 +431,15 @@ const AdminPanel = defineAsyncComponent({
 
 ## Quick Reference
 
-| Pattern | Use Case |
-|---------|----------|
-| `defineProps<T>()` | Type-safe props with TypeScript |
-| `withDefaults()` | Props with default values |
-| `defineEmits<T>()` | Type-safe event emitters |
-| `v-model` | Two-way data binding |
-| `<slot>` | Content distribution |
-| Scoped slots | Pass data from child to parent |
-| `provide/inject` | Dependency injection (avoid prop drilling) |
-| `<Teleport>` | Render DOM outside component hierarchy |
-| `<component :is>` | Dynamic component switching |
-| `defineAsyncComponent()` | Lazy load components |
+| Pattern                  | Use Case                                   |
+| ------------------------ | ------------------------------------------ |
+| `defineProps<T>()`       | Type-safe props with TypeScript            |
+| `withDefaults()`         | Props with default values                  |
+| `defineEmits<T>()`       | Type-safe event emitters                   |
+| `v-model`                | Two-way data binding                       |
+| `<slot>`                 | Content distribution                       |
+| Scoped slots             | Pass data from child to parent             |
+| `provide/inject`         | Dependency injection (avoid prop drilling) |
+| `<Teleport>`             | Render DOM outside component hierarchy     |
+| `<component :is>`        | Dynamic component switching                |
+| `defineAsyncComponent()` | Lazy load components                       |

@@ -4,11 +4,7 @@
       <div class="text-h6 text-weight-bold text-primary">{{ title }}</div>
     </div>
 
-    <svg 
-      viewBox="0 0 800 533" 
-      class="bolivia-map"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg viewBox="0 0 800 533" class="bolivia-map" xmlns="http://www.w3.org/2000/svg">
       <g>
         <!-- Pando -->
         <path
@@ -95,9 +91,11 @@
     </svg>
 
     <!-- Tooltip -->
-    <div v-if="tooltipVisible" 
-         class="map-tooltip" 
-         :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }">
+    <div
+      v-if="tooltipVisible"
+      class="map-tooltip"
+      :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }"
+    >
       <div class="tooltip-title">{{ tooltipData.name }}</div>
       <div v-if="tooltipData.sedesCount > 0" class="tooltip-content">
         <div class="text-caption text-grey-7 q-mb-xs">Haga click para ver detalles de:</div>
@@ -106,17 +104,15 @@
             <span>{{ sede.nombre || 'Sede' }}</span>
             <span>{{ sede.progreso }}%</span>
           </div>
-          <q-linear-progress 
-            :value="sede.progreso / 100" 
+          <q-linear-progress
+            :value="sede.progreso / 100"
             :color="getProgressColor(sede.progreso)"
-            rounded 
+            rounded
             size="4px"
           />
         </div>
       </div>
-      <div v-else class="tooltip-no-sede">
-        Sin sedes registradas
-      </div>
+      <div v-else class="tooltip-no-sede">Sin sedes registradas</div>
     </div>
 
     <!-- Leyenda -->
@@ -124,15 +120,15 @@
       <div class="legend-title">Nivel de Cumplimiento</div>
       <div class="legend-items">
         <div class="legend-item">
-          <span class="legend-color" style="background: #22c55e;"></span>
+          <span class="legend-color" style="background: #22c55e"></span>
           <span>Excelente (+80%)</span>
         </div>
         <div class="legend-item">
-          <span class="legend-color" style="background: #eab308;"></span>
+          <span class="legend-color" style="background: #eab308"></span>
           <span>Regular (60-79%)</span>
         </div>
         <div class="legend-item">
-          <span class="legend-color" style="background: #ef4444;"></span>
+          <span class="legend-color" style="background: #ef4444"></span>
           <span>Crítico (-60%)</span>
         </div>
       </div>
@@ -146,12 +142,12 @@ import { ref } from 'vue'
 const props = defineProps({
   sedesData: {
     type: Object,
-    required: true
+    required: true,
   },
   title: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 })
 
 const emit = defineEmits(['select-department', 'select-sede'])
@@ -172,7 +168,7 @@ const departmentNames = {
   potosi: 'Potosí',
   santa_cruz: 'Santa Cruz',
   chuquisaca: 'Chuquisaca',
-  tarija: 'Tarija'
+  tarija: 'Tarija',
 }
 
 // Obtener progreso promedio del departamento
@@ -192,13 +188,13 @@ function getProgressColor(progress) {
 function getDepartmentClass(deptId) {
   const sedes = props.sedesData[deptId] || []
   if (sedes.length === 0) return { 'dept-empty': true }
-  
+
   const progress = getProgress(deptId)
   return {
     'dept-high': progress >= 80,
     'dept-medium': progress >= 60 && progress < 80,
     'dept-low': progress < 60,
-    'has-sede': true
+    'has-sede': true,
   }
 }
 
@@ -208,7 +204,7 @@ function showTooltip(deptId, event) {
     name: departmentNames[deptId],
     progress: getProgress(deptId),
     sedesCount: sedes.length,
-    sedes: sedes
+    sedes: sedes,
   }
   tooltipX.value = event.clientX + 15
   tooltipY.value = event.clientY + 15
@@ -222,7 +218,7 @@ function hideTooltip() {
 function handleClick(deptId) {
   const sedes = props.sedesData[deptId] || []
   if (sedes.length === 0) return
-  
+
   if (sedes.length === 1) {
     emit('select-sede', sedes[0])
   } else if (sedes.length > 1) {
@@ -275,7 +271,7 @@ function handleClick(deptId) {
 }
 
 .dept-medium {
-  fill: #FFEA00; /* Amarillo Patito */
+  fill: #ffea00; /* Amarillo Patito */
 }
 
 .dept-low {

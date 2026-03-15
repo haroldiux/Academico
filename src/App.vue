@@ -34,7 +34,15 @@ const checkInactivity = () => {
       message: 'Sesión cerrada por inactividad (1 hora sin uso).',
       position: 'top',
       timeout: 0,
-      actions: [{ label: 'Entendido', color: 'white', handler: () => { /* dismiss */ } }]
+      actions: [
+        {
+          label: 'Entendido',
+          color: 'white',
+          handler: () => {
+            /* dismiss */
+          },
+        },
+      ],
     })
   }
 }
@@ -42,7 +50,7 @@ const checkInactivity = () => {
 onMounted(() => {
   // Inicializar tracking (Performance friendly: no ejecutar lógica pesada en cada evento)
   const events = ['mousemove', 'mousedown', 'keypress', 'touchmove', 'scroll', 'click']
-  events.forEach(evt => window.addEventListener(evt, updateActivity))
+  events.forEach((evt) => window.addEventListener(evt, updateActivity))
 
   // Chequear cada 1 minuto si se cumplió el tiempo
   checkInterval = setInterval(checkInactivity, 60 * 1000)
@@ -56,9 +64,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   const events = ['mousemove', 'mousedown', 'keypress', 'touchmove', 'scroll', 'click']
-  events.forEach(evt => window.removeEventListener(evt, updateActivity))
+  events.forEach((evt) => window.removeEventListener(evt, updateActivity))
   if (checkInterval) clearInterval(checkInterval)
-  
+
   stopNetworkListener()
 })
 </script>

@@ -9,7 +9,7 @@ export const changePassword = async (currentPassword, newPassword) => {
   const response = await api.post('/change-password', {
     current_password: currentPassword,
     new_password: newPassword,
-    new_password_confirmation: newPassword
+    new_password_confirmation: newPassword,
   })
   return response.data
 }

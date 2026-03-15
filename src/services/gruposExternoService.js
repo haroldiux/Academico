@@ -18,5 +18,5 @@ export default {
    */
   refrescarGrupos(params = {}) {
     return api.get('/grupos', { params })
-  }
+  },
 }

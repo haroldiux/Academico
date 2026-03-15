@@ -7,24 +7,69 @@
           <q-icon name="groups" color="teal" class="q-mr-sm" />
           Gestión de Grupos por Materia
         </h1>
-        <p class="page-subtitle">Visualiza los grupos/paralelos organizados por materia, docente y horario</p>
+        <p class="page-subtitle">
+          Visualiza los grupos/paralelos organizados por materia, docente y horario
+        </p>
       </div>
       <div class="header-actions">
-        <q-btn flat color="teal" icon="refresh" label="Actualizar" no-caps :loading="gruposStore.loading"
-          @click="refrescarDatos" />
+        <q-btn
+          flat
+          color="teal"
+          icon="refresh"
+          label="Actualizar"
+          no-caps
+          :loading="gruposStore.loading"
+          @click="refrescarDatos"
+        />
       </div>
     </div>
 
     <!-- Filtros -->
     <div class="filters-section">
-      <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
-        style="width: 100%; max-width: 180px; min-width: 150px;" @update:model-value="onSedeChange" />
-      <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
-        map-options style="width: 100%; max-width: 220px; min-width: 180px;" @update:model-value="onFiltroChange" />
-      <q-select v-model="filtros.gestion" :options="gestionesOptions" outlined dense label="Gestión" emit-value
-        map-options style="width: 100%; max-width: 130px; min-width: 100px;" @update:model-value="onFiltroChange" />
-      <q-select v-model="filtros.semestre" :options="semestresOptions" outlined dense label="Semestre" emit-value
-        map-options clearable style="width: 100%; max-width: 150px; min-width: 120px;" />
+      <q-select
+        v-model="filtros.sede"
+        :options="sedesOptions"
+        outlined
+        dense
+        label="Sede"
+        emit-value
+        map-options
+        style="width: 100%; max-width: 180px; min-width: 150px"
+        @update:model-value="onSedeChange"
+      />
+      <q-select
+        v-model="filtros.carrera"
+        :options="carrerasOptions"
+        outlined
+        dense
+        label="Carrera"
+        emit-value
+        map-options
+        style="width: 100%; max-width: 220px; min-width: 180px"
+        @update:model-value="onFiltroChange"
+      />
+      <q-select
+        v-model="filtros.gestion"
+        :options="gestionesOptions"
+        outlined
+        dense
+        label="Gestión"
+        emit-value
+        map-options
+        style="width: 100%; max-width: 130px; min-width: 100px"
+        @update:model-value="onFiltroChange"
+      />
+      <q-select
+        v-model="filtros.semestre"
+        :options="semestresOptions"
+        outlined
+        dense
+        label="Semestre"
+        emit-value
+        map-options
+        clearable
+        style="width: 100%; max-width: 150px; min-width: 120px"
+      />
     </div>
 
     <!-- Estadísticas -->
@@ -67,15 +112,24 @@
 
     <!-- Vista por Materias con sus Grupos -->
     <div v-else class="materias-container">
-      <div v-for="materia in materiasFiltradas" :key="materia.codigo + '-' + materia.semestre" class="materia-section">
+      <div
+        v-for="materia in materiasFiltradas"
+        :key="materia.codigo + '-' + materia.semestre"
+        class="materia-section"
+      >
         <div class="materia-header">
           <div class="materia-info">
-            <q-chip color="blue-1" text-color="blue-10" size="sm" dense class="text-weight-bold">{{ materia.codigo
+            <q-chip color="blue-1" text-color="blue-10" size="sm" dense class="text-weight-bold">{{
+              materia.codigo
             }}</q-chip>
             <h3 class="materia-nombre">{{ materia.nombre }}</h3>
             <div class="materia-meta">
-              <q-chip size="xs" color="purple-2" text-color="purple-9">{{ materia.carrera }}</q-chip>
-              <q-chip size="xs" color="blue-2" text-color="blue-9">{{ materia.sede_nombre }}</q-chip>
+              <q-chip size="xs" color="purple-2" text-color="purple-9">{{
+                materia.carrera
+              }}</q-chip>
+              <q-chip size="xs" color="blue-2" text-color="blue-9">{{
+                materia.sede_nombre
+              }}</q-chip>
               <q-chip size="xs" outline>{{ materia.semestre }}° Sem</q-chip>
               <q-chip size="xs" color="grey-3" text-color="grey-8">{{ materia.gestion }}</q-chip>
             </div>
@@ -88,15 +142,22 @@
         <div class="grupos-grid">
           <div v-for="(grupo, idx) in materia.grupos" :key="idx" class="grupo-card">
             <div class="grupo-header">
-              <div class="grupo-badge" :class="grupo.tipo_clase === 'Teorico' ? 'teorico' : 'practico'">
+              <div
+                class="grupo-badge"
+                :class="grupo.tipo_clase === 'Teorico' ? 'teorico' : 'practico'"
+              >
                 <span class="grupo-numero">{{ grupo.grupo }}</span>
               </div>
               <div class="grupo-info">
                 <span class="grupo-title">Grupo {{ grupo.grupo }} - {{ grupo.tipo_clase }}</span>
                 <span class="grupo-dia">{{ grupo.dia }}</span>
               </div>
-              <q-chip :color="grupo.tipo_clase === 'Teorico' ? 'blue-2' : 'orange-2'"
-                :text-color="grupo.tipo_clase === 'Teorico' ? 'blue-9' : 'orange-9'" size="xs" dense>
+              <q-chip
+                :color="grupo.tipo_clase === 'Teorico' ? 'blue-2' : 'orange-2'"
+                :text-color="grupo.tipo_clase === 'Teorico' ? 'blue-9' : 'orange-9'"
+                size="xs"
+                dense
+              >
                 {{ grupo.tipo_clase }}
               </q-chip>
             </div>
@@ -120,7 +181,9 @@
               </div>
               <div class="info-row">
                 <q-icon name="event_seat" size="16px" color="blue" />
-                <span>Capacidad: {{ grupo.capacidad }} | Pupitres: {{ grupo.pupitres || '-' }}</span>
+                <span
+                  >Capacidad: {{ grupo.capacidad }} | Pupitres: {{ grupo.pupitres || '-' }}</span
+                >
               </div>
             </div>
           </div>
@@ -158,7 +221,7 @@ const filtros = ref({
   sede: null, // ID interno de sede
   carrera: null, // ID interno de carrera
   gestion: '1-2026',
-  semestre: null
+  semestre: null,
 })
 
 // Opciones de filtros - Sedes dinámicas del backend
@@ -167,22 +230,22 @@ const sedesOptions = computed(() => sedesStore.getSedesOptions())
 // Opciones de carreras - Filtradas por sede seleccionada (igual que AsignaturasPage)
 const carrerasOptions = computed(() => {
   if (filtros.value.sede) {
-    return carrerasStore.getCarrerasBySede(filtros.value.sede).map(c => ({
+    return carrerasStore.getCarrerasBySede(filtros.value.sede).map((c) => ({
       label: c.nombre,
       value: c.id,
-      codigo: c.codigo
+      codigo: c.codigo,
     }))
   }
   // Si no hay sede seleccionada, mostrar todas con sede entre paréntesis
   return carrerasStore.carreras
-    .filter(c => c.activo)
-    .map(c => {
+    .filter((c) => c.activo)
+    .map((c) => {
       const sede = sedesStore.getSedeById(c.sede_id)
       return {
         label: `${c.nombre} (${sede?.nombre || 'Sede ?'})`,
         value: c.id,
         codigo: c.codigo,
-        sede_id: c.sede_id
+        sede_id: c.sede_id,
       }
     })
 })
@@ -191,7 +254,7 @@ const gestionesOptions = [
   { label: '1-2026', value: '1-2026' },
   { label: '2-2025', value: '2-2025' },
   { label: '1-2025', value: '1-2025' },
-  { label: '2-2024', value: '2-2024' }
+  { label: '2-2024', value: '2-2024' },
 ]
 
 const semestresOptions = [
@@ -205,22 +268,24 @@ const semestresOptions = [
   { label: '7° Semestre', value: 7 },
   { label: '8° Semestre', value: 8 },
   { label: '9° Semestre', value: 9 },
-  { label: '10° Semestre', value: 10 }
+  { label: '10° Semestre', value: 10 },
 ]
 
 // Materias filtradas por semestre (del frontend)
 const materiasFiltradas = computed(() => {
   const data = gruposStore.materias || []
   if (!filtros.value.semestre) return data
-  return data.filter(m => m.semestre === filtros.value.semestre)
+  return data.filter((m) => m.semestre === filtros.value.semestre)
 })
 
 // Computed: Stats desde datos locales
 const totalDocentes = computed(() => {
   const docentes = new Set()
-  materiasFiltradas.value.forEach(m => m.grupos?.forEach(g => {
-    if (g.docente && g.docente !== 'Sin Asignar') docentes.add(g.docente)
-  }))
+  materiasFiltradas.value.forEach((m) =>
+    m.grupos?.forEach((g) => {
+      if (g.docente && g.docente !== 'Sin Asignar') docentes.add(g.docente)
+    }),
+  )
   return docentes.size
 })
 
@@ -231,7 +296,7 @@ const carreraNombre = computed(() => {
 
 // Stats
 const totalGrupos = computed(() =>
-  materiasFiltradas.value.reduce((sum, m) => sum + (m.grupos?.length || 0), 0)
+  materiasFiltradas.value.reduce((sum, m) => sum + (m.grupos?.length || 0), 0),
 )
 
 // Methods
@@ -242,7 +307,7 @@ async function fetchData() {
   await gruposStore.fetchGrupos({
     gestion: filtros.value.gestion,
     carrera_id: filtros.value.carrera,
-    sede_id: filtros.value.sede
+    sede_id: filtros.value.sede,
   })
 }
 
@@ -270,27 +335,31 @@ async function refrescarDatos() {
   await gruposStore.fetchGrupos({
     gestion: filtros.value.gestion,
     carrera_id: filtros.value.carrera,
-    sede_id: filtros.value.sede
+    sede_id: filtros.value.sede,
   })
-  $q.notify({ type: 'positive', message: 'Datos actualizados desde base de datos local', icon: 'check' })
+  $q.notify({
+    type: 'positive',
+    message: 'Datos actualizados desde base de datos local',
+    icon: 'check',
+  })
 }
 
 // Watch semestre filter (client-side only)
-watch(() => filtros.value.semestre, () => {
-  // No API call needed, filtering is client-side
-})
+watch(
+  () => filtros.value.semestre,
+  () => {
+    // No API call needed, filtering is client-side
+  },
+)
 
 // Lifecycle
 onMounted(async () => {
   // Cargar sedes y carreras del backend
-  await Promise.all([
-    sedesStore.fetchSedes(),
-    carrerasStore.fetchCarreras()
-  ])
+  await Promise.all([sedesStore.fetchSedes(), carrerasStore.fetchCarreras()])
 
   // Seleccionar Cochabamba por defecto
   if (sedesStore.sedes.length > 0) {
-    const cochabamba = sedesStore.sedes.find(s => s.codigo === 'CBA')
+    const cochabamba = sedesStore.sedes.find((s) => s.codigo === 'CBA')
     filtros.value.sede = cochabamba?.id || sedesStore.sedes[0].id
   }
 
@@ -429,7 +498,9 @@ onMounted(async () => {
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 16px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .grupo-card:hover {

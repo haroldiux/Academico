@@ -7,13 +7,20 @@
           <q-icon name="people" size="36px" color="primary" class="q-mr-sm" />
           <span class="text-gradient">Gestión de Usuarios</span>
         </h4>
-        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
+        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary)">
           Administra los usuarios del sistema académico
         </p>
       </div>
       <div class="col-auto">
-        <q-btn unelevated color="primary" icon="person_add" label="Nuevo Usuario" class="btn-primary-gradient"
-          @click="abrirDialogNuevo" no-caps />
+        <q-btn
+          unelevated
+          color="primary"
+          icon="person_add"
+          label="Nuevo Usuario"
+          class="btn-primary-gradient"
+          @click="abrirDialogNuevo"
+          no-caps
+        />
       </div>
     </div>
 
@@ -63,31 +70,60 @@
       <q-card-section>
         <div class="row q-col-gutter-md items-end">
           <div class="col-12 col-md-4">
-            <q-input v-model="filtros.busqueda" outlined dense placeholder="Buscar por nombre, email..." clearable>
+            <q-input
+              v-model="filtros.busqueda"
+              outlined
+              dense
+              placeholder="Buscar por nombre, email..."
+              clearable
+            >
               <template v-slot:prepend>
                 <q-icon name="search" color="primary" />
               </template>
             </q-input>
           </div>
           <div class="col-12 col-md-3">
-            <q-select v-model="filtros.rol" outlined dense :options="opcionesRoles" label="Filtrar por Rol" emit-value
-              map-options clearable>
+            <q-select
+              v-model="filtros.rol"
+              outlined
+              dense
+              :options="opcionesRoles"
+              label="Filtrar por Rol"
+              emit-value
+              map-options
+              clearable
+            >
               <template v-slot:prepend>
                 <q-icon name="admin_panel_settings" color="primary" />
               </template>
             </q-select>
           </div>
           <div class="col-12 col-md-3">
-            <q-select v-model="filtros.estado" outlined dense :options="opcionesEstado" label="Estado" emit-value
-              map-options clearable>
+            <q-select
+              v-model="filtros.estado"
+              outlined
+              dense
+              :options="opcionesEstado"
+              label="Estado"
+              emit-value
+              map-options
+              clearable
+            >
               <template v-slot:prepend>
                 <q-icon name="toggle_on" color="primary" />
               </template>
             </q-select>
           </div>
           <div class="col-12 col-md-2">
-            <q-btn flat color="primary" icon="filter_alt_off" label="Limpiar" @click="limpiarFiltros" class="full-width"
-              no-caps />
+            <q-btn
+              flat
+              color="primary"
+              icon="filter_alt_off"
+              label="Limpiar"
+              @click="limpiarFiltros"
+              class="full-width"
+              no-caps
+            />
           </div>
         </div>
       </q-card-section>
@@ -95,20 +131,32 @@
 
     <!-- Users Table -->
     <q-card class="card-main animate-in" style="animation-delay: 0.35s">
-      <q-table :rows="usuariosFiltrados" :columns="columnas" row-key="id" :pagination="paginacion" flat
-        class="table-main" :loading="usuariosStore.loading" :rows-per-page-options="[5, 10, 20, 50]">
+      <q-table
+        :rows="usuariosFiltrados"
+        :columns="columnas"
+        row-key="id"
+        :pagination="paginacion"
+        flat
+        class="table-main"
+        :loading="usuariosStore.loading"
+        :rows-per-page-options="[5, 10, 20, 50]"
+      >
         <!-- Avatar + Name Column -->
         <template v-slot:body-cell-nombre="props">
           <q-td :props="props">
             <div class="row items-center no-wrap">
-              <q-avatar size="40px" :style="{ background: getColorRol(props.row.rolId) }" text-color="white">
+              <q-avatar
+                size="40px"
+                :style="{ background: getColorRol(props.row.rolId) }"
+                text-color="white"
+              >
                 <span class="text-weight-bold">{{ getInitials(props.row) }}</span>
               </q-avatar>
               <div class="q-ml-md">
                 <div class="text-weight-medium text-body2">
                   {{ props.row.nombre }} {{ props.row.apellido }}
                 </div>
-                <div class="text-caption" style="color: var(--text-secondary);">
+                <div class="text-caption" style="color: var(--text-secondary)">
                   CI: {{ props.row.ci }}
                 </div>
               </div>
@@ -121,7 +169,9 @@
           <q-td :props="props">
             <div class="column">
               <span class="text-body2">{{ props.row.email }}</span>
-              <span class="text-caption" style="color: var(--text-secondary);">{{ props.row.telefono }}</span>
+              <span class="text-caption" style="color: var(--text-secondary)">{{
+                props.row.telefono
+              }}</span>
             </div>
           </q-td>
         </template>
@@ -129,8 +179,15 @@
         <!-- Rol Column -->
         <template v-slot:body-cell-rol="props">
           <q-td :props="props">
-            <q-chip :style="{ background: getColorRolBg(props.row.rolId), color: getColorRolText(props.row.rolId) }"
-              dense class="text-weight-bold" size="sm">
+            <q-chip
+              :style="{
+                background: getColorRolBg(props.row.rolId),
+                color: getColorRolText(props.row.rolId),
+              }"
+              dense
+              class="text-weight-bold"
+              size="sm"
+            >
               <q-icon :name="getIconoRol(props.row.rolId)" size="16px" class="q-mr-xs" />
               {{ props.row.rolNombre }}
             </q-chip>
@@ -143,17 +200,25 @@
             <span v-if="props.row.carrera" class="text-body2">
               {{ props.row.carrera }}
             </span>
-            <span v-else class="text-caption" style="color: var(--text-secondary);">N/A</span>
+            <span v-else class="text-caption" style="color: var(--text-secondary)">N/A</span>
           </q-td>
         </template>
 
         <!-- Estado Column -->
         <template v-slot:body-cell-estado="props">
           <q-td :props="props">
-            <q-chip :color="props.row.estado === 'activo' ? 'green-2' : 'grey-4'"
-              :text-color="props.row.estado === 'activo' ? 'green-9' : 'grey-7'" dense class="text-weight-bold"
-              size="sm">
-              <q-icon :name="props.row.estado === 'activo' ? 'check_circle' : 'cancel'" size="16px" class="q-mr-xs" />
+            <q-chip
+              :color="props.row.estado === 'activo' ? 'green-2' : 'grey-4'"
+              :text-color="props.row.estado === 'activo' ? 'green-9' : 'grey-7'"
+              dense
+              class="text-weight-bold"
+              size="sm"
+            >
+              <q-icon
+                :name="props.row.estado === 'activo' ? 'check_circle' : 'cancel'"
+                size="16px"
+                class="q-mr-xs"
+              />
               {{ props.row.estado === 'activo' ? 'Activo' : 'Inactivo' }}
             </q-chip>
           </q-td>
@@ -162,7 +227,7 @@
         <!-- Ultimo Acceso Column -->
         <template v-slot:body-cell-ultimoAcceso="props">
           <q-td :props="props">
-            <span class="text-caption" style="color: var(--text-secondary);">
+            <span class="text-caption" style="color: var(--text-secondary)">
               {{ formatFecha(props.row.ultimoAcceso) }}
             </span>
           </q-td>
@@ -171,20 +236,59 @@
         <!-- Actions Column -->
         <template v-slot:body-cell-acciones="props">
           <q-td :props="props">
-            <q-btn flat round dense icon="visibility" size="sm" color="primary" @click="verUsuario(props.row)">
+            <q-btn
+              flat
+              round
+              dense
+              icon="visibility"
+              size="sm"
+              color="primary"
+              @click="verUsuario(props.row)"
+            >
               <q-tooltip>Ver detalles</q-tooltip>
             </q-btn>
-            <q-btn flat round dense icon="edit" size="sm" color="orange" @click="editarUsuario(props.row)">
+            <q-btn
+              flat
+              round
+              dense
+              icon="edit"
+              size="sm"
+              color="orange"
+              @click="editarUsuario(props.row)"
+            >
               <q-tooltip>Editar</q-tooltip>
             </q-btn>
-            <q-btn flat round dense icon="vpn_key" size="sm" color="deep-purple" @click="confirmarResetPassword(props.row)">
+            <q-btn
+              flat
+              round
+              dense
+              icon="vpn_key"
+              size="sm"
+              color="deep-purple"
+              @click="confirmarResetPassword(props.row)"
+            >
               <q-tooltip>Restablecer Contraseña (CI)</q-tooltip>
             </q-btn>
-            <q-btn flat round dense :icon="props.row.estado === 'activo' ? 'person_off' : 'person'" size="sm"
-              :color="props.row.estado === 'activo' ? 'orange' : 'green'" @click="toggleEstado(props.row)">
+            <q-btn
+              flat
+              round
+              dense
+              :icon="props.row.estado === 'activo' ? 'person_off' : 'person'"
+              size="sm"
+              :color="props.row.estado === 'activo' ? 'orange' : 'green'"
+              @click="toggleEstado(props.row)"
+            >
               <q-tooltip>{{ props.row.estado === 'activo' ? 'Desactivar' : 'Activar' }}</q-tooltip>
             </q-btn>
-            <q-btn flat round dense icon="delete" size="sm" color="red" @click="confirmarEliminar(props.row)">
+            <q-btn
+              flat
+              round
+              dense
+              icon="delete"
+              size="sm"
+              color="red"
+              @click="confirmarEliminar(props.row)"
+            >
               <q-tooltip>Eliminar</q-tooltip>
             </q-btn>
           </q-td>
@@ -192,7 +296,7 @@
 
         <!-- Empty state -->
         <template v-slot:no-data>
-          <div class="full-width column items-center q-pa-xl" style="color: var(--text-secondary);">
+          <div class="full-width column items-center q-pa-xl" style="color: var(--text-secondary)">
             <q-icon name="search_off" size="64px" class="q-mb-md" />
             <span class="text-h6">No se encontraron usuarios</span>
             <span class="text-caption">Intenta ajustar los filtros de búsqueda</span>
@@ -203,7 +307,7 @@
 
     <!-- Dialog Nuevo/Editar Usuario -->
     <q-dialog v-model="showDialogUsuario" persistent>
-      <q-card style="width: 100%; max-width: 700px; border-radius: 20px; overflow: hidden;">
+      <q-card style="width: 100%; max-width: 700px; border-radius: 20px; overflow: hidden">
         <div class="dialog-header row items-center justify-between q-py-md q-px-lg">
           <div class="text-h6 text-white text-weight-bold row items-center">
             <q-icon :name="editando ? 'edit' : 'person_add'" size="28px" class="q-mr-sm" />
@@ -214,43 +318,67 @@
 
         <q-separator />
 
-        <q-card-section class="q-pa-lg scroll" style="max-height: 70vh;">
+        <q-card-section class="q-pa-lg scroll" style="max-height: 70vh">
           <q-form @submit.prevent="guardarUsuario" class="q-gutter-y-lg">
-
             <!-- Sección: Información Personal -->
             <div>
-              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase"
-                style="letter-spacing: 0.5px;">
+              <div
+                class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase"
+                style="letter-spacing: 0.5px"
+              >
                 <q-icon name="badge" class="q-mr-xs" /> Información Personal
               </div>
               <div class="row q-col-gutter-md">
                 <div class="col-12 col-md-6">
-                  <q-input v-model="formUsuario.nombre" label="Nombre" outlined dense
-                    :rules="[val => !!val || 'El nombre es requerido']" class="input-rounded">
+                  <q-input
+                    v-model="formUsuario.nombre"
+                    label="Nombre"
+                    outlined
+                    dense
+                    :rules="[(val) => !!val || 'El nombre es requerido']"
+                    class="input-rounded"
+                  >
                     <template v-slot:prepend>
                       <q-icon name="person_outline" color="grey-6" />
                     </template>
                   </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                  <q-input v-model="formUsuario.apellido" label="Apellido" outlined dense
-                    :rules="[val => !!val || 'El apellido es requerido']" class="input-rounded">
+                  <q-input
+                    v-model="formUsuario.apellido"
+                    label="Apellido"
+                    outlined
+                    dense
+                    :rules="[(val) => !!val || 'El apellido es requerido']"
+                    class="input-rounded"
+                  >
                     <template v-slot:prepend>
                       <q-icon name="person_outline" color="grey-6" />
                     </template>
                   </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                  <q-input v-model="formUsuario.ci" label="Cédula de Identidad" outlined dense
-                    :rules="[val => !!val || 'El CI es requerido']" class="input-rounded">
+                  <q-input
+                    v-model="formUsuario.ci"
+                    label="Cédula de Identidad"
+                    outlined
+                    dense
+                    :rules="[(val) => !!val || 'El CI es requerido']"
+                    class="input-rounded"
+                  >
                     <template v-slot:prepend>
                       <q-icon name="subtitles" color="grey-6" />
                     </template>
                   </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                  <q-input v-model="formUsuario.telefono" label="Teléfono / Celular" outlined dense
-                    class="input-rounded">
+                  <q-input
+                    v-model="formUsuario.telefono"
+                    label="Teléfono / Celular"
+                    outlined
+                    dense
+                    class="input-rounded"
+                  >
                     <template v-slot:prepend>
                       <q-icon name="phone_iphone" color="grey-6" />
                     </template>
@@ -261,15 +389,24 @@
 
             <!-- Sección: Cuenta y Contacto -->
             <div>
-              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase"
-                style="letter-spacing: 0.5px;">
+              <div
+                class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase"
+                style="letter-spacing: 0.5px"
+              >
                 <q-icon name="contact_mail" class="q-mr-xs" /> Cuenta
               </div>
-              <q-input v-model="formUsuario.email" label="Correo Electrónico Institucional" outlined dense type="email"
+              <q-input
+                v-model="formUsuario.email"
+                label="Correo Electrónico Institucional"
+                outlined
+                dense
+                type="email"
                 :rules="[
-                  val => !!val || 'El email es requerido',
-                  val => /.+@.+\..+/.test(val) || 'Email inválido'
-                ]" class="input-rounded">
+                  (val) => !!val || 'El email es requerido',
+                  (val) => /.+@.+\..+/.test(val) || 'Email inválido',
+                ]"
+                class="input-rounded"
+              >
                 <template v-slot:prepend>
                   <q-icon name="email" color="grey-6" />
                 </template>
@@ -278,28 +415,43 @@
 
             <!-- Sección: Roles y Permisos -->
             <div class="bg-grey-1 q-pa-md rounded-borders">
-              <div class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase"
-                style="letter-spacing: 0.5px;">
+              <div
+                class="text-subtitle2 text-primary text-weight-bold q-mb-sm text-uppercase"
+                style="letter-spacing: 0.5px"
+              >
                 <q-icon name="admin_panel_settings" class="q-mr-xs" /> Asignación de Rol
               </div>
 
               <div class="row q-col-gutter-md">
                 <!-- Rol Selector -->
                 <div class="col-12">
-                  <q-select v-model="formUsuario.rolId" label="Seleccionar Rol" outlined dense
-                    :options="opcionesRolesForm" emit-value map-options :rules="[val => !!val || 'Seleccione un rol']"
-                    @update:model-value="onRolChange" class="input-rounded bg-white">
+                  <q-select
+                    v-model="formUsuario.rolId"
+                    label="Seleccionar Rol"
+                    outlined
+                    dense
+                    :options="opcionesRolesForm"
+                    emit-value
+                    map-options
+                    :rules="[(val) => !!val || 'Seleccione un rol']"
+                    @update:model-value="onRolChange"
+                    class="input-rounded bg-white"
+                  >
                     <template v-slot:prepend>
                       <q-icon name="groups" color="primary" />
                     </template>
                     <template v-slot:option="scope">
                       <q-item v-bind="scope.itemProps">
                         <q-item-section avatar>
-                          <q-icon :name="getIconoRol(scope.opt.value)"
-                            :style="{ color: getColorRol(scope.opt.value) }" />
+                          <q-icon
+                            :name="getIconoRol(scope.opt.value)"
+                            :style="{ color: getColorRol(scope.opt.value) }"
+                          />
                         </q-item-section>
                         <q-item-section>
-                          <q-item-label class="text-weight-medium">{{ scope.opt.label }}</q-item-label>
+                          <q-item-label class="text-weight-medium">{{
+                            scope.opt.label
+                          }}</q-item-label>
                         </q-item-section>
                       </q-item>
                     </template>
@@ -308,9 +460,18 @@
 
                 <!-- Sede Selector (Condicional o siempre visible) -->
                 <div class="col-12 col-md-6 animate-fade" v-if="requiereSede">
-                  <q-select v-model="formUsuario.sedeId" label="Sede Académica" outlined dense :options="opcionesSedes"
-                    emit-value map-options clearable :rules="[val => !requiereSede || !!val || 'La Sede es requerida']"
-                    class="input-rounded bg-white">
+                  <q-select
+                    v-model="formUsuario.sedeId"
+                    label="Sede Académica"
+                    outlined
+                    dense
+                    :options="opcionesSedes"
+                    emit-value
+                    map-options
+                    clearable
+                    :rules="[(val) => !requiereSede || !!val || 'La Sede es requerida']"
+                    class="input-rounded bg-white"
+                  >
                     <template v-slot:prepend>
                       <q-icon name="apartment" color="indigo" />
                     </template>
@@ -319,11 +480,28 @@
 
                 <!-- Carrera Selector (Condicional) -->
                 <div class="col-12 col-md-6 animate-fade" v-if="requiereCarrera">
-                  <q-select v-model="formUsuario.carrera" label="Carrera(s) Asignada(s)" outlined dense
-                    :options="opcionesCarrerasFiltradas" emit-value map-options clearable multiple use-chips use-input
-                    input-debounce="0" @filter="filtrarCarreras"
-                    :rules="[val => !requiereCarrera || (val && val.length > 0) || 'Seleccione al menos una carrera']"
-                    class="input-rounded bg-white">
+                  <q-select
+                    v-model="formUsuario.carrera"
+                    label="Carrera(s) Asignada(s)"
+                    outlined
+                    dense
+                    :options="opcionesCarrerasFiltradas"
+                    emit-value
+                    map-options
+                    clearable
+                    multiple
+                    use-chips
+                    use-input
+                    input-debounce="0"
+                    @filter="filtrarCarreras"
+                    :rules="[
+                      (val) =>
+                        !requiereCarrera ||
+                        (val && val.length > 0) ||
+                        'Seleccione al menos una carrera',
+                    ]"
+                    class="input-rounded bg-white"
+                  >
                     <template v-slot:prepend>
                       <q-icon name="school" color="indigo" />
                     </template>
@@ -333,7 +511,10 @@
                           <q-item-label>{{ opt.label }}</q-item-label>
                         </q-item-section>
                         <q-item-section side>
-                          <q-checkbox :model-value="selected" @update:model-value="toggleOption(opt)" />
+                          <q-checkbox
+                            :model-value="selected"
+                            @update:model-value="toggleOption(opt)"
+                          />
                         </q-item-section>
                       </q-item>
                     </template>
@@ -350,35 +531,60 @@
             </div>
 
             <!-- Toggle Estado -->
-            <div class="row items-center justify-between q-mt-md q-pa-sm rounded-borders border-dashed">
+            <div
+              class="row items-center justify-between q-mt-md q-pa-sm rounded-borders border-dashed"
+            >
               <div class="row items-center">
-                <q-icon :name="formUsuario.estado === 'activo' ? 'check_circle' : 'cancel'"
-                  :color="formUsuario.estado === 'activo' ? 'green' : 'grey'" size="24px" class="q-mr-sm" />
+                <q-icon
+                  :name="formUsuario.estado === 'activo' ? 'check_circle' : 'cancel'"
+                  :color="formUsuario.estado === 'activo' ? 'green' : 'grey'"
+                  size="24px"
+                  class="q-mr-sm"
+                />
                 <div class="text-body2">
                   <div class="text-weight-bold">Estado del Usuario</div>
-                  <div class="text-caption text-grey">Determina si el usuario puede acceder al sistema</div>
+                  <div class="text-caption text-grey">
+                    Determina si el usuario puede acceder al sistema
+                  </div>
                 </div>
               </div>
-              <q-toggle v-model="formUsuario.estado" :color="formUsuario.estado === 'activo' ? 'green' : 'grey'"
-                true-value="activo" false-value="inactivo" />
+              <q-toggle
+                v-model="formUsuario.estado"
+                :color="formUsuario.estado === 'activo' ? 'green' : 'grey'"
+                true-value="activo"
+                false-value="inactivo"
+              />
             </div>
-
           </q-form>
         </q-card-section>
 
         <q-separator />
 
         <div class="dialog-actions q-pa-md row justify-end items-center bg-grey-1">
-          <q-btn flat label="Cancelar" color="grey-7" class="q-mr-sm" @click="cerrarDialog" no-caps />
-          <q-btn unelevated :label="editando ? 'Guardar Cambios' : 'Crear Usuario'" color="primary" icon="save"
-            @click="guardarUsuario" no-caps class="q-px-lg btn-rounded" />
+          <q-btn
+            flat
+            label="Cancelar"
+            color="grey-7"
+            class="q-mr-sm"
+            @click="cerrarDialog"
+            no-caps
+          />
+          <q-btn
+            unelevated
+            :label="editando ? 'Guardar Cambios' : 'Crear Usuario'"
+            color="primary"
+            icon="save"
+            @click="guardarUsuario"
+            no-caps
+            class="q-px-lg btn-rounded"
+          />
         </div>
       </q-card>
     </q-dialog>
 
     <!-- Dialog Ver Usuario -->
     <q-dialog v-model="showDialogVer">
-      <q-card style="width: 550px; max-width: 95vw; border-radius: 16px;">
+      <q-card style="width: 550px; max-width: 95vw; border-radius: 16px">
         <div class="dialog-header">
           <div class="dialog-header-title">
             <q-avatar size="40px" color="white" text-color="primary">
@@ -392,14 +598,20 @@
           <div class="q-gutter-md">
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">CÉDULA DE IDENTIDAD
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  CÉDULA DE IDENTIDAD
                 </div>
                 <div class="text-body1 text-weight-medium">{{ usuarioSeleccionado?.ci }}</div>
               </div>
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">ESTADO</div>
-                <q-chip :color="usuarioSeleccionado?.estado === 'activo' ? 'green-2' : 'grey-2'"
-                  :text-color="usuarioSeleccionado?.estado === 'activo' ? 'green-9' : 'grey-9'" dense>
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  ESTADO
+                </div>
+                <q-chip
+                  :color="usuarioSeleccionado?.estado === 'activo' ? 'green-2' : 'grey-2'"
+                  :text-color="usuarioSeleccionado?.estado === 'activo' ? 'green-9' : 'grey-9'"
+                  dense
+                >
                   {{ usuarioSeleccionado?.estado === 'activo' ? 'Activo' : 'Inactivo' }}
                 </q-chip>
               </div>
@@ -408,12 +620,16 @@
             <q-separator />
 
             <div>
-              <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">EMAIL</div>
+              <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                EMAIL
+              </div>
               <div class="text-body1">{{ usuarioSeleccionado?.email }}</div>
             </div>
 
             <div>
-              <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">TELÉFONO</div>
+              <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                TELÉFONO
+              </div>
               <div class="text-body1">{{ usuarioSeleccionado?.telefono }}</div>
             </div>
 
@@ -421,15 +637,23 @@
 
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">ROL</div>
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  ROL
+                </div>
                 <q-chip
-                  :style="{ background: getColorRolBg(usuarioSeleccionado?.rolId), color: getColorRolText(usuarioSeleccionado?.rolId) }"
-                  dense>
+                  :style="{
+                    background: getColorRolBg(usuarioSeleccionado?.rolId),
+                    color: getColorRolText(usuarioSeleccionado?.rolId),
+                  }"
+                  dense
+                >
                   {{ usuarioSeleccionado?.rolNombre }}
                 </q-chip>
               </div>
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">CARRERA</div>
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  CARRERA
+                </div>
                 <div class="text-body1">{{ usuarioSeleccionado?.carrera || 'N/A' }}</div>
               </div>
             </div>
@@ -438,11 +662,15 @@
 
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">ÚLTIMO ACCESO</div>
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  ÚLTIMO ACCESO
+                </div>
                 <div class="text-body2">{{ formatFecha(usuarioSeleccionado?.ultimoAcceso) }}</div>
               </div>
               <div class="col-6">
-                <div class="text-caption text-weight-bold" style="color: var(--text-secondary);">FECHA REGISTRO</div>
+                <div class="text-caption text-weight-bold" style="color: var(--text-secondary)">
+                  FECHA REGISTRO
+                </div>
                 <div class="text-body2">{{ usuarioSeleccionado?.fechaCreacion }}</div>
               </div>
             </div>
@@ -451,22 +679,30 @@
 
         <div class="dialog-actions">
           <q-btn flat label="Cerrar" color="primary" v-close-popup no-caps />
-          <q-btn unelevated label="Editar" color="orange" icon="edit" @click="editarDesdeVer" no-caps />
+          <q-btn
+            unelevated
+            label="Editar"
+            color="orange"
+            icon="edit"
+            @click="editarDesdeVer"
+            no-caps
+          />
         </div>
       </q-card>
     </q-dialog>
 
     <!-- Dialog Confirmar Eliminar -->
     <q-dialog v-model="showDialogEliminar">
-      <q-card style="width: 400px; border-radius: 16px;">
+      <q-card style="width: 400px; border-radius: 16px">
         <q-card-section class="text-center q-pt-lg">
           <q-avatar icon="warning" color="red" text-color="white" size="60px" class="q-mb-md" />
           <div class="text-h6 text-weight-bold q-mb-sm">¿Eliminar usuario?</div>
           <p class="text-body1">
             ¿Estás seguro de que deseas eliminar al usuario
-            <strong>{{ usuarioAEliminar?.nombre }} {{ usuarioAEliminar?.apellido }}</strong>?
+            <strong>{{ usuarioAEliminar?.nombre }} {{ usuarioAEliminar?.apellido }}</strong
+            >?
           </p>
-          <p class="text-caption" style="color: var(--text-secondary);">
+          <p class="text-caption" style="color: var(--text-secondary)">
             Esta acción no se puede deshacer.
           </p>
         </q-card-section>
@@ -499,7 +735,7 @@ onMounted(async () => {
     usuariosStore.fetchUsuarios(),
     rolesStore.fetchRoles(),
     sedesStore.fetchSedes(),
-    carrerasStore.fetchCarreras()
+    carrerasStore.fetchCarreras(),
   ])
   // Inicializar opciones filtradas
   opcionesCarrerasFiltradas.value = opcionesCarreras.value
@@ -517,7 +753,7 @@ const usuarioAEliminar = ref(null)
 const filtros = ref({
   busqueda: '',
   rol: null,
-  estado: null
+  estado: null,
 })
 
 // Pagination
@@ -525,7 +761,7 @@ const paginacion = ref({
   sortBy: 'nombre',
   descending: false,
   page: 1,
-  rowsPerPage: 10
+  rowsPerPage: 10,
 })
 
 // Form
@@ -539,7 +775,7 @@ const formUsuarioInicial = {
   rolNombre: '',
   estado: 'activo',
   carrera: [],
-  sedeId: null
+  sedeId: null,
 }
 
 const formUsuario = ref({ ...formUsuarioInicial })
@@ -548,14 +784,17 @@ const opcionesCarrerasFiltradas = ref([])
 // Options
 const opcionesEstado = [
   { label: 'Activo', value: 'activo' },
-  { label: 'Inactivo', value: 'inactivo' }
+  { label: 'Inactivo', value: 'inactivo' },
 ]
 
 // Watchers
-watch(() => formUsuario.value.sedeId, (val) => {
-  // Si cambia de sede, recargar opciones de carrera válidas para esa sede
-  if (val) actualizarOpcionesCarreras()
-})
+watch(
+  () => formUsuario.value.sedeId,
+  (val) => {
+    // Si cambia de sede, recargar opciones de carrera válidas para esa sede
+    if (val) actualizarOpcionesCarreras()
+  },
+)
 
 // Table columns
 const columnas = [
@@ -565,15 +804,21 @@ const columnas = [
   { name: 'carrera', label: 'Carrera(s)', field: 'carrera', align: 'left', sortable: true },
   { name: 'sede', label: 'Sede', field: 'sedeNombre', align: 'left', sortable: true },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
-  { name: 'ultimoAcceso', label: 'Último Acceso', field: 'ultimoAcceso', align: 'left', sortable: true },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
+  {
+    name: 'ultimoAcceso',
+    label: 'Último Acceso',
+    field: 'ultimoAcceso',
+    align: 'left',
+    sortable: true,
+  },
+  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
 ]
 
 // Opciones de Sede desde el store
 const opcionesSedes = computed(() => {
-  return sedesStore.sedes.map(s => ({
+  return sedesStore.sedes.map((s) => ({
     label: s.nombre,
-    value: s.id
+    value: s.id,
   }))
 })
 
@@ -602,24 +847,24 @@ function filtrarCarreras(val, update) {
 
   update(() => {
     const needle = val.toLowerCase()
-    opcionesCarrerasFiltradas.value = opcionesCarreras.value.filter(v =>
-      v.label.toLowerCase().indexOf(needle) > -1
+    opcionesCarrerasFiltradas.value = opcionesCarreras.value.filter(
+      (v) => v.label.toLowerCase().indexOf(needle) > -1,
     )
   })
 }
 
 // Computed
 const opcionesRoles = computed(() => {
-  return rolesStore.rolesActivos.map(rol => ({
+  return rolesStore.rolesActivos.map((rol) => ({
     label: rol.nombre,
-    value: rol.id
+    value: rol.id,
   }))
 })
 
 const opcionesRolesForm = computed(() => {
-  return rolesStore.roles.map(rol => ({
+  return rolesStore.roles.map((rol) => ({
     label: rol.nombre,
-    value: rol.id
+    value: rol.id,
   }))
 })
 
@@ -641,20 +886,21 @@ const usuariosFiltrados = computed(() => {
 
   if (filtros.value.busqueda) {
     const termino = filtros.value.busqueda.toLowerCase()
-    resultado = resultado.filter(u =>
-      u.nombre.toLowerCase().includes(termino) ||
-      u.apellido.toLowerCase().includes(termino) ||
-      u.email.toLowerCase().includes(termino) ||
-      u.ci.includes(termino)
+    resultado = resultado.filter(
+      (u) =>
+        u.nombre.toLowerCase().includes(termino) ||
+        u.apellido.toLowerCase().includes(termino) ||
+        u.email.toLowerCase().includes(termino) ||
+        u.ci.includes(termino),
     )
   }
 
   if (filtros.value.rol) {
-    resultado = resultado.filter(u => u.rolId === filtros.value.rol)
+    resultado = resultado.filter((u) => u.rolId === filtros.value.rol)
   }
 
   if (filtros.value.estado) {
-    resultado = resultado.filter(u => u.estado === filtros.value.estado)
+    resultado = resultado.filter((u) => u.estado === filtros.value.estado)
   }
 
   return resultado
@@ -693,7 +939,7 @@ function formatFecha(fecha) {
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
@@ -735,7 +981,7 @@ function editarUsuario(usuario) {
     rolNombre: usuario.rolNombre,
     estado: usuario.estado,
     carrera: carrerasVal,
-    sedeId: usuario.sedeId
+    sedeId: usuario.sedeId,
   }
   showDialogUsuario.value = true
   actualizarOpcionesCarreras()
@@ -766,18 +1012,30 @@ function onRolChange(rolId) {
 }
 
 function guardarUsuario() {
-  if (!formUsuario.value.nombre || !formUsuario.value.apellido || !formUsuario.value.email || !formUsuario.value.rolId) {
+  if (
+    !formUsuario.value.nombre ||
+    !formUsuario.value.apellido ||
+    !formUsuario.value.email ||
+    !formUsuario.value.rolId
+  ) {
     $q.notify({
       type: 'warning',
       message: 'Por favor completa los campos requeridos',
       icon: 'warning',
-      position: 'top'
+      position: 'top',
     })
     return
   }
 
-  if (requiereCarrera.value && (!formUsuario.value.carrera || formUsuario.value.carrera.length === 0)) {
-    $q.notify({ type: 'warning', message: 'Seleccione al menos una carrera para este rol', icon: 'warning' })
+  if (
+    requiereCarrera.value &&
+    (!formUsuario.value.carrera || formUsuario.value.carrera.length === 0)
+  ) {
+    $q.notify({
+      type: 'warning',
+      message: 'Seleccione al menos una carrera para este rol',
+      icon: 'warning',
+    })
     return
   }
 
@@ -796,7 +1054,7 @@ function guardarUsuario() {
       type: 'positive',
       message: 'Usuario actualizado exitosamente',
       icon: 'check_circle',
-      position: 'top'
+      position: 'top',
     })
   } else {
     usuariosStore.addUsuario(payload)
@@ -804,7 +1062,7 @@ function guardarUsuario() {
       type: 'positive',
       message: 'Usuario creado exitosamente',
       icon: 'check_circle',
-      position: 'top'
+      position: 'top',
     })
   }
 
@@ -820,13 +1078,13 @@ function confirmarResetPassword(usuario) {
     ok: {
       label: 'Sí, Restablecer',
       color: 'deep-purple',
-      flat: true
+      flat: true,
     },
     cancel: {
       label: 'Cancelar',
       color: 'grey',
-      flat: true
-    }
+      flat: true,
+    },
   }).onOk(async () => {
     try {
       $q.loading.show({ message: 'Restableciendo...' })
@@ -836,7 +1094,7 @@ function confirmarResetPassword(usuario) {
         type: 'positive',
         message: 'Contraseña restablecida correctamente al CI',
         icon: 'vpn_key',
-        position: 'top'
+        position: 'top',
       })
     } catch (error) {
       console.error(error)
@@ -844,7 +1102,7 @@ function confirmarResetPassword(usuario) {
         type: 'negative',
         message: 'Error al restablecer contraseña',
         icon: 'error',
-        position: 'top'
+        position: 'top',
       })
     } finally {
       $q.loading.hide()
@@ -858,7 +1116,7 @@ function toggleEstado(usuario) {
     type: 'info',
     message: `Usuario ${usuario.estado === 'activo' ? 'desactivado' : 'activado'}`,
     icon: usuario.estado === 'activo' ? 'person_off' : 'person',
-    position: 'top'
+    position: 'top',
   })
 }
 
@@ -874,7 +1132,7 @@ function eliminarUsuario() {
       type: 'positive',
       message: 'Usuario eliminado exitosamente',
       icon: 'delete',
-      position: 'top'
+      position: 'top',
     })
   }
   showDialogEliminar.value = false

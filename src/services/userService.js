@@ -30,5 +30,5 @@ export default {
 
   resetPassword(id) {
     return api.post(`/usuarios/${id}/reset-password`)
-  }
+  },
 }

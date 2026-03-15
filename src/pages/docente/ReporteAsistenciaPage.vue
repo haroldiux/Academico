@@ -27,16 +27,36 @@
           <q-card-section>
             <div class="row q-col-gutter-md items-end">
               <div class="col-12 col-md-5">
-                <q-select v-model="asignaturaSeleccionada" :options="asignaturas" option-value="id"
-                  option-label="nombre" label="Asignatura" outlined dense emit-value map-options class="select-dark">
+                <q-select
+                  v-model="asignaturaSeleccionada"
+                  :options="asignaturas"
+                  option-value="id"
+                  option-label="nombre"
+                  label="Asignatura"
+                  outlined
+                  dense
+                  emit-value
+                  map-options
+                  class="select-dark"
+                >
                   <template v-slot:prepend>
                     <q-icon name="menu_book" color="primary" />
                   </template>
                 </q-select>
               </div>
               <div class="col-12 col-md-3">
-                <q-select v-model="grupoSeleccionado" :options="grupos" option-value="id" option-label="nombre"
-                  label="Grupo" outlined dense emit-value map-options class="select-dark">
+                <q-select
+                  v-model="grupoSeleccionado"
+                  :options="grupos"
+                  option-value="id"
+                  option-label="nombre"
+                  label="Grupo"
+                  outlined
+                  dense
+                  emit-value
+                  map-options
+                  class="select-dark"
+                >
                   <template v-slot:prepend>
                     <q-icon name="groups" color="teal" />
                   </template>
@@ -44,10 +64,22 @@
               </div>
               <div class="col-12 col-md-4">
                 <div class="row q-gutter-sm">
-                  <q-btn unelevated color="primary" icon="search" label="Generar Reporte" no-caps
-                    @click="generarReporte" />
-                  <q-btn outline color="green" icon="picture_as_pdf" label="Exportar PDF" no-caps
-                    @click="exportarPDF" />
+                  <q-btn
+                    unelevated
+                    color="primary"
+                    icon="search"
+                    label="Generar Reporte"
+                    no-caps
+                    @click="generarReporte"
+                  />
+                  <q-btn
+                    outline
+                    color="green"
+                    icon="picture_as_pdf"
+                    label="Exportar PDF"
+                    no-caps
+                    @click="exportarPDF"
+                  />
                 </div>
               </div>
             </div>
@@ -98,18 +130,31 @@
                         <q-avatar size="32px" color="primary" text-color="white">
                           {{ estudiante.iniciales }}
                         </q-avatar>
-                        <span class="estudiante-nombre">{{ estudiante.apellidos }} {{ estudiante.nombres }}</span>
+                        <span class="estudiante-nombre"
+                          >{{ estudiante.apellidos }} {{ estudiante.nombres }}</span
+                        >
                       </div>
                     </td>
-                    <td v-for="clase in clases" :key="clase.id" class="col-clase"
-                      @click="cambiarEstado(estudiante.id, clase.id)">
-                      <span :class="['estado-badge', `estado-${getEstado(estudiante.id, clase.id).toLowerCase()}`]">
+                    <td
+                      v-for="clase in clases"
+                      :key="clase.id"
+                      class="col-clase"
+                      @click="cambiarEstado(estudiante.id, clase.id)"
+                    >
+                      <span
+                        :class="[
+                          'estado-badge',
+                          `estado-${getEstado(estudiante.id, clase.id).toLowerCase()}`,
+                        ]"
+                      >
                         {{ getEstado(estudiante.id, clase.id) }}
                       </span>
                     </td>
                     <td class="col-stats">
-                      <q-badge :color="getPorcentajeColor(calcularPorcentaje(estudiante.id))"
-                        :label="`${calcularPorcentaje(estudiante.id)}%`" />
+                      <q-badge
+                        :color="getPorcentajeColor(calcularPorcentaje(estudiante.id))"
+                        :label="`${calcularPorcentaje(estudiante.id)}%`"
+                      />
                     </td>
                   </tr>
                 </tbody>
@@ -159,15 +204,22 @@
         <div class="row items-center justify-between q-mb-md">
           <div class="text-h6">Mi Seguimiento Semanal de Clases</div>
           <div class="row q-gutter-sm">
-            <q-input v-model="fechaFiltroSemana" label="Semana (Lunes)" type="date" outlined dense bg-color="white"
-              @update:model-value="loadMiCumplimiento" />
+            <q-input
+              v-model="fechaFiltroSemana"
+              label="Semana (Lunes)"
+              type="date"
+              outlined
+              dense
+              bg-color="white"
+              @update:model-value="loadMiCumplimiento"
+            />
           </div>
         </div>
 
         <q-banner class="bg-indigo-1 text-indigo-9 q-mb-lg rounded-borders">
           <template v-slot:avatar><q-icon name="info" /></template>
-          Esta sección muestra el estado de cumplimiento de tus clases según los registros de temas, estrategias y
-          evaluaciones realizados en el <b>Control de Clase</b>.
+          Esta sección muestra el estado de cumplimiento de tus clases según los registros de temas,
+          estrategias y evaluaciones realizados en el <b>Control de Clase</b>.
         </q-banner>
 
         <weekly-report-table :rows="misReportes" :loading="loadingCumplimiento" />
@@ -199,12 +251,12 @@ const grupoSeleccionado = ref(1)
 const asignaturas = ref([
   { id: 1, nombre: 'CÁLCULO I' },
   { id: 2, nombre: 'Ingeniería de Software I' },
-  { id: 3, nombre: 'Base de Datos I' }
+  { id: 3, nombre: 'Base de Datos I' },
 ])
 
 const grupos = ref([
   { id: 1, nombre: 'Grupo 1' },
-  { id: 2, nombre: 'Grupo 2' }
+  { id: 2, nombre: 'Grupo 2' },
 ])
 
 // Mock: Clases del semestre
@@ -223,7 +275,7 @@ const clases = ref([
   { id: 12, numero: 12, fecha: '07/02' },
   { id: 13, numero: 13, fecha: '10/02' },
   { id: 14, numero: 14, fecha: '12/02' },
-  { id: 15, numero: 15, fecha: '14/02' }
+  { id: 15, numero: 15, fecha: '14/02' },
 ])
 
 // Mock: Estudiantes
@@ -235,19 +287,147 @@ const estudiantes = ref([
   { id: 5, nombres: 'EVER', apellidos: 'ROCHA NUÑEZ', iniciales: 'RN' },
   { id: 6, nombres: 'JHON DEYVI', apellidos: 'GUTIERREZ SANTOS', iniciales: 'GS' },
   { id: 7, nombres: 'MARIA FERNANDA', apellidos: 'LOPEZ GARCIA', iniciales: 'LG' },
-  { id: 8, nombres: 'CARLOS ALBERTO', apellidos: 'MARTINEZ PEREZ', iniciales: 'MP' }
+  { id: 8, nombres: 'CARLOS ALBERTO', apellidos: 'MARTINEZ PEREZ', iniciales: 'MP' },
 ])
 
 // Mock: Asistencias (estudianteId -> claseId -> estado)
 const asistencias = ref({
-  1: { 1: 'P', 2: 'P', 3: 'P', 4: 'P', 5: 'P', 6: 'T', 7: 'P', 8: 'P', 9: 'P', 10: 'P', 11: 'P', 12: 'P', 13: 'P', 14: 'P', 15: 'P' },
-  2: { 1: 'P', 2: 'P', 3: 'P', 4: 'P', 5: 'P', 6: 'P', 7: 'P', 8: 'P', 9: 'P', 10: 'P', 11: 'P', 12: 'P', 13: 'P', 14: 'P', 15: 'P' },
-  3: { 1: 'P', 2: 'P', 3: 'T', 4: 'P', 5: 'P', 6: 'P', 7: 'F', 8: 'P', 9: 'P', 10: 'P', 11: 'T', 12: 'P', 13: 'P', 14: 'P', 15: 'P' },
-  4: { 1: 'F', 2: 'P', 3: 'P', 4: 'P', 5: 'P', 6: 'P', 7: 'P', 8: 'P', 9: 'Fj', 10: 'P', 11: 'P', 12: 'P', 13: 'P', 14: 'P', 15: 'P' },
-  5: { 1: 'P', 2: 'Fj', 3: 'Fj', 4: 'P', 5: 'P', 6: 'P', 7: 'P', 8: 'P', 9: 'P', 10: 'P', 11: 'P', 12: 'F', 13: 'P', 14: 'P', 15: 'P' },
-  6: { 1: 'P', 2: 'P', 3: 'P', 4: 'P', 5: 'P', 6: 'P', 7: 'P', 8: 'P', 9: 'P', 10: 'P', 11: 'P', 12: 'P', 13: 'P', 14: 'P', 15: 'P' },
-  7: { 1: 'P', 2: 'P', 3: 'P', 4: 'F', 5: 'F', 6: 'F', 7: 'P', 8: 'P', 9: 'P', 10: 'P', 11: 'P', 12: 'P', 13: 'P', 14: 'P', 15: 'P' },
-  8: { 1: 'F', 2: 'F', 3: 'F', 4: 'F', 5: 'P', 6: 'P', 7: 'P', 8: 'P', 9: 'P', 10: 'P', 11: 'P', 12: 'P', 13: 'P', 14: 'P', 15: 'P' }
+  1: {
+    1: 'P',
+    2: 'P',
+    3: 'P',
+    4: 'P',
+    5: 'P',
+    6: 'T',
+    7: 'P',
+    8: 'P',
+    9: 'P',
+    10: 'P',
+    11: 'P',
+    12: 'P',
+    13: 'P',
+    14: 'P',
+    15: 'P',
+  },
+  2: {
+    1: 'P',
+    2: 'P',
+    3: 'P',
+    4: 'P',
+    5: 'P',
+    6: 'P',
+    7: 'P',
+    8: 'P',
+    9: 'P',
+    10: 'P',
+    11: 'P',
+    12: 'P',
+    13: 'P',
+    14: 'P',
+    15: 'P',
+  },
+  3: {
+    1: 'P',
+    2: 'P',
+    3: 'T',
+    4: 'P',
+    5: 'P',
+    6: 'P',
+    7: 'F',
+    8: 'P',
+    9: 'P',
+    10: 'P',
+    11: 'T',
+    12: 'P',
+    13: 'P',
+    14: 'P',
+    15: 'P',
+  },
+  4: {
+    1: 'F',
+    2: 'P',
+    3: 'P',
+    4: 'P',
+    5: 'P',
+    6: 'P',
+    7: 'P',
+    8: 'P',
+    9: 'Fj',
+    10: 'P',
+    11: 'P',
+    12: 'P',
+    13: 'P',
+    14: 'P',
+    15: 'P',
+  },
+  5: {
+    1: 'P',
+    2: 'Fj',
+    3: 'Fj',
+    4: 'P',
+    5: 'P',
+    6: 'P',
+    7: 'P',
+    8: 'P',
+    9: 'P',
+    10: 'P',
+    11: 'P',
+    12: 'F',
+    13: 'P',
+    14: 'P',
+    15: 'P',
+  },
+  6: {
+    1: 'P',
+    2: 'P',
+    3: 'P',
+    4: 'P',
+    5: 'P',
+    6: 'P',
+    7: 'P',
+    8: 'P',
+    9: 'P',
+    10: 'P',
+    11: 'P',
+    12: 'P',
+    13: 'P',
+    14: 'P',
+    15: 'P',
+  },
+  7: {
+    1: 'P',
+    2: 'P',
+    3: 'P',
+    4: 'F',
+    5: 'F',
+    6: 'F',
+    7: 'P',
+    8: 'P',
+    9: 'P',
+    10: 'P',
+    11: 'P',
+    12: 'P',
+    13: 'P',
+    14: 'P',
+    15: 'P',
+  },
+  8: {
+    1: 'F',
+    2: 'F',
+    3: 'F',
+    4: 'F',
+    5: 'P',
+    6: 'P',
+    7: 'P',
+    8: 'P',
+    9: 'P',
+    10: 'P',
+    11: 'P',
+    12: 'P',
+    13: 'P',
+    14: 'P',
+    15: 'P',
+  },
 })
 
 // Funciones
@@ -272,7 +452,7 @@ function calcularPorcentaje(estudianteId) {
   const totalClases = clases.value.length
   let presentes = 0
 
-  Object.values(registro).forEach(estado => {
+  Object.values(registro).forEach((estado) => {
     if (estado === 'P' || estado === 'T') presentes++
   })
 
@@ -293,7 +473,7 @@ const estadisticas = computed(() => {
   let sumaPorc = 0
   let enRiesgo = 0
 
-  estudiantes.value.forEach(est => {
+  estudiantes.value.forEach((est) => {
     const porc = calcularPorcentaje(est.id)
     sumaPorc += porc
     if (porc < 70) enRiesgo++
@@ -303,7 +483,7 @@ const estadisticas = computed(() => {
     totalClases,
     totalEstudiantes,
     promedioAsistencia: Math.round(sumaPorc / totalEstudiantes),
-    estudiantesRiesgo: enRiesgo
+    estudiantesRiesgo: enRiesgo,
   }
 })
 
@@ -328,8 +508,16 @@ async function loadMiCumplimiento() {
         docente: { nombre: authStore.usuarioActual?.nombre || 'Docente' },
         semana_inicio: fechaFiltroSemana.value,
         alerta: 'VERDE',
-        criterios: { temaImpartido: true, actividadesFormativas: true, secuenciaDidactica: true, plataformaVirtual: true, evidencias: true, evaluaciones: true, integracionTransversal: true }
-      }
+        criterios: {
+          temaImpartido: true,
+          actividadesFormativas: true,
+          secuenciaDidactica: true,
+          plataformaVirtual: true,
+          evidencias: true,
+          evaluaciones: true,
+          integracionTransversal: true,
+        },
+      },
     ]
   } finally {
     loadingCumplimiento.value = false
@@ -341,7 +529,7 @@ function generarReporte() {
     type: 'positive',
     message: 'Reporte generado exitosamente',
     icon: 'check_circle',
-    position: 'top'
+    position: 'top',
   })
 }
 
@@ -350,7 +538,7 @@ function exportarPDF() {
     type: 'info',
     message: 'Exportando reporte a PDF...',
     icon: 'picture_as_pdf',
-    position: 'top'
+    position: 'top',
   })
 }
 </script>

@@ -98,7 +98,7 @@ export const useUserStore = defineStore('user', {
   state: (): UserState => ({
     user: null,
     users: [],
-    loading: false
+    loading: false,
   }),
 
   // Getters
@@ -108,13 +108,13 @@ export const useUserStore = defineStore('user', {
 
     // Getter with parameters
     getUserById: (state) => {
-      return (userId: number) => state.users.find(u => u.id === userId)
+      return (userId: number) => state.users.find((u) => u.id === userId)
     },
 
     // Getter accessing other getters
     activeUserCount(): number {
-      return this.users.filter(u => u.isActive).length
-    }
+      return this.users.filter((u) => u.isActive).length
+    },
   },
 
   // Actions
@@ -137,7 +137,7 @@ export const useUserStore = defineStore('user', {
         const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password }),
         })
         this.user = await response.json()
       } catch (error) {
@@ -157,8 +157,8 @@ export const useUserStore = defineStore('user', {
       if (this.user) {
         await this.fetchUsers()
       }
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -189,21 +189,17 @@ export const useTodoStore = defineStore('todos', () => {
   const filteredTodos = computed(() => {
     switch (filter.value) {
       case 'active':
-        return todos.value.filter(t => !t.completed)
+        return todos.value.filter((t) => !t.completed)
       case 'completed':
-        return todos.value.filter(t => t.completed)
+        return todos.value.filter((t) => t.completed)
       default:
         return todos.value
     }
   })
 
-  const completedCount = computed(() =>
-    todos.value.filter(t => t.completed).length
-  )
+  const completedCount = computed(() => todos.value.filter((t) => t.completed).length)
 
-  const activeCount = computed(() =>
-    todos.value.filter(t => !t.completed).length
-  )
+  const activeCount = computed(() => todos.value.filter((t) => !t.completed).length)
 
   // Actions
   async function fetchTodos() {
@@ -225,20 +221,20 @@ export const useTodoStore = defineStore('todos', () => {
       id: Date.now(),
       title,
       completed: false,
-      createdAt: new Date()
+      createdAt: new Date(),
     }
     todos.value.push(newTodo)
   }
 
   function toggleTodo(id: number) {
-    const todo = todos.value.find(t => t.id === id)
+    const todo = todos.value.find((t) => t.id === id)
     if (todo) {
       todo.completed = !todo.completed
     }
   }
 
   function deleteTodo(id: number) {
-    const index = todos.value.findIndex(t => t.id === id)
+    const index = todos.value.findIndex((t) => t.id === id)
     if (index > -1) {
       todos.value.splice(index, 1)
     }
@@ -249,7 +245,7 @@ export const useTodoStore = defineStore('todos', () => {
   }
 
   function clearCompleted() {
-    todos.value = todos.value.filter(t => !t.completed)
+    todos.value = todos.value.filter((t) => !t.completed)
   }
 
   return {
@@ -268,7 +264,7 @@ export const useTodoStore = defineStore('todos', () => {
     toggleTodo,
     deleteTodo,
     setFilter,
-    clearCompleted
+    clearCompleted,
   }
 })
 ```
@@ -301,7 +297,7 @@ export const useCartStore = defineStore('cart', () => {
   })
 
   function addItem(productId: number, quantity = 1) {
-    const existingItem = items.value.find(i => i.productId === productId)
+    const existingItem = items.value.find((i) => i.productId === productId)
     if (existingItem) {
       existingItem.quantity += quantity
     } else {
@@ -318,14 +314,14 @@ export const useCartStore = defineStore('cart', () => {
     const order = {
       userId: userStore.user?.id,
       items: items.value,
-      total: total.value
+      total: total.value,
     }
 
     // Make API call
     await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(order)
+      body: JSON.stringify(order),
     })
 
     items.value = []
@@ -371,32 +367,40 @@ const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 
 // stores/settings.ts
-export const useSettingsStore = defineStore('settings', () => {
-  const theme = ref<'light' | 'dark'>('light')
-  const language = ref('en')
+export const useSettingsStore = defineStore(
+  'settings',
+  () => {
+    const theme = ref<'light' | 'dark'>('light')
+    const language = ref('en')
 
-  function setTheme(newTheme: 'light' | 'dark') {
-    theme.value = newTheme
-  }
+    function setTheme(newTheme: 'light' | 'dark') {
+      theme.value = newTheme
+    }
 
-  return { theme, language, setTheme }
-}, {
-  persist: true // Auto-persist to localStorage
-})
+    return { theme, language, setTheme }
+  },
+  {
+    persist: true, // Auto-persist to localStorage
+  },
+)
 
 // Advanced persistence
-export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(null)
-  const user = ref<User | null>(null)
+export const useAuthStore = defineStore(
+  'auth',
+  () => {
+    const token = ref<string | null>(null)
+    const user = ref<User | null>(null)
 
-  return { token, user }
-}, {
-  persist: {
-    key: 'auth-storage',
-    storage: sessionStorage,
-    paths: ['token'] // Only persist token, not user
-  }
-})
+    return { token, user }
+  },
+  {
+    persist: {
+      key: 'auth-storage',
+      storage: sessionStorage,
+      paths: ['token'], // Only persist token, not user
+    },
+  },
+)
 ```
 
 ## Store Testing
@@ -436,14 +440,14 @@ describe('Counter Store', () => {
 
 ## Quick Reference
 
-| Pattern | Use Case |
-|---------|----------|
-| Setup stores | Composition API style (recommended) |
-| Options stores | Traditional Vuex-like syntax |
-| `storeToRefs()` | Maintain reactivity when destructuring |
-| `store.$subscribe()` | Watch for state changes |
-| `store.$patch()` | Batch state updates |
-| `store.$reset()` | Reset state to initial |
-| Plugins | Add global functionality (logger, persistence) |
-| Accessing stores | Use other stores in actions |
-| Testing | Use `setActivePinia()` for isolated tests |
+| Pattern              | Use Case                                       |
+| -------------------- | ---------------------------------------------- |
+| Setup stores         | Composition API style (recommended)            |
+| Options stores       | Traditional Vuex-like syntax                   |
+| `storeToRefs()`      | Maintain reactivity when destructuring         |
+| `store.$subscribe()` | Watch for state changes                        |
+| `store.$patch()`     | Batch state updates                            |
+| `store.$reset()`     | Reset state to initial                         |
+| Plugins              | Add global functionality (logger, persistence) |
+| Accessing stores     | Use other stores in actions                    |
+| Testing              | Use `setActivePinia()` for isolated tests      |

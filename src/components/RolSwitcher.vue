@@ -1,24 +1,24 @@
 <template>
   <div class="rol-switcher">
-    <q-btn-dropdown 
-      flat 
-      :label="rolActual?.nombre || 'Seleccionar Rol'" 
+    <q-btn-dropdown
+      flat
+      :label="rolActual?.nombre || 'Seleccionar Rol'"
       :color="rolActual ? 'primary' : 'grey'"
       no-caps
       class="rol-dropdown"
     >
-      <q-list style="min-width: 280px;">
+      <q-list style="min-width: 280px">
         <q-item-label header class="text-weight-bold">
           <q-icon name="swap_horiz" class="q-mr-sm" />
           Cambiar Rol (Dev Mode)
         </q-item-label>
         <q-separator />
-        
-        <q-item 
-          v-for="rol in rolesDisponibles" 
-          :key="rol.key" 
-          clickable 
-          v-close-popup 
+
+        <q-item
+          v-for="rol in rolesDisponibles"
+          :key="rol.key"
+          clickable
+          v-close-popup
           @click="cambiarRol(rol.key)"
           :class="{ 'bg-primary-light': authStore.rol === rol.key }"
         >
@@ -61,17 +61,59 @@ const authStore = useAuthStore()
 const { getDashboardRoute } = usePermisos()
 
 const rolesDisponibles = [
-  { key: ROLES.SUPER_ADMIN, nombre: 'Super Admin', descripcion: 'Control total', icono: 'shield', color: 'deep-purple' },
-  { key: ROLES.ADMIN, nombre: 'Admin', descripcion: 'Estadísticas especiales', icono: 'admin_panel_settings', color: 'purple' },
-  { key: ROLES.VICERRECTOR_NACIONAL, nombre: 'Vicerrector Nacional', descripcion: 'Ver y editar todo', icono: 'public', color: 'blue' },
-  { key: ROLES.VICERRECTOR_SEDE, nombre: 'Vicerrector Sede', descripcion: 'Ver todo de sede', icono: 'location_city', color: 'teal' },
-  { key: ROLES.DIRECCION_ACADEMICA, nombre: 'Dir. Académica', descripcion: 'Ver sede (solo lectura)', icono: 'business', color: 'amber' },
-  { key: ROLES.DIRECTOR_CARRERA, nombre: 'Dir. Carrera', descripcion: 'Ver y editar carrera', icono: 'school', color: 'orange' },
-  { key: ROLES.DOCENTE, nombre: 'Docente', descripcion: 'Solo materias asignadas', icono: 'person', color: 'green' }
+  {
+    key: ROLES.SUPER_ADMIN,
+    nombre: 'Super Admin',
+    descripcion: 'Control total',
+    icono: 'shield',
+    color: 'deep-purple',
+  },
+  {
+    key: ROLES.ADMIN,
+    nombre: 'Admin',
+    descripcion: 'Estadísticas especiales',
+    icono: 'admin_panel_settings',
+    color: 'purple',
+  },
+  {
+    key: ROLES.VICERRECTOR_NACIONAL,
+    nombre: 'Vicerrector Nacional',
+    descripcion: 'Ver y editar todo',
+    icono: 'public',
+    color: 'blue',
+  },
+  {
+    key: ROLES.VICERRECTOR_SEDE,
+    nombre: 'Vicerrector Sede',
+    descripcion: 'Ver todo de sede',
+    icono: 'location_city',
+    color: 'teal',
+  },
+  {
+    key: ROLES.DIRECCION_ACADEMICA,
+    nombre: 'Dir. Académica',
+    descripcion: 'Ver sede (solo lectura)',
+    icono: 'business',
+    color: 'amber',
+  },
+  {
+    key: ROLES.DIRECTOR_CARRERA,
+    nombre: 'Dir. Carrera',
+    descripcion: 'Ver y editar carrera',
+    icono: 'school',
+    color: 'orange',
+  },
+  {
+    key: ROLES.DOCENTE,
+    nombre: 'Docente',
+    descripcion: 'Solo materias asignadas',
+    icono: 'person',
+    color: 'green',
+  },
 ]
 
 const rolActual = computed(() => {
-  return rolesDisponibles.find(r => r.key === authStore.rol)
+  return rolesDisponibles.find((r) => r.key === authStore.rol)
 })
 
 function cambiarRol(rolKey) {

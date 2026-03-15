@@ -61,7 +61,9 @@ export default defineRouter(function (/* { store, ssrContext } */) {
 
       // Si el rol no coincide (y no es Super Admin)
       if (!rolesPermitidos.includes(user.rol) && user.rol !== 'SUPER_ADMIN') {
-        console.warn(`Acceso denegado: Se requiere ${rolesPermitidos.join(' o ')} pero usuario es ${user.rol}`)
+        console.warn(
+          `Acceso denegado: Se requiere ${rolesPermitidos.join(' o ')} pero usuario es ${user.rol}`,
+        )
         return next({ name: 'dashboard' })
       }
     }

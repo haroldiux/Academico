@@ -7,8 +7,9 @@ import axios from 'axios'
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const isNative = typeof window !== 'undefined' &&
-  (window.location.protocol.startsWith('capacitor') || window.location.hostname === 'localhost');
+const isNative =
+  typeof window !== 'undefined' &&
+  (window.location.protocol.startsWith('capacitor') || window.location.hostname === 'localhost')
 
 const api = axios.create({
   baseURL: process.env.DEV
@@ -16,8 +17,8 @@ const api = axios.create({
     : 'https://planificacion.unitepc.edu.bo/api',
   withCredentials: !isNative,
   headers: {
-    'Accept': 'application/json'
-  }
+    Accept: 'application/json',
+  },
 })
 
 export default boot(({ app }) => {
@@ -31,8 +32,8 @@ export default boot(({ app }) => {
 
   // Interceptor para manejar expiración de sesión (401 Unauthorized)
   api.interceptors.response.use(
-    response => response,
-    async error => {
+    (response) => response,
+    async (error) => {
       if (error.response && error.response.status === 401) {
         // Importación dinámica para evitar dependencia circular y corregir error 'require' en el navegador
         const { useAuthStore } = await import('src/stores/auth')
@@ -46,7 +47,7 @@ export default boot(({ app }) => {
         }
       }
       return Promise.reject(error)
-    }
+    },
   )
 })
 

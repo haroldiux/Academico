@@ -36,7 +36,8 @@
       :columns="columns"
       row-key="id"
       :loading="loading"
-      flat bordered
+      flat
+      bordered
       class="bg-white q-mt-md"
       :pagination="{ rowsPerPage: 15 }"
     >
@@ -57,7 +58,13 @@
               <q-icon name="filter_list" />
             </template>
           </q-select>
-          <q-input borderless dense debounce="300" v-model="filter" placeholder="Buscar asignatura o docente...">
+          <q-input
+            borderless
+            dense
+            debounce="300"
+            v-model="filter"
+            placeholder="Buscar asignatura o docente..."
+          >
             <template v-slot:append>
               <q-icon name="search" />
             </template>
@@ -67,7 +74,12 @@
 
       <template v-slot:body-cell-avancePlaneado="props">
         <q-td :props="props" class="text-center">
-          <q-chip :color="getAvanceColor(parseFloat(props.value))" text-color="white" size="sm" dense>
+          <q-chip
+            :color="getAvanceColor(parseFloat(props.value))"
+            text-color="white"
+            size="sm"
+            dense
+          >
             {{ props.value }}
           </q-chip>
         </q-td>
@@ -88,10 +100,9 @@
 
       <template v-slot:body-cell-diferencia="props">
         <q-td :props="props" class="text-center">
-          <span
-            class="text-weight-bold"
-            :class="getDiferenciaClass(props.value)"
-          >{{ props.value }}</span>
+          <span class="text-weight-bold" :class="getDiferenciaClass(props.value)">{{
+            props.value
+          }}</span>
         </q-td>
       </template>
 
@@ -106,7 +117,7 @@
       <template v-slot:body-cell-alertas="props">
         <q-td :props="props">
           <div class="text-negative text-caption" v-if="props.row.alertas !== 'Ninguna'">
-            <q-icon name="warning" class="q-mr-xs"/> {{ props.row.alertas }}
+            <q-icon name="warning" class="q-mr-xs" /> {{ props.row.alertas }}
           </div>
           <div v-else class="text-grey-6 text-caption">Ninguna</div>
         </q-td>
@@ -114,11 +125,11 @@
 
       <template v-slot:body-cell-acciones="props">
         <q-td :props="props">
-          <q-btn 
-            size="sm" 
-            color="indigo" 
-            label="Auditar" 
-            icon="checklist" 
+          <q-btn
+            size="sm"
+            color="indigo"
+            label="Auditar"
+            icon="checklist"
             @click="openAuditForm(props.row)"
           />
         </q-td>
@@ -127,15 +138,14 @@
 
     <!-- Audit Form Dialog -->
     <q-dialog v-model="showAuditForm" persistent>
-      <AcademicAuditForm 
-        :asignatura-id="selectedRow?.id" 
+      <AcademicAuditForm
+        :asignatura-id="selectedRow?.id"
         :asignatura-nombre="selectedRow?.asignatura"
         :docente-id="selectedRow?.docenteId"
         :docente-nombre="selectedRow?.docente"
-        @saved="onAuditSaved" 
+        @saved="onAuditSaved"
       />
     </q-dialog>
-
   </div>
 </template>
 
@@ -148,7 +158,7 @@ import { useQuasar, date } from 'quasar'
 const props = defineProps({
   sedeId: { type: Number, default: null },
   carreraId: { type: Number, default: null },
-  semanaInicio: { type: String, default: null }  // Viene del padre (ReportesPage)
+  semanaInicio: { type: String, default: null }, // Viene del padre (ReportesPage)
 })
 
 const $q = useQuasar()
@@ -182,7 +192,7 @@ const weekOptions = computed(() => {
 const semanaInfo = computed(() => {
   const semana = props.semanaInicio
   if (!semana) return null
-  const opt = weekOptions.value.find(o => o.value === semana)
+  const opt = weekOptions.value.find((o) => o.value === semana)
   if (!opt) return null
   // Número de semana (1-indexed) = posición en la lista + 1
   const idx = weekOptions.value.indexOf(opt) + 1
@@ -202,33 +212,46 @@ const columns = [
   { name: 'asignatura', label: 'Asignatura', field: 'asignatura', sortable: true, align: 'left' },
   { name: 'docente', label: 'Docente', field: 'docente', sortable: true, align: 'left' },
   { name: 'carrera', label: 'Carrera', field: 'carrera', sortable: true, align: 'left' },
-  { name: 'avancePlaneado', label: 'A. Planeado', field: 'avancePlaneado', sortable: true, align: 'center' },
+  {
+    name: 'avancePlaneado',
+    label: 'A. Planeado',
+    field: 'avancePlaneado',
+    sortable: true,
+    align: 'center',
+  },
   { name: 'avanceReal', label: 'A. Real', field: 'avanceReal', sortable: true, align: 'center' },
   { name: 'diferencia', label: 'Diferencia', field: 'diferencia', sortable: true, align: 'center' },
   { name: 'semaforo', label: 'Estado', field: 'semaforo', sortable: true, align: 'center' },
   { name: 'alertas', label: 'Alertas', field: 'alertas', sortable: true, align: 'left' },
-  { name: 'acciones_correctivas', label: 'Acciones Dispuestas', field: 'acciones', sortable: true, align: 'left' },
-  { name: 'acciones', label: 'Auditar', field: 'acciones', align: 'center' }
+  {
+    name: 'acciones_correctivas',
+    label: 'Acciones Dispuestas',
+    field: 'acciones',
+    sortable: true,
+    align: 'left',
+  },
+  { name: 'acciones', label: 'Auditar', field: 'acciones', align: 'center' },
 ]
 
 const filteredMatrizData = computed(() => {
   let result = matrizData.value
 
   if (soloReincidentes.value && reincidentesIds.value.length > 0) {
-    result = result.filter(row => reincidentesIds.value.includes(row.docenteId))
+    result = result.filter((row) => reincidentesIds.value.includes(row.docenteId))
   }
 
   if (filter.value) {
     const searchTerm = filter.value.toLowerCase()
-    result = result.filter(row =>
-      (row.asignatura && row.asignatura.toLowerCase().includes(searchTerm)) ||
-      (row.docente && row.docente.toLowerCase().includes(searchTerm)) ||
-      (row.codigo && row.codigo.toLowerCase().includes(searchTerm))
+    result = result.filter(
+      (row) =>
+        (row.asignatura && row.asignatura.toLowerCase().includes(searchTerm)) ||
+        (row.docente && row.docente.toLowerCase().includes(searchTerm)) ||
+        (row.codigo && row.codigo.toLowerCase().includes(searchTerm)),
     )
   }
 
   if (filtroEstado.value !== 'todos') {
-    result = result.filter(row => row.semaforo === filtroEstado.value)
+    result = result.filter((row) => row.semaforo === filtroEstado.value)
   }
 
   return result
@@ -255,7 +278,7 @@ const loadMatriz = async () => {
   try {
     const params = {
       sede_id: props.sedeId,
-      carrera_id: props.carreraId || undefined
+      carrera_id: props.carreraId || undefined,
     }
     // Pasar la semana del padre al backend
     if (props.semanaInicio) {
@@ -274,7 +297,10 @@ const loadMatriz = async () => {
 
 const loadReincidentes = async () => {
   if (!props.carreraId || !props.semanaInicio) {
-    $q.notify({ type: 'warning', message: 'Selecciona una carrera y semana para filtrar reincidentes' })
+    $q.notify({
+      type: 'warning',
+      message: 'Selecciona una carrera y semana para filtrar reincidentes',
+    })
     return
   }
 
@@ -283,18 +309,18 @@ const loadReincidentes = async () => {
     const { data } = await api.get('/reportes/director/resumen-carrera', {
       params: {
         carrera_id: props.carreraId,
-        semana_inicio: props.semanaInicio
-      }
+        semana_inicio: props.semanaInicio,
+      },
     })
     const criticos = data.docentes_criticos || []
-    reincidentesIds.value = criticos.map(d => d.docente_id)
+    reincidentesIds.value = criticos.map((d) => d.docente_id)
 
     if (reincidentesIds.value.length === 0) {
       $q.notify({ type: 'info', message: 'No hay docentes con 2 semanas consecutivas en ROJO' })
     } else {
       $q.notify({
         type: 'warning',
-        message: `${reincidentesIds.value.length} docente(s) con rojo 2 semanas consecutivas`
+        message: `${reincidentesIds.value.length} docente(s) con rojo 2 semanas consecutivas`,
       })
     }
   } catch (error) {
@@ -330,16 +356,22 @@ onMounted(() => {
 })
 
 // Recargar cuando cambie la semana desde el padre
-watch(() => props.semanaInicio, () => {
-  soloReincidentes.value = false
-  reincidentesIds.value = []
-  loadMatriz()
-})
+watch(
+  () => props.semanaInicio,
+  () => {
+    soloReincidentes.value = false
+    reincidentesIds.value = []
+    loadMatriz()
+  },
+)
 
 watch(() => props.sedeId, loadMatriz)
-watch(() => props.carreraId, () => {
-  soloReincidentes.value = false
-  reincidentesIds.value = []
-  loadMatriz()
-})
+watch(
+  () => props.carreraId,
+  () => {
+    soloReincidentes.value = false
+    reincidentesIds.value = []
+    loadMatriz()
+  },
+)
 </script>

@@ -7,11 +7,11 @@ import autoTable from 'jspdf-autotable'
 
 // Colores institucionales UNITEPC
 const COLORS = {
-  morado: [67, 56, 202],      // #4338CA - Títulos principales
-  turquesa: [20, 184, 166],   // #14B8A6 - Secciones secundarias
-  gris: [204, 204, 204],      // #CCCCCC - Cabeceras de tabla
+  morado: [67, 56, 202], // #4338CA - Títulos principales
+  turquesa: [20, 184, 166], // #14B8A6 - Secciones secundarias
+  gris: [204, 204, 204], // #CCCCCC - Cabeceras de tabla
   negro: [0, 0, 0],
-  blanco: [255, 255, 255]
+  blanco: [255, 255, 255],
 }
 
 /**
@@ -24,11 +24,22 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   const margin = 15
 
   // Normalizar carrera (puede venir como objeto o string)
-  const carreraNombre = typeof carrera === 'object' ? (carrera?.nombre || 'Sin Carrera') : (carrera || 'Sin Carrera')
-  const carreraObj = typeof carrera === 'object' ? carrera : { nombre: carrera || 'Sin Carrera', codigo: '', area: '', mision: '', vision: '', perfil_profesional: '' }
+  const carreraNombre =
+    typeof carrera === 'object' ? carrera?.nombre || 'Sin Carrera' : carrera || 'Sin Carrera'
+  const carreraObj =
+    typeof carrera === 'object'
+      ? carrera
+      : {
+          nombre: carrera || 'Sin Carrera',
+          codigo: '',
+          area: '',
+          mision: '',
+          vision: '',
+          perfil_profesional: '',
+        }
 
   // Normalizar sede
-  const sedeNombre = typeof sede === 'object' ? (sede?.nombre || 'Cochabamba') : (sede || 'Cochabamba')
+  const sedeNombre = typeof sede === 'object' ? sede?.nombre || 'Cochabamba' : sede || 'Cochabamba'
   const sedeObj = typeof sede === 'object' ? sede : { nombre: sedeNombre }
 
   // Normalizar docente
@@ -38,14 +49,17 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   } else if (asignatura.nombre_docente) {
     docenteNombre = asignatura.nombre_docente
   } else if (asignatura.docentes && asignatura.docentes.length > 0) {
-    docenteNombre = asignatura.docentes.map(d => d.nombre_completo || 'Sin nombre').join(', ')
+    docenteNombre = asignatura.docentes.map((d) => d.nombre_completo || 'Sin nombre').join(', ')
   } else if (asignatura.docente) {
-    docenteNombre = typeof asignatura.docente === 'object' ? (asignatura.docente.nombre_completo || asignatura.docente.nombre) : asignatura.docente
+    docenteNombre =
+      typeof asignatura.docente === 'object'
+        ? asignatura.docente.nombre_completo || asignatura.docente.nombre
+        : asignatura.docente
   }
 
   const docente = {
     nombre: (docenteNombre || 'Por Asignar').toUpperCase(),
-    titulo: '' // Ya viene incluido en el nombre generalmente o no es necesario
+    titulo: '', // Ya viene incluido en el nombre generalmente o no es necesario
   }
 
   // Normalizar objeto asignatura (para soportar tanto { asignatura_obj: ... } como objeto directo)
@@ -70,7 +84,7 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
     logo: opciones.logo,
     pageWidth,
     pageHeight,
-    margin
+    margin,
   })
 
   // ==========================================
@@ -95,7 +109,13 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   // PROGRAMA ANALÍTICO (PA)
   // ==========================================
   doc.addPage()
-  generarProgramaAnalitico(doc, { asignatura: asignaturaObj, carrera: carreraObj, carreraNombre, pageWidth, margin })
+  generarProgramaAnalitico(doc, {
+    asignatura: asignaturaObj,
+    carrera: carreraObj,
+    carreraNombre,
+    pageWidth,
+    margin,
+  })
 
   // ==========================================
   // PROGRAMA POR COMPETENCIAS (PAC)
@@ -107,16 +127,17 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   // PLANES DE CLASE (PCT/PCP)
   // ==========================================
   const unidades = asignaturaObj.unidades || []
-  unidades.forEach(unidad => {
+  unidades.forEach((unidad) => {
     const temas = unidad.temas || []
-    temas.forEach(tema => {
+    temas.forEach((tema) => {
       doc.addPage()
       generarPlanClase(doc, { asignatura: asignaturaObj, unidad, tema, pageWidth, margin })
     })
   })
 
   // Guardar PDF con nombre correcto
-  const nombreArchivo = 'Carpeta_Docente_' + (asignaturaObj.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
+  const nombreArchivo =
+    'Carpeta_Docente_' + (asignaturaObj.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
   doc.save(nombreArchivo)
 
   return doc
@@ -125,7 +146,21 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
 /**
  * PORTADA - Carátula institucional
  */
-function generarPortada(doc, { asignatura, carrera, carreraNombre, sedeNombre, docente, gestion, grupo, logo, pageWidth, margin }) {
+function generarPortada(
+  doc,
+  {
+    asignatura,
+    carrera,
+    carreraNombre,
+    sedeNombre,
+    docente,
+    gestion,
+    grupo,
+    logo,
+    pageWidth,
+    margin,
+  },
+) {
   let y = 30
 
   // Área y Carrera
@@ -139,7 +174,9 @@ function generarPortada(doc, { asignatura, carrera, carreraNombre, sedeNombre, d
 
   y += 8
   doc.setFontSize(14)
-  doc.text(`CARRERA DE ${(carreraNombre || 'SIN CARRERA').toUpperCase()}`, pageWidth / 2, y, { align: 'center' })
+  doc.text(`CARRERA DE ${(carreraNombre || 'SIN CARRERA').toUpperCase()}`, pageWidth / 2, y, {
+    align: 'center',
+  })
 
   // Título Carpeta
   y += 15
@@ -151,14 +188,16 @@ function generarPortada(doc, { asignatura, carrera, carreraNombre, sedeNombre, d
   y += 10
   doc.setFontSize(14)
   doc.setTextColor(0, 0, 0)
-  doc.text(`SEDE ${(sedeNombre || 'COCHABAMBA').toUpperCase()}`, pageWidth / 2, y, { align: 'center' })
+  doc.text(`SEDE ${(sedeNombre || 'COCHABAMBA').toUpperCase()}`, pageWidth / 2, y, {
+    align: 'center',
+  })
 
   // Logo UNITEPC (Imagen o Texto fallback)
   y += 5
   if (logo) {
     const imgWidth = 95 // Ancho base para mantener equilibrio
     const imgHeight = 60 // Alto calculado para el ratio 2.38:1 (1125x473)
-    doc.addImage(logo, 'PNG', pageWidth / 2 - (imgWidth / 2), y, imgWidth, imgHeight)
+    doc.addImage(logo, 'PNG', pageWidth / 2 - imgWidth / 2, y, imgWidth, imgHeight)
     y += imgHeight + 10
   } else {
     y += 20
@@ -200,7 +239,7 @@ function generarPortada(doc, { asignatura, carrera, carreraNombre, sedeNombre, d
     ['Codigo de la asignatura:', asignatura.codigo_asignatura || 'N/A'],
     ['Semestre:', `${asignatura.semestre || 'N/A'}`],
     ['Grupo:', `${grupo || ''}`],
-    ['Gestión:', gestion]
+    ['Gestión:', gestion],
   ]
 
   campos.forEach(([label, value]) => {
@@ -259,7 +298,7 @@ function generarIndice(doc, { pageWidth, margin }) {
   doc.setFont('helvetica', 'normal')
   const valItems = ['Misión de la carrera', 'Visión de la carrera', 'Perfil profesional']
   valItems.forEach((text, i) => {
-    doc.text(text, margin + 3, y + 6 + (i * 6))
+    doc.text(text, margin + 3, y + 6 + i * 6)
   })
 
   // Box for MVP
@@ -285,7 +324,7 @@ function generarIndice(doc, { pageWidth, margin }) {
   doc.setFont('helvetica', 'normal')
   const orgItems = ['Horario de clases de la asignatura', 'Rol de exámenes de la asignatura']
   orgItems.forEach((text, i) => {
-    doc.text(text, margin + 3, y + 6 + (i * 6))
+    doc.text(text, margin + 3, y + 6 + i * 6)
   })
 
   // Box for HR
@@ -310,15 +349,15 @@ function generarIndice(doc, { pageWidth, margin }) {
   const planItems = [
     { n: 'Programa analítico', c: 'PA' },
     { n: 'Programa de asignatura por competencias', c: 'PAC' },
-    { n: 'Plan de clase Teórico-Práctico (según corresponda)', c: 'PCT-PCP' }
+    { n: 'Plan de clase Teórico-Práctico (según corresponda)', c: 'PCT-PCP' },
   ]
 
   planItems.forEach((item, i) => {
     doc.setTextColor(0, 0, 0)
     doc.setFont('helvetica', 'normal')
-    doc.text(item.n, margin + 3, y + 6 + (i * 6))
+    doc.text(item.n, margin + 3, y + 6 + i * 6)
     doc.setFont('helvetica', 'bold')
-    doc.text(item.c, pageWidth - margin - codeColWidth / 2, y + 6 + (i * 6), { align: 'center' })
+    doc.text(item.c, pageWidth - margin - codeColWidth / 2, y + 6 + i * 6, { align: 'center' })
   })
 }
 
@@ -398,7 +437,8 @@ function generarMVP(doc, { carrera, pageWidth, margin }) {
 
   y += 15
 
-  const perfilText = carrera.perfil_profesional || 'El profesional está preparado para desempeñarse en su área.'
+  const perfilText =
+    carrera.perfil_profesional || 'El profesional está preparado para desempeñarse en su área.'
   const perfilLines = doc.splitTextToSize(perfilText, pageWidth - margin * 2 - 10)
   const perfilBoxHeight = perfilLines.length * 5 + 10
   doc.setDrawColor(...COLORS.turquesa)
@@ -437,7 +477,11 @@ function generarHorariosExamenes(doc, { data, pageWidth, margin }) {
 
   y += 15
 
-  const horarioData = (data.horarios || []).map(h => [h.dia, `${h.hora_inicio} - ${h.hora_fin}`, h.aula])
+  const horarioData = (data.horarios || []).map((h) => [
+    h.dia,
+    `${h.hora_inicio} - ${h.hora_fin}`,
+    h.aula,
+  ])
 
   autoTable(doc, {
     startY: y,
@@ -446,7 +490,7 @@ function generarHorariosExamenes(doc, { data, pageWidth, margin }) {
     styles: { fontSize: 11, cellPadding: 4, halign: 'center' },
     head: [['DÍA', 'HORARIO', 'AULA']],
     headStyles: { fillColor: COLORS.gris, textColor: 0, fontStyle: 'bold' },
-    body: horarioData.length > 0 ? horarioData : [['-', '-', '-']]
+    body: horarioData.length > 0 ? horarioData : [['-', '-', '-']],
   })
 
   y = doc.lastAutoTable.finalY + 20
@@ -461,7 +505,7 @@ function generarHorariosExamenes(doc, { data, pageWidth, margin }) {
 
   y += 15
 
-  const examenesData = (data.examenes || []).map(e => [e.tipo, e.fecha, e.hora, e.aula])
+  const examenesData = (data.examenes || []).map((e) => [e.tipo, e.fecha, e.hora, e.aula])
 
   autoTable(doc, {
     startY: y,
@@ -470,7 +514,7 @@ function generarHorariosExamenes(doc, { data, pageWidth, margin }) {
     styles: { fontSize: 11, cellPadding: 4, halign: 'center' },
     head: [['TIPO', 'FECHA', 'HORA', 'AULA']],
     headStyles: { fillColor: COLORS.gris, textColor: 0, fontStyle: 'bold' },
-    body: examenesData.length > 0 ? examenesData : [['No cargado', '-', '-', '-']]
+    body: examenesData.length > 0 ? examenesData : [['No cargado', '-', '-', '-']],
   })
 }
 
@@ -488,7 +532,9 @@ function generarProgramaAnalitico(doc, { asignatura, carrera, carreraNombre, pag
   y += 4
   doc.text('"UNITEPC"', pageWidth / 2, y, { align: 'center' })
   y += 4
-  doc.text(`CARRERA: ${(carreraNombre || 'SIN CARRERA').toUpperCase()}`, pageWidth / 2, y, { align: 'center' })
+  doc.text(`CARRERA: ${(carreraNombre || 'SIN CARRERA').toUpperCase()}`, pageWidth / 2, y, {
+    align: 'center',
+  })
 
   y += 10
 
@@ -509,16 +555,18 @@ function generarProgramaAnalitico(doc, { asignatura, carrera, carreraNombre, pag
     styles: { fontSize: 8, cellPadding: 2 },
     head: [['CÓDIGO', 'ASIGNATURA', 'CRÉDITOS', 'HRS/SEMESTRE', 'PROGRAMA', 'SEMESTRE', 'Nº HOJA']],
     headStyles: { fillColor: COLORS.gris, textColor: 0, fontStyle: 'bold', halign: 'center' },
-    body: [[
-      asignatura.codigo,
-      asignatura.nombre,
-      asignatura.creditos || 4,
-      (asignatura.horas_teoricas || 0) + (asignatura.horas_practicas || 0),
-      carrera.codigo,
-      `${asignatura.semestre}º SEM`,
-      '1'
-    ]],
-    bodyStyles: { halign: 'center' }
+    body: [
+      [
+        asignatura.codigo,
+        asignatura.nombre,
+        asignatura.creditos || 4,
+        (asignatura.horas_teoricas || 0) + (asignatura.horas_practicas || 0),
+        carrera.codigo,
+        `${asignatura.semestre}º SEM`,
+        '1',
+      ],
+    ],
+    bodyStyles: { halign: 'center' },
   })
 
   y = doc.lastAutoTable.finalY + 10
@@ -529,7 +577,7 @@ function generarProgramaAnalitico(doc, { asignatura, carrera, carreraNombre, pag
   doc.setFontSize(9)
   doc.setTextColor(0, 0, 0)
 
-  unidades.forEach(unidad => {
+  unidades.forEach((unidad) => {
     // Verificar espacio
     if (y > 240) {
       doc.addPage()
@@ -541,7 +589,7 @@ function generarProgramaAnalitico(doc, { asignatura, carrera, carreraNombre, pag
     y += 6
 
     const temas = unidad.temas || []
-    temas.forEach(tema => {
+    temas.forEach((tema) => {
       if (y > 250) {
         doc.addPage()
         y = 20
@@ -554,7 +602,9 @@ function generarProgramaAnalitico(doc, { asignatura, carrera, carreraNombre, pag
       // Contenidos resumidos
       doc.setFont('helvetica', 'normal')
       const contenidos = Array.isArray(tema.contenidos) ? tema.contenidos : []
-      const contenidoTexto = contenidos.map(c => typeof c === 'string' ? c : (c.titulo || '')).join('. ')
+      const contenidoTexto = contenidos
+        .map((c) => (typeof c === 'string' ? c : c.titulo || ''))
+        .join('. ')
       if (contenidoTexto) {
         const lines = doc.splitTextToSize(contenidoTexto, pageWidth - margin * 2)
         doc.text(lines.slice(0, 2), margin, y)
@@ -579,10 +629,10 @@ function generarProgramaAnalitico(doc, { asignatura, carrera, carreraNombre, pag
   doc.setFont('helvetica', 'normal')
   const bibliografia = asignatura.bibliografia || [
     '"Ingeniería de Software". Ian Sommerville. 10ª Ed.',
-    '"Patrones de Diseño". Gamma, Helm, Johnson, Vlissides.'
+    '"Patrones de Diseño". Gamma, Helm, Johnson, Vlissides.',
   ]
 
-  bibliografia.forEach(ref => {
+  bibliografia.forEach((ref) => {
     if (y > 260) {
       doc.addPage()
       y = 20
@@ -617,9 +667,12 @@ function generarPAC(doc, { asignatura, pageWidth, margin }) {
     body: [
       [{ content: 'Asignatura:', styles: { fontStyle: 'bold' } }, asignatura.nombre],
       [{ content: 'Código:', styles: { fontStyle: 'bold' } }, asignatura.codigo],
-      [{ content: 'Competencia General:', styles: { fontStyle: 'bold' } }, asignatura.objetivo_general || 'Desarrollar competencias profesionales en el área.']
+      [
+        { content: 'Competencia General:', styles: { fontStyle: 'bold' } },
+        asignatura.objetivo_general || 'Desarrollar competencias profesionales en el área.',
+      ],
     ],
-    columnStyles: { 0: { cellWidth: 45 } }
+    columnStyles: { 0: { cellWidth: 45 } },
   })
 
   y = doc.lastAutoTable.finalY + 10
@@ -628,19 +681,23 @@ function generarPAC(doc, { asignatura, pageWidth, margin }) {
   const unidades = asignatura.unidades || []
 
   const rows = []
-  unidades.forEach(unidad => {
+  unidades.forEach((unidad) => {
     rows.push([
-      { content: `Unidad ${unidad.numero}: ${unidad.titulo}`, colSpan: 3, styles: { fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }
+      {
+        content: `Unidad ${unidad.numero}: ${unidad.titulo}`,
+        colSpan: 3,
+        styles: { fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' },
+      },
     ])
     rows.push([
       { content: 'Elemento de Competencia', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } },
       { content: 'Saberes Esenciales', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } },
-      { content: 'Evidencias', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } }
+      { content: 'Evidencias', styles: { fillColor: COLORS.gris, fontStyle: 'bold' } },
     ])
     rows.push([
       unidad.elemento_competencia || 'Por definir',
       unidad.saberes_esenciales || 'Conocimientos teóricos y prácticos',
-      unidad.evidencias || 'Exámenes, trabajos prácticos'
+      unidad.evidencias || 'Exámenes, trabajos prácticos',
     ])
   })
 
@@ -650,12 +707,10 @@ function generarPAC(doc, { asignatura, pageWidth, margin }) {
       margin: { left: margin, right: margin },
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 3 },
-      body: rows
+      body: rows,
     })
   }
 }
-
-
 
 /**
  * PLAN DE CLASE TEÓRICO (PCT/PCP)
@@ -674,9 +729,12 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
   // ===== DATOS GENERALES (Header) =====
   let docenteNombre = 'Por asignar'
   if (asignatura?.docentes?.length > 0) {
-    docenteNombre = asignatura.docentes.map(d => d.nombre_completo || `${d.nombre || ''} ${d.apellido || ''}`.trim()).join(', ')
+    docenteNombre = asignatura.docentes
+      .map((d) => d.nombre_completo || `${d.nombre || ''} ${d.apellido || ''}`.trim())
+      .join(', ')
   }
-  const carreraNombre = typeof asignatura?.carrera === 'object' ? asignatura.carrera.nombre : (asignatura?.carrera || '')
+  const carreraNombre =
+    typeof asignatura?.carrera === 'object' ? asignatura.carrera.nombre : asignatura?.carrera || ''
   const fechaActual = new Date().toLocaleDateString('es-BO')
 
   autoTable(doc, {
@@ -689,15 +747,15 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
         { content: 'Nombre del docente:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } },
         docenteNombre,
         { content: 'Asignatura:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } },
-        asignatura?.nombre || ''
+        asignatura?.nombre || '',
       ],
       [
         { content: 'Fecha:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } },
         fechaActual,
         { content: 'Carrera:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } },
-        carreraNombre
-      ]
-    ]
+        carreraNombre,
+      ],
+    ],
   })
   y = doc.lastAutoTable.finalY
 
@@ -709,10 +767,13 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     styles: { fontSize: 9, cellPadding: 3 },
     body: [
       [
-        { content: 'Unidad # ' + (unidad.numero || '1') + ':', styles: { fontStyle: 'bold', fillColor: COLORS.gris, cellWidth: 40 } },
-        { content: unidad.titulo || '', styles: { textColor: COLORS.morado } }
-      ]
-    ]
+        {
+          content: 'Unidad # ' + (unidad.numero || '1') + ':',
+          styles: { fontStyle: 'bold', fillColor: COLORS.gris, cellWidth: 40 },
+        },
+        { content: unidad.titulo || '', styles: { textColor: COLORS.morado } },
+      ],
+    ],
   })
   y = doc.lastAutoTable.finalY
 
@@ -724,10 +785,13 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     styles: { fontSize: 9, cellPadding: 3 },
     body: [
       [
-        { content: 'Elemento de Competencia # ' + (unidad.numero || '1') + ':', styles: { fontStyle: 'bold', fillColor: COLORS.gris, cellWidth: 60 } },
-        unidad.elemento_competencia || ''
-      ]
-    ]
+        {
+          content: 'Elemento de Competencia # ' + (unidad.numero || '1') + ':',
+          styles: { fontStyle: 'bold', fillColor: COLORS.gris, cellWidth: 60 },
+        },
+        unidad.elemento_competencia || '',
+      ],
+    ],
   })
   y = doc.lastAutoTable.finalY
 
@@ -739,10 +803,13 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     styles: { fontSize: 9, cellPadding: 3 },
     body: [
       [
-        { content: 'Tema # ' + (tema.numero || '1') + ':', styles: { fontStyle: 'bold', fillColor: COLORS.gris, cellWidth: 40 } },
-        { content: tema.titulo || '', styles: { textColor: COLORS.morado } }
-      ]
-    ]
+        {
+          content: 'Tema # ' + (tema.numero || '1') + ':',
+          styles: { fontStyle: 'bold', fillColor: COLORS.gris, cellWidth: 40 },
+        },
+        { content: tema.titulo || '', styles: { textColor: COLORS.morado } },
+      ],
+    ],
   })
   y = doc.lastAutoTable.finalY
 
@@ -754,9 +821,14 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 3 },
     body: [
-      [{ content: 'Resultados de Aprendizaje:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
-      [resultadosAprendizaje]
-    ]
+      [
+        {
+          content: 'Resultados de Aprendizaje:',
+          styles: { fontStyle: 'bold', fillColor: COLORS.gris },
+        },
+      ],
+      [resultadosAprendizaje],
+    ],
   })
   y = doc.lastAutoTable.finalY
 
@@ -770,15 +842,20 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     styles: { fontSize: 8, cellPadding: 3 },
     body: [
       [{ content: 'Logros Esperados:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
-      [logrosText || 'Por definir']
-    ]
+      [logrosText || 'Por definir'],
+    ],
   })
   y = doc.lastAutoTable.finalY
 
   // ===== INDICADORES DE LOGRO =====
-  const indicadores = logros.flatMap((l, idx) =>
-    (l.indicadores || []).map((ind, i) => `I.D.D.${idx + 1}.${i + 1}. ${typeof ind === 'string' ? ind : ind.descripcion || ''}`)
-  ).join('\n')
+  const indicadores = logros
+    .flatMap((l, idx) =>
+      (l.indicadores || []).map(
+        (ind, i) =>
+          `I.D.D.${idx + 1}.${i + 1}. ${typeof ind === 'string' ? ind : ind.descripcion || ''}`,
+      ),
+    )
+    .join('\n')
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
@@ -786,8 +863,8 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     styles: { fontSize: 8, cellPadding: 3 },
     body: [
       [{ content: 'Indicadores de Logro:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
-      [indicadores || 'El estudiante demuestra el logro cuando: [Por definir]']
-    ]
+      [indicadores || 'El estudiante demuestra el logro cuando: [Por definir]'],
+    ],
   })
   y = doc.lastAutoTable.finalY
 
@@ -799,9 +876,15 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
 
   // ===== CONTENIDOS =====
   const contenidos = tema.contenidos || {}
-  const conceptual = Array.isArray(contenidos.conceptual) ? contenidos.conceptual.map(c => '• ' + c).join('\n') : ''
-  const procedimental = Array.isArray(contenidos.procedimental) ? contenidos.procedimental.map(c => '✓ ' + c).join('\n') : ''
-  const actitudinal = Array.isArray(contenidos.actitudinal) ? contenidos.actitudinal.map(c => '• ' + c).join('\n') : ''
+  const conceptual = Array.isArray(contenidos.conceptual)
+    ? contenidos.conceptual.map((c) => '• ' + c).join('\n')
+    : ''
+  const procedimental = Array.isArray(contenidos.procedimental)
+    ? contenidos.procedimental.map((c) => '✓ ' + c).join('\n')
+    : ''
+  const actitudinal = Array.isArray(contenidos.actitudinal)
+    ? contenidos.actitudinal.map((c) => '• ' + c).join('\n')
+    : ''
 
   const contenidoTexto = `Contenido Conceptual:\n${conceptual || '- Por definir'}\n\nContenido Procedimental:\n${procedimental || '- Por definir'}\n\nContenido Actitudinal:\n${actitudinal || '- Por definir'}`
 
@@ -812,16 +895,22 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     styles: { fontSize: 8, cellPadding: 3 },
     body: [
       [{ content: 'Contenidos:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
-      [contenidoTexto]
-    ]
+      [contenidoTexto],
+    ],
   })
   y = doc.lastAutoTable.finalY
 
   // ===== BIBLIOGRAFÍA OBLIGATORIA =====
   const referencias = tema.referencias_bibliograficas || asignatura?.bibliografias || []
-  const biblioText = referencias.length > 0
-    ? referencias.map((b, i) => `${i + 1}. ${b.autor || ''} (${b.anio || ''}). ${b.titulo || ''}. ${b.editorial || ''}`).join('\n')
-    : 'Bibliografía pendiente de asignar'
+  const biblioText =
+    referencias.length > 0
+      ? referencias
+          .map(
+            (b, i) =>
+              `${i + 1}. ${b.autor || ''} (${b.anio || ''}). ${b.titulo || ''}. ${b.editorial || ''}`,
+          )
+          .join('\n')
+      : 'Bibliografía pendiente de asignar'
 
   autoTable(doc, {
     startY: y,
@@ -829,9 +918,14 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 3 },
     body: [
-      [{ content: 'Bibliografía Obligatoria para las clases:', styles: { fontStyle: 'bold', fillColor: COLORS.gris } }],
-      [biblioText]
-    ]
+      [
+        {
+          content: 'Bibliografía Obligatoria para las clases:',
+          styles: { fontStyle: 'bold', fillColor: COLORS.gris },
+        },
+      ],
+      [biblioText],
+    ],
   })
   y = doc.lastAutoTable.finalY
 
@@ -849,20 +943,37 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 3 },
     head: [
-      [{ content: 'ESTRATEGIAS DIDÁCTICAS', colSpan: 3, styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }],
       [
-        { content: 'Metodológicas (De Enseñanza del Docente)', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-        { content: 'De Aprendizaje (Estudiantes)', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-        { content: 'Recursos de Enseñanza', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } }
-      ]
+        {
+          content: 'ESTRATEGIAS DIDÁCTICAS',
+          colSpan: 3,
+          styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' },
+        },
+      ],
+      [
+        {
+          content: 'Metodológicas (De Enseñanza del Docente)',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+        {
+          content: 'De Aprendizaje (Estudiantes)',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+        {
+          content: 'Recursos de Enseñanza',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+      ],
     ],
     body: [
       [
         estrategias.metodologicas || '',
         estrategias.aprendizaje || '',
-        Array.isArray(estrategias.recursos) ? estrategias.recursos.join('\n') : (estrategias.recursos || '')
-      ]
-    ]
+        Array.isArray(estrategias.recursos)
+          ? estrategias.recursos.join('\n')
+          : estrategias.recursos || '',
+      ],
+    ],
   })
   y = doc.lastAutoTable.finalY + 5
 
@@ -876,28 +987,58 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 2 },
     head: [
-      [{ content: 'EVALUACIÓN DE LOS APRENDIZAJES', colSpan: 4, styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }],
       [
-        { content: 'TIPO DE EVALUACIÓN', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-        { content: 'Actividades y Técnicas', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-        { content: 'Instrumentos', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-        { content: 'Evidencias de Evaluación', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } }
-      ]
+        {
+          content: 'EVALUACIÓN DE LOS APRENDIZAJES',
+          colSpan: 4,
+          styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' },
+        },
+      ],
+      [
+        {
+          content: 'TIPO DE EVALUACIÓN',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+        {
+          content: 'Actividades y Técnicas',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+        {
+          content: 'Instrumentos',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+        {
+          content: 'Evidencias de Evaluación',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+      ],
     ],
     body: [
       [
         { content: 'FORMATIVA', styles: { fontStyle: 'bold', halign: 'center' } },
-        Array.isArray(evalFormativa.actividades) ? evalFormativa.actividades.join('\n') : (evalFormativa.actividades || ''),
-        Array.isArray(evalFormativa.instrumentos) ? evalFormativa.instrumentos.join('\n') : (evalFormativa.instrumentos || ''),
-        Array.isArray(evalFormativa.evidencias) ? evalFormativa.evidencias.join('\n') : (evalFormativa.evidencias || '')
+        Array.isArray(evalFormativa.actividades)
+          ? evalFormativa.actividades.join('\n')
+          : evalFormativa.actividades || '',
+        Array.isArray(evalFormativa.instrumentos)
+          ? evalFormativa.instrumentos.join('\n')
+          : evalFormativa.instrumentos || '',
+        Array.isArray(evalFormativa.evidencias)
+          ? evalFormativa.evidencias.join('\n')
+          : evalFormativa.evidencias || '',
       ],
       [
         { content: 'SUMATIVA', styles: { fontStyle: 'bold', halign: 'center' } },
-        Array.isArray(evalSumativa.actividades) ? evalSumativa.actividades.join('\n') : (evalSumativa.actividades || ''),
-        Array.isArray(evalSumativa.instrumentos) ? evalSumativa.instrumentos.join('\n') : (evalSumativa.instrumentos || ''),
-        Array.isArray(evalSumativa.evidencias) ? evalSumativa.evidencias.join('\n') : (evalSumativa.evidencias || '')
-      ]
-    ]
+        Array.isArray(evalSumativa.actividades)
+          ? evalSumativa.actividades.join('\n')
+          : evalSumativa.actividades || '',
+        Array.isArray(evalSumativa.instrumentos)
+          ? evalSumativa.instrumentos.join('\n')
+          : evalSumativa.instrumentos || '',
+        Array.isArray(evalSumativa.evidencias)
+          ? evalSumativa.evidencias.join('\n')
+          : evalSumativa.evidencias || '',
+      ],
+    ],
   })
   y = doc.lastAutoTable.finalY + 5
 
@@ -914,7 +1055,7 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     { momento: 'RESULTADOS DE APRENDIZAJE/LOGROS ESPERADOS', actividad: '', duracion: '' },
     { momento: 'CONTENIDOS DE LA CLASE', actividad: '', duracion: '' },
     { momento: 'CUERPO DE CONTENIDOS', actividad: '', duracion: '' },
-    { momento: 'CONCLUSIÓN O CIERRE', actividad: '', duracion: '' }
+    { momento: 'CONCLUSIÓN O CIERRE', actividad: '', duracion: '' },
   ]
   const secuenciaData = secuencia.length > 0 ? secuencia : secuenciaDefault
 
@@ -925,21 +1066,36 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
     styles: { fontSize: 8, cellPadding: 3 },
     columnStyles: { 0: { cellWidth: 70 }, 2: { cellWidth: 25 } },
     head: [
-      [{ content: 'SECUENCIA DIDÁCTICA', colSpan: 3, styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' } }],
       [
-        { content: 'MOMENTOS', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-        { content: 'ACTIVIDAD', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } },
-        { content: 'DURACIÓN', styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' } }
-      ]
+        {
+          content: 'SECUENCIA DIDÁCTICA',
+          colSpan: 3,
+          styles: { halign: 'center', fillColor: COLORS.morado, textColor: 255, fontStyle: 'bold' },
+        },
+      ],
+      [
+        {
+          content: 'MOMENTOS',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+        {
+          content: 'ACTIVIDAD',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+        {
+          content: 'DURACIÓN',
+          styles: { fillColor: COLORS.gris, fontStyle: 'bold', halign: 'center' },
+        },
+      ],
     ],
-    body: secuenciaData.map(s => [
+    body: secuenciaData.map((s) => [
       { content: (s.momento || '').toUpperCase(), styles: { fontStyle: 'bold' } },
       s.actividad || '',
-      s.duracion ? (typeof s.duracion === 'number' ? `${s.duracion} min` : s.duracion) : ''
-    ])
+      s.duracion ? (typeof s.duracion === 'number' ? `${s.duracion} min` : s.duracion) : '',
+    ]),
   })
 }
 
 export default {
-  generarCarpetaDocente
+  generarCarpetaDocente,
 }
