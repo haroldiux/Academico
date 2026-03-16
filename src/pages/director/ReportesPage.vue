@@ -215,7 +215,11 @@
 
         <!-- Panel Resumen de Carrera -->
         <q-tab-panel name="resumen" class="q-pa-none">
-          <ResumenCarreraTab :carrera-id="Number(filtros.carrera)" :semana="filtros.semana" />
+          <ResumenCarreraTab
+            :sede-id="Number(filtros.sede)"
+            :carrera-id="Number(filtros.carrera)"
+            :semana="filtros.semana"
+          />
         </q-tab-panel>
 
         <!-- Panel Semanal -->
@@ -229,7 +233,11 @@
 
         <!-- Panel Reincidentes -->
         <q-tab-panel name="reincidentes" class="q-pa-none">
-          <ReincidentesTab :carrera-id="Number(filtros.carrera)" :semana="filtros.semana" />
+          <ReincidentesTab
+            :sede-id="Number(filtros.sede)"
+            :carrera-id="Number(filtros.carrera)"
+            :semana="filtros.semana"
+          />
         </q-tab-panel>
 
         <!-- Panel Asistencias -->

@@ -290,6 +290,7 @@
               <tr>
                 <th class="text-left text-weight-bold">Fecha</th>
                 <th class="text-left text-weight-bold">Tema / Actividad</th>
+                <th class="text-left text-weight-bold">Tipo Sesión</th>
                 <th class="text-left text-weight-bold">Estado Real</th>
                 <th class="text-left text-weight-bold">Evidencias Subidas</th>
               </tr>
@@ -303,7 +304,17 @@
                       : 'N/A'
                   }}
                 </td>
-                <td style="white-space: normal; min-width: 250px">{{ session.tema }}</td>
+                <td style="white-space: normal; min-width: 200px">{{ session.tema }}</td>
+                <td style="width: 15%">
+                  <q-badge
+                    v-if="session.es_examen || session.tipo_examen"
+                    :color="session.es_examen ? 'positive' : 'primary'"
+                    class="q-mb-xs"
+                  >
+                    {{ formatSessionType(session) }}
+                  </q-badge>
+                  <q-badge v-else color="grey" class="q-mb-xs"> Clase Regular </q-badge>
+                </td>
                 <td style="width: 15%">
                   <q-badge :color="session.estado === 'PENDIENTE' ? 'red' : 'positive'">{{
                     session.estado
@@ -498,6 +509,29 @@ const openEvidence = (path) => {
   else {
     window.open(`https://${path}`, '_blank')
   }
+}
+
+const formatSessionType = (session) => {
+  if (session.es_examen) {
+    const examType = session.tipo_examen
+    if (examType === 'PRIMER_PARCIAL') return '1er Parcial'
+    if (examType === 'SEGUNDO_PARCIAL') return '2do Parcial'
+    if (examType === 'TERCER_PARCIAL') return '3er Parcial'
+    if (examType === 'FINAL') return 'Examen Final'
+    if (examType === 'RECUPERATORIO') return 'Recuperatorio'
+    return 'Examen'
+  }
+
+  if (session.tipo_examen) {
+    const practiceType = session.tipo_examen
+    if (practiceType === 'LABORATORIO') return 'Práctica Lab.'
+    if (practiceType === 'ANFITEATRO') return 'Práctica Anf.'
+    if (practiceType === 'CAMPO') return 'Práctica Campo'
+    if (practiceType === 'TALLER') return 'Taller Práctico'
+    return 'Práctica Especial'
+  }
+
+  return 'Clase Regular'
 }
 
 // ─── INDIVIDUAL PDF EXPORT ──────────────────────────────────────────────────
@@ -703,11 +737,15 @@ const recalculateAlert = () => {
 const saveReport = async () => {
   saving.value = true
   try {
-    await api.post('/reportes/semanal', report.value)
+    console.log('Enviando datos del informe:', JSON.stringify(report.value, null, 2))
+    const response = await api.post('/reportes/semanal', report.value)
+    console.log('Respuesta del servidor:', response.data)
     $q.notify({ type: 'positive', message: 'Informe guardado correctamente' })
     emit('saved')
   } catch (error) {
     console.error('Error saving report:', error)
+    console.error('Datos enviados:', report.value)
+    console.error('Respuesta del error:', error.response?.data)
     $q.notify({ type: 'negative', message: 'Error al guardar el informe' })
   } finally {
     saving.value = false

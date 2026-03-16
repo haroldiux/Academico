@@ -1665,7 +1665,14 @@
               icon="swap_horiz"
               label="Cambiar archivo"
               class="q-mt-sm"
-              @click="archivoPreviewBanco = null; archivoBancoFile = null; preguntasImportadas = []; importErrores = []"
+              @click="
+                () => {
+                  archivoPreviewBanco = null
+                  archivoBancoFile = null
+                  preguntasImportadas = []
+                  importErrores = []
+                }
+              "
             />
           </div>
         </q-card-section>

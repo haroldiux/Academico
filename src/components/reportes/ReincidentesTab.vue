@@ -139,6 +139,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 const props = defineProps({
+  sedeId: { type: Number, required: false },
   carreraId: { type: Number, required: false },
   semana: { type: String, required: true },
 })
@@ -240,8 +241,8 @@ const cargarDatos = async () => {
   if (!props.carreraId || !props.semana) return
   loading.value = true
   try {
-    const { data } = await api.get('/reportes/director/resumen-carrera', {
-      params: { carrera_id: props.carreraId, semana_inicio: props.semana },
+    const { data } = await api.get('/reportes/director/reincidentes-semanal', {
+      params: { sede_id: props.sedeId, carrera_id: props.carreraId, semana_inicio: props.semana },
     })
     reincidentes.value = data.docentes_criticos ?? []
     semanaFin.value = data.semana_fin ?? ''
@@ -260,6 +261,7 @@ const cargarDatos = async () => {
 
 watch(() => props.semana, cargarDatos)
 watch(() => props.carreraId, cargarDatos)
+watch(() => props.sedeId, cargarDatos)
 onMounted(cargarDatos)
 </script>
 

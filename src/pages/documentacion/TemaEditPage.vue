@@ -1250,10 +1250,7 @@
             flat
             label="Cancelar"
             color="grey"
-            @click="
-              dialogLogro = false
-              nuevoLogro = ''
-            "
+            @click="((dialogLogro = false), (nuevoLogro = ''))"
             no-caps
           />
           <q-btn unelevated label="Agregar" color="green" @click="agregarLogro" no-caps />
@@ -1286,10 +1283,7 @@
             flat
             label="Cancelar"
             color="grey"
-            @click="
-              dialogIndicador = false
-              nuevoIndicador = ''
-            "
+            @click="((dialogIndicador = false), (nuevoIndicador = ''))"
             no-caps
           />
           <q-btn unelevated label="Agregar" color="primary" @click="agregarIndicador" no-caps />

@@ -127,6 +127,15 @@
           >
             {{ props.row.subReports.length }} Grupos
           </q-badge>
+          <q-badge
+            v-if="isPropagated(props.row)"
+            color="info"
+            text-color="white"
+            class="q-ml-sm"
+            icon="content_copy"
+          >
+            Propagado
+          </q-badge>
         </q-td>
       </template>
 
@@ -352,6 +361,14 @@ const computeTechScore = (criterios) => {
   const keys = Object.keys(criterios)
   const yes = keys.filter((k) => criterios[k].cumple).length
   return `${yes}/${keys.length} Cumplidos`
+}
+
+const isPropagated = (row) => {
+  if (row.es_propagado) return true
+  if (row.subReports && row.subReports.length > 0) {
+    return row.subReports.some((sub) => sub.es_propagado)
+  }
+  return false
 }
 
 const getAlertColor = (alert) => {

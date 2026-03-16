@@ -630,16 +630,29 @@
 
                   <!-- Modo Examen Placeholder -->
                   <div v-else class="q-mb-md">
-                    <q-banner dense rounded class="bg-red-1 text-red-9 border-red q-pa-md">
+                    <q-banner dense rounded class="bg-green-1 text-green-9 border-green q-pa-md">
                       <template v-slot:avatar>
-                        <q-icon name="assignment" color="red" />
+                        <q-icon name="assignment_turned_in" color="positive" />
                       </template>
-                      <div class="text-weight-bold">Sesión Práctica Especial / Examen</div>
+                      <div class="text-weight-bold">✅ Sesión Práctica Especial / Examen</div>
                       <div>
-                        Esta sesión está marcada como práctica especial o examen. Los campos de
-                        avance temático están ocultos para facilitar el registro de evidencias.
+                        Esta sesión está marcada como práctica especial o examen. Se contará como
+                        <strong>TOTALMENTE CUMPLIDA</strong> para los informes de dirección de
+                        carrera. Los campos pedagógicos están ocultos para facilitar el registro de
+                        evidencias.
                       </div>
                     </q-banner>
+                    <div class="q-mt-md text-center">
+                      <q-chip
+                        color="positive"
+                        text-color="white"
+                        icon="check_circle"
+                        size="lg"
+                        class="q-pa-sm"
+                      >
+                        TOTALMENTE CUMPLIDO (PRÁCTICA/EXAMEN)
+                      </q-chip>
+                    </div>
                   </div>
                 </div>
 
@@ -1721,6 +1734,16 @@ const tiposExamenOptions = [
   { label: 'Práctica (Clínica, Anfiteatro, Lab, Otros)', value: 'PRACTICA_ESPECIAL' },
 ]
 
+// Watch para establecer estado TOTAL automáticamente cuando es examen
+watch(
+  () => esExamen.value,
+  (newVal) => {
+    if (newVal) {
+      estadoCumplimiento.value = 'TOTAL'
+    }
+  },
+)
+
 const capturarUbicacion = async () => {
   if (capturandoUbicacion.value) return
   capturandoUbicacion.value = true
@@ -2137,28 +2160,44 @@ const materiasDisponibles = computed(() => {
   return result
 })
 
+// Materia actual seleccionada con sus datos completos
+const materiaActual = computed(() => {
+  if (!materiaSeleccionada.value) return null
+  return materiasDisponibles.value.find((m) => m.id === materiaSeleccionada.value)
+})
+
 // 2. Grupos consolidados para la materia seleccionada
+// Para materias comunes se reúnen los grupos de TODAS las materias vinculadas.
 const gruposDisponibles = computed(() => {
   if (!materiaSeleccionada.value) return []
 
   const materia = materiasDisponibles.value.find((m) => m.id === materiaSeleccionada.value)
-  if (!materia || !materia.grupos) return []
+  if (!materia) return []
 
-  // Consolidar por grupo_id
+  // Fuentes de grupos: si es común agrupada usar todas las vinculadas, si no solo la materia actual
+  const fuentesMaterias =
+    materia.esComunAgrupada && materia.materiasVinculadas?.length > 0
+      ? materia.materiasVinculadas
+      : [materia]
+
+  // Consolidar por grupo_id de todas las fuentes
   const gruposMap = {}
 
-  materia.grupos.forEach((g) => {
-    if (!gruposMap[g.grupo_id]) {
-      gruposMap[g.grupo_id] = {
-        id: g.grupo_id,
-        nombre: g.grupo,
-        tipo: g.tipo_clase,
-        horarios: [],
+  fuentesMaterias.forEach((src) => {
+    if (!src.grupos) return
+    src.grupos.forEach((g) => {
+      if (!gruposMap[g.grupo_id]) {
+        gruposMap[g.grupo_id] = {
+          id: g.grupo_id,
+          nombre: g.grupo,
+          tipo: g.tipo_clase,
+          horarios: [],
+        }
       }
-    }
-    if (g.dia !== '-') {
-      gruposMap[g.grupo_id].horarios.push(`${g.dia} ${g.hora_inicio}-${g.hora_fin}`)
-    }
+      if (g.dia !== '-') {
+        gruposMap[g.grupo_id].horarios.push(`${g.dia} ${g.hora_inicio}-${g.hora_fin}`)
+      }
+    })
   })
 
   return Object.values(gruposMap).map((g) => ({
@@ -2405,13 +2444,39 @@ const fetchSesiones = async () => {
   }
 
   try {
-    // 1. Fetch Planificación (Hybrid: Master + Execution)
-    const response = await planificacionSemestralService.getPlanificacion(
-      materiaSeleccionada.value,
-      {
-        grupo_id: grupoSeleccionado.value,
-      },
-    )
+    // --- Resolución de ID para materias comunes ---
+    // Si la materia es común (esComunAgrupada), probar cada materia vinculada
+    // y usar la primera que devuelva sesiones en el cronograma.
+    const materiaObj = materiasDisponibles.value.find((m) => m.id === materiaSeleccionada.value)
+    let asignaturaIdEfectivo = materiaSeleccionada.value
+
+    if (materiaObj?.esComunAgrupada && materiaObj.materiasVinculadas?.length > 0) {
+      for (const vinculada of materiaObj.materiasVinculadas) {
+        try {
+          const testResp = await planificacionSemestralService.getPlanificacion(vinculada.id, {
+            grupo_id: grupoSeleccionado.value,
+          })
+          const testSesiones = testResp.data.planificacion || []
+          if (testSesiones.length > 0) {
+            asignaturaIdEfectivo = vinculada.id
+            console.log(
+              `[Común] Cronograma encontrado en materia ID ${vinculada.id} (${vinculada.nombre || vinculada.codigo})`,
+            )
+            break
+          }
+        } catch {
+          // Materia vinculada sin cronograma, continuar con la siguiente
+        }
+      }
+      if (asignaturaIdEfectivo === materiaSeleccionada.value) {
+        console.warn('[Común] Ninguna materia vinculada tiene cronograma aún.')
+      }
+    }
+
+    // 1. Fetch Planificación usando el ID efectivo (el que tiene cronograma)
+    const response = await planificacionSemestralService.getPlanificacion(asignaturaIdEfectivo, {
+      grupo_id: grupoSeleccionado.value,
+    })
 
     let rawSesiones = response.data.planificacion || []
     const config = response.data.config || {}
@@ -2812,6 +2877,7 @@ const guardarSeguimiento = async () => {
         cronograma_id: sesionActual.value.cronograma_id || sesionActual.value.id,
         grupo_id: grupoSeleccionado.value,
         asignatura_id: materiaSeleccionada.value,
+        comun_token: materiaActual.value?.comun_token || null,
         numero_sesion: sesionActual.value.numero_sesion,
         fecha: sesionActual.value.fecha || new Date().toISOString().split('T')[0],
         tema_cumplido:
@@ -2904,9 +2970,20 @@ const guardarSeguimiento = async () => {
     )
     formData.append('grupo_id', grupoSeleccionado.value || '')
     formData.append('asignatura_id', materiaSeleccionada.value || '')
+    if (materiaActual.value?.comun_token) {
+      formData.append('comun_token', materiaActual.value.comun_token)
+    }
     formData.append('numero_sesion', sesionActual.value.numero_sesion || '')
     formData.append('fecha', sesionActual.value.fecha || '')
     formData.append('estado_cumplimiento', estadoCumplimiento.value || 'NO')
+
+    // Debug: Log FormData contents
+    console.log('=== FormData contents ===')
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ', pair[1])
+    }
+    console.log('materiaActual:', materiaActual.value)
+    console.log('comun_token:', materiaActual.value?.comun_token)
 
     const pedagogicoData = {
       estrategias: pedagogico.value.estrategias,
@@ -3069,9 +3146,24 @@ const guardarSeguimiento = async () => {
     )
   } catch (error) {
     console.error('Error saving follow-up:', error)
+    console.error('Error response:', error.response?.data)
+    console.error('Error status:', error.response?.status)
+    console.error('Error headers:', error.response?.headers)
+
+    let errorMessage = 'Error al guardar el seguimiento'
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message
+    } else if (error.response?.data?.error) {
+      errorMessage = error.response.data.error
+    } else if (error.response?.data) {
+      errorMessage = JSON.stringify(error.response.data)
+    }
+
     $q.notify({
       type: 'negative',
-      message: 'Error al guardar el seguimiento',
+      message: errorMessage,
+      caption: `Código: ${error.response?.status || 'N/A'}`,
+      timeout: 8000,
     })
   }
 }

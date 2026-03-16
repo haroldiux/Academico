@@ -292,6 +292,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 const props = defineProps({
+  sedeId: { type: Number, required: false },
   carreraId: { type: Number, required: false },
   semana: { type: String, required: true },
   carreraNombre: { type: String, default: '' },
@@ -537,7 +538,7 @@ const cargarDatos = async () => {
   loading.value = true
   try {
     const { data } = await api.get('/reportes/director/resumen-carrera', {
-      params: { carrera_id: props.carreraId, semana_inicio: props.semana },
+      params: { sede_id: props.sedeId, carrera_id: props.carreraId, semana_inicio: props.semana },
     })
     datosTotales.value = data.totales
     datosPorcentajes.value = data.porcentajes
@@ -561,6 +562,7 @@ const cargarDatos = async () => {
 
 watch(() => props.semana, cargarDatos)
 watch(() => props.carreraId, cargarDatos)
+watch(() => props.sedeId, cargarDatos)
 onMounted(cargarDatos)
 </script>
 

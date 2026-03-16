@@ -306,8 +306,9 @@ const loadReincidentes = async () => {
 
   loadingReincidentes.value = true
   try {
-    const { data } = await api.get('/reportes/director/resumen-carrera', {
+    const { data } = await api.get('/reportes/director/reincidentes-semanal', {
       params: {
+        sede_id: props.sedeId,
         carrera_id: props.carreraId,
         semana_inicio: props.semanaInicio,
       },
