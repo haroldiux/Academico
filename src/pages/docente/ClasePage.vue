@@ -2191,21 +2191,33 @@ const gruposDisponibles = computed(() => {
           id: g.grupo_id,
           nombre: g.grupo,
           tipo: g.tipo_clase,
-          horarios: [],
+          horariosSet: new Set(), // Usar Set para horarios únicos
         }
+      } else if (gruposMap[g.grupo_id].tipo !== g.tipo_clase) {
+        // Warning si el mismo grupo tiene tipo diferente en distintas materias vinculadas
+        console.warn(
+          `Grupo ${g.grupo_id} tiene tipo inconsistente: ${gruposMap[g.grupo_id].tipo} vs ${g.tipo_clase}`,
+        )
       }
       if (g.dia !== '-') {
-        gruposMap[g.grupo_id].horarios.push(`${g.dia} ${g.hora_inicio}-${g.hora_fin}`)
+        const horarioStr = `${g.dia} ${g.hora_inicio}-${g.hora_fin}`
+        gruposMap[g.grupo_id].horariosSet.add(horarioStr)
       }
     })
   })
 
-  return Object.values(gruposMap).map((g) => ({
-    label: `Grupo ${g.nombre} - ${g.tipo}`,
-    sublabel: g.horarios.length > 0 ? g.horarios.join(', ') : 'Sin horario definido',
-    value: g.id,
-    ...g,
-  }))
+  return Object.values(gruposMap).map((g) => {
+    const horarios = Array.from(g.horariosSet)
+    return {
+      label: `Grupo ${g.nombre} - ${g.tipo}`,
+      sublabel: horarios.length > 0 ? horarios.join(', ') : 'Sin horario definido',
+      value: g.id,
+      id: g.id,
+      nombre: g.nombre,
+      tipo: g.tipo,
+      horarios,
+    }
+  })
 })
 
 // Lógica de Unificación de Clases (MANTENIDA para compatibilidad de vista de estudiantes si es necesario, pero simplificada)
@@ -2444,39 +2456,14 @@ const fetchSesiones = async () => {
   }
 
   try {
-    // --- Resolución de ID para materias comunes ---
-    // Si la materia es común (esComunAgrupada), probar cada materia vinculada
-    // y usar la primera que devuelva sesiones en el cronograma.
-    const materiaObj = materiasDisponibles.value.find((m) => m.id === materiaSeleccionada.value)
-    let asignaturaIdEfectivo = materiaSeleccionada.value
-
-    if (materiaObj?.esComunAgrupada && materiaObj.materiasVinculadas?.length > 0) {
-      for (const vinculada of materiaObj.materiasVinculadas) {
-        try {
-          const testResp = await planificacionSemestralService.getPlanificacion(vinculada.id, {
-            grupo_id: grupoSeleccionado.value,
-          })
-          const testSesiones = testResp.data.planificacion || []
-          if (testSesiones.length > 0) {
-            asignaturaIdEfectivo = vinculada.id
-            console.log(
-              `[Común] Cronograma encontrado en materia ID ${vinculada.id} (${vinculada.nombre || vinculada.codigo})`,
-            )
-            break
-          }
-        } catch {
-          // Materia vinculada sin cronograma, continuar con la siguiente
-        }
-      }
-      if (asignaturaIdEfectivo === materiaSeleccionada.value) {
-        console.warn('[Común] Ninguna materia vinculada tiene cronograma aún.')
-      }
-    }
-
-    // 1. Fetch Planificación usando el ID efectivo (el que tiene cronograma)
-    const response = await planificacionSemestralService.getPlanificacion(asignaturaIdEfectivo, {
-      grupo_id: grupoSeleccionado.value,
-    })
+    // 1. Fetch Planificación usando la materia seleccionada
+    // El backend selecciona automáticamente el mejor cronograma para materias comunes fusionadas
+    const response = await planificacionSemestralService.getPlanificacion(
+      materiaSeleccionada.value,
+      {
+        grupo_id: grupoSeleccionado.value,
+      },
+    )
 
     let rawSesiones = response.data.planificacion || []
     const config = response.data.config || {}
@@ -2578,6 +2565,17 @@ const fetchSesiones = async () => {
         message: 'Configure la fecha de inicio de clases para ver las fechas proyectadas',
       })
     }
+
+    // Deduplicar sesiones por ID (protección contra posibles duplicados del backend)
+    const seenIds = new Set()
+    filteredSesiones = filteredSesiones.filter((s) => {
+      if (seenIds.has(s.id)) {
+        console.warn(`Sesión duplicada ID ${s.id} eliminada`)
+        return false
+      }
+      seenIds.add(s.id)
+      return true
+    })
 
     sesiones.value = filteredSesiones
 

@@ -323,15 +323,15 @@ const routes = [
             path: 'comparador-backup',
             name: 'comparador-backup',
             component: () => import('pages/admin/ComparadorBackupPage.vue'),
-            meta: { title: 'Comparador de Backups', rol: ['SUPER_ADMIN', 'ADMIN'] }
+            meta: { title: 'Comparador de Backups', rol: ['SUPER_ADMIN', 'ADMIN'] },
           },
           {
             path: 'recuperacion-manual',
             name: 'recuperacion-manual',
             component: () => import('pages/admin/RecuperacionManualPage.vue'),
-            meta: { title: 'Recuperación Manual', rol: ['SUPER_ADMIN', 'ADMIN'] }
-          }
-        ]
+            meta: { title: 'Recuperación Manual', rol: ['SUPER_ADMIN', 'ADMIN'] },
+          },
+        ],
       },
       // Documentación
       {

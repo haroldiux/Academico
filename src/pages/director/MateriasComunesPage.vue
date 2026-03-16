@@ -432,18 +432,31 @@ const toggleSeleccion = (candidato) => {
 const vincularMultiple = async () => {
   if (!materiaBase.value || !materiasSeleccionadas.value.length) return
   saving.value = true
+  const allWarnings = []
   try {
     for (const target of materiasSeleccionadas.value) {
-      await api.post('/materias-comunes/link', {
+      const response = await api.post('/materias-comunes/link', {
         asignatura_id: materiaBase.value.id,
         target_asignatura_id: target.id,
         tipo: tipoVinculacion.value,
       })
+      if (response.data.warnings && response.data.warnings.length) {
+        allWarnings.push(...response.data.warnings)
+      }
     }
-    $q.notify({
-      type: 'positive',
-      message: `${materiasSeleccionadas.value.length} materia(s) vinculadas`,
-    })
+    if (allWarnings.length) {
+      $q.notify({
+        type: 'warning',
+        message: `${materiasSeleccionadas.value.length} materia(s) vinculadas con advertencias`,
+        caption: allWarnings.join('; '),
+        timeout: 8000,
+      })
+    } else {
+      $q.notify({
+        type: 'positive',
+        message: `${materiasSeleccionadas.value.length} materia(s) vinculadas`,
+      })
+    }
     dialogLink.value = false
     fetchMateriasComunes()
   } catch {

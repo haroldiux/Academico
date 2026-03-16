@@ -1174,7 +1174,6 @@
         <!-- Tab: Banco de Preguntas -->
         <!-- ============================================================ -->
         <q-tab-panel name="banco" class="q-pa-none">
-
           <!-- ── Header principal ── -->
           <div class="banco-header">
             <div>

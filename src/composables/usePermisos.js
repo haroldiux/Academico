@@ -271,7 +271,11 @@ export function usePermisos() {
         { label: 'Estadísticas', icon: 'analytics', to: '/admin/estadisticas' },
         { label: 'Configuración', icon: 'settings', to: '/admin/configuracion' },
         { label: 'Comparador Backups', icon: 'history_edu', to: '/admin/comparador-backup' },
-        { label: 'Recuperación Manual', icon: 'settings_backup_restore', to: '/admin/recuperacion-manual' }
+        {
+          label: 'Recuperación Manual',
+          icon: 'settings_backup_restore',
+          to: '/admin/recuperacion-manual',
+        },
       ]
     }
 
