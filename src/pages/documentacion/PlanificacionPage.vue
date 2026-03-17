@@ -892,11 +892,61 @@ async function cargarPlanificacion() {
       // 1. Calcular estructura base sin guardar
       planificacionSesiones.value = calcularPropuestaPlanificacion()
 
+      // Helper: normalizar tipo de sesión a 'teorica' o 'practica'
+      const normalizarTipo = (t) => {
+        if (!t) return ''
+        const s = String(t).toUpperCase()
+        if (s.includes('TEOR') || s === 'T') return 'teorica'
+        if (s.includes('PRACT') || s === 'P') return 'practica'
+        return s.toLowerCase()
+      }
+
+      // Pre-calcular índice ordinal de cada registro DB dentro de su grupo semana+tipo.
+      // Esto permite saber que un registro es "la 1ra Teórica de la semana 3", etc.,
+      // independientemente del numero_sesion global (que varía entre docentes).
+      const gruposPorSemanaYTipo = {}
+      cronogramasDB.forEach((db) => {
+        const tipoNorm = normalizarTipo(db.tipo_clase)
+        const key = `${db.semana}_${tipoNorm}`
+        if (!gruposPorSemanaYTipo[key]) gruposPorSemanaYTipo[key] = []
+        gruposPorSemanaYTipo[key].push(db)
+      })
+      // Ordenar cada grupo por numero_sesion ascendente para preservar el orden original
+      const indiceOrdenalDB = new Map()
+      Object.values(gruposPorSemanaYTipo).forEach((grupo) => {
+        grupo.sort((a, b) => a.numero_sesion - b.numero_sesion)
+        grupo.forEach((db, idx) => {
+          indiceOrdenalDB.set(db.numero_sesion, idx + 1) // índice 1-based
+        })
+      })
+
       // Ahora inyectar datos reales sobre planificacionSesiones
       cronogramasDB.forEach((db) => {
-        const sesionView = planificacionSesiones.value.find(
-          (s) => s.numeroGlobal === db.numero_sesion,
-        )
+        // Determinar índice ordinal: usa indice_tipo si el backend lo tiene guardado,
+        // si no, lo inferimos del orden relativo entre sesiones del mismo tipo y semana.
+        const tipoNorm = normalizarTipo(db.tipo_clase)
+        const indiceDB = db.indice_tipo || indiceOrdenalDB.get(db.numero_sesion) || 1
+
+        // Matching principal: semana + tipo + índice ordinal dentro del tipo
+        // Esto garantiza que "la 1ra Teórica de la semana 1 de Harold"
+        // se muestre en "la 1ra Teórica de la semana 1 de Martín",
+        // sin importar el día o el número global de sesión de cada uno.
+        let sesionView = null
+        if (db.tipo_clase && db.semana) {
+          sesionView = planificacionSesiones.value.find((s) => {
+            return (
+              s.semana === db.semana &&
+              normalizarTipo(s.tipoClase) === tipoNorm &&
+              s.indiceTipo === indiceDB
+            )
+          })
+        }
+        // Fallback: match por numero_sesion (retrocompatibilidad con datos guardados antes de este fix)
+        if (!sesionView) {
+          sesionView = planificacionSesiones.value.find(
+            (s) => s.numeroGlobal === db.numero_sesion,
+          )
+        }
         if (sesionView) {
           // 1. Manejo de Temas (Prioridad IDs para el select)
           if (db.temas && db.temas.length > 0) {
@@ -1720,13 +1770,16 @@ async function guardarTodo(silent = false) {
         contenido_procedimental: sesion.procedimental,
         contenido_actitudinal: sesion.actitudinal,
         numero_sesion: sesion.numeroGlobal,
+        semana: sesion.semana,
+        tipo_clase: sesion.tipoClase,    // snake_case para el backend
+        indice_tipo: sesion.indiceTipo,  // posición ordinal dentro del tipo en la semana (1ra teórica=1, 2da=2…)
+        tipoClase: sesion.tipoClase,     // mantener camelCase por compatibilidad
         tema_id:
           sesion.tema_id ||
           (temasIds.length > 0 ? temasIds[0] : null),
         temas_ids: temasIds,
         contenido_items_seleccionados: sesion.contenido_items_seleccionados || [],
         observaciones: sesion.contenido || '', // Guardar contenido manual en observaciones
-        tipoClase: sesion.tipoClase // Send type explicitly (Teórica/Práctica)
       }
 
       // REMOVED: Date saving logic from here. Dates are now projected on the fly or saved via Execution.
