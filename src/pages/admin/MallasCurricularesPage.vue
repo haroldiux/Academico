@@ -12,8 +12,14 @@
             Consulta y administra planes de estudio desde API de Planificación externa
           </p>
           <div class="header-badges q-mt-xs">
-            <q-badge color="positive" label="API Externa" class="q-mr-xs" />
-            <q-badge color="primary" label="Plan Nuevo (N)" />
+            <q-badge color="grey-6" label="BD Local" class="q-mr-xs" />
+            <q-badge color="primary" label="Plan Nuevo (N)" class="q-mr-xs" />
+            <q-badge
+              v-if="ultimoSync"
+              color="positive"
+              :label="`Sync: ${ultimoSync}`"
+            />
+            <q-badge v-else color="warning" label="Sin sincronizar" />
           </div>
         </div>
       </div>
@@ -32,7 +38,7 @@
           color="primary"
           icon="sync"
           label="Sincronizar API"
-          @click="sincronizarAPI"
+          @click="abrirDialogoSincronizar"
           :loading="sincronizando"
           no-caps
         />
@@ -303,6 +309,60 @@
       </div>
     </q-card>
 
+    <!-- Diálogo Confirmación Sincronización -->
+    <q-dialog v-model="dialogSincronizar" persistent>
+      <q-card style="min-width: 460px">
+        <q-card-section class="bg-primary text-white">
+          <div class="text-h6 flex items-center gap-2">
+            <q-icon name="sync" class="q-mr-sm" />
+            Sincronizar API Planning
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-md">
+          <div class="text-body1 q-mb-sm">
+            Esta acción descargará las mallas curriculares del Plan N para
+            <strong>todas las carreras de Cochabamba</strong> desde la API de
+            Planning y las guardará en la base de datos local.
+          </div>
+          <q-banner class="bg-warning text-white q-mb-md" rounded>
+            <template v-slot:avatar>
+              <q-icon name="warning" />
+            </template>
+            Los datos anteriores de la gestión
+            <strong>{{ filtros.gestion }}</strong> serán reemplazados.
+          </q-banner>
+          <div class="text-body2 text-grey-8 q-mb-sm">
+            Para confirmar, escribe <strong>sincronizar</strong> en el campo:
+          </div>
+          <q-input
+            v-model="confirmacionTexto"
+            outlined
+            dense
+            placeholder="sincronizar"
+            :error="confirmacionError"
+            error-message="Escribe exactamente 'sincronizar'"
+            @keyup.enter="ejecutarSincronizacion"
+            autofocus
+          />
+        </q-card-section>
+
+        <q-card-actions align="right" class="text-primary q-pb-md q-pr-md">
+          <q-btn flat label="Cancelar" @click="cerrarDialogoSincronizar" />
+          <q-btn
+            color="primary"
+            icon="sync"
+            label="Confirmar Sincronización"
+            :disable="confirmacionTexto !== 'sincronizar'"
+            @click="ejecutarSincronizacion"
+            :loading="sincronizando"
+            unelevated
+            no-caps
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Diálogo Edición -->
     <q-dialog v-model="dialogEdicion" persistent>
       <q-card style="min-width: 500px">
@@ -406,6 +466,12 @@ const dialogEdicion = ref(false)
 const materiaEditada = ref(null)
 const localAsignaturas = ref([])
 const loadingLocal = ref(false)
+
+// Diálogo de sincronización
+const dialogSincronizar = ref(false)
+const confirmacionTexto = ref('')
+const confirmacionError = ref(false)
+const ultimoSync = ref(null) // fecha de último sync exitoso
 
 // Opciones de filtro
 const carrerasFiltradas = ref([])
@@ -784,49 +850,66 @@ async function fetchMallas() {
     const carrera = carrerasStore.carreras.find((c) => c.id === filtros.value.carrera)
     const codigoCarrera = getCarreraApiCode(carrera)
 
-    console.log('Fetching mallas for:', {
-      sede: filtros.value.sede,
-      carreraId: filtros.value.carrera,
-      carreraNombre: carrera?.nombre,
-      codigoCarrera,
-    })
-
     if (!codigoCarrera) {
-      throw new Error('Carrera no tiene código API configurado')
+      $q.notify({
+        type: 'warning',
+        message: 'Esta carrera no tiene código API configurado. Contacta al administrador.',
+        position: 'top-right',
+      })
+      return
     }
 
-    const sedeApiId = sedesStore.getSedeApiId(filtros.value.sede)
-    console.log('Sede API ID:', sedeApiId, 'Sede internal ID:', filtros.value.sede)
-    const response = await api.get('/grupos-externo/plan-n', {
+    const sedeApiId = sedesStore.getSedeApiId(filtros.value.sede) || filtros.value.sede
+
+    // Leer de la BD local (planning_cache) — NO de la API externa
+    const response = await api.get('/planning/cache', {
       params: {
         gestion: filtros.value.gestion,
-        carrera: codigoCarrera,
-        sede: sedeApiId,
+        carrera_codigo: codigoCarrera.toUpperCase(),
+        sede_api_id: sedeApiId,
       },
     })
 
-    console.log('API Response:', response.data)
     if (response.data.success) {
+      if (!response.data.sincronizado || response.data.data.length === 0) {
+        // No hay datos en BD — avisar al usuario que debe sincronizar
+        $q.notify({
+          type: 'warning',
+          icon: 'sync',
+          message: 'No hay datos sincronizados para esta carrera y gestión. Usa "Sincronizar API" primero.',
+          position: 'top-right',
+          timeout: 5000,
+        })
+        return
+      }
+
       materias.value = response.data.data.map((m) => ({
         ...m,
         carrera_id: filtros.value.carrera,
         sede_id: filtros.value.sede,
       }))
 
+      // Actualizar fecha de último sync
+      if (response.data.sincronizado_at) {
+        ultimoSync.value = new Date(response.data.sincronizado_at).toLocaleString('es-BO', {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        })
+      }
+
       await fetchLocalAsignaturas()
 
       $q.notify({
         type: 'positive',
-        message: `Cargadas ${materias.value.length} materias del Plan N`,
+        message: `${materias.value.length} materias cargadas desde BD local`,
         position: 'top-right',
       })
     }
   } catch (error) {
-    console.error('Error fetching mallas curriculares:', error)
+    console.error('Error fetching mallas desde BD:', error)
     $q.notify({
       type: 'negative',
-      message:
-        error.response?.data?.message || 'Error al cargar las mallas curriculares desde la API',
+      message: error.response?.data?.message || 'Error al consultar los datos locales',
       position: 'top-right',
     })
   } finally {
@@ -834,34 +917,61 @@ async function fetchMallas() {
   }
 }
 
-async function sincronizarAPI() {
+function abrirDialogoSincronizar() {
+  confirmacionTexto.value = ''
+  confirmacionError.value = false
+  dialogSincronizar.value = true
+}
+
+function cerrarDialogoSincronizar() {
+  dialogSincronizar.value = false
+  confirmacionTexto.value = ''
+  confirmacionError.value = false
+}
+
+async function ejecutarSincronizacion() {
+  if (confirmacionTexto.value !== 'sincronizar') {
+    confirmacionError.value = true
+    return
+  }
+
+  confirmacionError.value = false
   sincronizando.value = true
+
   try {
-    // Forzar recarga de datos limpiando cache
-    if (filtros.value.sede && filtros.value.carrera) {
-      const carrera = carrerasStore.carreras.find((c) => c.id === filtros.value.carrera)
-      const codigoCarrera = carrera?.codigo_api || carrera?.codigo?.toLowerCase()
+    const response = await api.post('/planning/sincronizar-cochabamba', {
+      gestion: filtros.value.gestion,
+    })
 
-      await api.post('/grupos-externo/refresh', {
-        gestion: filtros.value.gestion,
-        carrera: codigoCarrera,
-        sede: filtros.value.sede,
-      })
+    cerrarDialogoSincronizar()
 
-      // Recargar datos
-      await fetchMallas()
-
+    if (response.data.success) {
       $q.notify({
         type: 'positive',
-        message: 'Datos sincronizados correctamente',
+        icon: 'check_circle',
+        message: response.data.message,
+        caption: `${response.data.total_carreras} carreras · ${response.data.total_registros} registros`,
+        position: 'top-right',
+        timeout: 6000,
+      })
+
+      // Si hay filtros activos, recargar la tabla automáticamente
+      if (filtros.value.sede && filtros.value.carrera) {
+        await fetchMallas()
+      }
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: response.data.message || 'Error al sincronizar',
         position: 'top-right',
       })
     }
   } catch (error) {
-    console.error('Error sincronizando API:', error)
+    console.error('Error sincronizando:', error)
+    cerrarDialogoSincronizar()
     $q.notify({
       type: 'negative',
-      message: 'Error al sincronizar con la API externa',
+      message: error.response?.data?.message || 'Error al conectar con la API de Planning',
       position: 'top-right',
     })
   } finally {
@@ -972,6 +1082,21 @@ function verComparacion(materia) {
 onMounted(async () => {
   if (sedesStore.sedes.length === 0) await sedesStore.fetchSedes()
   if (carrerasStore.carreras.length === 0) await carrerasStore.fetchCarreras()
+
+  // Cargar estado de última sincronización
+  try {
+    const res = await api.get('/planning/sync-status', {
+      params: { gestion: filtros.value.gestion },
+    })
+    if (res.data.success && res.data.sincronizado && res.data.ultimo_sync?.finished_at) {
+      ultimoSync.value = new Date(res.data.ultimo_sync.finished_at).toLocaleString('es-BO', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      })
+    }
+  } catch {
+    // silencioso — no es crítico
+  }
 })
 </script>
 
