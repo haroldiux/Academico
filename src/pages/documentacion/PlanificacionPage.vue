@@ -1252,16 +1252,20 @@ async function cargarPlanificacion() {
       }
 
       // Pre-calcular índice ordinal de cada registro DB dentro de su grupo semana+tipo.
+      // El backend devuelve 'semana_academica' (no 'semana').
       // Esto permite saber que un registro es "la 1ra Teórica de la semana 3", etc.,
       // independientemente del numero_sesion global (que varía entre docentes).
       const gruposPorSemanaYTipo = {}
       cronogramasDB.forEach((db) => {
+        // El backend guarda la semana como 'semana_academica'
+        const semanaDB = db.semana_academica ?? db.semana ?? null
         const tipoNorm = normalizarTipo(db.tipo_clase)
-        const key = `${db.semana}_${tipoNorm}`
+        const key = `${semanaDB}_${tipoNorm}`
         if (!gruposPorSemanaYTipo[key]) gruposPorSemanaYTipo[key] = []
         gruposPorSemanaYTipo[key].push(db)
       })
       // Ordenar cada grupo por numero_sesion ascendente para preservar el orden original
+      // del docente que hizo la planificación, y asignar índice ordinal (1, 2, 3…)
       const indiceOrdenalDB = new Map()
       Object.values(gruposPorSemanaYTipo).forEach((grupo) => {
         grupo.sort((a, b) => a.numero_sesion - b.numero_sesion)
@@ -1272,26 +1276,28 @@ async function cargarPlanificacion() {
 
       // Ahora inyectar datos reales sobre planificacionSesiones
       cronogramasDB.forEach((db) => {
+        // El backend guarda la semana como 'semana_academica'
+        const semanaDB = db.semana_academica ?? db.semana ?? null
         // Determinar índice ordinal: usa indice_tipo si el backend lo tiene guardado,
         // si no, lo inferimos del orden relativo entre sesiones del mismo tipo y semana.
         const tipoNorm = normalizarTipo(db.tipo_clase)
         const indiceDB = db.indice_tipo || indiceOrdenalDB.get(db.numero_sesion) || 1
 
-        // Matching principal: semana + tipo + índice ordinal dentro del tipo
+        // Matching principal: semana + tipo + índice ordinal dentro del tipo.
         // Esto garantiza que "la 1ra Teórica de la semana 1 de Harold"
         // se muestre en "la 1ra Teórica de la semana 1 de Martín",
         // sin importar el día o el número global de sesión de cada uno.
         let sesionView = null
-        if (db.tipo_clase && db.semana) {
+        if (db.tipo_clase && semanaDB) {
           sesionView = planificacionSesiones.value.find((s) => {
             return (
-              s.semana === db.semana &&
+              s.semana === Number(semanaDB) &&
               normalizarTipo(s.tipoClase) === tipoNorm &&
               s.indiceTipo === indiceDB
             )
           })
         }
-        // Fallback: match por numero_sesion (retrocompatibilidad con datos guardados antes de este fix)
+        // Fallback: match por numero_sesion (retrocompatibilidad con datos sin tipo_clase/semana)
         if (!sesionView) {
           sesionView = planificacionSesiones.value.find(
             (s) => s.numeroGlobal === db.numero_sesion,
