@@ -331,6 +331,24 @@ const routes = [
             component: () => import('pages/admin/RecuperacionManualPage.vue'),
             meta: { title: 'Recuperación Manual', rol: ['SUPER_ADMIN', 'ADMIN'] },
           },
+          {
+            path: 'mallas-curriculares',
+            name: 'admin-mallas-curriculares',
+            component: () => import('pages/admin/MallasCurricularesPage.vue'),
+            meta: {
+              title: 'Mallas Curriculares (Admin)',
+              rol: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'],
+            },
+          },
+          {
+            path: 'comparacion-asignatura',
+            name: 'comparacion-asignatura',
+            component: () => import('pages/admin/ComparacionAsignaturaPage.vue'),
+            meta: {
+              title: 'Comparación de Asignatura',
+              rol: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'],
+            },
+          },
         ],
       },
       // Documentación
