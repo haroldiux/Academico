@@ -21,6 +21,7 @@ SEDE (Cochabamba, La Paz, El Alto, Ivirgarzama...)
 ## Ejemplo Concreto
 
 ### Sede: Cochabamba
+
 - **Campus Colonial**
   - Carrera: Medicina
     - Materia: Anatomía I
@@ -45,6 +46,7 @@ SEDE (Cochabamba, La Paz, El Alto, Ivirgarzama...)
       - Grupo 3 → Lic. Ana Torres
 
 ### Sede: Ivirgarzama
+
 - **Campus Principal**
   - Carrera: Medicina
     - Materia: Anatomía I
@@ -55,6 +57,7 @@ SEDE (Cochabamba, La Paz, El Alto, Ivirgarzama...)
       - Grupo 1 → Lic. Rosa Condori
 
 ### Sede: El Alto
+
 - **Campus Ciudad Satélite**
   - Carrera: Medicina
     - Materia: Anatomía I
@@ -65,18 +68,21 @@ SEDE (Cochabamba, La Paz, El Alto, Ivirgarzama...)
 ## Relaciones Importantes
 
 ### Un Docente puede:
+
 - Tener **múltiples grupos** de la **misma materia** (ej: Dr. Vargas tiene Anatomía grupos 1 y 2)
 - Tener **múltiples materias** diferentes (ej: Dra. Huanca tiene Anatomía y Biología)
 - Trabajar en **diferentes carreras** (ej: un docente de Matemáticas en Sistemas y Medicina)
 - Trabajar en **diferentes campus/sedes** (según contrato)
 
 ### Una Materia:
+
 - Pertenece a UNA carrera específica (aunque el nombre coincida)
 - Puede tener 1 o más grupos/paralelos
 - Cada grupo tiene UN docente asignado
 - Los grupos son por semestre y gestión
 
 ### Los Grupos:
+
 - Son paralelos de una materia específica
 - Tienen un docente asignado
 - Están asociados a un semestre y gestión

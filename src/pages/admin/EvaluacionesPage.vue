@@ -10,22 +10,71 @@
         <p class="page-subtitle">Crea y administra exámenes desde el banco de preguntas</p>
       </div>
       <div class="header-actions">
-        <q-btn outline color="green" icon="upload_file" label="Importar Horarios" no-caps
-          @click="showImportDialog = true" />
-        <q-btn unelevated color="orange" icon="add" label="Nueva Evaluación" no-caps @click="openDialog()" />
+        <q-btn
+          outline
+          color="green"
+          icon="upload_file"
+          label="Importar Horarios"
+          no-caps
+          @click="showImportDialog = true"
+        />
+        <q-btn
+          unelevated
+          color="orange"
+          icon="add"
+          label="Nueva Evaluación"
+          no-caps
+          @click="openDialog()"
+        />
       </div>
     </div>
 
     <!-- Filtros -->
     <div class="filters-section">
-      <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
-        clearable style="min-width: 180px;" />
-      <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
-        map-options clearable style="min-width: 200px;" />
-      <q-select v-model="filtros.parcial" :options="parcialesOptions" outlined dense label="Parcial" emit-value
-        map-options clearable style="min-width: 150px;" />
-      <q-select v-model="filtros.estado" :options="estadosOptions" outlined dense label="Estado" emit-value map-options
-        clearable style="min-width: 150px;" />
+      <q-select
+        v-model="filtros.sede"
+        :options="sedesOptions"
+        outlined
+        dense
+        label="Sede"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 180px"
+      />
+      <q-select
+        v-model="filtros.carrera"
+        :options="carrerasOptions"
+        outlined
+        dense
+        label="Carrera"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 200px"
+      />
+      <q-select
+        v-model="filtros.parcial"
+        :options="parcialesOptions"
+        outlined
+        dense
+        label="Parcial"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 150px"
+      />
+      <q-select
+        v-model="filtros.estado"
+        :options="estadosOptions"
+        outlined
+        dense
+        label="Estado"
+        emit-value
+        map-options
+        clearable
+        style="min-width: 150px"
+      />
     </div>
 
     <!-- Estadísticas -->
@@ -62,11 +111,19 @@
 
     <!-- Tabla de Evaluaciones -->
     <q-card class="table-card">
-      <q-table :rows="evaluacionesFiltradas" :columns="columns" row-key="id" flat :pagination="{ rowsPerPage: 10 }">
+      <q-table
+        :rows="evaluacionesFiltradas"
+        :columns="columns"
+        row-key="id"
+        flat
+        :pagination="{ rowsPerPage: 10 }"
+      >
         <template v-slot:body-cell-materia="props">
           <q-td :props="props">
             <div class="materia-cell">
-              <q-chip size="sm" color="primary" text-color="white" dense>{{ props.row.materia_codigo }}</q-chip>
+              <q-chip size="sm" color="primary" text-color="white" dense>{{
+                props.row.materia_codigo
+              }}</q-chip>
               <span class="materia-nombre">{{ props.row.materia }}</span>
             </div>
           </q-td>
@@ -93,18 +150,37 @@
           <q-td :props="props">
             <div class="flex items-center gap-2">
               <span class="text-weight-medium">{{ props.row.preguntas_count }}</span>
-              <q-linear-progress :value="props.row.preguntas_count / props.row.preguntas_total"
-                :color="props.row.preguntas_count >= props.row.preguntas_total ? 'green' : 'orange'" rounded size="6px"
-                style="width: 60px;" />
+              <q-linear-progress
+                :value="props.row.preguntas_count / props.row.preguntas_total"
+                :color="props.row.preguntas_count >= props.row.preguntas_total ? 'green' : 'orange'"
+                rounded
+                size="6px"
+                style="width: 60px"
+              />
             </div>
           </q-td>
         </template>
 
         <template v-slot:body-cell-patron="props">
           <q-td :props="props">
-            <q-btn v-if="puedeGenerarPatron(props.row)" flat dense color="green" icon="fact_check"
-              label="Generar Patrón" no-caps size="sm" @click="generarPatron(props.row)" />
-            <q-chip v-else-if="props.row.patronGenerado" color="green-2" text-color="green-9" size="sm" dense>
+            <q-btn
+              v-if="puedeGenerarPatron(props.row)"
+              flat
+              dense
+              color="green"
+              icon="fact_check"
+              label="Generar Patrón"
+              no-caps
+              size="sm"
+              @click="generarPatron(props.row)"
+            />
+            <q-chip
+              v-else-if="props.row.patronGenerado"
+              color="green-2"
+              text-color="green-9"
+              size="sm"
+              dense
+            >
               <q-icon name="check" size="14px" class="q-mr-xs" /> Patrón listo
             </q-chip>
             <span v-else class="text-grey-5 text-caption">Disponible 3h después</span>
@@ -113,13 +189,37 @@
 
         <template v-slot:body-cell-acciones="props">
           <q-td :props="props">
-            <q-btn flat round dense icon="visibility" size="sm" color="primary" @click="verEvaluacion(props.row)">
+            <q-btn
+              flat
+              round
+              dense
+              icon="visibility"
+              size="sm"
+              color="primary"
+              @click="verEvaluacion(props.row)"
+            >
               <q-tooltip>Ver</q-tooltip>
             </q-btn>
-            <q-btn flat round dense icon="edit" size="sm" color="orange" @click="openDialog(props.row)">
+            <q-btn
+              flat
+              round
+              dense
+              icon="edit"
+              size="sm"
+              color="orange"
+              @click="openDialog(props.row)"
+            >
               <q-tooltip>Editar</q-tooltip>
             </q-btn>
-            <q-btn flat round dense icon="picture_as_pdf" size="sm" color="red" @click="exportarPDF(props.row)">
+            <q-btn
+              flat
+              round
+              dense
+              icon="picture_as_pdf"
+              size="sm"
+              color="red"
+              @click="exportarPDF(props.row)"
+            >
               <q-tooltip>Exportar PDF</q-tooltip>
             </q-btn>
           </q-td>
@@ -129,7 +229,7 @@
 
     <!-- Dialog Crear/Editar Evaluación -->
     <q-dialog v-model="showDialog" persistent>
-      <q-card class="dialog-card" style="width: 100%; max-width: 700px;">
+      <q-card class="dialog-card" style="width: 100%; max-width: 700px">
         <div class="dialog-header">
           <h3>
             <q-icon :name="editMode ? 'edit' : 'add_circle'" class="q-mr-sm" />
@@ -142,28 +242,53 @@
             <!-- Paso 1: Información Básica -->
             <q-step :name="1" title="Información Básica" icon="info" :done="step > 1">
               <div class="q-gutter-md">
-                <q-input v-model="form.nombre" outlined label="Nombre de la Evaluación *"
-                  placeholder="Ej: Primer Parcial - Anatomía I" />
+                <q-input
+                  v-model="form.nombre"
+                  outlined
+                  label="Nombre de la Evaluación *"
+                  placeholder="Ej: Primer Parcial - Anatomía I"
+                />
 
                 <div class="row q-col-gutter-md">
                   <div class="col-6">
-                    <q-select v-model="form.carrera" :options="carrerasOptions" outlined label="Carrera *" emit-value
-                      map-options />
+                    <q-select
+                      v-model="form.carrera"
+                      :options="carrerasOptions"
+                      outlined
+                      label="Carrera *"
+                      emit-value
+                      map-options
+                    />
                   </div>
                   <div class="col-6">
-                    <q-select v-model="form.materia" :options="materiasOptions" outlined label="Materia *" emit-value
-                      map-options />
+                    <q-select
+                      v-model="form.materia"
+                      :options="materiasOptions"
+                      outlined
+                      label="Materia *"
+                      emit-value
+                      map-options
+                    />
                   </div>
                 </div>
 
                 <div class="row q-col-gutter-md">
                   <div class="col-4">
-                    <q-select v-model="form.parcial" :options="parcialesOptions" outlined label="Parcial *" emit-value
-                      map-options>
+                    <q-select
+                      v-model="form.parcial"
+                      :options="parcialesOptions"
+                      outlined
+                      label="Parcial *"
+                      emit-value
+                      map-options
+                    >
                       <template v-slot:option="scope">
                         <q-item v-bind="scope.itemProps">
                           <q-item-section avatar>
-                            <q-icon :name="getParcialIcon(scope.opt.value)" :color="getParcialColor(scope.opt.value)" />
+                            <q-icon
+                              :name="getParcialIcon(scope.opt.value)"
+                              :color="getParcialColor(scope.opt.value)"
+                            />
                           </q-item-section>
                           <q-item-section>{{ scope.opt.label }}</q-item-section>
                         </q-item>
@@ -178,7 +303,13 @@
                   </div>
                 </div>
 
-                <q-input v-model.number="form.duracion" outlined type="number" label="Duración (minutos)" min="15" />
+                <q-input
+                  v-model.number="form.duracion"
+                  outlined
+                  type="number"
+                  label="Duración (minutos)"
+                  min="15"
+                />
               </div>
 
               <q-stepper-navigation>
@@ -192,8 +323,14 @@
                 <!-- Total de preguntas -->
                 <div class="config-section">
                   <div class="section-title">Total de Preguntas</div>
-                  <q-input v-model.number="form.totalPreguntas" outlined type="number" min="5" max="100"
-                    style="max-width: 200px;">
+                  <q-input
+                    v-model.number="form.totalPreguntas"
+                    outlined
+                    type="number"
+                    min="5"
+                    max="100"
+                    style="max-width: 200px"
+                  >
                     <template v-slot:append>
                       <span class="text-grey-6">preguntas</span>
                     </template>
@@ -203,8 +340,9 @@
                 <!-- Distribución por Dificultad -->
                 <div class="config-section">
                   <div class="section-title">Distribución por Dificultad</div>
-                  <p class="text-caption text-grey-6 q-mb-md">Arrastra los separadores para distribuir las {{
-                    form.totalPreguntas }} preguntas</p>
+                  <p class="text-caption text-grey-6 q-mb-md">
+                    Arrastra los separadores para distribuir las {{ form.totalPreguntas }} preguntas
+                  </p>
 
                   <!-- Barra única segmentada -->
                   <div class="distribucion-bar-container">
@@ -215,8 +353,13 @@
                       <div class="segment segment-medio" :style="{ width: `${porcentajeMedio}%` }">
                         <span v-if="form.dificultad.medio > 0">{{ form.dificultad.medio }}</span>
                       </div>
-                      <div class="segment segment-dificil" :style="{ width: `${porcentajeDificil}%` }">
-                        <span v-if="form.dificultad.dificil > 0">{{ form.dificultad.dificil }}</span>
+                      <div
+                        class="segment segment-dificil"
+                        :style="{ width: `${porcentajeDificil}%` }"
+                      >
+                        <span v-if="form.dificultad.dificil > 0">{{
+                          form.dificultad.dificil
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -224,51 +367,133 @@
                   <!-- Controles de ajuste con inputs editables -->
                   <div class="distribucion-controls q-mt-md">
                     <div class="control-item">
-                      <q-chip color="green" text-color="white" size="sm" icon="sentiment_satisfied">Fácil</q-chip>
+                      <q-chip color="green" text-color="white" size="sm" icon="sentiment_satisfied"
+                        >Fácil</q-chip
+                      >
                       <div class="control-btns">
-                        <q-btn round flat dense icon="remove" size="sm" @click="ajustarDificultad('facil', -1)"
-                          :disable="form.dificultad.facil <= 0" />
-                        <q-input v-model.number="form.dificultad.facil" type="number" dense borderless
-                          input-class="text-center text-weight-bold" style="width: 50px;" :min="0"
-                          :max="form.totalPreguntas" @update:model-value="validarDificultad('facil')" />
-                        <q-btn round flat dense icon="add" size="sm" @click="ajustarDificultad('facil', 1)"
-                          :disable="sumaDificultad >= form.totalPreguntas" />
+                        <q-btn
+                          round
+                          flat
+                          dense
+                          icon="remove"
+                          size="sm"
+                          @click="ajustarDificultad('facil', -1)"
+                          :disable="form.dificultad.facil <= 0"
+                        />
+                        <q-input
+                          v-model.number="form.dificultad.facil"
+                          type="number"
+                          dense
+                          borderless
+                          input-class="text-center text-weight-bold"
+                          style="width: 50px"
+                          :min="0"
+                          :max="form.totalPreguntas"
+                          @update:model-value="validarDificultad('facil')"
+                        />
+                        <q-btn
+                          round
+                          flat
+                          dense
+                          icon="add"
+                          size="sm"
+                          @click="ajustarDificultad('facil', 1)"
+                          :disable="sumaDificultad >= form.totalPreguntas"
+                        />
                       </div>
                     </div>
                     <div class="control-item">
-                      <q-chip color="orange" text-color="white" size="sm" icon="sentiment_neutral">Medio</q-chip>
+                      <q-chip color="orange" text-color="white" size="sm" icon="sentiment_neutral"
+                        >Medio</q-chip
+                      >
                       <div class="control-btns">
-                        <q-btn round flat dense icon="remove" size="sm" @click="ajustarDificultad('medio', -1)"
-                          :disable="form.dificultad.medio <= 0" />
-                        <q-input v-model.number="form.dificultad.medio" type="number" dense borderless
-                          input-class="text-center text-weight-bold" style="width: 50px;" :min="0"
-                          :max="form.totalPreguntas" @update:model-value="validarDificultad('medio')" />
-                        <q-btn round flat dense icon="add" size="sm" @click="ajustarDificultad('medio', 1)"
-                          :disable="sumaDificultad >= form.totalPreguntas" />
+                        <q-btn
+                          round
+                          flat
+                          dense
+                          icon="remove"
+                          size="sm"
+                          @click="ajustarDificultad('medio', -1)"
+                          :disable="form.dificultad.medio <= 0"
+                        />
+                        <q-input
+                          v-model.number="form.dificultad.medio"
+                          type="number"
+                          dense
+                          borderless
+                          input-class="text-center text-weight-bold"
+                          style="width: 50px"
+                          :min="0"
+                          :max="form.totalPreguntas"
+                          @update:model-value="validarDificultad('medio')"
+                        />
+                        <q-btn
+                          round
+                          flat
+                          dense
+                          icon="add"
+                          size="sm"
+                          @click="ajustarDificultad('medio', 1)"
+                          :disable="sumaDificultad >= form.totalPreguntas"
+                        />
                       </div>
                     </div>
                     <div class="control-item">
-                      <q-chip color="red" text-color="white" size="sm" icon="sentiment_dissatisfied">Difícil</q-chip>
+                      <q-chip color="red" text-color="white" size="sm" icon="sentiment_dissatisfied"
+                        >Difícil</q-chip
+                      >
                       <div class="control-btns">
-                        <q-btn round flat dense icon="remove" size="sm" @click="ajustarDificultad('dificil', -1)"
-                          :disable="form.dificultad.dificil <= 0" />
-                        <q-input v-model.number="form.dificultad.dificil" type="number" dense borderless
-                          input-class="text-center text-weight-bold" style="width: 50px;" :min="0"
-                          :max="form.totalPreguntas" @update:model-value="validarDificultad('dificil')" />
-                        <q-btn round flat dense icon="add" size="sm" @click="ajustarDificultad('dificil', 1)"
-                          :disable="sumaDificultad >= form.totalPreguntas" />
+                        <q-btn
+                          round
+                          flat
+                          dense
+                          icon="remove"
+                          size="sm"
+                          @click="ajustarDificultad('dificil', -1)"
+                          :disable="form.dificultad.dificil <= 0"
+                        />
+                        <q-input
+                          v-model.number="form.dificultad.dificil"
+                          type="number"
+                          dense
+                          borderless
+                          input-class="text-center text-weight-bold"
+                          style="width: 50px"
+                          :min="0"
+                          :max="form.totalPreguntas"
+                          @update:model-value="validarDificultad('dificil')"
+                        />
+                        <q-btn
+                          round
+                          flat
+                          dense
+                          icon="add"
+                          size="sm"
+                          @click="ajustarDificultad('dificil', 1)"
+                          :disable="sumaDificultad >= form.totalPreguntas"
+                        />
                       </div>
                     </div>
                   </div>
 
                   <q-banner
-                    :class="sumaDificultad === form.totalPreguntas ? 'bg-green-1 text-green-9' : 'bg-orange-1 text-orange-9'"
-                    class="q-mt-md" rounded dense>
-                    <q-icon :name="sumaDificultad === form.totalPreguntas ? 'check' : 'warning'" class="q-mr-sm" />
+                    :class="
+                      sumaDificultad === form.totalPreguntas
+                        ? 'bg-green-1 text-green-9'
+                        : 'bg-orange-1 text-orange-9'
+                    "
+                    class="q-mt-md"
+                    rounded
+                    dense
+                  >
+                    <q-icon
+                      :name="sumaDificultad === form.totalPreguntas ? 'check' : 'warning'"
+                      class="q-mr-sm"
+                    />
                     Total: {{ sumaDificultad }} / {{ form.totalPreguntas }} preguntas
-                    <span v-if="sumaDificultad !== form.totalPreguntas" class="text-caption"> (faltan {{
-                      form.totalPreguntas
-                      - sumaDificultad }})</span>
+                    <span v-if="sumaDificultad !== form.totalPreguntas" class="text-caption">
+                      (faltan {{ form.totalPreguntas - sumaDificultad }})</span
+                    >
                   </q-banner>
                 </div>
 
@@ -277,7 +502,9 @@
                   <div class="section-title">Fuente de Preguntas</div>
                   <p class="text-caption text-grey-6 q-mb-md">
                     Se tomarán preguntas del banco según el parcial seleccionado:
-                    <strong>{{ form.parcial <= 2 ? `${form.parcial}° Parcial` : 'Todos los logros' }}</strong>
+                    <strong>{{
+                      form.parcial <= 2 ? `${form.parcial}° Parcial` : 'Todos los logros'
+                    }}</strong>
                   </p>
 
                   <!-- Vista previa de temas y logros -->
@@ -287,15 +514,25 @@
                       Contenido disponible para {{ materiaSeleccionada.nombre }}:
                     </div>
 
-                    <div v-if="logrosDisponibles.length === 0" class="text-center q-pa-md bg-grey-1 rounded-borders">
+                    <div
+                      v-if="logrosDisponibles.length === 0"
+                      class="text-center q-pa-md bg-grey-1 rounded-borders"
+                    >
                       <q-icon name="info" size="24px" color="grey-5" />
-                      <p class="text-caption text-grey-6 q-mb-none">No hay logros marcados para este parcial</p>
+                      <p class="text-caption text-grey-6 q-mb-none">
+                        No hay logros marcados para este parcial
+                      </p>
                     </div>
 
                     <q-list v-else dense bordered separator class="rounded-borders">
-                      <q-expansion-item v-for="unidad in unidadesConLogros" :key="unidad.id"
+                      <q-expansion-item
+                        v-for="unidad in unidadesConLogros"
+                        :key="unidad.id"
                         :label="`Unidad ${unidad.numero}: ${unidad.titulo}`"
-                        :caption="`${unidad.logrosCount} logros disponibles`" header-class="bg-blue-1" dense>
+                        :caption="`${unidad.logrosCount} logros disponibles`"
+                        header-class="bg-blue-1"
+                        dense
+                      >
                         <q-card>
                           <q-card-section class="q-pa-sm">
                             <div v-for="tema in unidad.temas" :key="tema.id" class="q-mb-sm">
@@ -304,16 +541,26 @@
                                 {{ tema.titulo }}
                               </div>
                               <q-list dense class="q-pl-md">
-                                <q-item v-for="logro in tema.logros" :key="logro.id" dense class="q-py-xs">
+                                <q-item
+                                  v-for="logro in tema.logros"
+                                  :key="logro.id"
+                                  dense
+                                  class="q-py-xs"
+                                >
                                   <q-item-section avatar>
-                                    <q-chip :color="logro.parcial === 1 ? 'blue' : 'orange'" text-color="white"
-                                      size="xs" dense>
+                                    <q-chip
+                                      :color="logro.parcial === 1 ? 'blue' : 'orange'"
+                                      text-color="white"
+                                      size="xs"
+                                      dense
+                                    >
                                       {{ logro.parcial }}°
                                     </q-chip>
                                   </q-item-section>
                                   <q-item-section>
-                                    <q-item-label class="text-caption">{{ logro.codigo }}: {{ logro.descripcion
-                                      }}</q-item-label>
+                                    <q-item-label class="text-caption"
+                                      >{{ logro.codigo }}: {{ logro.descripcion }}</q-item-label
+                                    >
                                   </q-item-section>
                                 </q-item>
                               </q-list>
@@ -325,7 +572,8 @@
 
                     <q-banner class="bg-green-1 text-green-9 q-mt-md" rounded dense>
                       <q-icon name="quiz" class="q-mr-sm" />
-                      <strong>{{ logrosDisponibles.length }}</strong> logros disponibles para generar preguntas
+                      <strong>{{ logrosDisponibles.length }}</strong> logros disponibles para
+                      generar preguntas
                     </q-banner>
                   </div>
 
@@ -338,8 +586,13 @@
 
               <q-stepper-navigation>
                 <q-btn flat color="grey" label="Atrás" @click="step = 1" class="q-mr-sm" />
-                <q-btn unelevated color="orange" label="Siguiente" @click="step = 3"
-                  :disable="sumaDificultad !== form.totalPreguntas" />
+                <q-btn
+                  unelevated
+                  color="orange"
+                  label="Siguiente"
+                  @click="step = 3"
+                  :disable="sumaDificultad !== form.totalPreguntas"
+                />
               </q-stepper-navigation>
             </q-step>
 
@@ -352,14 +605,20 @@
 
                 <q-banner class="bg-green-1 text-green-9 q-mt-md" rounded dense>
                   <q-icon name="fact_check" class="q-mr-sm" />
-                  <strong>Patrón de Respuestas:</strong> Estará disponible 3 horas después de la hora de inicio del
-                  examen.
+                  <strong>Patrón de Respuestas:</strong> Estará disponible 3 horas después de la
+                  hora de inicio del examen.
                 </q-banner>
               </div>
 
               <q-stepper-navigation>
                 <q-btn flat color="grey" label="Atrás" @click="step = 2" class="q-mr-sm" />
-                <q-btn unelevated color="orange" icon="save" label="Guardar Evaluación" @click="guardarEvaluacion" />
+                <q-btn
+                  unelevated
+                  color="orange"
+                  icon="save"
+                  label="Guardar Evaluación"
+                  @click="guardarEvaluacion"
+                />
               </q-stepper-navigation>
             </q-step>
           </q-stepper>
@@ -373,16 +632,23 @@
 
     <!-- Dialog Importar Horarios -->
     <q-dialog v-model="showImportDialog">
-      <q-card class="dialog-card" style="min-width: 500px;">
+      <q-card class="dialog-card" style="min-width: 500px">
         <div class="dialog-header bg-green">
           <h3><q-icon name="upload_file" class="q-mr-sm" /> Importar Horarios de Exámenes</h3>
         </div>
         <q-card-section>
-          <p class="q-mb-md">Sube un archivo Excel con los horarios de exámenes proporcionado por el Director de
+          <p class="q-mb-md">
+            Sube un archivo Excel con los horarios de exámenes proporcionado por el Director de
             Carrera.
           </p>
 
-          <q-file v-model="archivoExcel" outlined label="Seleccionar archivo Excel" accept=".xlsx, .xls" max-files="1">
+          <q-file
+            v-model="archivoExcel"
+            outlined
+            label="Seleccionar archivo Excel"
+            accept=".xlsx, .xls"
+            max-files="1"
+          >
             <template v-slot:prepend>
               <q-icon name="attach_file" />
             </template>
@@ -394,14 +660,28 @@
           </q-banner>
 
           <div v-if="importPreview.length" class="q-mt-lg">
-            <div class="text-subtitle2 q-mb-sm">Vista previa ({{ importPreview.length }} registros):</div>
-            <q-table :rows="importPreview" :columns="importColumns" dense flat :pagination="{ rowsPerPage: 5 }" />
+            <div class="text-subtitle2 q-mb-sm">
+              Vista previa ({{ importPreview.length }} registros):
+            </div>
+            <q-table
+              :rows="importPreview"
+              :columns="importColumns"
+              dense
+              flat
+              :pagination="{ rowsPerPage: 5 }"
+            />
           </div>
         </q-card-section>
         <q-card-actions align="right" class="dialog-actions">
           <q-btn flat label="Cancelar" @click="showImportDialog = false" />
-          <q-btn unelevated color="green" icon="upload" label="Importar" @click="ejecutarImportacion"
-            :disable="!archivoExcel" />
+          <q-btn
+            unelevated
+            color="green"
+            icon="upload"
+            label="Importar"
+            @click="ejecutarImportacion"
+            :disable="!archivoExcel"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -425,14 +705,21 @@
           <!-- Header UNITEPC -->
           <div class="patron-header">
             <div class="logo-section">
-              <img src="/logo-unitepc.png" alt="UNITEPC" class="logo" onerror="this.style.display='none'" />
+              <img
+                src="/logo-unitepc.png"
+                alt="UNITEPC"
+                class="logo"
+                onerror="this.style.display = 'none'"
+              />
               <div class="logo-fallback">
                 <div class="logo-text">UNITEPC</div>
               </div>
             </div>
             <div class="header-info">
               <div class="universidad-name">UNIVERSIDAD TÉCNICA PRIVADA COSMOS</div>
-              <div class="carrera-line">Carrera: <span class="field-value">{{ patronData.carrera }}</span></div>
+              <div class="carrera-line">
+                Carrera: <span class="field-value">{{ patronData.carrera }}</span>
+              </div>
               <div class="slogan">"TÚ ESTÁS AQUÍ PORQUE FORMAS PARTE DE NUESTRA HISTORIA"</div>
             </div>
             <div class="codigo-section">
@@ -470,8 +757,13 @@
               <div class="tipo-examen-box">
                 <div class="tipo-label">TIPO DE EXAMEN</div>
                 <div class="tipo-options">
-                  <span v-for="tipo in ['A', 'B', 'C', 'D', 'E']" :key="tipo" class="tipo-bubble"
-                    :class="{ active: patronData.tipoExamen === tipo }">{{ tipo }}</span>
+                  <span
+                    v-for="tipo in ['A', 'B', 'C', 'D', 'E']"
+                    :key="tipo"
+                    class="tipo-bubble"
+                    :class="{ active: patronData.tipoExamen === tipo }"
+                    >{{ tipo }}</span
+                  >
                 </div>
               </div>
               <div class="fecha-box">
@@ -489,12 +781,18 @@
             <div v-for="col in 4" :key="col" class="respuestas-column">
               <div class="column-header">
                 <span class="col-num"></span>
-                <span v-for="opt in ['A', 'B', 'C', 'D', 'E']" :key="opt" class="opt-header">{{ opt }}</span>
+                <span v-for="opt in ['A', 'B', 'C', 'D', 'E']" :key="opt" class="opt-header">{{
+                  opt
+                }}</span>
               </div>
               <div v-for="num in 25" :key="num" class="respuesta-row">
                 <span class="pregunta-num">{{ (col - 1) * 25 + num }}</span>
-                <span v-for="opt in ['A', 'B', 'C', 'D', 'E']" :key="opt" class="bubble"
-                  :class="{ filled: patronData.respuestas[(col - 1) * 25 + num - 1] === opt }">
+                <span
+                  v-for="opt in ['A', 'B', 'C', 'D', 'E']"
+                  :key="opt"
+                  class="bubble"
+                  :class="{ filled: patronData.respuestas[(col - 1) * 25 + num - 1] === opt }"
+                >
                   {{ opt }}
                 </span>
               </div>
@@ -503,8 +801,10 @@
 
           <!-- Recomendaciones -->
           <div class="recomendaciones">
-            <div class="rec-title">RECOMENDACIONES: Esta cartilla debe ser llenada con bolígrafo azul, no se aceptan
-              borrones enmendadas o raspaduras; la prueba se realizará en silencio</div>
+            <div class="rec-title">
+              RECOMENDACIONES: Esta cartilla debe ser llenada con bolígrafo azul, no se aceptan
+              borrones enmendadas o raspaduras; la prueba se realizará en silencio
+            </div>
             <div class="rec-list">
               <div class="rec-col">
                 <p>Quedará nulo en caso de:</p>
@@ -519,8 +819,10 @@
             </div>
             <div class="correcto-incorrecto">
               <span>Correcto <span class="bubble filled">●</span></span>
-              <span class="q-ml-lg">Incorrecto <span class="bubble">○</span> <span class="bubble">⊘</span> <span
-                  class="bubble">⊗</span></span>
+              <span class="q-ml-lg"
+                >Incorrecto <span class="bubble">○</span> <span class="bubble">⊘</span>
+                <span class="bubble">⊗</span></span
+              >
             </div>
           </div>
         </q-card-section>
@@ -552,8 +854,12 @@
             </div>
             <div class="header-info">
               <div class="universidad-name">UNIVERSIDAD TÉCNICA PRIVADA COSMOS</div>
-              <div class="carrera-line">Carrera: <span class="field-value">{{ examenData.carrera }}</span></div>
-              <div class="materia-line"><strong>{{ examenData.materia }}</strong></div>
+              <div class="carrera-line">
+                Carrera: <span class="field-value">{{ examenData.carrera }}</span>
+              </div>
+              <div class="materia-line">
+                <strong>{{ examenData.materia }}</strong>
+              </div>
             </div>
             <div class="tipo-section">
               <div class="tipo-box">TIPO {{ examenData.tipo }}</div>
@@ -606,9 +912,9 @@
 
           <!-- Instrucciones -->
           <div class="instrucciones">
-            <strong>INSTRUCCIONES:</strong> Lea cuidadosamente cada pregunta y marque con una X la opción correcta en su
-            hoja de respuestas.
-            Tiempo máximo: {{ examenData.duracion }} minutos. Total de preguntas: {{ examenData.totalPreguntas }}.
+            <strong>INSTRUCCIONES:</strong> Lea cuidadosamente cada pregunta y marque con una X la
+            opción correcta en su hoja de respuestas. Tiempo máximo:
+            {{ examenData.duracion }} minutos. Total de preguntas: {{ examenData.totalPreguntas }}.
           </div>
 
           <!-- Preguntas del Examen -->
@@ -668,7 +974,7 @@ const patronData = ref({
   fecha: '',
   codigo: '',
   tipoExamen: 'A',
-  respuestas: [] // Array de 100 respuestas (A, B, C, D, E)
+  respuestas: [], // Array de 100 respuestas (A, B, C, D, E)
 })
 
 // Datos del examen para impresión
@@ -682,7 +988,7 @@ const examenData = ref({
   duracion: 90,
   totalPreguntas: 20,
   tipo: 'A',
-  preguntas: [] // Array de preguntas con texto y opciones
+  preguntas: [], // Array de preguntas con texto y opciones
 })
 
 const filtros = ref({ sede: null, carrera: null, parcial: null, estado: null })
@@ -699,38 +1005,50 @@ const form = ref({
   dificultad: { facil: 8, medio: 8, dificil: 4 },
   mezclarPreguntas: true,
   mezclarOpciones: true,
-  tiempoLimite: true
+  tiempoLimite: true,
 })
 
 const parcialesOptions = [
   { label: '1° Parcial', value: 1 },
   { label: '2° Parcial', value: 2 },
   { label: 'Examen Final', value: 3 },
-  { label: '2da Instancia', value: 4 }
+  { label: '2da Instancia', value: 4 },
 ]
 
 const estadosOptions = [
   { label: 'Programada', value: 'Programada' },
   { label: 'En Curso', value: 'En Curso' },
-  { label: 'Completada', value: 'Completada' }
+  { label: 'Completada', value: 'Completada' },
 ]
 
-const sedesOptions = computed(() => sedesStore.sedesActivas.map(s => ({ label: s.nombre, value: s.id })))
-const carrerasOptions = computed(() => carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id })))
+const sedesOptions = computed(() =>
+  sedesStore.sedesActivas.map((s) => ({ label: s.nombre, value: s.id })),
+)
+const carrerasOptions = computed(() =>
+  carrerasStore.carreras.map((c) => ({ label: c.nombre, value: c.id })),
+)
 
 // Materias desde el store de asignaturas
 const materiasOptions = computed(() => {
-  return asignaturasStore.asignaturas.map(a => ({
+  return asignaturasStore.asignaturas.map((a) => ({
     label: `${a.nombre} (${a.codigo})`,
-    value: a.id
+    value: a.id,
   }))
 })
 
-const sumaDificultad = computed(() => form.value.dificultad.facil + form.value.dificultad.medio + form.value.dificultad.dificil)
+const sumaDificultad = computed(
+  () => form.value.dificultad.facil + form.value.dificultad.medio + form.value.dificultad.dificil,
+)
 
-const porcentajeFacil = computed(() => (form.value.dificultad.facil / form.value.totalPreguntas) * 100)
-const porcentajeMedio = computed(() => (form.value.dificultad.medio / form.value.totalPreguntas) * 100)
-const porcentajeDificil = computed(() => (form.value.dificultad.dificil / form.value.totalPreguntas) * 100)
+const porcentajeFacil = computed(
+  () => (form.value.dificultad.facil / form.value.totalPreguntas) * 100,
+)
+const porcentajeMedio = computed(
+  () => (form.value.dificultad.medio / form.value.totalPreguntas) * 100,
+)
+const porcentajeDificil = computed(
+  () => (form.value.dificultad.dificil / form.value.totalPreguntas) * 100,
+)
 
 // Obtener la materia seleccionada del store
 const materiaSeleccionada = computed(() => {
@@ -745,9 +1063,9 @@ const logrosDisponibles = computed(() => {
   const logros = []
   const parcialFiltro = form.value.parcial
 
-  materiaSeleccionada.value.unidades?.forEach(unidad => {
-    unidad.temas?.forEach(tema => {
-      tema.logros_esperados?.forEach(logro => {
+  materiaSeleccionada.value.unidades?.forEach((unidad) => {
+    unidad.temas?.forEach((tema) => {
+      tema.logros_esperados?.forEach((logro) => {
         // Para 1° o 2° parcial, filtrar por el campo parcial del logro
         // Para Final (3) o Instancia (4), incluir todos los logros
         if (parcialFiltro >= 3 || logro.parcial === parcialFiltro || !logro.parcial) {
@@ -757,7 +1075,7 @@ const logrosDisponibles = computed(() => {
             temaTitulo: tema.titulo,
             unidadId: unidad.id,
             unidadTitulo: unidad.titulo,
-            unidadNumero: unidad.numero
+            unidadNumero: unidad.numero,
           })
         }
       })
@@ -773,14 +1091,14 @@ const unidadesConLogros = computed(() => {
 
   const unidadesMap = new Map()
 
-  logrosDisponibles.value.forEach(logro => {
+  logrosDisponibles.value.forEach((logro) => {
     if (!unidadesMap.has(logro.unidadId)) {
       unidadesMap.set(logro.unidadId, {
         id: logro.unidadId,
         numero: logro.unidadNumero,
         titulo: logro.unidadTitulo,
         temas: new Map(),
-        logrosCount: 0
+        logrosCount: 0,
       })
     }
 
@@ -791,7 +1109,7 @@ const unidadesConLogros = computed(() => {
       unidad.temas.set(logro.temaId, {
         id: logro.temaId,
         titulo: logro.temaTitulo,
-        logros: []
+        logros: [],
       })
     }
 
@@ -799,9 +1117,9 @@ const unidadesConLogros = computed(() => {
   })
 
   // Convertir Map a array
-  return Array.from(unidadesMap.values()).map(unidad => ({
+  return Array.from(unidadesMap.values()).map((unidad) => ({
     ...unidad,
-    temas: Array.from(unidad.temas.values())
+    temas: Array.from(unidad.temas.values()),
   }))
 })
 
@@ -822,7 +1140,11 @@ function ajustarDificultad(tipo, delta) {
 // Función para validar cuando se escribe directamente en el input
 function validarDificultad(tipo) {
   // Asegurar que sea un número válido
-  if (form.value.dificultad[tipo] === null || form.value.dificultad[tipo] === '' || isNaN(form.value.dificultad[tipo])) {
+  if (
+    form.value.dificultad[tipo] === null ||
+    form.value.dificultad[tipo] === '' ||
+    isNaN(form.value.dificultad[tipo])
+  ) {
     form.value.dificultad[tipo] = 0
     return
   }
@@ -837,7 +1159,7 @@ function validarDificultad(tipo) {
 
   // Calcular cuánto espacio hay disponible (total - suma de los otros dos)
   const tipos = ['facil', 'medio', 'dificil']
-  const otrosTipos = tipos.filter(t => t !== tipo)
+  const otrosTipos = tipos.filter((t) => t !== tipo)
   const sumaOtros = otrosTipos.reduce((sum, t) => sum + form.value.dificultad[t], 0)
   const maximoDisponible = form.value.totalPreguntas - sumaOtros
 
@@ -854,33 +1176,81 @@ const columns = [
   { name: 'preguntas', label: 'Preguntas', field: 'preguntas_count', align: 'center' },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
   { name: 'patron', label: 'Patrón Resp.', field: 'patron', align: 'center' },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' }
+  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
 ]
 
 const importColumns = [
   { name: 'materia', label: 'Materia', field: 'materia', align: 'left' },
   { name: 'parcial', label: 'Parcial', field: 'parcial', align: 'center' },
   { name: 'fecha', label: 'Fecha', field: 'fecha', align: 'center' },
-  { name: 'hora', label: 'Hora', field: 'hora', align: 'center' }
+  { name: 'hora', label: 'Hora', field: 'hora', align: 'center' },
 ]
 
 const evaluaciones = ref([
-  { id: 1, nombre: '1er Parcial - Anatomía I', materia: 'Anatomía I', materia_codigo: 'MED-101', parcial: 1, fecha: '2026-03-15', hora: '08:00', duracion: 90, preguntas_count: 20, preguntas_total: 20, estado: 'Completada', patronGenerado: true, horaInicio: new Date('2026-03-15T08:00:00') },
-  { id: 2, nombre: '2do Parcial - Anatomía I', materia: 'Anatomía I', materia_codigo: 'MED-101', parcial: 2, fecha: '2026-04-20', hora: '08:00', duracion: 90, preguntas_count: 18, preguntas_total: 20, estado: 'Programada', patronGenerado: false, horaInicio: new Date('2026-04-20T08:00:00') },
-  { id: 3, nombre: '1er Parcial - Ing. Software', materia: 'Ingeniería de Software I', materia_codigo: 'SIS-301', parcial: 1, fecha: '2026-01-12', hora: '10:00', duracion: 120, preguntas_count: 25, preguntas_total: 25, estado: 'En Curso', patronGenerado: false, horaInicio: new Date('2026-01-12T10:00:00') }
+  {
+    id: 1,
+    nombre: '1er Parcial - Anatomía I',
+    materia: 'Anatomía I',
+    materia_codigo: 'MED-101',
+    parcial: 1,
+    fecha: '2026-03-15',
+    hora: '08:00',
+    duracion: 90,
+    preguntas_count: 20,
+    preguntas_total: 20,
+    estado: 'Completada',
+    patronGenerado: true,
+    horaInicio: new Date('2026-03-15T08:00:00'),
+  },
+  {
+    id: 2,
+    nombre: '2do Parcial - Anatomía I',
+    materia: 'Anatomía I',
+    materia_codigo: 'MED-101',
+    parcial: 2,
+    fecha: '2026-04-20',
+    hora: '08:00',
+    duracion: 90,
+    preguntas_count: 18,
+    preguntas_total: 20,
+    estado: 'Programada',
+    patronGenerado: false,
+    horaInicio: new Date('2026-04-20T08:00:00'),
+  },
+  {
+    id: 3,
+    nombre: '1er Parcial - Ing. Software',
+    materia: 'Ingeniería de Software I',
+    materia_codigo: 'SIS-301',
+    parcial: 1,
+    fecha: '2026-01-12',
+    hora: '10:00',
+    duracion: 120,
+    preguntas_count: 25,
+    preguntas_total: 25,
+    estado: 'En Curso',
+    patronGenerado: false,
+    horaInicio: new Date('2026-01-12T10:00:00'),
+  },
 ])
 
 const evaluacionesFiltradas = computed(() => {
-  return evaluaciones.value.filter(e => {
+  return evaluaciones.value.filter((e) => {
     if (filtros.value.parcial && e.parcial !== filtros.value.parcial) return false
     if (filtros.value.estado && e.estado !== filtros.value.estado) return false
     return true
   })
 })
 
-const evaluacionesProgramadas = computed(() => evaluaciones.value.filter(e => e.estado === 'Programada').length)
-const evaluacionesEnCurso = computed(() => evaluaciones.value.filter(e => e.estado === 'En Curso').length)
-const evaluacionesCompletadas = computed(() => evaluaciones.value.filter(e => e.estado === 'Completada').length)
+const evaluacionesProgramadas = computed(
+  () => evaluaciones.value.filter((e) => e.estado === 'Programada').length,
+)
+const evaluacionesEnCurso = computed(
+  () => evaluaciones.value.filter((e) => e.estado === 'En Curso').length,
+)
+const evaluacionesCompletadas = computed(
+  () => evaluaciones.value.filter((e) => e.estado === 'Completada').length,
+)
 
 function getParcialColor(parcial) {
   const colors = { 1: 'blue', 2: 'orange', 3: 'purple', 4: 'red' }
@@ -898,12 +1268,12 @@ function getParcialIcon(parcial) {
 }
 
 function getEstadoColor(estado) {
-  const colors = { 'Programada': 'blue', 'En Curso': 'green', 'Completada': 'purple' }
+  const colors = { Programada: 'blue', 'En Curso': 'green', Completada: 'purple' }
   return colors[estado] || 'grey'
 }
 
 function getEstadoIcon(estado) {
-  const icons = { 'Programada': 'schedule', 'En Curso': 'play_circle', 'Completada': 'check_circle' }
+  const icons = { Programada: 'schedule', 'En Curso': 'play_circle', Completada: 'check_circle' }
   return icons[estado] || 'info'
 }
 
@@ -916,8 +1286,9 @@ function puedeGenerarPatron(evaluacion) {
 function generarPatron(evaluacion) {
   // Generar respuestas aleatorias para demostración
   const opciones = ['A', 'B', 'C', 'D', 'E']
-  const respuestas = Array.from({ length: 100 }, () =>
-    opciones[Math.floor(Math.random() * opciones.length)]
+  const respuestas = Array.from(
+    { length: 100 },
+    () => opciones[Math.floor(Math.random() * opciones.length)],
   )
 
   // Llenar datos del patrón
@@ -930,7 +1301,7 @@ function generarPatron(evaluacion) {
     fecha: evaluacion.fecha,
     codigo: String(Math.floor(100000 + Math.random() * 900000)),
     tipoExamen: 'A',
-    respuestas: respuestas
+    respuestas: respuestas,
   }
 
   evaluacion.patronGenerado = true
@@ -946,16 +1317,37 @@ function openDialog(evaluacion = null) {
   editMode.value = !!evaluacion
   step.value = 1
   if (evaluacion) {
-    form.value = { ...evaluacion, dificultad: { facil: 8, medio: 8, dificil: 4 }, totalPreguntas: evaluacion.preguntas_total }
+    form.value = {
+      ...evaluacion,
+      dificultad: { facil: 8, medio: 8, dificil: 4 },
+      totalPreguntas: evaluacion.preguntas_total,
+    }
   } else {
-    form.value = { nombre: '', carrera: null, materia: null, parcial: 1, fecha: '', hora: '', duracion: 90, totalPreguntas: 20, dificultad: { facil: 8, medio: 8, dificil: 4 }, mezclarPreguntas: true, mezclarOpciones: true, tiempoLimite: true }
+    form.value = {
+      nombre: '',
+      carrera: null,
+      materia: null,
+      parcial: 1,
+      fecha: '',
+      hora: '',
+      duracion: 90,
+      totalPreguntas: 20,
+      dificultad: { facil: 8, medio: 8, dificil: 4 },
+      mezclarPreguntas: true,
+      mezclarOpciones: true,
+      tiempoLimite: true,
+    }
   }
   showDialog.value = true
 }
 
 function guardarEvaluacion() {
   showDialog.value = false
-  $q.notify({ type: 'positive', message: editMode.value ? 'Evaluación actualizada' : 'Evaluación creada', icon: 'check_circle' })
+  $q.notify({
+    type: 'positive',
+    message: editMode.value ? 'Evaluación actualizada' : 'Evaluación creada',
+    icon: 'check_circle',
+  })
 }
 
 function verEvaluacion(evaluacion) {
@@ -970,7 +1362,7 @@ function exportarPDF(evaluacion) {
     'fisiología cardiovascular',
     'histología de tejidos',
     'embriología general',
-    'bioquímica celular'
+    'bioquímica celular',
   ]
 
   for (let i = 0; i < evaluacion.preguntas_count; i++) {
@@ -982,8 +1374,8 @@ function exportarPDF(evaluacion) {
         `Segunda opción que describe un concepto de ${tema}`,
         `Tercera alternativa sobre ${tema}`,
         `Cuarta posibilidad referente a ${tema}`,
-        `Quinta opción acerca de ${tema}`
-      ]
+        `Quinta opción acerca de ${tema}`,
+      ],
     })
   }
 
@@ -996,11 +1388,15 @@ function exportarPDF(evaluacion) {
     duracion: evaluacion.duracion,
     totalPreguntas: evaluacion.preguntas_count,
     tipo: 'A',
-    preguntas: preguntasDemo
+    preguntas: preguntasDemo,
   }
 
   showExamenDialog.value = true
-  $q.notify({ type: 'positive', message: `Generando PDF: ${evaluacion.nombre}`, icon: 'picture_as_pdf' })
+  $q.notify({
+    type: 'positive',
+    message: `Generando PDF: ${evaluacion.nombre}`,
+    icon: 'picture_as_pdf',
+  })
 }
 
 function imprimirExamen() {

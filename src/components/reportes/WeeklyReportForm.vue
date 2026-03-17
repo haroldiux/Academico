@@ -47,7 +47,6 @@
             <div class="text-caption text-grey-6">{{ weekRangeLabel }}</div>
           </div>
         </div>
-
       </div>
       <!-- Criteria Table -->
       <div v-if="hasCriteria">
@@ -272,7 +271,7 @@
 
     <!-- Sessions & Evidences Modal -->
     <q-dialog v-model="showSessionsModal">
-      <q-card style="min-width: 800px; max-width: 90vw;">
+      <q-card style="min-width: 800px; max-width: 90vw">
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6">Sesiones Controladas de la Semana</div>
           <q-space />
@@ -280,7 +279,10 @@
         </q-card-section>
 
         <q-card-section>
-          <div v-if="!report?.sesiones_detalle || report?.sesiones_detalle.length === 0" class="text-center text-grey">
+          <div
+            v-if="!report?.sesiones_detalle || report?.sesiones_detalle.length === 0"
+            class="text-center text-grey"
+          >
             No hay sesiones registradas.
           </div>
           <q-markup-table v-else flat bordered dense class="bg-grey-1">
@@ -288,14 +290,31 @@
               <tr>
                 <th class="text-left text-weight-bold">Fecha</th>
                 <th class="text-left text-weight-bold">Tema / Actividad</th>
+                <th class="text-left text-weight-bold">Tipo Sesión</th>
                 <th class="text-left text-weight-bold">Estado Real</th>
                 <th class="text-left text-weight-bold">Evidencias Subidas</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(session, idx) in report.sesiones_detalle" :key="idx">
-                <td style="width: 15%">{{ session.fecha && session.fecha !== 'N/A' ? formatDateSimple(session.fecha) : 'N/A' }}</td>
-                <td style="white-space: normal; min-width: 250px;">{{ session.tema }}</td>
+                <td style="width: 15%">
+                  {{
+                    session.fecha && session.fecha !== 'N/A'
+                      ? formatDateSimple(session.fecha)
+                      : 'N/A'
+                  }}
+                </td>
+                <td style="white-space: normal; min-width: 200px">{{ session.tema }}</td>
+                <td style="width: 15%">
+                  <q-badge
+                    v-if="session.es_examen || session.tipo_examen"
+                    :color="session.es_examen ? 'positive' : 'primary'"
+                    class="q-mb-xs"
+                  >
+                    {{ formatSessionType(session) }}
+                  </q-badge>
+                  <q-badge v-else color="grey" class="q-mb-xs"> Clase Regular </q-badge>
+                </td>
                 <td style="width: 15%">
                   <q-badge :color="session.estado === 'PENDIENTE' ? 'red' : 'positive'">{{
                     session.estado
@@ -303,7 +322,9 @@
                 </td>
                 <td>
                   <div class="row q-gutter-xs">
-                    <template v-if="session.evidencias && Object.keys(session.evidencias).length > 0">
+                    <template
+                      v-if="session.evidencias && Object.keys(session.evidencias).length > 0"
+                    >
                       <q-btn
                         v-for="(path, type) in session.evidencias"
                         :key="type"
@@ -327,7 +348,6 @@
         </q-card-section>
       </q-card>
     </q-dialog>
-
   </div>
 </template>
 
@@ -352,10 +372,10 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 const $q = useQuasar()
 
-const loading    = ref(true)
-const saving     = ref(false)
+const loading = ref(true)
+const saving = ref(false)
 const exportando = ref(false)
-const report     = ref(null)
+const report = ref(null)
 const showSessionsModal = ref(false)
 
 const alertColor = computed(() => {
@@ -410,7 +430,6 @@ const academicWeekNumber = computed(() => {
   }
 })
 
-
 const hasCriteria = computed(() => {
   return (
     report.value &&
@@ -449,7 +468,8 @@ const getEvidenceIcon = (type) => {
   if (type === 'aprendizaje_activo') return 'image'
   if (type === 'evaluacion_formativa') return 'link'
   if (type === 'secuencia_didactica') return 'description'
-  if (type === 'investigacion' || type === 'interaccion' || type === 'internalizacion') return 'auto_stories'
+  if (type === 'investigacion' || type === 'interaccion' || type === 'internalizacion')
+    return 'auto_stories'
   return 'attach_file'
 }
 
@@ -457,7 +477,8 @@ const getEvidenceColor = (type) => {
   if (type === 'aprendizaje_activo') return 'primary'
   if (type === 'evaluacion_formativa') return 'info'
   if (type === 'secuencia_didactica') return 'secondary'
-  if (type === 'investigacion' || type === 'interaccion' || type === 'internalizacion') return 'accent'
+  if (type === 'investigacion' || type === 'interaccion' || type === 'internalizacion')
+    return 'accent'
   return 'grey'
 }
 
@@ -475,19 +496,42 @@ const formatEvidenceType = (type) => {
 
 const openEvidence = (path) => {
   if (!path) return
-  
+
   // If it looks like a backend file path
   if (path.includes('/') && !path.startsWith('http')) {
     window.open(`${api.defaults.baseURL.replace('/api', '/storage')}/${path}`, '_blank')
-  } 
+  }
   // If it's already a full URL
   else if (path.startsWith('http://') || path.startsWith('https://')) {
     window.open(path, '_blank')
-  } 
+  }
   // Otherwise, fallback to treating it as an external link (like 'google.com' or just text)
   else {
     window.open(`https://${path}`, '_blank')
   }
+}
+
+const formatSessionType = (session) => {
+  if (session.es_examen) {
+    const examType = session.tipo_examen
+    if (examType === 'PRIMER_PARCIAL') return '1er Parcial'
+    if (examType === 'SEGUNDO_PARCIAL') return '2do Parcial'
+    if (examType === 'TERCER_PARCIAL') return '3er Parcial'
+    if (examType === 'FINAL') return 'Examen Final'
+    if (examType === 'RECUPERATORIO') return 'Recuperatorio'
+    return 'Examen'
+  }
+
+  if (session.tipo_examen) {
+    const practiceType = session.tipo_examen
+    if (practiceType === 'LABORATORIO') return 'Práctica Lab.'
+    if (practiceType === 'ANFITEATRO') return 'Práctica Anf.'
+    if (practiceType === 'CAMPO') return 'Práctica Campo'
+    if (practiceType === 'TALLER') return 'Taller Práctico'
+    return 'Práctica Especial'
+  }
+
+  return 'Clase Regular'
 }
 
 // ─── INDIVIDUAL PDF EXPORT ──────────────────────────────────────────────────
@@ -495,9 +539,9 @@ const exportarPDF = () => {
   if (!report.value) return
   exportando.value = true
   try {
-    const r      = report.value
-    const doc    = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const w      = 210
+    const r = report.value
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const w = 210
     const margin = 14
 
     // Color del estado
@@ -531,8 +575,8 @@ const exportarPDF = () => {
     autoTable(doc, {
       startY: y,
       body: [
-        ['Docente',   r.docente_nombre   ?? '—', 'Asignatura', r.asignatura_nombre ?? '—'],
-        ['Semana',    `Semana ${academicWeekNumber.value}`, 'Período', weekRangeLabel.value],
+        ['Docente', r.docente_nombre ?? '—', 'Asignatura', r.asignatura_nombre ?? '—'],
+        ['Semana', `Semana ${academicWeekNumber.value}`, 'Período', weekRangeLabel.value],
       ],
       bodyStyles: { fontSize: 9, cellPadding: 3 },
       columnStyles: {
@@ -554,12 +598,16 @@ const exportarPDF = () => {
     const criteriosRows = []
     const getCriteriaDesc = (key) => {
       const details = {
-        'Cumplimiento de Planificación': 'Verificación del uso de métodos y recursos educativos planificados.',
+        'Cumplimiento de Planificación':
+          'Verificación del uso de métodos y recursos educativos planificados.',
         'Evaluación Formativa': 'Uso de instrumentos de evaluación durante la sesión.',
-        'Secuencia Didáctica': 'Cumplimiento de los momentos de la clase (Inicio, Desarrollo, Cierre).',
-        'Integración Transversal': 'Contiene Investigación, Interacción Social o Internacionalización.',
+        'Secuencia Didáctica':
+          'Cumplimiento de los momentos de la clase (Inicio, Desarrollo, Cierre).',
+        'Integración Transversal':
+          'Contiene Investigación, Interacción Social o Internacionalización.',
         'Evidencia de Aprendizaje': 'Respaldo multimedia, enlaces o documentos subidos.',
-        'Registro Oportuno': 'Puntualidad en el registro del seguimiento dentro de los tiempos institucionales.',
+        'Registro Oportuno':
+          'Puntualidad en el registro del seguimiento dentro de los tiempos institucionales.',
       }
       return details[key] || ''
     }
@@ -569,7 +617,7 @@ const exportarPDF = () => {
         criteriosRows.push([
           `${key}\n${getCriteriaDesc(key)}`,
           val.cumple ? 'SÍ' : 'NO',
-          val.obs ?? ''
+          val.obs ?? '',
         ])
       })
     }
@@ -590,7 +638,7 @@ const exportarPDF = () => {
         if (data.column.index === 1 && data.section === 'body') {
           data.cell.styles.textColor = data.row.raw[1] === 'SÍ' ? [27, 148, 69] : [193, 0, 21]
         }
-      }
+      },
     })
 
     // ── Observaciones del Director ────────────────────────────────────────────
@@ -603,7 +651,11 @@ const exportarPDF = () => {
     autoTable(doc, {
       startY: y,
       body: [[r.observaciones || 'Sin observaciones registradas.']],
-      bodyStyles: { fontSize: 9, fontStyle: 'italic', textColor: r.observaciones ? [30, 30, 30] : [150, 150, 150] },
+      bodyStyles: {
+        fontSize: 9,
+        fontStyle: 'italic',
+        textColor: r.observaciones ? [30, 30, 30] : [150, 150, 150],
+      },
       margin: { left: margin, right: margin },
     })
 
@@ -613,7 +665,11 @@ const exportarPDF = () => {
       doc.setPage(i)
       doc.setFontSize(7)
       doc.setTextColor(150)
-      doc.text(`Generado el ${date.formatDate(new Date(), 'DD/MM/YYYY HH:mm')}  ·  Página ${i} de ${totalPags}`, margin, 290)
+      doc.text(
+        `Generado el ${date.formatDate(new Date(), 'DD/MM/YYYY HH:mm')}  ·  Página ${i} de ${totalPags}`,
+        margin,
+        290,
+      )
       doc.setDrawColor(200)
       doc.line(margin, 286, w - margin, 286)
     }
@@ -681,17 +737,20 @@ const recalculateAlert = () => {
 const saveReport = async () => {
   saving.value = true
   try {
-    await api.post('/reportes/semanal', report.value)
+    console.log('Enviando datos del informe:', JSON.stringify(report.value, null, 2))
+    const response = await api.post('/reportes/semanal', report.value)
+    console.log('Respuesta del servidor:', response.data)
     $q.notify({ type: 'positive', message: 'Informe guardado correctamente' })
     emit('saved')
   } catch (error) {
     console.error('Error saving report:', error)
+    console.error('Datos enviados:', report.value)
+    console.error('Respuesta del error:', error.response?.data)
     $q.notify({ type: 'negative', message: 'Error al guardar el informe' })
   } finally {
     saving.value = false
   }
 }
-
 
 onMounted(() => {
   fetchDraft()

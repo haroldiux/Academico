@@ -12,14 +12,35 @@
         </p>
       </div>
       <div class="col-auto row q-gutter-sm">
-        <q-btn v-if="puedeEditar && store.examenes.length > 0" outline color="red" icon="delete_forever" label="Borrar Todo"
-          no-caps @click="eliminarTodo" />
-        <q-btn v-if="authStore.rol === 'VICERRECTOR_SEDE'" outline color="purple" icon="analytics"
-          label="Reporte Cumplimiento" no-caps @click="abrirReporte" />
+        <q-btn
+          v-if="puedeEditar && store.examenes.length > 0"
+          outline
+          color="red"
+          icon="delete_forever"
+          label="Borrar Todo"
+          no-caps
+          @click="eliminarTodo"
+        />
+        <q-btn
+          v-if="authStore.rol === 'VICERRECTOR_SEDE'"
+          outline
+          color="purple"
+          icon="analytics"
+          label="Reporte Cumplimiento"
+          no-caps
+          @click="abrirReporte"
+        />
         <!-- Ocultado por solicitud: se usará plantilla institucional externa -->
         <!-- <q-btn v-if="puedeEditar" outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" /> -->
-        <q-btn v-if="puedeEditar" unelevated color="green" icon="upload_file" label="Subir Excel" no-caps
-          @click="showUploadDialog = true" />
+        <q-btn
+          v-if="puedeEditar"
+          unelevated
+          color="green"
+          icon="upload_file"
+          label="Subir Excel"
+          no-caps
+          @click="showUploadDialog = true"
+        />
       </div>
     </div>
 
@@ -28,20 +49,49 @@
       <q-card-section>
         <div class="row q-col-gutter-md items-end">
           <div class="col-12 col-md-3">
-            <q-select v-model="filtros.gestion" :options="gestionesOptions" outlined dense label="Gestión" emit-value
-              map-options />
+            <q-select
+              v-model="filtros.gestion"
+              :options="gestionesOptions"
+              outlined
+              dense
+              label="Gestión"
+              emit-value
+              map-options
+            />
           </div>
           <div class="col-12 col-md-4">
-            <q-select v-model="filtros.carrera_id" :options="carrerasOptions" outlined dense label="Carrera" emit-value
-              map-options clearable />
+            <q-select
+              v-model="filtros.carrera_id"
+              :options="carrerasOptions"
+              outlined
+              dense
+              label="Carrera"
+              emit-value
+              map-options
+              clearable
+            />
           </div>
           <div class="col-12 col-md-2">
-            <q-select v-model="filtroSemestre" :options="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]" outlined dense
-              label="Semestre" clearable />
+            <q-select
+              v-model="filtroSemestre"
+              :options="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+              outlined
+              dense
+              label="Semestre"
+              clearable
+            />
           </div>
           <div class="col-12 col-md-2">
-            <q-select v-model="filtroTipo" :options="tiposExamenOptions" outlined dense label="Tipo" emit-value
-              map-options clearable />
+            <q-select
+              v-model="filtroTipo"
+              :options="tiposExamenOptions"
+              outlined
+              dense
+              label="Tipo"
+              emit-value
+              map-options
+              clearable
+            />
           </div>
           <div class="col-12 col-md-3">
             <q-input v-model="busqueda" outlined dense label="Buscar materia..." clearable>
@@ -51,8 +101,15 @@
             </q-input>
           </div>
           <div class="col-auto">
-            <q-btn unelevated color="primary" icon="refresh" label="Cargar" no-caps @click="cargarExamenes"
-              :loading="loading" />
+            <q-btn
+              unelevated
+              color="primary"
+              icon="refresh"
+              label="Cargar"
+              no-caps
+              @click="cargarExamenes"
+              :loading="loading"
+            />
           </div>
         </div>
       </q-card-section>
@@ -61,8 +118,15 @@
     <!-- Tabla de Exámenes -->
     <q-card>
       <q-card-section class="q-pa-none">
-        <q-table :rows="examenesFiltrados" :columns="columns" row-key="id" :loading="loading" flat bordered
-          :pagination="{ rowsPerPage: 20 }">
+        <q-table
+          :rows="examenesFiltrados"
+          :columns="columns"
+          row-key="id"
+          :loading="loading"
+          flat
+          bordered
+          :pagination="{ rowsPerPage: 20 }"
+        >
           <template v-slot:body-cell-semestre="props">
             <q-td :props="props" class="text-center">
               <q-badge color="teal" :label="props.row.semestre" v-if="props.row.semestre" />
@@ -71,10 +135,20 @@
           </template>
 
           <template v-slot:body-cell-semana="props">
-            <q-td :props="props" class="text-center"
-              :class="props.row.conflictos && props.row.conflictos.semana ? 'bg-amber-1 text-amber-9 text-weight-bold' : ''">
+            <q-td
+              :props="props"
+              class="text-center"
+              :class="
+                props.row.conflictos && props.row.conflictos.semana
+                  ? 'bg-amber-1 text-amber-9 text-weight-bold'
+                  : ''
+              "
+            >
               {{ props.row.semana }}
-              <q-tooltip v-if="props.row.conflictos && props.row.conflictos.semana" class="bg-amber-9">
+              <q-tooltip
+                v-if="props.row.conflictos && props.row.conflictos.semana"
+                class="bg-amber-9"
+              >
                 {{ props.row.conflictos.semana }}
               </q-tooltip>
             </q-td>
@@ -82,36 +156,70 @@
 
           <template v-slot:body-cell-tipo_examen="props">
             <q-td :props="props">
-              <q-chip :color="getExamenColor(props.row.tipo_examen)" text-color="white" size="sm" dense>
+              <q-chip
+                :color="getExamenColor(props.row.tipo_examen)"
+                text-color="white"
+                size="sm"
+                dense
+              >
                 {{ props.row.tipo_examen }}
               </q-chip>
             </q-td>
           </template>
 
           <template v-slot:body-cell-fecha_dia="props">
-            <q-td :props="props"
-              :class="props.row.conflictos ? 'bg-deep-orange-1 text-deep-orange-9 text-weight-bold' : ''">
+            <q-td
+              :props="props"
+              :class="
+                props.row.conflictos ? 'bg-deep-orange-1 text-deep-orange-9 text-weight-bold' : ''
+              "
+            >
               {{ getDayName(props.row.fecha) }}
             </q-td>
           </template>
 
           <template v-slot:body-cell-fecha="props">
-            <q-td :props="props"
-              :class="props.row.conflictos ? 'bg-deep-orange-1 text-deep-orange-9 text-weight-bold' : ''">
+            <q-td
+              :props="props"
+              :class="
+                props.row.conflictos ? 'bg-deep-orange-1 text-deep-orange-9 text-weight-bold' : ''
+              "
+            >
               <div class="row items-center no-wrap justify-center">
                 <q-icon name="event" size="xs" class="q-mr-xs" />
                 {{ formatDate(props.row.fecha) }}
-                <q-icon v-if="props.row.conflictos"
+                <q-icon
+                  v-if="props.row.conflictos"
                   name="error"
-                  :color="props.row.tipo_examen === 'Final' ? 'amber-9' : (props.row.tipo_examen === '2da Instancia' ? 'positive' : 'negative')" 
-                  size="xs" class="q-ml-xs cursor-pointer">
+                  :color="
+                    props.row.tipo_examen === 'Final'
+                      ? 'amber-9'
+                      : props.row.tipo_examen === '2da Instancia'
+                        ? 'positive'
+                        : 'negative'
+                  "
+                  size="xs"
+                  class="q-ml-xs cursor-pointer"
+                >
                   <q-tooltip class="bg-white text-black shadow-4" style="border: 1px solid #ddd">
-                    <div class="text-weight-bold q-mb-xs" 
-                      :class="props.row.tipo_examen === 'Final' ? 'text-amber-9' : (props.row.tipo_examen === '2da Instancia' ? 'text-positive' : 'text-negative')">
+                    <div
+                      class="text-weight-bold q-mb-xs"
+                      :class="
+                        props.row.tipo_examen === 'Final'
+                          ? 'text-amber-9'
+                          : props.row.tipo_examen === '2da Instancia'
+                            ? 'text-positive'
+                            : 'text-negative'
+                      "
+                    >
                       Advertencias de Validación:
                     </div>
-                    <div v-if="props.row.conflictos.semana">• {{ props.row.conflictos.semana }}</div>
-                    <div v-if="props.row.conflictos.horario">• {{ props.row.conflictos.horario }}</div>
+                    <div v-if="props.row.conflictos.semana">
+                      • {{ props.row.conflictos.semana }}
+                    </div>
+                    <div v-if="props.row.conflictos.horario">
+                      • {{ props.row.conflictos.horario }}
+                    </div>
                   </q-tooltip>
                 </q-icon>
               </div>
@@ -128,10 +236,26 @@
           <template v-slot:body-cell-actions="props">
             <q-td :props="props" class="text-center">
               <div v-if="puedeEditar">
-                <q-btn flat round dense icon="edit" size="sm" color="primary" @click="editarExamen(props.row)">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="edit"
+                  size="sm"
+                  color="primary"
+                  @click="editarExamen(props.row)"
+                >
                   <q-tooltip>Editar</q-tooltip>
                 </q-btn>
-                <q-btn flat round dense icon="delete" size="sm" color="red" @click="eliminarExamen(props.row)">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="delete"
+                  size="sm"
+                  color="red"
+                  @click="eliminarExamen(props.row)"
+                >
                   <q-tooltip>Eliminar</q-tooltip>
                 </q-btn>
               </div>
@@ -147,8 +271,15 @@
             <div class="text-center q-pa-xl">
               <q-icon name="event_busy" size="64px" color="grey-4" />
               <p class="text-grey-6 q-mt-md">No hay exámenes cargados para esta gestión</p>
-              <q-btn v-if="puedeEditar" unelevated color="green" icon="upload_file" label="Subir Excel" no-caps
-                @click="showUploadDialog = true" />
+              <q-btn
+                v-if="puedeEditar"
+                unelevated
+                color="green"
+                icon="upload_file"
+                label="Subir Excel"
+                no-caps
+                @click="showUploadDialog = true"
+              />
             </div>
           </template>
         </q-table>
@@ -157,7 +288,7 @@
 
     <!-- Dialog Subir Excel -->
     <q-dialog v-model="showUploadDialog">
-      <q-card style="min-width: 500px;">
+      <q-card style="min-width: 500px">
         <div class="dialog-header bg-green">
           <h3><q-icon name="upload_file" class="q-mr-sm" />Subir Rol de Exámenes</h3>
         </div>
@@ -180,42 +311,76 @@
           </q-banner>
 
           <div class="text-center q-pa-lg upload-zone" @dragover.prevent @drop.prevent="onDrop">
-            <input type="file" ref="fileInput" @change="onFileSelected" accept=".xlsx,.xls" style="display: none" />
+            <input
+              type="file"
+              ref="fileInput"
+              @change="onFileSelected"
+              accept=".xlsx,.xls"
+              style="display: none"
+            />
 
             <div v-if="!selectedFile">
               <q-icon name="cloud_upload" size="64px" color="grey-4" />
               <p class="text-grey-6 q-mt-md">Arrastra un archivo Excel aquí o</p>
-              <q-btn outline color="primary" label="Seleccionar Archivo" no-caps @click="$refs.fileInput.click()" />
+              <q-btn
+                outline
+                color="primary"
+                label="Seleccionar Archivo"
+                no-caps
+                @click="$refs.fileInput.click()"
+              />
             </div>
 
             <div v-else>
               <q-icon name="description" size="48px" color="green" />
               <p class="text-subtitle1 q-mt-sm text-weight-medium">{{ selectedFile.name }}</p>
               <p class="text-caption text-grey-6">{{ formatFileSize(selectedFile.size) }}</p>
-              <q-btn flat color="red" label="Quitar" no-caps icon="close" @click="selectedFile = null" />
+              <q-btn
+                flat
+                color="red"
+                label="Quitar"
+                no-caps
+                icon="close"
+                @click="selectedFile = null"
+              />
             </div>
           </div>
         </q-card-section>
 
         <q-card-actions align="right" class="q-pa-md">
           <q-btn flat label="Cancelar" @click="showUploadDialog = false" />
-          <q-btn unelevated color="green" label="Subir" icon="upload" no-caps :disable="!selectedFile"
-            :loading="uploading" @click="subirExcel" />
+          <q-btn
+            unelevated
+            color="green"
+            label="Subir"
+            icon="upload"
+            no-caps
+            :disable="!selectedFile"
+            :loading="uploading"
+            @click="subirExcel"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
     <!-- Dialog Editar Examen -->
     <q-dialog v-model="showEditDialog">
-      <q-card style="min-width: 450px;">
+      <q-card style="min-width: 450px">
         <div class="dialog-header">
           <h3><q-icon name="edit" class="q-mr-sm" />Editar Examen</h3>
         </div>
 
         <q-card-section class="q-gutter-md">
           <q-input v-model="examenForm.materia_nombre" outlined dense label="Materia" readonly />
-          <q-select v-model="examenForm.tipo_examen" :options="tiposExamenOptions" outlined dense label="Tipo de Examen"
-            emit-value map-options />
+          <q-select
+            v-model="examenForm.tipo_examen"
+            :options="tiposExamenOptions"
+            outlined
+            dense
+            label="Tipo de Examen"
+            emit-value
+            map-options
+          />
           <div class="row q-col-gutter-md">
             <div class="col-6">
               <q-input v-model="examenForm.semana" outlined dense label="Semana" type="number" />
@@ -226,7 +391,13 @@
           </div>
           <div class="row q-col-gutter-md">
             <div class="col-6">
-              <q-input v-model="examenForm.hora_inicio" outlined dense label="Hora Inicio" type="time" />
+              <q-input
+                v-model="examenForm.hora_inicio"
+                outlined
+                dense
+                label="Hora Inicio"
+                type="time"
+              />
             </div>
             <div class="col-6">
               <q-input v-model="examenForm.hora_fin" outlined dense label="Hora Fin" type="time" />
@@ -236,36 +407,65 @@
 
         <q-card-actions align="right" class="q-pa-md">
           <q-btn flat label="Cancelar" @click="showEditDialog = false" />
-          <q-btn unelevated color="primary" label="Guardar" icon="save" no-caps @click="guardarExamen" />
+          <q-btn
+            unelevated
+            color="primary"
+            label="Guardar"
+            icon="save"
+            no-caps
+            @click="guardarExamen"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
     <!-- Dialog Reporte Cumplimiento -->
     <q-dialog v-model="showReportDialog">
-      <q-card style="min-width: 600px; max-width: 80vw;">
+      <q-card style="min-width: 600px; max-width: 80vw">
         <div class="dialog-header bg-purple">
           <h3><q-icon name="analytics" class="q-mr-sm" />Reporte de Cumplimiento</h3>
         </div>
 
         <q-card-section>
           <div class="row items-center justify-between q-mb-md">
-            <div class="text-subtitle1">Gestión: <b>{{ filtros.gestion }}</b></div>
-            <q-btn color="primary" label="Generar Análisis" icon="refresh" :loading="reportLoading"
-              @click="generarReporte" />
+            <div class="text-subtitle1">
+              Gestión: <b>{{ filtros.gestion }}</b>
+            </div>
+            <q-btn
+              color="primary"
+              label="Generar Análisis"
+              icon="refresh"
+              :loading="reportLoading"
+              @click="generarReporte"
+            />
           </div>
 
-          <q-table :rows="reporteData" :columns="reporteColumns" row-key="carrera" dense flat bordered
-            :loading="reportLoading" :pagination="{ rowsPerPage: 0 }" hide-bottom>
+          <q-table
+            :rows="reporteData"
+            :columns="reporteColumns"
+            row-key="carrera"
+            dense
+            flat
+            bordered
+            :loading="reportLoading"
+            :pagination="{ rowsPerPage: 0 }"
+            hide-bottom
+          >
             <template v-slot:body-cell-estado="props">
               <q-td :props="props" class="text-center">
-                <q-chip :color="props.row.total > 0 ? 'positive' : 'negative'" text-color="white" size="sm">
+                <q-chip
+                  :color="props.row.total > 0 ? 'positive' : 'negative'"
+                  text-color="white"
+                  size="sm"
+                >
                   {{ props.row.total > 0 ? 'Cumplido' : 'Pendiente' }}
                 </q-chip>
               </q-td>
             </template>
             <template v-slot:body-cell-total="props">
               <q-td :props="props" class="text-center">
-                <span :class="props.row.total === 0 ? 'text-red text-weight-bold' : ''">{{ props.row.total }}</span>
+                <span :class="props.row.total === 0 ? 'text-red text-weight-bold' : ''">{{
+                  props.row.total
+                }}</span>
               </q-td>
             </template>
             <template v-slot:no-data>
@@ -306,7 +506,7 @@ const filtroTipo = ref(null)
 
 const filtros = ref({
   gestion: '2026-I',
-  carrera_id: null
+  carrera_id: null,
 })
 
 const examenForm = ref({
@@ -317,14 +517,14 @@ const examenForm = ref({
   semana: 0,
   fecha: '',
   hora_inicio: '',
-  hora_fin: ''
+  hora_fin: '',
 })
 
 // Options
 const gestionesOptions = [
   { label: 'Gestión 2026-I', value: '2026-I' },
   { label: 'Gestión 2025-II', value: '2025-II' },
-  { label: 'Gestión 2025-I', value: '2025-I' }
+  { label: 'Gestión 2025-I', value: '2025-I' },
 ]
 
 const authStore = useAuthStore()
@@ -332,9 +532,9 @@ const authStore = useAuthStore()
 const carrerasOptions = computed(() => {
   // Para Vicerrector Sede
   if (authStore.rol === ROLES.VICERRECTOR_SEDE) {
-    return carrerasStore.getCarrerasBySede(authStore.sedeId).map(c => ({
+    return carrerasStore.getCarrerasBySede(authStore.sedeId).map((c) => ({
       label: c.nombre,
-      value: c.id
+      value: c.id,
     }))
   }
 
@@ -348,9 +548,9 @@ const carrerasOptions = computed(() => {
     carreras.push(user.director.carrera)
   }
 
-  return carreras.map(c => ({
+  return carreras.map((c) => ({
     label: c.nombre,
-    value: c.id
+    value: c.id,
   }))
 })
 
@@ -363,12 +563,24 @@ const tiposExamenOptions = [
   { label: '1er Parcial', value: '1er Parcial' },
   { label: '2do Parcial', value: '2do Parcial' },
   { label: 'Final', value: 'Final' },
-  { label: '2da Instancia', value: '2da Instancia' }
+  { label: '2da Instancia', value: '2da Instancia' },
 ]
 
 const columns = [
-  { name: 'materia_codigo', label: 'Código', field: 'materia_codigo', align: 'left', sortable: true },
-  { name: 'materia_nombre', label: 'Materia', field: 'materia_nombre', align: 'left', sortable: true },
+  {
+    name: 'materia_codigo',
+    label: 'Código',
+    field: 'materia_codigo',
+    align: 'left',
+    sortable: true,
+  },
+  {
+    name: 'materia_nombre',
+    label: 'Materia',
+    field: 'materia_nombre',
+    align: 'left',
+    sortable: true,
+  },
   { name: 'semestre', label: 'Sem.', field: 'semestre', align: 'center', sortable: true },
   { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center', sortable: true },
   { name: 'tipo_examen', label: 'Tipo', field: 'tipo_examen', align: 'center', sortable: true },
@@ -376,7 +588,7 @@ const columns = [
   { name: 'fecha_dia', label: 'Día', field: 'fecha_dia', align: 'center', sortable: true },
   { name: 'fecha', label: 'Fecha', field: 'fecha', align: 'center', sortable: true },
   { name: 'horario', label: 'Horario', align: 'center' },
-  { name: 'actions', label: 'Acciones', align: 'center' }
+  { name: 'actions', label: 'Acciones', align: 'center' },
 ]
 
 // Computed
@@ -387,18 +599,19 @@ const examenesFiltrados = computed(() => {
   let lista = store.examenes
 
   if (filtroSemestre.value) {
-    lista = lista.filter(e => e.semestre == filtroSemestre.value)
+    lista = lista.filter((e) => e.semestre == filtroSemestre.value)
   }
 
   if (filtroTipo.value) {
-    lista = lista.filter(e => e.tipo_examen === filtroTipo.value)
+    lista = lista.filter((e) => e.tipo_examen === filtroTipo.value)
   }
 
   if (busqueda.value) {
     const term = busqueda.value.toLowerCase()
-    lista = lista.filter(e =>
-      e.materia_codigo?.toLowerCase().includes(term) ||
-      e.materia_nombre?.toLowerCase().includes(term)
+    lista = lista.filter(
+      (e) =>
+        e.materia_codigo?.toLowerCase().includes(term) ||
+        e.materia_nombre?.toLowerCase().includes(term),
     )
   }
   return lista
@@ -407,11 +620,16 @@ const examenesFiltrados = computed(() => {
 // Methods
 function getExamenColor(tipo) {
   switch (tipo) {
-    case '1er Parcial': return 'blue'
-    case '2do Parcial': return 'orange'
-    case 'Final': return 'purple'
-    case '2da Instancia': return 'red'
-    default: return 'grey'
+    case '1er Parcial':
+      return 'blue'
+    case '2do Parcial':
+      return 'orange'
+    case 'Final':
+      return 'purple'
+    case '2da Instancia':
+      return 'red'
+    default:
+      return 'grey'
   }
 }
 
@@ -461,18 +679,24 @@ async function subirExcel() {
     $q.notify({
       type: 'warning',
       message: 'Debe seleccionar una carrera antes de subir el archivo.',
-      icon: 'warning'
+      icon: 'warning',
     })
     return
   }
 
   try {
-    const response = await store.uploadExcel(selectedFile.value, filtros.value.gestion, filtros.value.carrera_id)
+    const response = await store.uploadExcel(
+      selectedFile.value,
+      filtros.value.gestion,
+      filtros.value.carrera_id,
+    )
 
     // Show warnings/errors if any
 
-
-    if ((response.errors && response.errors.length > 0) || (response.warnings && response.warnings.length > 0)) {
+    if (
+      (response.errors && response.errors.length > 0) ||
+      (response.warnings && response.warnings.length > 0)
+    ) {
       let html = '<div class="text-left">'
 
       if (response.imported > 0) {
@@ -484,7 +708,7 @@ async function subirExcel() {
       if (response.errors && response.errors.length > 0) {
         html += `<div class="text-red text-weight-bold q-mt-md">Errores (Registros no importados):</div>`
         html += `<ul class="q-pl-md text-red-9">`
-        response.errors.forEach(e => html += `<li>${e}</li>`)
+        response.errors.forEach((e) => (html += `<li>${e}</li>`))
         html += `</ul>`
         html += `</ul>`
       }
@@ -492,7 +716,7 @@ async function subirExcel() {
       if (response.warnings && response.warnings.length > 0) {
         html += `<div class="text-orange-9 text-weight-bold q-mt-md">Advertencias (Registros importados):</div>`
         html += `<ul class="q-pl-md text-orange-10">`
-        response.warnings.forEach(w => html += `<li>${w}</li>`)
+        response.warnings.forEach((w) => (html += `<li>${w}</li>`))
         html += `</ul>`
       }
 
@@ -502,13 +726,13 @@ async function subirExcel() {
         title: 'Resultado de la Importación',
         message: html,
         html: true,
-        ok: 'Entendido'
+        ok: 'Entendido',
       })
     } else {
       $q.notify({
         type: 'positive',
         message: `Se importaron ${response.imported} registros correctamente.`,
-        icon: 'check_circle'
+        icon: 'check_circle',
       })
     }
 
@@ -518,11 +742,10 @@ async function subirExcel() {
     $q.notify({
       type: 'negative',
       message: 'Error al subir archivo: ' + error.message,
-      icon: 'error'
+      icon: 'error',
     })
   }
 }
-
 
 function editarExamen(examen) {
   examenForm.value = { ...examen }
@@ -535,14 +758,14 @@ async function guardarExamen() {
     $q.notify({
       type: 'positive',
       message: 'Examen actualizado',
-      icon: 'check'
+      icon: 'check',
     })
     showEditDialog.value = false
   } catch (error) {
     $q.notify({
       type: 'negative',
       message: 'Error al actualizar: ' + error.message,
-      icon: 'error'
+      icon: 'error',
     })
   }
 }
@@ -552,20 +775,20 @@ function eliminarExamen(examen) {
     title: 'Confirmar',
     message: `¿Eliminar el examen de ${examen.materia_nombre}?`,
     cancel: true,
-    persistent: true
+    persistent: true,
   }).onOk(async () => {
     try {
       await store.eliminarExamen(examen.id)
       $q.notify({
         type: 'positive',
         message: 'Examen eliminado',
-        icon: 'delete'
+        icon: 'delete',
       })
     } catch {
       $q.notify({
         type: 'negative',
         message: 'Error al eliminar',
-        icon: 'error'
+        icon: 'error',
       })
     }
   })
@@ -576,7 +799,7 @@ function eliminarTodo() {
     $q.notify({
       type: 'warning',
       message: 'Debe seleccionar una carrera antes de eliminar los registros.',
-      icon: 'warning'
+      icon: 'warning',
     })
     return
   }
@@ -587,26 +810,26 @@ function eliminarTodo() {
     html: true,
     prompt: {
       model: '',
-      isValid: val => val.toLowerCase() === 'eliminar',
-      type: 'text'
+      isValid: (val) => val.toLowerCase() === 'eliminar',
+      type: 'text',
     },
     persistent: true,
     ok: { label: 'Confirmar Eliminación', color: 'negative', flat: true },
-    cancel: { label: 'Cancelar', color: 'primary' }
+    cancel: { label: 'Cancelar', color: 'primary' },
   }).onOk(async () => {
     try {
       const res = await store.deleteAll(filtros.value.gestion, filtros.value.carrera_id)
       $q.notify({
         type: 'positive',
         message: res.message || 'Se eliminaron los exámenes correctamente',
-        icon: 'delete_forever'
+        icon: 'delete_forever',
       })
       await cargarExamenes()
     } catch (error) {
       $q.notify({
         type: 'negative',
         message: 'Error al eliminar todo: ' + error.message,
-        icon: 'error'
+        icon: 'error',
       })
     }
   })
@@ -619,7 +842,7 @@ const reporteData = ref([])
 const reporteColumns = [
   { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left', sortable: true },
   { name: 'total', label: 'Exámenes Cargados', field: 'total', align: 'center', sortable: true },
-  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true }
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
 ]
 
 function abrirReporte() {
@@ -630,36 +853,35 @@ function abrirReporte() {
 async function generarReporte() {
   reportLoading.value = true
   reporteData.value = []
-  
+
   try {
     const gestion = filtros.value.gestion
     const carreras = carrerasOptions.value
-    
+
     // Iterate securely using service direct call to avoid Store UI flush
     const promises = carreras.map(async (c) => {
       try {
         const res = await rolExamenesService.getRolExamenes({
           gestion: gestion,
-          carrera_id: c.value
+          carrera_id: c.value,
         })
         const total = (res.data.data || res.data || []).length
         return {
           carrera: c.label,
           total: total,
-          estado: total > 0 ? 'Cumplido' : 'Pendiente'
+          estado: total > 0 ? 'Cumplido' : 'Pendiente',
         }
       } catch {
         return {
           carrera: c.label,
           total: 0,
-          estado: 'Error'
+          estado: 'Error',
         }
       }
     })
-    
+
     // Execute all in parallel (might be heavy for server if many, but for 30 is fine)
     reporteData.value = await Promise.all(promises)
-    
   } catch {
     $q.notify({ type: 'negative', message: 'Error generando reporte' })
   } finally {
@@ -674,7 +896,10 @@ onMounted(async () => {
   }
 
   // Solo cargar si hay carrera seleccionada o si es un rol global
-  if (filtros.value.carrera_id || [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.VICERRECTOR_NACIONAL].includes(authStore.rol)) {
+  if (
+    filtros.value.carrera_id ||
+    [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.VICERRECTOR_NACIONAL].includes(authStore.rol)
+  ) {
     await cargarExamenes()
   }
 })

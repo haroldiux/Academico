@@ -130,7 +130,6 @@
           <q-tooltip>Ver detalle de cursos con avance &lt; 20%</q-tooltip>
         </q-card>
       </div>
-
     </div>
 
     <!-- Charts Section (Oculto a petición) -->
@@ -188,7 +187,7 @@
         <q-tab name="semanal" label="Informe Semanal" icon="assignment_turned_in" />
         <q-tab name="resumen" label="Resumen de Carrera" icon="pie_chart" />
         <q-tab name="reincidentes" label="Reincidentes con Acciones" icon="warning" />
-<!--         <q-tab name="asistencias" label="Asistencias" icon="how_to_reg" v-if="false" /> -->
+        <!--         <q-tab name="asistencias" label="Asistencias" icon="how_to_reg" v-if="false" /> -->
         <q-tab name="auditoria" label="Auditoría 25%" icon="policy" v-if="rolPermiteAuditoria" />
       </q-tabs>
       <q-separator />
@@ -217,6 +216,7 @@
         <!-- Panel Resumen de Carrera -->
         <q-tab-panel name="resumen" class="q-pa-none">
           <ResumenCarreraTab
+            :sede-id="Number(filtros.sede)"
             :carrera-id="Number(filtros.carrera)"
             :semana="filtros.semana"
           />
@@ -234,6 +234,7 @@
         <!-- Panel Reincidentes -->
         <q-tab-panel name="reincidentes" class="q-pa-none">
           <ReincidentesTab
+            :sede-id="Number(filtros.sede)"
             :carrera-id="Number(filtros.carrera)"
             :semana="filtros.semana"
           />
@@ -251,7 +252,7 @@
 
         <!-- Panel Auditoría -->
         <q-tab-panel name="auditoria">
-          <MatrizControlInstitucional 
+          <MatrizControlInstitucional
             :sede-id="Number(filtros.sede)"
             :carrera-id="Number(filtros.carrera)"
             :semana-inicio="filtros.semana"

@@ -18,7 +18,7 @@ const props = defineProps<Props>()
 const propsWithDefaults = withDefaults(defineProps<Props>(), {
   count: 0,
   items: () => [],
-  optional: false
+  optional: false,
 })
 
 // Union types
@@ -99,7 +99,7 @@ interface FormData {
 const form = ref<FormData>({
   username: '',
   email: '',
-  age: 0
+  age: 0,
 })
 
 // Ref as function parameter
@@ -131,16 +131,16 @@ const state = reactive<State>({
   count: 0,
   user: {
     name: '',
-    email: ''
+    email: '',
   },
-  items: []
+  items: [],
 })
 
 // Type inference
 const inferredState = reactive({
   count: 0, // number
   message: 'hello', // string
-  active: true // boolean
+  active: true, // boolean
 })
 </script>
 ```
@@ -180,7 +180,7 @@ const fullNameWritable = computed<string>({
     const [first, last] = value.split(' ')
     user.value.firstName = first
     user.value.lastName = last
-  }
+  },
 })
 </script>
 ```
@@ -336,11 +336,7 @@ function handleSelect(item: T) {
 
 <template>
   <div>
-    <div
-      v-for="item in items"
-      :key="item.id"
-      @click="handleSelect(item)"
-    >
+    <div v-for="item in items" :key="item.id" @click="handleSelect(item)">
       <slot :item="item"></slot>
     </div>
   </div>
@@ -354,9 +350,7 @@ interface User {
   email: string
 }
 
-const users: User[] = [
-  { id: 1, name: 'John', email: 'john@example.com' }
-]
+const users: User[] = [{ id: 1, name: 'John', email: 'john@example.com' }]
 
 function handleUserSelect(user: User) {
   console.log('Selected user:', user.name)
@@ -434,7 +428,7 @@ function updateUser(newUser: User) {
 // Provide with type safety
 provide(userContextKey, {
   user,
-  updateUser
+  updateUser,
 })
 </script>
 
@@ -449,7 +443,7 @@ const userContext = inject(userContextKey)
 // With default value
 const defaultContext: UserContext = {
   user: ref({ id: 0, name: '', email: '' }),
-  updateUser: () => {}
+  updateUser: () => {},
 }
 
 const contextWithDefault = inject(userContextKey, defaultContext)
@@ -503,7 +497,7 @@ export const useUserStore = defineStore('user', () => {
     isAdmin,
     userCount,
     fetchUser,
-    logout
+    logout,
   }
 })
 
@@ -570,15 +564,15 @@ const user = await $api.get<User>('/api/user')
 
 ## Quick Reference
 
-| Pattern | Type |
-|---------|------|
-| `defineProps<T>()` | Interface for props |
-| `defineEmits<T>()` | Interface for emits |
-| `ref<T>()` | Typed ref |
-| `reactive<T>()` | Typed reactive object |
-| `computed<T>()` | Typed computed |
-| `ref<HTMLElement \| null>` | Template refs |
-| `generic="T"` | Generic components |
-| `InjectionKey<T>` | Typed provide/inject |
-| Type guards | Runtime type checking |
-| `as` assertions | Type assertions |
+| Pattern                    | Type                  |
+| -------------------------- | --------------------- |
+| `defineProps<T>()`         | Interface for props   |
+| `defineEmits<T>()`         | Interface for emits   |
+| `ref<T>()`                 | Typed ref             |
+| `reactive<T>()`            | Typed reactive object |
+| `computed<T>()`            | Typed computed        |
+| `ref<HTMLElement \| null>` | Template refs         |
+| `generic="T"`              | Generic components    |
+| `InjectionKey<T>`          | Typed provide/inject  |
+| Type guards                | Runtime type checking |
+| `as` assertions            | Type assertions       |

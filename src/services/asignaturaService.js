@@ -36,12 +36,13 @@ export default {
     formData.append('file', file)
     if (options.datos !== undefined) formData.append('import_datos', options.datos ? 1 : 0)
     if (options.unidades !== undefined) formData.append('import_unidades', options.unidades ? 1 : 0)
-    if (options.bibliografia !== undefined) formData.append('import_bibliografia', options.bibliografia ? 1 : 0)
+    if (options.bibliografia !== undefined)
+      formData.append('import_bibliografia', options.bibliografia ? 1 : 0)
 
     return api.post(`/asignaturas/${id}/import-word`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        'Content-Type': 'multipart/form-data',
+      },
     })
   },
 
@@ -51,8 +52,8 @@ export default {
 
     return api.post(`/asignaturas/${id}/import-excel`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        'Content-Type': 'multipart/form-data',
+      },
     })
   },
 
@@ -62,22 +63,22 @@ export default {
 
     return api.post(`/asignaturas/${id}/import-plan-clase`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        'Content-Type': 'multipart/form-data',
+      },
     })
   },
 
   importarCronograma(id, formData) {
     return api.post(`/asignaturas/${id}/import-cronograma`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
   },
 
   importPersonal(id, file) {
     const formData = new FormData()
     formData.append('file', file)
     return api.post(`/asignaturas/${id}/import-personal`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
 
@@ -132,5 +133,5 @@ export default {
 
   moveTema(id, direction) {
     return api.post(`/planificacion/temas/${id}/move`, { direction })
-  }
+  },
 }

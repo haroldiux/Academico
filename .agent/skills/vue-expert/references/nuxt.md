@@ -47,7 +47,7 @@ my-nuxt-app/
 <script setup lang="ts">
 definePageMeta({
   title: 'Home',
-  layout: 'default'
+  layout: 'default',
 })
 </script>
 
@@ -97,7 +97,8 @@ const slug = route.params.slug // ['2024', '12', 'my-post']
       <nav>Navigation</nav>
     </header>
     <main>
-      <slot /> <!-- Page content goes here -->
+      <slot />
+      <!-- Page content goes here -->
     </main>
     <footer>Footer</footer>
   </div>
@@ -106,7 +107,7 @@ const slug = route.params.slug // ['2024', '12', 'my-post']
 <!-- layouts/admin.vue -->
 <script setup lang="ts">
 definePageMeta({
-  middleware: 'auth' // Protect with middleware
+  middleware: 'auth', // Protect with middleware
 })
 </script>
 
@@ -122,7 +123,7 @@ definePageMeta({
 <!-- pages/admin/dashboard.vue -->
 <script setup lang="ts">
 definePageMeta({
-  layout: 'admin'
+  layout: 'admin',
 })
 </script>
 
@@ -149,15 +150,15 @@ const { data } = await useFetch('/api/users', {
   method: 'POST',
   body: { name: 'John' },
   headers: {
-    'Authorization': 'Bearer token'
+    Authorization: 'Bearer token',
   },
   query: { page: 1, limit: 10 },
   // Transform response
-  transform: (data) => data.map(u => ({ ...u, fullName: u.firstName + ' ' + u.lastName })),
+  transform: (data) => data.map((u) => ({ ...u, fullName: u.firstName + ' ' + u.lastName })),
   // Pick specific keys
   pick: ['id', 'name'],
   // Watch for changes
-  watch: [page, limit]
+  watch: [page, limit],
 })
 
 // useAsyncData - More control
@@ -170,17 +171,15 @@ const { data: user } = await useAsyncData(
   {
     server: true, // Fetch on server
     lazy: false, // Don't block navigation
-    default: () => null // Default value while loading
-  }
+    default: () => null, // Default value while loading
+  },
 )
 
 // useLazyFetch - Non-blocking
 const { data: posts } = await useLazyFetch('/api/posts')
 
 // useLazyAsyncData - Non-blocking with custom fetcher
-const { data: comments } = await useLazyAsyncData('comments', () =>
-  $fetch('/api/comments')
-)
+const { data: comments } = await useLazyAsyncData('comments', () => $fetch('/api/comments'))
 
 // Manual refresh
 function handleRefresh() {
@@ -214,7 +213,7 @@ export default defineEventHandler(async (event) => {
   // Fetch from database
   const users = await prisma.user.findMany({
     skip: (page - 1) * limit,
-    take: limit
+    take: limit,
   })
 
   return users
@@ -225,13 +224,13 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
 
   const user = await prisma.user.findUnique({
-    where: { id: Number(id) }
+    where: { id: Number(id) },
   })
 
   if (!user) {
     throw createError({
       statusCode: 404,
-      message: 'User not found'
+      message: 'User not found',
     })
   }
 
@@ -246,15 +245,15 @@ export default defineEventHandler(async (event) => {
   if (!body.email || !body.name) {
     throw createError({
       statusCode: 400,
-      message: 'Email and name are required'
+      message: 'Email and name are required',
     })
   }
 
   const user = await prisma.user.create({
     data: {
       email: body.email,
-      name: body.name
-    }
+      name: body.name,
+    },
   })
 
   return user
@@ -270,7 +269,7 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({
       statusCode: 401,
-      message: 'Invalid credentials'
+      message: 'Invalid credentials',
     })
   }
 
@@ -279,7 +278,7 @@ export default defineEventHandler(async (event) => {
     httpOnly: true,
     secure: true,
     sameSite: 'strict',
-    maxAge: 60 * 60 * 24 * 7 // 7 days
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   })
 
   return { success: true, user }
@@ -399,11 +398,7 @@ const users = await $api('/users')
 export default defineNuxtConfig({
   devtools: { enabled: true },
 
-  modules: [
-    '@pinia/nuxt',
-    '@nuxtjs/tailwindcss',
-    '@vueuse/nuxt'
-  ],
+  modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss', '@vueuse/nuxt'],
 
   runtimeConfig: {
     // Server-only (never exposed to client)
@@ -411,8 +406,8 @@ export default defineNuxtConfig({
 
     // Exposed to client
     public: {
-      apiBase: process.env.API_BASE || '/api'
-    }
+      apiBase: process.env.API_BASE || '/api',
+    },
   },
 
   app: {
@@ -421,41 +416,39 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'My amazing site' }
+        { name: 'description', content: 'My amazing site' },
       ],
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-      ]
-    }
+      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+    },
   },
 
   css: ['~/assets/css/main.css'],
 
   typescript: {
     strict: true,
-    typeCheck: true
+    typeCheck: true,
   },
 
   // Vite is the default bundler in Nuxt 3
   // Note: webpack is deprecated - use Vite for all new projects
   vite: {
     optimizeDeps: {
-      include: ['vue', 'vue-router', 'pinia']
+      include: ['vue', 'vue-router', 'pinia'],
     },
     build: {
       rollupOptions: {
         output: {
           manualChunks: {
-            'vendor': ['vue', 'pinia']
-          }
-        }
-      }
-    }
+            vendor: ['vue', 'pinia'],
+          },
+        },
+      },
+    },
   },
 
   nitro: {
-    preset: 'vercel' // or 'node-server', 'cloudflare', 'bun', etc.
-  }
+    preset: 'vercel', // or 'node-server', 'cloudflare', 'bun', etc.
+  },
 })
 ```
 
@@ -471,8 +464,8 @@ useHead({
   meta: [
     { name: 'description', content: 'User profile page' },
     { property: 'og:title', content: title },
-    { property: 'og:description', content: 'User profile' }
-  ]
+    { property: 'og:description', content: 'User profile' },
+  ],
 })
 
 // Or use useSeoMeta
@@ -481,7 +474,7 @@ useSeoMeta({
   ogTitle: 'My Page',
   description: 'Page description',
   ogDescription: 'Page description',
-  ogImage: 'https://example.com/image.png'
+  ogImage: 'https://example.com/image.png',
 })
 </script>
 ```
@@ -552,10 +545,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         server: './server.ts',
-        client: './src/entry-client.ts'
-      }
-    }
-  }
+        client: './src/entry-client.ts',
+      },
+    },
+  },
 })
 ```
 
@@ -568,9 +561,7 @@ export default defineConfig({
 import { defineAsyncComponent } from 'vue'
 
 // Heavy component loaded only on client
-const HeavyChart = defineAsyncComponent(() =>
-  import('./components/HeavyChart.vue')
-)
+const HeavyChart = defineAsyncComponent(() => import('./components/HeavyChart.vue'))
 </script>
 
 <template>
@@ -621,7 +612,7 @@ onMounted(() => {
 // Use nuxt-delay-hydration for non-critical content
 definePageMeta({
   // Delay hydration until visible or idle
-  hydration: 'when-visible' // or 'on-idle'
+  hydration: 'when-visible', // or 'on-idle'
 })
 </script>
 
@@ -643,27 +634,27 @@ export default defineNuxtConfig({
 
   delayHydration: {
     mode: 'init', // or 'mount'
-    debug: process.env.NODE_ENV === 'development'
-  }
+    debug: process.env.NODE_ENV === 'development',
+  },
 })
 ```
 
 ## Quick Reference
 
-| Pattern | Use Case |
-|---------|----------|
-| `useFetch()` | Fetch data (SSR-safe) |
-| `useAsyncData()` | Custom async operations |
-| `useLazyFetch()` | Non-blocking fetch |
-| `useState()` | Shared state across components |
-| `useRoute()` | Access route params/query |
-| `useRouter()` | Navigate programmatically |
-| `navigateTo()` | Navigate to route |
-| `definePageMeta()` | Page-level metadata |
-| `useHead()` | Dynamic meta tags |
-| Server routes | `/server/api/*.ts` |
-| Auto-imports | Components, composables, utils |
-| `<ClientOnly>` | Client-only rendering, prevent hydration mismatch |
-| `renderToString()` | Custom SSR with Fastify/Express |
-| `vite: {}` | Vite configuration in nuxt.config.ts |
-| `nuxt-delay-hydration` | Progressive hydration for performance |
+| Pattern                | Use Case                                          |
+| ---------------------- | ------------------------------------------------- |
+| `useFetch()`           | Fetch data (SSR-safe)                             |
+| `useAsyncData()`       | Custom async operations                           |
+| `useLazyFetch()`       | Non-blocking fetch                                |
+| `useState()`           | Shared state across components                    |
+| `useRoute()`           | Access route params/query                         |
+| `useRouter()`          | Navigate programmatically                         |
+| `navigateTo()`         | Navigate to route                                 |
+| `definePageMeta()`     | Page-level metadata                               |
+| `useHead()`            | Dynamic meta tags                                 |
+| Server routes          | `/server/api/*.ts`                                |
+| Auto-imports           | Components, composables, utils                    |
+| `<ClientOnly>`         | Client-only rendering, prevent hydration mismatch |
+| `renderToString()`     | Custom SSR with Fastify/Express                   |
+| `vite: {}`             | Vite configuration in nuxt.config.ts              |
+| `nuxt-delay-hydration` | Progressive hydration for performance             |

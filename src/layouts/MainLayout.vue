@@ -25,19 +25,22 @@
           </div>
         </div>
 
-
-
         <!-- Connected Badge -->
-        <div 
-          :class="['connected-badge', { 'offline': !isReallyConnected }]"
+        <div
+          :class="['connected-badge', { offline: !isReallyConnected }]"
           @click="checkActualConnection"
-          style="cursor: pointer;"
+          style="cursor: pointer"
         >
-          <span :class="['connected-dot', { 'offline': !isReallyConnected }]"></span>
+          <span :class="['connected-dot', { offline: !isReallyConnected }]"></span>
           {{ isReallyConnected ? 'Conectado' : 'Sin conexión' }}
-          
+
           <!-- Sync Badge -->
-          <q-badge v-if="syncStore.pendingFollowups.length > 0" color="orange" floating class="q-ml-sm">
+          <q-badge
+            v-if="syncStore.pendingFollowups.length > 0"
+            color="orange"
+            floating
+            class="q-ml-sm"
+          >
             {{ syncStore.pendingFollowups.length }}
             <q-tooltip>Sincronizaciones pendientes</q-tooltip>
           </q-badge>
@@ -85,7 +88,13 @@
     </q-header>
 
     <!-- Sidebar -->
-    <q-drawer v-model="leftDrawerOpen" show-if-above :width="240" :breakpoint="1024" class="sidebar-dark">
+    <q-drawer
+      v-model="leftDrawerOpen"
+      show-if-above
+      :width="240"
+      :breakpoint="1024"
+      class="sidebar-dark"
+    >
       <div class="sidebar-content">
         <!-- User Card -->
         <div class="sidebar-user-card">
@@ -100,11 +109,23 @@
         <!-- Navigation Dinámico -->
         <q-scroll-area class="sidebar-nav-area">
           <nav class="sidebar-nav">
-            <router-link v-for="item in menuItems" :key="item.to" :to="item.to" custom v-slot="{ isActive, navigate }">
-              <div @click="navigate" :class="['nav-item', { 'active': isActive }]">
+            <router-link
+              v-for="item in menuItems"
+              :key="item.to"
+              :to="item.to"
+              custom
+              v-slot="{ isActive, navigate }"
+            >
+              <div @click="navigate" :class="['nav-item', { active: isActive }]">
                 <q-icon :name="item.icon" size="20px" />
                 <span>{{ item.label }}</span>
-                <q-chip v-if="item.badge" size="xs" color="red" text-color="white" class="q-ml-auto">
+                <q-chip
+                  v-if="item.badge"
+                  size="xs"
+                  color="red"
+                  text-color="white"
+                  class="q-ml-auto"
+                >
                   {{ item.badge }}
                 </q-chip>
               </div>
@@ -169,13 +190,13 @@ const checkActualConnection = async () => {
     // Usamos el manifest.json o cualquier archivo pequeño
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 3000)
-    
-    await fetch('/favicon.ico', { 
-      method: 'HEAD', 
+
+    await fetch('/favicon.ico', {
+      method: 'HEAD',
       cache: 'no-store',
-      signal: controller.signal 
+      signal: controller.signal,
     })
-    
+
     clearTimeout(timeoutId)
     isReallyConnected.value = true
     return true
@@ -208,7 +229,7 @@ onMounted(async () => {
   if (actuallyOnline && syncStore.pendingFollowups.length > 0) {
     syncStore.syncAll()
   }
-  
+
   connectionInterval = setInterval(async () => {
     if (!isReallyConnected.value || !browserOnline.value) {
       const reconnected = await checkActualConnection()
@@ -239,7 +260,7 @@ const rolLabel = computed(() => {
     [ROLES.DIRECCION_ACADEMICA]: 'Dirección Académica',
     [ROLES.DIRECTOR_CARRERA]: 'Director de Carrera',
     [ROLES.DOCENTE]: 'Docente',
-    [ROLES.EVALUACIONES]: 'Evaluaciones'
+    [ROLES.EVALUACIONES]: 'Evaluaciones',
   }
   return labels[authStore.rol] || 'Usuario'
 })
@@ -258,13 +279,13 @@ function handleLogout() {
     ok: {
       label: 'Sí, Salir',
       color: 'primary',
-      unelevated: true
+      unelevated: true,
     },
     cancel: {
       label: 'Cancelar',
       color: 'negative',
-      flat: true
-    }
+      flat: true,
+    },
   }).onOk(() => {
     authStore.logout()
     router.push('/login')
@@ -387,7 +408,6 @@ function handleLogout() {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;

@@ -14,11 +14,11 @@ export const useDocentesStore = defineStore('docentes', () => {
 
       // Determine if response is array (legacy) or object { data, stats }
       if (Array.isArray(response.data)) {
-          docentes.value = response.data
-          return { data: response.data, stats: null }
+        docentes.value = response.data
+        return { data: response.data, stats: null }
       } else {
-          docentes.value = response.data.data
-          return response.data // Returns { data, stats }
+        docentes.value = response.data.data
+        return response.data // Returns { data, stats }
       }
     } catch (error) {
       console.error('Error fetching docentes:', error)
@@ -89,6 +89,6 @@ export const useDocentesStore = defineStore('docentes', () => {
     syncDocentes,
     createDocente,
     updateDocente,
-    deleteDocente
+    deleteDocente,
   }
 })

@@ -7,7 +7,7 @@ export const useCarrerasStore = defineStore('carreras', () => {
   const loading = ref(false)
   const error = ref(null)
 
-  const carrerasActivas = computed(() => carreras.value.filter(c => c.activo))
+  const carrerasActivas = computed(() => carreras.value.filter((c) => c.activo))
   const totalCarreras = computed(() => carreras.value.length)
 
   async function fetchCarreras(params = {}) {
@@ -24,21 +24,21 @@ export const useCarrerasStore = defineStore('carreras', () => {
   }
 
   function getCarreraById(id) {
-    return carreras.value.find(c => c.id === id)
+    return carreras.value.find((c) => c.id === id)
   }
 
   function getCarrerasBySede(sedeId) {
     if (!sedeId) return carreras.value // Retornar todo si no hay sede
     // Usar == para comparar string/number indistintamente
-    return carreras.value.filter(c => {
-      const match = (c.sede_id == sedeId) || (c.sedes_ids && c.sedes_ids.includes(Number(sedeId)))
+    return carreras.value.filter((c) => {
+      const match = c.sede_id == sedeId || (c.sedes_ids && c.sedes_ids.includes(Number(sedeId)))
       return match && c.activo
     })
   }
 
   function getCarrerasByNombre(nombre) {
-    return carreras.value.filter(c =>
-      c.nombre.toLowerCase().includes(nombre.toLowerCase()) && c.activo
+    return carreras.value.filter(
+      (c) => c.nombre.toLowerCase().includes(nombre.toLowerCase()) && c.activo,
     )
   }
 
@@ -55,21 +55,22 @@ export const useCarrerasStore = defineStore('carreras', () => {
     // Nuevas funciones para API externa
     getCarrerasOptions: (sedeId = null) => {
       const lista = sedeId
-        ? carreras.value.filter(c => {
-            const match = (c.sede_id == sedeId) || (c.sedes_ids && c.sedes_ids.includes(Number(sedeId)))
+        ? carreras.value.filter((c) => {
+            const match =
+              c.sede_id == sedeId || (c.sedes_ids && c.sedes_ids.includes(Number(sedeId)))
             return match && c.activo
           })
-        : carreras.value.filter(c => c.activo)
+        : carreras.value.filter((c) => c.activo)
 
-      return lista.map(c => ({
+      return lista.map((c) => ({
         label: c.nombre,
         value: c.id,
-        codigo: c.codigo // Código para la API externa
+        codigo: c.codigo, // Código para la API externa
       }))
     },
     getCarreraCodigo: (carreraId) => {
-      const carrera = carreras.value.find(c => c.id === carreraId)
+      const carrera = carreras.value.find((c) => c.id === carreraId)
       return carrera?.codigo?.toLowerCase() || null
-    }
+    },
   }
 })

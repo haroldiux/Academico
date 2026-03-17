@@ -254,7 +254,9 @@
                 >
                   <q-item-section>
                     <q-item-label class="text-weight-medium">{{ materia.nombre }}</q-item-label>
-                    <q-item-label caption>{{ materia.codigo }} • Grupo {{ materia.grupo }}</q-item-label>
+                    <q-item-label caption
+                      >{{ materia.codigo }} • Grupo {{ materia.grupo }}</q-item-label
+                    >
                   </q-item-section>
                   <q-item-section side>
                     <q-icon name="chevron_right" size="xs" color="grey-5" />
@@ -544,49 +546,58 @@ watch(
 const docentesFiltrados = computed(() => {
   let lista = docentesStore.docentes || []
 
-  return lista.map(docenteOriginal => {
-    // Clonar el docente para no mutar el store directamente (por las dudas)
-    let d = { ...docenteOriginal, materiasData: [...(docenteOriginal.materiasData || [])] }
-    
-    // Si somos director de carrera y tenemos un filtro de carrera activo, filtramos las materiasData
-    if (authStore.rol === 'DIRECTOR_CARRERA' && filtros.value.carrera) {
-      d.materiasData = d.materiasData.filter(m => 
-        m.carreras_ids && m.carreras_ids.includes(filtros.value.carrera)
-      )
-      d.materias_count = d.materiasData.length
-      
-      // Calculate missing details to fix counts inside UI
-      let distinctGroups = [...new Set(d.materiasData.map(m => m.grupo))]; // Count groups just assigned
-      d.gruposLength = distinctGroups.length;
-    } else {
-      d.gruposLength = d.grupos ? d.grupos.length : 0;
-    }
+  return lista
+    .map((docenteOriginal) => {
+      // Clonar el docente para no mutar el store directamente (por las dudas)
+      let d = { ...docenteOriginal, materiasData: [...(docenteOriginal.materiasData || [])] }
 
-    return d
-  }).filter((d) => {
-    // Escondemos docentes que se hayan quedado sin materias para esta carrera
-    if (authStore.rol === 'DIRECTOR_CARRERA' && filtros.value.carrera && d.materiasData.length === 0) {
-      return false
-    }
+      // Si somos director de carrera y tenemos un filtro de carrera activo, filtramos las materiasData
+      if (authStore.rol === 'DIRECTOR_CARRERA' && filtros.value.carrera) {
+        d.materiasData = d.materiasData.filter(
+          (m) => m.carreras_ids && m.carreras_ids.includes(filtros.value.carrera),
+        )
+        d.materias_count = d.materiasData.length
 
-    // Filtro por búsqueda
-    if (filtros.value.buscar) {
-      const buscar = filtros.value.buscar.toLowerCase()
-      // Backend provides 'nombre' as nombre_completo
-      if (!d.nombre_completo?.toLowerCase().includes(buscar) && !(d.ci || '').includes(buscar)) {
+        // Calculate missing details to fix counts inside UI
+        let distinctGroups = [...new Set(d.materiasData.map((m) => m.grupo))] // Count groups just assigned
+        d.gruposLength = distinctGroups.length
+      } else {
+        d.gruposLength = d.grupos ? d.grupos.length : 0
+      }
+
+      return d
+    })
+    .filter((d) => {
+      // Escondemos docentes que se hayan quedado sin materias para esta carrera
+      if (
+        authStore.rol === 'DIRECTOR_CARRERA' &&
+        filtros.value.carrera &&
+        d.materiasData.length === 0
+      ) {
         return false
       }
-    }
 
-    // Filtro por estado (basado en el estado general del docente)
-    const estadoGeneral = getEstadoGeneral(d)
-    if (filtros.value.estado === 'al_dia' && estadoGeneral !== 'Al día') return false
-    if (filtros.value.estado === 'retraso' && !['Con retraso', 'Atrasado'].includes(estadoGeneral))
-      return false
-    if (filtros.value.estado === 'sin_doc' && estadoGeneral !== 'Sin documentación') return false
+      // Filtro por búsqueda
+      if (filtros.value.buscar) {
+        const buscar = filtros.value.buscar.toLowerCase()
+        // Backend provides 'nombre' as nombre_completo
+        if (!d.nombre_completo?.toLowerCase().includes(buscar) && !(d.ci || '').includes(buscar)) {
+          return false
+        }
+      }
 
-    return true
-  })
+      // Filtro por estado (basado en el estado general del docente)
+      const estadoGeneral = getEstadoGeneral(d)
+      if (filtros.value.estado === 'al_dia' && estadoGeneral !== 'Al día') return false
+      if (
+        filtros.value.estado === 'retraso' &&
+        !['Con retraso', 'Atrasado'].includes(estadoGeneral)
+      )
+        return false
+      if (filtros.value.estado === 'sin_doc' && estadoGeneral !== 'Sin documentación') return false
+
+      return true
+    })
 })
 
 // Funciones auxiliares

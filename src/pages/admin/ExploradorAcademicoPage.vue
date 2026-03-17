@@ -6,7 +6,6 @@
     </div>
 
     <div class="row q-col-gutter-md" style="height: calc(100vh - 120px)">
-      
       <!-- COLUMNA 1: SEDES -->
       <div class="col-12 col-md-3 h-100">
         <q-card class="fit column">
@@ -15,9 +14,15 @@
           </q-card-section>
           <q-card-section class="col q-pa-none scroll">
             <q-list separator>
-              <q-item v-for="sede in sedes" :key="sede.id" clickable v-ripple
-                :active="selectedSede?.id === sede.id" active-class="bg-blue-1 text-primary"
-                @click="selectSede(sede)">
+              <q-item
+                v-for="sede in sedes"
+                :key="sede.id"
+                clickable
+                v-ripple
+                :active="selectedSede?.id === sede.id"
+                active-class="bg-blue-1 text-primary"
+                @click="selectSede(sede)"
+              >
                 <q-item-section avatar>
                   <q-icon name="business" />
                 </q-item-section>
@@ -29,7 +34,7 @@
                   <q-icon name="chevron_right" color="grey" />
                 </q-item-section>
               </q-item>
-              
+
               <q-item v-if="loadingSedes">
                 <q-item-section class="text-center">
                   <q-spinner color="primary" />
@@ -42,11 +47,11 @@
 
       <!-- COLUMNA 2: CARRERAS -->
       <div class="col-12 col-md-3 h-100">
-        <q-card class="fit column" :class="{'bg-grey-1': !selectedSede}">
+        <q-card class="fit column" :class="{ 'bg-grey-1': !selectedSede }">
           <q-card-section class="bg-secondary text-white q-py-sm">
             <div class="text-subtitle1 text-weight-bold">2. Carreras</div>
           </q-card-section>
-          
+
           <q-card-section v-if="!selectedSede" class="col flex flex-center text-grey">
             <div class="text-center">
               <q-icon name="arrow_back" size="md" />
@@ -56,9 +61,15 @@
 
           <q-card-section v-else class="col q-pa-none scroll">
             <q-list separator>
-              <q-item v-for="carrera in carreras" :key="carrera.id" clickable v-ripple
-                :active="selectedCarrera?.id === carrera.id" active-class="bg-teal-1 text-secondary"
-                @click="selectCarrera(carrera)">
+              <q-item
+                v-for="carrera in carreras"
+                :key="carrera.id"
+                clickable
+                v-ripple
+                :active="selectedCarrera?.id === carrera.id"
+                active-class="bg-teal-1 text-secondary"
+                @click="selectCarrera(carrera)"
+              >
                 <q-item-section>
                   <q-item-label class="text-weight-medium">{{ carrera.nombre }}</q-item-label>
                   <q-item-label caption>Código: {{ carrera.codigo }}</q-item-label>
@@ -73,7 +84,7 @@
                   <q-spinner color="secondary" />
                 </q-item-section>
               </q-item>
-              
+
               <q-item v-if="!loadingCarreras && carreras.length === 0">
                 <q-item-section class="text-center text-grey">
                   No hay carreras en esta sede
@@ -86,7 +97,7 @@
 
       <!-- COLUMNA 3: MATERIAS -->
       <div class="col-12 col-md-6 h-100">
-        <q-card class="fit column" :class="{'bg-grey-1': !selectedCarrera}">
+        <q-card class="fit column" :class="{ 'bg-grey-1': !selectedCarrera }">
           <q-card-section class="bg-deep-purple text-white q-py-sm">
             <div class="text-subtitle1 text-weight-bold">3. Asignaturas (Plan de Estudios)</div>
           </q-card-section>
@@ -100,7 +111,8 @@
 
           <q-card-section v-else class="col q-pa-none scroll bg-white">
             <q-table
-              flat bordered
+              flat
+              bordered
               :rows="materias"
               :columns="columnsMaterias"
               row-key="id"
@@ -116,7 +128,6 @@
           </q-card-section>
         </q-card>
       </div>
-
     </div>
   </q-page>
 </template>

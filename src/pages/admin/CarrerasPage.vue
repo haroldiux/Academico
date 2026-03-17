@@ -6,13 +6,19 @@
           <q-icon name="school" size="36px" color="secondary" class="q-mr-sm" />
           <span class="text-gradient">Gestión de Carreras</span>
         </h4>
-        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary);">
+        <p class="q-ma-none q-mt-xs" style="color: var(--text-secondary)">
           {{ esDireccionAcademica ? 'Carreras de tu sede' : 'Administra las carreras por sede' }}
         </p>
       </div>
       <div class="col-auto" v-if="!esDireccionAcademica">
-        <q-select v-model="sedeSeleccionada" :options="opcionesSedes" label="Filtrar por Sede" outlined dense
-          style="width: 100%; max-width: 200px; min-width: 150px;" />
+        <q-select
+          v-model="sedeSeleccionada"
+          :options="opcionesSedes"
+          label="Filtrar por Sede"
+          outlined
+          dense
+          style="width: 100%; max-width: 200px; min-width: 150px"
+        />
       </div>
       <div class="col-auto" v-else>
         <q-chip color="primary" text-color="white" icon="apartment">
@@ -36,31 +42,42 @@
 
     <!-- Carreras Grid -->
     <div class="carreras-grid">
-      <div 
-        v-for="carrera in carrerasFiltradas" 
-        :key="carrera.id" 
+      <div
+        v-for="carrera in carrerasFiltradas"
+        :key="carrera.id"
         class="carrera-card"
-        :class="{ 'clickable': !esDireccionAcademica }"
+        :class="{ clickable: !esDireccionAcademica }"
         @click="!esDireccionAcademica && navegarACarrera(carrera)"
       >
         <div class="carrera-header">
-          <div class="carrera-icon"
-            :style="{ background: getCarreraColor(carrera.id) + '20', color: getCarreraColor(carrera.id) }">
+          <div
+            class="carrera-icon"
+            :style="{
+              background: getCarreraColor(carrera.id) + '20',
+              color: getCarreraColor(carrera.id),
+            }"
+          >
             <q-icon name="menu_book" size="24px" />
           </div>
-          <q-chip :color="carrera.activo ? 'green-2' : 'grey-2'" :text-color="carrera.activo ? 'green-9' : 'grey-9'"
-            size="sm">
+          <q-chip
+            :color="carrera.activo ? 'green-2' : 'grey-2'"
+            :text-color="carrera.activo ? 'green-9' : 'grey-9'"
+            size="sm"
+          >
             {{ carrera.activo ? 'Activa' : 'Inactiva' }}
           </q-chip>
         </div>
         <h3 class="carrera-nombre">{{ carrera.nombre }}</h3>
         <p class="carrera-codigo">{{ carrera.codigo }} • {{ getSedeName(carrera.sede_id) }}</p>
-        
+
         <!-- Barra de Progreso de Documentación -->
         <div class="carrera-progreso">
           <div class="progreso-header">
             <span class="progreso-label">Documentación</span>
-            <span class="progreso-value" :class="getProgresoClass(carrera.progreso_documentacion || 0)">
+            <span
+              class="progreso-value"
+              :class="getProgresoClass(carrera.progreso_documentacion || 0)"
+            >
               {{ carrera.progreso_documentacion || 0 }}%
             </span>
           </div>
@@ -72,7 +89,7 @@
             class="progreso-bar"
           />
         </div>
-        
+
         <div class="carrera-stats">
           <div class="carrera-stat">
             <q-icon name="menu_book" size="16px" />
@@ -83,7 +100,7 @@
             <span>{{ carrera.docentes_count || 0 }} docentes</span>
           </div>
         </div>
-        
+
         <!-- Botones del Director Académico -->
         <div v-if="esDireccionAcademica" class="carrera-buttons q-mt-md row q-gutter-sm">
           <q-btn
@@ -133,9 +150,7 @@ onMounted(() => {
 })
 
 // Detectar si es Director Académico
-const esDireccionAcademica = computed(() => 
-  authStore.rol === 'DIRECCION_ACADEMICA'
-)
+const esDireccionAcademica = computed(() => authStore.rol === 'DIRECCION_ACADEMICA')
 
 // Para no-directores: selector de sede manual
 const sedeSeleccionada = ref(null)
@@ -144,13 +159,13 @@ const sedeSeleccionada = ref(null)
 const sedeNombreDirector = computed(() => {
   const sedeId = authStore.sedeId || authStore.usuarioActual?.sede_id
   if (!sedeId) return 'Sin sede'
-  const sede = sedesStore.sedes.find(s => s.id == sedeId)
+  const sede = sedesStore.sedes.find((s) => s.id == sedeId)
   return sede?.nombre || `Sede ${sedeId}`
 })
 
 const opcionesSedes = computed(() => [
   { label: 'Todas las sedes', value: null },
-  ...sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
+  ...sedesStore.sedes.map((s) => ({ label: s.nombre, value: s.id })),
 ])
 
 const carrerasFiltradas = computed(() => {
@@ -168,13 +183,42 @@ const carrerasFiltradas = computed(() => {
 })
 
 const estadisticas = computed(() => [
-  { label: 'Total Carreras', value: carrerasFiltradas.value.length, icon: 'school', color: 'purple' },
-  { label: 'Carreras Activas', value: carrerasFiltradas.value.filter(c => c.activo).length, icon: 'check_circle', color: 'green' },
-  { label: 'Total Asignaturas', value: carrerasFiltradas.value.reduce((s, c) => s + (c.asignaturas_count || 0), 0), icon: 'menu_book', color: 'orange' },
-  { label: 'Docentes Asignados', value: carrerasFiltradas.value.reduce((s, c) => s + (c.docentes_count || 0), 0), icon: 'people', color: 'blue' }
+  {
+    label: 'Total Carreras',
+    value: carrerasFiltradas.value.length,
+    icon: 'school',
+    color: 'purple',
+  },
+  {
+    label: 'Carreras Activas',
+    value: carrerasFiltradas.value.filter((c) => c.activo).length,
+    icon: 'check_circle',
+    color: 'green',
+  },
+  {
+    label: 'Total Asignaturas',
+    value: carrerasFiltradas.value.reduce((s, c) => s + (c.asignaturas_count || 0), 0),
+    icon: 'menu_book',
+    color: 'orange',
+  },
+  {
+    label: 'Docentes Asignados',
+    value: carrerasFiltradas.value.reduce((s, c) => s + (c.docentes_count || 0), 0),
+    icon: 'people',
+    color: 'blue',
+  },
 ])
 
-const colores = ['#7C3AED', '#14B8A6', '#F97316', '#3B82F6', '#22C55E', '#EF4444', '#8B5CF6', '#EC4899']
+const colores = [
+  '#7C3AED',
+  '#14B8A6',
+  '#F97316',
+  '#3B82F6',
+  '#22C55E',
+  '#EF4444',
+  '#8B5CF6',
+  '#EC4899',
+]
 
 function getCarreraColor(id) {
   return colores[id % colores.length]
@@ -193,8 +237,8 @@ function navegarACarrera(carrera) {
     query: {
       tab: 'materias',
       carrera: carrera.id,
-      sede
-    }
+      sede,
+    },
   })
 }
 
@@ -203,7 +247,7 @@ function irAAsignaturas(carrera) {
   const sede = carrera.sede_id || authStore.sedeId || authStore.usuarioActual?.sede_id
   router.push({
     path: '/director/asignaturas',
-    query: { carrera: carrera.id, sede }
+    query: { carrera: carrera.id, sede },
   })
 }
 
@@ -211,7 +255,7 @@ function irAReportes(carrera) {
   const sede = carrera.sede_id || authStore.sedeId || authStore.usuarioActual?.sede_id
   router.push({
     path: '/director/reportes',
-    query: { tab: 'auditoria', carrera: carrera.id, sede }
+    query: { tab: 'auditoria', carrera: carrera.id, sede },
   })
 }
 
@@ -416,16 +460,21 @@ function getProgresoClass(progreso) {
   font-weight: 600;
 }
 
-.progreso-value.text-green { color: var(--accent-green); }
-.progreso-value.text-orange { color: var(--accent-orange); }
-.progreso-value.text-red { color: #ef4444; }
+.progreso-value.text-green {
+  color: var(--accent-green);
+}
+.progreso-value.text-orange {
+  color: var(--accent-orange);
+}
+.progreso-value.text-red {
+  color: #ef4444;
+}
 
 .progreso-bar {
   background: rgba(0, 0, 0, 0.1);
-}.carrera-buttons {
+}
+.carrera-buttons {
   border-top: 1px solid var(--border-color);
   padding-top: 12px;
 }
-
 </style>
-  

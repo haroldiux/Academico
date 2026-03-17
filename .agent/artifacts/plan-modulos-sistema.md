@@ -3,6 +3,7 @@
 ## Estado Actual del Sistema (Actualizado: 10/01/2026)
 
 ### ✅ Módulos Implementados:
+
 1. **Autenticación y Roles** - auth.js, RolSwitcher
 2. **Dashboards por Rol** - 6 dashboards (Docente, Director Carrera, Dir. Académica, Vicerrector Sede, Vicerrector Nacional, Admin)
 3. **Documentación Académica** - Asignaturas, Unidades, Temas
@@ -22,6 +23,7 @@
 17. **Reportes** - ReportesPage.vue ✅ (por docente, carrera, sede + exportación PDF/Excel)
 
 ### 🎉 SISTEMA COMPLETO
+
 Todos los módulos principales han sido implementados.
 
 ## Estructura de Datos (Jerarquía)
@@ -42,6 +44,7 @@ Ver más detalles en: `estructura-datos.md`
 ## Rutas Implementadas:
 
 ### Admin
+
 - `/admin/usuarios` - Gestión de usuarios
 - `/admin/roles` - Gestión de roles
 - `/admin/sedes` - Gestión de sedes
@@ -53,11 +56,13 @@ Ver más detalles en: `estructura-datos.md`
 - `/admin/configuracion` - Configuración general
 
 ### Documentación
+
 - `/documentacion` - Vista de asignaturas
 - `/documentacion/asignatura/:id` - Detalle de asignatura con unidades y temas
 - `/documentacion/banco-preguntas/:id` - Banco de preguntas por tema
 
 ### Dashboards
+
 - `/docente/dashboard` - Dashboard de docente
 - `/director-carrera/dashboard` - Dashboard de director de carrera
 - `/direccion-academica/dashboard` - Dashboard de dirección académica
@@ -70,6 +75,7 @@ Ver más detalles en: `estructura-datos.md`
 ## Navegación por Rol:
 
 ### DOCENTE
+
 - Dashboard
 - Mis Asignaturas
 - Documentación
@@ -77,6 +83,7 @@ Ver más detalles en: `estructura-datos.md`
 - Mi Perfil
 
 ### DIRECTOR DE CARRERA
+
 - Dashboard
 - Docentes de mi Carrera
 - Asignaturas
@@ -85,18 +92,21 @@ Ver más detalles en: `estructura-datos.md`
 - Reportes de Carrera
 
 ### DIRECCIÓN ACADÉMICA
+
 - Dashboard
 - Vista Carreras (solo lectura)
 - Reportes de Sede
 - Estadísticas
 
 ### VICERRECTOR SEDE
+
 - Dashboard
 - Vista General Sede
 - Reportes
 - Estadísticas
 
 ### VICERRECTOR NACIONAL
+
 - Dashboard Nacional
 - Todas las Sedes
 - Todas las Carreras
@@ -104,6 +114,7 @@ Ver más detalles en: `estructura-datos.md`
 - Estadísticas Nacionales
 
 ### ADMIN / SUPER ADMIN
+
 - Dashboard
 - Usuarios
 - Roles

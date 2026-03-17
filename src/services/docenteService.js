@@ -15,5 +15,5 @@ export default {
   },
   deleteDocente(id) {
     return api.delete(`/docentes/${id}`)
-  }
+  },
 }

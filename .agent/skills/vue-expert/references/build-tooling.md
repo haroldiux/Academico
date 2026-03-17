@@ -19,9 +19,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@components': fileURLToPath(new URL('./src/components', import.meta.url)),
       '@composables': fileURLToPath(new URL('./src/composables', import.meta.url)),
-      '@stores': fileURLToPath(new URL('./src/stores', import.meta.url))
-    }
-  }
+      '@stores': fileURLToPath(new URL('./src/stores', import.meta.url)),
+    },
+  },
 })
 ```
 
@@ -47,7 +47,7 @@ export default defineConfig({
     Components({
       dirs: ['src/components'],
       resolvers: [QuasarResolver()],
-      dts: 'src/components.d.ts'
+      dts: 'src/components.d.ts',
     }),
 
     // Auto-import Vue APIs
@@ -55,9 +55,9 @@ export default defineConfig({
       imports: ['vue', 'vue-router', 'pinia'],
       dts: 'src/auto-imports.d.ts',
       dirs: ['src/composables'],
-      vueTemplate: true
-    })
-  ]
+      vueTemplate: true,
+    }),
+  ],
 })
 ```
 
@@ -95,8 +95,8 @@ interface ImportMetaEnv {
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString())
-  }
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
 })
 ```
 
@@ -112,14 +112,14 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
       '/ws': {
         target: 'ws://localhost:3000',
-        ws: true
-      }
-    }
-  }
+        ws: true,
+      },
+    },
+  },
 })
 ```
 
@@ -134,8 +134,8 @@ export default defineConfig({
 export default defineConfig({
   build: {
     // Full sourcemaps for development
-    sourcemap: true
-  }
+    sourcemap: true,
+  },
 })
 ```
 
@@ -146,17 +146,17 @@ export default defineConfig({
 export default defineConfig({
   build: {
     // Options: true | 'inline' | 'hidden' | false
-    sourcemap: process.env.NODE_ENV === 'production' ? 'hidden' : true
-  }
+    sourcemap: process.env.NODE_ENV === 'production' ? 'hidden' : true,
+  },
 })
 ```
 
-| Mode | Value | Use Case |
-|------|-------|----------|
-| Full | `true` | Development, staging |
+| Mode   | Value      | Use Case                       |
+| ------ | ---------- | ------------------------------ |
+| Full   | `true`     | Development, staging           |
 | Hidden | `'hidden'` | Production with error tracking |
-| Inline | `'inline'` | Single-file debugging |
-| None | `false` | Production without debugging |
+| Inline | `'inline'` | Single-file debugging          |
+| None   | `false`    | Production without debugging   |
 
 ### VS Code Debugging
 
@@ -187,7 +187,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 export default defineConfig({
   build: {
-    sourcemap: true
+    sourcemap: true,
   },
   plugins: [
     sentryVitePlugin({
@@ -196,10 +196,10 @@ export default defineConfig({
       authToken: process.env.SENTRY_AUTH_TOKEN,
       sourcemaps: {
         assets: './dist/**',
-        filesToDeleteAfterUpload: './dist/**/*.map'
-      }
-    })
-  ]
+        filesToDeleteAfterUpload: './dist/**/*.map',
+      },
+    }),
+  ],
 })
 ```
 
@@ -238,18 +238,16 @@ import * as dateFns from 'date-fns'
 const routes = [
   {
     path: '/dashboard',
-    component: () => import('./views/Dashboard.vue')
+    component: () => import('./views/Dashboard.vue'),
   },
   {
     path: '/settings',
-    component: () => import('./views/Settings.vue')
-  }
+    component: () => import('./views/Settings.vue'),
+  },
 ]
 
 // Component-level lazy loading
-const HeavyChart = defineAsyncComponent(() =>
-  import('./components/HeavyChart.vue')
-)
+const HeavyChart = defineAsyncComponent(() => import('./components/HeavyChart.vue'))
 
 // With loading/error states
 const AsyncModal = defineAsyncComponent({
@@ -257,7 +255,7 @@ const AsyncModal = defineAsyncComponent({
   loadingComponent: LoadingSpinner,
   errorComponent: ErrorDisplay,
   delay: 200,
-  timeout: 10000
+  timeout: 10000,
 })
 ```
 
@@ -271,17 +269,17 @@ export default defineConfig({
       output: {
         manualChunks: {
           // Vendor chunk for core dependencies
-          'vendor': ['vue', 'vue-router', 'pinia'],
+          vendor: ['vue', 'vue-router', 'pinia'],
 
           // UI framework chunk
-          'ui': ['quasar', '@quasar/extras'],
+          ui: ['quasar', '@quasar/extras'],
 
           // Utility libraries
-          'utils': ['lodash-es', 'date-fns', 'axios']
-        }
-      }
-    }
-  }
+          utils: ['lodash-es', 'date-fns', 'axios'],
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -297,10 +295,10 @@ export default defineConfig({
             const packageName = id.split('node_modules/')[1].split('/')[0]
             return `vendor-${packageName}`
           }
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -318,10 +316,10 @@ export default defineConfig({
         // Ensure CSS is extracted
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'js/[name]-[hash].js',
-        entryFileNames: 'js/[name]-[hash].js'
-      }
-    }
-  }
+        entryFileNames: 'js/[name]-[hash].js',
+      },
+    },
+  },
 })
 ```
 
@@ -337,16 +335,16 @@ export default defineConfig({
     viteCompression({
       algorithm: 'gzip',
       ext: '.gz',
-      threshold: 1024
+      threshold: 1024,
     }),
 
     // Brotli compression (better ratio)
     viteCompression({
       algorithm: 'brotliCompress',
       ext: '.br',
-      threshold: 1024
-    })
-  ]
+      threshold: 1024,
+    }),
+  ],
 })
 ```
 
@@ -365,12 +363,12 @@ export default defineConfig({
       svgo: {
         plugins: [
           { name: 'removeViewBox', active: false },
-          { name: 'removeEmptyAttrs', active: true }
-        ]
+          { name: 'removeEmptyAttrs', active: true },
+        ],
       },
-      webp: { quality: 80 }
-    })
-  ]
+      webp: { quality: 80 },
+    }),
+  ],
 })
 ```
 
@@ -391,9 +389,9 @@ export default defineConfig({
       open: true,
       gzipSize: true,
       brotliSize: true,
-      template: 'treemap' // or 'sunburst', 'network'
-    })
-  ]
+      template: 'treemap', // or 'sunburst', 'network'
+    }),
+  ],
 })
 ```
 
@@ -416,14 +414,14 @@ export default defineConfig({
     target: 'esnext',
 
     // Disable CSS code splitting for faster builds
-    cssCodeSplit: false
+    cssCodeSplit: false,
   },
 
   // Optimize dependency pre-bundling
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia', 'axios'],
-    exclude: ['your-local-package']
-  }
+    exclude: ['your-local-package'],
+  },
 })
 ```
 
@@ -466,15 +464,15 @@ if (import.meta.env.PROD) {
 
 ## Quick Reference
 
-| Pattern | Use Case |
-|---------|----------|
-| `@vitejs/plugin-vue` | Vue 3 SFC support |
-| `unplugin-vue-components` | Auto-import components |
-| `unplugin-auto-import` | Auto-import Vue APIs |
-| `manualChunks` | Vendor code splitting |
-| `sourcemap: 'hidden'` | Production error tracking |
-| `vite-plugin-compression` | Gzip/Brotli compression |
-| `rollup-plugin-visualizer` | Bundle size analysis |
-| `import.meta.env.VITE_*` | Environment variables |
-| `defineAsyncComponent` | Component lazy loading |
-| `web-vitals` | Core Web Vitals monitoring |
+| Pattern                    | Use Case                   |
+| -------------------------- | -------------------------- |
+| `@vitejs/plugin-vue`       | Vue 3 SFC support          |
+| `unplugin-vue-components`  | Auto-import components     |
+| `unplugin-auto-import`     | Auto-import Vue APIs       |
+| `manualChunks`             | Vendor code splitting      |
+| `sourcemap: 'hidden'`      | Production error tracking  |
+| `vite-plugin-compression`  | Gzip/Brotli compression    |
+| `rollup-plugin-visualizer` | Bundle size analysis       |
+| `import.meta.env.VITE_*`   | Environment variables      |
+| `defineAsyncComponent`     | Component lazy loading     |
+| `web-vitals`               | Core Web Vitals monitoring |

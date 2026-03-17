@@ -1,6 +1,5 @@
 <template>
   <div class="reincidentes-tab-container q-pa-md" id="reincidentes-print-area">
-
     <!-- Header -->
     <div class="row items-center justify-between q-mb-md">
       <div>
@@ -18,15 +17,23 @@
         <q-btn color="negative" icon="refresh" flat round @click="cargarDatos">
           <q-tooltip>Actualizar</q-tooltip>
         </q-btn>
-        <q-btn color="negative" icon="picture_as_pdf" unelevated label="Exportar PDF"
-          @click="exportarPDF" :loading="exportando" />
+        <q-btn
+          color="negative"
+          icon="picture_as_pdf"
+          unelevated
+          label="Exportar PDF"
+          @click="exportarPDF"
+          :loading="exportando"
+        />
       </div>
     </div>
 
     <!-- Sin reincidentes -->
-    <div v-if="!loading && reincidentes.length === 0"
+    <div
+      v-if="!loading && reincidentes.length === 0"
       class="q-pa-xl text-center bg-green-1 rounded-borders"
-      style="border:1px solid #c8e6c9;">
+      style="border: 1px solid #c8e6c9"
+    >
       <q-icon name="task_alt" size="64px" color="positive" class="q-mb-sm" />
       <div class="text-h6 text-positive q-mt-sm">Sin casos críticos detectados</div>
       <div class="text-subtitle2 text-grey-8">
@@ -36,19 +43,35 @@
 
     <!-- Cards de Reincidentes -->
     <div class="row q-col-gutter-lg q-mt-sm" v-else>
-      <div class="col-12 col-md-6 col-lg-4" v-for="docente in reincidentes" :key="docente.docente_id">
+      <div
+        class="col-12 col-md-6 col-lg-4"
+        v-for="docente in reincidentes"
+        :key="docente.docente_id"
+      >
         <q-card flat class="reincidente-card hover-effect">
           <div class="card-top-bar">
             <q-icon name="error" color="white" size="18px" class="q-mr-xs" />
-            <span class="text-caption text-white text-weight-bold">ROJO · 2 Semanas Consecutivas</span>
+            <span class="text-caption text-white text-weight-bold"
+              >ROJO · 2 Semanas Consecutivas</span
+            >
             <q-space />
-            <span class="text-caption text-white opacity-80">Sem. {{ semanaNum }} · {{ semanaLabel }}</span>
+            <span class="text-caption text-white opacity-80"
+              >Sem. {{ semanaNum }} · {{ semanaLabel }}</span
+            >
           </div>
 
           <q-card-section class="q-pb-xs row items-center no-wrap">
-            <q-avatar color="negative" text-color="white" icon="person" size="44px" class="q-mr-md shadow-3" />
+            <q-avatar
+              color="negative"
+              text-color="white"
+              icon="person"
+              size="44px"
+              class="q-mr-md shadow-3"
+            />
             <div class="col">
-              <div class="text-subtitle1 text-weight-bold text-dark ellipsis">{{ docente.nombre }}</div>
+              <div class="text-subtitle1 text-weight-bold text-dark ellipsis">
+                {{ docente.nombre }}
+              </div>
               <div class="text-caption text-negative text-weight-medium">Prioridad Crítica</div>
             </div>
           </q-card-section>
@@ -56,19 +79,44 @@
           <q-separator />
 
           <q-card-section class="col-grow q-pt-sm">
-            <div class="text-caption text-grey-7 text-uppercase text-weight-bold q-mb-xs">Asignaturas Afectadas</div>
+            <div class="text-caption text-grey-7 text-uppercase text-weight-bold q-mb-xs">
+              Asignaturas Afectadas
+            </div>
             <div class="q-gutter-xs q-mb-md">
-              <q-badge color="red-1" text-color="red-9" outline
-                v-for="(materia, i) in docente.materias" :key="i">{{ materia }}</q-badge>
+              <q-badge
+                color="red-1"
+                text-color="red-9"
+                outline
+                v-for="(materia, i) in docente.materias"
+                :key="i"
+                >{{ materia }}</q-badge
+              >
             </div>
 
-            <div class="text-caption text-grey-7 text-uppercase text-weight-bold q-mb-xs">Acción Tomada por el Director</div>
-            <div class="accion-box q-pa-sm rounded-borders text-body2"
-              :class="docente.accion_director === 'Sin observaciones registradas.' ? 'accion-pending' : 'accion-done'">
+            <div class="text-caption text-grey-7 text-uppercase text-weight-bold q-mb-xs">
+              Acción Tomada por el Director
+            </div>
+            <div
+              class="accion-box q-pa-sm rounded-borders text-body2"
+              :class="
+                docente.accion_director === 'Sin observaciones registradas.'
+                  ? 'accion-pending'
+                  : 'accion-done'
+              "
+            >
               <q-icon
-                :name="docente.accion_director === 'Sin observaciones registradas.' ? 'pending_actions' : 'check_circle'"
-                :color="docente.accion_director === 'Sin observaciones registradas.' ? 'orange-8' : 'positive'"
-                size="16px" class="q-mr-xs"
+                :name="
+                  docente.accion_director === 'Sin observaciones registradas.'
+                    ? 'pending_actions'
+                    : 'check_circle'
+                "
+                :color="
+                  docente.accion_director === 'Sin observaciones registradas.'
+                    ? 'orange-8'
+                    : 'positive'
+                "
+                size="16px"
+                class="q-mr-xs"
               />
               {{ docente.accion_director }}
             </div>
@@ -91,16 +139,17 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 const props = defineProps({
+  sedeId: { type: Number, required: false },
   carreraId: { type: Number, required: false },
-  semana:    { type: String, required: true }
+  semana: { type: String, required: true },
 })
 
-const $q         = useQuasar()
-const loading    = ref(false)
+const $q = useQuasar()
+const loading = ref(false)
 const exportando = ref(false)
 const reincidentes = ref([])
-const semanaFin  = ref('')
-const semanaNum  = ref(0)
+const semanaFin = ref('')
+const semanaNum = ref(0)
 
 const semanaLabel = computed(() => {
   if (!props.semana) return ''
@@ -120,8 +169,8 @@ const exportarPDF = () => {
   }
   exportando.value = true
   try {
-    const doc   = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-    const rojo  = [183, 28, 28]
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const rojo = [183, 28, 28]
 
     // Encabezado
     doc.setFillColor(...rojo)
@@ -133,17 +182,19 @@ const exportarPDF = () => {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     doc.text(`SEMANA ${semanaNum.value}   |   ${semanaLabel.value}`, 14, 18)
-    doc.text(`Generado: ${date.formatDate(new Date(), 'DD/MM/YYYY HH:mm')}`, 297 - 14, 18, { align: 'right' })
+    doc.text(`Generado: ${date.formatDate(new Date(), 'DD/MM/YYYY HH:mm')}`, 297 - 14, 18, {
+      align: 'right',
+    })
 
     // Tabla de reincidentes
     autoTable(doc, {
       startY: 28,
       head: [['Semana', 'Docente', 'Asignaturas Afectadas', 'Acción / Observación del Director']],
-      body: reincidentes.value.map(d => [
+      body: reincidentes.value.map((d) => [
         `SEMANA ${semanaNum.value}\n${semanaLabel.value}`,
         d.nombre,
         (d.materias || []).join('\n'),
-        d.accion_director || 'Sin acción registrada aún'
+        d.accion_director || 'Sin acción registrada aún',
       ]),
       headStyles: { fillColor: rojo, textColor: 255, fontStyle: 'bold', fontSize: 9 },
       bodyStyles: { fontSize: 9, valign: 'top' },
@@ -155,12 +206,15 @@ const exportarPDF = () => {
           data.cell.styles.fontStyle = 'bold'
           data.cell.styles.textColor = rojo
         }
-        if (data.column.index === 3 && data.section === 'body'
-          && data.row.raw[3] === 'Sin acción registrada aún') {
+        if (
+          data.column.index === 3 &&
+          data.section === 'body' &&
+          data.row.raw[3] === 'Sin acción registrada aún'
+        ) {
           data.cell.styles.textColor = [200, 100, 0]
           data.cell.styles.fontStyle = 'italic'
         }
-      }
+      },
     })
 
     // Pie
@@ -187,37 +241,63 @@ const cargarDatos = async () => {
   if (!props.carreraId || !props.semana) return
   loading.value = true
   try {
-    const { data } = await api.get('/reportes/director/resumen-carrera', {
-      params: { carrera_id: props.carreraId, semana_inicio: props.semana }
+    const { data } = await api.get('/reportes/director/reincidentes-semanal', {
+      params: { sede_id: props.sedeId, carrera_id: props.carreraId, semana_inicio: props.semana },
     })
     reincidentes.value = data.docentes_criticos ?? []
-    semanaFin.value    = data.semana_fin ?? ''
-    semanaNum.value    = data.semana_academica ?? 0
+    semanaFin.value = data.semana_fin ?? ''
+    semanaNum.value = data.semana_academica ?? 0
   } catch (error) {
     console.error('Error cargando reincidentes:', error)
-    $q.notify({ color: 'negative', message: 'Error al cargar docentes reincidentes', icon: 'error' })
+    $q.notify({
+      color: 'negative',
+      message: 'Error al cargar docentes reincidentes',
+      icon: 'error',
+    })
   } finally {
     loading.value = false
   }
 }
 
-watch(() => props.semana,    cargarDatos)
+watch(() => props.semana, cargarDatos)
 watch(() => props.carreraId, cargarDatos)
+watch(() => props.sedeId, cargarDatos)
 onMounted(cargarDatos)
 </script>
 
 <style scoped>
 .reincidente-card {
-  display: flex; flex-direction: column;
-  border: 1px solid #ffcdd2; border-radius: 8px; overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  overflow: hidden;
 }
 .card-top-bar {
   background: linear-gradient(90deg, #b71c1c, #e53935);
-  padding: 6px 12px; display: flex; align-items: center;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
 }
-.hover-effect { transition: transform .2s ease, box-shadow .2s ease; }
-.hover-effect:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(193,0,21,.2); }
-.accion-box  { white-space: pre-wrap; font-style: italic; }
-.accion-done    { background: #e8f5e9; color: #2e7d32; }
-.accion-pending { background: #fff8e1; color: #e65100; }
+.hover-effect {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.hover-effect:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(193, 0, 21, 0.2);
+}
+.accion-box {
+  white-space: pre-wrap;
+  font-style: italic;
+}
+.accion-done {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.accion-pending {
+  background: #fff8e1;
+  color: #e65100;
+}
 </style>

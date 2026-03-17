@@ -61,12 +61,12 @@ export default {
     try {
       const [materiaRes, docenteRes] = await Promise.all([
         this.getDatosMateria(materiaId, temaId),
-        this.getDatosDocente(materiaId, temaId, docenteId)
+        this.getDatosDocente(materiaId, temaId, docenteId),
       ])
 
       return {
         materia: materiaRes.data,
-        docente: docenteRes.data
+        docente: docenteRes.data,
       }
     } catch (error) {
       console.error('Error obteniendo plan de clase completo:', error)
@@ -80,7 +80,13 @@ export default {
    * @param {Object} datosDocente - Datos a nivel docente
    * @param {boolean} puedeEditarMateria - Si el usuario puede editar datos de materia
    */
-  async savePlanClaseCompleto(materiaId, temaId, datosMateria, datosDocente, puedeEditarMateria = false) {
+  async savePlanClaseCompleto(
+    materiaId,
+    temaId,
+    datosMateria,
+    datosDocente,
+    puedeEditarMateria = false,
+  ) {
     const promises = []
 
     // Solo guardar materia si tiene permisos
@@ -94,5 +100,5 @@ export default {
     }
 
     return Promise.all(promises)
-  }
+  },
 }

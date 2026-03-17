@@ -7,9 +7,7 @@
         <h1 class="page-title">Mi Perfil</h1>
       </div>
       <div class="header-right">
-        <q-chip v-if="saving" color="warning" text-color="white" icon="sync">
-          Guardando...
-        </q-chip>
+        <q-chip v-if="saving" color="warning" text-color="white" icon="sync"> Guardando... </q-chip>
         <q-chip v-else color="positive" text-color="white" icon="check_circle">
           Guardado Automático
         </q-chip>
@@ -26,34 +24,72 @@
           </div>
 
           <div class="form-grid">
-            <q-input v-model="form.nombre" label="Nombre(s)" outlined class="input-rounded" bg-color="bg-tertiary"
-              :rules="[val => !!val || 'Requerido']">
+            <q-input
+              v-model="form.nombre"
+              label="Nombre(s)"
+              outlined
+              class="input-rounded"
+              bg-color="bg-tertiary"
+              :rules="[(val) => !!val || 'Requerido']"
+            >
               <template v-slot:prepend><q-icon name="person" /></template>
             </q-input>
 
-            <q-input v-model="form.apellido" label="Apellidos" outlined class="input-rounded" bg-color="bg-tertiary"
-              :rules="[val => !!val || 'Requerido']">
+            <q-input
+              v-model="form.apellido"
+              label="Apellidos"
+              outlined
+              class="input-rounded"
+              bg-color="bg-tertiary"
+              :rules="[(val) => !!val || 'Requerido']"
+            >
               <template v-slot:prepend><q-icon name="people" /></template>
             </q-input>
 
-            <q-input v-model="form.ci" label="Cédula de Identidad (CI)" outlined class="input-rounded"
-              bg-color="bg-tertiary" :rules="[val => !!val || 'Requerido']">
+            <q-input
+              v-model="form.ci"
+              label="Cédula de Identidad (CI)"
+              outlined
+              class="input-rounded"
+              bg-color="bg-tertiary"
+              :rules="[(val) => !!val || 'Requerido']"
+            >
               <template v-slot:prepend><q-icon name="fingerprint" /></template>
             </q-input>
 
-            <q-input v-model="form.email" label="Correo Electrónico" outlined class="input-rounded"
+            <q-input
+              v-model="form.email"
+              label="Correo Electrónico"
+              outlined
+              class="input-rounded"
               bg-color="bg-tertiary"
-              :rules="[val => !!val || 'Correo inválido', val => /.+@.+\..+/.test(val) || 'Formato inválido']">
+              :rules="[
+                (val) => !!val || 'Correo inválido',
+                (val) => /.+@.+\..+/.test(val) || 'Formato inválido',
+              ]"
+            >
               <template v-slot:prepend><q-icon name="email" /></template>
             </q-input>
 
-            <q-input v-model="form.telefono" label="Número de Teléfono / Celular" outlined class="input-rounded"
-              bg-color="bg-tertiary" placeholder="Ej: 78945612">
+            <q-input
+              v-model="form.telefono"
+              label="Número de Teléfono / Celular"
+              outlined
+              class="input-rounded"
+              bg-color="bg-tertiary"
+              placeholder="Ej: 78945612"
+            >
               <template v-slot:prepend><q-icon name="phone" /></template>
             </q-input>
 
-            <q-input v-model="form.formacion" label="Formación Académica / Título" outlined class="input-rounded"
-              bg-color="bg-tertiary" placeholder="Ej: Magister en Educación Superior">
+            <q-input
+              v-model="form.formacion"
+              label="Formación Académica / Título"
+              outlined
+              class="input-rounded"
+              bg-color="bg-tertiary"
+              placeholder="Ej: Magister en Educación Superior"
+            >
               <template v-slot:prepend><q-icon name="school" /></template>
             </q-input>
           </div>
@@ -71,10 +107,18 @@
               <q-icon name="vpn_key" size="24px" color="orange" class="q-mr-md" />
               <div>
                 <p class="action-title">Cambiar Contraseña</p>
-                <p class="action-desc">Se recomienda usar una contraseña segura que no sea tu número de CI.</p>
+                <p class="action-desc">
+                  Se recomienda usar una contraseña segura que no sea tu número de CI.
+                </p>
               </div>
             </div>
-            <q-btn outline color="orange" label="Modificar" class="btn-rounded" @click="showPwdDialog = true" />
+            <q-btn
+              outline
+              color="orange"
+              label="Modificar"
+              class="btn-rounded"
+              @click="showPwdDialog = true"
+            />
           </div>
         </div>
       </div>
@@ -119,21 +163,39 @@
 
     <!-- Password Dialog -->
     <q-dialog v-model="showPwdDialog" backdrop-filter="blur(4px)">
-      <q-card style="width: 100%; max-width: 400px; border-radius: 16px;">
+      <q-card style="width: 100%; max-width: 400px; border-radius: 16px">
         <q-card-section class="bg-gradient-warning text-white q-py-lg">
           <div class="text-h6 text-weight-bold">Cambiar Contraseña</div>
         </q-card-section>
 
         <q-card-section class="q-pa-lg q-gutter-md">
-          <q-input v-model="pwdForm.new" label="Nueva Contraseña" outlined type="password" class="input-rounded" />
-          <q-input v-model="pwdForm.confirm" label="Confirmar Nueva Contraseña" outlined type="password"
-            class="input-rounded" />
+          <q-input
+            v-model="pwdForm.new"
+            label="Nueva Contraseña"
+            outlined
+            type="password"
+            class="input-rounded"
+          />
+          <q-input
+            v-model="pwdForm.confirm"
+            label="Confirmar Nueva Contraseña"
+            outlined
+            type="password"
+            class="input-rounded"
+          />
         </q-card-section>
 
         <q-card-actions align="right" class="q-pa-md border-top">
           <q-btn flat label="Cancelar" color="grey-7" v-close-popup no-caps />
-          <q-btn unelevated label="Actualizar Contraseña" color="primary" class="btn-rounded" :loading="changingPwd"
-            @click="handleUpdatePwd" no-caps />
+          <q-btn
+            unelevated
+            label="Actualizar Contraseña"
+            color="primary"
+            class="btn-rounded"
+            :loading="changingPwd"
+            @click="handleUpdatePwd"
+            no-caps
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -158,12 +220,12 @@ const form = ref({
   ci: '',
   email: '',
   telefono: '',
-  formacion: ''
+  formacion: '',
 })
 
 const pwdForm = ref({
   new: '',
-  confirm: ''
+  confirm: '',
 })
 
 onMounted(async () => {
@@ -176,7 +238,7 @@ onMounted(async () => {
       apellido: nombres.slice(1).join(' ') || '',
       ci: user.ci || '',
       email: user.email || '',
-      telefono: user.telefono || ''
+      telefono: user.telefono || '',
     }
   }
 
@@ -194,7 +256,7 @@ onMounted(async () => {
       email: freshUser.email || '',
       telefono: freshUser.telefono || '',
       // Cargar formación si existe en el perfil docente
-      formacion: freshUser.docente?.formacion || ''
+      formacion: freshUser.docente?.formacion || '',
     }
   }
 })
@@ -241,15 +303,19 @@ async function handleSave() {
 
 // Autosave Logic
 let autoSaveTimeout = null
-watch(form, () => {
-  saving.value = true
-  if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
+watch(
+  form,
+  () => {
+    saving.value = true
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
 
-  autoSaveTimeout = setTimeout(async () => {
-    await handleSave()
-    saving.value = false
-  }, 2000)
-}, { deep: true })
+    autoSaveTimeout = setTimeout(async () => {
+      await handleSave()
+      saving.value = false
+    }, 2000)
+  },
+  { deep: true },
+)
 
 async function handleUpdatePwd() {
   if (pwdForm.value.new !== pwdForm.value.confirm) {

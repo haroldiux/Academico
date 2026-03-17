@@ -10,8 +10,22 @@
         <p class="page-subtitle">Genera reportes por docente, carrera o sede</p>
       </div>
       <div class="header-actions">
-        <q-btn outline color="green" icon="table_chart" label="Exportar Excel" no-caps @click="exportarExcel" />
-        <q-btn unelevated color="red" icon="picture_as_pdf" label="Exportar PDF" no-caps @click="exportarPDF" />
+        <q-btn
+          outline
+          color="green"
+          icon="table_chart"
+          label="Exportar Excel"
+          no-caps
+          @click="exportarExcel"
+        />
+        <q-btn
+          unelevated
+          color="red"
+          icon="picture_as_pdf"
+          label="Exportar PDF"
+          no-caps
+          @click="exportarPDF"
+        />
       </div>
     </div>
 
@@ -20,27 +34,72 @@
       <q-card-section>
         <div class="row q-col-gutter-md items-end">
           <div class="col-12 col-md-2">
-            <q-select v-model="filtros.tipoReporte" :options="tiposReporte" outlined dense label="Tipo de Reporte"
-              emit-value map-options />
+            <q-select
+              v-model="filtros.tipoReporte"
+              :options="tiposReporte"
+              outlined
+              dense
+              label="Tipo de Reporte"
+              emit-value
+              map-options
+            />
           </div>
           <div class="col-12 col-md-2">
-            <q-select v-model="filtros.sede" :options="sedesOptions" outlined dense label="Sede" emit-value map-options
-              clearable />
+            <q-select
+              v-model="filtros.sede"
+              :options="sedesOptions"
+              outlined
+              dense
+              label="Sede"
+              emit-value
+              map-options
+              clearable
+            />
           </div>
           <div class="col-12 col-md-2" v-if="filtros.tipoReporte !== 'sedes'">
-            <q-select v-model="filtros.carrera" :options="carrerasOptions" outlined dense label="Carrera" emit-value
-              map-options clearable />
+            <q-select
+              v-model="filtros.carrera"
+              :options="carrerasOptions"
+              outlined
+              dense
+              label="Carrera"
+              emit-value
+              map-options
+              clearable
+            />
           </div>
           <div class="col-12 col-md-2" v-if="filtros.tipoReporte === 'docentes'">
-            <q-select v-model="filtros.docente" :options="docentesOptions" outlined dense label="Docente" emit-value
-              map-options clearable />
+            <q-select
+              v-model="filtros.docente"
+              :options="docentesOptions"
+              outlined
+              dense
+              label="Docente"
+              emit-value
+              map-options
+              clearable
+            />
           </div>
           <div class="col-12 col-md-2">
-            <q-select v-model="filtros.gestion" :options="gestionesOptions" outlined dense label="Gestión" emit-value
-              map-options />
+            <q-select
+              v-model="filtros.gestion"
+              :options="gestionesOptions"
+              outlined
+              dense
+              label="Gestión"
+              emit-value
+              map-options
+            />
           </div>
           <div class="col-auto">
-            <q-btn unelevated color="indigo" icon="search" label="Generar" no-caps @click="generarReporte" />
+            <q-btn
+              unelevated
+              color="indigo"
+              icon="search"
+              label="Generar"
+              no-caps
+              @click="generarReporte"
+            />
           </div>
         </div>
       </q-card-section>
@@ -96,11 +155,21 @@
 
         <q-card class="data-card">
           <q-card-section>
-            <q-table :rows="reporteDocentes.detalle" :columns="columnasDocentes" row-key="id" flat bordered>
+            <q-table
+              :rows="reporteDocentes.detalle"
+              :columns="columnasDocentes"
+              row-key="id"
+              flat
+              bordered
+            >
               <template v-slot:body-cell-progreso="props">
                 <q-td :props="props">
-                  <q-linear-progress :value="props.value / 100"
-                    :color="props.value >= 80 ? 'green' : props.value >= 50 ? 'orange' : 'red'" rounded size="8px" />
+                  <q-linear-progress
+                    :value="props.value / 100"
+                    :color="props.value >= 80 ? 'green' : props.value >= 50 ? 'orange' : 'red'"
+                    rounded
+                    size="8px"
+                  />
                   <span class="text-caption">{{ props.value }}%</span>
                 </q-td>
               </template>
@@ -157,7 +226,13 @@
 
         <q-card class="data-card">
           <q-card-section>
-            <q-table :rows="reporteCarreras.detalle" :columns="columnasCarreras" row-key="id" flat bordered />
+            <q-table
+              :rows="reporteCarreras.detalle"
+              :columns="columnasCarreras"
+              row-key="id"
+              flat
+              bordered
+            />
           </q-card-section>
         </q-card>
       </div>
@@ -210,7 +285,13 @@
 
         <q-card class="data-card">
           <q-card-section>
-            <q-table :rows="reporteSedes.detalle" :columns="columnasSedes" row-key="id" flat bordered />
+            <q-table
+              :rows="reporteSedes.detalle"
+              :columns="columnasSedes"
+              row-key="id"
+              flat
+              bordered
+            />
           </q-card-section>
         </q-card>
       </div>
@@ -220,15 +301,20 @@
         <div class="reporte-header q-mb-md">
           <h2 class="reporte-titulo">Auditoría de Cumplimiento Semanal</h2>
           <div class="row q-gutter-sm">
-            <q-btn color="secondary" icon="auto_awesome" label="Generar Reportes" @click="prototypeGenerate" />
+            <q-btn
+              color="secondary"
+              icon="auto_awesome"
+              label="Generar Reportes"
+              @click="prototypeGenerate"
+            />
             <p class="reporte-fecha q-ml-md flex items-center">Generado: {{ fechaReporte }}</p>
           </div>
         </div>
 
         <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md rounded-borders">
           <template v-slot:avatar><q-icon name="info" /></template>
-          Vista global de auditoría para todas las sedes y carreras. Los reportes se basan en el Control de Clase
-          docente.
+          Vista global de auditoría para todas las sedes y carreras. Los reportes se basan en el
+          Control de Clase docente.
         </q-banner>
 
         <q-card class="data-card">
@@ -269,35 +355,35 @@ const filtros = ref({
   sede: null,
   carrera: null,
   docente: null,
-  gestion: '2026-I'
+  gestion: '2026-I',
 })
 
 const tiposReporte = [
   { label: 'Por Docentes', value: 'docentes' },
   { label: 'Por Carreras', value: 'carreras' },
   { label: 'Por Sedes', value: 'sedes' },
-  { label: 'Cumplimiento Semanal', value: 'cumplimiento_semanal' }
+  { label: 'Cumplimiento Semanal', value: 'cumplimiento_semanal' },
 ]
 
 const gestionesOptions = [
   { label: 'Gestión 2026-I', value: '2026-I' },
   { label: 'Gestión 2025-II', value: '2025-II' },
-  { label: 'Gestión 2025-I', value: '2025-I' }
+  { label: 'Gestión 2025-I', value: '2025-I' },
 ]
 
 const sedesOptions = computed(() =>
-  sedesStore.sedesActivas.map(s => ({ label: s.nombre, value: s.id }))
+  sedesStore.sedesActivas.map((s) => ({ label: s.nombre, value: s.id })),
 )
 
 const carrerasOptions = computed(() =>
-  carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id }))
+  carrerasStore.carreras.map((c) => ({ label: c.nombre, value: c.id })),
 )
 
 const docentesOptions = [
   { label: 'Dr. Juan Pérez', value: 1 },
   { label: 'Dra. María García', value: 2 },
   { label: 'Ing. Carlos López', value: 3 },
-  { label: 'Lic. Ana Martínez', value: 4 }
+  { label: 'Lic. Ana Martínez', value: 4 },
 ]
 
 // Datos de ejemplo para reportes
@@ -307,12 +393,52 @@ const reporteDocentes = ref({
   grupos: 85,
   horasSemanales: 640,
   detalle: [
-    { id: 1, nombre: 'Dr. Juan Pérez', especialidad: 'Medicina', materias: 3, grupos: 4, horas: 16, progreso: 85 },
-    { id: 2, nombre: 'Dra. María García', especialidad: 'Pediatría', materias: 2, grupos: 3, horas: 12, progreso: 92 },
-    { id: 3, nombre: 'Ing. Carlos López', especialidad: 'Sistemas', materias: 4, grupos: 5, horas: 20, progreso: 78 },
-    { id: 4, nombre: 'Lic. Ana Martínez', especialidad: 'Derecho', materias: 2, grupos: 2, horas: 8, progreso: 65 },
-    { id: 5, nombre: 'Dr. Roberto Fernández', especialidad: 'Anatomía', materias: 3, grupos: 4, horas: 16, progreso: 95 }
-  ]
+    {
+      id: 1,
+      nombre: 'Dr. Juan Pérez',
+      especialidad: 'Medicina',
+      materias: 3,
+      grupos: 4,
+      horas: 16,
+      progreso: 85,
+    },
+    {
+      id: 2,
+      nombre: 'Dra. María García',
+      especialidad: 'Pediatría',
+      materias: 2,
+      grupos: 3,
+      horas: 12,
+      progreso: 92,
+    },
+    {
+      id: 3,
+      nombre: 'Ing. Carlos López',
+      especialidad: 'Sistemas',
+      materias: 4,
+      grupos: 5,
+      horas: 20,
+      progreso: 78,
+    },
+    {
+      id: 4,
+      nombre: 'Lic. Ana Martínez',
+      especialidad: 'Derecho',
+      materias: 2,
+      grupos: 2,
+      horas: 8,
+      progreso: 65,
+    },
+    {
+      id: 5,
+      nombre: 'Dr. Roberto Fernández',
+      especialidad: 'Anatomía',
+      materias: 3,
+      grupos: 4,
+      horas: 16,
+      progreso: 95,
+    },
+  ],
 })
 
 const reporteCarreras = ref({
@@ -321,12 +447,52 @@ const reporteCarreras = ref({
   materias: 156,
   documentacion: 72,
   detalle: [
-    { id: 1, nombre: 'Medicina', sede: 'Cochabamba', estudiantes: 450, docentes: 28, materias: 45, documentacion: 85 },
-    { id: 2, nombre: 'Ing. de Sistemas', sede: 'Cochabamba', estudiantes: 320, docentes: 15, materias: 38, documentacion: 78 },
-    { id: 3, nombre: 'Derecho', sede: 'La Paz', estudiantes: 280, docentes: 12, materias: 32, documentacion: 65 },
-    { id: 4, nombre: 'Odontología', sede: 'Cochabamba', estudiantes: 180, docentes: 14, materias: 28, documentacion: 72 },
-    { id: 5, nombre: 'Enfermería', sede: 'El Alto', estudiantes: 210, docentes: 10, materias: 22, documentacion: 58 }
-  ]
+    {
+      id: 1,
+      nombre: 'Medicina',
+      sede: 'Cochabamba',
+      estudiantes: 450,
+      docentes: 28,
+      materias: 45,
+      documentacion: 85,
+    },
+    {
+      id: 2,
+      nombre: 'Ing. de Sistemas',
+      sede: 'Cochabamba',
+      estudiantes: 320,
+      docentes: 15,
+      materias: 38,
+      documentacion: 78,
+    },
+    {
+      id: 3,
+      nombre: 'Derecho',
+      sede: 'La Paz',
+      estudiantes: 280,
+      docentes: 12,
+      materias: 32,
+      documentacion: 65,
+    },
+    {
+      id: 4,
+      nombre: 'Odontología',
+      sede: 'Cochabamba',
+      estudiantes: 180,
+      docentes: 14,
+      materias: 28,
+      documentacion: 72,
+    },
+    {
+      id: 5,
+      nombre: 'Enfermería',
+      sede: 'El Alto',
+      estudiantes: 210,
+      docentes: 10,
+      materias: 22,
+      documentacion: 58,
+    },
+  ],
 })
 
 const reporteSedes = ref({
@@ -335,12 +501,52 @@ const reporteSedes = ref({
   docentes: 180,
   carreras: 24,
   detalle: [
-    { id: 1, nombre: 'Cochabamba', campus: 3, carreras: 8, estudiantes: 1450, docentes: 85, documentacion: 78 },
-    { id: 2, nombre: 'La Paz', campus: 2, carreras: 6, estudiantes: 820, docentes: 45, documentacion: 65 },
-    { id: 3, nombre: 'El Alto', campus: 1, carreras: 4, estudiantes: 430, docentes: 22, documentacion: 55 },
-    { id: 4, nombre: 'Ivirgarzama', campus: 1, carreras: 3, estudiantes: 280, docentes: 15, documentacion: 48 },
-    { id: 5, nombre: 'Santa Cruz', campus: 2, carreras: 3, estudiantes: 220, docentes: 13, documentacion: 42 }
-  ]
+    {
+      id: 1,
+      nombre: 'Cochabamba',
+      campus: 3,
+      carreras: 8,
+      estudiantes: 1450,
+      docentes: 85,
+      documentacion: 78,
+    },
+    {
+      id: 2,
+      nombre: 'La Paz',
+      campus: 2,
+      carreras: 6,
+      estudiantes: 820,
+      docentes: 45,
+      documentacion: 65,
+    },
+    {
+      id: 3,
+      nombre: 'El Alto',
+      campus: 1,
+      carreras: 4,
+      estudiantes: 430,
+      docentes: 22,
+      documentacion: 55,
+    },
+    {
+      id: 4,
+      nombre: 'Ivirgarzama',
+      campus: 1,
+      carreras: 3,
+      estudiantes: 280,
+      docentes: 15,
+      documentacion: 48,
+    },
+    {
+      id: 5,
+      nombre: 'Santa Cruz',
+      campus: 2,
+      carreras: 3,
+      estudiantes: 220,
+      docentes: 13,
+      documentacion: 42,
+    },
+  ],
 })
 
 const columnasDocentes = [
@@ -349,7 +555,7 @@ const columnasDocentes = [
   { name: 'materias', label: 'Materias', field: 'materias', align: 'center' },
   { name: 'grupos', label: 'Grupos', field: 'grupos', align: 'center' },
   { name: 'horas', label: 'Horas/Sem', field: 'horas', align: 'center' },
-  { name: 'progreso', label: 'Documentación', field: 'progreso', align: 'center' }
+  { name: 'progreso', label: 'Documentación', field: 'progreso', align: 'center' },
 ]
 
 const columnasCarreras = [
@@ -358,7 +564,7 @@ const columnasCarreras = [
   { name: 'estudiantes', label: 'Estudiantes', field: 'estudiantes', align: 'center' },
   { name: 'docentes', label: 'Docentes', field: 'docentes', align: 'center' },
   { name: 'materias', label: 'Materias', field: 'materias', align: 'center' },
-  { name: 'documentacion', label: 'Doc. %', field: 'documentacion', align: 'center' }
+  { name: 'documentacion', label: 'Doc. %', field: 'documentacion', align: 'center' },
 ]
 
 const columnasSedes = [
@@ -367,7 +573,7 @@ const columnasSedes = [
   { name: 'carreras', label: 'Carreras', field: 'carreras', align: 'center' },
   { name: 'estudiantes', label: 'Estudiantes', field: 'estudiantes', align: 'center' },
   { name: 'docentes', label: 'Docentes', field: 'docentes', align: 'center' },
-  { name: 'documentacion', label: 'Doc. %', field: 'documentacion', align: 'center' }
+  { name: 'documentacion', label: 'Doc. %', field: 'documentacion', align: 'center' },
 ]
 
 function prototypeGenerate() {
@@ -381,7 +587,15 @@ function prototypeGenerate() {
         docente: { nombre: 'KARINA PAOLA LOPEZ' },
         semana_inicio: '2026-01-26',
         alerta: 'VERDE',
-        criterios: { temaImpartido: true, actividadesFormativas: true, secuenciaDidactica: true, plataformaVirtual: true, evidencias: true, evaluaciones: true, integracionTransversal: true }
+        criterios: {
+          temaImpartido: true,
+          actividadesFormativas: true,
+          secuenciaDidactica: true,
+          plataformaVirtual: true,
+          evidencias: true,
+          evaluaciones: true,
+          integracionTransversal: true,
+        },
       },
       {
         id: 2,
@@ -390,8 +604,16 @@ function prototypeGenerate() {
         docente: { nombre: 'HAROLD MARCO ANTONIO ROJAS' },
         semana_inicio: '2026-01-26',
         alerta: 'ROJO',
-        criterios: { temaImpartido: false, actividadesFormativas: true, secuenciaDidactica: false, plataformaVirtual: true, evidencias: false, evaluaciones: true, integracionTransversal: false }
-      }
+        criterios: {
+          temaImpartido: false,
+          actividadesFormativas: true,
+          secuenciaDidactica: false,
+          plataformaVirtual: true,
+          evidencias: false,
+          evaluaciones: true,
+          integracionTransversal: false,
+        },
+      },
     ]
     loadingMock.value = false
     $q.notify({ type: 'positive', message: 'Reportes de auditoría generados (Modo Prototipo)' })

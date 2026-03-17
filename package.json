@@ -27,6 +27,7 @@
     "apexcharts": "^5.4.0",
     "axios": "^1.13.2",
     "browser-image-compression": "^2.0.2",
+    "exceljs": "^4.4.0",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
     "pinia": "^2.1.7",
