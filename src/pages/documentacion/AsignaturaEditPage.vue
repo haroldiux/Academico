@@ -108,7 +108,7 @@
         </div>
       </div>
       <!-- Tabs: solo icono + etiqueta -->
-      <q-tabs ref="tabsRef" v-model="tabActual" class="text-grey" active-color="primary" indicator-color="primary"
+      <q-tabs v-model="tabActual" class="text-grey" active-color="primary" indicator-color="primary"
         align="left">
         <q-tab v-if="authStore.rol !== 'DOCENTE'" name="datos" icon="description" label="Datos de Asignatura" no-caps />
         <q-tab v-if="authStore.rol !== 'DOCENTE'" name="programa" icon="assignment" label="Programa" no-caps />
@@ -121,43 +121,10 @@
         <q-tab name="banco" icon="help_outline" label="Banco de Preguntas" no-caps />
       </q-tabs>
 
-      <!-- Strip de progreso alineado con los tabs -->
-      <div class="progress-strip" v-if="asignatura?.indicadores_documentacion">
-        <!-- PAC: 1 barra — abarca Datos + Programa + Bibliografía -->
-        <div class="ps-section ps-pac" :style="{ width: psWidths.pac }">
-          <div class="ps-row">
-            <q-linear-progress :value="(asignatura.indicadores_documentacion.programa_asignatura?.porcentaje || 0) / 100
-              " :color="asignatura.indicadores_documentacion.programa_asignatura?.color || 'negative'" rounded
-              size="7px" class="ps-bar" />
-            <span class="ps-label"
-              :class="`text-${asignatura.indicadores_documentacion.programa_asignatura?.color || 'negative'}`">
-              PAC: {{ asignatura.indicadores_documentacion.programa_asignatura?.porcentaje || 0 }}%
-            </span>
-          </div>
-        </div>
-
-        <!-- Unidades: 2 barras — Analítico + Plan de Clase -->
-        <div class="ps-section ps-unidades" :style="{ width: psWidths.uni }">
-          <div class="ps-row" v-if="asignatura.indicadores_documentacion.programa_analitico">
-            <q-linear-progress :value="asignatura.indicadores_documentacion.programa_analitico.porcentaje / 100"
-              :color="asignatura.indicadores_documentacion.programa_analitico.color" rounded size="5px"
-              class="ps-bar" />
-            <span class="ps-label" :class="`text-${asignatura.indicadores_documentacion.programa_analitico.color}`">
-              Analítico: {{ asignatura.indicadores_documentacion.programa_analitico.porcentaje }}%
-            </span>
-          </div>
-          <div class="ps-row" v-if="asignatura.indicadores_documentacion.plan_clase">
-            <q-linear-progress :value="planClasePctLocal / 100" :color="planClaseColor" rounded size="5px"
-              class="ps-bar" />
-            <span class="ps-label" :class="`text-${planClaseColor}`">
-              Plan Clase: {{ planClasePctLocal }}%
-            </span>
-          </div>
-        </div>
-
-        <!-- Cronograma: sin barra -->
-        <div class="ps-section ps-cronograma" :style="{ width: psWidths.cron }" />
-      </div>
+      <!-- Strip de progreso oculto a solicitud -->
+      <!-- <div class="progress-strip" v-if="asignatura?.indicadores_documentacion">
+        ... (contenido oculto)
+      </div> -->
 
       <q-separator />
 
@@ -758,12 +725,14 @@
 
             <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
               <template v-slot:avatar><q-icon name="info" /></template>
-              1. <strong>Configura y descarga</strong> el formato Excel que se adaptará a la
-              distribución que definas. <br>
-              2. Una vez lleno, utiliza el botón <strong>"Subir Banco"</strong>.
+              1. <strong>Descarga el formato Excel</strong> y procede a completarlo con las
+              preguntas adecuadas según tu criterio (15 de dificultad fácil, 30 de dificultad media y
+              15 difíciles). <br>
+              2. Una vez que el archivo esté completo, utiliza el botón <strong>"Subir Banco"</strong>
+              para cargarlo al sistema.
               <template v-slot:action>
-                <q-btn unelevated color="indigo" icon="tune" label="Configurar y Descargar Excel" no-caps
-                  @click="showConfigDescarga = true" />
+                <q-btn unelevated color="indigo" icon="download" label="Descargar Excel Base" no-caps
+                  @click="descargarFormatoBanco" />
               </template>
             </q-banner>
 
@@ -849,7 +818,7 @@
           <div v-if="!archivoPreviewBanco">
             <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
               <template v-slot:avatar><q-icon name="info" /></template>
-              Sube el Excel con el formato oficial (V3). Recuerda que solo se admiten preguntas tipo
+              Sube el Excel con el formato oficial. Recuerda que solo se admiten preguntas tipo
               <strong>FV, SS y SM</strong>.
             </q-banner>
 
@@ -985,122 +954,6 @@
     <!-- ============================================================ -->
     <!-- DIALOG: Configurar Parámetros del Formato -->
     <!-- ============================================================ -->
-    <q-dialog v-model="showConfigDescarga" persistent>
-      <q-card style="width: 800px; max-width: 95vw; border-radius: 16px">
-        <div class="dialog-header row items-center q-px-lg q-py-md"
-          style="background: linear-gradient(135deg, #4527a0, #7b1fa2); color: white;">
-          <q-icon name="tune" class="q-mr-sm" size="24px" />
-          <div class="text-h6 text-weight-bold">Parametrización del Banco de Preguntas</div>
-          <q-space />
-          <q-btn flat round dense icon="close" color="white" @click="showConfigDescarga = false" />
-        </div>
-
-        <q-card-section class="q-pt-lg">
-          <div class="text-subtitle2 q-mb-md text-grey-8 bg-indigo-1 q-pa-md rounded-borders border-all">
-            <q-icon name="info" color="indigo" class="q-mr-xs" />
-            Defina la distribución de preguntas para su archivo Excel. El banco debe contener un mínimo de:
-            <div class="row q-gutter-x-md q-mt-xs justify-center">
-              <q-chip outline color="green" icon="child_care" size="sm">15 Fáciles</q-chip>
-              <q-chip outline color="orange" icon="psychology" size="sm">30 Medias</q-chip>
-              <q-chip outline color="red" icon="bolt" size="sm">15 Difíciles</q-chip>
-            </div>
-          </div>
-
-
-          <div class="row q-col-gutter-md q-mb-lg">
-            <div class="col-12 col-md-4">
-              <div class="config-block config-block--facil q-pa-md">
-                <div class="config-block__title q-mb-sm text-weight-bold">Falso y Verdadero (FV)</div>
-                <div class="q-mb-md">
-                  <q-btn-toggle v-model="bancoConfig.dif_fv" toggle-color="green" flat dense unelevated size="md" spread
-                    class="border-all rounded-borders q-pa-xs bg-white" :options="[
-                      { label: 'Nivel 1 (Fácil)', value: '1' },
-                      { label: 'Nivel 2', value: '2' },
-                      { label: 'Nivel 3', value: '3' },
-                    ]" />
-                </div>
-                <q-input v-model.number="bancoConfig.fv" label="Cantidad de preguntas" type="number" outlined dense
-                  :min="0" />
-                <div class="config-block__total q-mt-sm">Subtotal: {{ bancoConfig.fv }}</div>
-              </div>
-            </div>
-          </div>
-
-
-          <div class="row q-col-gutter-md q-mb-lg">
-            <div class="col-12 col-md-4">
-              <div class="config-block config-block--media q-pa-md">
-                <div class="config-block__title q-mb-sm text-weight-bold">Selección Simple (SS)</div>
-                <div class="q-mb-md">
-                  <q-btn-toggle v-model="bancoConfig.dif_ss" toggle-color="orange" flat dense unelevated size="md"
-                    spread class="border-all rounded-borders q-pa-xs bg-white" :options="[
-                      { label: 'Nivel 1', value: '1' },
-                      { label: 'Nivel 2 (Medio)', value: '2' },
-                      { label: 'Nivel 3', value: '3' },
-                    ]" />
-                </div>
-                <q-input v-model.number="bancoConfig.ss" label="Cantidad de preguntas" type="number" outlined dense
-                  :min="0" />
-              </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="config-block config-block--dificil q-pa-md">
-                <div class="config-block__title q-mb-sm text-weight-bold">Selección Múltiple (SM)</div>
-                <div class="q-mb-md">
-                  <q-btn-toggle v-model="bancoConfig.dif_sm" toggle-color="red" flat dense unelevated size="md" spread
-                    class="border-all rounded-borders q-pa-xs bg-white" :options="[
-                      { label: 'Nivel 1', value: '1' },
-                      { label: 'Nivel 2', value: '2' },
-                      { label: 'Nivel 3 (Difícil)', value: '3' },
-                    ]" />
-                </div>
-                <q-input v-model.number="bancoConfig.sm" label="Cantidad de preguntas" type="number" outlined dense
-                  :min="0" />
-              </div>
-            </div>
-          </div>
-
-          <q-banner :class="puedeGenerarExcel ? 'bg-green-1 text-green-10' : 'bg-red-1 text-red-10'" rounded-borders
-            shadow-1>
-            <template v-slot:avatar>
-              <q-icon :name="puedeGenerarExcel ? 'check_circle' : 'error'"
-                :color="puedeGenerarExcel ? 'green' : 'red'" />
-            </template>
-            <div class="row items-center full-width">
-              <div class="col">
-                <div v-if="puedeGenerarExcel" class="text-weight-bold">
-                  <q-icon name="check_circle" color="green" size="20px" class="q-mr-xs" />
-                  Distribución válida: <strong>{{ bancoConfigTotal }}</strong> preguntas
-                  (<strong>{{ totalFilasExcel }}</strong> filas).
-                </div>
-                <div v-else class="text-weight-bold">
-                  <q-icon name="warning" color="red" size="20px" class="q-mr-xs" />
-                  Faltan preguntas para cumplir los mínimos requeridos.
-                </div>
-                <!-- Mini contadores en tiempo real -->
-                <div class="row q-gutter-x-md q-mt-xs">
-                  <div :class="totalFaciles >= 15 ? 'text-green' : 'text-red'">
-                    Fáciles: <strong>{{ totalFaciles }}</strong>/15
-                  </div>
-                  <div :class="totalMedios >= 30 ? 'text-green' : 'text-red'">
-                    Medias: <strong>{{ totalMedios }}</strong>/30
-                  </div>
-                  <div :class="totalDificiles >= 15 ? 'text-green' : 'text-red'">
-                    Difíciles: <strong>{{ totalDificiles }}</strong>/15
-                  </div>
-                </div>
-              </div>
-            </div>
-          </q-banner>
-        </q-card-section>
-
-        <q-card-actions align="right" class="q-pa-md bg-grey-1">
-          <q-btn flat label="Cerrar" color="grey-7" @click="showConfigDescarga = false" />
-          <q-btn unelevated color="deep-purple" icon="download" label="Generar y Descargar Excel" no-caps
-            :disable="!puedeGenerarExcel" @click="descargarFormatoYSalir" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
 
     <!-- Dialog Bibliografía -->
     <q-dialog v-model="dialogBibliografia" persistent>
@@ -1444,9 +1297,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
-import { watchDebounced } from '@vueuse/core'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { watchDebounced } from '@vueuse/core'
 import { useQuasar } from 'quasar'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useCarrerasStore } from 'src/stores/carreras'
@@ -1492,49 +1345,13 @@ const tabActual = ref(tabInicial)
 const asignatura = computed(() => store.asignaturaActual)
 
 // ── Medición real de tabs para alinear el progress-strip ──
-const tabsRef = ref(null)
-const psWidths = ref({ pac: '60%', uni: '26%', cron: '14%' })
 
-function measureTabWidths() {
-  nextTick(() => {
-    const el = tabsRef.value?.$el
-    if (!el) return
-    const tabs = el.querySelectorAll('.q-tab')
-    if (tabs.length < 5) return
-    const w = (i) => tabs[i].getBoundingClientRect().width
-    const pacW = w(0) + w(1) + w(2)
-    const uniW = w(3)
-    const cronW = w(4)
-    const total = pacW + uniW + cronW
-    if (total === 0) return
-    psWidths.value = {
-      pac: `${pacW}px`,
-      uni: `${uniW}px`,
-      cron: `${cronW}px`,
-    }
-  })
-}
 
 onMounted(() => {
-  measureTabWidths()
   cargarBancoPreguntas()
 })
 
 // ── Plan de Clase: calculado igual que por-unidad (garantiza coherencia) ──
-const planClasePctLocal = computed(() => {
-  const unidades = asignatura.value?.unidades?.filter((u) => u.temas?.length) ?? []
-  if (!unidades.length) return 0
-  const suma = unidades.reduce((acc, u) => acc + calcularProgresoUnidad(u), 0)
-  return Math.round(suma / unidades.length)
-})
-
-const planClaseColor = computed(() =>
-  planClasePctLocal.value >= 80
-    ? 'positive'
-    : planClasePctLocal.value >= 50
-      ? 'warning'
-      : 'negative',
-)
 
 // Cargar banco cuando cambie la asignatura (reactividad)
 watch(
@@ -2628,44 +2445,7 @@ function generarCarpetaHtml() {
 // ============================================================
 
 const showSubirBanco = ref(false)
-const showConfigDescarga = ref(false)
 
-const bancoConfig = ref({
-  fv: 15, dif_fv: '1',         // Falso/Verdadero
-  ss: 30, dif_ss: '2',         // Selección Simple
-  sm: 15, dif_sm: '3',         // Selección Múltiple
-})
-
-const totalFaciles = computed(() => {
-  let total = 0
-  if (bancoConfig.value.dif_fv === '1') total += bancoConfig.value.fv
-  if (bancoConfig.value.dif_ss === '1') total += bancoConfig.value.ss
-  if (bancoConfig.value.dif_sm === '1') total += bancoConfig.value.sm
-  return total
-})
-
-const totalMedios = computed(() => {
-  let total = 0
-  if (bancoConfig.value.dif_fv === '2') total += bancoConfig.value.fv
-  if (bancoConfig.value.dif_ss === '2') total += bancoConfig.value.ss
-  if (bancoConfig.value.dif_sm === '2') total += bancoConfig.value.sm
-  return total
-})
-
-const totalDificiles = computed(() => {
-  let total = 0
-  if (bancoConfig.value.dif_fv === '3') total += bancoConfig.value.fv
-  if (bancoConfig.value.dif_ss === '3') total += bancoConfig.value.ss
-  if (bancoConfig.value.dif_sm === '3') total += bancoConfig.value.sm
-  return total
-})
-
-const bancoConfigTotal = computed(() => totalFaciles.value + totalMedios.value + totalDificiles.value)
-const totalFilasExcel = computed(() => bancoConfigTotal.value)
-
-const puedeGenerarExcel = computed(() => {
-  return totalFaciles.value >= 15 && totalMedios.value >= 30 && totalDificiles.value >= 15
-})
 
 
 
@@ -2682,39 +2462,13 @@ const preguntasFiltradas = computed(() => {
 })
 
 async function cargarBancoPreguntas() {
-  if (!asignatura.value?.id) {
-    console.warn('cargarBancoPreguntas: Sin ID de asignatura')
-    return
-  }
-
-  // DEBUG NOTIFICATION
-  const dismiss = $q.notify({
-    group: 'debug-banco',
-    spinner: true,
-    message: `Solicitando preguntas... (ID: ${asignatura.value.id})`,
-    color: 'indigo',
-    timeout: 0
-  })
+  if (!asignatura.value?.id) return
 
   try {
     const { data } = await api.get(`/banco-preguntas?asignatura_id=${asignatura.value.id}`)
     bancoPreguntasLocal.value = data
-
-    dismiss()
-    $q.notify({
-      group: 'debug-banco',
-      type: 'positive',
-      message: `Cargadas ${data.length} preguntas del servidor`,
-      timeout: 2000
-    })
   } catch (error) {
-    dismiss()
-    console.error('Error al cargar banco:', error)
-    $q.notify({
-      group: 'debug-banco',
-      type: 'negative',
-      message: `Error API: ${error.response?.status || 'Red'} - ${error.message}`
-    })
+    console.error('Error al cargar banco de preguntas:', error)
   }
 }
 
@@ -2756,7 +2510,7 @@ async function descargarFormatoBanco() {
   wsInst.getColumn(1).width = 40
   wsInst.getColumn(2).width = 80
 
-  const titleRow = wsInst.addRow(['BANCO DE PREGUNTAS — GUÍA OFICIAL (V3)'])
+  const titleRow = wsInst.addRow(['BANCO DE PREGUNTAS — GUÍA OFICIAL'])
   titleRow.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }
   titleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4527A0' } }
 
@@ -2820,38 +2574,38 @@ async function descargarFormatoBanco() {
     }
   })
 
-  const addPreguntaRow = (tipo, dif, parcial, enunciadoText) => {
-    // 0:tipo, 1:enunciado, 2:opA, 3:opB, 4:opC, 5:opD, 6:opE, 7:resp, 8:dificultad, 9:parcial
-    const row = wsBanco.addRow([tipo, enunciadoText, '', '', '', '', '', '', dif, parcial])
-    row.getCell(1).font = { bold: true }
-    if (tipo === 'PR')
-      row.eachCell(
-        (c) => (c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3E0' } }),
-      )
-    if (tipo === 'SP')
-      row.eachCell(
-        (c) => (c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } }),
-      )
-    if (tipo === 'FV') {
-      row.getCell(4).value = 'Verdadero'
-      row.getCell(5).value = 'Falso'
-    }
+  const addPreguntaRow = (dif, parcial, color) => {
+    // Columnas: tipo, enunciado, op_a, op_b, op_c, op_d, op_e, respuesta_correcta, dificultad, parcial
+    const row = wsBanco.addRow(['', '', '', '', '', '', '', '', dif, parcial])
+    row.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: color },
+      }
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
+      }
+    })
   }
 
-  const c = bancoConfig.value
-  const p = '1P' // Default
+  // Generar 15 Fáciles (Verde)
+  for (let i = 0; i < 15; i++) {
+    addPreguntaRow('1', '1P', 'FFC6EFCE')
+  }
 
-  // Nivel dinámico: FV
-  for (let i = 0; i < c.fv; i++)
-    addPreguntaRow('FV', c.dif_fv, p, 'Indica si la afirmación es verdadera (V) o falsa (F).')
+  // Generar 30 Medias (Amarillo)
+  for (let i = 0; i < 30; i++) {
+    addPreguntaRow('2', '1P', 'FFFFEB9C')
+  }
 
-  // Nivel dinámico: SS
-  for (let i = 0; i < c.ss; i++)
-    addPreguntaRow('SS', c.dif_ss, p, 'Selecciona la opción correcta entre las alternativas.')
-
-  // Nivel dinámico: SM
-  for (let i = 0; i < c.sm; i++)
-    addPreguntaRow('SM', c.dif_sm, p, 'Selecciona una o más opciones correctas.')
+  // Generar 15 Difíciles (Rojo)
+  for (let i = 0; i < 15; i++) {
+    addPreguntaRow('3', '1P', 'FFFFC7CE')
+  }
 
   wsBanco.columns = [
     { width: 10 },
@@ -2937,16 +2691,12 @@ async function descargarFormatoBanco() {
   })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
-  link.download = `formato_banco_V2_${asignatura.value?.sigla || 'asig'}.xlsx`
+  link.download = `formato_banco_preguntas_${asignatura.value?.sigla || 'asig'}.xlsx`
   link.click()
 
-  $q.notify({ type: 'positive', message: 'Excel V3 generado exitosamente', icon: 'check_circle' })
+  $q.notify({ type: 'positive', message: 'Excel generado exitosamente', icon: 'check_circle' })
 }
 
-async function descargarFormatoYSalir() {
-  await descargarFormatoBanco()
-  showConfigDescarga.value = false
-}
 
 // ============================================================
 // IMPORTACIÓN BANCO DE PREGUNTAS — REFS Y LÓGICA
@@ -3825,63 +3575,6 @@ function getParcialColorBanco(parcial) {
   opacity: 0;
 }
 
-/* ── Progress Strip (fila de barras debajo de los tabs) ── */
-.progress-strip {
-  display: flex;
-  align-items: stretch;
-  padding: 4px 0 6px 0;
-  /* Sin padding lateral para que pegue justo con el inicio de los tabs */
-  gap: 0;
-  background: var(--bg-card, #fff);
-  border-top: 1px solid rgba(0, 0, 0, 0.07);
-}
-
-/* Sección genérica */
-.ps-section {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
-  padding: 4px 12px;
-  flex: none;
-  /* Forzamos tamaño con style width, NO estirar con flex */
-}
-
-/* PAC abarca 3 tabs */
-.ps-pac {
-  border-right: 1.5px solid rgba(0, 0, 0, 0.1);
-  padding-right: 16px;
-}
-
-/* Unidades abarca 1 tab (con 2 barras) */
-.ps-unidades {
-  border-right: 1.5px solid rgba(0, 0, 0, 0.1);
-  padding: 4px 16px;
-  gap: 4px;
-}
-
-/* Cronograma sin barras */
-/* Cronograma sin barras de progreso */
-
-/* Fila individual de barra + label */
-.ps-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ps-bar {
-  flex: 1;
-  border-radius: 4px;
-}
-
-.ps-label {
-  font-size: 10.5px;
-  font-weight: 600;
-  white-space: nowrap;
-  min-width: 100px;
-  text-align: right;
-}
 
 /* ============================================================
    Banco de Preguntas
