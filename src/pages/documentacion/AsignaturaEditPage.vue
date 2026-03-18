@@ -1187,30 +1187,28 @@
             </div>
             <div class="row q-gutter-sm">
               <q-btn
-                outline
-                color="white"
-                icon="upload_file"
-                label="Subir Banco"
-                no-caps
-                @click="showSubirBanco = true"
-              />
-              <q-btn
                 unelevated
                 color="white"
                 text-color="deep-purple-9"
-                icon="add"
-                label="Nueva Pregunta"
+                icon="upload_file"
+                label="Subir Banco (Excel)"
                 no-caps
-                @click="abrirFormPregunta"
+                @click="showSubirBanco = true"
               />
             </div>
           </div>
 
           <div class="q-px-lg q-pb-lg">
+            <q-banner class="bg-amber-1 text-amber-10 q-mb-md border-amber" rounded dense>
+              <template v-slot:avatar><q-icon name="warning" color="amber-10" /></template>
+              <strong>Método de Registro:</strong> Actualmente las preguntas se registran exclusivamente
+              mediante la <strong>importación masiva desde Excel</strong> para garantizar el formato oficial.
+            </q-banner>
+
             <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
               <template v-slot:avatar><q-icon name="info" /></template>
-              Configura y descarga el formato Excel para cargar preguntas masivamente. El formato se
-              adaptará a la distribución que definas (mínimo 60 preguntas).
+              1. <strong>Configura y descarga</strong> el formato Excel (V3) que se adaptará a la
+              distribución que definas. 2. Una vez lleno, utiliza el botón <strong>"Subir Banco"</strong>.
               <template v-slot:action>
                 <q-btn
                   unelevated
@@ -1223,185 +1221,18 @@
               </template>
             </q-banner>
 
-            <!-- Filtros del banco -->
-            <div class="row q-col-gutter-md q-mb-md">
-              <div class="col-12 col-md-3">
-                <q-select
-                  v-model="bancoParcialFiltro"
-                  :options="parcialOpciones"
-                  outlined
-                  dense
-                  label="Filtrar por Parcial"
-                  emit-value
-                  map-options
-                  clearable
-                />
-              </div>
-              <div class="col-12 col-md-3">
-                <q-select
-                  v-model="bancoDificultadFiltro"
-                  :options="dificultadOpciones"
-                  outlined
-                  dense
-                  label="Filtrar por Dificultad"
-                  emit-value
-                  map-options
-                  clearable
-                />
-              </div>
-              <div class="col-12 col-md-4">
-                <q-input
-                  v-model="bancoBusqueda"
-                  outlined
-                  dense
-                  label="Buscar pregunta..."
-                  clearable
-                >
-                  <template v-slot:prepend><q-icon name="search" /></template>
-                </q-input>
-              </div>
-              <div class="col-auto flex items-center">
-                <q-chip
-                  color="deep-purple-1"
-                  text-color="deep-purple-9"
-                  icon="format_list_numbered"
-                >
-                  {{ preguntasFiltradas.length }} preguntas
-                </q-chip>
-              </div>
+            <!-- Resumen del banco -->
+            <div class="row justify-end q-mb-md">
+              <q-chip
+                color="deep-purple-1"
+                text-color="deep-purple-9"
+                icon="format_list_numbered"
+              >
+                {{ preguntasFiltradas.length }} preguntas en total
+              </q-chip>
             </div>
 
-            <!-- Formulario inline de nueva/editar pregunta -->
-            <q-slide-transition>
-              <q-card
-                v-if="showFormPregunta"
-                class="q-mb-lg"
-                flat
-                bordered
-                style="border: 2px solid #7b1fa2; border-radius: 12px"
-              >
-                <q-card-section class="bg-deep-purple-1">
-                  <div class="row items-center">
-                    <q-icon
-                      :name="editandoPregunta ? 'edit' : 'add_circle'"
-                      color="deep-purple"
-                      class="q-mr-sm"
-                    />
-                    <span class="text-weight-bold text-deep-purple">
-                      {{ editandoPregunta ? 'Editar Pregunta' : 'Nueva Pregunta' }}
-                    </span>
-                    <q-space />
-                    <q-btn
-                      flat
-                      round
-                      dense
-                      icon="close"
-                      color="grey"
-                      @click="showFormPregunta = false"
-                    />
-                  </div>
-                </q-card-section>
-                <q-card-section>
-                  <div class="q-gutter-md">
-                    <!-- Texto de la pregunta -->
-                    <q-input
-                      v-model="formPregunta.texto"
-                      outlined
-                      label="Texto de la Pregunta *"
-                      type="textarea"
-                      rows="3"
-                      placeholder="Escribe la pregunta aquí..."
-                    />
 
-                    <!-- Opciones A-E -->
-                    <div class="section-label q-mb-sm">
-                      <q-icon name="list" color="primary" class="q-mr-xs" /> Opciones de Respuesta
-                    </div>
-                    <div class="row q-col-gutter-md">
-                      <div
-                        v-for="(letra, idx) in ['A', 'B', 'C', 'D', 'E']"
-                        :key="letra"
-                        class="col-12 col-md-6"
-                      >
-                        <q-input
-                          v-model="formPregunta.opciones[idx]"
-                          outlined
-                          dense
-                          :label="`Opción ${letra}`"
-                          :placeholder="`Opción ${letra}...`"
-                        >
-                          <template v-slot:prepend>
-                            <q-chip
-                              :color="formPregunta.respuesta === letra ? 'green' : 'grey-3'"
-                              :text-color="formPregunta.respuesta === letra ? 'white' : 'grey-7'"
-                              size="sm"
-                              dense
-                              style="cursor: pointer"
-                              @click="formPregunta.respuesta = letra"
-                            >
-                              {{ letra }}
-                            </q-chip>
-                          </template>
-                        </q-input>
-                      </div>
-                    </div>
-
-                    <q-banner class="bg-blue-1 text-blue-9" dense rounded>
-                      <q-icon name="info" class="q-mr-xs" />
-                      Haz click en la letra (A-E) para marcarla como respuesta correcta. Respuesta
-                      correcta actual:
-                      <strong>{{ formPregunta.respuesta || 'No seleccionada' }}</strong>
-                    </q-banner>
-
-                    <!-- Metadatos -->
-                    <div class="row q-col-gutter-md">
-                      <div class="col-12 col-md-4">
-                        <q-select
-                          v-model="formPregunta.dificultad"
-                          :options="dificultadOpciones"
-                          outlined
-                          dense
-                          label="Dificultad *"
-                          emit-value
-                          map-options
-                        />
-                      </div>
-                      <div class="col-12 col-md-4">
-                        <q-select
-                          v-model="formPregunta.parcial"
-                          :options="parcialOpciones"
-                          outlined
-                          dense
-                          label="Parcial al que pertenece *"
-                          emit-value
-                          map-options
-                        />
-                      </div>
-                      <div class="col-12 col-md-4">
-                        <q-input
-                          v-model="formPregunta.fuente"
-                          outlined
-                          dense
-                          label="Fuente / Referencia"
-                          placeholder="Ej: Capítulo 3, pág. 45"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </q-card-section>
-                <q-card-actions align="right" class="q-pa-md">
-                  <q-btn flat label="Cancelar" @click="showFormPregunta = false" />
-                  <q-btn
-                    unelevated
-                    color="deep-purple"
-                    icon="save"
-                    label="Guardar Pregunta"
-                    :disable="!formPregunta.texto || !formPregunta.respuesta"
-                    @click="guardarPregunta"
-                  />
-                </q-card-actions>
-              </q-card>
-            </q-slide-transition>
 
             <!-- Lista de preguntas -->
             <div
@@ -1411,7 +1242,7 @@
               <q-icon name="quiz" size="56px" color="grey-4" />
               <p class="text-h6 text-grey-6 q-mt-md">No hay preguntas registradas</p>
               <p class="text-caption text-grey-5">
-                Agrega preguntas usando el formulario o sube un banco en formato Excel
+                Sube un banco en formato Excel para visualizar las preguntas aquí
               </p>
             </div>
 
@@ -1433,31 +1264,34 @@
                           text-color="white"
                           size="xs"
                           dense
-                          >{{ pregunta.dificultad }}</q-chip
+                          >{{ { 1: 'Fácil', 2: 'Medio', 3: 'Difícil' }[pregunta.dificultad] || pregunta.dificultad }}</q-chip
                         >
                         <q-chip
+                          v-if="pregunta.parcial"
                           :color="getParcialColorBanco(pregunta.parcial)"
                           text-color="white"
                           size="xs"
                           dense
                           >{{ pregunta.parcial }}</q-chip
                         >
+                        <q-chip color="teal-7" text-color="white" size="xs" dense>
+                          {{ pregunta.tipo?.replace('_', ' ') }}
+                        </q-chip>
                       </div>
-                      <div class="text-body2 text-weight-medium q-mb-sm">{{ pregunta.texto }}</div>
+                      <div class="text-body2 text-weight-medium q-mb-sm">{{ pregunta.enunciado }}</div>
                       <div class="opciones-grid">
                         <div
                           v-for="(opc, oidx) in pregunta.opciones"
                           :key="oidx"
                           class="opcion-item"
                           :class="{
-                            'opcion-correcta':
-                              ['A', 'B', 'C', 'D', 'E'][oidx] === pregunta.respuesta,
+                            'opcion-correcta': esOpcionCorrecta(pregunta, opc.id),
                           }"
                         >
-                          <span class="opcion-letra">{{ ['A', 'B', 'C', 'D', 'E'][oidx] }})</span>
-                          <span>{{ opc }}</span>
+                          <span class="opcion-letra">{{ opc.id }})</span>
+                          <span>{{ opc.text }}</span>
                           <q-icon
-                            v-if="['A', 'B', 'C', 'D', 'E'][oidx] === pregunta.respuesta"
+                            v-if="esOpcionCorrecta(pregunta, opc.id)"
                             name="check_circle"
                             color="green"
                             size="16px"
@@ -1467,17 +1301,7 @@
                       </div>
                     </div>
                     <div class="col-auto">
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="edit"
-                        size="sm"
-                        color="orange"
-                        @click="editarPregunta(pregunta)"
-                      >
-                        <q-tooltip>Editar</q-tooltip>
-                      </q-btn>
+
                       <q-btn
                         flat
                         round
@@ -1485,7 +1309,7 @@
                         icon="delete"
                         size="sm"
                         color="red"
-                        @click="eliminarPregunta(pregunta)"
+                        @click="confirmarBorrarPregunta(pregunta)"
                       >
                         <q-tooltip>Eliminar</q-tooltip>
                       </q-btn>
@@ -1504,11 +1328,14 @@
     <!-- ============================================================ -->
     <q-dialog v-model="showSubirBanco" persistent>
       <q-card style="min-width: 620px; max-width: 95vw">
-        <div class="dialog-header" style="background: linear-gradient(135deg, #4527a0, #7b1fa2)">
-          <q-icon name="upload_file" class="q-mr-sm" size="22px" />
-          <span>Subir Banco de Preguntas</span>
+        <div
+          class="dialog-header row items-center q-pa-md text-white"
+          style="background: linear-gradient(135deg, #4527a0, #7b1fa2)"
+        >
+          <q-icon name="upload_file" class="q-mr-sm" size="24px" />
+          <div class="text-h6 text-white">Subir Banco de Preguntas</div>
           <q-space />
-          <q-btn flat round dense icon="close" color="white" @click="cerrarDialogImportBanco" />
+          <q-btn flat round dense icon="close" v-close-popup @click="cerrarDialogImportBanco" />
         </div>
 
         <q-card-section>
@@ -1516,8 +1343,8 @@
           <div v-if="!archivoPreviewBanco">
             <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
               <template v-slot:avatar><q-icon name="info" /></template>
-              Sube el Excel con el formato correcto (usa "Descargar Formato"). Son válidos los 4
-              tipos: opción múltiple, emparejamiento, problema y subpreguntas.
+              Sube el Excel con el formato oficial (V3). Recuerda que solo se admiten preguntas tipo
+              <strong>FV, SS y SM</strong>.
             </q-banner>
 
             <q-file
@@ -1547,38 +1374,32 @@
           <!-- Paso 2: Previsualización -->
           <div v-else>
             <!-- Stats -->
-            <div class="import-stats q-mb-md">
-              <q-chip color="deep-purple" text-color="white" icon="format_list_numbered" size="sm">
-                {{ preguntasImportadas.length }} preguntas
-              </q-chip>
-              <q-chip
-                v-if="importStats.opcion_multiple > 0"
-                color="blue"
-                text-color="white"
-                icon="radio_button_checked"
-                size="sm"
-              >
-                {{ importStats.opcion_multiple }} opción múltiple
-              </q-chip>
-              <q-chip
-                v-if="importStats.emparejamiento > 0"
-                color="teal"
-                text-color="white"
-                icon="compare_arrows"
-                size="sm"
-              >
-                {{ importStats.emparejamiento }} emparejamiento
-              </q-chip>
-              <q-chip
-                v-if="importStats.problema > 0"
-                color="orange"
-                text-color="white"
-                icon="article"
-                size="sm"
-              >
-                {{ importStats.problema }} problema + {{ importStats.sub_pregunta }} subpreguntas
-              </q-chip>
+            <div class="import-stats q-mb-md font-mono">
+              <q-badge color="deep-purple" class="q-pa-sm">
+                Total: {{ preguntasImportadas.length }} preguntas
+              </q-badge>
+              <q-badge color="green-7" class="q-pa-sm q-ml-sm">
+                Fáciles: {{ importStats.faciles || 0 }}
+              </q-badge>
+              <q-badge color="orange-8" class="q-pa-sm q-ml-sm">
+                Medias: {{ importStats.medios || 0 }}
+              </q-badge>
+              <q-badge color="red-8" class="q-pa-sm q-ml-sm">
+                Difíciles: {{ importStats.dificiles || 0 }}
+              </q-badge>
             </div>
+
+            <!-- Validación de mínimos -->
+            <q-banner v-if="importStats.total > 0 && !validacionDistribucion" class="bg-orange-1 text-orange-10 q-mb-md border-orange" rounded dense>
+              <template v-slot:avatar><q-icon name="warning" /></template>
+              <div class="text-weight-bold text-caption">No se cumple el mínimo requerido:</div>
+              <div class="text-caption">10 Fáciles (Faltan: {{ Math.max(0, 10 - importStats.faciles) }}), 40 Medias (Faltan: {{ Math.max(0, 40 - importStats.medios) }}), 10 Difíciles (Faltan: {{ Math.max(0, 10 - importStats.dificiles) }}).</div>
+            </q-banner>
+
+            <q-banner v-if="importStats.total > 0 && validacionDistribucion" class="bg-green-1 text-green-10 q-mb-md" rounded dense>
+              <template v-slot:avatar><q-icon name="check_circle" /></template>
+              <div class="text-weight-bold text-caption">Distribución válida para importar.</div>
+            </q-banner>
 
             <!-- Errores -->
             <q-banner v-if="importErrores.length > 0" class="bg-red-1 text-red-9 q-mb-md" rounded>
@@ -1632,25 +1453,16 @@
               </div>
             </div>
 
-            <!-- Modo importación -->
+            <!-- Aviso de Reemplazo Forzado -->
             <q-separator class="q-mb-md" />
-            <div class="text-subtitle2 q-mb-sm">Modo de importación:</div>
-            <q-option-group
-              v-model="modoImportacion"
-              :options="[
-                {
-                  label: 'Agregar al banco existente (conservar preguntas actuales)',
-                  value: 'agregar',
-                  color: 'green',
-                },
-                {
-                  label: 'Reemplazar todo el banco (eliminar preguntas actuales)',
-                  value: 'reemplazar',
-                  color: 'red',
-                },
-              ]"
-              dense
-            />
+            <q-banner class="bg-red-1 text-red-10" rounded dense>
+              <template v-slot:avatar><q-icon name="warning" /></template>
+              <div class="text-weight-bold">Aviso Importante</div>
+              <div class="text-caption">
+                Esta importación <b>reemplazará</b> todo el banco de preguntas actual de la asignatura.
+                Cualquier pregunta registrada previamente será eliminada.
+              </div>
+            </q-banner>
 
             <q-btn
               flat
@@ -1679,7 +1491,7 @@
             color="deep-purple"
             icon="upload"
             :label="`Importar ${preguntasImportadas.length} pregunta(s)`"
-            :disable="preguntasImportadas.length === 0"
+            :disable="preguntasImportadas.length === 0 || !validacionDistribucion"
             :loading="importandoBanco"
             @click="confirmarImportacionBanco"
           />
@@ -1692,97 +1504,98 @@
     <!-- ============================================================ -->
     <q-dialog v-model="showConfigDescarga" persistent>
       <q-card style="width: 800px; max-width: 95vw; border-radius: 16px">
-        <div class="dialog-header" style="background: linear-gradient(135deg, #4527a0, #7b1fa2)">
+        <div class="dialog-header row items-center q-px-lg q-py-md" style="background: linear-gradient(135deg, #4527a0, #7b1fa2); color: white;">
           <q-icon name="tune" class="q-mr-sm" size="24px" />
-          Parametrización del Banco de Preguntas (V2)
+          <div class="text-h6 text-weight-bold">Parametrización del Banco de Preguntas</div>
           <q-space />
-          <q-btn flat round dense icon="close" @click="showConfigDescarga = false" />
+          <q-btn flat round dense icon="close" color="white" @click="showConfigDescarga = false" />
         </div>
 
         <q-card-section class="q-pt-lg">
-          <div class="text-subtitle2 q-mb-md text-grey-8">
-            Defina la distribución de preguntas que tendrá su archivo Excel. Debe cumplir con los
-            mínimos requeridos (<strong>20/60/20</strong>).
-          </div>
-
-          <!-- NIVEL 1 -->
-          <div class="config-section-label">
-            <q-icon name="looks_one" color="green" />
-            Nivel 1: Fáciles (Mínimo 20)
-            <q-badge :color="totalFaciles >= 20 ? 'green' : 'red'" class="q-ml-sm">
-              {{ totalFaciles }} Preguntas
-            </q-badge>
-          </div>
-          <div class="row q-col-gutter-md q-mb-lg">
-            <div class="col-12 col-md-4">
-              <div class="config-block config-block--facil">
-                <div class="config-block__title">Falso y Verdadero (FV)</div>
-                <q-input v-model.number="bancoConfig.fv" type="number" outlined dense :min="0" />
-                <div class="config-block__total">Subtotal: {{ bancoConfig.fv }}</div>
-              </div>
+          <div class="text-subtitle2 q-mb-md text-grey-8 bg-indigo-1 q-pa-md rounded-borders border-all">
+            <q-icon name="info" color="indigo" class="q-mr-xs" />
+            Defina la distribución de preguntas para su archivo Excel. El banco debe contener un mínimo de:
+            <div class="row q-gutter-x-md q-mt-xs justify-center">
+              <q-chip outline color="green" icon="child_care" size="sm">10 Fáciles</q-chip>
+              <q-chip outline color="orange" icon="psychology" size="sm">40 Medias</q-chip>
+              <q-chip outline color="red" icon="bolt" size="sm">10 Difíciles</q-chip>
             </div>
           </div>
 
-          <!-- NIVEL 2 -->
-          <div class="config-section-label">
-            <q-icon name="looks_two" color="orange" />
-            Nivel 2: Medios (Mínimo 60)
-            <q-badge :color="totalMedios >= 60 ? 'green' : 'red'" class="q-ml-sm">
-              {{ totalMedios }} Preguntas
-            </q-badge>
-          </div>
+
           <div class="row q-col-gutter-md q-mb-lg">
             <div class="col-12 col-md-4">
-              <div class="config-block config-block--media">
-                <div class="config-block__title">Selección Simple (SS)</div>
-                <q-input v-model.number="bancoConfig.ss" type="number" outlined dense :min="0" />
-              </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="config-block config-block--emparejar">
-                <div class="config-block__title">Emparejamiento (EM)</div>
-                <q-input v-model.number="bancoConfig.em" type="number" outlined dense :min="0" />
-              </div>
-            </div>
-            <div class="col-12 col-md-4 flex items-center">
-              <div class="text-h6 text-weight-bold text-orange-9">
-                Total Nivel 2: {{ totalMedios }}
+              <div class="config-block config-block--facil q-pa-md">
+                <div class="config-block__title q-mb-sm text-weight-bold">Falso y Verdadero (FV)</div>
+                <div class="q-mb-md">
+                  <q-btn-toggle
+                    v-model="bancoConfig.dif_fv"
+                    toggle-color="green"
+                    flat
+                    dense
+                    unelevated
+                    size="md"
+                    spread
+                    class="border-all rounded-borders q-pa-xs bg-white"
+                    :options="[
+                      { label: 'Nivel 1 (Fácil)', value: '1' },
+                      { label: 'Nivel 2', value: '2' },
+                      { label: 'Nivel 3', value: '3' },
+                    ]"
+                  />
+                </div>
+                <q-input v-model.number="bancoConfig.fv" label="Cantidad de preguntas" type="number" outlined dense :min="0" />
+                <div class="config-block__total q-mt-sm">Subtotal: {{ bancoConfig.fv }}</div>
               </div>
             </div>
           </div>
 
-          <!-- NIVEL 3 -->
-          <div class="config-section-label">
-            <q-icon name="looks_3" color="red" />
-            Nivel 3: Difíciles (Mínimo 20)
-            <q-badge :color="totalDificiles >= 20 ? 'green' : 'red'" class="q-ml-sm">
-              {{ totalDificiles }} Preguntas
-            </q-badge>
-          </div>
+
           <div class="row q-col-gutter-md q-mb-lg">
             <div class="col-12 col-md-4">
-              <div class="config-block config-block--dificil">
-                <div class="config-block__title">Selección Múltiple (SM)</div>
-                <q-input v-model.number="bancoConfig.sm" type="number" outlined dense :min="0" />
+              <div class="config-block config-block--media q-pa-md">
+                <div class="config-block__title q-mb-sm text-weight-bold">Selección Simple (SS)</div>
+                <div class="q-mb-md">
+                  <q-btn-toggle
+                    v-model="bancoConfig.dif_ss"
+                    toggle-color="orange"
+                    flat
+                    dense
+                    unelevated
+                    size="md"
+                    spread
+                    class="border-all rounded-borders q-pa-xs bg-white"
+                    :options="[
+                      { label: 'Nivel 1', value: '1' },
+                      { label: 'Nivel 2 (Medio)', value: '2' },
+                      { label: 'Nivel 3', value: '3' },
+                    ]"
+                  />
+                </div>
+                <q-input v-model.number="bancoConfig.ss" label="Cantidad de preguntas" type="number" outlined dense :min="0" />
               </div>
             </div>
             <div class="col-12 col-md-4">
-              <div class="config-block config-block--problema">
-                <div class="config-block__title">Problemas (PR)</div>
-                <q-input v-model.number="bancoConfig.pr" type="number" outlined dense :min="0" />
-                <div class="text-caption text-grey-6 q-mt-xs">Subpreguntas (SP) p/ bloque:</div>
-                <q-input
-                  v-model.number="bancoConfig.sp_por_pr"
-                  type="number"
-                  outlined
-                  dense
-                  :min="1"
-                />
-              </div>
-            </div>
-            <div class="col-12 col-md-4 flex items-center">
-              <div class="text-h6 text-weight-bold text-red-9">
-                Total Nivel 3: {{ totalDificiles }}
+              <div class="config-block config-block--dificil q-pa-md">
+                <div class="config-block__title q-mb-sm text-weight-bold">Selección Múltiple (SM)</div>
+                <div class="q-mb-md">
+                  <q-btn-toggle
+                    v-model="bancoConfig.dif_sm"
+                    toggle-color="red"
+                    flat
+                    dense
+                    unelevated
+                    size="md"
+                    spread
+                    class="border-all rounded-borders q-pa-xs bg-white"
+                    :options="[
+                      { label: 'Nivel 1', value: '1' },
+                      { label: 'Nivel 2', value: '2' },
+                      { label: 'Nivel 3 (Difícil)', value: '3' },
+                    ]"
+                  />
+                </div>
+                <q-input v-model.number="bancoConfig.sm" label="Cantidad de preguntas" type="number" outlined dense :min="0" />
               </div>
             </div>
           </div>
@@ -1798,15 +1611,30 @@
                 :color="puedeGenerarExcel ? 'green' : 'red'"
               />
             </template>
-            <div v-if="puedeGenerarExcel">
-              Distribución válida: <strong>{{ bancoConfigTotal }}</strong> preguntas totales
-              (generará <strong>{{ totalFilasExcel }}</strong> filas en Excel).
-            </div>
-            <div v-else>
-              Faltan preguntas para cumplir los mínimos:
-              <span v-if="totalFaciles < 20">Fáciles ({{ 20 - totalFaciles }} más), </span>
-              <span v-if="totalMedios < 60">Medios ({{ 60 - totalMedios }} más), </span>
-              <span v-if="totalDificiles < 20">Difíciles ({{ 20 - totalDificiles }} más)</span>
+            <div class="row items-center full-width">
+              <div class="col">
+                <div v-if="puedeGenerarExcel" class="text-weight-bold">
+                  <q-icon name="check_circle" color="green" size="20px" class="q-mr-xs" />
+                  Distribución válida: <strong>{{ bancoConfigTotal }}</strong> preguntas
+                  (<strong>{{ totalFilasExcel }}</strong> filas).
+                </div>
+                <div v-else class="text-weight-bold">
+                  <q-icon name="warning" color="red" size="20px" class="q-mr-xs" />
+                  Faltan preguntas para cumplir los mínimos requeridos.
+                </div>
+                <!-- Mini contadores en tiempo real -->
+                <div class="row q-gutter-x-md q-mt-xs">
+                  <div :class="totalFaciles >= 10 ? 'text-green' : 'text-red'">
+                    Fáciles: <strong>{{ totalFaciles }}</strong>/10
+                  </div>
+                  <div :class="totalMedios >= 40 ? 'text-green' : 'text-red'">
+                    Medias: <strong>{{ totalMedios }}</strong>/40
+                  </div>
+                  <div :class="totalDificiles >= 10 ? 'text-green' : 'text-red'">
+                    Difíciles: <strong>{{ totalDificiles }}</strong>/10
+                  </div>
+                </div>
+              </div>
             </div>
           </q-banner>
         </q-card-section>
@@ -2339,6 +2167,7 @@ import { useCarrerasStore } from 'src/stores/carreras'
 import { useSedesStore } from 'src/stores/sedes'
 import { ROLES } from 'src/stores/auth'
 import { useAuthStore } from 'src/stores/auth'
+import { api } from 'boot/axios'
 
 // Helpers para contar logros e indicadores (consistente con backend/store)
 function countLogros(tema) {
@@ -2400,7 +2229,10 @@ function measureTabWidths() {
   })
 }
 
-onMounted(measureTabWidths)
+onMounted(() => {
+  measureTabWidths()
+  cargarBancoPreguntas()
+})
 
 // ── Plan de Clase: calculado igual que por-unidad (garantiza coherencia) ──
 const planClasePctLocal = computed(() => {
@@ -2416,6 +2248,15 @@ const planClaseColor = computed(() =>
     : planClasePctLocal.value >= 50
       ? 'warning'
       : 'negative',
+)
+
+// Cargar banco cuando cambie la asignatura (reactividad)
+watch(
+  () => asignatura.value?.id,
+  (newId) => {
+    if (newId) cargarBancoPreguntas()
+  },
+  { immediate: true },
 )
 
 // Watcher para redirigir a PlanificacionPage cuando se selecciona el tab cronograma
@@ -3499,160 +3340,124 @@ function generarCarpetaHtml() {
 // ============================================================
 // BANCO DE PREGUNTAS - CONFIGURACIÓN Y MOCK
 // ============================================================
-const showFormPregunta = ref(false)
+
 const showSubirBanco = ref(false)
 const showConfigDescarga = ref(false)
 
 const bancoConfig = ref({
-  fv: 20, // Falso/Verdadero (Nivel 1)
-  ss: 50, // Selección Simple (Nivel 2)
-  em: 10, // Emparejamiento (Nivel 2)
-  sm: 15, // Selección Múltiple (Nivel 3)
-  pr: 5, // Problemas (Nivel 3)
-  sp_por_pr: 3, // Subpreguntas por problema
+  fv: 10, dif_fv: '1',         // Falso/Verdadero
+  ss: 40, dif_ss: '2',         // Selección Simple
+  sm: 10, dif_sm: '3',         // Selección Múltiple
 })
 
-const totalFaciles = computed(() => bancoConfig.value.fv)
-const totalMedios = computed(() => bancoConfig.value.ss + bancoConfig.value.em)
-const totalDificiles = computed(
-  () => bancoConfig.value.sm + bancoConfig.value.pr * bancoConfig.value.sp_por_pr,
-)
+const totalFaciles = computed(() => {
+  let total = 0
+  if (bancoConfig.value.dif_fv === '1') total += bancoConfig.value.fv
+  if (bancoConfig.value.dif_ss === '1') total += bancoConfig.value.ss
+  if (bancoConfig.value.dif_sm === '1') total += bancoConfig.value.sm
+  return total
+})
 
-const bancoConfigTotal = computed(
-  () => totalFaciles.value + totalMedios.value + totalDificiles.value,
-)
-const totalFilasExcel = computed(() => bancoConfigTotal.value + bancoConfig.value.pr) // Sumamos los encabezados PR como filas extra
+const totalMedios = computed(() => {
+  let total = 0
+  if (bancoConfig.value.dif_fv === '2') total += bancoConfig.value.fv
+  if (bancoConfig.value.dif_ss === '2') total += bancoConfig.value.ss
+  if (bancoConfig.value.dif_sm === '2') total += bancoConfig.value.sm
+  return total
+})
+
+const totalDificiles = computed(() => {
+  let total = 0
+  if (bancoConfig.value.dif_fv === '3') total += bancoConfig.value.fv
+  if (bancoConfig.value.dif_ss === '3') total += bancoConfig.value.ss
+  if (bancoConfig.value.dif_sm === '3') total += bancoConfig.value.sm
+  return total
+})
+
+const bancoConfigTotal = computed(() => totalFaciles.value + totalMedios.value + totalDificiles.value)
+const totalFilasExcel = computed(() => bancoConfigTotal.value)
 
 const puedeGenerarExcel = computed(() => {
-  return totalFaciles.value >= 20 && totalMedios.value >= 60 && totalDificiles.value >= 20
+  return totalFaciles.value >= 10 && totalMedios.value >= 40 && totalDificiles.value >= 10
 })
 
-const editandoPregunta = ref(null)
-const bancoParcialFiltro = ref(null)
-const bancoDificultadFiltro = ref(null)
-const bancoBusqueda = ref('')
 
-const formPregunta = ref({
-  texto: '',
-  opciones: ['', '', '', '', ''],
-  respuesta: '',
-  dificultad: '',
-  parcial: '',
-  fuente: '',
-})
 
-const dificultadOpciones = [
-  { label: 'Nivel 1 (Fácil)', value: '1' },
-  { label: 'Nivel 2 (Medio)', value: '2' },
-  { label: 'Nivel 3 (Difícil)', value: '3' },
-]
 
-const parcialOpciones = [
-  { label: '1P (1° Parcial)', value: '1P' },
-  { label: '2P (2° Parcial)', value: '2P' },
-  { label: 'EF (Examen Final)', value: 'EF' },
-  { label: '2I (2da Instancia)', value: '2I' },
-]
 
-// Banco de preguntas local (mock — se reemplazará con API)
-const bancoPreguntasLocal = ref([
-  {
-    id: 1,
-    texto: '¿Cuál es la función principal del corazón en el sistema circulatorio?',
-    opciones: [
-      'Filtrar la sangre',
-      'Bombear la sangre',
-      'Producir glóbulos rojos',
-      'Regular la presión',
-      'Almacenar nutrientes',
-    ],
-    respuesta: 'B',
-    dificultad: 'Fácil',
-    parcial: '1° Parcial',
-    fuente: 'Capítulo 1, pág. 22',
-  },
-  {
-    id: 2,
-    texto: '¿Qué estructura del corazón separa las cavidades izquierda y derecha?',
-    opciones: [
-      'Pericardio',
-      'Endocardio',
-      'Tabique interventricular',
-      'Válvula aórtica',
-      'Nodo sinusal',
-    ],
-    respuesta: 'C',
-    dificultad: 'Medio',
-    parcial: '1° Parcial',
-    fuente: 'Capítulo 2, pág. 45',
-  },
-])
+
+
+
+// Banco de preguntas real (desde API)
+const bancoPreguntasLocal = ref([])
 
 const preguntasFiltradas = computed(() => {
-  let result = bancoPreguntasLocal.value
-  if (bancoParcialFiltro.value)
-    result = result.filter((p) => p.parcial === bancoParcialFiltro.value)
-  if (bancoDificultadFiltro.value)
-    result = result.filter((p) => p.dificultad === bancoDificultadFiltro.value)
-  if (bancoBusqueda.value) {
-    const q = bancoBusqueda.value.toLowerCase()
-    result = result.filter((p) => p.texto.toLowerCase().includes(q))
-  }
-  return result
+  return bancoPreguntasLocal.value
 })
 
-function abrirFormPregunta() {
-  editandoPregunta.value = null
-  formPregunta.value = {
-    texto: '',
-    opciones: ['', '', '', '', ''],
-    respuesta: '',
-    dificultad: '',
-    parcial: '',
-    fuente: '',
+async function cargarBancoPreguntas() {
+  if (!asignatura.value?.id) {
+    console.warn('cargarBancoPreguntas: Sin ID de asignatura')
+    return
   }
-  showFormPregunta.value = true
-}
+  
+  // DEBUG NOTIFICATION
+  const dismiss = $q.notify({
+    group: 'debug-banco',
+    spinner: true,
+    message: `Solicitando preguntas... (ID: ${asignatura.value.id})`,
+    color: 'indigo',
+    timeout: 0
+  })
 
-function editarPregunta(pregunta) {
-  editandoPregunta.value = pregunta
-  formPregunta.value = {
-    texto: pregunta.texto,
-    opciones: [...pregunta.opciones],
-    respuesta: pregunta.respuesta,
-    dificultad: pregunta.dificultad,
-    parcial: pregunta.parcial,
-    fuente: pregunta.fuente || '',
-  }
-  showFormPregunta.value = true
-}
-
-function guardarPregunta() {
-  if (editandoPregunta.value) {
-    const idx = bancoPreguntasLocal.value.findIndex((p) => p.id === editandoPregunta.value.id)
-    if (idx !== -1) {
-      bancoPreguntasLocal.value[idx] = { ...editandoPregunta.value, ...formPregunta.value }
-    }
-    $q.notify({ type: 'positive', message: 'Pregunta actualizada', icon: 'edit' })
-  } else {
-    bancoPreguntasLocal.value.push({
-      id: Date.now(),
-      ...formPregunta.value,
+  try {
+    const { data } = await api.get(`/banco-preguntas?asignatura_id=${asignatura.value.id}`)
+    bancoPreguntasLocal.value = data
+    
+    dismiss()
+    $q.notify({
+      group: 'debug-banco',
+      type: 'positive',
+      message: `Cargadas ${data.length} preguntas del servidor`,
+      timeout: 2000
     })
-    $q.notify({ type: 'positive', message: 'Pregunta agregada al banco', icon: 'add_circle' })
+  } catch (error) {
+    dismiss()
+    console.error('Error al cargar banco:', error)
+    $q.notify({
+      group: 'debug-banco',
+      type: 'negative',
+      message: `Error API: ${error.response?.status || 'Red'} - ${error.message}`
+    })
   }
-  showFormPregunta.value = false
 }
 
-function eliminarPregunta(pregunta) {
+function esOpcionCorrecta(pregunta, letra) {
+  const resp = pregunta.respuesta_correcta
+  if (Array.isArray(resp)) {
+    return resp.includes(letra)
+  }
+  return resp === letra
+}
+
+
+
+
+
+function confirmarBorrarPregunta(pregunta) {
   $q.dialog({
     title: 'Eliminar Pregunta',
-    message: `¿Eliminar esta pregunta del banco?: "${pregunta.texto.substring(0, 60)}..."`,
+    message: `¿Eliminar esta pregunta del banco?: "${pregunta.enunciado.substring(0, 60)}..."`,
     ok: { label: 'Eliminar', color: 'red', unelevated: true },
     cancel: { label: 'Cancelar', flat: true },
-  }).onOk(() => {
-    bancoPreguntasLocal.value = bancoPreguntasLocal.value.filter((p) => p.id !== pregunta.id)
-    $q.notify({ type: 'warning', message: 'Pregunta eliminada del banco' })
+  }).onOk(async () => {
+    try {
+      await api.delete(`/banco-preguntas/${pregunta.id}`)
+      await cargarBancoPreguntas()
+      $q.notify({ type: 'warning', message: 'Pregunta eliminada del banco' })
+    } catch {
+      $q.notify({ type: 'negative', message: 'Error al eliminar pregunta' })
+    }
   })
 }
 
@@ -3665,7 +3470,7 @@ async function descargarFormatoBanco() {
   wsInst.getColumn(1).width = 40
   wsInst.getColumn(2).width = 80
 
-  const titleRow = wsInst.addRow(['BANCO DE PREGUNTAS — GUÍA OFICIAL (V2)'])
+  const titleRow = wsInst.addRow(['BANCO DE PREGUNTAS — GUÍA OFICIAL (V3)'])
   titleRow.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }
   titleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4527A0' } }
 
@@ -3678,18 +3483,15 @@ async function descargarFormatoBanco() {
   }
 
   addGuideHeader('1. CÓDIGOS DE PREGUNTA (Columna TIPO)')
-  wsInst.addRow(['FV', 'Falso y Verdadero (Dificultad 1 - Fácil)'])
-  wsInst.addRow(['SS', 'Selección Simple - 1 respuesta correcta (Dificultad 2 - Medio)'])
-  wsInst.addRow(['EM', 'Emparejamiento (Dificultad 2 - Medio)'])
-  wsInst.addRow(['SM', 'Selección Múltiple - varias respuestas (Dificultad 3 - Difícil)'])
-  wsInst.addRow(['PR', 'Problema (Enunciado de contexto para subpreguntas)'])
-  wsInst.addRow(['SP', 'Subpregunta (Asociada a un PR mediante GRUPO_ID)'])
+  wsInst.addRow(['FV', 'Falso y Verdadero'])
+  wsInst.addRow(['SS', 'Selección Simple - 1 respuesta correcta'])
+  wsInst.addRow(['SM', 'Selección Múltiple - varias respuestas'])
   wsInst.addRow([])
 
   addGuideHeader('2. RESPUESTAS VÁLIDAS')
-  wsInst.addRow(['Opciones (SS, SM, SP)', 'Letras: A, B, C, D o E'])
+  wsInst.addRow(['Opciones (SS)', 'Una sola letra (A, B, C, D o E) según corresponda.'])
+  wsInst.addRow(['Opciones (SM)', 'Múltiples letras separadas por coma (ej: A,C,D).'])
   wsInst.addRow(['Falso/Verdadero (FV)', 'Letras: A (Verdadero), B (Falso)'])
-  wsInst.addRow(['Emparejar (EM)', 'Formato: A-1, B-2, C-3 (Letra del inciso-Número de respuesta)'])
   wsInst.addRow([])
 
   addGuideHeader('3. CONFIGURACIÓN DEL EXAMEN')
@@ -3708,7 +3510,6 @@ async function descargarFormatoBanco() {
   // Cabeceras
   const headers = [
     'tipo',
-    'grupo_id',
     'enunciado',
     'opcion_a',
     'opcion_b',
@@ -3733,8 +3534,9 @@ async function descargarFormatoBanco() {
     }
   })
 
-  const addPreguntaRow = (tipo, dif, parcial, enunciadoText, grupoId = '') => {
-    const row = wsBanco.addRow([tipo, grupoId, enunciadoText, '', '', '', '', '', '', dif, parcial])
+  const addPreguntaRow = (tipo, dif, parcial, enunciadoText) => {
+    // 0:tipo, 1:enunciado, 2:opA, 3:opB, 4:opC, 5:opD, 6:opE, 7:resp, 8:dificultad, 9:parcial
+    const row = wsBanco.addRow([tipo, enunciadoText, '', '', '', '', '', '', dif, parcial])
     row.getCell(1).font = { bold: true }
     if (tipo === 'PR')
       row.eachCell(
@@ -3753,36 +3555,20 @@ async function descargarFormatoBanco() {
   const c = bancoConfig.value
   const p = '1P' // Default
 
-  // Nivel 1: FV
+  // Nivel dinámico: FV
   for (let i = 0; i < c.fv; i++)
-    addPreguntaRow('FV', '1', p, 'Indica si la afirmación es verdadera (V) o falsa (F).')
+    addPreguntaRow('FV', c.dif_fv, p, 'Indica si la afirmación es verdadera (V) o falsa (F).')
 
-  // Nivel 2: SS y EM
+  // Nivel dinámico: SS
   for (let i = 0; i < c.ss; i++)
-    addPreguntaRow('SS', '2', p, 'Selecciona la opción correcta entre las alternativas.')
-  for (let i = 0; i < c.em; i++)
-    addPreguntaRow('EM', '2', p, 'Relaciona los elementos de ambas columnas.', `EM-${i + 1}`)
+    addPreguntaRow('SS', c.dif_ss, p, 'Selecciona la opción correcta entre las alternativas.')
 
-  // Nivel 3: SM y PR
+  // Nivel dinámico: SM
   for (let i = 0; i < c.sm; i++)
-    addPreguntaRow('SM', '3', p, 'Selecciona una o más opciones correctas.')
-  for (let i = 0; i < c.pr; i++) {
-    const gId = `PR-${i + 1}`
-    addPreguntaRow(
-      'PR',
-      '3',
-      p,
-      'CASO/CONTEXTO: Lea detenidamente el siguiente párrafo para responder.',
-      gId,
-    )
-    for (let j = 0; j < c.sp_por_pr; j++) {
-      addPreguntaRow('SP', '3', p, 'Pregunta relacionada al caso anterior:', gId)
-    }
-  }
+    addPreguntaRow('SM', c.dif_sm, p, 'Selecciona una o más opciones correctas.')
 
   wsBanco.columns = [
     { width: 10 },
-    { width: 12 },
     { width: 60 },
     { width: 25 },
     { width: 25 },
@@ -3803,18 +3589,15 @@ async function descargarFormatoBanco() {
     cell.alignment = { vertical: 'middle', horizontal: 'center' }
   })
 
-  const addEjRow = (tipo, dif, parc, enun, r, opCodes = [], gId = '') => {
-    const rowData = [tipo, gId, enun, ...opCodes, r, dif, parc]
-    while (rowData.length < headers.length) rowData.splice(rowData.length - 2, 0, '')
+  const addEjRow = (tipo, dif, parc, enun, r, ops = []) => {
+    // Columnas: tipo(1), enunciado(2), op_a(3), op_b(4), op_c(5), op_d(6), op_e(7), r_corr(8), dif(9), parc(10)
+    const rowData = [tipo, enun, '', '', '', '', '', r, dif, parc]
+    // Rellenamos opciones si existen (máximo 5)
+    for (let i = 0; i < Math.min(ops.length, 5); i++) {
+      rowData[2 + i] = ops[i]
+    }
     const row = wsEj.addRow(rowData)
-    if (tipo === 'PR')
-      row.eachCell(
-        (c) => (c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3E0' } }),
-      )
-    if (tipo === 'SP')
-      row.eachCell(
-        (c) => (c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } }),
-      )
+    row.getCell(1).font = { bold: true }
   }
 
   // Ejemplos FV
@@ -3843,22 +3626,6 @@ async function descargarFormatoBanco() {
     'Venus',
   ])
 
-  // Ejemplos EM
-  addEjRow(
-    'EM',
-    '2',
-    '1P',
-    'Relacione los países con sus respectivas capitales.',
-    'A-1,B-2,C-3,D-4',
-    ['A: Bolivia, B: Perú', 'C: Chile, D: Brasil', '1: Sucre, 2: Lima', '3: Santiago, 4: Brasilia'],
-  )
-  addEjRow('EM', '2', '1P', 'Relacione los elementos químicos con su categoría.', 'A-1,B-2,C-3', [
-    'A: Hierro, B: Oxígeno',
-    'C: Neón',
-    '1: Metal, 2: No-metal',
-    '3: Gas Noble',
-  ])
-
   // Ejemplos SM
   addEjRow(
     'SM',
@@ -3876,54 +3643,6 @@ async function descargarFormatoBanco() {
     'Cochabamba',
   ])
 
-  // Ejemplos PR/SP
-  addEjRow(
-    'PR',
-    '3',
-    '1P',
-    'CASO: El ciclo del agua es el proceso continuo de circulación del agua en la Tierra...',
-    '',
-    [],
-    'CASO-01',
-  )
-  addEjRow(
-    'SP',
-    '3',
-    '1P',
-    '¿Cómo se llama el proceso cuando el agua líquida se convierte en gas?',
-    'A',
-    ['Evaporación', 'Condensación', 'Solidificación', 'Fusión'],
-    'CASO-01',
-  )
-  addEjRow(
-    'SP',
-    '3',
-    '1P',
-    '¿Qué fuente de energía principal impulsa el ciclo del agua?',
-    'C',
-    ['La Luna', 'El Viento', 'El Sol', 'La Gravedad'],
-    'CASO-01',
-  )
-
-  addEjRow(
-    'PR',
-    '3',
-    '1P',
-    'CASO: La Guerra del Pacífico fue un conflicto armado acontecido entre 1879 y 1884...',
-    '',
-    [],
-    'CASO-02',
-  )
-  addEjRow(
-    'SP',
-    '3',
-    '1P',
-    '¿Entre qué países se libró principalmente este conflicto?',
-    'B',
-    ['Bolivia y Perú', 'Chile contra Bolivia y Perú', 'Chile y Argentina', 'Perú y Ecuador'],
-    'CASO-02',
-  )
-
   wsEj.columns = wsBanco.columns
 
   const buffer = await workbook.xlsx.writeBuffer()
@@ -3935,7 +3654,7 @@ async function descargarFormatoBanco() {
   link.download = `formato_banco_V2_${asignatura.value?.sigla || 'asig'}.xlsx`
   link.click()
 
-  $q.notify({ type: 'positive', message: 'Excel V2 generado exitosamente', icon: 'check_circle' })
+  $q.notify({ type: 'positive', message: 'Excel V3 generado exitosamente', icon: 'check_circle' })
 }
 
 async function descargarFormatoYSalir() {
@@ -3951,33 +3670,39 @@ const archivoPreviewBanco = ref(null)
 const preguntasImportadas = ref([])
 const importErrores = ref([])
 const importandoBanco = ref(false)
-const modoImportacion = ref('agregar')
+const modoImportacion = ref('reemplazar')
 const importStats = ref({
   total: 0,
-  opcion_multiple: 0,
-  emparejamiento: 0,
-  problema: 0,
-  sub_pregunta: 0,
+  faciles: 0,
+  medios: 0,
+  dificiles: 0,
+})
+
+const validacionDistribucion = computed(() => {
+  return (
+    importStats.value.faciles >= 10 &&
+    importStats.value.medios >= 40 &&
+    importStats.value.dificiles >= 10
+  )
 })
 
 // Mapping de columnas del Excel (orden igual que el formato descargado)
 const COLS = {
   tipo: 0,
-  grupo_id: 1,
-  enunciado: 2,
-  opcion_a: 3,
-  opcion_b: 4,
-  opcion_c: 5,
-  opcion_d: 6,
-  opcion_e: 7,
-  respuesta_correcta: 8,
-  dificultad: 9,
-  parcial: 10,
-  unidad: 11,
-  puntaje: 12,
+  enunciado: 1,
+  opcion_a: 2,
+  opcion_b: 3,
+  opcion_c: 4,
+  opcion_d: 5,
+  opcion_e: 6,
+  respuesta_correcta: 7,
+  dificultad: 8,
+  parcial: 9,
+  unidad: 10,
+  puntaje: 11,
 }
 
-const TIPOS_VALIDOS = ['fv', 'ss', 'em', 'sm', 'pr', 'sp']
+const TIPOS_VALIDOS = ['fv', 'ss', 'sm']
 const DIFICULTAD_MAP = { 1: '1', 2: '2', 3: '3' }
 const PARCIAL_MAP = { '1p': '1P', '2p': '2P', ef: 'EF', '2i': '2I' }
 
@@ -4035,7 +3760,6 @@ function previsualizarArchivoExcel(file) {
           }
 
           const enunciado = String(row[COLS.enunciado] || '').trim()
-          const grupoId = String(row[COLS.grupo_id] || '').trim()
           const respuesta = String(row[COLS.respuesta_correcta] || '')
             .trim()
             .toUpperCase()
@@ -4049,7 +3773,7 @@ function previsualizarArchivoExcel(file) {
           const parcial = PARCIAL_MAP[parcialRaw] || parcialRaw
 
           // Validar campos requeridos por tipo
-          if (['ss', 'sm', 'fv', 'sp'].includes(tipo)) {
+          if (['ss', 'sm', 'fv'].includes(tipo)) {
             if (
               !respuesta ||
               (!['A', 'B', 'C', 'D', 'E'].includes(respuesta) && !respuesta.includes(','))
@@ -4061,26 +3785,9 @@ function previsualizarArchivoExcel(file) {
             }
           }
 
-          if (tipo === 'sp' && !grupoId) {
-            errores.push(
-              `Fila ${lineNum}: subpregunta (sp) requiere grupo_id para asociarse a un problema`,
-            )
-            return
-          }
-
-          if (tipo === 'em') {
-            if (!respuesta.includes('-')) {
-              errores.push(
-                `Fila ${lineNum}: emparejamiento (em) requiere respuesta en formato A-3,B-1,C-2,...`,
-              )
-              return
-            }
-          }
-
           preguntas.push({
             id: Date.now() + idx + Math.random(),
             tipo,
-            grupo_id: grupoId,
             enunciado,
             opciones: [
               String(row[COLS.opcion_a] || ''),
@@ -4095,10 +3802,12 @@ function previsualizarArchivoExcel(file) {
           })
         })
 
-        // Calcular stats
-        const stats = { total: preguntas.length, fv: 0, ss: 0, sm: 0, em: 0, pr: 0, sp: 0 }
+        // Calcular stats por dificultad
+        const stats = { total: preguntas.length, faciles: 0, medios: 0, dificiles: 0 }
         preguntas.forEach((p) => {
-          if (stats[p.tipo] !== undefined) stats[p.tipo]++
+          if (p.dificultad === '1') stats.faciles++
+          else if (p.dificultad === '2') stats.medios++
+          else if (p.dificultad === '3') stats.dificiles++
         })
 
         preguntasImportadas.value = preguntas
@@ -4121,38 +3830,58 @@ function previsualizarArchivoExcel(file) {
   reader.readAsArrayBuffer(file)
 }
 
-function confirmarImportacionBanco() {
-  if (preguntasImportadas.value.length === 0) return
+async function confirmarImportacionBanco() {
+  if (preguntasImportadas.value.length === 0 || !archivoBancoFile.value) return
   importandoBanco.value = true
 
-  setTimeout(() => {
-    // Modo reemplazar: limpiar banco actual
-    if (modoImportacion.value === 'reemplazar') {
-      bancoPreguntasLocal.value = []
+  try {
+    const formData = new FormData()
+    formData.append('file', archivoBancoFile.value)
+    formData.append('asignatura_id', asignatura.value.id)
+
+    // Inyectar docente_id de la carpeta o del usuario logueado
+    const dId = route.query.docente_id || authStore.usuarioActual?.docente?.id || authStore.usuarioActual?.docente_id
+    if (dId) {
+      formData.append('docente_id', dId)
     }
 
-    // Agregar preguntas (solo opcion_multiple y sub_pregunta van a la lista individual;
-    // problema y emparejamiento también se guardan para futura visualización agrupada)
-    const nuevas = preguntasImportadas.value.map((p) => ({
-      ...p,
-      id: Date.now() + Math.random(),
-    }))
-    bancoPreguntasLocal.value.push(...nuevas)
+    if (modoImportacion.value === 'reemplazar') {
+      formData.append('modo', 'reemplazar') // El backend puede manejar esto para limpiar antes de insertar
+    }
 
-    const modo = modoImportacion.value === 'reemplazar' ? 'reemplazado' : 'agregado'
-    $q.notify({
-      type: 'positive',
-      message: `Banco ${modo}: ${nuevas.length} pregunta(s) importada(s)`,
-      icon: 'upload',
-      caption:
-        importErrores.value.length > 0
-          ? `${importErrores.value.length} fila(s) con errores fueron omitidas`
-          : 'Importación completada sin errores',
+    const response = await api.post('/banco-preguntas/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     })
 
+    if (response.data.success) {
+      $q.notify({
+        type: 'positive',
+        message: response.data.message || 'Banco actualizado correctamente',
+        icon: 'cloud_done',
+      })
+
+      // Opcional: Recargar preguntas desde el servidor si existe un index
+      await cargarBancoPreguntas() 
+
+      // Por ahora, para feedback inmediato, actualizamos el local mock con lo que procesó el backend
+      // o simplemente limpiamos y cerramos
+      store.setAsignaturaActual(asignatura.value.id) // Refrescar asignatura/datos
+      
+      cerrarDialogImportBanco()
+    } else {
+      throw new Error(response.data.error || 'Error desconocido en el servidor')
+    }
+  } catch (error) {
+    console.error('Error al importar banco:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo completar la importación',
+      caption: error.response?.data?.error || error.message,
+      icon: 'error',
+    })
+  } finally {
     importandoBanco.value = false
-    cerrarDialogImportBanco()
-  }, 600)
+  }
 }
 
 function cerrarDialogImportBanco() {
@@ -4161,7 +3890,7 @@ function cerrarDialogImportBanco() {
   archivoPreviewBanco.value = null
   preguntasImportadas.value = []
   importErrores.value = []
-  importStats.value = { total: 0, fv: 0, ss: 0, sm: 0, em: 0, pr: 0, sp: 0 }
+  importStats.value = { total: 0, faciles: 0, medios: 0, dificiles: 0 }
 }
 
 function getChipColorTipo(tipo) {

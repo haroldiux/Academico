@@ -373,6 +373,25 @@
                         </div>
                       </template>
 
+                      <!-- Columna Preguntas 1P -->
+                      <template v-else-if="col.name === 'preguntas_1p'">
+                        <div v-if="props.row.preguntas_1p_stats" class="row q-gutter-xs justify-center">
+                          <q-chip size="xs" color="blue-1" text-color="blue-9" dense>
+                            F: {{ props.row.preguntas_1p_stats.faciles }}
+                            <q-tooltip>Fáciles (1P)</q-tooltip>
+                          </q-chip>
+                          <q-chip size="xs" color="orange-1" text-color="orange-9" dense>
+                            M: {{ props.row.preguntas_1p_stats.medias }}
+                            <q-tooltip>Medias (1P)</q-tooltip>
+                          </q-chip>
+                          <q-chip size="xs" color="red-1" text-color="red-9" dense>
+                            D: {{ props.row.preguntas_1p_stats.dificiles }}
+                            <q-tooltip>Difíciles (1P)</q-tooltip>
+                          </q-chip>
+                        </div>
+                        <div v-else class="text-grey-4">-</div>
+                      </template>
+
                       <!-- Columna Estado -->
                       <template v-else-if="col.name === 'estado'">
                         <q-chip
@@ -557,6 +576,24 @@
                                 </q-icon>
                               </div>
                             </div>
+                          </q-item-section>
+
+                          <q-item-section>
+                            <div class="row q-gutter-xs justify-center" v-if="docente.preguntas_1p_stats">
+                              <q-chip size="xs" color="blue-1" text-color="blue-9" outline dense>
+                                F: {{ docente.preguntas_1p_stats.faciles }}
+                              </q-chip>
+                              <q-chip size="xs" color="orange-1" text-color="orange-9" outline dense>
+                                M: {{ docente.preguntas_1p_stats.medias }}
+                              </q-chip>
+                              <q-chip size="xs" color="red-1" text-color="red-9" outline dense>
+                                D: {{ docente.preguntas_1p_stats.dificiles }}
+                              </q-chip>
+                              <div class="text-caption text-grey-6 q-ml-xs">
+                                Total: {{ docente.preguntas_1p_stats.total }}
+                              </div>
+                            </div>
+                            <div v-else class="text-caption text-grey-4 text-center">Sin preguntas 1P</div>
                           </q-item-section>
 
                           <q-item-section side>
@@ -968,6 +1005,13 @@ const columnasAsignaturas = [
     align: 'center',
     sortable: true,
     style: 'width: 180px',
+  },
+  {
+    name: 'preguntas_1p',
+    label: 'Preguntas 1P',
+    field: 'preguntas_1p_stats',
+    align: 'center',
+    style: 'width: 150px',
   },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 100px' },
   {
