@@ -309,31 +309,107 @@
       </div>
     </q-card>
 
-    <!-- Diálogo Confirmación Sincronización -->
+    <!-- Diálogo Sincronización -->
     <q-dialog v-model="dialogSincronizar" persistent>
-      <q-card style="min-width: 460px">
-        <q-card-section class="bg-primary text-white">
-          <div class="text-h6 flex items-center gap-2">
-            <q-icon name="sync" class="q-mr-sm" />
-            Sincronizar API Planning
+      <q-card style="min-width: 680px; max-width: 96vw">
+        <q-card-section class="bg-primary text-white q-pb-sm">
+          <div class="row items-center justify-between">
+            <div class="text-h6">
+              <q-icon name="sync" class="q-mr-sm" />
+              Sincronizar API Planning — Cochabamba
+            </div>
+            <q-btn flat round dense icon="close" color="white" @click="cerrarDialogoSincronizar" />
           </div>
+          <div class="text-caption text-blue-2">Gestión: {{ filtros.gestion }}</div>
         </q-card-section>
 
-        <q-card-section class="q-pt-md">
-          <div class="text-body1 q-mb-sm">
-            Esta acción descargará las mallas curriculares del Plan N para
-            <strong>todas las carreras de Cochabamba</strong> desde la API de
-            Planning y las guardará en la base de datos local.
+        <!-- Estado por carrera -->
+        <q-card-section class="q-pa-sm">
+          <div class="row items-center justify-between q-px-sm q-mb-xs">
+            <span class="text-subtitle2 text-grey-8">Estado por carrera</span>
+            <div class="row gap-sm">
+              <q-chip dense color="positive" text-color="white" size="sm">
+                <q-icon name="check" size="xs" class="q-mr-xs" />
+                {{ syncCarreras.filter(c => c.sincronizado).length }} con datos
+              </q-chip>
+              <q-chip dense color="warning" text-color="white" size="sm">
+                <q-icon name="warning" size="xs" class="q-mr-xs" />
+                {{ syncCarreras.filter(c => !c.sincronizado).length }} sin datos
+              </q-chip>
+            </div>
           </div>
-          <q-banner class="bg-warning text-white q-mb-md" rounded>
+
+          <q-scroll-area style="height: 280px">
+            <q-list dense separator>
+              <q-item
+                v-for="carrera in syncCarreras"
+                :key="carrera.codigo"
+                class="q-py-xs"
+              >
+                <q-item-section avatar style="min-width: 40px">
+                  <q-icon
+                    :name="carrera.sincronizando ? 'hourglass_empty'
+                          : carrera.sincronizado ? 'check_circle'
+                          : carrera.error ? 'error'
+                          : 'radio_button_unchecked'"
+                    :color="carrera.sincronizando ? 'blue'
+                           : carrera.sincronizado ? 'positive'
+                           : carrera.error ? 'negative'
+                           : 'grey-4'"
+                    :class="{ 'rotating': carrera.sincronizando }"
+                  />
+                </q-item-section>
+
+                <q-item-section>
+                  <q-item-label class="text-weight-medium" style="font-size:0.85rem">
+                    {{ carrera.codigo }}
+                  </q-item-label>
+                  <q-item-label caption>
+                    <span v-if="carrera.sincronizando" class="text-blue">Sincronizando...</span>
+                    <span v-else-if="carrera.sincronizado" class="text-positive">
+                      {{ carrera.registros_en_bd }} registros
+                      <span v-if="carrera.sincronizado_at" class="text-grey-6">
+                        · {{ formatFecha(carrera.sincronizado_at) }}
+                      </span>
+                    </span>
+                    <span v-else-if="carrera.error" class="text-negative">{{ carrera.error }}</span>
+                    <span v-else class="text-grey-6">Sin datos en BD</span>
+                  </q-item-label>
+                </q-item-section>
+
+                <q-item-section side>
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    icon="refresh"
+                    size="sm"
+                    color="primary"
+                    :loading="carrera.sincronizando"
+                    :disable="sincronizando"
+                    @click="sincronizarCarreraIndividual(carrera.codigo)"
+                  >
+                    <q-tooltip>Re-sincronizar solo {{ carrera.codigo }}</q-tooltip>
+                  </q-btn>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-scroll-area>
+        </q-card-section>
+
+        <q-separator />
+
+        <!-- Confirmación para sync masivo -->
+        <q-card-section class="q-pt-sm q-pb-sm">
+          <q-banner class="bg-orange-1 text-orange-10 q-mb-sm" rounded dense>
             <template v-slot:avatar>
-              <q-icon name="warning" />
+              <q-icon name="warning" color="orange" />
             </template>
-            Los datos anteriores de la gestión
-            <strong>{{ filtros.gestion }}</strong> serán reemplazados.
+            Sincronizar todas reemplaza los datos actuales de la gestión
+            <strong>{{ filtros.gestion }}</strong>.
           </q-banner>
-          <div class="text-body2 text-grey-8 q-mb-sm">
-            Para confirmar, escribe <strong>sincronizar</strong> en el campo:
+          <div class="text-body2 text-grey-8 q-mb-xs">
+            Para sincronizar <strong>todas</strong>, escribe <strong>sincronizar</strong>:
           </div>
           <q-input
             v-model="confirmacionTexto"
@@ -343,17 +419,16 @@
             :error="confirmacionError"
             error-message="Escribe exactamente 'sincronizar'"
             @keyup.enter="ejecutarSincronizacion"
-            autofocus
           />
         </q-card-section>
 
-        <q-card-actions align="right" class="text-primary q-pb-md q-pr-md">
-          <q-btn flat label="Cancelar" @click="cerrarDialogoSincronizar" />
+        <q-card-actions align="right" class="q-pb-md q-pr-md">
+          <q-btn flat label="Cerrar" @click="cerrarDialogoSincronizar" />
           <q-btn
             color="primary"
             icon="sync"
-            label="Confirmar Sincronización"
-            :disable="confirmacionTexto !== 'sincronizar'"
+            label="Sincronizar Todas"
+            :disable="confirmacionTexto !== 'sincronizar' || sincronizando"
             @click="ejecutarSincronizacion"
             :loading="sincronizando"
             unelevated
@@ -418,13 +493,33 @@ const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
 const asignaturasStore = useAsignaturasStore()
 
-// Mapeo de carreras a códigos API externos (como fallback)
+// Mapeo de carreras a códigos API externos (fallback por nombre)
+// Fuente de verdad: campo `codigo` en la tabla carreras de la BD
 const CARRERAS_API_MAP = {
-  enfermería: 'carenl',
-  'licenciatura en enfermería': 'carenl',
-  sistemas: 'carsis',
+  'administración de empresas': 'caradm',
+  'arte y escultura': 'caraye',
+  'bioquímica y farmacia': 'carbyf',
+  'complementaria en administración': 'carcad',
+  'complementaria contaduría': 'carccp',
+  'complementaria ingeniería comercial': 'carcic',
+  'cinematografía': 'carcne',
+  'contaduría pública': 'carcpu',
+  'comunicación social': 'carcso',
+  'derecho': 'carder',
+  'economía': 'careco',
+  'ingeniería electronica': 'carele',
+  'enfermería': 'carenl',
+  'fisioterapia': 'carfis',
+  'fonoaudiologia': 'carfon',
+  'ingeniería biomédica': 'caribi',
+  'ingeniería comercial': 'carico',
+  'medicina veterinaria': 'carvet',
+  'medicina': 'carmed',
+  'nutrición': 'carnyd',
+  'odontología': 'carodo',
+  'protesis dental': 'carpro',
   'ingeniería de sistemas': 'carsis',
-  // agregar más según necesidad
+  'ingeniería de sonido': 'carson',
 }
 
 // Helper para obtener código API de carrera
@@ -472,6 +567,7 @@ const dialogSincronizar = ref(false)
 const confirmacionTexto = ref('')
 const confirmacionError = ref(false)
 const ultimoSync = ref(null) // fecha de último sync exitoso
+const syncCarreras = ref([]) // estado por carrera en el diálogo
 
 // Opciones de filtro
 const carrerasFiltradas = ref([])
@@ -917,16 +1013,80 @@ async function fetchMallas() {
   }
 }
 
-function abrirDialogoSincronizar() {
+async function abrirDialogoSincronizar() {
   confirmacionTexto.value = ''
   confirmacionError.value = false
   dialogSincronizar.value = true
+  await cargarEstadoCarreras()
 }
 
 function cerrarDialogoSincronizar() {
   dialogSincronizar.value = false
   confirmacionTexto.value = ''
   confirmacionError.value = false
+}
+
+async function cargarEstadoCarreras() {
+  try {
+    const res = await api.get('/planning/sync-status', {
+      params: { gestion: filtros.value.gestion },
+    })
+    if (res.data.success) {
+      // Combinar la lista del servidor con estado de sincronizando=false
+      syncCarreras.value = (res.data.carreras || []).map((c) => ({
+        ...c,
+        sincronizando: false,
+        error: null,
+      }))
+    }
+  } catch {
+    // silencioso
+  }
+}
+
+function formatFecha(fecha) {
+  if (!fecha) return ''
+  return new Date(fecha).toLocaleString('es-BO', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+async function sincronizarCarreraIndividual(codigo) {
+  const carrera = syncCarreras.value.find((c) => c.codigo === codigo)
+  if (!carrera) return
+
+  carrera.sincronizando = true
+  carrera.error = null
+
+  try {
+    const res = await api.post('/planning/sincronizar-carrera', {
+      gestion: filtros.value.gestion,
+      carrera_codigo: codigo,
+    })
+
+    if (res.data.success) {
+      carrera.sincronizado = true
+      carrera.registros_en_bd = res.data.resultado?.registros ?? 0
+      carrera.sincronizado_at = new Date().toISOString()
+      $q.notify({
+        type: 'positive',
+        message: `${codigo} sincronizada: ${carrera.registros_en_bd} registros`,
+        position: 'top-right',
+      })
+    } else {
+      carrera.error = res.data.message || 'Error desconocido'
+      $q.notify({ type: 'negative', message: `Error en ${codigo}: ${carrera.error}`, position: 'top-right' })
+    }
+  } catch (e) {
+    carrera.error = e.response?.data?.message || 'Error de conexión'
+    $q.notify({ type: 'negative', message: `Error en ${codigo}`, position: 'top-right' })
+  } finally {
+    carrera.sincronizando = false
+    // Si hay filtros activos y es la carrera seleccionada, recargar tabla
+    const carreraActual = carrerasStore.carreras.find((c) => c.id === filtros.value.carrera)
+    const codigoActual = getCarreraApiCode(carreraActual)
+    if (codigoActual?.toUpperCase() === codigo && filtros.value.sede && filtros.value.carrera) {
+      await fetchMallas()
+    }
+  }
 }
 
 async function ejecutarSincronizacion() {
@@ -946,13 +1106,32 @@ async function ejecutarSincronizacion() {
     cerrarDialogoSincronizar()
 
     if (response.data.success) {
+      // Actualizar el estado visual de cada carrera con los resultados
+      if (response.data.resultados) {
+        response.data.resultados.forEach((r) => {
+          const carrera = syncCarreras.value.find((c) => c.codigo === r.codigo)
+          if (carrera) {
+            carrera.sincronizado = r.status === 'ok'
+            carrera.registros_en_bd = r.registros ?? 0
+            carrera.error = r.status === 'error' ? r.mensaje : null
+            if (r.status === 'ok') carrera.sincronizado_at = new Date().toISOString()
+          }
+        })
+      }
+
+      confirmacionTexto.value = ''
+
+      const conDatos = (response.data.resultados || []).filter((r) => r.status === 'ok').length
+      const sinDatos = (response.data.resultados || []).filter((r) => r.status === 'sin_datos').length
+      const conError = (response.data.resultados || []).filter((r) => r.status === 'error').length
+
       $q.notify({
         type: 'positive',
         icon: 'check_circle',
         message: response.data.message,
-        caption: `${response.data.total_carreras} carreras · ${response.data.total_registros} registros`,
+        caption: `${conDatos} con datos · ${sinDatos} sin datos · ${conError} errores`,
         position: 'top-right',
-        timeout: 6000,
+        timeout: 7000,
       })
 
       // Si hay filtros activos, recargar la tabla automáticamente
@@ -1253,5 +1432,20 @@ onMounted(async () => {
   .stats-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* Ícono giratorio para sincronización en curso */
+.rotating {
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Chips del resumen en el diálogo */
+.gap-sm {
+  gap: 6px;
 }
 </style>
