@@ -239,7 +239,7 @@ export function usePermisos() {
     }
 
     if (esAdmin.value || esSuperAdmin.value) {
-      return [
+      const items = [
         ...itemsBase,
         { label: 'Usuarios', icon: 'people', to: '/admin/usuarios' },
         { label: 'Roles', icon: 'admin_panel_settings', to: '/admin/roles' },
@@ -268,6 +268,15 @@ export function usePermisos() {
           to: '/admin/recuperacion-manual',
         },
       ]
+      // Sincronización solo para SUPER_ADMIN
+      if (esSuperAdmin.value) {
+        items.push({
+          label: 'Sincronización',
+          icon: 'sync',
+          to: '/admin/sincronizacion',
+        })
+      }
+      return items
     }
 
     return itemsBase

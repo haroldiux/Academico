@@ -349,6 +349,15 @@ const routes = [
               rol: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'],
             },
           },
+          {
+            path: 'sincronizacion',
+            name: 'sincronizacion',
+            component: () => import('pages/admin/SincronizacionPage.vue'),
+            meta: {
+              title: 'Sincronización Académica',
+              rol: ['SUPER_ADMIN'],
+            },
+          },
         ],
       },
       // Documentación
