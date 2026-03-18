@@ -712,7 +712,7 @@
             </div>
             <div class="row q-gutter-sm">
               <q-btn unelevated color="white" text-color="deep-purple-9" icon="upload_file" label="Subir Banco (Excel)"
-                no-caps @click="showSubirBanco = true" />
+                no-caps @click="showSubirBanco = true" disable />
             </div>
           </div>
 
@@ -732,7 +732,7 @@
               para cargarlo al sistema.
               <template v-slot:action>
                 <q-btn unelevated color="indigo" icon="download" label="Descargar Excel Base" no-caps
-                  @click="descargarFormatoBanco" />
+                  @click="descargarFormatoBanco" disable />
               </template>
             </q-banner>
 
