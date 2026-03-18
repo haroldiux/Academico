@@ -10,22 +10,7 @@
         <p class="page-subtitle">Crea y administra exámenes desde el banco de preguntas</p>
       </div>
       <div class="header-actions">
-        <q-btn
-          outline
-          color="green"
-          icon="upload_file"
-          label="Importar Horarios"
-          no-caps
-          @click="showImportDialog = true"
-        />
-        <q-btn
-          unelevated
-          color="orange"
-          icon="add"
-          label="Nueva Evaluación"
-          no-caps
-          @click="openDialog()"
-        />
+        <!-- Botones de importación y creación eliminados por requerimiento -->
       </div>
     </div>
 
