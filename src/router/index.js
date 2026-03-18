@@ -48,8 +48,11 @@ export default defineRouter(function (/* { store, ssrContext } */) {
 
     // 2. Redirección si ya está logueado
     if (to.name === 'login' && token) {
-      // Redirigir al dashboard según rol (si existe lógica) o al home
-      return next({ name: 'dashboard' }) // O usar user.rol para redirigir a dashboard específico
+      // Docentes van a Mis Asignaturas, el resto al dashboard
+      if (user?.rol === 'DOCENTE') {
+        return next({ path: '/documentacion' })
+      }
+      return next({ name: 'dashboard' })
     }
 
     // 3. Verificación de Roles (Autorización)

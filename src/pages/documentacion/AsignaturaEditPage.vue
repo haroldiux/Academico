@@ -155,11 +155,11 @@
         indicator-color="primary"
         align="left"
       >
-        <q-tab name="datos" icon="description" label="Datos de Asignatura" no-caps />
-        <q-tab name="programa" icon="assignment" label="Programa" no-caps />
-        <q-tab name="bibliografia" icon="auto_stories" label="Bibliografía" no-caps />
-        <q-tab name="unidades" icon="folder_open" label="Unidades de Aprendizaje" no-caps />
-        <q-tab name="cronograma" icon="calendar_month" label="Cronograma de Asignatura" no-caps />
+        <q-tab v-if="authStore.rol !== 'DOCENTE'" name="datos" icon="description" label="Datos de Asignatura" no-caps />
+        <q-tab v-if="authStore.rol !== 'DOCENTE'" name="programa" icon="assignment" label="Programa" no-caps />
+        <q-tab v-if="authStore.rol !== 'DOCENTE'" name="bibliografia" icon="auto_stories" label="Bibliografía" no-caps />
+        <q-tab v-if="authStore.rol !== 'DOCENTE'" name="unidades" icon="folder_open" label="Unidades de Aprendizaje" no-caps />
+        <q-tab v-if="authStore.rol !== 'DOCENTE'" name="cronograma" icon="calendar_month" label="Cronograma de Asignatura" no-caps />
         <q-tab name="banco" icon="help_outline" label="Banco de Preguntas" no-caps />
       </q-tabs>
 
@@ -1210,7 +1210,7 @@
             <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
               <template v-slot:avatar><q-icon name="info" /></template>
               Configura y descarga el formato Excel para cargar preguntas masivamente. El formato se
-              adaptará a la distribución que definas (mínimo 100 preguntas).
+              adaptará a la distribución que definas (mínimo 60 preguntas).
               <template v-slot:action>
                 <q-btn
                   unelevated
@@ -2365,11 +2365,14 @@ const authStore = useAuthStore()
 
 // Estado
 // Leer el tab inicial desde los query params (para volver al tab correcto desde TemaEditPage)
-const tabInicial =
-  route.query.tab &&
-  ['datos', 'programa', 'bibliografia', 'unidades', 'cronograma'].includes(route.query.tab)
+// Para docentes, forzar siempre el tab "banco" ya que los demás están ocultos
+const tabInicial = (() => {
+  if (authStore.rol === 'DOCENTE') return 'banco'
+  return route.query.tab &&
+    ['datos', 'programa', 'bibliografia', 'unidades', 'cronograma'].includes(route.query.tab)
     ? route.query.tab
     : 'datos'
+})()
 const tabActual = ref(tabInicial)
 const asignatura = computed(() => store.asignaturaActual)
 

@@ -236,7 +236,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from 'src/stores/auth'
+import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useQuasar } from 'quasar'
 
 const router = useRouter()
@@ -280,7 +280,9 @@ async function handleLogin() {
         position: 'top',
         timeout: 2500,
       })
-      router.push('/')
+      // Docentes van directamente a Mis Asignaturas
+      const destino = result.usuario.rol === ROLES.DOCENTE ? '/documentacion' : '/'
+      router.push(destino)
     }
   } else {
     error.value = result.error
@@ -297,7 +299,9 @@ async function handleChangePassword() {
   if (result.success) {
     showChangePassword.value = false
     $q.notify({ type: 'positive', message: '¡Contraseña actualizada!', position: 'top' })
-    router.push('/')
+    // Docentes van directamente a Mis Asignaturas
+    const destino = authStore.rol === ROLES.DOCENTE ? '/documentacion' : '/'
+    router.push(destino)
   } else {
     changeError.value = result.error
   }

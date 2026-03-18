@@ -192,8 +192,8 @@
               </div>
             </div>
 
-            <!-- Info Grid -->
-            <div class="row q-col-gutter-sm q-mb-md">
+            <!-- Info Grid: oculto para docentes -->
+            <div v-if="authStore.rol !== 'DOCENTE'" class="row q-col-gutter-sm q-mb-md">
               <div class="col-4">
                 <div
                   class="text-center q-pa-sm rounded-borders"
@@ -234,82 +234,84 @@
               </q-chip>
             </div>
 
-            <!-- Indicadores de Documentación (iconos por estado) -->
-            <div class="row q-gutter-xs q-mb-sm">
-              <!-- PAC -->
-              <q-chip
-                dense
-                size="sm"
-                :color="getIndicadorColor(asignatura, 'programa_asignatura')"
-                text-color="white"
-                icon="assignment"
-              >
-                PAC
-                <q-tooltip
-                  >Programa de Asignatura (PAC):
-                  {{ getIndicadorPct(asignatura, 'programa_asignatura') }}%</q-tooltip
+            <!-- Indicadores y progreso: ocultos para docentes -->
+            <template v-if="authStore.rol !== 'DOCENTE'">
+              <!-- Indicadores de Documentación (iconos por estado) -->
+              <div class="row q-gutter-xs q-mb-sm">
+                <!-- PAC -->
+                <q-chip
+                  dense
+                  size="sm"
+                  :color="getIndicadorColor(asignatura, 'programa_asignatura')"
+                  text-color="white"
+                  icon="assignment"
                 >
-              </q-chip>
-              <!-- Analítico -->
-              <q-chip
-                dense
-                size="sm"
-                :color="getIndicadorColor(asignatura, 'programa_analitico')"
-                text-color="white"
-                icon="menu_book"
-              >
-                Analítico
-                <q-tooltip
-                  >Programa Analítico:
-                  {{ getIndicadorPct(asignatura, 'programa_analitico') }}%</q-tooltip
+                  PAC
+                  <q-tooltip
+                    >Programa de Asignatura (PAC):
+                    {{ getIndicadorPct(asignatura, 'programa_asignatura') }}%</q-tooltip
+                  >
+                </q-chip>
+                <!-- Analítico -->
+                <q-chip
+                  dense
+                  size="sm"
+                  :color="getIndicadorColor(asignatura, 'programa_analitico')"
+                  text-color="white"
+                  icon="menu_book"
                 >
-              </q-chip>
-              <!-- Plan de Clase -->
-              <q-chip
-                dense
-                size="sm"
-                :color="getIndicadorColor(asignatura, 'plan_clase')"
-                text-color="white"
-                icon="edit_note"
-              >
-                Plan Clase
-                <q-tooltip
-                  >Plan de Clase: {{ getIndicadorPct(asignatura, 'plan_clase') }}%</q-tooltip
+                  Analítico
+                  <q-tooltip
+                    >Programa Analítico:
+                    {{ getIndicadorPct(asignatura, 'programa_analitico') }}%</q-tooltip
+                  >
+                </q-chip>
+                <!-- Plan de Clase -->
+                <q-chip
+                  dense
+                  size="sm"
+                  :color="getIndicadorColor(asignatura, 'plan_clase')"
+                  text-color="white"
+                  icon="edit_note"
                 >
-              </q-chip>
-              <!-- Bibliografía (usando programa_asignatura como proxy para biblío) -->
-              <q-chip
-                v-if="authStore.rol !== 'DOCENTE'"
-                dense
-                size="sm"
-                :color="getIndicadorColor(asignatura, 'preguntas')"
-                text-color="white"
-                icon="quiz"
-              >
-                Preguntas
-                <q-tooltip
-                  >Banco de Preguntas: {{ getIndicadorPct(asignatura, 'preguntas') }}%</q-tooltip
+                  Plan Clase
+                  <q-tooltip
+                    >Plan de Clase: {{ getIndicadorPct(asignatura, 'plan_clase') }}%</q-tooltip
+                  >
+                </q-chip>
+                <!-- Preguntas -->
+                <q-chip
+                  dense
+                  size="sm"
+                  :color="getIndicadorColor(asignatura, 'preguntas')"
+                  text-color="white"
+                  icon="quiz"
                 >
-              </q-chip>
-            </div>
-
-            <!-- Progreso de documentación -->
-            <div class="q-mb-sm">
-              <div class="row items-center justify-between q-mb-xs">
-                <span class="text-caption text-weight-medium" style="color: var(--text-secondary)">
-                  Progreso de Documentación
-                </span>
-                <span class="text-caption text-weight-bold text-primary">
-                  {{ asignatura.progreso_documentacion ?? 0 }}%
-                </span>
+                  Preguntas
+                  <q-tooltip
+                    >Banco de Preguntas: {{ getIndicadorPct(asignatura, 'preguntas') }}%</q-tooltip
+                  >
+                </q-chip>
               </div>
-              <q-linear-progress
-                :value="(asignatura.progreso_documentacion ?? 0) / 100"
-                :color="getProgresoColor(asignatura.progreso_documentacion ?? 0)"
-                rounded
-                size="8px"
-              />
-            </div>
+
+              <!-- Progreso de documentación -->
+              <div class="q-mb-sm">
+                <div class="row items-center justify-between q-mb-xs">
+                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary)">
+                    Progreso de Documentación
+                  </span>
+                  <span class="text-caption text-weight-bold text-primary">
+                    {{ asignatura.progreso_documentacion ?? 0 }}%
+                  </span>
+                </div>
+                <q-linear-progress
+                  :value="(asignatura.progreso_documentacion ?? 0) / 100"
+                  :color="getProgresoColor(asignatura.progreso_documentacion ?? 0)"
+                  rounded
+                  size="8px"
+                />
+              </div>
+            </template>
           </q-card-section>
 
           <q-separator />

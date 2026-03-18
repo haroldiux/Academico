@@ -5,6 +5,7 @@ import { useCarrerasStore } from 'src/stores/carreras'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 
 // Detectar si estamos corriendo como app nativa (Capacitor)
+// eslint-disable-next-line no-unused-vars
 const esAppNativa = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.() === true
 
 /**
@@ -176,19 +177,9 @@ export function usePermisos() {
 
     // Items según rol
     if (esDocente.value) {
-      // En app móvil solo mostramos Control de Clase
-      if (esAppNativa) {
-        return [
-          { label: 'Control de Clase', icon: 'class', to: '/docente/clase' },
-          { label: 'Mi Perfil', icon: 'person', to: '/perfil' },
-        ]
-      }
-      // En web mostramos todos los módulos
+      // Docentes: solo Mis Asignaturas (web y app nativa)
       return [
-        ...itemsBase,
         { label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' },
-        { label: 'Control de Clase', icon: 'class', to: '/docente/clase' },
-        { label: 'Mi Perfil', icon: 'person', to: '/perfil' },
       ]
     }
 
