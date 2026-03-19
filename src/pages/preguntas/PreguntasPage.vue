@@ -213,7 +213,7 @@
                 </tr>
                 <tr>
                   <td><strong>TIPO</strong></td>
-                  <td>SELECCION_UNICA, SELECCION_MULTIPLE o FALSO_VERDADERO</td>
+                  <td>SELECCION_UNICA, SELECCION_MULTIPLE (SOLO 2) o FALSO_VERDADERO</td>
                 </tr>
                 <tr>
                   <td><strong>A, B, C, D, E</strong></td>
@@ -229,7 +229,7 @@
                 </tr>
                 <tr>
                   <td><strong>RESPUESTA</strong></td>
-                  <td>Única: "A" | Múltiple: "A;B;C" | V/F: "A" o "B"</td>
+                  <td>Única: "A" | Múltiple: "A;B" (Exactamente 2) | V/F: "A" o "B"</td>
                 </tr>
               </table>
             </div>
@@ -356,9 +356,7 @@
               <span v-if="nuevaPregunta.tipo === 'SELECCION_UNICA'" class="text-caption text-grey"
                 >(selecciona UNA correcta)</span
               ><span
-                v-else-if="nuevaPregunta.tipo === 'SELECCION_MULTIPLE'"
-                class="text-caption text-grey"
-                >(selecciona VARIAS correctas)</span
+                >(debe seleccionar exactamente 2 correctas)</span
               >
             </h4>
             <div v-for="letra in ['A', 'B', 'C', 'D', 'E']" :key="letra" class="opcion-input-row">

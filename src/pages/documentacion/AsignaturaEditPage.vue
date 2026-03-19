@@ -2594,7 +2594,7 @@ async function descargarFormatoBanco() {
   addGuideHeader('1. CÓDIGOS DE PREGUNTA (Columna TIPO)')
   wsInst.addRow(['FV', 'Falso y Verdadero'])
   wsInst.addRow(['SS', 'Selección Simple - Solo 1 respuesta correcta'])
-  wsInst.addRow(['SM', 'Selección Múltiple - 2 o más respuestas correctas'])
+  wsInst.addRow(['SM', 'Selección Múltiple - SOLO 2 OPCIONES (Ambas deben ser correctas)'])
   wsInst.addRow(['PR', 'Problema o Caso Clínico (Solo llenar el Enunciado. Lo demás vacío)'])
   wsInst.addRow(['SP', 'Subpregunta de un PR o EM (Llenar igual que Selección Simple)'])
   wsInst.addRow(['EM', 'Emparejamiento (Solo llenar el Enunciado. Lo demás vacío)'])
@@ -2603,7 +2603,7 @@ async function descargarFormatoBanco() {
   addGuideHeader('2. RESPUESTAS VÁLIDAS')
   wsInst.addRow(['Opciones (SS)', 'Pon una sola letra: A, B, C, D o E.'])
   wsInst.addRow(['Emparejamiento (EM)', 'Déjalo completamente en blanco.'])
-  wsInst.addRow(['Opciones (SM)', 'Pon varias letras separadas por coma, por ejemplo: A,C,D.'])
+  wsInst.addRow(['Opciones (SM)', 'Debes poner exactamente las 2 letras correspondientes, por ejemplo: A,B.'])
   wsInst.addRow(['Falso/Verdadero (FV)', 'A para Verdadero, B para Falso.'])
   wsInst.addRow(['Problemas (PR)', 'Déjalo completamente en blanco.'])
   wsInst.addRow(['Opciones (SP)', 'Pon una sola letra: A, B, C, D o E.'])
@@ -2617,6 +2617,7 @@ async function descargarFormatoBanco() {
   addGuideHeader('⚠️ NOTAS IMPORTANTES')
   const note = wsInst.addRow(['- No elimine columnas ni cambie el nombre de la hoja "Banco".'])
   note.font = { italic: true, color: { argb: 'FFC62828' } }
+  wsInst.addRow(['- IMPORTANTE: Las preguntas SM (Selección Múltiple) deben tener SOLAMENTE 2 OPCIONES y ambas deben ser marcadas como correctas (ej: A,B).'])
   wsInst.addRow(['- Los campos "Unidad" y "Puntaje" ya no son obligatorios ni se procesan.'])
 
   // ── HOJA 2: BANCO ──
@@ -2772,16 +2773,13 @@ async function descargarFormatoBanco() {
     'SM',
     '3',
     '1P',
-    '¿Cuáles de los siguientes colores son considerados colores primarios?',
-    'A,B,D',
-    ['Rojo', 'Azul', 'Verde', 'Amarillo', 'Violeta'],
+    '¿Cuáles de los siguientes son elementos que componen el núcleo atómico?',
+    'A,B',
+    ['Protones', 'Neutrones'],
   )
-  addEjRow('SM', '3', '1P', '¿Qué departamentos conforman el eje central de Bolivia?', 'B,C,E', [
-    'Pando',
-    'La Paz',
-    'Santa Cruz',
-    'Beni',
-    'Cochabamba',
+  addEjRow('SM', '3', '1P', '¿Cuáles son los principales componentes del agua pura?', 'A,B', [
+    'Hidrógeno',
+    'Oxígeno',
   ])
 
   // Ejemplos PR y SP (Caso Clínico)
