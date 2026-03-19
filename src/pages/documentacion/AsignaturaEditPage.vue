@@ -108,8 +108,7 @@
         </div>
       </div>
       <!-- Tabs: solo icono + etiqueta -->
-      <q-tabs v-model="tabActual" class="text-grey" active-color="primary" indicator-color="primary"
-        align="left">
+      <q-tabs v-model="tabActual" class="text-grey" active-color="primary" indicator-color="primary" align="left">
         <q-tab v-if="authStore.rol !== 'DOCENTE'" name="datos" icon="description" label="Datos de Asignatura" no-caps />
         <q-tab v-if="authStore.rol !== 'DOCENTE'" name="programa" icon="assignment" label="Programa" no-caps />
         <q-tab v-if="authStore.rol !== 'DOCENTE'" name="bibliografia" icon="auto_stories" label="Bibliografía"
@@ -711,8 +710,10 @@
               </div>
             </div>
             <div class="row q-gutter-sm">
+              <q-btn outline color="white" icon="download" label="Descargar Excel Base"
+                no-caps @click="descargarFormatoBanco" />
               <q-btn unelevated color="white" text-color="deep-purple-9" icon="upload_file" label="Subir Banco (Excel)"
-                no-caps @click="showSubirBanco = true" disable />
+                no-caps @click="showSubirBanco = true" />
             </div>
           </div>
 
@@ -730,10 +731,6 @@
               15 difíciles). <br>
               2. Una vez que el archivo esté completo, utiliza el botón <strong>"Subir Banco"</strong>
               para cargarlo al sistema.
-              <template v-slot:action>
-                <q-btn unelevated color="indigo" icon="download" label="Descargar Excel Base" no-caps
-                  @click="descargarFormatoBanco" disable />
-              </template>
             </q-banner>
 
             <!-- Resumen del banco -->
@@ -771,8 +768,12 @@
                         <q-chip color="teal-7" text-color="white" size="xs" dense>
                           {{ pregunta.tipo?.replace('_', ' ') }}
                         </q-chip>
+                        <q-chip v-if="pregunta.grupo" color="grey-3" text-color="grey-9" size="xs" dense>
+                          <q-icon name="label" size="12px" class="q-mr-xs" />
+                          {{ pregunta.grupo }}
+                        </q-chip>
                       </div>
-                      <div class="text-body2 text-weight-medium q-mb-sm">{{ pregunta.enunciado }}</div>
+                      <div class="text-body2 text-weight-medium q-mb-sm" v-html="pregunta.enunciado"></div>
                       <div class="opciones-grid">
                         <div v-for="(opc, oidx) in pregunta.opciones" :key="oidx" class="opcion-item" :class="{
                           'opcion-correcta': esOpcionCorrecta(pregunta, opc.id),
@@ -819,7 +820,7 @@
             <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
               <template v-slot:avatar><q-icon name="info" /></template>
               Sube el Excel con el formato oficial. Recuerda que solo se admiten preguntas tipo
-              <strong>FV, SS y SM</strong>.
+              <strong>FV, SS, SM, PR, EM y SP</strong>.
             </q-banner>
 
             <q-file v-model="archivoBancoFile" outlined label="Seleccionar archivo Excel (.xlsx)" accept=".xlsx,.xls"
@@ -906,8 +907,8 @@
                       }[p.tipo] || p.tipo
                     }}
                   </q-chip>
-                  <q-chip v-if="p.grupo_id" color="grey-3" text-color="grey-8" size="xs" dense>{{
-                    p.grupo_id
+                  <q-chip v-if="p.grupo || p.grupo_id" color="grey-3" text-color="grey-8" size="xs" dense>{{
+                    p.grupo || p.grupo_id
                   }}</q-chip>
                   <q-chip :color="getDificultadColor(p.dificultad)" text-color="white" size="xs" dense>{{ p.dificultad
                   }}</q-chip>
@@ -915,7 +916,7 @@
                     ✓ {{ p.respuesta }}
                   </q-chip>
                 </div>
-                <div class="text-body2 preview-texto">{{ p.enunciado }}</div>
+                <div class="text-body2 preview-texto" v-html="p.enunciado"></div>
               </div>
             </div>
 
@@ -2524,14 +2525,20 @@ async function descargarFormatoBanco() {
 
   addGuideHeader('1. CÓDIGOS DE PREGUNTA (Columna TIPO)')
   wsInst.addRow(['FV', 'Falso y Verdadero'])
-  wsInst.addRow(['SS', 'Selección Simple - 1 respuesta correcta'])
-  wsInst.addRow(['SM', 'Selección Múltiple - varias respuestas'])
+  wsInst.addRow(['SS', 'Selección Simple - Solo 1 respuesta correcta'])
+  wsInst.addRow(['SM', 'Selección Múltiple - 2 o más respuestas correctas'])
+  wsInst.addRow(['PR', 'Problema o Caso Clínico (Solo llenar el Enunciado. Lo demás vacío)'])
+  wsInst.addRow(['SP', 'Subpregunta de un PR o EM (Llenar igual que Selección Simple)'])
+  wsInst.addRow(['EM', 'Emparejamiento (Solo llenar el Enunciado. Lo demás vacío)'])
   wsInst.addRow([])
 
   addGuideHeader('2. RESPUESTAS VÁLIDAS')
-  wsInst.addRow(['Opciones (SS)', 'Una sola letra (A, B, C, D o E) según corresponda.'])
-  wsInst.addRow(['Opciones (SM)', 'Múltiples letras separadas por coma (ej: A,C,D).'])
-  wsInst.addRow(['Falso/Verdadero (FV)', 'Letras: A (Verdadero), B (Falso)'])
+  wsInst.addRow(['Opciones (SS)', 'Pon una sola letra: A, B, C, D o E.'])
+  wsInst.addRow(['Emparejamiento (EM)', 'Déjalo completamente en blanco.'])
+  wsInst.addRow(['Opciones (SM)', 'Pon varias letras separadas por coma, por ejemplo: A,C,D.'])
+  wsInst.addRow(['Falso/Verdadero (FV)', 'A para Verdadero, B para Falso.'])
+  wsInst.addRow(['Problemas (PR)', 'Déjalo completamente en blanco.'])
+  wsInst.addRow(['Opciones (SP)', 'Pon una sola letra: A, B, C, D o E.'])
   wsInst.addRow([])
 
   addGuideHeader('3. CONFIGURACIÓN DEL EXAMEN')
@@ -2550,6 +2557,7 @@ async function descargarFormatoBanco() {
   // Cabeceras
   const headers = [
     'tipo',
+    'grupo',
     'enunciado',
     'opcion_a',
     'opcion_b',
@@ -2574,9 +2582,9 @@ async function descargarFormatoBanco() {
     }
   })
 
-  const addPreguntaRow = (dif, parcial, color) => {
-    // Columnas: tipo, enunciado, op_a, op_b, op_c, op_d, op_e, respuesta_correcta, dificultad, parcial
-    const row = wsBanco.addRow(['', '', '', '', '', '', '', '', dif, parcial])
+  const addPreguntaRow = (dif, parcial, color, grupo = '') => {
+    // Columnas: tipo, grupo, enunciado, op_a, op_b, op_c, op_d, op_e, respuesta_correcta, dificultad, parcial
+    const row = wsBanco.addRow(['', grupo, '', '', '', '', '', '', '', dif, parcial])
     row.eachCell((cell) => {
       cell.fill = {
         type: 'pattern',
@@ -2609,19 +2617,44 @@ async function descargarFormatoBanco() {
 
   wsBanco.columns = [
     { width: 10 },
-    { width: 60 },
-    { width: 25 },
-    { width: 25 },
-    { width: 25 },
-    { width: 25 },
-    { width: 25 },
+    { width: 15 },
+    { width: 60, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 25, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 25, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 25, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 25, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 25, style: { alignment: { wrapText: true, vertical: 'top' } } },
     { width: 20 },
     { width: 12 },
     { width: 12 },
   ]
 
+  // Add Data Validation and Totals
+  for (let i = 2; i <= 61; i++) {
+    wsBanco.getCell(`A${i}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: ['"FV,SS,SM,PR,SP,EM"'],
+    }
+  }
+
+  const rowF = wsBanco.getRow(63)
+  rowF.getCell(9).value = 'Total Fáciles:'
+  rowF.getCell(9).font = { bold: true }
+  rowF.getCell(10).value = { formula: 'COUNTIF(J2:J61, 1)' }
+
+  const rowM = wsBanco.getRow(64)
+  rowM.getCell(9).value = 'Total Medias:'
+  rowM.getCell(9).font = { bold: true }
+  rowM.getCell(10).value = { formula: 'COUNTIF(J2:J61, 2)' }
+
+  const rowD = wsBanco.getRow(65)
+  rowD.getCell(9).value = 'Total Difíciles:'
+  rowD.getCell(9).font = { bold: true }
+  rowD.getCell(10).value = { formula: 'COUNTIF(J2:J61, 3)' }
+
   // ── HOJA 3: EJEMPLO (PRECARGADA) ──
-  const wsEj = workbook.addWorksheet('EJEMPLO')
+  const wsEj = workbook.addWorksheet('Ejemplo')
   const ejHeaderRow = wsEj.addRow(headers)
   ejHeaderRow.eachCell((cell) => {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF006064' } } // Color diferente (Teal oscuro)
@@ -2629,12 +2662,12 @@ async function descargarFormatoBanco() {
     cell.alignment = { vertical: 'middle', horizontal: 'center' }
   })
 
-  const addEjRow = (tipo, dif, parc, enun, r, ops = []) => {
-    // Columnas: tipo(1), enunciado(2), op_a(3), op_b(4), op_c(5), op_d(6), op_e(7), r_corr(8), dif(9), parc(10)
-    const rowData = [tipo, enun, '', '', '', '', '', r, dif, parc]
+  const addEjRow = (tipo, dif, parc, enun, r, ops = [], grupo = '') => {
+    // Columnas: tipo(1), grupo(2), enunciado(3), op_a(4), op_b(5), op_c(6), op_d(7), op_e(8), r_corr(9), dif(10), parc(11)
+    const rowData = [tipo, grupo, enun, '', '', '', '', '', r, dif, parc]
     // Rellenamos opciones si existen (máximo 5)
     for (let i = 0; i < Math.min(ops.length, 5); i++) {
-      rowData[2 + i] = ops[i]
+      rowData[3 + i] = ops[i]
     }
     const row = wsEj.addRow(rowData)
     row.getCell(1).font = { bold: true }
@@ -2683,6 +2716,51 @@ async function descargarFormatoBanco() {
     'Cochabamba',
   ])
 
+  // Ejemplos PR y SP (Caso Clínico)
+  addEjRow(
+    'PR',
+    '3',
+    '1P',
+    'CASO CLINICO O PROBLEMA\nUna mujer de 58 años, inconsciente, es llevada al Servicio de Urgencia después de sufrir un colapso en un centro de compras local. Su familia informa que ella se sentía bien en la mañana pero que desarrolló una cefalea de intensidad creciente. Tiene antecedentes de hipertensión arterial y fibrilación auricular, por lo que recibe medicamentos antihipertensivos y anticoagulantes orales. Al examen físico: presión arterial 220/130 mmHg. Presenta apnea alternada con hiperpnea y responde solo a estímulos dolorosos con extensión postural de brazo y pierna derecha. El fondo de ojo muestra edema de papila que compromete el disco óptico izquierdo. Las pupilas son 3.0/7.0 (derecha/izquierda) sin reacción a la luz en la izquierda y con una preferencia de mirada a izquierda. Presenta hiperreflexia difusa, mayor en lado derecho y signo de Babinski bilateral.',
+    '',
+    [],
+    'Caso 1'
+  )
+  addEjRow(
+    'SP',
+    '3',
+    '1P',
+    '¿Con cuál de las siguientes estructuras del lado izquierdo que presente una lesión es más consistente la presencia de una pupila izquierda no reactiva y dilatada?',
+    'D',
+    ['Nervio óptico', 'Tracto óptico', 'Protuberancia', 'Nervio oculomotor', 'Colículo superior'],
+    'Caso 1'
+  )
+  addEjRow(
+    'SP',
+    '3',
+    '1P',
+    '¿Con una lesión en cuál de las siguientes áreas del cerebro izquierdo es más consistente la postura en extensión del brazo derecho?',
+    'E',
+    ['Telencéfalo', 'Diencéfalo', 'Protuberancia', 'Bulbo raquídeo', 'Cerebro medio'],
+    'Caso 1'
+  )
+
+  // Ejemplos EM y SP (Emparejamiento)
+  addEjRow(
+    'EM',
+    '2',
+    '1P',
+    'EMPAREJAMIENTO: Relacione el concepto con su definición correcta:\nA. Metodología\nB. Método\nC. Técnica\nD. Ciencia\nE. Conocimiento Empírico',
+    '',
+    [],
+    'Emp 1'
+  )
+  addEjRow('SP', '2', '1P', 'Herramientas y procedimientos prácticos para recolectar datos.', 'A', [], 'Emp 1')
+  addEjRow('SP', '2', '1P', 'Conocimiento que se obtiene mediante la práctica diaria y la percepción personal.', 'B', [], 'Emp 1')
+  addEjRow('SP', '2', '1P', 'El estudio de los pasos y estrategias que se siguen en una investigación.', 'C', [], 'Emp 1')
+  addEjRow('SP', '2', '1P', 'El camino lógico o plan estructurado para alcanzar un objetivo de conocimiento.', 'D', [], 'Emp 1')
+  addEjRow('SP', '2', '1P', 'Sistema de saberes organizados, objetivos y verificables sobre la realidad.', 'E', [], 'Emp 1')
+
   wsEj.columns = wsBanco.columns
 
   const buffer = await workbook.xlsx.writeBuffer()
@@ -2725,20 +2803,21 @@ const validacionDistribucion = computed(() => {
 // Mapping de columnas del Excel (orden igual que el formato descargado)
 const COLS = {
   tipo: 0,
-  enunciado: 1,
-  opcion_a: 2,
-  opcion_b: 3,
-  opcion_c: 4,
-  opcion_d: 5,
-  opcion_e: 6,
-  respuesta_correcta: 7,
-  dificultad: 8,
-  parcial: 9,
-  unidad: 10,
-  puntaje: 11,
+  grupo: 1,
+  enunciado: 2,
+  opcion_a: 3,
+  opcion_b: 4,
+  opcion_c: 5,
+  opcion_d: 6,
+  opcion_e: 7,
+  respuesta_correcta: 8,
+  dificultad: 9,
+  parcial: 10,
+  unidad: 11,
+  puntaje: 12,
 }
 
-const TIPOS_VALIDOS = ['fv', 'ss', 'sm']
+const TIPOS_VALIDOS = ['fv', 'ss', 'sm', 'pr', 'em', 'sp']
 const DIFICULTAD_MAP = { 1: '1', 2: '2', 3: '3' }
 const PARCIAL_MAP = { '1p': '1P', '2p': '2P', ef: 'EF', '2i': '2I' }
 
@@ -2756,11 +2835,28 @@ function previsualizarArchivoExcel(file) {
         const ws = wb.Sheets[sheetName]
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
 
-        // Encontrar fila de encabezado (buscar fila con "tipo")
+        // Encontrar fila de encabezado e identificar dinámicamente el orden
         let headerRowIdx = -1
+        let colsMap = { ...COLS }
         for (let i = 0; i < Math.min(rows.length, 10); i++) {
-          if (String(rows[i][0]).toLowerCase().trim() === 'tipo') {
+          const rowLower = rows[i].map((c) => String(c || '').toLowerCase().trim())
+          if (rowLower.includes('tipo') && rowLower.includes('enunciado')) {
             headerRowIdx = i
+            rowLower.forEach((colName, idx) => {
+              if (colName === 'tipo') colsMap.tipo = idx
+              else if (colName === 'grupo') colsMap.grupo = idx
+              else if (colName === 'enunciado') colsMap.enunciado = idx
+              else if (colName.includes('opcion') || colName.includes('opción')) {
+                if (colName.endsWith('a')) colsMap.opcion_a = idx
+                else if (colName.endsWith('b')) colsMap.opcion_b = idx
+                else if (colName.endsWith('c')) colsMap.opcion_c = idx
+                else if (colName.endsWith('d')) colsMap.opcion_d = idx
+                else if (colName.endsWith('e')) colsMap.opcion_e = idx
+              }
+              else if (colName.includes('respuesta')) colsMap.respuesta_correcta = idx
+              else if (colName.includes('dificultad')) colsMap.dificultad = idx
+              else if (colName.includes('parcial')) colsMap.parcial = idx
+            })
             break
           }
         }
@@ -2780,12 +2876,12 @@ function previsualizarArchivoExcel(file) {
 
         dataRows.forEach((row, idx) => {
           const lineNum = headerRowIdx + idx + 2 // número de fila real en Excel
-          const tipo = String(row[COLS.tipo] || '')
+          const tipo = String(row[colsMap.tipo] || '')
             .toLowerCase()
             .trim()
 
           // Ignorar filas vacías
-          if (!tipo || !row[COLS.enunciado]) return
+          if (!tipo || !row[colsMap.enunciado]) return
 
           // Validar tipo
           if (!TIPOS_VALIDOS.includes(tipo)) {
@@ -2795,21 +2891,24 @@ function previsualizarArchivoExcel(file) {
             return
           }
 
-          const enunciado = String(row[COLS.enunciado] || '').trim()
-          const respuesta = String(row[COLS.respuesta_correcta] || '')
+          const enunciadoRaw = String(row[colsMap.enunciado] || '').trim()
+          const enunciado = enunciadoRaw.replace(/\r\n|\n/g, '<br>')
+
+          const respuesta = String(row[colsMap.respuesta_correcta] || '')
             .trim()
             .toUpperCase()
-          const dificultadRaw = String(row[COLS.dificultad] || '')
+          const dificultadRaw = String(row[colsMap.dificultad] || '')
             .trim()
             .toLowerCase()
           const dificultad = DIFICULTAD_MAP[dificultadRaw] || dificultadRaw
-          const parcialRaw = String(row[COLS.parcial] || '')
+          const parcialRaw = String(row[colsMap.parcial] || '')
             .trim()
             .toLowerCase()
           const parcial = PARCIAL_MAP[parcialRaw] || parcialRaw
+          const grupoRaw = String(row[colsMap.grupo] || '').trim()
 
           // Validar campos requeridos por tipo
-          if (['ss', 'sm', 'fv'].includes(tipo)) {
+          if (['ss', 'sm', 'fv', 'sp'].includes(tipo)) {
             if (
               !respuesta ||
               (!['A', 'B', 'C', 'D', 'E'].includes(respuesta) && !respuesta.includes(','))
@@ -2825,12 +2924,13 @@ function previsualizarArchivoExcel(file) {
             id: Date.now() + idx + Math.random(),
             tipo,
             enunciado,
+            grupo: grupoRaw || null,
             opciones: [
-              String(row[COLS.opcion_a] || ''),
-              String(row[COLS.opcion_b] || ''),
-              String(row[COLS.opcion_c] || ''),
-              String(row[COLS.opcion_d] || ''),
-              String(row[COLS.opcion_e] || ''),
+              String(row[colsMap.opcion_a] || '').replace(/\r\n|\n/g, '<br>').trim(),
+              String(row[colsMap.opcion_b] || '').replace(/\r\n|\n/g, '<br>').trim(),
+              String(row[colsMap.opcion_c] || '').replace(/\r\n|\n/g, '<br>').trim(),
+              String(row[colsMap.opcion_d] || '').replace(/\r\n|\n/g, '<br>').trim(),
+              String(row[colsMap.opcion_e] || '').replace(/\r\n|\n/g, '<br>').trim(),
             ],
             respuesta,
             dificultad: dificultad || '1',
@@ -2873,7 +2973,7 @@ async function confirmarImportacionBanco() {
   try {
     const formData = new FormData()
     formData.append('file', archivoBancoFile.value)
-    formData.append('asignatura_id', asignatura.value.id)
+    formData.append('asignatura_id', route.params.id)
 
     // Inyectar docente_id de la carpeta o del usuario logueado
     const dId = route.query.docente_id || authStore.usuarioActual?.docente?.id || authStore.usuarioActual?.docente_id
