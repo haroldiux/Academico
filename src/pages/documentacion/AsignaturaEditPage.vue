@@ -718,6 +718,39 @@
           </div>
 
           <div class="q-px-lg q-pb-lg">
+            <!-- Apartado Estratégico: Fechas de Exámenes (Oculto temporalmente a petición) -->
+            <q-card v-if="false && examenesAsignatura.length > 0" flat bordered class="q-mb-md border-primary rounded-borders bg-blue-grey-1">
+              <q-card-section class="bg-primary text-white q-pa-sm row items-center shadow-1">
+                <q-icon name="event" size="20px" class="q-mr-sm" /> 
+                <span class="text-weight-bold text-subtitle2">Fechas de Exámenes Programadas</span>
+              </q-card-section>
+              
+              <q-card-section class="q-pa-md row q-col-gutter-md justify-center">
+                <div v-for="(examen, idx) in examenesAsignatura" :key="idx" class="col-12 col-sm-6 col-md-3">
+                  <q-card class="bg-white column justify-between items-center shadow-2 full-height" style="border-radius: 8px;">
+                    <q-card-section class="q-pa-sm text-center full-width bg-indigo-1">
+                      <div class="text-caption text-indigo-9 text-uppercase text-weight-bolder">{{ examen.tipo_examen }}</div>
+                    </q-card-section>
+                    <q-separator />
+                    <q-card-section class="q-pa-sm text-center full-width">
+                      <div class="text-subtitle1 text-weight-bold text-grey-9 q-mb-xs">
+                        <q-icon name="calendar_today" size="xs" color="indigo-4" class="q-mr-xs"/>
+                        {{ formatoFecha(examen.fecha) }}
+                      </div>
+                      <div class="text-caption text-grey-7">
+                        <q-icon name="schedule" size="xs" color="grey-5" class="q-mr-xs"/>
+                        {{ examen.hora_inicio }} - {{ examen.hora_fin }}
+                      </div>
+                      <div class="text-caption text-orange-9" v-if="examen.semana">
+                        Semana {{ examen.semana }}
+                      </div>
+                    </q-card-section>
+                  </q-card>
+                </div>
+              </q-card-section>
+              <q-inner-loading :showing="cargandoExamenes" />
+            </q-card>
+
             <q-banner class="bg-amber-1 text-amber-10 q-mb-md border-amber" rounded dense>
               <template v-slot:avatar><q-icon name="warning" color="amber-10" /></template>
               <strong>Método de Registro:</strong> Actualmente las preguntas se registran exclusivamente
@@ -1350,6 +1383,7 @@ const asignatura = computed(() => store.asignaturaActual)
 
 onMounted(() => {
   cargarBancoPreguntas()
+  cargarExamenes()
 })
 
 // ── Plan de Clase: calculado igual que por-unidad (garantiza coherencia) ──
@@ -1358,7 +1392,10 @@ onMounted(() => {
 watch(
   () => asignatura.value?.id,
   (newId) => {
-    if (newId) cargarBancoPreguntas()
+    if (newId) {
+      cargarBancoPreguntas()
+      cargarExamenes()
+    }
   },
   { immediate: true },
 )
@@ -2457,6 +2494,37 @@ const showSubirBanco = ref(false)
 
 // Banco de preguntas real (desde API)
 const bancoPreguntasLocal = ref([])
+
+// Exámenes de la asignatura (desde el rol de exámenes general)
+const examenesAsignatura = ref([])
+const cargandoExamenes = ref(false)
+
+function formatoFecha(fechaIso) {
+  if (!fechaIso) return '';
+  const val = fechaIso.split(' ')[0]; // si viene con hora
+  const [y, m, d] = val.split('-');
+  if (d && m && y) return `${d}/${m}/${y}`;
+  return val;
+}
+
+async function cargarExamenes() {
+  if (!asignatura.value?.codigo) return
+  cargandoExamenes.value = true
+  try {
+    let url = `/rol-examenes/materia/${asignatura.value.codigo}`
+    let carreraId = asignatura.value?.carreras?.[0]?.id || asignatura.value?.carrera_id || asignatura.value?.carrera?.id
+    if (carreraId) {
+      url += `?carrera_id=${carreraId}`
+    }
+    const { data } = await api.get(url)
+    // El endpoint devuelve { data: [...] }
+    examenesAsignatura.value = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : [])
+  } catch (error) {
+    console.error('Error al cargar exámenes:', error)
+  } finally {
+    cargandoExamenes.value = false
+  }
+}
 
 const preguntasFiltradas = computed(() => {
   return bancoPreguntasLocal.value

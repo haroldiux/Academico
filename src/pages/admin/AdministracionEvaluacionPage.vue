@@ -383,7 +383,7 @@
 
           <div class="row q-col-gutter-lg">
             <!-- Columna izquierda: Estructura del Examen -->
-            <div class="col-12 col-md-6">
+            <div :class="['col-12', nivelConfig === 'nacional' ? 'col-md-6' : 'col-md-12']">
               <q-card class="config-section-card">
                 <q-card-section>
                   <div class="section-label q-mb-md">
@@ -431,8 +431,7 @@
                           dense
                           type="number"
                           min="0"
-                          max="100"
-                          suffix="%"
+                          :max="parcial.totalPreguntas"
                           style="width: 90px"
                         />
                       </div>
@@ -446,8 +445,7 @@
                           dense
                           type="number"
                           min="0"
-                          max="100"
-                          suffix="%"
+                          :max="parcial.totalPreguntas"
                           style="width: 90px"
                         />
                       </div>
@@ -465,8 +463,7 @@
                           dense
                           type="number"
                           min="0"
-                          max="100"
-                          suffix="%"
+                          :max="parcial.totalPreguntas"
                           style="width: 90px"
                         />
                       </div>
@@ -474,7 +471,7 @@
 
                     <q-banner
                       :class="
-                        sumaDistribucion(parcial) === 100
+                        sumaDistribucion(parcial) === parcial.totalPreguntas
                           ? 'bg-green-1 text-green-9'
                           : 'bg-orange-1 text-orange-9'
                       "
@@ -483,12 +480,12 @@
                       class="q-mt-sm"
                     >
                       <q-icon
-                        :name="sumaDistribucion(parcial) === 100 ? 'check' : 'warning'"
+                        :name="sumaDistribucion(parcial) === parcial.totalPreguntas ? 'check' : 'warning'"
                         class="q-mr-xs"
                       />
-                      Total distribución: {{ sumaDistribucion(parcial) }}%
-                      <span v-if="sumaDistribucion(parcial) !== 100" class="text-caption">
-                        (debe sumar 100%)</span
+                      Total distribución: {{ sumaDistribucion(parcial) }}
+                      <span v-if="sumaDistribucion(parcial) !== parcial.totalPreguntas" class="text-caption">
+                        (debe sumar {{ parcial.totalPreguntas }})</span
                       >
                     </q-banner>
 
@@ -499,7 +496,7 @@
             </div>
 
             <!-- Columna derecha: Tiempos y opciones -->
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-6" v-if="nivelConfig === 'nacional'">
               <q-card class="config-section-card q-mb-md">
                 <q-card-section>
                   <div class="section-label q-mb-md">
@@ -563,37 +560,6 @@
                       /></template>
                       <template v-slot:append><span class="text-grey-6">horas</span></template>
                     </q-input>
-                  </div>
-                </q-card-section>
-              </q-card>
-
-              <q-card class="config-section-card">
-                <q-card-section>
-                  <div class="section-label q-mb-md">
-                    <q-icon name="settings" color="grey-8" class="q-mr-sm" />
-                    Opciones Generales
-                  </div>
-                  <div class="q-gutter-sm">
-                    <q-toggle
-                      v-model="config.mezclarPreguntas"
-                      label="Mezclar preguntas automáticamente"
-                      color="deep-purple"
-                    />
-                    <q-toggle
-                      v-model="config.mezclarOpciones"
-                      label="Mezclar opciones de respuesta"
-                      color="deep-purple"
-                    />
-                    <q-toggle
-                      v-model="config.permitirMultiplesVersiones"
-                      label="Permitir múltiples versiones del examen (A, B, C...)"
-                      color="deep-purple"
-                    />
-                    <q-toggle
-                      v-model="config.mostrarBancoDocente"
-                      label="Mostrar banco de preguntas a docentes"
-                      color="deep-purple"
-                    />
                   </div>
                 </q-card-section>
               </q-card>
@@ -733,8 +699,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
+import { api } from 'boot/axios'
 
 const $q = useQuasar()
 
@@ -756,36 +723,31 @@ const campusForm = ref({ id: null, nombre: '', sede_id: null, direccion: '', act
 const carreraCampusForm = ref({ campus_id: null, carrera_id: null })
 const usuarioForm = ref({ id: null, usuario_id: null, campus_id: null, carreras: [] })
 
-// Config
 const config = ref({
   minutosAntesEntrega: 15,
-  horasAntesGeneracion: 24,
-  horasPatron: 3,
+  horasAntesGeneracion: 48,
+  horasPatron: 0,
   alertaHorasAntes: 24,
-  mezclarPreguntas: true,
-  mezclarOpciones: true,
-  permitirMultiplesVersiones: true,
-  mostrarBancoDocente: false,
   parciales: [
     {
       nombre: '1° Parcial',
-      totalPreguntas: 20,
-      distribucion: { facil: 40, medio: 40, dificil: 20 },
+      totalPreguntas: 30,
+      distribucion: { facil: 7, medio: 16, dificil: 7 },
     },
     {
       nombre: '2° Parcial',
-      totalPreguntas: 20,
-      distribucion: { facil: 30, medio: 40, dificil: 30 },
+      totalPreguntas: 30,
+      distribucion: { facil: 7, medio: 16, dificil: 7 },
     },
     {
       nombre: 'Examen Final',
       totalPreguntas: 40,
-      distribucion: { facil: 30, medio: 40, dificil: 30 },
+      distribucion: { facil: 10, medio: 20, dificil: 10 },
     },
     {
       nombre: '2da Instancia',
       totalPreguntas: 40,
-      distribucion: { facil: 25, medio: 40, dificil: 35 },
+      distribucion: { facil: 10, medio: 20, dificil: 10 },
     },
   ],
 })
@@ -987,9 +949,63 @@ function eliminarUsuario(usuario) {
   })
 }
 
-function guardarConfiguracion() {
-  $q.notify({ type: 'positive', message: 'Configuración guardada correctamente', icon: 'save' })
+async function cargarConfiguracion() {
+  try {
+    const params = { nivel: nivelConfig.value }
+    if (nivelConfig.value === 'sede' || nivelConfig.value === 'carrera') {
+      if (configSede.value) params.sede_id = configSede.value
+      else return
+    }
+    if (nivelConfig.value === 'carrera') {
+      if (configCarrera.value) params.carrera_id = configCarrera.value
+      else return
+    }
+
+    const { data } = await api.get('/evaluaciones/config', { params })
+    if (data.success && data.configuracion) {
+      // Deep merge avoiding reactivity loss on nested structure could be tricky, 
+      // simple reassignment of known structure is best
+      config.value = JSON.parse(JSON.stringify(data.configuracion))
+      
+      if (data.nivel_hallado !== nivelConfig.value) {
+        $q.notify({
+          type: 'info',
+          message: `Cargando configuración heredada de nivel ${data.nivel_hallado}`,
+          position: 'top-right',
+          timeout: 2000
+        })
+      }
+    }
+  } catch (err) {
+    console.error('Error cargando configuración:', err)
+  }
 }
+
+async function guardarConfiguracion() {
+  try {
+    const payload = {
+      nivel: nivelConfig.value,
+      sede_id: configSede.value,
+      carrera_id: configCarrera.value,
+      configuracion: config.value
+    }
+    const { data } = await api.post('/evaluaciones/config', payload)
+    if (data.success) {
+      $q.notify({ type: 'positive', message: 'Configuración guardada correctamente', icon: 'save' })
+    }
+  } catch (err) {
+    console.error('Error al guardar configuración:', err)
+    $q.notify({ type: 'negative', message: 'Error al guardar la configuración' })
+  }
+}
+
+watch([nivelConfig, configSede, configCarrera], () => {
+  cargarConfiguracion()
+})
+
+onMounted(() => {
+  cargarConfiguracion()
+})
 </script>
 
 <style scoped>
