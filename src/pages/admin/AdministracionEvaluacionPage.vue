@@ -480,11 +480,16 @@
                       class="q-mt-sm"
                     >
                       <q-icon
-                        :name="sumaDistribucion(parcial) === parcial.totalPreguntas ? 'check' : 'warning'"
+                        :name="
+                          sumaDistribucion(parcial) === parcial.totalPreguntas ? 'check' : 'warning'
+                        "
                         class="q-mr-xs"
                       />
                       Total distribución: {{ sumaDistribucion(parcial) }}
-                      <span v-if="sumaDistribucion(parcial) !== parcial.totalPreguntas" class="text-caption">
+                      <span
+                        v-if="sumaDistribucion(parcial) !== parcial.totalPreguntas"
+                        class="text-caption"
+                      >
                         (debe sumar {{ parcial.totalPreguntas }})</span
                       >
                     </q-banner>
@@ -963,16 +968,16 @@ async function cargarConfiguracion() {
 
     const { data } = await api.get('/evaluaciones/config', { params })
     if (data.success && data.configuracion) {
-      // Deep merge avoiding reactivity loss on nested structure could be tricky, 
+      // Deep merge avoiding reactivity loss on nested structure could be tricky,
       // simple reassignment of known structure is best
       config.value = JSON.parse(JSON.stringify(data.configuracion))
-      
+
       if (data.nivel_hallado !== nivelConfig.value) {
         $q.notify({
           type: 'info',
           message: `Cargando configuración heredada de nivel ${data.nivel_hallado}`,
           position: 'top-right',
-          timeout: 2000
+          timeout: 2000,
         })
       }
     }
@@ -987,7 +992,7 @@ async function guardarConfiguracion() {
       nivel: nivelConfig.value,
       sede_id: configSede.value,
       carrera_id: configCarrera.value,
-      configuracion: config.value
+      configuracion: config.value,
     }
     const { data } = await api.post('/evaluaciones/config', payload)
     if (data.success) {

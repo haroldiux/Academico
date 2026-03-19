@@ -375,7 +375,10 @@
 
                       <!-- Columna Preguntas 1P -->
                       <template v-else-if="col.name === 'preguntas_1p'">
-                        <div v-if="props.row.preguntas_1p_stats" class="row q-gutter-xs justify-center">
+                        <div
+                          v-if="props.row.preguntas_1p_stats"
+                          class="row q-gutter-xs justify-center"
+                        >
                           <q-chip size="xs" color="blue-1" text-color="blue-9" dense>
                             F: {{ props.row.preguntas_1p_stats.faciles }}
                             <q-tooltip>Fáciles (1P)</q-tooltip>
@@ -579,11 +582,20 @@
                           </q-item-section>
 
                           <q-item-section>
-                            <div class="row q-gutter-xs justify-center" v-if="docente.preguntas_1p_stats">
+                            <div
+                              class="row q-gutter-xs justify-center"
+                              v-if="docente.preguntas_1p_stats"
+                            >
                               <q-chip size="xs" color="blue-1" text-color="blue-9" outline dense>
                                 F: {{ docente.preguntas_1p_stats.faciles }}
                               </q-chip>
-                              <q-chip size="xs" color="orange-1" text-color="orange-9" outline dense>
+                              <q-chip
+                                size="xs"
+                                color="orange-1"
+                                text-color="orange-9"
+                                outline
+                                dense
+                              >
                                 M: {{ docente.preguntas_1p_stats.medias }}
                               </q-chip>
                               <q-chip size="xs" color="red-1" text-color="red-9" outline dense>
@@ -593,7 +605,9 @@
                                 Total: {{ docente.preguntas_1p_stats.total }}
                               </div>
                             </div>
-                            <div v-else class="text-caption text-grey-4 text-center">Sin preguntas 1P</div>
+                            <div v-else class="text-caption text-grey-4 text-center">
+                              Sin preguntas 1P
+                            </div>
                           </q-item-section>
 
                           <q-item-section side>

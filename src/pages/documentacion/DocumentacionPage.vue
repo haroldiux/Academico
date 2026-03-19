@@ -297,7 +297,10 @@
               <!-- Progreso de documentación -->
               <div class="q-mb-sm">
                 <div class="row items-center justify-between q-mb-xs">
-                  <span class="text-caption text-weight-medium" style="color: var(--text-secondary)">
+                  <span
+                    class="text-caption text-weight-medium"
+                    style="color: var(--text-secondary)"
+                  >
                     Progreso de Documentación
                   </span>
                   <span class="text-caption text-weight-bold text-primary">

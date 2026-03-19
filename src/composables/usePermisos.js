@@ -178,9 +178,7 @@ export function usePermisos() {
     // Items según rol
     if (esDocente.value) {
       // Docentes: solo Mis Asignaturas (web y app nativa)
-      return [
-        { label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' },
-      ]
+      return [{ label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' }]
     }
 
     if (esDirectorCarrera.value) {

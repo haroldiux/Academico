@@ -1,6 +1,5 @@
 <template>
   <q-page class="sync-page q-pa-lg">
-
     <!-- Header -->
     <div class="page-header q-mb-lg">
       <div class="row items-center q-gutter-sm">
@@ -8,8 +7,8 @@
         <div>
           <h1 class="page-title q-ma-none">Sincronización Académica</h1>
           <p class="text-caption text-grey-6 q-ma-none">
-            Sincroniza datos desde la API de Planning por carrera, sede o materia.
-            Solo visible para Super Admin.
+            Sincroniza datos desde la API de Planning por carrera, sede o materia. Solo visible para
+            Super Admin.
           </p>
         </div>
       </div>
@@ -39,15 +38,14 @@
       indicator-color="indigo"
       align="left"
     >
-      <q-tab name="carrera"   icon="school"          label="Por Carrera"           no-caps />
-      <q-tab name="multiple"  icon="checklist"       label="Múltiples Carreras"    no-caps />
-      <q-tab name="sede"      icon="location_city"   label="Por Sede"              no-caps />
-      <q-tab name="materia"   icon="menu_book"       label="Por Materia"           no-caps />
+      <q-tab name="carrera" icon="school" label="Por Carrera" no-caps />
+      <q-tab name="multiple" icon="checklist" label="Múltiples Carreras" no-caps />
+      <q-tab name="sede" icon="location_city" label="Por Sede" no-caps />
+      <q-tab name="materia" icon="menu_book" label="Por Materia" no-caps />
     </q-tabs>
     <q-separator class="q-mb-lg" />
 
     <q-tab-panels v-model="tab" animated>
-
       <!-- ═══════════════════════════════════════════════
            TAB 1: POR CARRERA (sede + carrera individual)
            ═══════════════════════════════════════════════ -->
@@ -188,7 +186,12 @@
                 <q-chip color="green-1" text-color="green-9" icon="check_circle">
                   OK: {{ resultadoSede.resumen.ok }}
                 </q-chip>
-                <q-chip color="red-1" text-color="red-9" icon="error" v-if="resultadoSede.resumen.error > 0">
+                <q-chip
+                  color="red-1"
+                  text-color="red-9"
+                  icon="error"
+                  v-if="resultadoSede.resumen.error > 0"
+                >
                   Error: {{ resultadoSede.resumen.error }}
                 </q-chip>
                 <q-chip color="blue-1" text-color="blue-9" icon="timer">
@@ -240,10 +243,24 @@
 
               <!-- Acciones rápidas -->
               <div class="row q-gutter-xs q-mb-sm">
-                <q-btn flat dense size="sm" no-caps label="Seleccionar todas" color="indigo"
-                  @click="carrerasMult = [...CARRERAS]" />
-                <q-btn flat dense size="sm" no-caps label="Limpiar" color="grey"
-                  @click="carrerasMult = []" />
+                <q-btn
+                  flat
+                  dense
+                  size="sm"
+                  no-caps
+                  label="Seleccionar todas"
+                  color="indigo"
+                  @click="carrerasMult = [...CARRERAS]"
+                />
+                <q-btn
+                  flat
+                  dense
+                  size="sm"
+                  no-caps
+                  label="Limpiar"
+                  color="grey"
+                  @click="carrerasMult = []"
+                />
                 <q-chip size="sm" color="indigo-1" text-color="indigo-9">
                   {{ carrerasMult.length }} / {{ CARRERAS.length }}
                 </q-chip>
@@ -302,8 +319,12 @@
                 <q-chip color="green-1" text-color="green-9" icon="check_circle">
                   OK: {{ resultadoMult.resumen.ok }}
                 </q-chip>
-                <q-chip v-if="resultadoMult.resumen.error > 0"
-                  color="red-1" text-color="red-9" icon="error">
+                <q-chip
+                  v-if="resultadoMult.resumen.error > 0"
+                  color="red-1"
+                  text-color="red-9"
+                  icon="error"
+                >
                   Error: {{ resultadoMult.resumen.error }}
                 </q-chip>
                 <q-chip color="blue-1" text-color="blue-9" icon="timer">
@@ -317,12 +338,25 @@
                   v-for="(res, carrera) in resultadoMult.results"
                   :key="carrera"
                   class="carrera-chip"
-                  :class="res.estado === 'ok' ? 'carrera-ok' : res.estado === 'pending' ? 'carrera-pending' : 'carrera-err'"
+                  :class="
+                    res.estado === 'ok'
+                      ? 'carrera-ok'
+                      : res.estado === 'pending'
+                        ? 'carrera-pending'
+                        : 'carrera-err'
+                  "
                 >
                   <q-spinner v-if="res.estado === 'pending'" size="12px" class="q-mr-xs" />
-                  <q-icon v-else :name="res.estado === 'ok' ? 'check' : 'close'" size="14px" class="q-mr-xs" />
+                  <q-icon
+                    v-else
+                    :name="res.estado === 'ok' ? 'check' : 'close'"
+                    size="14px"
+                    class="q-mr-xs"
+                  />
                   <span class="carrera-sigla">{{ carrera }}</span>
-                  <span v-if="res.estado === 'ok'" class="carrera-count">{{ res.stats?.total ?? 0 }}</span>
+                  <span v-if="res.estado === 'ok'" class="carrera-count">{{
+                    res.stats?.total ?? 0
+                  }}</span>
                   <q-tooltip v-if="res.estado === 'error'">{{ res.error }}</q-tooltip>
                 </div>
               </div>
@@ -388,7 +422,12 @@
                 <q-chip color="green-1" text-color="green-9" icon="check_circle">
                   OK: {{ resultadoMateria.resumen.ok }}
                 </q-chip>
-                <q-chip color="red-1" text-color="red-9" icon="error" v-if="resultadoMateria.resumen.error > 0">
+                <q-chip
+                  color="red-1"
+                  text-color="red-9"
+                  icon="error"
+                  v-if="resultadoMateria.resumen.error > 0"
+                >
                   Error: {{ resultadoMateria.resumen.error }}
                 </q-chip>
                 <q-chip color="blue-1" text-color="blue-9" icon="timer">
@@ -407,9 +446,12 @@
                   <q-item-section>
                     <q-item-label>{{ sedeName }}</q-item-label>
                     <q-item-label caption v-if="res.ok">
-                      {{ res.stats.total }} registros · {{ res.stats.grupos }} grupos · {{ res.duracion }}s
+                      {{ res.stats.total }} registros · {{ res.stats.grupos }} grupos ·
+                      {{ res.duracion }}s
                     </q-item-label>
-                    <q-item-label caption class="text-negative" v-else>{{ res.error }}</q-item-label>
+                    <q-item-label caption class="text-negative" v-else>{{
+                      res.error
+                    }}</q-item-label>
                   </q-item-section>
                   <q-item-section side v-if="res.ok">
                     <q-chip dense size="sm" color="blue-1" text-color="blue-9">
@@ -422,7 +464,6 @@
           </q-card>
         </div>
       </q-tab-panel>
-
     </q-tab-panels>
 
     <!-- ═══════════════════════════════════════════════
@@ -434,7 +475,15 @@
           <q-icon name="history" color="indigo" class="q-mr-xs" />
           Historial de Sincronizaciones
         </div>
-        <q-btn flat dense icon="refresh" color="indigo" label="Actualizar" no-caps @click="cargarLogs" />
+        <q-btn
+          flat
+          dense
+          icon="refresh"
+          color="indigo"
+          label="Actualizar"
+          no-caps
+          @click="cargarLogs"
+        />
       </q-card-section>
 
       <q-card-section class="q-pt-sm">
@@ -442,7 +491,7 @@
         <div class="row q-gutter-sm q-mb-md">
           <q-select
             v-model="filtroSede"
-            :options="[{id: null, nombre: 'Todas'}, ...opcionesSedes]"
+            :options="[{ id: null, nombre: 'Todas' }, ...opcionesSedes]"
             option-label="nombre"
             option-value="id"
             emit-value
@@ -464,7 +513,12 @@
           />
           <q-select
             v-model="filtroModo"
-            :options="[{label:'Todos', value:null},{label:'Por Carrera', value:'carrera'},{label:'Por Sede', value:'sede'},{label:'Por Materia', value:'materia'}]"
+            :options="[
+              { label: 'Todos', value: null },
+              { label: 'Por Carrera', value: 'carrera' },
+              { label: 'Por Sede', value: 'sede' },
+              { label: 'Por Materia', value: 'materia' },
+            ]"
             option-label="label"
             option-value="value"
             emit-value
@@ -494,9 +548,27 @@
               <q-chip
                 dense
                 size="sm"
-                :color="props.value === 'ok' ? 'green-1' : props.value === 'parcial' ? 'orange-1' : 'red-1'"
-                :text-color="props.value === 'ok' ? 'green-9' : props.value === 'parcial' ? 'orange-9' : 'red-9'"
-                :icon="props.value === 'ok' ? 'check_circle' : props.value === 'parcial' ? 'warning' : 'error'"
+                :color="
+                  props.value === 'ok'
+                    ? 'green-1'
+                    : props.value === 'parcial'
+                      ? 'orange-1'
+                      : 'red-1'
+                "
+                :text-color="
+                  props.value === 'ok'
+                    ? 'green-9'
+                    : props.value === 'parcial'
+                      ? 'orange-9'
+                      : 'red-9'
+                "
+                :icon="
+                  props.value === 'ok'
+                    ? 'check_circle'
+                    : props.value === 'parcial'
+                      ? 'warning'
+                      : 'error'
+                "
               >
                 {{ props.value === 'ok' ? 'OK' : props.value === 'parcial' ? 'Parcial' : 'Error' }}
               </q-chip>
@@ -504,7 +576,13 @@
           </template>
           <template #body-cell-modo="props">
             <q-td :props="props">
-              <q-chip dense size="sm" color="blue-1" text-color="blue-9" :icon="modoIcon(props.value)">
+              <q-chip
+                dense
+                size="sm"
+                color="blue-1"
+                text-color="blue-9"
+                :icon="modoIcon(props.value)"
+              >
                 {{ props.value }}
               </q-chip>
             </q-td>
@@ -530,7 +608,9 @@
                 no-caps
                 :color="props.row.total_cambios > 0 ? 'indigo' : 'grey'"
                 :icon="props.row.total_cambios > 0 ? 'difference' : 'check_circle'"
-                :label="props.row.total_cambios > 0 ? `${props.row.total_cambios} cambios` : 'Sin cambios'"
+                :label="
+                  props.row.total_cambios > 0 ? `${props.row.total_cambios} cambios` : 'Sin cambios'
+                "
                 @click="verDiff(props.row.id)"
               />
               <span v-else class="text-grey text-caption">—</span>
@@ -539,7 +619,6 @@
         </q-table>
       </q-card-section>
     </q-card>
-
   </q-page>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
@@ -550,9 +629,7 @@
       <q-card-section class="row items-center q-pb-none bg-indigo text-white">
         <q-icon name="difference" size="24px" class="q-mr-sm" />
         <div>
-          <div class="text-subtitle1 text-weight-bold">
-            Cambios de Sincronización
-          </div>
+          <div class="text-subtitle1 text-weight-bold">Cambios de Sincronización</div>
           <div class="text-caption" v-if="diffData">
             {{ diffData.carrera }} — {{ diffData.sede }} — {{ diffData.fecha }}
           </div>
@@ -567,7 +644,6 @@
       </q-card-section>
 
       <q-card-section v-else-if="diffData" class="q-pa-md">
-
         <!-- Resumen de cambios -->
         <div class="row q-gutter-sm q-mb-lg">
           <q-chip
@@ -580,53 +656,85 @@
           >
             {{ val.label }}: {{ val.valor }}
           </q-chip>
-          <q-chip v-if="diffData.diff?.resumen?.total_cambios === 0"
-            color="green-1" text-color="green-9" icon="check_circle">
+          <q-chip
+            v-if="diffData.diff?.resumen?.total_cambios === 0"
+            color="green-1"
+            text-color="green-9"
+            icon="check_circle"
+          >
             Sin cambios detectados
           </q-chip>
         </div>
 
         <!-- Tabs de categorías del diff -->
-        <q-tabs v-model="tabDiff" dense active-color="indigo" indicator-color="indigo" align="left" class="q-mb-md">
-          <q-tab name="grupos_nuevos"
+        <q-tabs
+          v-model="tabDiff"
+          dense
+          active-color="indigo"
+          indicator-color="indigo"
+          align="left"
+          class="q-mb-md"
+        >
+          <q-tab
+            name="grupos_nuevos"
             v-if="diffData.diff?.grupos_nuevos?.length"
             :label="`Grupos nuevos (${diffData.diff.grupos_nuevos.length})`"
-            icon="add_circle" no-caps />
-          <q-tab name="docente_cambio"
+            icon="add_circle"
+            no-caps
+          />
+          <q-tab
+            name="docente_cambio"
             v-if="diffData.diff?.grupos_docente_cambio?.length"
             :label="`Cambios docente (${diffData.diff.grupos_docente_cambio.length})`"
-            icon="swap_horiz" no-caps />
-          <q-tab name="horario_cambio"
+            icon="swap_horiz"
+            no-caps
+          />
+          <q-tab
+            name="horario_cambio"
             v-if="diffData.diff?.grupos_horario_cambio?.length"
             :label="`Cambios horario (${diffData.diff.grupos_horario_cambio.length})`"
-            icon="schedule" no-caps />
-          <q-tab name="horarios_eliminados"
+            icon="schedule"
+            no-caps
+          />
+          <q-tab
+            name="horarios_eliminados"
             v-if="diffData.diff?.horarios_eliminados?.length"
             :label="`Horarios eliminados (${diffData.diff.horarios_eliminados.length})`"
-            icon="delete" no-caps />
-          <q-tab name="grupos_eliminados"
+            icon="delete"
+            no-caps
+          />
+          <q-tab
+            name="grupos_eliminados"
             v-if="diffData.diff?.grupos_eliminados?.length"
             :label="`Grupos eliminados (${diffData.diff.grupos_eliminados.length})`"
-            icon="remove_circle" no-caps />
-          <q-tab name="docentes_nuevos"
+            icon="remove_circle"
+            no-caps
+          />
+          <q-tab
+            name="docentes_nuevos"
             v-if="diffData.diff?.docentes_nuevos?.length"
             :label="`Docentes nuevos (${diffData.diff.docentes_nuevos.length})`"
-            icon="person_add" no-caps />
-          <q-tab name="asignaturas_nuevas"
+            icon="person_add"
+            no-caps
+          />
+          <q-tab
+            name="asignaturas_nuevas"
             v-if="diffData.diff?.asignaturas_nuevas?.length"
             :label="`Asignaturas nuevas (${diffData.diff.asignaturas_nuevas.length})`"
-            icon="library_add" no-caps />
+            icon="library_add"
+            no-caps
+          />
         </q-tabs>
 
         <q-tab-panels v-model="tabDiff" animated>
-
           <!-- Grupos nuevos -->
           <q-tab-panel name="grupos_nuevos" class="q-pa-none">
             <q-table
               :rows="diffData.diff?.grupos_nuevos ?? []"
               :columns="colsGruposNuevos"
               row-key="grupo"
-              dense flat
+              dense
+              flat
               :rows-per-page-options="[0]"
               hide-pagination
             >
@@ -646,7 +754,8 @@
               :rows="diffData.diff?.grupos_docente_cambio ?? []"
               :columns="colsDocenteCambio"
               row-key="grupo"
-              dense flat
+              dense
+              flat
               :rows-per-page-options="[0]"
               hide-pagination
             >
@@ -673,16 +782,20 @@
               :rows="diffData.diff?.grupos_horario_cambio ?? []"
               :columns="colsHorarioCambio"
               row-key="grupo"
-              dense flat
+              dense
+              flat
               :rows-per-page-options="[0]"
               hide-pagination
             >
               <template #body-cell-tipo="props">
                 <q-td :props="props">
-                  <q-chip dense size="sm"
+                  <q-chip
+                    dense
+                    size="sm"
                     :color="props.value === 'nuevo' ? 'blue-1' : 'orange-1'"
                     :text-color="props.value === 'nuevo' ? 'blue-9' : 'orange-9'"
-                    :icon="props.value === 'nuevo' ? 'add' : 'edit'">
+                    :icon="props.value === 'nuevo' ? 'add' : 'edit'"
+                  >
                     {{ props.value === 'nuevo' ? 'Nuevo' : 'Modificado' }}
                   </q-chip>
                 </q-td>
@@ -707,7 +820,8 @@
               :rows="diffData.diff?.horarios_eliminados ?? []"
               :columns="colsHorariosEliminados"
               row-key="grupo"
-              dense flat
+              dense
+              flat
               :rows-per-page-options="[0]"
               hide-pagination
             />
@@ -719,7 +833,8 @@
               :rows="diffData.diff?.grupos_eliminados ?? []"
               :columns="colsGruposNuevos"
               row-key="grupo"
-              dense flat
+              dense
+              flat
               :rows-per-page-options="[0]"
               hide-pagination
             >
@@ -736,7 +851,7 @@
           <!-- Docentes nuevos -->
           <q-tab-panel name="docentes_nuevos" class="q-pa-none">
             <q-list bordered separator>
-              <q-item v-for="d in (diffData.diff?.docentes_nuevos ?? [])" :key="d" dense>
+              <q-item v-for="d in diffData.diff?.docentes_nuevos ?? []" :key="d" dense>
                 <q-item-section avatar>
                   <q-icon name="person_add" color="green" />
                 </q-item-section>
@@ -748,7 +863,7 @@
           <!-- Asignaturas nuevas -->
           <q-tab-panel name="asignaturas_nuevas" class="q-pa-none">
             <q-list bordered separator>
-              <q-item v-for="a in (diffData.diff?.asignaturas_nuevas ?? [])" :key="a" dense>
+              <q-item v-for="a in diffData.diff?.asignaturas_nuevas ?? []" :key="a" dense>
                 <q-item-section avatar>
                   <q-icon name="library_add" color="blue" />
                 </q-item-section>
@@ -756,7 +871,6 @@
               </q-item>
             </q-list>
           </q-tab-panel>
-
         </q-tab-panels>
       </q-card-section>
     </q-card>
@@ -775,44 +889,64 @@ const $q = useQuasar()
 const PLANNING_API = 'http://181.188.185.211:9098/api/Grupos/listar/'
 
 const CARRERAS = [
-  'CARADM', 'CARAYE', 'CARBYF', 'CARCAD', 'CARCCP', 'CARCIC',
-  'CARCNE', 'CARCPU', 'CARCSO', 'CARDER', 'CARECO', 'CARELE',
-  'CARENL', 'CARFIS', 'CARFON', 'CARIBI', 'CARICO', 'CARMED',
-  'CARNYD', 'CARODO', 'CARPRO', 'CARSIS', 'CARSON', 'CARVET',
+  'CARADM',
+  'CARAYE',
+  'CARBYF',
+  'CARCAD',
+  'CARCCP',
+  'CARCIC',
+  'CARCNE',
+  'CARCPU',
+  'CARCSO',
+  'CARDER',
+  'CARECO',
+  'CARELE',
+  'CARENL',
+  'CARFIS',
+  'CARFON',
+  'CARIBI',
+  'CARICO',
+  'CARMED',
+  'CARNYD',
+  'CARODO',
+  'CARPRO',
+  'CARSIS',
+  'CARSON',
+  'CARVET',
 ]
 
 const SEDES = [
-  { id: 1,  nombre: 'Cochabamba'     },
-  { id: 2,  nombre: 'Caranavi'       },
-  { id: 3,  nombre: 'Cobija'         },
-  { id: 4,  nombre: 'El Alto'        },
-  { id: 5,  nombre: 'Ivirgarzama'    },
-  { id: 6,  nombre: 'La Paz'         },
-  { id: 8,  nombre: 'Puerto Quijarro'},
-  { id: 9,  nombre: 'Santa Cruz'     },
-  { id: 12, nombre: 'Guayaramerin'   },
+  { id: 1, nombre: 'Cochabamba' },
+  { id: 2, nombre: 'Caranavi' },
+  { id: 3, nombre: 'Cobija' },
+  { id: 4, nombre: 'El Alto' },
+  { id: 5, nombre: 'Ivirgarzama' },
+  { id: 6, nombre: 'La Paz' },
+  { id: 8, nombre: 'Puerto Quijarro' },
+  { id: 9, nombre: 'Santa Cruz' },
+  { id: 12, nombre: 'Guayaramerin' },
 ]
 
 // ─── Estado global ───────────────────────────────────────────────────────────
 
-const tab     = ref('carrera')
+const tab = ref('carrera')
 const gestion = ref('1-2026')
 
 // ─── Tab: Por Carrera ────────────────────────────────────────────────────────
 
-const selSede          = ref(1)
-const selCarrera       = ref('CARSIS')
-const loadingCarrera   = ref(false)
+const selSede = ref(1)
+const selCarrera = ref('CARSIS')
+const loadingCarrera = ref(false)
 const resultadoCarrera = ref(null)
 
-const opcionesSedes   = ref([...SEDES])
+const opcionesSedes = ref([...SEDES])
 const opcionesCarreras = ref([...CARRERAS])
 
 function filtrarCarreras(val, update) {
   update(() => {
     const needle = val.toLowerCase()
     opcionesCarreras.value = needle
-      ? CARRERAS.filter(c => c.toLowerCase().includes(needle))
+      ? CARRERAS.filter((c) => c.toLowerCase().includes(needle))
       : [...CARRERAS]
   })
 }
@@ -821,27 +955,35 @@ const statsCarrera = computed(() => {
   if (!resultadoCarrera.value?.stats) return {}
   const s = resultadoCarrera.value.stats
   return {
-    total:    { label: 'Registros',  valor: s.total    ?? 0 },
-    docentes: { label: 'Docentes',   valor: s.docentes ?? 0 },
-    grupos:   { label: 'Grupos',     valor: s.grupos   ?? 0 },
-    horarios: { label: 'Horarios',   valor: s.horarios ?? 0 },
+    total: { label: 'Registros', valor: s.total ?? 0 },
+    docentes: { label: 'Docentes', valor: s.docentes ?? 0 },
+    grupos: { label: 'Grupos', valor: s.grupos ?? 0 },
+    horarios: { label: 'Horarios', valor: s.horarios ?? 0 },
   }
 })
 
 async function syncCarrera() {
-  loadingCarrera.value   = true
+  loadingCarrera.value = true
   resultadoCarrera.value = null
   try {
     const res = await api.post('/sync/carrera', {
-      gestion:  gestion.value,
-      sede_id:  selSede.value,
-      carrera:  selCarrera.value,
+      gestion: gestion.value,
+      sede_id: selSede.value,
+      carrera: selCarrera.value,
     })
     resultadoCarrera.value = res.data
-    $q.notify({ type: res.data.ok ? 'positive' : 'negative', message: res.data.ok ? 'Sincronización exitosa' : 'Error en sincronización' })
+    $q.notify({
+      type: res.data.ok ? 'positive' : 'negative',
+      message: res.data.ok ? 'Sincronización exitosa' : 'Error en sincronización',
+    })
     cargarLogs()
   } catch (e) {
-    resultadoCarrera.value = { ok: false, error: e.response?.data?.message || e.message, carrera: selCarrera.value, sede: '' }
+    resultadoCarrera.value = {
+      ok: false,
+      error: e.response?.data?.message || e.message,
+      carrera: selCarrera.value,
+      sede: '',
+    }
     $q.notify({ type: 'negative', message: 'Error: ' + (e.response?.data?.message || e.message) })
   } finally {
     loadingCarrera.value = false
@@ -850,56 +992,56 @@ async function syncCarrera() {
 
 // ─── Tab: Múltiples Carreras ─────────────────────────────────────────────────
 
-const selSedeMult    = ref(1)
-const carrerasMult   = ref([])
-const loadingMult    = ref(false)
-const resultadoMult  = ref(null)
-const progMult       = ref({ actual: 0, total: 0 })
+const selSedeMult = ref(1)
+const carrerasMult = ref([])
+const loadingMult = ref(false)
+const resultadoMult = ref(null)
+const progMult = ref({ actual: 0, total: 0 })
 
-const nombreSedeMult = computed(() =>
-  SEDES.find(s => s.id === selSedeMult.value)?.nombre ?? '—'
-)
+const nombreSedeMult = computed(() => SEDES.find((s) => s.id === selSedeMult.value)?.nombre ?? '—')
 
 async function syncMultiple() {
   if (!carrerasMult.value.length) return
-  loadingMult.value  = true
-  progMult.value     = { actual: 0, total: carrerasMult.value.length }
+  loadingMult.value = true
+  progMult.value = { actual: 0, total: carrerasMult.value.length }
 
   // Inicializar resultado con estado "pending" para cada carrera seleccionada
   resultadoMult.value = {
     resumen: { ok: 0, error: 0 },
     duracion: 0,
-    results: Object.fromEntries(carrerasMult.value.map(c => [c, { estado: 'pending' }])),
+    results: Object.fromEntries(carrerasMult.value.map((c) => [c, { estado: 'pending' }])),
   }
 
   const inicio = Date.now()
-  let ok = 0, err = 0
+  let ok = 0,
+    err = 0
 
   for (const carrera of carrerasMult.value) {
     try {
       const res = await api.post('/sync/carrera', {
-        gestion:  gestion.value,
-        sede_id:  selSedeMult.value,
+        gestion: gestion.value,
+        sede_id: selSedeMult.value,
         carrera,
       })
       resultadoMult.value.results[carrera] = {
         estado: res.data.ok ? 'ok' : 'error',
-        stats:  res.data.stats,
-        error:  res.data.error,
+        stats: res.data.stats,
+        error: res.data.error,
       }
-      if (res.data.ok) ok++; else err++
+      if (res.data.ok) ok++
+      else err++
     } catch (e) {
       resultadoMult.value.results[carrera] = {
         estado: 'error',
-        error:  e.response?.data?.message || e.message,
+        error: e.response?.data?.message || e.message,
       }
       err++
     }
     progMult.value.actual++
   }
 
-  resultadoMult.value.resumen   = { ok, error: err }
-  resultadoMult.value.duracion  = ((Date.now() - inicio) / 1000).toFixed(1)
+  resultadoMult.value.resumen = { ok, error: err }
+  resultadoMult.value.duracion = ((Date.now() - inicio) / 1000).toFixed(1)
   loadingMult.value = false
 
   $q.notify({
@@ -911,16 +1053,16 @@ async function syncMultiple() {
 
 // ─── Tab: Por Sede ───────────────────────────────────────────────────────────
 
-const selSedeMasivo   = ref(1)
-const loadingSede     = ref(false)
-const resultadoSede   = ref(null)
+const selSedeMasivo = ref(1)
+const loadingSede = ref(false)
+const resultadoSede = ref(null)
 
-const nombreSedeMasivo = computed(() =>
-  SEDES.find(s => s.id === selSedeMasivo.value)?.nombre ?? '—'
+const nombreSedeMasivo = computed(
+  () => SEDES.find((s) => s.id === selSedeMasivo.value)?.nombre ?? '—',
 )
 
 async function syncSede() {
-  loadingSede.value   = true
+  loadingSede.value = true
   resultadoSede.value = null
   try {
     const res = await api.post('/sync/sede', {
@@ -942,22 +1084,22 @@ async function syncSede() {
 
 // ─── Tab: Por Materia ────────────────────────────────────────────────────────
 
-const selCarreraMateria    = ref('CARSIS')
+const selCarreraMateria = ref('CARSIS')
 const opcionesCarrerasMateria = ref([...CARRERAS])
-const loadingMateria       = ref(false)
-const resultadoMateria     = ref(null)
+const loadingMateria = ref(false)
+const resultadoMateria = ref(null)
 
 function filtrarCarrerasMateria(val, update) {
   update(() => {
     const needle = val.toLowerCase()
     opcionesCarrerasMateria.value = needle
-      ? CARRERAS.filter(c => c.toLowerCase().includes(needle))
+      ? CARRERAS.filter((c) => c.toLowerCase().includes(needle))
       : [...CARRERAS]
   })
 }
 
 async function syncMateria() {
-  loadingMateria.value   = true
+  loadingMateria.value = true
   resultadoMateria.value = null
   try {
     const res = await api.post('/sync/materia', {
@@ -979,89 +1121,149 @@ async function syncMateria() {
 
 // ─── Historial ───────────────────────────────────────────────────────────────
 
-const logs        = ref([])
+const logs = ref([])
 const loadingLogs = ref(false)
-const filtroSede    = ref(null)
+const filtroSede = ref(null)
 const filtroCarrera = ref(null)
-const filtroModo    = ref(null)
+const filtroModo = ref(null)
 
 const columnas = [
-  { name: 'fecha',                 label: 'Fecha',       field: 'fecha',                 align: 'left',   sortable: true  },
-  { name: 'sede',                  label: 'Sede',        field: 'sede',                  align: 'left',   sortable: true  },
-  { name: 'carrera',               label: 'Carrera',     field: 'carrera',               align: 'left',   sortable: true  },
-  { name: 'gestion',               label: 'Gestión',     field: 'gestion',               align: 'center', sortable: true  },
-  { name: 'modo',                  label: 'Modo',        field: 'modo',                  align: 'center', sortable: true  },
-  { name: 'estado',                label: 'Estado',      field: 'estado',                align: 'center', sortable: true  },
-  { name: 'total_registros',       label: 'Registros',   field: 'total_registros',       align: 'center', sortable: true  },
-  { name: 'grupos_creados',        label: 'Grupos',      field: 'grupos_creados',        align: 'center', sortable: true  },
-  { name: 'duracion_segundos',     label: 'Dur. (s)',    field: 'duracion_segundos',     align: 'center', sortable: true  },
-  { name: 'usuario',               label: 'Usuario',     field: 'usuario',               align: 'left',   sortable: false },
-  { name: 'error_mensaje',         label: 'Error',       field: 'error_mensaje',         align: 'left',   sortable: false },
-  { name: 'acciones',              label: 'Cambios',     field: 'acciones',              align: 'center', sortable: false },
+  { name: 'fecha', label: 'Fecha', field: 'fecha', align: 'left', sortable: true },
+  { name: 'sede', label: 'Sede', field: 'sede', align: 'left', sortable: true },
+  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left', sortable: true },
+  { name: 'gestion', label: 'Gestión', field: 'gestion', align: 'center', sortable: true },
+  { name: 'modo', label: 'Modo', field: 'modo', align: 'center', sortable: true },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
+  {
+    name: 'total_registros',
+    label: 'Registros',
+    field: 'total_registros',
+    align: 'center',
+    sortable: true,
+  },
+  {
+    name: 'grupos_creados',
+    label: 'Grupos',
+    field: 'grupos_creados',
+    align: 'center',
+    sortable: true,
+  },
+  {
+    name: 'duracion_segundos',
+    label: 'Dur. (s)',
+    field: 'duracion_segundos',
+    align: 'center',
+    sortable: true,
+  },
+  { name: 'usuario', label: 'Usuario', field: 'usuario', align: 'left', sortable: false },
+  { name: 'error_mensaje', label: 'Error', field: 'error_mensaje', align: 'left', sortable: false },
+  { name: 'acciones', label: 'Cambios', field: 'acciones', align: 'center', sortable: false },
 ]
 
 // ─── Diff dialog ─────────────────────────────────────────────────────────────
-const showDiff    = ref(false)
+const showDiff = ref(false)
 const loadingDiff = ref(false)
-const diffData    = ref(null)
-const tabDiff     = ref('grupos_nuevos')
+const diffData = ref(null)
+const tabDiff = ref('grupos_nuevos')
 
 const resumenChips = computed(() => {
   const r = diffData.value?.diff?.resumen
   if (!r) return {}
   const chips = {}
-  if (r.grupos_nuevos)       chips.grupos_nuevos       = { label: 'Grupos nuevos',        valor: r.grupos_nuevos,       color: 'green',  icon: 'add_circle'   }
-  if (r.grupos_eliminados)   chips.grupos_eliminados   = { label: 'Grupos eliminados',    valor: r.grupos_eliminados,   color: 'red',    icon: 'remove_circle'}
-  if (r.cambios_docente)     chips.cambios_docente     = { label: 'Cambios docente',      valor: r.cambios_docente,     color: 'orange', icon: 'swap_horiz'   }
-  if (r.cambios_horario)     chips.cambios_horario     = { label: 'Cambios horario',      valor: r.cambios_horario,     color: 'blue',   icon: 'schedule'     }
-  if (r.horarios_eliminados) chips.horarios_eliminados = { label: 'Horarios eliminados',  valor: r.horarios_eliminados, color: 'red',    icon: 'delete'       }
-  if (r.docentes_nuevos)     chips.docentes_nuevos     = { label: 'Docentes nuevos',      valor: r.docentes_nuevos,     color: 'teal',   icon: 'person_add'   }
-  if (r.asignaturas_nuevas)  chips.asignaturas_nuevas  = { label: 'Asignaturas nuevas',   valor: r.asignaturas_nuevas,  color: 'indigo', icon: 'library_add'  }
+  if (r.grupos_nuevos)
+    chips.grupos_nuevos = {
+      label: 'Grupos nuevos',
+      valor: r.grupos_nuevos,
+      color: 'green',
+      icon: 'add_circle',
+    }
+  if (r.grupos_eliminados)
+    chips.grupos_eliminados = {
+      label: 'Grupos eliminados',
+      valor: r.grupos_eliminados,
+      color: 'red',
+      icon: 'remove_circle',
+    }
+  if (r.cambios_docente)
+    chips.cambios_docente = {
+      label: 'Cambios docente',
+      valor: r.cambios_docente,
+      color: 'orange',
+      icon: 'swap_horiz',
+    }
+  if (r.cambios_horario)
+    chips.cambios_horario = {
+      label: 'Cambios horario',
+      valor: r.cambios_horario,
+      color: 'blue',
+      icon: 'schedule',
+    }
+  if (r.horarios_eliminados)
+    chips.horarios_eliminados = {
+      label: 'Horarios eliminados',
+      valor: r.horarios_eliminados,
+      color: 'red',
+      icon: 'delete',
+    }
+  if (r.docentes_nuevos)
+    chips.docentes_nuevos = {
+      label: 'Docentes nuevos',
+      valor: r.docentes_nuevos,
+      color: 'teal',
+      icon: 'person_add',
+    }
+  if (r.asignaturas_nuevas)
+    chips.asignaturas_nuevas = {
+      label: 'Asignaturas nuevas',
+      valor: r.asignaturas_nuevas,
+      color: 'indigo',
+      icon: 'library_add',
+    }
   return chips
 })
 
 // Columnas para tablas del diff
 const colsGruposNuevos = [
-  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left'   },
-  { name: 'grupo',      label: 'Grupo',      field: 'grupo',      align: 'center' },
-  { name: 'docente',    label: 'Docente',    field: 'docente',    align: 'left'   },
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
+  { name: 'docente', label: 'Docente', field: 'docente', align: 'left' },
 ]
 const colsDocenteCambio = [
-  { name: 'asignatura',      label: 'Asignatura',      field: 'asignatura',      align: 'left'   },
-  { name: 'grupo',           label: 'Grupo',           field: 'grupo',           align: 'center' },
-  { name: 'docente_antes',   label: 'Antes',           field: 'docente_antes',   align: 'left'   },
-  { name: 'docente_despues', label: 'Después',         field: 'docente_despues', align: 'left'   },
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
+  { name: 'docente_antes', label: 'Antes', field: 'docente_antes', align: 'left' },
+  { name: 'docente_despues', label: 'Después', field: 'docente_despues', align: 'left' },
 ]
 const colsHorarioCambio = [
-  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left'   },
-  { name: 'grupo',      label: 'Grupo',      field: 'grupo',      align: 'center' },
-  { name: 'tipo',       label: 'Tipo',       field: 'tipo',       align: 'center' },
-  { name: 'antes',      label: 'Antes',      field: 'antes',      align: 'left'   },
-  { name: 'despues',    label: 'Después',    field: 'despues',    align: 'left'   },
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
+  { name: 'tipo', label: 'Tipo', field: 'tipo', align: 'center' },
+  { name: 'antes', label: 'Antes', field: 'antes', align: 'left' },
+  { name: 'despues', label: 'Después', field: 'despues', align: 'left' },
 ]
 const colsHorariosEliminados = [
-  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left'   },
-  { name: 'grupo',      label: 'Grupo',      field: 'grupo',      align: 'center' },
-  { name: 'horario',    label: 'Horario',    field: 'horario',    align: 'left'   },
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
+  { name: 'horario', label: 'Horario', field: 'horario', align: 'left' },
 ]
 
 async function verDiff(logId) {
-  showDiff.value    = true
+  showDiff.value = true
   loadingDiff.value = true
-  diffData.value    = null
-  tabDiff.value     = 'grupos_nuevos'
+  diffData.value = null
+  tabDiff.value = 'grupos_nuevos'
   try {
-    const res   = await api.get(`/sync/logs/${logId}/diff`)
+    const res = await api.get(`/sync/logs/${logId}/diff`)
     diffData.value = res.data
     // Auto-seleccionar primer tab con datos
     const d = res.data.diff
-    if (d?.grupos_nuevos?.length)          tabDiff.value = 'grupos_nuevos'
+    if (d?.grupos_nuevos?.length) tabDiff.value = 'grupos_nuevos'
     else if (d?.grupos_docente_cambio?.length) tabDiff.value = 'docente_cambio'
     else if (d?.grupos_horario_cambio?.length) tabDiff.value = 'horario_cambio'
-    else if (d?.horarios_eliminados?.length)   tabDiff.value = 'horarios_eliminados'
-    else if (d?.grupos_eliminados?.length)     tabDiff.value = 'grupos_eliminados'
-    else if (d?.docentes_nuevos?.length)       tabDiff.value = 'docentes_nuevos'
-    else if (d?.asignaturas_nuevas?.length)    tabDiff.value = 'asignaturas_nuevas'
+    else if (d?.horarios_eliminados?.length) tabDiff.value = 'horarios_eliminados'
+    else if (d?.grupos_eliminados?.length) tabDiff.value = 'grupos_eliminados'
+    else if (d?.docentes_nuevos?.length) tabDiff.value = 'docentes_nuevos'
+    else if (d?.asignaturas_nuevas?.length) tabDiff.value = 'asignaturas_nuevas'
   } catch {
     $q.notify({ type: 'negative', message: 'Error al cargar el diff' })
     showDiff.value = false
@@ -1074,9 +1276,9 @@ async function cargarLogs() {
   loadingLogs.value = true
   try {
     const params = { limit: 100 }
-    if (filtroSede.value)    params.sede_id = filtroSede.value
+    if (filtroSede.value) params.sede_id = filtroSede.value
     if (filtroCarrera.value && filtroCarrera.value !== 'Todas') params.carrera = filtroCarrera.value
-    if (filtroModo.value)    params.modo = filtroModo.value
+    if (filtroModo.value) params.modo = filtroModo.value
     const res = await api.get('/sync/logs', { params })
     logs.value = res.data.logs ?? []
   } catch {
@@ -1146,7 +1348,7 @@ onMounted(() => cargarLogs())
   margin-right: 4px;
 }
 .carrera-count {
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
   padding: 0 5px;
   font-size: 0.7rem;

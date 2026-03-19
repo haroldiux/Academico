@@ -14,11 +14,7 @@
           <div class="header-badges q-mt-xs">
             <q-badge color="grey-6" label="BD Local" class="q-mr-xs" />
             <q-badge color="primary" label="Plan Nuevo (N)" class="q-mr-xs" />
-            <q-badge
-              v-if="ultimoSync"
-              color="positive"
-              :label="`Sync: ${ultimoSync}`"
-            />
+            <q-badge v-if="ultimoSync" color="positive" :label="`Sync: ${ultimoSync}`" />
             <q-badge v-else color="warning" label="Sin sincronizar" />
           </div>
         </div>
@@ -330,38 +326,44 @@
             <div class="row gap-sm">
               <q-chip dense color="positive" text-color="white" size="sm">
                 <q-icon name="check" size="xs" class="q-mr-xs" />
-                {{ syncCarreras.filter(c => c.sincronizado).length }} con datos
+                {{ syncCarreras.filter((c) => c.sincronizado).length }} con datos
               </q-chip>
               <q-chip dense color="warning" text-color="white" size="sm">
                 <q-icon name="warning" size="xs" class="q-mr-xs" />
-                {{ syncCarreras.filter(c => !c.sincronizado).length }} sin datos
+                {{ syncCarreras.filter((c) => !c.sincronizado).length }} sin datos
               </q-chip>
             </div>
           </div>
 
           <q-scroll-area style="height: 280px">
             <q-list dense separator>
-              <q-item
-                v-for="carrera in syncCarreras"
-                :key="carrera.codigo"
-                class="q-py-xs"
-              >
+              <q-item v-for="carrera in syncCarreras" :key="carrera.codigo" class="q-py-xs">
                 <q-item-section avatar style="min-width: 40px">
                   <q-icon
-                    :name="carrera.sincronizando ? 'hourglass_empty'
-                          : carrera.sincronizado ? 'check_circle'
-                          : carrera.error ? 'error'
-                          : 'radio_button_unchecked'"
-                    :color="carrera.sincronizando ? 'blue'
-                           : carrera.sincronizado ? 'positive'
-                           : carrera.error ? 'negative'
-                           : 'grey-4'"
-                    :class="{ 'rotating': carrera.sincronizando }"
+                    :name="
+                      carrera.sincronizando
+                        ? 'hourglass_empty'
+                        : carrera.sincronizado
+                          ? 'check_circle'
+                          : carrera.error
+                            ? 'error'
+                            : 'radio_button_unchecked'
+                    "
+                    :color="
+                      carrera.sincronizando
+                        ? 'blue'
+                        : carrera.sincronizado
+                          ? 'positive'
+                          : carrera.error
+                            ? 'negative'
+                            : 'grey-4'
+                    "
+                    :class="{ rotating: carrera.sincronizando }"
                   />
                 </q-item-section>
 
                 <q-item-section>
-                  <q-item-label class="text-weight-medium" style="font-size:0.85rem">
+                  <q-item-label class="text-weight-medium" style="font-size: 0.85rem">
                     {{ carrera.codigo }}
                   </q-item-label>
                   <q-item-label caption>
@@ -406,7 +408,8 @@
               <q-icon name="warning" color="orange" />
             </template>
             Sincronizar todas reemplaza los datos actuales de la gestión
-            <strong>{{ filtros.gestion }}</strong>.
+            <strong>{{ filtros.gestion }}</strong
+            >.
           </q-banner>
           <div class="text-body2 text-grey-8 q-mb-xs">
             Para sincronizar <strong>todas</strong>, escribe <strong>sincronizar</strong>:
@@ -502,21 +505,21 @@ const CARRERAS_API_MAP = {
   'complementaria en administración': 'carcad',
   'complementaria contaduría': 'carccp',
   'complementaria ingeniería comercial': 'carcic',
-  'cinematografía': 'carcne',
+  cinematografía: 'carcne',
   'contaduría pública': 'carcpu',
   'comunicación social': 'carcso',
-  'derecho': 'carder',
-  'economía': 'careco',
+  derecho: 'carder',
+  economía: 'careco',
   'ingeniería electronica': 'carele',
-  'enfermería': 'carenl',
-  'fisioterapia': 'carfis',
-  'fonoaudiologia': 'carfon',
+  enfermería: 'carenl',
+  fisioterapia: 'carfis',
+  fonoaudiologia: 'carfon',
   'ingeniería biomédica': 'caribi',
   'ingeniería comercial': 'carico',
   'medicina veterinaria': 'carvet',
-  'medicina': 'carmed',
-  'nutrición': 'carnyd',
-  'odontología': 'carodo',
+  medicina: 'carmed',
+  nutrición: 'carnyd',
+  odontología: 'carodo',
   'protesis dental': 'carpro',
   'ingeniería de sistemas': 'carsis',
   'ingeniería de sonido': 'carson',
@@ -972,7 +975,8 @@ async function fetchMallas() {
         $q.notify({
           type: 'warning',
           icon: 'sync',
-          message: 'No hay datos sincronizados para esta carrera y gestión. Usa "Sincronizar API" primero.',
+          message:
+            'No hay datos sincronizados para esta carrera y gestión. Usa "Sincronizar API" primero.',
           position: 'top-right',
           timeout: 5000,
         })
@@ -1073,7 +1077,11 @@ async function sincronizarCarreraIndividual(codigo) {
       })
     } else {
       carrera.error = res.data.message || 'Error desconocido'
-      $q.notify({ type: 'negative', message: `Error en ${codigo}: ${carrera.error}`, position: 'top-right' })
+      $q.notify({
+        type: 'negative',
+        message: `Error en ${codigo}: ${carrera.error}`,
+        position: 'top-right',
+      })
     }
   } catch (e) {
     carrera.error = e.response?.data?.message || 'Error de conexión'
@@ -1122,7 +1130,9 @@ async function ejecutarSincronizacion() {
       confirmacionTexto.value = ''
 
       const conDatos = (response.data.resultados || []).filter((r) => r.status === 'ok').length
-      const sinDatos = (response.data.resultados || []).filter((r) => r.status === 'sin_datos').length
+      const sinDatos = (response.data.resultados || []).filter(
+        (r) => r.status === 'sin_datos',
+      ).length
       const conError = (response.data.resultados || []).filter((r) => r.status === 'error').length
 
       $q.notify({
@@ -1440,8 +1450,12 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Chips del resumen en el diálogo */

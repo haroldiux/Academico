@@ -575,7 +575,7 @@
                   placeholder="Ej: 2476"
                   class="col-4"
                   style="min-width: 120px"
-                  :rules="[val => val > 0 || 'ID debe ser mayor a 0']"
+                  :rules="[(val) => val > 0 || 'ID debe ser mayor a 0']"
                 />
                 <div class="text-caption text-grey-6">
                   (Usar este ID si no hay carpeta seleccionada)
@@ -671,7 +671,9 @@
               color="teal"
               icon="download"
               label="Registrar seleccionados"
-              :disable="docentesSeleccionados.length === 0 || !(carpetaSeleccionada || asignaturaIdManual)"
+              :disable="
+                docentesSeleccionados.length === 0 || !(carpetaSeleccionada || asignaturaIdManual)
+              "
               :loading="registrando"
               @click="registrarDocentesSeleccionados"
             >
@@ -1060,7 +1062,7 @@ async function registrarDocentesSeleccionados() {
   if (!asignaturaId || asignaturaId <= 0) {
     $q.notify({
       type: 'warning',
-      message: carpetaSeleccionada.value 
+      message: carpetaSeleccionada.value
         ? 'ID de asignatura inválido'
         : 'Selecciona una carpeta con "Verificar Carpeta" o ingresa un ID manual válido',
       position: 'top-right',
@@ -1086,11 +1088,11 @@ async function registrarDocentesSeleccionados() {
   }
 
   registrando.value = true
-  const items = getDocentesParaMigrar().map(item => ({
+  const items = getDocentesParaMigrar().map((item) => ({
     docente_nombre: item.docente_nombre,
     docente_ci: item.docente_ci,
     grupo_nombre: item.grupo_nombre,
-    horarios: item.horarios.map(h => ({
+    horarios: item.horarios.map((h) => ({
       id_horario_api: h.id_horario_api,
       tipo_clase: h.tipo_clase,
       dia: h.dia,
@@ -1113,9 +1115,11 @@ async function registrarDocentesSeleccionados() {
       const res = response.data.data
       const summary = []
       if (res.docentes_creados > 0) summary.push(`${res.docentes_creados} docente(s) nuevos`)
-      if (res.docentes_existentes > 0) summary.push(`${res.docentes_existentes} docente(s) existentes`)
+      if (res.docentes_existentes > 0)
+        summary.push(`${res.docentes_existentes} docente(s) existentes`)
       if (res.grupos_creados > 0) summary.push(`${res.grupos_creados} grupo(s) creados`)
-      if (res.grupos_actualizados > 0) summary.push(`${res.grupos_actualizados} grupo(s) actualizados`)
+      if (res.grupos_actualizados > 0)
+        summary.push(`${res.grupos_actualizados} grupo(s) actualizados`)
       if (res.horarios_creados > 0) summary.push(`${res.horarios_creados} horario(s) creados`)
       const detail = summary.length ? ` (${summary.join(', ')})` : ''
       $q.notify({

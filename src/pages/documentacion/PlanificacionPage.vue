@@ -1299,9 +1299,7 @@ async function cargarPlanificacion() {
         }
         // Fallback: match por numero_sesion (retrocompatibilidad con datos sin tipo_clase/semana)
         if (!sesionView) {
-          sesionView = planificacionSesiones.value.find(
-            (s) => s.numeroGlobal === db.numero_sesion,
-          )
+          sesionView = planificacionSesiones.value.find((s) => s.numeroGlobal === db.numero_sesion)
         }
         if (sesionView) {
           // 1. Manejo de Temas (Prioridad IDs para el select)
@@ -2131,9 +2129,7 @@ async function guardarTodo(silent = false) {
         semana: sesion.semana,
         tipo_clase: sesion.tipoClase, // snake_case para el backend
         indice_tipo: sesion.indiceTipo, // posición ordinal dentro del tipo en la semana (1ra teórica=1, 2da=2…)
-        tema_id:
-          sesion.tema_id ||
-          (temasIds.length > 0 ? temasIds[0] : null),
+        tema_id: sesion.tema_id || (temasIds.length > 0 ? temasIds[0] : null),
         temas_ids: temasIds,
         contenido_items_seleccionados: sesion.contenido_items_seleccionados || [],
         observaciones: sesion.contenido || '', // Guardar contenido manual en observaciones

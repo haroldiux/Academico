@@ -9,42 +9,42 @@
 <script setup lang="ts">
 // Basic interface
 interface Props {
-    title: string;
-    count: number;
-    items: string[];
-    optional?: boolean;
+  title: string
+  count: number
+  items: string[]
+  optional?: boolean
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
 // Props with defaults
 const propsWithDefaults = withDefaults(defineProps<Props>(), {
-    count: 0,
-    items: () => [],
-    optional: false,
-});
+  count: 0,
+  items: () => [],
+  optional: false,
+})
 
 // Union types
 interface PropsWithUnion {
-    status: 'success' | 'error' | 'warning';
-    size: 'sm' | 'md' | 'lg';
+  status: 'success' | 'error' | 'warning'
+  size: 'sm' | 'md' | 'lg'
 }
 
 // Complex types
 interface User {
-    id: number;
-    name: string;
-    email: string;
+  id: number
+  name: string
+  email: string
 }
 
 interface ComplexProps {
-    user: User;
-    users: User[];
-    callback: (id: number) => void;
-    config: Record<string, unknown>;
+  user: User
+  users: User[]
+  callback: (id: number) => void
+  config: Record<string, unknown>
 }
 
-const complexProps = defineProps<ComplexProps>();
+const complexProps = defineProps<ComplexProps>()
 </script>
 ```
 
@@ -54,27 +54,27 @@ const complexProps = defineProps<ComplexProps>();
 <script setup lang="ts">
 // Type-safe emits
 interface Emits {
-    (e: 'update', value: string): void;
-    (e: 'delete', id: number): void;
-    (e: 'submit', payload: { name: string; email: string }): void;
+  (e: 'update', value: string): void
+  (e: 'delete', id: number): void
+  (e: 'submit', payload: { name: string; email: string }): void
 }
 
-const emit = defineEmits<Emits>();
+const emit = defineEmits<Emits>()
 
 // Usage
 function handleUpdate(value: string) {
-    emit('update', value); // Type-safe
-    // emit('update', 123) // Error: number not assignable to string
+  emit('update', value) // Type-safe
+  // emit('update', 123) // Error: number not assignable to string
 }
 
 // Alternative syntax
 type EmitsType = {
-    update: [value: string];
-    delete: [id: number];
-    submit: [payload: { name: string; email: string }];
-};
+  update: [value: string]
+  delete: [id: number]
+  submit: [payload: { name: string; email: string }]
+}
 
-const emit2 = defineEmits<EmitsType>();
+const emit2 = defineEmits<EmitsType>()
 </script>
 ```
 
@@ -82,35 +82,35 @@ const emit2 = defineEmits<EmitsType>();
 
 ```vue
 <script setup lang="ts">
-import { ref, Ref } from 'vue';
+import { ref, Ref } from 'vue'
 
 // Type inference
-const count = ref(0); // Ref<number>
-const message = ref('hello'); // Ref<string>
+const count = ref(0) // Ref<number>
+const message = ref('hello') // Ref<string>
 
 // Explicit typing
-const user = ref<User | null>(null);
-const items = ref<string[]>([]);
+const user = ref<User | null>(null)
+const items = ref<string[]>([])
 
 // Complex types
 interface FormData {
-    username: string;
-    email: string;
-    age: number;
+  username: string
+  email: string
+  age: number
 }
 
 const form = ref<FormData>({
-    username: '',
-    email: '',
-    age: 0,
-});
+  username: '',
+  email: '',
+  age: 0,
+})
 
 // Ref as function parameter
 function updateCount(countRef: Ref<number>) {
-    countRef.value++;
+  countRef.value++
 }
 
-updateCount(count);
+updateCount(count)
 </script>
 ```
 
@@ -118,33 +118,33 @@ updateCount(count);
 
 ```vue
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { reactive } from 'vue'
 
 interface State {
-    count: number;
-    user: {
-        name: string;
-        email: string;
-    };
-    items: string[];
+  count: number
+  user: {
+    name: string
+    email: string
+  }
+  items: string[]
 }
 
 // Explicit typing
 const state = reactive<State>({
-    count: 0,
-    user: {
-        name: '',
-        email: '',
-    },
-    items: [],
-});
+  count: 0,
+  user: {
+    name: '',
+    email: '',
+  },
+  items: [],
+})
 
 // Type inference
 const inferredState = reactive({
-    count: 0, // number
-    message: 'hello', // string
-    active: true, // boolean
-});
+  count: 0, // number
+  message: 'hello', // string
+  active: true, // boolean
+})
 </script>
 ```
 
@@ -152,39 +152,39 @@ const inferredState = reactive({
 
 ```vue
 <script setup lang="ts">
-import { ref, computed, ComputedRef } from 'vue';
+import { ref, computed, ComputedRef } from 'vue'
 
-const count = ref(0);
+const count = ref(0)
 
 // Type inference
-const doubled = computed(() => count.value * 2); // ComputedRef<number>
+const doubled = computed(() => count.value * 2) // ComputedRef<number>
 
 // Explicit typing
-const tripled = computed<number>(() => count.value * 3);
+const tripled = computed<number>(() => count.value * 3)
 
 // Complex computed
 interface User {
-    firstName: string;
-    lastName: string;
+  firstName: string
+  lastName: string
 }
 
-const user = ref<User>({ firstName: 'John', lastName: 'Doe' });
+const user = ref<User>({ firstName: 'John', lastName: 'Doe' })
 
 const fullName = computed<string>(() => {
-    return `${user.value.firstName} ${user.value.lastName}`;
-});
+  return `${user.value.firstName} ${user.value.lastName}`
+})
 
 // Writable computed with typing
 const fullNameWritable = computed<string>({
-    get() {
-        return `${user.value.firstName} ${user.value.lastName}`;
-    },
-    set(value: string) {
-        const [first, last] = value.split(' ');
-        user.value.firstName = first;
-        user.value.lastName = last;
-    },
-});
+  get() {
+    return `${user.value.firstName} ${user.value.lastName}`
+  },
+  set(value: string) {
+    const [first, last] = value.split(' ')
+    user.value.firstName = first
+    user.value.lastName = last
+  },
+})
 </script>
 ```
 
@@ -192,33 +192,33 @@ const fullNameWritable = computed<string>({
 
 ```vue
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue'
 
 // HTML element refs
-const inputRef = ref<HTMLInputElement | null>(null);
-const divRef = ref<HTMLDivElement | null>(null);
+const inputRef = ref<HTMLInputElement | null>(null)
+const divRef = ref<HTMLDivElement | null>(null)
 
 onMounted(() => {
-    inputRef.value?.focus();
-    if (divRef.value) {
-        divRef.value.scrollTop = 100;
-    }
-});
+  inputRef.value?.focus()
+  if (divRef.value) {
+    divRef.value.scrollTop = 100
+  }
+})
 
 // Component refs
-import ChildComponent from './ChildComponent.vue';
+import ChildComponent from './ChildComponent.vue'
 
-const childRef = ref<InstanceType<typeof ChildComponent> | null>(null);
+const childRef = ref<InstanceType<typeof ChildComponent> | null>(null)
 
 onMounted(() => {
-    childRef.value?.someMethod();
-});
+  childRef.value?.someMethod()
+})
 </script>
 
 <template>
-    <input ref="inputRef" />
-    <div ref="divRef">Content</div>
-    <ChildComponent ref="childRef" />
+  <input ref="inputRef" />
+  <div ref="divRef">Content</div>
+  <ChildComponent ref="childRef" />
 </template>
 ```
 
@@ -321,51 +321,51 @@ const { data, error, loading } = useFetch<User>('/api/user')
 <!-- GenericList.vue -->
 <script setup lang="ts" generic="T extends { id: number }">
 interface Props {
-    items: T[];
-    selected?: T;
+  items: T[]
+  selected?: T
 }
 
 interface Emits {
-    (e: 'select', item: T): void;
+  (e: 'select', item: T): void
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 
 function handleSelect(item: T) {
-    emit('select', item);
+  emit('select', item)
 }
 </script>
 
 <template>
-    <div>
-        <div v-for="item in items" :key="item.id" @click="handleSelect(item)">
-            <slot :item="item"></slot>
-        </div>
+  <div>
+    <div v-for="item in items" :key="item.id" @click="handleSelect(item)">
+      <slot :item="item"></slot>
     </div>
+  </div>
 </template>
 
 <!-- Usage -->
 <script setup lang="ts">
 interface User {
-    id: number;
-    name: string;
-    email: string;
+  id: number
+  name: string
+  email: string
 }
 
-const users: User[] = [{ id: 1, name: 'John', email: 'john@example.com' }];
+const users: User[] = [{ id: 1, name: 'John', email: 'john@example.com' }]
 
 function handleUserSelect(user: User) {
-    console.log('Selected user:', user.name);
+  console.log('Selected user:', user.name)
 }
 </script>
 
 <template>
-    <GenericList :items="users" @select="handleUserSelect">
-        <template #default="{ item }">
-            <div>{{ item.name }} - {{ item.email }}</div>
-        </template>
-    </GenericList>
+  <GenericList :items="users" @select="handleUserSelect">
+    <template #default="{ item }">
+      <div>{{ item.name }} - {{ item.email }}</div>
+    </template>
+  </GenericList>
 </template>
 ```
 
@@ -375,35 +375,35 @@ function handleUserSelect(user: User) {
 <script setup lang="ts">
 // DOM events
 function handleClick(event: MouseEvent) {
-    console.log(event.clientX, event.clientY);
+  console.log(event.clientX, event.clientY)
 }
 
 function handleInput(event: Event) {
-    const target = event.target as HTMLInputElement;
-    console.log(target.value);
+  const target = event.target as HTMLInputElement
+  console.log(target.value)
 }
 
 function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
-        console.log('Enter pressed');
-    }
+  if (event.key === 'Enter') {
+    console.log('Enter pressed')
+  }
 }
 
 // Custom events from child components
 interface CustomPayload {
-    id: number;
-    value: string;
+  id: number
+  value: string
 }
 
 function handleCustomEvent(payload: CustomPayload) {
-    console.log(payload.id, payload.value);
+  console.log(payload.id, payload.value)
 }
 </script>
 
 <template>
-    <button @click="handleClick">Click me</button>
-    <input @input="handleInput" @keydown="handleKeydown" />
-    <ChildComponent @custom="handleCustomEvent" />
+  <button @click="handleClick">Click me</button>
+  <input @input="handleInput" @keydown="handleKeydown" />
+  <ChildComponent @custom="handleCustomEvent" />
 </template>
 ```
 
@@ -412,49 +412,49 @@ function handleCustomEvent(payload: CustomPayload) {
 ```vue
 <!-- Parent.vue -->
 <script setup lang="ts">
-import { provide, InjectionKey, Ref, ref } from 'vue';
+import { provide, InjectionKey, Ref, ref } from 'vue'
 
 interface UserContext {
-    user: Ref<User>;
-    updateUser: (user: User) => void;
+  user: Ref<User>
+  updateUser: (user: User) => void
 }
 
 // Create typed injection key
-export const userContextKey = Symbol() as InjectionKey<UserContext>;
+export const userContextKey = Symbol() as InjectionKey<UserContext>
 
-const user = ref<User>({ id: 1, name: 'John', email: 'john@example.com' });
+const user = ref<User>({ id: 1, name: 'John', email: 'john@example.com' })
 
 function updateUser(newUser: User) {
-    user.value = newUser;
+  user.value = newUser
 }
 
 // Provide with type safety
 provide(userContextKey, {
-    user,
-    updateUser,
-});
+  user,
+  updateUser,
+})
 </script>
 
 <!-- Child.vue -->
 <script setup lang="ts">
-import { inject } from 'vue';
-import { userContextKey } from './Parent.vue';
+import { inject } from 'vue'
+import { userContextKey } from './Parent.vue'
 
 // Inject with type safety
-const userContext = inject(userContextKey);
+const userContext = inject(userContextKey)
 
 // With default value
 const defaultContext: UserContext = {
-    user: ref({ id: 0, name: '', email: '' }),
-    updateUser: () => {},
-};
+  user: ref({ id: 0, name: '', email: '' }),
+  updateUser: () => {},
+}
 
-const contextWithDefault = inject(userContextKey, defaultContext);
+const contextWithDefault = inject(userContextKey, defaultContext)
 
 // Or throw if not provided
-const requiredContext = inject(userContextKey);
+const requiredContext = inject(userContextKey)
 if (!requiredContext) {
-    throw new Error('User context not provided');
+  throw new Error('User context not provided')
 }
 </script>
 ```
@@ -463,49 +463,49 @@ if (!requiredContext) {
 
 ```typescript
 // stores/user.ts
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 
 interface User {
-    id: number;
-    name: string;
-    email: string;
-    role: 'admin' | 'user';
+  id: number
+  name: string
+  email: string
+  role: 'admin' | 'user'
 }
 
 export const useUserStore = defineStore('user', () => {
-    // State
-    const user = ref<User | null>(null);
-    const users = ref<User[]>([]);
+  // State
+  const user = ref<User | null>(null)
+  const users = ref<User[]>([])
 
-    // Getters
-    const isAdmin = computed(() => user.value?.role === 'admin');
-    const userCount = computed(() => users.value.length);
+  // Getters
+  const isAdmin = computed(() => user.value?.role === 'admin')
+  const userCount = computed(() => users.value.length)
 
-    // Actions
-    async function fetchUser(id: number): Promise<User> {
-        const response = await fetch(`/api/users/${id}`);
-        const data = await response.json();
-        user.value = data;
-        return data;
-    }
+  // Actions
+  async function fetchUser(id: number): Promise<User> {
+    const response = await fetch(`/api/users/${id}`)
+    const data = await response.json()
+    user.value = data
+    return data
+  }
 
-    function logout() {
-        user.value = null;
-    }
+  function logout() {
+    user.value = null
+  }
 
-    return {
-        user,
-        users,
-        isAdmin,
-        userCount,
-        fetchUser,
-        logout,
-    };
-});
+  return {
+    user,
+    users,
+    isAdmin,
+    userCount,
+    fetchUser,
+    logout,
+  }
+})
 
 // Typed store instance
-export type UserStore = ReturnType<typeof useUserStore>;
+export type UserStore = ReturnType<typeof useUserStore>
 ```
 
 ## Global Properties Typing

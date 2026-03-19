@@ -355,9 +355,7 @@
               Opciones de respuesta
               <span v-if="nuevaPregunta.tipo === 'SELECCION_UNICA'" class="text-caption text-grey"
                 >(selecciona UNA correcta)</span
-              ><span
-                >(debe seleccionar exactamente 2 correctas)</span
-              >
+              ><span>(debe seleccionar exactamente 2 correctas)</span>
             </h4>
             <div v-for="letra in ['A', 'B', 'C', 'D', 'E']" :key="letra" class="opcion-input-row">
               <!-- Radio para selección única -->
