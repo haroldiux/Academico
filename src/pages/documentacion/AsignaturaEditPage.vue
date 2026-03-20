@@ -1300,23 +1300,60 @@
                           {{ pregunta.tipo?.replace('_', ' ') }}
                         </q-chip>
                         <q-chip
-                          v-if="pregunta.grupoTeorico || pregunta.grupo"
-                          color="indigo-1"
-                          text-color="indigo-9"
+                          v-if="pregunta.grupo || pregunta.grupoTeorico"
+                          color="grey-2"
+                          text-color="grey-9"
                           size="xs"
+                          icon="groups"
                           dense
                         >
-                          <q-icon name="groups" size="12px" class="q-mr-xs" />
-                          {{ pregunta.grupoTeorico || pregunta.grupo }}
+                          {{ pregunta.grupo || pregunta.grupoTeorico }}
                         </q-chip>
+                        <q-space />
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          color="primary"
+                          icon="edit"
+                          size="sm"
+                          @click="abrirEditorPregunta(pregunta)"
+                        >
+                          <q-tooltip>Editar Pregunta</q-tooltip>
+                        </q-btn>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          color="red"
+                          icon="delete"
+                          size="sm"
+                          @click="confirmarBorrarPregunta(pregunta)"
+                        >
+                          <q-tooltip>Eliminar Pregunta</q-tooltip>
+                        </q-btn>
                       </div>
-                      <div
-                        class="text-body2 text-weight-medium q-mb-sm"
-                        v-html="pregunta.enunciado"
-                      ></div>
+
+                      <div class="text-subtitle1 text-weight-bold q-mb-sm" v-html="pregunta.enunciado"></div>
+                      
+                      <!-- Imagen de la pregunta -->
+                      <div v-if="pregunta.imagen" class="q-mb-md">
+                        <q-img 
+                          :src="`${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${pregunta.imagen}`" 
+                          style="max-width: 300px; border-radius: 8px;"
+                          class="shadow-1"
+                        >
+                          <template v-slot:error>
+                            <div class="absolute-full flex flex-center bg-negative text-white">
+                              Error al cargar imagen
+                            </div>
+                          </template>
+                        </q-img>
+                      </div>
+
                       <div class="opciones-grid">
                         <div
-                          v-for="(opc, oidx) in pregunta.opciones"
+                          v-for="(opc, oidx) in (Array.isArray(pregunta.opciones) ? pregunta.opciones : [])"
                           :key="oidx"
                           class="opcion-item"
                           :class="{
@@ -1334,19 +1371,6 @@
                           />
                         </div>
                       </div>
-                    </div>
-                    <div class="col-auto">
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="delete"
-                        size="sm"
-                        color="red"
-                        @click="confirmarBorrarPregunta(pregunta)"
-                      >
-                        <q-tooltip>Eliminar</q-tooltip>
-                      </q-btn>
                     </div>
                   </div>
                 </q-card-section>
@@ -1857,6 +1881,143 @@
             :disable="!archivoImportarPlanClase"
             @click="procesarImportacionPlanClase"
             no-caps
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- DIALOG: Editar Pregunta -->
+    <q-dialog v-model="dialogEditarPregunta" persistent>
+      <q-card style="width: 700px; max-width: 95vw; border-radius: 16px">
+        <div class="q-pa-md bg-deep-purple text-white row items-center">
+          <q-icon name="edit" size="24px" class="q-mr-sm" />
+          <div class="text-h6">Editar Pregunta</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </div>
+
+        <q-card-section class="q-pa-lg scroll" style="max-height: 70vh">
+          <q-form ref="formEditarPregRef" class="q-gutter-y-md">
+            <!-- Enunciado -->
+            <q-input
+              v-model="formPregunta.enunciado"
+              label="Enunciado de la Pregunta"
+              type="textarea"
+              outlined
+              autogrow
+              rows="3"
+            />
+
+            <!-- Imagen Actual / Nueva -->
+            <div class="row q-col-gutter-md items-center">
+              <div class="col-12 col-sm-6">
+                <q-file
+                  v-model="archivoImagenPregunta"
+                  label="Adjuntar/Cambiar Imagen"
+                  outlined
+                  dense
+                  accept="image/*"
+                  counter
+                >
+                  <template v-slot:prepend>
+                    <q-icon name="image" />
+                  </template>
+                </q-file>
+              </div>
+              <div class="col-12 col-sm-6 text-center" v-if="formPregunta.imagen || previewImagenEdit">
+                 <div class="text-caption text-grey-7 q-mb-xs">Previsualización:</div>
+                 <q-img 
+                   :src="previewImagenEdit || `${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${formPregunta.imagen}`"
+                   style="height: 100px; max-width: 150px; border-radius: 4px;"
+                   fit="contain"
+                   class="bg-grey-2"
+                 />
+              </div>
+            </div>
+
+            <div class="row q-col-gutter-md">
+              <div class="col-6">
+                <q-select
+                  v-model="formPregunta.tipo"
+                  label="Tipo de Pregunta"
+                  outlined
+                  dense
+                  :options="[
+                    { label: 'Selección Única', value: 'SELECCION_UNICA' },
+                    { label: 'Selección Múltiple', value: 'SELECCION_MULTIPLE' },
+                    { label: 'Falso/Verdadero', value: 'FALSO_VERDADERO' },
+                    { label: 'Problema (PR)', value: 'PR' },
+                    { label: 'Emparejamiento (EM)', value: 'EM' },
+                    { label: 'Subpregunta (SP)', value: 'SP' },
+                  ]"
+                  emit-value
+                  map-options
+                />
+              </div>
+              <div class="col-6">
+                <q-select
+                  v-model="formPregunta.dificultad"
+                  label="Dificultad"
+                  outlined
+                  dense
+                  :options="[
+                    { label: 'Fácil', value: '1' },
+                    { label: 'Medio', value: '2' },
+                    { label: 'Difícil', value: '3' },
+                  ]"
+                  emit-value
+                  map-options
+                />
+              </div>
+            </div>
+
+            <div class="row q-col-gutter-md">
+              <div class="col-6">
+                 <q-input v-model="formPregunta.parcial" label="Parcial (1P, 2P, EF, 2I)" outlined dense />
+              </div>
+              <div class="col-6">
+                 <q-input v-model="formPregunta.grupo" label="Grupo/Referencia" outlined dense />
+              </div>
+            </div>
+
+            <!-- Opciones (Si aplica) -->
+            <div v-if="['SELECCION_UNICA', 'SELECCION_MULTIPLE', 'SP', 'FALSO_VERDADERO'].includes(formPregunta.tipo)">
+              <div class="text-subtitle2 q-mb-sm">Opciones de Respuesta</div>
+              <div class="q-gutter-y-xs">
+                <div v-for="(op, i) in formPregunta.opciones" :key="i" class="row items-center q-gutter-x-sm">
+                  <q-avatar size="sm" color="grey-3" text-color="grey-8" font-size="12px">{{ String.fromCharCode(65 + i) }}</q-avatar>
+                  <q-input v-model="formPregunta.opciones[i]" dense outlined class="col" />
+                  <q-checkbox 
+                    v-model="formPregunta.respuesta_correcta" 
+                    :val="String.fromCharCode(65 + i)" 
+                    label="Correcta" 
+                    v-if="formPregunta.tipo === 'SELECCION_MULTIPLE'"
+                  />
+                  <q-radio 
+                    v-model="formPregunta.respuesta_correcta" 
+                    :val="String.fromCharCode(65 + i)" 
+                    label="Correcta" 
+                    v-else
+                  />
+                </div>
+              </div>
+            </div>
+
+          </q-form>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancelar" v-close-popup no-caps />
+          <q-btn 
+            unelevated 
+            label="Guardar Cambios" 
+            color="deep-purple" 
+            icon="save" 
+            :loading="guardandoEditPreg"
+            @click="guardarEdicionPregunta"
+            no-caps 
           />
         </q-card-actions>
       </q-card>
@@ -3234,6 +3395,80 @@ const bancoPreguntasLocal = ref([])
 // Exámenes de la asignatura (desde el rol de exámenes general)
 const examenesAsignatura = ref([])
 const cargandoExamenes = ref(false)
+
+// Edición de Preguntas
+const dialogEditarPregunta = ref(false)
+const formPregunta = ref({
+  id: null,
+  enunciado: '',
+  tipo: '',
+  opciones: [],
+  respuesta_correcta: null,
+  dificultad: '1',
+  parcial: '',
+  grupo: '',
+  imagen: null,
+})
+const archivoImagenPregunta = ref(null)
+const guardandoEditPreg = ref(false)
+const previewImagenEdit = ref(null)
+
+watch(archivoImagenPregunta, (file) => {
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => (previewImagenEdit.value = e.target.result)
+    reader.readAsDataURL(file)
+  } else {
+    previewImagenEdit.value = null
+  }
+})
+
+function abrirEditorPregunta(pregunta) {
+  formPregunta.value = {
+    ...pregunta,
+    opciones: Array.isArray(pregunta.opciones) ? [...pregunta.opciones] : ['', '', '', '', ''],
+  }
+  archivoImagenPregunta.value = null
+  previewImagenEdit.value = null
+  dialogEditarPregunta.value = true
+}
+
+async function guardarEdicionPregunta() {
+  guardandoEditPreg.value = true
+  try {
+    const fd = new FormData()
+    fd.append('enunciado', formPregunta.value.enunciado)
+    fd.append('tipo', formPregunta.value.tipo)
+    fd.append('opciones', JSON.stringify(formPregunta.value.opciones))
+    fd.append(
+      'respuesta_correcta',
+      Array.isArray(formPregunta.value.respuesta_correcta)
+        ? JSON.stringify(formPregunta.value.respuesta_correcta)
+        : formPregunta.value.respuesta_correcta,
+    )
+    fd.append('dificultad', formPregunta.value.dificultad)
+    fd.append('parcial', formPregunta.value.parcial || '')
+    fd.append('grupo', formPregunta.value.grupo || '')
+    fd.append('logro_esperado_id', formPregunta.value.logro_esperado_id)
+
+    if (archivoImagenPregunta.value) {
+      fd.append('image_file', archivoImagenPregunta.value)
+    }
+
+    await api.post(`/banco-preguntas/${formPregunta.value.id}`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
+    $q.notify({ type: 'positive', message: 'Pregunta actualizada' })
+    dialogEditarPregunta.value = false
+    await cargarBancoPreguntas()
+  } catch (error) {
+    console.error(error)
+    $q.notify({ type: 'negative', message: 'Error al actualizar pregunta' })
+  } finally {
+    guardandoEditPreg.value = false
+  }
+}
 
 function formatoFecha(fechaIso) {
   if (!fechaIso) return ''
