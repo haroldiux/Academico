@@ -2286,6 +2286,12 @@ const asignatura = computed(() => store.asignaturaActual)
 
 // ── Medición real de tabs para alinear el progress-strip ──
 
+// Banco de preguntas real (desde API)
+const bancoPreguntasLocal = ref([])
+// Exámenes de la asignatura (desde el rol de exámenes general)
+const examenesAsignatura = ref([])
+const cargandoExamenes = ref(false)
+
 onMounted(() => {
   cargarBancoPreguntas()
   cargarExamenes()
@@ -3389,12 +3395,7 @@ function generarCarpetaHtml() {
 
 const showSubirBanco = ref(false)
 
-// Banco de preguntas real (desde API)
-const bancoPreguntasLocal = ref([])
-
 // Exámenes de la asignatura (desde el rol de exámenes general)
-const examenesAsignatura = ref([])
-const cargandoExamenes = ref(false)
 
 // Edición de Preguntas
 const dialogEditarPregunta = ref(false)
