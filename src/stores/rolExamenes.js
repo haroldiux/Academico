@@ -87,7 +87,7 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
   /**
    * Subir Excel con rol de exámenes
    */
-  async function uploadExcel(file, gestion, carreraId) {
+  async function uploadExcel(file, gestion, carreraId, sedeId) {
     uploading.value = true
     error.value = null
 
@@ -98,10 +98,11 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
       const response = await rolExamenesService.uploadExcel(formData, {
         gestion,
         carrera_id: carreraId,
+        sede_id: sedeId
       })
 
       // Recargar exámenes después de subir
-      await cargarExamenes({ gestion, carrera_id: carreraId })
+      await cargarExamenes({ gestion, carrera_id: carreraId, sede_id: sedeId })
 
       return response.data
     } catch (err) {
@@ -209,18 +210,10 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
   /**
    * Eliminar todos los exámenes (Bulk Delete)
    */
-  async function deleteAll(gestion, carreraId) {
-    uploading.value = true // Reuse upload loading state or general loading
+  async function deleteAll(gestion, carreraId, sedeId) {
+    uploading.value = true
     try {
-      // We need direct axios access or service.
-      // Service is imported as rolExamenesService.
-      // However rolExamenesService likely doesn't have deleteAll yet.
-      // Let's assume we update service or do distinct call.
-      // Checking file content: 'rolExamenesService' is used.
-      // Better add to service first? Or use ax directly if available?
-      // 'ax' is not visible in snippet.
-      // I will use rolExamenesService.deleteAll
-      const response = await rolExamenesService.deleteAll(gestion, carreraId)
+      const response = await rolExamenesService.deleteAll(gestion, carreraId, sedeId)
       examenes.value = [] // Clear list
       return response.data
     } catch (err) {

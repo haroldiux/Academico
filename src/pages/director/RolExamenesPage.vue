@@ -689,6 +689,7 @@ async function subirExcel() {
       selectedFile.value,
       filtros.value.gestion,
       filtros.value.carrera_id,
+      authStore.sedeId,
     )
 
     // Show warnings/errors if any
@@ -818,7 +819,7 @@ function eliminarTodo() {
     cancel: { label: 'Cancelar', color: 'primary' },
   }).onOk(async () => {
     try {
-      const res = await store.deleteAll(filtros.value.gestion, filtros.value.carrera_id)
+      const res = await store.deleteAll(filtros.value.gestion, filtros.value.carrera_id, authStore.sedeId)
       $q.notify({
         type: 'positive',
         message: res.message || 'Se eliminaron los exámenes correctamente',

@@ -1381,11 +1381,27 @@
               <strong>FV, SS, SM, PR, EM y SP</strong>.
             </q-banner>
 
+            <q-select
+              v-model="grupoTeoricoSeleccionado"
+              :options="gruposTeoricosOptions"
+              outlined
+              dense
+              label="Seleccionar Grupo Teórico"
+              class="q-mb-md"
+              hint="Las preguntas se asociarán a este grupo"
+              :rules="[(val) => !!val || 'El grupo es obligatorio']"
+              emit-value
+              map-options
+            >
+              <template v-slot:prepend><q-icon name="groups" /></template>
+            </q-select>
+
             <q-file
               v-model="archivoBancoFile"
               outlined
               label="Seleccionar archivo Excel (.xlsx)"
               accept=".xlsx,.xls"
+              :disable="!grupoTeoricoSeleccionado"
               @update:model-value="previsualizarArchivoExcel"
             >
               <template v-slot:prepend><q-icon name="attach_file" /></template>
@@ -1544,7 +1560,7 @@
             color="deep-purple"
             icon="upload"
             :label="`Importar ${preguntasImportadas.length} pregunta(s)`"
-            :disable="preguntasImportadas.length === 0 || !validacionDistribucion"
+            :disable="preguntasImportadas.length === 0 || !validacionDistribucion || !grupoTeoricoSeleccionado"
             :loading="importandoBanco"
             @click="confirmarImportacionBanco"
           />
@@ -3649,6 +3665,7 @@ async function descargarFormatoBanco() {
 // ============================================================
 const archivoBancoFile = ref(null)
 const archivoPreviewBanco = ref(null)
+const grupoTeoricoSeleccionado = ref(null)
 const preguntasImportadas = ref([])
 const importErrores = ref([])
 const importandoBanco = ref(false)
@@ -3661,11 +3678,33 @@ const importStats = ref({
 })
 
 const validacionDistribucion = computed(() => {
-  return (
-    importStats.value.faciles >= 15 &&
-    importStats.value.medios >= 30 &&
-    importStats.value.dificiles >= 15
+  const countF = importStats.value.faciles || 0
+  const countM = importStats.value.medios || 0
+  const countD = importStats.value.dificiles || 0
+  return preguntasFiltradas.value.length >= 60 && countF >= 15 && countM >= 30 && countD >= 15
+})
+
+const gruposTeoricosOptions = computed(() => {
+  if (!asignatura.value || !asignatura.value.grupos) return []
+
+  // Normalizar el filtro de tipo (la DB usa TEORICO pero el código a veces usa TEORICA)
+  let grupos = asignatura.value.grupos.filter(
+    (g) => g.tipo === 'TEORICA' || g.tipo === 'TEORICO' || g.tipo === 'TEO',
   )
+
+  // Filtrar por docente si el rol es DOCENTE o si somos directivos viendo una carpeta específica
+  const dIdRequest = route.query.docente_id
+  const myDocenteId = authStore.usuarioActual?.docente?.id || authStore.usuarioActual?.docente_id
+  const targetDocenteId = dIdRequest || (authStore.rol === 'DOCENTE' ? myDocenteId : null)
+
+  if (targetDocenteId) {
+    grupos = grupos.filter((g) => Number(g.docente_id) === Number(targetDocenteId))
+  }
+
+  return grupos.map((g) => ({
+    label: `Grupo ${g.nombre}`,
+    value: g.nombre, // Usamos el nombre del grupo
+  }))
 })
 
 // Mapping de columnas del Excel (orden igual que el formato descargado)
@@ -3780,14 +3819,25 @@ function previsualizarArchivoExcel(file) {
 
           // Validar campos requeridos por tipo
           if (['ss', 'sm', 'fv', 'sp'].includes(tipo)) {
-            if (
-              !respuesta ||
-              (!['A', 'B', 'C', 'D', 'E'].includes(respuesta) && !respuesta.includes(','))
-            ) {
-              errores.push(
-                `Fila ${lineNum}: tipo "${tipo}" requiere respuesta_correcta válida (A-E)`,
-              )
+            if (!respuesta) {
+              errores.push(`Fila ${lineNum}: tipo "${tipo}" requiere respuesta_correcta.`)
               return
+            }
+            if (tipo === 'sm') {
+              // SM debe tener exactamente 2 respuestas (ej: A,B o AB)
+              const letters = respuesta.replace(/[^A-E]/g, '')
+              if (letters.length !== 2) {
+                errores.push(
+                  `Fila ${lineNum}: Selección Múltiple (SM) DEBE tener exactamente 2 respuestas correctas (ej: A,B).`,
+                )
+                return
+              }
+            } else {
+              // SS, FV, SP deben tener solo 1 letra
+              if (!['A', 'B', 'C', 'D', 'E'].includes(respuesta) && respuesta.length > 1) {
+                errores.push(`Fila ${lineNum}: tipo "${tipo}" solo acepta una letra (A-E).`)
+                return
+              }
             }
           }
 
@@ -3814,7 +3864,7 @@ function previsualizarArchivoExcel(file) {
                 .trim(),
             ],
             respuesta,
-            dificultad: dificultad || '1',
+            dificultad: ['pr', 'em'].includes(tipo) ? '' : dificultad || '1',
             parcial: parcial || '1P',
           })
         })
@@ -3848,7 +3898,7 @@ function previsualizarArchivoExcel(file) {
 }
 
 async function confirmarImportacionBanco() {
-  if (preguntasImportadas.value.length === 0 || !archivoBancoFile.value) return
+  if (preguntasImportadas.value.length === 0 || !archivoBancoFile.value || !grupoTeoricoSeleccionado.value) return
   importandoBanco.value = true
 
   try {
@@ -3864,6 +3914,8 @@ async function confirmarImportacionBanco() {
     if (dId) {
       formData.append('docente_id', dId)
     }
+    formData.append('sede_id', authStore.usuarioActual?.sede_id || '')
+    formData.append('grupoTeorico', grupoTeoricoSeleccionado.value || '')
 
     if (modoImportacion.value === 'reemplazar') {
       formData.append('modo', 'reemplazar') // El backend puede manejar esto para limpiar antes de insertar
