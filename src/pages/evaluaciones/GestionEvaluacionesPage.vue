@@ -478,6 +478,17 @@ const ESTADOS_FLOW = [
   { key: 'subidos', label: 'Subido', icon: 'cloud_done', color: 'purple-9', action: 'FINALIZADO', hasGestion: false, desc: 'Notas subidas al sistema académico' }
 ]
 
+const shuffle = (array) => {
+  let currentIndex = array.length,  randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
+
 const filtros = ref({
   sede: null,
   carrera: null,
@@ -784,6 +795,31 @@ const ejecutarAccionGestion = async () => {
       payload.timestamps_proceso = ts
 
       if (examen.estado === 'programados') {
+        $q.loading.show({ message: 'Obteniendo banco de preguntas...' })
+        let bancoPreguntas = []
+        try {
+          const resp = await api.get('/banco-preguntas', { 
+            params: { 
+              asignatura_id: examen.asignatura_id, 
+              docente_id: examen.docente_id,
+              parcial: examen.parcial,
+              all_docentes: true 
+            } 
+          })
+          bancoPreguntas = resp.data
+        } catch (err) {
+          console.error('Error al obtener banco:', err)
+          $q.notify({ type: 'negative', message: 'No se pudo obtener el banco de preguntas' })
+          $q.loading.hide()
+          return
+        }
+        $q.loading.hide()
+
+        // Agrupar por dificultad
+        const pf = bancoPreguntas.filter(p => p.dificultad === '1' || p.dificultad === 'FACIL')
+        const pm = bancoPreguntas.filter(p => p.dificultad === '2' || p.dificultad === 'MEDIO' || p.dificultad === 'MEDIA')
+        const pd = bancoPreguntas.filter(p => p.dificultad === '3' || p.dificultad === 'DIFICIL')
+
         const v = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
         payload.config_generacion = { 
           facil: tempConfig.value.facil, medio: tempConfig.value.medio, dificil: tempConfig.value.dificil,
@@ -793,7 +829,14 @@ const ejecutarAccionGestion = async () => {
 
         // Generar y Subir PDFs para cada variante
         for (const letra of v) {
-          const { blob, filename } = generarExamenPDF(examen, tempConfig.value, letra)
+          // MUESTREO ALEATORIO PARA CADA VARIANTE
+          const seleccionadas = [
+             ...shuffle([...pf]).slice(0, tempConfig.value.facil),
+             ...shuffle([...pm]).slice(0, tempConfig.value.medio),
+             ...shuffle([...pd]).slice(0, tempConfig.value.dificil)
+          ]
+
+          const { blob, filename } = await generarExamenPDF(examen, tempConfig.value, letra, seleccionadas)
           
           const formData = new FormData()
           formData.append('archivo', blob, filename)
@@ -941,7 +984,7 @@ const generarPatronXLSX = (examen, letra) => {
   return { blob, filename: rawFilename }
 }
 
-const generarExamenPDF = (examen, config, letra = 'A') => {
+const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => {
   const formatMap = {
     'Carta': 'letter',
     'Oficio': 'legal',
@@ -955,65 +998,142 @@ const generarExamenPDF = (examen, config, letra = 'A') => {
     format: paperFormat
   })
 
-  const margin = 25
-  
-  // Header Table
-  const body = [
-    [
-      { content: 'LOGO\nUNITEPC', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fontSize: 8, cellWidth: 30 } },
-      { content: 'UNIVERSIDAD TECNICA PRIVADA COSMOS\nGESTION I-2026', styles: { halign: 'center', fontSize: 12, fontStyle: 'bold', cellWidth: 120 } },
-      { content: '', rowSpan: 2, styles: { cellWidth: 30 } }
-    ],
-    [
-      { content: `EVALUACION TEÓRICA ${examen.parcial.toUpperCase()}`, styles: { halign: 'center', fontStyle: 'bold' } }
-    ],
-    [
-      { content: 'NOMBRE ESTUDIANTE:', styles: { minCellHeight: 10 } },
-      { content: 'TIEMPO:', colSpan: 2 }
-    ],
-    [
-      { content: `CODIGO:\nCARRERA: ${examen.carrera}` },
-      { content: `GRUPO: ${examen.grupo}`, colSpan: 2 }
-    ],
-    [
-      { content: `DOCENTE: ${examen.docente}` },
-      { content: `TIPO DE EXAMEN: ${examen.parcial}`, colSpan: 2 }
-    ],
-    [
-      { content: `MATERIA: ${examen.materia}` },
-      { content: `FECHA: ${examen.fecha_examen}`, colSpan: 2 }
-    ],
-    [
-      { content: `SEMESTRE: ${examen.semestre || '-'}` },
-      { content: `HORA: ${examen.hora}`, colSpan: 2 }
-    ]
-  ]
+  const margin = 20
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const contentWidth = pageWidth - (margin * 2)
 
+  // LOGO / TITULO TABLE
   autoTable(doc, {
     startY: margin,
     margin: { left: margin, right: margin },
-    body: body,
     theme: 'grid',
-    styles: { 
-      fontSize: 11, 
-      font: 'helvetica', 
-      textColor: [0, 0, 0], 
-      lineColor: [0, 0, 0], 
-      lineWidth: 0.1,
-      cellPadding: 1.5 
-    },
-    headStyles: { fillColor: [255, 255, 255] },
-    columnStyles: {
-      0: { cellWidth: 'auto' },
-      1: { cellWidth: 'auto' },
-      2: { cellWidth: 'auto' }
-    }
+    styles: { fontSize: 11, font: 'helvetica', textColor: [0, 0, 0], lineWidth: 0.1, lineColor: [0,0,0] },
+    body: [
+      [
+        { content: 'LOGO\nUNITEPC', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fontSize: 8, cellWidth: 30 } },
+        { content: 'UNIVERSIDAD TECNICA PRIVADA COSMOS\nGESTION I-2026', styles: { halign: 'center', fontSize: 12, fontStyle: 'bold' } },
+        { content: '', rowSpan: 2, styles: { cellWidth: 30 } }
+      ],
+      [
+        { content: `EVALUACION TEÓRICA ${examen.parcial.toUpperCase()}`, styles: { halign: 'center', fontStyle: 'bold' } }
+      ]
+    ]
   })
 
-  const rawFilename = `${examen.materia_codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_Var${letra}.pdf`
-  const blob = doc.output('blob')
+  // INFO TABLE
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.1, lineColor: [0,0,0] },
+    body: [
+      [
+        { content: 'NOMBRE ESTUDIANTE:', styles: { minCellHeight: 10, cellWidth: 100 } },
+        { content: 'TIEMPO:', styles: { cellWidth: 70 } }
+      ],
+      [
+        { content: `CODIGO:\nCARRERA: ${examen.carrera || ''}` },
+        { content: `GRUPO: ${examen.grupo}` }
+      ],
+      [
+        { content: `DOCENTE: ${examen.docente}` },
+        { content: `TIPO DE EXAMEN: ${examen.parcial}` }
+      ],
+      [
+        { content: `MATERIA: ${examen.materia}` },
+        { content: `FECHA: ${examen.fecha_examen}` }
+      ],
+      [
+        { content: `SEMESTRE: ${examen.semestre || '-'}` },
+        { content: `HORA: ${examen.hora}` }
+      ]
+    ]
+  })
 
+  let currentY = doc.lastAutoTable.finalY + 10
+
+  // RENDER PREGUNTAS
+  for (let i = 0; i < preguntas.length; i++) {
+    const p = preguntas[i]
+    
+    // Check for page break
+    if (currentY > (doc.internal.pageSize.getHeight() - 30)) {
+       doc.addPage()
+       currentY = margin
+    }
+
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    const enumText = `${i + 1}. `
+    doc.text(enumText, margin, currentY)
+    
+    doc.setFont('helvetica', 'normal')
+    const cleanEnunciado = (p.enunciado || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').trim()
+    const enunciadoLines = doc.splitTextToSize(cleanEnunciado, contentWidth - 10)
+    doc.text(enunciadoLines, margin + 8, currentY)
+    currentY += (enunciadoLines.length * 6) + 2
+
+    // Imagen (si existe)
+    if (p.imagen) {
+      try {
+        const imgUrl = `${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${p.imagen}`
+        const imgData = await fetchImageAsBase64(imgUrl)
+        if (imgData) {
+          const imgProps = doc.getImageProperties(imgData)
+          const imgW = 80
+          const imgH = (imgProps.height * imgW) / imgProps.width
+          
+          if (currentY + imgH > (doc.internal.pageSize.getHeight() - 20)) {
+            doc.addPage()
+            currentY = margin
+          }
+
+          doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, currentY, imgW, imgH)
+          currentY += imgH + 5
+        }
+      } catch (e) {
+        console.error("Error cargando imagen en PDF:", e)
+      }
+    }
+
+    // Opciones
+    const opciones = Array.isArray(p.opciones) ? p.opciones : []
+    if (opciones.length > 0) {
+      doc.setFontSize(10)
+      for (const opc of opciones) {
+        const opcText = `${opc.id || ''}) ${opc.text || ''}`
+        const opcLines = doc.splitTextToSize(opcText, contentWidth - 15)
+        
+        if (currentY + (opcLines.length * 5) > (doc.internal.pageSize.getHeight() - 20)) {
+          doc.addPage()
+          currentY = margin
+        }
+
+        doc.text(opcLines, margin + 12, currentY)
+        currentY += (opcLines.length * 5) + 1
+      }
+    }
+    currentY += 5
+  }
+
+  const rawFilename = `${examen.codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_Var${letra}.pdf`
+  const blob = doc.output('blob')
   return { blob, filename: rawFilename }
+}
+
+async function fetchImageAsBase64(url) {
+  try {
+    const response = await fetch(url)
+    const blob = await response.blob()
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  } catch (e) {
+    return null
+  }
 }
 
 </script>
