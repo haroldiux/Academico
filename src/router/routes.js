@@ -330,7 +330,7 @@ const routes = [
           {
             path: 'evaluaciones',
             name: 'evaluaciones',
-            component: () => import('pages/admin/EvaluacionesPage.vue'),
+            component: () => import('pages/evaluaciones/GestionEvaluacionesPage.vue'),
             meta: { title: 'Gestión de Evaluaciones' },
           },
           {

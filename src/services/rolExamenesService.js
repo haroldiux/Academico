@@ -8,7 +8,7 @@ export default {
   /**
    * Subir Excel con rol de exámenes
    * @param {FormData} formData - Archivo Excel
-   * @param {Object} params - gestion, carrera_id
+   * @param {Object} params - gestion, carrera_id, sede_id
    */
   uploadExcel(formData, params = {}) {
     return api.post('/rol-examenes/upload', formData, {
@@ -64,9 +64,9 @@ export default {
   },
 
   /**
-   * Eliminar todos los exámenes de una gestión/carrera
+   * Eliminar todos los exámenes de una gestión/carrera/sede
    */
-  deleteAll(gestion, carrera_id) {
-    return api.post('/rol-examenes/bulk-delete', { gestion, carrera_id })
+  deleteAll(gestion, carrera_id, sede_id) {
+    return api.post('/rol-examenes/bulk-delete', { gestion, carrera_id, sede_id })
   },
 }

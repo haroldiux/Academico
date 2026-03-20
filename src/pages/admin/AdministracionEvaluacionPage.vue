@@ -346,19 +346,31 @@
                 <q-select
                   v-model="configSede"
                   :options="sedesOptions"
+                  option-value="value"
+                  option-label="label"
                   outlined
                   dense
                   label="Seleccionar Sede"
                   emit-value
                   map-options
                   style="max-width: 300px"
-                />
+                >
+                  <template v-slot:no-option>
+                    <q-item>
+                      <q-item-section class="text-grey">
+                        Sedes no disponibles.
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                </q-select>
               </div>
               <div v-if="nivelConfig === 'carrera'" class="q-mt-md row q-col-gutter-md">
                 <div class="col-12 col-md-4">
                   <q-select
                     v-model="configSede"
                     :options="sedesOptions"
+                    option-value="value"
+                    option-label="label"
                     outlined
                     dense
                     label="Sede"
@@ -384,6 +396,14 @@
           <div class="row q-col-gutter-lg">
             <!-- Columna izquierda: Estructura del Examen -->
             <div :class="['col-12', nivelConfig === 'nacional' ? 'col-md-6' : 'col-md-12']">
+              <q-banner v-if="!esConfigPropia && nivelConfig !== 'nacional'" class="bg-info text-white q-mb-md rounded-borders" dense>
+                <template v-slot:avatar>
+                  <q-icon name="info" size="sm" />
+                </template>
+                Mostrando configuración heredada de: <strong class="text-uppercase">{{ nivelOrigen }}</strong> <br>
+                <span class="text-caption">Si guardas cambios aquí, se creará una configuración independiente para que {{ nivelConfig === 'sede' ? 'esta sede' : 'esta carrera' }} sobresalga del resto.</span>
+              </q-banner>
+
               <q-card class="config-section-card">
                 <q-card-section>
                   <div class="section-label q-mb-md">
@@ -504,14 +524,27 @@
             <div class="col-12 col-md-6" v-if="nivelConfig === 'nacional'">
               <q-card class="config-section-card q-mb-md">
                 <q-card-section>
-                  <div class="section-label q-mb-md">
-                    <q-icon name="timer" color="blue" class="q-mr-sm" />
-                    Configuración de Tiempos
+                  <div class="section-label q-mb-md flex justify-between items-center">
+                    <div>
+                      <q-icon name="timer" color="blue" class="q-mr-sm" />
+                      Configuración de Tiempos
+                    </div>
+                    <!-- Selector de Gestión -->
+                    <q-select
+                      v-model="gestionConfig"
+                      :options="['1/2026', '2/2026', '3/2026', '4/2026']"
+                      outlined
+                      dense
+                      label="Gestión"
+                      emit-value
+                      map-options
+                      style="width: 130px"
+                    />
                   </div>
 
                   <div class="q-gutter-md">
                     <q-input
-                      v-model.number="config.minutosAntesEntrega"
+                      v-model.number="tiemposConfig.minutos_antes_entrega"
                       outlined
                       dense
                       type="number"
@@ -524,7 +557,7 @@
                     </q-input>
 
                     <q-input
-                      v-model.number="config.horasAntesGeneracion"
+                      v-model.number="tiemposConfig.horas_antes_generacion"
                       outlined
                       dense
                       type="number"
@@ -537,7 +570,7 @@
                     </q-input>
 
                     <q-input
-                      v-model.number="config.horasPatron"
+                      v-model.number="tiemposConfig.horas_post_patron"
                       outlined
                       dense
                       type="number"
@@ -552,7 +585,7 @@
                     </q-input>
 
                     <q-input
-                      v-model.number="config.alertaHorasAntes"
+                      v-model.number="tiemposConfig.alerta_horas_antes"
                       outlined
                       dense
                       type="number"
@@ -565,6 +598,16 @@
                       /></template>
                       <template v-slot:append><span class="text-grey-6">horas</span></template>
                     </q-input>
+                  </div>
+
+                  <div class="q-mt-md flex justify-end">
+                    <q-btn
+                      unelevated
+                      color="blue-8"
+                      label="Guardar Tiempos"
+                      icon="save"
+                      @click="guardarTiempos"
+                    />
                   </div>
                 </q-card-section>
               </q-card>
@@ -658,34 +701,56 @@
           {{ usuarioForm.id ? 'Editar Evaluador' : 'Agregar Evaluador' }}
         </div>
         <q-card-section class="q-gutter-md">
-          <q-select
-            v-model="usuarioForm.usuario_id"
-            :options="usuariosDisponibles"
-            outlined
-            label="Usuario *"
-            emit-value
-            map-options
-            use-input
-            input-debounce="300"
-            placeholder="Buscar usuario..."
+          <q-toggle
+            v-model="usuarioForm.crear_nuevo"
+            label="Registrar nuevo usuario Evaluador"
+            color="deep-purple"
           />
+
+          <!-- MODO SELECCIÓN -->
+          <template v-if="!usuarioForm.crear_nuevo">
+            <q-select
+              v-model="usuarioForm.usuario_id"
+              :options="usuariosDisponibles"
+              outlined
+              label="Seleccionar Usuario Existente *"
+              emit-value
+              map-options
+              use-input
+              input-debounce="300"
+              placeholder="Buscar usuario..."
+            />
+          </template>
+
+          <!-- MODO CREACIÓN -->
+          <template v-else>
+            <div class="row q-col-gutter-sm">
+              <div class="col-12 col-md-6">
+                <q-input v-model="usuarioForm.nombre" outlined dense label="Nombre (s) *" />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input v-model="usuarioForm.apellido" outlined dense label="Apellidos *" />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input v-model="usuarioForm.ci" outlined dense label="Cédula de Identidad *" />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input v-model="usuarioForm.telefono" outlined dense label="Teléfono" />
+              </div>
+              <div class="col-12">
+                <q-input v-model="usuarioForm.email" outlined dense type="email" label="Correo Electrónico *" />
+              </div>
+            </div>
+          </template>
+
           <q-select
             v-model="usuarioForm.campus_id"
             :options="campusOptions"
             outlined
-            label="Campus *"
+            label="Campus Asignado *"
             emit-value
             map-options
-          />
-          <q-select
-            v-model="usuarioForm.carreras"
-            :options="carrerasOptions"
-            outlined
-            label="Carreras asignadas"
-            emit-value
-            map-options
-            multiple
-            use-chips
+            class="q-mt-md"
           />
         </q-card-section>
         <q-card-actions align="right" class="q-pa-md">
@@ -718,6 +783,9 @@ const nivelConfig = ref('nacional')
 const configSede = ref(null)
 const configCarrera = ref(null)
 
+const esConfigPropia = ref(true)
+const nivelOrigen = ref('nacional')
+
 // Dialogs
 const showDialogCampus = ref(false)
 const showDialogCarreraCampus = ref(false)
@@ -726,13 +794,19 @@ const showDialogUsuario = ref(false)
 // Forms
 const campusForm = ref({ id: null, nombre: '', sede_id: null, direccion: '', activo: true })
 const carreraCampusForm = ref({ campus_id: null, carrera_id: null })
-const usuarioForm = ref({ id: null, usuario_id: null, campus_id: null, carreras: [] })
+const usuarioForm = ref({ 
+  id: null, 
+  usuario_id: null, 
+  campus_id: null, 
+  crear_nuevo: false,
+  nombre: '',
+  apellido: '',
+  ci: '',
+  telefono: '',
+  email: ''
+})
 
 const config = ref({
-  minutosAntesEntrega: 15,
-  horasAntesGeneracion: 48,
-  horasPatron: 0,
-  alertaHorasAntes: 24,
   parciales: [
     {
       nombre: '1° Parcial',
@@ -757,86 +831,23 @@ const config = ref({
   ],
 })
 
-// Options (mock - se reemplazarán con datos del store/API)
-const sedesOptions = ref([
-  { label: 'Sede Central', value: 1 },
-  { label: 'Sede Cochabamba', value: 2 },
-  { label: 'Sede Santa Cruz', value: 3 },
-])
+const gestionConfig = ref('1/2026')
+const tiemposConfig = ref({
+  minutos_antes_entrega: 15,
+  horas_antes_generacion: 48,
+  horas_post_patron: 0,
+  alerta_horas_antes: 24,
+})
 
-const campusOptions = ref([
-  { label: 'Campus Central - Sede Central', value: 1 },
-  { label: 'Campus Norte - Sede Cochabamba', value: 2 },
-  { label: 'Campus Sur - Sede Santa Cruz', value: 3 },
-])
+// Data real local
+const sedesOptions = ref([])
+const campus = ref([])
+const campusOptions = ref([])
 
-const carrerasOptions = ref([
-  { label: 'Medicina', value: 1 },
-  { label: 'Enfermería', value: 2 },
-  { label: 'Odontología', value: 3 },
-  { label: 'Fisioterapia', value: 4 },
-])
+const carrerasOptions = ref([])
 
-const usuariosDisponibles = ref([
-  { label: 'Juan Pérez (evaluaciones@unitepc.edu.bo)', value: 10 },
-  { label: 'María García (mgarcia@unitepc.edu.bo)', value: 11 },
-])
-
-// Mock Data
-const campus = ref([
-  {
-    id: 1,
-    nombre: 'Campus Central',
-    sede: 'Sede Central',
-    sede_id: 1,
-    direccion: 'Av. Principal 100',
-    activo: true,
-    carreras: 3,
-  },
-  {
-    id: 2,
-    nombre: 'Campus Norte',
-    sede: 'Sede Cochabamba',
-    sede_id: 2,
-    direccion: 'Calle Norte 200',
-    activo: true,
-    carreras: 2,
-  },
-  {
-    id: 3,
-    nombre: 'Campus Sur',
-    sede: 'Sede Santa Cruz',
-    sede_id: 3,
-    direccion: 'Av. Sur 300',
-    activo: false,
-    carreras: 1,
-  },
-])
-
-const carrerasCampus = ref([
-  { id: 1, campus: 'Campus Central', campus_id: 1, carrera: 'Medicina', grupos: 4 },
-  { id: 2, campus: 'Campus Central', campus_id: 1, carrera: 'Enfermería', grupos: 3 },
-  { id: 3, campus: 'Campus Norte', campus_id: 2, carrera: 'Odontología', grupos: 2 },
-])
-
-const usuarios = ref([
-  {
-    id: 1,
-    nombre: 'Juan Pérez',
-    email: 'jperez@unitepc.edu.bo',
-    campus: 'Campus Central',
-    campus_id: 1,
-    carreras: ['Medicina', 'Enfermería'],
-  },
-  {
-    id: 2,
-    nombre: 'María García',
-    email: 'mgarcia@unitepc.edu.bo',
-    campus: 'Campus Norte',
-    campus_id: 2,
-    carreras: ['Odontología'],
-  },
-])
+const usuariosDisponibles = ref([])
+const usuarios = ref([])
 
 // Columnas tablas
 const columnasCampus = [
@@ -849,9 +860,8 @@ const columnasCampus = [
 ]
 
 const columnasCarrerasCampus = [
-  { name: 'campus', label: 'Campus', field: 'campus', align: 'left' },
-  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left' },
-  { name: 'grupos', label: 'Grupos', field: 'grupos', align: 'center' },
+  { name: 'campus', label: 'Campus', field: 'campus', align: 'left', sortable: true },
+  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left', sortable: true },
   { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
 ]
 
@@ -869,8 +879,36 @@ const campusFiltrados = computed(() => {
 })
 
 const carrerasCampusFiltradas = computed(() => {
-  if (!filtroCampusCarreras.value) return carrerasCampus.value
-  return carrerasCampus.value.filter((c) => c.campus_id === filtroCampusCarreras.value)
+  let listado = []
+  
+  if (filtroCampusCarreras.value) {
+    const camp = campus.value.find(c => c.id === filtroCampusCarreras.value)
+    if (camp && camp.lista_carreras) {
+      listado = camp.lista_carreras.map(c => ({
+        id: c.id,
+        campus: camp.nombre,
+        campus_id: camp.id,
+        carrera: c.nombre
+      }))
+    }
+  } else {
+    // Listar de todos
+    campus.value.forEach(camp => {
+      if (camp.lista_carreras) {
+        camp.lista_carreras.forEach(c => {
+          listado.push({
+            id: c.id,
+            campus: camp.nombre,
+            campus_id: camp.id,
+            carrera: c.nombre
+          })
+        })
+      }
+    })
+  }
+
+  // Ordenar alfabéticamente
+  return listado.sort((a, b) => a.campus.localeCompare(b.campus) || a.carrera.localeCompare(b.carrera))
 })
 
 const usuariosFiltrados = computed(() => {
@@ -895,17 +933,67 @@ function abrirDialogCampus(campus_ = null) {
   showDialogCampus.value = true
 }
 
-function guardarCampus() {
-  $q.notify({
-    type: 'positive',
-    message: `Campus "${campusForm.value.nombre}" guardado correctamente`,
-  })
-  showDialogCampus.value = false
+async function cargarSedes() {
+  try {
+    const { data } = await api.get('/sedes')
+    const list = data.data || data
+    sedesOptions.value = list.map(s => ({ label: s.nombre, value: s.id }))
+  } catch (error) {
+    console.error('Error cargando sedes', error)
+  }
 }
 
-function toggleCampus(campus_) {
-  campus_.activo = !campus_.activo
-  $q.notify({ type: 'info', message: `Campus ${campus_.activo ? 'activado' : 'desactivado'}` })
+async function cargarCarreras() {
+  try {
+    // El controller devuelve info en json
+    const { data } = await api.get('/carreras')
+    const list = data.data || data
+    carrerasOptions.value = list.map(c => ({ label: `${c.sigla} - ${c.nombre}`, value: c.id }))
+  } catch (error) {
+    console.error('Error cargando carreras globales', error)
+  }
+}
+
+async function cargarCampus() {
+  try {
+    const { data } = await api.get('/campus')
+    campus.value = data.data || data
+    campusOptions.value = campus.value.map(c => ({ 
+      label: `${c.nombre} - ${c.sede}`, 
+      value: c.id 
+    }))
+  } catch (error) {
+    console.error('Error cargando campus', error)
+  }
+}
+
+async function guardarCampus() {
+  try {
+    if (campusForm.value.id) {
+      await api.put(`/campus/${campusForm.value.id}`, campusForm.value)
+      $q.notify({ type: 'positive', message: 'Campus actualizado correctamente' })
+    } else {
+      await api.post('/campus', campusForm.value)
+      $q.notify({ type: 'positive', message: 'Campus creado correctamente' })
+    }
+    showDialogCampus.value = false
+    cargarCampus()
+  } catch (error) {
+    console.error('Error guardando campus', error)
+    $q.notify({ type: 'negative', message: 'Error al intentar guardar el campus' })
+  }
+}
+
+async function toggleCampus(campus_) {
+  try {
+    campus_.activo = !campus_.activo 
+    await api.put(`/campus/${campus_.id}`, { activo: campus_.activo })
+    $q.notify({ type: 'info', message: `Campus ${campus_.activo ? 'activado' : 'desactivado'}` })
+  } catch (error) {
+    console.error('Error toggling estado del campus', error)
+    campus_.activo = !campus_.activo 
+    $q.notify({ type: 'negative', message: 'No se pudo cambiar el estado' })
+  }
 }
 
 function abrirDialogCarreraCampus() {
@@ -913,9 +1001,24 @@ function abrirDialogCarreraCampus() {
   showDialogCarreraCampus.value = true
 }
 
-function guardarCarreraCampus() {
-  $q.notify({ type: 'positive', message: 'Carrera asignada al campus correctamente' })
-  showDialogCarreraCampus.value = false
+async function guardarCarreraCampus() {
+  if(!carreraCampusForm.value.campus_id || !carreraCampusForm.value.carrera_id) {
+    $q.notify({ type: 'warning', message: 'Debe seleccionar un campus y una carrera' })
+    return
+  }
+
+  try {
+    const payload = { carreras: [carreraCampusForm.value.carrera_id] }
+    await api.post(`/campus/${carreraCampusForm.value.campus_id}/carreras`, payload)
+    $q.notify({ type: 'positive', message: 'Carrera asignada al campus correctamente' })
+    showDialogCarreraCampus.value = false
+    
+    // Recargar la data general del campus para refrescar la lista
+    cargarCampus()
+  } catch (error) {
+    console.error('Error al asignar carrera al campus', error)
+    $q.notify({ type: 'negative', message: 'Error al asignar la carrera' })
+  }
 }
 
 function eliminarCarreraCampus(row) {
@@ -924,33 +1027,100 @@ function eliminarCarreraCampus(row) {
     message: `¿Quitar la carrera "${row.carrera}" del campus "${row.campus}"?`,
     ok: { label: 'Quitar', color: 'red', unelevated: true },
     cancel: { label: 'Cancelar', flat: true },
-  }).onOk(() => {
-    $q.notify({ type: 'warning', message: 'Asignación eliminada' })
+  }).onOk(async () => {
+    try {
+      await api.delete(`/campus/${row.campus_id}/carreras/${row.id}`)
+      $q.notify({ type: 'warning', message: 'Asignación eliminada correctamente' })
+      cargarCampus() // Recargar datos
+    } catch(err) {
+      console.error('Error al quitar asignación de carrera', err)
+      $q.notify({ type: 'negative', message: 'Error al desenlazar carrera' })
+    }
   })
 }
 
 function abrirDialogUsuario(usuario = null) {
   if (usuario) {
-    usuarioForm.value = { ...usuario }
+    usuarioForm.value = { ...usuario, crear_nuevo: false }
   } else {
-    usuarioForm.value = { id: null, usuario_id: null, campus_id: null, carreras: [] }
+    usuarioForm.value = { 
+      id: null, 
+      usuario_id: null, 
+      campus_id: null, 
+      crear_nuevo: false,
+      nombre: '',
+      apellido: '',
+      ci: '',
+      telefono: '',
+      email: ''
+    }
   }
   showDialogUsuario.value = true
 }
 
-function guardarUsuario() {
-  $q.notify({ type: 'positive', message: 'Evaluador guardado correctamente' })
-  showDialogUsuario.value = false
+async function cargarUsuarios() {
+  try {
+    const { data } = await api.get('/evaluadores')
+    usuarios.value = data.data || data
+  } catch (err) {
+    console.error('Error cargando los usuarios evaluadores', err)
+  }
 }
 
-function eliminarUsuario(usuario) {
+async function cargarUsuariosDisponibles() {
+  try {
+    const { data } = await api.get('/evaluadores/disponibles')
+    const list = data.data || data
+    usuariosDisponibles.value = list.map(u => ({ label: `${u.nombre} (${u.email})`, value: u.id }))
+  } catch (err) {
+    console.error('Error cargando evaluadores disponibles', err)
+  }
+}
+
+async function guardarUsuario() {
+  if(!usuarioForm.value.campus_id) {
+    $q.notify({ type: 'warning', message: 'Debe seleccionar un campus asignado' })
+    return
+  }
+
+  if (!usuarioForm.value.crear_nuevo && !usuarioForm.value.usuario_id) {
+    $q.notify({ type: 'warning', message: 'Debe seleccionar un usuario existente' })
+    return
+  }
+  
+  try {
+    const payload = { ...usuarioForm.value }
+    await api.post(`/campus/${usuarioForm.value.campus_id}/evaluadores`, payload)
+    
+    $q.notify({ type: 'positive', message: 'Evaluador asignado correctamente' })
+    showDialogUsuario.value = false
+    
+    cargarUsuarios()
+    cargarUsuariosDisponibles()
+  } catch (error) {
+    console.error('Error asignando evaluador a campus', error)
+    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Error al asignar usuario' })
+  }
+}
+
+function eliminarUsuario(row) {
+  if(!row.campus_id || !row.id) return
+  
   $q.dialog({
     title: 'Quitar Evaluador',
-    message: `¿Quitar a "${usuario.nombre}" del campus?`,
+    message: `¿Quitar a "${row.nombre}" del campus "${row.campus}"?`,
     ok: { label: 'Quitar', color: 'red', unelevated: true },
     cancel: { label: 'Cancelar', flat: true },
-  }).onOk(() => {
-    $q.notify({ type: 'warning', message: 'Evaluador removido' })
+  }).onOk(async () => {
+    try {
+      await api.delete(`/campus/${row.campus_id}/evaluadores/${row.id}`)
+      $q.notify({ type: 'warning', message: 'Evaluador removido' })
+      cargarUsuarios()
+      cargarUsuariosDisponibles()
+    } catch (error) {
+      console.error('Error removiendo evaluador', error)
+      $q.notify({ type: 'negative', message: 'No se pudo quitar la asignación de este usuario' })
+    }
   })
 }
 
@@ -971,15 +1141,11 @@ async function cargarConfiguracion() {
       // Deep merge avoiding reactivity loss on nested structure could be tricky,
       // simple reassignment of known structure is best
       config.value = JSON.parse(JSON.stringify(data.configuracion))
+      
+      esConfigPropia.value = data.es_propia
+      nivelOrigen.value = data.nivel_hallado
 
-      if (data.nivel_hallado !== nivelConfig.value) {
-        $q.notify({
-          type: 'info',
-          message: `Cargando configuración heredada de nivel ${data.nivel_hallado}`,
-          position: 'top-right',
-          timeout: 2000,
-        })
-      }
+      // Ya no mostramos la alerta flash, lo manejamos con el q-banner fijo
     }
   } catch (err) {
     console.error('Error cargando configuración:', err)
@@ -1004,12 +1170,51 @@ async function guardarConfiguracion() {
   }
 }
 
+async function cargarTiempos() {
+  try {
+    const { data } = await api.get('/evaluaciones/tiempos', {
+      params: { gestion: gestionConfig.value }
+    })
+    if (data.success && data.configuracion) {
+      tiemposConfig.value = { ...data.configuracion }
+    }
+  } catch (err) {
+    console.error('Error cargando tiempos:', err)
+  }
+}
+
+async function guardarTiempos() {
+  try {
+    const payload = {
+      gestion: gestionConfig.value,
+      ...tiemposConfig.value
+    }
+    const { data } = await api.post('/evaluaciones/tiempos', payload)
+    if (data.success) {
+      $q.notify({ type: 'positive', message: 'Tiempos guardados correctamente', icon: 'timer' })
+    }
+  } catch (err) {
+    console.error('Error al guardar tiempos:', err)
+    $q.notify({ type: 'negative', message: 'Error al guardar configuración de tiempos' })
+  }
+}
+
 watch([nivelConfig, configSede, configCarrera], () => {
   cargarConfiguracion()
 })
 
+watch(gestionConfig, () => {
+  cargarTiempos()
+})
+
 onMounted(() => {
   cargarConfiguracion()
+  cargarTiempos()
+  cargarSedes()
+  cargarCampus()
+  cargarCarreras()
+  cargarUsuarios()
+  cargarUsuariosDisponibles()
 })
 </script>
 
