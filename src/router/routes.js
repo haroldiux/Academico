@@ -6,7 +6,6 @@ const routes = [
     component: () => import('pages/LoginPage.vue'),
     meta: { title: 'Iniciar Sesión', public: true },
   },
-  {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
@@ -267,6 +266,36 @@ const routes = [
             name: 'carreras',
             component: () => import('pages/admin/CarrerasPage.vue'),
             meta: { title: 'Gestión de Carreras' },
+          },
+          {
+            path: 'carreras-admin',
+            name: 'carreras-admin',
+            component: () => import('pages/admin/crud/CarrerasCrudPage.vue'),
+            meta: { title: 'Administración de Carreras', rol: 'SUPER_ADMIN' },
+          },
+          {
+            path: 'sedes-admin',
+            name: 'sedes-admin',
+            component: () => import('pages/admin/crud/SedesCrudPage.vue'),
+            meta: { title: 'Administración de Sedes', rol: 'SUPER_ADMIN' },
+          },
+          {
+            path: 'asignaturas-admin',
+            name: 'asignaturas-admin',
+            component: () => import('pages/admin/crud/AsignaturasCrudPage.vue'),
+            meta: { title: 'Administración de Asignaturas', rol: 'SUPER_ADMIN' },
+          },
+          {
+            path: 'grupos-admin',
+            name: 'grupos-admin',
+            component: () => import('pages/admin/crud/GruposCrudPage.vue'),
+            meta: { title: 'Administración de Grupos', rol: 'SUPER_ADMIN' },
+          },
+          {
+            path: 'horarios-admin',
+            name: 'horarios-admin',
+            component: () => import('pages/admin/crud/HorariosCrudPage.vue'),
+            meta: { title: 'Administración de Horarios', rol: 'SUPER_ADMIN' },
           },
           {
             path: 'asignaturas',

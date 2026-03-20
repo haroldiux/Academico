@@ -73,6 +73,50 @@ export const useSedesStore = defineStore('sedes', () => {
     }
   }
 
+  async function createSede(data) {
+    loading.value = true
+    try {
+      const response = await sedeService.createSede(data)
+      sedes.value.push(response.data)
+      return response.data
+    } catch (error) {
+      console.error('Error creating sede:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateSede(id, data) {
+    loading.value = true
+    try {
+      const response = await sedeService.updateSede(id, data)
+      const index = sedes.value.findIndex(s => s.id === id)
+      if (index !== -1) {
+        sedes.value[index] = response.data
+      }
+      return response.data
+    } catch (error) {
+      console.error('Error updating sede:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteSede(id) {
+    loading.value = true
+    try {
+      await sedeService.deleteSede(id)
+      sedes.value = sedes.value.filter(s => s.id !== id)
+    } catch (error) {
+      console.error('Error deleting sede:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     sedes,
     stats,
@@ -81,6 +125,9 @@ export const useSedesStore = defineStore('sedes', () => {
     totalSedes,
     loading,
     fetchSedes,
+    createSede,
+    updateSede,
+    deleteSede,
     getSedeById,
     getSedeByNombre,
     getCampusBySede,
