@@ -222,19 +222,34 @@
             <div class="flex items-center justify-center gap-1">
               <!-- Variantes generadas -->
               <template v-if="props.row.variantes && props.row.variantes.length > 0">
-                <q-btn flat round dense color="red-8" icon="picture_as_pdf" size="sm" v-for="v in props.row.variantes" :key="v">
-                  <q-tooltip>Examen Variante {{ v }}</q-tooltip>
+                <q-btn 
+                  flat round dense 
+                  color="red-8" 
+                  icon="picture_as_pdf" 
+                  size="sm" 
+                  v-for="v in props.row.variantes" 
+                  :key="v.letra || v"
+                  type="a"
+                  :href="getExamenUrl(v)"
+                  target="_blank"
+                >
+                  <q-tooltip>Examen Variante {{ v.letra || v }}</q-tooltip>
                 </q-btn>
               </template>
-              <div v-else class="text-caption text-grey-4">Sin variantes</div>
+              <div v-else class="text-caption text-grey-4 text-xs">Sin variantes</div>
               
               <q-separator vertical class="q-mx-xs" v-if="props.row.patrones && props.row.patrones.length > 0" />
               
               <!-- Patrones generados -->
               <template v-if="props.row.patrones && props.row.patrones.length > 0">
-                <q-btn flat round dense color="teal-7" icon="quiz" size="sm" v-for="p in props.row.patrones" :key="p">
-                  <q-tooltip>Patrón de Respuestas {{ p }}</q-tooltip>
-                </q-btn>
+                <div v-for="p in props.row.patrones" :key="p.letra" class="row no-wrap">
+                  <q-btn flat round dense color="teal-7" icon="quiz" size="sm" type="a" :href="getPatronUrl(p, 'pdf')" target="_blank" v-if="p.pdf">
+                    <q-tooltip>Patrón PDF {{ p.letra }}</q-tooltip>
+                  </q-btn>
+                  <q-btn flat round dense color="green-8" icon="description" size="sm" type="a" :href="getPatronUrl(p, 'xlsx')" target="_blank" v-if="p.xlsx">
+                    <q-tooltip>Patrón Remark {{ p.letra }}</q-tooltip>
+                  </q-btn>
+                </div>
               </template>
             </div>
           </q-td>
@@ -300,22 +315,58 @@
 
         <q-card-section class="q-pa-xl">
           <!-- CASO 1: PROGRAMADOS (Generación) -->
-          <div v-if="dialogGestion.examen?.estado === 'programados'" class="config-generacion">
+            <div v-if="dialogGestion.examen?.estado === 'programados'" class="config-generacion">
+              <div 
+                class="q-pa-md rounded-borders q-mb-lg flex justify-between items-center bg-indigo-50 border-indigo-200 shadow-1"
+                v-if="bancoStats.total > 0"
+              >
+                <div class="flex items-center text-indigo-9">
+                  <q-icon name="help_center" size="24px" class="q-mr-md" />
+                  <div class="column">
+                    <span class="text-weight-bold">Banco Disponible para esta Evaluación</span>
+                    <span class="text-caption">Se encontraron preguntas que coinciden con el Parcial y Grupo.</span>
+                  </div>
+                </div>
+                <div class="text-h4 text-indigo-7 text-weight-bolder">
+                  {{ bancoStats.total }}
+                </div>
+              </div>
+
+              <q-banner v-if="bancoStats.total === 0 && (bancoTotalAsignatura || 0) > 0" class="bg-amber-1 text-amber-9 rounded-borders q-mb-lg border-amber" dense bordered>
+                <template v-slot:avatar><q-icon name="warning" color="amber-9" size="32px" /></template>
+                <div class="text-weight-bold">Aviso de Disponibilidad:</div>
+                No hay preguntas para este <b>Grupo o Parcial</b>, pero tienes <b>{{ bancoTotalAsignatura }}</b> preguntas en total en la asignatura. 
+                Verifica que el Grupo en el Excel coincida con el del Rol de Examen.
+              </q-banner>
             <div class="text-subtitle1 text-weight-bold q-mb-md flex items-center">
               <q-icon name="tune" color="primary" class="q-mr-xs" />
               Parámetros de Generación
             </div>
             
-            <div class="q-mb-md">
-              <q-input 
-                v-model.number="tempConfig.cantVariantes" 
-                outlined label="Cantidad de Variantes (Max 5)" 
-                type="number" min="1" max="5" 
-                hint="Se generarán archivos PDF por cada variante"
-                bg-color="grey-1"
-              >
-                <template v-slot:prepend><q-icon name="filter_none" /></template>
-              </q-input>
+            <div class="row q-col-gutter-sm q-mb-md">
+              <div class="col-12 col-md-8">
+                <q-input 
+                  v-model.number="tempConfig.cantVariantes" 
+                  outlined label="Cantidad de Variantes (Max 5)" 
+                  type="number" min="1" max="5" 
+                  hint="Se generarán archivos PDF por cada variante"
+                  bg-color="grey-1"
+                >
+                  <template v-slot:prepend><q-icon name="filter_none" /></template>
+                </q-input>
+              </div>
+              <div class="col-12 col-md-4">
+                <q-select
+                  v-model="tempConfig.formatoHoja"
+                  :options="optionsHoja"
+                  outlined
+                  label="Tamaño Hoja"
+                  bg-color="blue-50"
+                  input-class="text-weight-bold"
+                >
+                  <template v-slot:prepend><q-icon name="description" color="primary" /></template>
+                </q-select>
+              </div>
             </div>
 
             <div class="row q-col-gutter-sm q-mt-sm">
@@ -409,8 +460,9 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar, date } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore, ROLES } from 'src/stores/auth'
-import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import * as XLSX from 'xlsx'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
@@ -437,6 +489,7 @@ const filtros = ref({
 const sedesOptions = ref([])
 const carrerasOptions = ref([])
 const parcialesOptions = ['1er Parcial', '2do Parcial', 'Final', '2da Instancia']
+const optionsHoja = ['Oficio (8.5" x 13")', 'Carta', 'Oficio']
 const loadingOptions = ref({ sedes: false, carreras: false })
 
 const esSedeRestringida = computed(() => {
@@ -504,10 +557,12 @@ const tempConfig = ref({
   cantVariantes: 1,
   facil: 10,
   medio: 10,
-  dificil: 5
+  dificil: 5,
+  formatoHoja: 'Oficio (8.5" x 13")'
 })
 
 const bancoStats = ref({ facil: 0, medio: 0, dificil: 0, total: 0 })
+const bancoTotalAsignatura = ref(0)
 const configOrigenActual = ref('nacional')
 
 const examenesList = ref([])
@@ -535,16 +590,20 @@ const cargarDatos = async () => {
       id: e.id,
       codigo: e.materia_codigo,
       materia: e.materia_nombre,
-      carrera: e.carrera?.nombre || 'Carrera',
-      sede: e.sede?.nombre || 'Sede',
+      carrera: e.carrera_nombre || 'Carrera',
+      sede: e.sede_nombre || 'Sede',
       grupo: e.grupo || '-',
       docente: e.docente_nombre || 'POR ASIGNAR', // Ajustar si viene del join
-      parcial: e.tipo_examen,
+      parcial: e.tipo_examen || e.parcial,
       fecha_examen: e.fecha,
       hora: e.hora_inicio?.substring(0, 5) || '00:00',
       total_preguntas: e.config_generacion?.total || 0,
-      distribucion: e.config_generacion || { facil: 0, medio: 0, dificil: 0 },
+      distribucion: e.config_generacion || { facil: 0, medio: 0, dificil: 0, total: 0 },
       estado: e.estado || 'programados',
+      sede_id: e.sede_id,
+      carrera_id: e.carrera_id,
+      asignatura_id: e.asignatura_id,
+      docente_id: e.docente_id,
       variantes: e.variantes || [],
       patrones: e.patrones || [],
       timestamps: e.timestamps_proceso || { programados: e.created_at },
@@ -604,7 +663,7 @@ function imprimirListaDiaria() {
     return
   }
   // ... (mismo código jsPDF pero usando examenesFiltrados del backend)
-  const doc = jsPDF({ orientation: 'landscape' })
+  const doc = new jsPDF({ orientation: 'landscape' })
   const fecha = filtros.value.fecha || 'Sin fecha'
   const sedeObj = filtros.value.sede
   const sedeName = sedeObj ? (typeof sedeObj === 'string' ? sedeObj : sedeObj.label) : 'Todas las Sedes'
@@ -618,7 +677,7 @@ function imprimirListaDiaria() {
   doc.text(`PARCIAL: ${filtros.value.parcial || 'TODOS'}`, 210, 30)
   
   const tableData = examenesFiltrados.value.map(e => [e.hora, `${e.materia}\n(G: ${e.grupo})`, e.docente, '', '', '', '', '', ''])
-  doc.autoTable({
+  autoTable(doc, {
     startY: 38, head: [['HORA', 'MATERIA / GRUPO', 'DOCENTE', 'H. RECOJO', 'CANT.', 'FIRMA', 'H. DEV.', 'CANT.', 'FIRMA']],
     body: tableData, theme: 'grid', headStyles: { fillColor: [45, 23, 102], fontSize: 8 }, styles: { fontSize: 7 }
   })
@@ -640,7 +699,8 @@ const gestionarEstado = async (examen) => {
       cantVariantes: examen.variantes.length || 1, 
       facil: examen.distribucion.facil || 10, 
       medio: examen.distribucion.medio || 10, 
-      dificil: examen.distribucion.dificil || 5 
+      dificil: examen.distribucion.dificil || 5,
+      formatoHoja: examen.distribucion.formatoHoja || 'Oficio (8.5" x 13")'
     }
 
     // Intentar cargar configuración efectiva del backend
@@ -663,7 +723,14 @@ const gestionarEstado = async (examen) => {
           p.nombre.toLowerCase().includes('instancia') && partialKey.toLowerCase().includes('instancia')
         )
 
-        if (confParcial && (!examen.distribucion || examen.distribucion.total === 0)) {
+        // Solo sobreescribir si el examen NO tiene configuración guardada (todos en 0)
+        const tieneConfigGuardada = examen.distribucion && (
+          examen.distribucion.facil > 0 || 
+          examen.distribucion.medio > 0 || 
+          examen.distribucion.dificil > 0
+        )
+
+        if (confParcial && !tieneConfigGuardada) {
           tempConfig.value.facil = confParcial.distribucion.facil
           tempConfig.value.medio = confParcial.distribucion.medio
           tempConfig.value.dificil = confParcial.distribucion.dificil
@@ -679,11 +746,14 @@ const gestionarEstado = async (examen) => {
         params: {
           asignatura_id: examen.asignatura_id,
           docente_id: examen.docente_id,
-          sede_id: examen.sede_id
+          sede_id: examen.sede_id,
+          parcial: examen.tipo_examen || examen.parcial,
+          grupo: examen.grupo
         }
       })
       if (data.success) {
         bancoStats.value = data.stats
+        bancoTotalAsignatura.value = data.total_asignatura || 0
       }
     } catch (err) {
       console.error('Error cargando estadísticas del banco:', err)
@@ -697,9 +767,13 @@ const ejecutarAccionGestion = async () => {
   const currentIndex = ESTADOS_FLOW.findIndex(e => e.key === examen.estado)
   const nextKey = ESTADOS_FLOW[currentIndex + 1].key
   
+  const msg = nextKey === 'devueltos' 
+    ? `¿Deseas procesar la generacion de patron(es) y pasar al estado: ${nextKey.toUpperCase()}?`
+    : `¿Deseas procesar la generacion de examen(es) y pasar al estado: ${nextKey.toUpperCase()}?`
+  
   $q.dialog({
     title: 'Confirmar Acción',
-    message: `¿Deseas procesar y pasar al estado: ${nextKey.toUpperCase()}?`,
+    message: msg,
     ok: { label: 'Sí, Procesar', color: 'deep-purple', unelevated: true },
     cancel: { label: 'Cancelar', flat: true },
     persistent: true
@@ -711,21 +785,60 @@ const ejecutarAccionGestion = async () => {
 
       if (examen.estado === 'programados') {
         const v = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
-        payload.variantes = v
         payload.config_generacion = { 
           facil: tempConfig.value.facil, medio: tempConfig.value.medio, dificil: tempConfig.value.dificil,
-          total: tempConfig.value.facil + tempConfig.value.medio + tempConfig.value.dificil
+          total: tempConfig.value.facil + tempConfig.value.medio + tempConfig.value.dificil,
+          formatoHoja: tempConfig.value.formatoHoja
+        }
+
+        // Generar y Subir PDFs para cada variante
+        for (const letra of v) {
+          const { blob, filename } = generarExamenPDF(examen, tempConfig.value, letra)
+          
+          const formData = new FormData()
+          formData.append('archivo', blob, filename)
+          formData.append('variante', letra)
+          formData.append('filename', filename)
+
+          try {
+            await api.post(`/rol-examenes/${examen.id}/upload-examen`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            })
+          } catch (uploadErr) {
+            console.error(`Error subiendo variante ${letra}:`, uploadErr)
+          }
         }
       }
 
       if (examen.estado === 'entregados') {
-        payload.patrones = [...examen.variantes]
+        // Generar y subir patrones PDF y XLSX
+        const variants = examen.variantes.map(v => typeof v === 'string' ? v : v.letra)
+        for (const letra of variants) {
+          // 1. PDF Patron
+          const { blob: pdfBlob, filename: pdfName } = generarPatronPDF(examen, letra)
+          const f1 = new FormData()
+          f1.append('archivo', pdfBlob, pdfName)
+          f1.append('variante', letra)
+          f1.append('tipo', 'pdf')
+          f1.append('filename', pdfName)
+          await api.post(`/rol-examenes/${examen.id}/upload-patron`, f1, { headers: { 'Content-Type': 'multipart/form-data' } })
+
+          // 2. XLSX Patron
+          const { blob: excelBlob, filename: excelName } = generarPatronXLSX(examen, letra)
+          const f2 = new FormData()
+          f2.append('archivo', excelBlob, excelName)
+          f2.append('variante', letra)
+          f2.append('tipo', 'xlsx')
+          f2.append('filename', excelName)
+          await api.post(`/rol-examenes/${examen.id}/upload-patron`, f2, { headers: { 'Content-Type': 'multipart/form-data' } })
+        }
       }
 
       await api.put(`/rol-examenes/${examen.id}`, payload)
-      $q.notify({ type: 'positive', message: 'Procesado correctamente' })
+      
+      $q.notify({ type: 'positive', message: 'Estado actualizado correctamente' })
       dialogGestion.value.show = false
-      cargarDatos()
+      cargarDatos() // RECARGAR PARA VER CAMBIOS (PDFs/Patrones)
     } catch (error) {
        console.error('Error al actualizar el estado:', error)
        $q.notify({ type: 'negative', message: 'Error al actualizar el estado' })
@@ -783,6 +896,125 @@ const limpiarFiltros = () => {
   filtros.value = { sede: sDefault, carrera: null, parcial: '1° Parcial', estado: null, fecha: date.formatDate(Date.now(), 'YYYY-MM-DD') }
 }
 const verDetalles = (ex) => $q.notify({ message: `Materia: ${ex.materia}`, icon: 'info' })
+
+const getExamenUrl = (v) => {
+  const filename = typeof v === 'string' ? null : v.archivo
+  if (!filename) return 'javascript:void(0)'
+  const baseUrl = api.defaults.baseURL.replace('/api', '')
+  return `${baseUrl}/storage/examenes/${filename}`
+}
+
+const getPatronUrl = (p, tipo) => {
+  const filename = typeof p === 'string' ? null : p[tipo]
+  if (!filename) return 'javascript:void(0)'
+  const baseUrl = api.defaults.baseURL.replace('/api', '')
+  return `${baseUrl}/storage/patrones/${filename}`
+}
+
+const generarPatronPDF = (examen, letra) => {
+  const doc = new jsPDF()
+  doc.text(`Patrón de Respuestas - Variante ${letra}`, 20, 20)
+  doc.text(`Asignatura: ${examen.materia}`, 20, 30)
+  doc.text(`Grupo: ${examen.grupo}`, 20, 40)
+  
+  const rawFilename = `${examen.materia_codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_PatronVar${letra}.pdf`
+  const blob = doc.output('blob')
+  return { blob, filename: rawFilename }
+}
+
+const generarPatronXLSX = (examen, letra) => {
+  const data = [
+    ["Patrón de Respuestas", `Variante ${letra}`],
+    ["Asignatura", examen.materia],
+    ["Grupo", examen.grupo],
+    ["", ""],
+    ["Pregunta", "Respuesta Correcta"],
+    ["1", "A"],
+    ["2", "B"]
+  ]
+  const ws = XLSX.utils.aoa_to_sheet(data)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, "Patron")
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+  const blob = new Blob([wbout], { type: 'application/octet-stream' })
+  const rawFilename = `${examen.materia_codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_PatronVar${letra}.xlsx`
+  return { blob, filename: rawFilename }
+}
+
+const generarExamenPDF = (examen, config, letra = 'A') => {
+  const formatMap = {
+    'Carta': 'letter',
+    'Oficio': 'legal',
+    'Oficio (8.5" x 13")': [215.9, 330.2]
+  }
+  const paperFormat = formatMap[config.formatoHoja] || [215.9, 330.2]
+  
+  const doc = new jsPDF({
+    orientation: 'p',
+    unit: 'mm',
+    format: paperFormat
+  })
+
+  const margin = 25
+  
+  // Header Table
+  const body = [
+    [
+      { content: 'LOGO\nUNITEPC', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fontSize: 8, cellWidth: 30 } },
+      { content: 'UNIVERSIDAD TECNICA PRIVADA COSMOS\nGESTION I-2026', styles: { halign: 'center', fontSize: 12, fontStyle: 'bold', cellWidth: 120 } },
+      { content: '', rowSpan: 2, styles: { cellWidth: 30 } }
+    ],
+    [
+      { content: `EVALUACION TEÓRICA ${examen.parcial.toUpperCase()}`, styles: { halign: 'center', fontStyle: 'bold' } }
+    ],
+    [
+      { content: 'NOMBRE ESTUDIANTE:', styles: { minCellHeight: 10 } },
+      { content: 'TIEMPO:', colSpan: 2 }
+    ],
+    [
+      { content: `CODIGO:\nCARRERA: ${examen.carrera}` },
+      { content: `GRUPO: ${examen.grupo}`, colSpan: 2 }
+    ],
+    [
+      { content: `DOCENTE: ${examen.docente}` },
+      { content: `TIPO DE EXAMEN: ${examen.parcial}`, colSpan: 2 }
+    ],
+    [
+      { content: `MATERIA: ${examen.materia}` },
+      { content: `FECHA: ${examen.fecha_examen}`, colSpan: 2 }
+    ],
+    [
+      { content: `SEMESTRE: ${examen.semestre || '-'}` },
+      { content: `HORA: ${examen.hora}`, colSpan: 2 }
+    ]
+  ]
+
+  autoTable(doc, {
+    startY: margin,
+    margin: { left: margin, right: margin },
+    body: body,
+    theme: 'grid',
+    styles: { 
+      fontSize: 11, 
+      font: 'helvetica', 
+      textColor: [0, 0, 0], 
+      lineColor: [0, 0, 0], 
+      lineWidth: 0.1,
+      cellPadding: 1.5 
+    },
+    headStyles: { fillColor: [255, 255, 255] },
+    columnStyles: {
+      0: { cellWidth: 'auto' },
+      1: { cellWidth: 'auto' },
+      2: { cellWidth: 'auto' }
+    }
+  })
+
+  const rawFilename = `${examen.materia_codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_Var${letra}.pdf`
+  const blob = doc.output('blob')
+
+  return { blob, filename: rawFilename }
+}
 
 </script>
 

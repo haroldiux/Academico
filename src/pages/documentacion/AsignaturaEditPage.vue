@@ -1300,14 +1300,14 @@
                           {{ pregunta.tipo?.replace('_', ' ') }}
                         </q-chip>
                         <q-chip
-                          v-if="pregunta.grupo"
-                          color="grey-3"
-                          text-color="grey-9"
+                          v-if="pregunta.grupoTeorico || pregunta.grupo"
+                          color="indigo-1"
+                          text-color="indigo-9"
                           size="xs"
                           dense
                         >
-                          <q-icon name="label" size="12px" class="q-mr-xs" />
-                          {{ pregunta.grupo }}
+                          <q-icon name="groups" size="12px" class="q-mr-xs" />
+                          {{ pregunta.grupoTeorico || pregunta.grupo }}
                         </q-chip>
                       </div>
                       <div
@@ -3276,8 +3276,19 @@ const preguntasFiltradas = computed(() => {
 async function cargarBancoPreguntas() {
   if (!asignatura.value?.id) return
 
+  // Inyectar docente_id de la carpeta o del usuario logueado
+  const dId =
+    route.query.docente_id ||
+    authStore.usuarioActual?.docente?.id ||
+    authStore.usuarioActual?.docente_id
+
   try {
-    const { data } = await api.get(`/banco-preguntas?asignatura_id=${asignatura.value.id}`)
+    let url = `/banco-preguntas?asignatura_id=${asignatura.value.id}`
+    if (dId) {
+      url += `&docente_id=${dId}`
+    }
+
+    const { data } = await api.get(url)
     bancoPreguntasLocal.value = data
   } catch (error) {
     console.error('Error al cargar banco de preguntas:', error)
@@ -3681,7 +3692,7 @@ const validacionDistribucion = computed(() => {
   const countF = importStats.value.faciles || 0
   const countM = importStats.value.medios || 0
   const countD = importStats.value.dificiles || 0
-  return preguntasFiltradas.value.length >= 60 && countF >= 15 && countM >= 30 && countD >= 15
+  return preguntasImportadas.value.length >= 60 && countF >= 15 && countM >= 30 && countD >= 15
 })
 
 const gruposTeoricosOptions = computed(() => {
@@ -3726,7 +3737,16 @@ const COLS = {
 
 const TIPOS_VALIDOS = ['fv', 'ss', 'sm', 'pr', 'em', 'sp']
 const DIFICULTAD_MAP = { 1: '1', 2: '2', 3: '3' }
-const PARCIAL_MAP = { '1p': '1P', '2p': '2P', ef: 'EF', '2i': '2I' }
+const PARCIAL_MAP = {
+  '1p': '1er Parcial',
+  '2p': '2do Parcial',
+  ef: 'Final',
+  '2i': '2da Instancia',
+  '1P': '1er Parcial',
+  '2P': '2do Parcial',
+  EF: 'Final',
+  '2I': '2da Instancia',
+}
 
 function previsualizarArchivoExcel(file) {
   if (!file) return
@@ -3977,7 +3997,17 @@ function getDificultadColor(dificultad) {
 }
 
 function getParcialColorBanco(parcial) {
-  return { '1P': 'blue', '2P': 'orange', EF: 'purple', '2I': 'red' }[parcial] || 'grey'
+  const map = {
+    '1er Parcial': 'blue',
+    '2do Parcial': 'orange',
+    Final: 'purple',
+    '2da Instancia': 'red',
+    '1P': 'blue',
+    '2P': 'orange',
+    EF: 'purple',
+    '2I': 'red',
+  }
+  return map[parcial] || 'grey'
 }
 </script>
 
