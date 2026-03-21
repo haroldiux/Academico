@@ -396,8 +396,9 @@
               </div>
             </div>
             
-            <div class="total-badge q-mt-sm row justify-end">
-              <q-chip label outline color="primary" class="text-weight-bold">
+            <div class="total-badge q-mt-sm row justify-end items-center q-gutter-x-sm">
+              <q-chip v-if="!bancoSuficiente" dense color="red-1" text-color="red-7" icon="error_outline" label="Banco Insuficiente" class="text-weight-bold" />
+              <q-chip label outline :color="bancoSuficiente ? 'primary' : 'red'" class="text-weight-bold">
                 TOTAL PREGUNTAS: {{ tempConfig.facil + tempConfig.medio + tempConfig.dificil }}
               </q-chip>
             </div>
@@ -407,6 +408,11 @@
               Regla aplicada desde nivel: 
               <strong class="text-uppercase q-ml-xs">{{ configOrigenActual }}</strong>
               <span class="q-ml-sm" v-if="configOrigenActual !== 'nacional'">( {{ dialogGestion.examen?.sede }} {{ configOrigenActual === 'carrera' ? '> ' + dialogGestion.examen?.carrera : '' }} )</span>
+            </q-banner>
+
+            <q-banner v-if="!bancoSuficiente" class="bg-red-1 text-red-9 q-mt-sm rounded-borders" dense>
+              <template v-slot:avatar><q-icon name="warning" color="red" /></template>
+              No existen suficientes preguntas en el banco para cumplir con la distribución solicitada.
             </q-banner>
             
             <div class="q-mt-lg text-caption text-grey-6 items-center flex">
@@ -447,6 +453,7 @@
             color="deep-purple-7" 
             :label="configGestion.actionLabel" 
             :icon="configGestion.actionIcon" 
+            :disable="!bancoSuficiente"
             @click="ejecutarAccionGestion"
             no-caps
             class="q-px-lg shadow-3"
@@ -589,9 +596,16 @@ const tempConfig = ref({
   formatoHoja: 'Oficio (8.5" x 13")'
 })
 
+const configOrigenActual = ref('nacional')
 const bancoStats = ref({ facil: 0, medio: 0, dificil: 0, total: 0 })
 const bancoTotalAsignatura = ref(0)
-const configOrigenActual = ref('nacional')
+
+const bancoSuficiente = computed(() => {
+  if (dialogGestion.value.examen?.estado !== 'programados') return true
+  return (tempConfig.value.facil || 0) <= (bancoStats.value.facil || 0) &&
+         (tempConfig.value.medio || 0) <= (bancoStats.value.medio || 0) &&
+         (tempConfig.value.dificil || 0) <= (bancoStats.value.dificil || 0)
+})
 
 const examenesList = ref([])
 
@@ -792,6 +806,18 @@ const gestionarEstado = async (examen) => {
 
 const ejecutarAccionGestion = async () => {
   const examen = dialogGestion.value.examen
+  if (!examen) return
+
+  // Validación de disponibilidad en el banco (solo para generación de variantes)
+  if (examen.estado === 'programados' && !bancoSuficiente.value) {
+    $q.notify({
+      type: 'negative',
+      message: 'No hay suficientes preguntas en el banco para la distribución solicitada.',
+      icon: 'warning'
+    })
+    return
+  }
+
   const currentIndex = ESTADOS_FLOW.findIndex(e => e.key === examen.estado)
   const nextKey = ESTADOS_FLOW[currentIndex + 1].key
   
@@ -820,12 +846,7 @@ const ejecutarAccionGestion = async () => {
               asignatura_id: examen.asignatura_id, 
               docente_id: examen.docente_id,
               grupoTeorico: examen.grupo,
-              parcial: {
-                '1er Parcial': '1P',
-                '2do Parcial': '2P',
-                'Final': 'EF',
-                '2da Instancia': '2I'
-              }[examen.parcial] || examen.parcial,
+              parcial: examen.parcial,
               all_docentes: true 
             } 
           })
@@ -846,48 +867,101 @@ const ejecutarAccionGestion = async () => {
           formatoHoja: tempConfig.value.formatoHoja
         }
 
-        const todas = bancoPreguntas.preguntas || []
+        const todas = Array.isArray(bancoPreguntas) ? bancoPreguntas : (bancoPreguntas.preguntas || [])
         
-        // Separar por especiales (PR, EM) y dificultad (SM, SU, FV, etc.)
-        const especiales = todas.filter(p => ['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo))
-        const faciles = todas.filter(p => !especiales.includes(p) && (p.dificultad === 'FACIL' || p.dificultad === '1'))
-        const medios = todas.filter(p => !especiales.includes(p) && (p.dificultad === 'MEDIA' || p.dificultad === 'MEDIO' || p.dificultad === '2'))
-        const dificiles = todas.filter(p => !especiales.includes(p) && (p.dificultad === 'DIFICIL' || p.dificultad === '3'))
+        // 1. Identificar Grupos Macro (Headers PR/EM + sus Subpreguntas)
+        const headers = todas.filter(p => ['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase()))
+        const subpreguntas = todas.filter(p => ['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(p.tipo?.toUpperCase()))
+        
+        const macroGrupos = headers.map(h => {
+          return {
+            header: h,
+            // Las subpreguntas se vinculan por el campo 'grupo' (Referencia)
+            children: subpreguntas.filter(sp => sp.grupo?.trim() === h.grupo?.trim() && h.grupo)
+          }
+        }).filter(mg => mg.children.length > 0) // Solo grupos con contenido
+
+        // 2. Identificar Preguntas Individuales
+        const individuales = todas.filter(p => 
+          ['SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO', 'SS', 'SM', 'FV'].includes(p.tipo?.toUpperCase())
+        )
 
         for (const letra of variantes) {
-          // Muestreo PRIORITARIO (Meta: 30 preguntas)
-          let seleccionadas = []
-          
-          // 1. Priorizar Especiales (PR/EM)
-          const poolEspeciales = shuffle([...especiales])
-          // Seleccionamos un máximo de 5 especiales si hay, o todas si hay menos
-          const pickedEspeciales = poolEspeciales.slice(0, 5) 
-          seleccionadas = [...pickedEspeciales]
-          
-          // 2. Calcular cupo restante para completar 30
-          const faltantes = 30 - seleccionadas.length
-          
-          // 3. Rellenar proporcionalmente (7/16/7 original -> 23.3%/53.3%/23.3%)
-          const nFacil = Math.round(faltantes * (7 / 30))
-          const nDificil = Math.round(faltantes * (7 / 30))
-          const nMedio = faltantes - nFacil - nDificil
-          
-          seleccionadas = [
-            ...seleccionadas,
-            ...shuffle([...faciles]).slice(0, nFacil),
-            ...shuffle([...medios]).slice(0, nMedio),
-            ...shuffle([...dificiles]).slice(0, nDificil)
-          ]
+          let seleccionadasFinal = []
+          let totalPreguntasContadas = 0
+          const meta = 30
 
-          // Barajar el orden final? No, mejor agrupar por tipo luego en el PDF
-          // Pero barajamos para que no siempre salgan las mismas al inicio del tipo
-          seleccionadas = shuffle(seleccionadas)
+          // A. Macro Grupos al inicio
+          const poolGrupos = shuffle([...macroGrupos])
+          for (const mg of poolGrupos) {
+            if (totalPreguntasContadas + mg.children.length <= meta) {
+              seleccionadasFinal.push(JSON.parse(JSON.stringify(mg.header))) 
+              seleccionadasFinal.push(...JSON.parse(JSON.stringify(shuffle([...mg.children]))))
+              totalPreguntasContadas += mg.children.length
+            }
+          }
 
-          // 4. Agrupar por tipo para el PDF final
-          const ordenTipos = ['SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO', 'PROBLEMA', 'EMPAREJAMIENTO', 'SUBPREGUNTA']
-          const sorted = [...seleccionadas].sort((a, b) => {
-            let ta = a.tipo === 'PR' ? 'PROBLEMA' : (a.tipo === 'EM' ? 'EMPAREJAMIENTO' : (a.tipo === 'SP' ? 'SUBPREGUNTA' : a.tipo))
-            let tb = b.tipo === 'PR' ? 'PROBLEMA' : (b.tipo === 'EM' ? 'EMPAREJAMIENTO' : (b.tipo === 'SP' ? 'SUBPREGUNTA' : b.tipo))
+          // B. Individuales
+          const faltantes = meta - totalPreguntasContadas
+          if (faltantes > 0) {
+            const extras = shuffle([...individuales]).slice(0, faltantes)
+            seleccionadasFinal.push(...JSON.parse(JSON.stringify(extras)))
+            totalPreguntasContadas += extras.length
+          }
+
+          // C. MEZCLAR INCISOS (Excepto FV) y Sincronizar Respuesta Correcta
+          seleccionadasFinal = seleccionadasFinal.map(p => {
+            if (['FALSO_VERDADERO', 'FV'].includes(p.tipo?.toUpperCase()) || !p.opciones || p.opciones.length === 0) {
+              return p
+            }
+            
+            // 1. Identificar textos correctos originales
+            const rCorrectasOrig = Array.isArray(p.respuesta_correcta) ? p.respuesta_correcta : [p.respuesta_correcta]
+            const textosCorrectos = p.opciones
+              .filter(o => rCorrectasOrig.includes(o.id))
+              .map(o => o.text)
+
+            // 2. Mezclar opciones
+            const nuevasOpciones = shuffle([...p.opciones])
+            
+            // 3. Re-asignar IDs (A, B, C...) y encontrar nuevas correctas
+            const abcd = 'ABCDEFGHIJ'.split('')
+            let nuevasRCorrectas = []
+            
+            p.opciones = nuevasOpciones.map((o, idx) => {
+              const newId = abcd[idx] || (idx + 1).toString()
+              if (textosCorrectos.includes(o.text)) {
+                nuevasRCorrectas.push(newId)
+              }
+              return { ...o, id: newId }
+            })
+
+            // 4. Actualizar respuesta_correcta (manteniendo el formato original string/array)
+            p.respuesta_correcta = Array.isArray(p.respuesta_correcta) 
+              ? nuevasRCorrectas 
+              : (nuevasRCorrectas[0] || p.respuesta_correcta)
+
+            return p
+          })
+
+          // D. ORDENAR PARA EVITAR DUPLICIDAD DE SECCIONES (Manteniendo MacroGrupos al inicio)
+          // Grupos Macro (PR/EM) -> SU -> SM -> FV
+          const ordenTipos = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA', 'SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO', 'SS', 'SM', 'FV']
+          const sorted = [...seleccionadasFinal].sort((a, b) => {
+            // Si son del mismo grupo macro, NO los separamos
+            if (a.grupo && b.grupo && a.grupo === b.grupo) return 0 
+            
+            // Prioridad por tipo
+            let ta = a.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
+            let tb = b.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
+            
+            // Si uno es macro y el otro no, el macro va primero
+            const isAMacro = ['PROBLEMA', 'EMPAREJAMIENTO'].includes(ta) || (a.tipo?.toUpperCase() === 'SUBPROBLEMA' && a.grupo)
+            const isBMacro = ['PROBLEMA', 'EMPAREJAMIENTO'].includes(tb) || (b.tipo?.toUpperCase() === 'SUBPROBLEMA' && b.grupo)
+            
+            if (isAMacro && !isBMacro) return -1
+            if (!isAMacro && isBMacro) return 1
+            
             return ordenTipos.indexOf(ta) - ordenTipos.indexOf(tb)
           })
 
@@ -905,7 +979,7 @@ const ejecutarAccionGestion = async () => {
             })
 
             // 2. Generar y Subir PATRON PDF (usando el mismo orden 'sorted')
-            const pPDF = generarPatronPDF(examen, letra, sorted)
+            const pPDF = await generarPatronPDF(examen, letra, sorted)
             const fPatronPDF = new FormData()
             fPatronPDF.append('archivo', pPDF.blob, pPDF.filename)
             fPatronPDF.append('variante', letra)
@@ -1008,54 +1082,203 @@ const getPatronUrl = (p, tipo) => {
   return `${baseUrl}/storage/patrones/${filename}`
 }
 
-const generarPatronPDF = (examen, letra, preguntas = []) => {
+const generarPatronPDF = async (examen, letra, preguntas = []) => {
   const doc = new jsPDF()
-  const margin = 20
-  
-  const formatFecha = (f) => {
-    if (!f) return '-'
-    const d = new Date(f)
-    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const margin = 15
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const PURPLE = [121, 40, 169]
+
+  // Logo
+  const logoUrl = `${api.defaults.baseURL}/banco-preguntas/logo-unitepc`
+  let logoBase64 = null
+  try {
+     logoBase64 = await fetchImageAsBase64(logoUrl)
+  } catch (e) {
+    console.warn('No se pudo cargar el logo oficial para el patrón:', e)
   }
 
-  doc.setFontSize(16)
+  // Header Design
+  if (logoBase64) {
+    doc.addImage(logoBase64, 'PNG', margin, margin, 25, 20)
+  }
+  
+  doc.setTextColor(PURPLE[0], PURPLE[1], PURPLE[2])
   doc.setFont('helvetica', 'bold')
-  doc.text(`Patrón de Respuestas - VAR ${letra}`, margin, 20)
+  doc.setFontSize(14)
+  doc.text('UNIVERSIDAD TÉCNICA PRIVADA COSMOS', pageWidth / 2, margin + 8, { align: 'center' })
   
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`Asignatura: ${examen.materia}`, margin, 30)
-  doc.text(`Docente: ${examen.docente}`, margin, 37)
-  doc.text(`Sede: ${examen.sede} | Grupo: ${examen.grupo}`, margin, 44)
-  doc.text(`Evaluación: ${examen.parcial} | Fecha: ${formatFecha(examen.fecha_examen)}`, margin, 51)
+  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(10)
+  doc.text(`Carrera: ${examen.carrera || ''}`, pageWidth / 2, margin + 14, { align: 'center' })
+  doc.setFont('helvetica', 'italic')
+  doc.setFontSize(8)
+  doc.text('"TÚ ESTÁS AQUÍ PORQUE FORMAS PARTE DE NUESTRA HISTORIA"', pageWidth / 2, margin + 19, { align: 'center' })
   
-  const tableBody = preguntas.map((p, i) => [
-    (i + 1).toString(),
-    p.respuesta_correcta?.replace(/["']/g, '') || '-'
-  ])
+  doc.setDrawColor(PURPLE[0], PURPLE[1], PURPLE[2])
+  doc.setLineWidth(0.8)
+  doc.line(margin, margin + 22, pageWidth - margin, margin + 22)
+  
+  // Info Section
+  let currentY = margin + 30
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(22)
+  doc.text('PATRÓN', margin + 35, currentY + 5)
 
-  autoTable(doc, {
-    startY: 60,
-    margin: { left: margin },
-    head: [['Pregunta', 'Respuesta Correcta']],
-    body: tableBody,
-    theme: 'grid',
-    headStyles: { fillColor: [79, 70, 229] }, // Indigo
-    styles: { halign: 'center' },
-    columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 50 } }
+  // Exam Variant Bubbles (Top Right)
+  const drawVariantBubbles = (x, y, activeLetra) => {
+    const letters = ['A', 'B', 'C', 'D', 'E']
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('TIPO DE EXAMEN', x + 15, y - 5, { align: 'center' })
+    letters.forEach((l, idx) => {
+      const bx = x + (idx * 7)
+      const isSelected = l === activeLetra
+      doc.setLineWidth(0.2)
+      doc.setDrawColor(0, 0, 0)
+      if (isSelected) {
+        doc.setFillColor(0, 0, 0)
+        doc.circle(bx, y, 2.5, 'FD')
+        doc.setTextColor(255, 255, 255)
+      } else {
+        doc.circle(bx, y, 2.5, 'S')
+        doc.setTextColor(0, 0, 0)
+      }
+      doc.text(l, bx, y + 0.8, { align: 'center', baseline: 'middle' })
+    })
+    doc.setTextColor(0, 0, 0)
+  }
+  drawVariantBubbles(pageWidth - margin - 35, currentY + 5, letra)
+
+  // Signature Box
+  doc.setLineWidth(0.2)
+  doc.setDrawColor(180, 180, 180)
+  doc.rect(pageWidth - margin - 50, currentY + 15, 50, 20)
+  doc.setFontSize(7)
+  doc.text('FIRMA DOCENTE Y SELLO', pageWidth - margin - 25, currentY + 32, { align: 'center' })
+
+  // Meta Fields
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  const fields = [
+    { k: 'Materia:', v: examen.materia },
+    { k: 'Docente:', v: examen.docente },
+    { k: 'Examen:', v: examen.parcial },
+    { k: 'Grupo:', v: `Grupo ${examen.grupo || ''}` }
+  ]
+  fields.forEach((f, idx) => {
+    const fy = currentY + 15 + (idx * 6)
+    doc.text(f.k, margin, fy)
+    doc.setFont('helvetica', 'normal')
+    doc.text(f.v || '', margin + 20, fy)
+    doc.setFont('helvetica', 'bold')
   })
   
+  doc.text('FECHA:', pageWidth - margin - 45, currentY + 21)
+  doc.setFont('helvetica', 'normal')
+  const fechaStr = examen.fecha_examen ? new Date(examen.fecha_examen).toISOString().split('T')[0] : '-'
+  doc.text(fechaStr, pageWidth - margin - 30, currentY + 21)
+
+  doc.setLineWidth(0.2)
+  doc.setDrawColor(200, 200, 200)
+  doc.line(margin, currentY + 42, pageWidth - margin, currentY + 42)
+
+  // OMR GRID
+  currentY += 55
+  const colWidth = (pageWidth - 2 * margin) / 4
+  const startYGrid = currentY
+  
+  const drawOMRLine = (qNum, answer, x, y) => {
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`${qNum}`, x, y + 1, { baseline: 'middle' })
+    
+    const options = ['A', 'B', 'C', 'D', 'E']
+    options.forEach((opt, idx) => {
+      const bx = x + 8 + (idx * 7)
+      const isCorrect = answer && answer.toUpperCase().includes(opt)
+      
+      doc.setLineWidth(0.1)
+      doc.setDrawColor(100, 100, 100)
+      if (isCorrect) {
+        doc.setFillColor(50, 50, 50)
+        doc.circle(bx, y, 2.2, 'FD')
+        doc.setTextColor(255, 255, 255)
+      } else {
+        doc.circle(bx, y, 2.2, 'S')
+        doc.setTextColor(100, 100, 100)
+      }
+      doc.setFontSize(6)
+      doc.text(opt, bx, y + 0.8, { align: 'center', baseline: 'middle' })
+    })
+    doc.setTextColor(0, 0, 0)
+  }
+
+  // Mapping Answers - FORZAR 100 FILAS (siempre mostrar 100 burbujas)
+  const preguntasReales = preguntas.filter(p => !['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase()))
+  const totalFilas = 100
+  const qPerCol = 25
+  
+  for (let i = 0; i < totalFilas; i++) {
+    const p = preguntasReales[i] || null
+    const colIndex = Math.floor(i / qPerCol)
+    const rowIndex = i % qPerCol
+    
+    const x = margin + (colIndex * colWidth)
+    const y = startYGrid + (rowIndex * 7)
+    
+    // Normalize answer
+    let ans = ''
+    if (p) {
+       ans = String(p.respuesta_correcta || '').replace(/["']/g, '')
+       const tipo = p.tipo?.toUpperCase()
+       if (['FALSO_VERDADERO', 'FV'].includes(tipo)) {
+          const lower = ans.toLowerCase()
+          if (lower === 'true' || lower === 'verdadero' || lower === 'v') ans = 'A'
+          if (lower === 'false' || lower === 'falso' || lower === 'f') ans = 'B'
+       }
+    }
+
+    drawOMRLine(i + 1, ans, x, y)
+    
+    // Bottom line deco
+    doc.setDrawColor(230, 230, 230)
+    doc.setLineWidth(0.1)
+    doc.line(x, y + 3.5, x + colWidth - 5, y + 3.5)
+  }
+
   const rawFilename = `${examen.codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_PatronVar${letra}.pdf`
   const blob = doc.output('blob')
   return { blob, filename: rawFilename }
 }
 
 const generarPatronXLSX = (examen, letra, preguntas = []) => {
-  // Formato para Remark: Suele ser una lista simple de respuestas
+  // Filtrar tipos que no son preguntas reales (PR, EM son solo contenedores)
+  const preguntasReales = preguntas.filter(p => !['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase()))
+  
+  // Formato para Remark: Encabezados y luego 100 filas
   const data = [
-    ["Pregunta", "Respuesta"],
-    ...preguntas.map((p, i) => [i + 1, p.respuesta_correcta?.replace(/["']/g, '') || '-'])
+    ["UNITEPC - PATRÓN DE RESPUESTAS (REMARK)"],
+    ["MATERIA", examen.materia],
+    ["DOCENTE", examen.docente],
+    ["VARIANTE", letra],
+    [],
+    ["Pregunta", "Respuesta Correcta"]
   ]
+  
+  for (let i = 0; i < 100; i++) {
+    const p = preguntasReales[i] || null
+    let ans = ''
+    if (p) {
+       ans = String(p.respuesta_correcta || '').replace(/["']/g, '')
+       const tipo = p.tipo?.toUpperCase()
+       if (['FALSO_VERDADERO', 'FV'].includes(tipo)) {
+          const lower = ans.toLowerCase()
+          if (lower === 'true' || lower === 'verdadero' || lower === 'v') ans = 'A'
+          if (lower === 'false' || lower === 'falso' || lower === 'f') ans = 'B'
+       }
+    }
+    data.push([i + 1, ans])
+  }
   
   const ws = XLSX.utils.aoa_to_sheet(data)
   const wb = XLSX.utils.book_new()
@@ -1091,7 +1314,7 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
   }
 
   // LOGO / TITULO TABLE
-  const logoUrl = `${api.defaults.baseURL.replace('/api', '')}/descargas/unitepc-logo.png`
+  const logoUrl = `${api.defaults.baseURL}/banco-preguntas/logo-unitepc`
   let logoBase64 = null
   try {
      logoBase64 = await fetchImageAsBase64(logoUrl)
@@ -1132,36 +1355,53 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
     }
   })
 
+  // Margen doble para la cabecera superior (homogeneizar con info table)
+  doc.setLineWidth(0.4)
+  doc.setDrawColor(0, 0, 0)
+  doc.rect(margin, margin, contentWidth, doc.lastAutoTable.finalY - margin)
+
   // INFO TABLE
+  const startYTable = doc.lastAutoTable.finalY + 2
   autoTable(doc, {
-    startY: doc.lastAutoTable.finalY,
+    startY: startYTable,
     margin: { left: margin, right: margin },
     tableWidth: pageWidth - (margin * 2),
     theme: 'grid',
-    styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.1, lineColor: [0,0,0] },
+    styles: { 
+      fontSize: 9, 
+      cellPadding: 2.5, 
+      lineWidth: 0.15, 
+      lineColor: [0,0,0],
+      font: 'helvetica'
+    },
     body: [
       [
-        { content: 'NOMBRE ESTUDIANTE:', styles: { minCellHeight: 10, cellWidth: (pageWidth - margin*2) * 0.6 } },
-        { content: 'TIEMPO:', styles: { cellWidth: (pageWidth - margin*2) * 0.4 } }
+        { content: 'NOMBRE ESTUDIANTE:', styles: { fontStyle: 'bold', minCellHeight: 10, cellWidth: (pageWidth - margin*2) * 0.65 } },
+        { content: 'CÓDIGO:', styles: { fontStyle: 'bold', cellWidth: (pageWidth - margin*2) * 0.35 } }
       ],
       [
-        { content: `CODIGO:\nCARRERA: ${examen.carrera || ''}` },
-        { content: `GRUPO: ${examen.grupo}` }
+        { content: `CARRERA: ${examen.carrera || ''}`, styles: { fontStyle: 'bold' } },
+        { content: `GRUPO: ${examen.grupo}`, styles: { fontStyle: 'bold' } }
       ],
       [
-        { content: `DOCENTE: ${examen.docente}` },
-        { content: `TIPO DE EXAMEN: ${examen.parcial} - VAR ${letra}` }
+        { content: `DOCENTE: ${examen.docente}`, styles: { fontStyle: 'bold' } },
+        { content: `TIPO DE EXAMEN: ${examen.parcial} - VAR ${letra}`, styles: { fontStyle: 'bold' } }
       ],
       [
-        { content: `MATERIA: ${examen.materia}` },
-        { content: `FECHA: ${formatFecha(examen.fecha_examen)}` }
+        { content: `MATERIA: ${examen.materia}`, styles: { fontStyle: 'bold' } },
+        { content: `FECHA: ${formatFecha(examen.fecha_examen)}`, styles: { fontStyle: 'bold' } }
       ],
       [
-        { content: `SEMESTRE: ${examen.semestre || '-'}` },
-        { content: `HORA: ${examen.hora}` }
+        { content: `SEMESTRE: ${examen.semestre || '-'}`, styles: { fontStyle: 'bold' } },
+        { content: `HORA: ${examen.hora}`, styles: { fontStyle: 'bold' } }
       ]
     ]
   })
+
+  // Efecto de margen doble minimalista (borde exterior más grueso)
+  const tableHeight = doc.lastAutoTable.finalY - startYTable
+  doc.setLineWidth(0.4)
+  doc.rect(margin, startYTable, contentWidth, tableHeight)
 
   let currentY = doc.lastAutoTable.finalY + 10
 
@@ -1169,10 +1409,9 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
   const descripciones = {
     'SELECCION_UNICA': 'SECCIÓN: SELECCIÓN ÚNICA - Seleccione la respuesta correcta entre las opciones presentadas.',
     'SELECCION_MULTIPLE': 'SECCIÓN: SELECCIÓN MÚLTIPLE - Seleccione todas las respuestas correctas. Puede haber más de una.',
-    'FALSO_VERDADERO': 'SECCIÓN: FALSO O VERDADERO - Marque si la afirmación es Verdadera (V) o Falsa (F).',
-    'PROBLEMA': 'SECCIÓN: PROBLEMAS - Resuelva los siguientes planteamientos.',
-    'EMPAREJAMIENTO': 'SECCIÓN: EMPAREJAMIENTO - Relacione los elementos de la columna izquierda con la derecha.',
-    'SUBPREGUNTA': 'SECCIÓN: SUBPREGUNTAS - Responda a las preguntas derivadas del caso anterior.'
+    'FALSO_VERDADERO': 'SECCIÓN: FALSO O VERDADERO - Marque si la afirmación es Verdadera (A) o Falsa (B)',
+    'PROBLEMA': 'SECCIÓN: PROBLEMAS - Resuelva los siguientes planteamientos. Lea detenidamente cada enunciado y resuelva las preguntas asociadas:',
+    'EMPAREJAMIENTO': 'SECCIÓN: EMPAREJAMIENTO - Relacione los términos o conceptos con sus definiciones o descripciones correspondientes.',
   }
 
   let ultimoTipo = null
@@ -1180,20 +1419,30 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
   // RENDER PREGUNTAS
   for (let i = 0; i < preguntas.length; i++) {
     const p = preguntas[i]
-    let tipoActual = p.tipo === 'PR' ? 'PROBLEMA' : (p.tipo === 'EM' ? 'EMPAREJAMIENTO' : (p.tipo === 'SP' ? 'SUBPREGUNTA' : p.tipo))
+    let tipoActualOriginal = p.tipo?.toUpperCase()
+    let tipoActual = tipoActualOriginal === 'PR' ? 'PROBLEMA' : (tipoActualOriginal === 'EM' ? 'EMPAREJAMIENTO' : (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(tipoActualOriginal) ? 'SUBPREGUNTA' : tipoActualOriginal))
     
-    // Encabezado de sección
-    if (tipoActual !== ultimoTipo) {
-      if (currentY > (doc.internal.pageSize.getHeight() - 40)) {
+    // Encabezado de sección (Solo para tipos principales)
+    const tiposPrincipales = ['SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO', 'PROBLEMA', 'EMPAREJAMIENTO']
+    if (tipoActual !== ultimoTipo && tiposPrincipales.includes(tipoActual)) {
+      const descText = descripciones[tipoActual] || `SECCIÓN: ${tipoActual.replace('_', ' ')}`
+      const descLines = doc.splitTextToSize(descText, contentWidth - 4)
+      const rectH = (descLines.length * 4.5) + 4
+
+      if (currentY + rectH > (doc.internal.pageSize.getHeight() - 40)) {
         doc.addPage()
         currentY = margin
       }
-      doc.setFillColor(240, 240, 240)
-      doc.rect(margin, currentY, contentWidth, 8, 'F')
-      doc.setFontSize(9)
+      
+      // Diseño minimalista para secciones: Línea de acento izquierda y sin fondo
+      doc.setDrawColor(70, 70, 70) // Gris oscuro para la línea
+      doc.setLineWidth(0.8)
+      doc.line(margin, currentY, margin, currentY + rectH - 1)
+      
+      doc.setFontSize(10)
       doc.setFont('helvetica', 'bold')
-      doc.text(descripciones[tipoActual] || `SECCIÓN: ${tipoActual.replace('_', ' ')}`, margin + 2, currentY + 5.5)
-      currentY += 12
+      doc.text(descLines, margin + 4, currentY + 4)
+      currentY += rectH + (tipoActual === 'PROBLEMA' ? 1 : 4) // Espacio mínimo para problemas
       ultimoTipo = tipoActual
     }
     
@@ -1202,60 +1451,153 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
        doc.addPage()
        currentY = margin
     }
+    // RENDER PREGUNTA ACTUAL
+    const enumTextBase = i + 1 - preguntas.slice(0, i).filter(x => ['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(x.tipo?.toUpperCase())).length
+    
+    // CASO ESPECIAL: EMPAREJAMIENTO (TABLA 2 COLUMNAS)
+    if (tipoActual === 'EMPAREJAMIENTO') {
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      let cleanEnunciado = (p.enunciado || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').trim()
+      if (cleanEnunciado.toUpperCase().startsWith('EMPAREJAMIENTO:')) {
+        cleanEnunciado = cleanEnunciado.substring(16).trim()
+      }
+      const enunciadoLines = doc.splitTextToSize(cleanEnunciado, contentWidth - 10)
+      doc.text(enunciadoLines, margin + 8, currentY) // Alineado con preguntas normales
+      currentY += (enunciadoLines.length * 6) + 4
 
+      // Buscar subpreguntas
+      let matchingSubs = []
+      let j = i + 1
+      while (j < preguntas.length && (preguntas[j].tipo?.toUpperCase() === 'SUBPROBLEMA' || preguntas[j].tipo?.toUpperCase() === 'SUBPREGUNTA') && preguntas[j].grupo === p.grupo) {
+        matchingSubs.push(preguntas[j])
+        j++
+      }
+
+      // Tabla
+      const tableData = []
+      const maxRows = Math.max((p.opciones || []).length, matchingSubs.length)
+      for (let r = 0; r < maxRows; r++) {
+        const opt = (p.opciones || [])[r] || null
+        const sub = matchingSubs[r] || null
+        const numReal = enumTextBase + r
+        tableData.push([
+          opt ? `${opt.id}) ${opt.text}` : '',
+          sub ? `(      )  ${numReal}. ${sub.enunciado?.replace(/<[^>]*>/g, '').trim()}` : ''
+        ])
+      }
+
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin },
+        tableWidth: contentWidth,
+        theme: 'plain',
+        styles: { fontSize: 10, cellPadding: 2, valign: 'middle' },
+        columnStyles: { 
+          0: { cellWidth: contentWidth * 0.25, fontStyle: 'bold' }, 
+          1: { cellWidth: contentWidth * 0.75 } 
+        },
+        body: tableData
+      })
+
+      currentY = doc.lastAutoTable.finalY + 10
+      i = j - 1 // Saltar subpreguntas
+      continue
+    }
+
+    // CASO NORMAL (SU, SM, FV, PR)
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
-    const enumText = `${i + 1}. `
-    doc.text(enumText, margin, currentY)
+    
+    // Solo numeramos si NO es un encabezado PROBLEMA
+    const esHeader = ['PR', 'PROBLEMA'].includes(p.tipo?.toUpperCase())
+    if (!esHeader) {
+      const headersAntes = preguntas.slice(0, i).filter(x => ['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(x.tipo?.toUpperCase())).length
+      const realNum = i + 1 - headersAntes
+      doc.text(`${realNum}. `, margin, currentY)
+    }
     
     doc.setFont('helvetica', 'normal')
-    const cleanEnunciado = (p.enunciado || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').trim()
+    let cleanEnunciado = (p.enunciado || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').trim()
+    
+    // Eliminar prefijos redundantes si la cabecera ya los menciona
+    if (cleanEnunciado.toUpperCase().startsWith('EMPAREJAMIENTO:')) {
+      cleanEnunciado = cleanEnunciado.substring(16).trim()
+    }
+    if (cleanEnunciado.toUpperCase().startsWith('PROBLEMA:')) {
+      cleanEnunciado = cleanEnunciado.substring(9).trim()
+    }
+
     const enunciadoLines = doc.splitTextToSize(cleanEnunciado, contentWidth - 10)
     doc.text(enunciadoLines, margin + 8, currentY)
-    currentY += (enunciadoLines.length * 6) + 2
+    currentY += (enunciadoLines.length * 6) + (esHeader ? 1 : 2)
 
     // Imagen (si existe)
     if (p.imagen) {
       try {
-        const imgUrl = `${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${p.imagen}`
+        const imgUrl = `${api.defaults.baseURL}/banco-preguntas/image/${p.imagen}`
         const imgData = await fetchImageAsBase64(imgUrl)
         if (imgData) {
           const imgProps = doc.getImageProperties(imgData)
-          const imgW = 80
-          const imgH = (imgProps.height * imgW) / imgProps.width
           
+          // Ajuste por ALTURA definida (ej: 45) y centrado
+          let imgH = 45 
+          let imgW = (imgProps.width * imgH) / imgProps.height
+          
+          // Si el ancho calculado es mayor al disponible, re-escalamos por ancho
+          if (imgW > contentWidth - 10) {
+            imgW = contentWidth - 10
+            imgH = (imgProps.height * imgW) / imgProps.width
+          }
+
           if (currentY + imgH > (doc.internal.pageSize.getHeight() - 20)) {
-            doc.addPage()
-            currentY = margin
+            doc.addPage(); currentY = margin
           }
 
           doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, currentY, imgW, imgH)
-          currentY += imgH + 5
+          currentY += imgH + 2
+        } else {
+          // DIAGNÓSTICO: Si falla la carga, dibujar un cuadro rojo
+          doc.setDrawColor(255, 0, 0)
+          doc.rect((pageWidth - 20)/2, currentY, 20, 10)
+          doc.text("ERR_IMG", (pageWidth - 20)/2 + 2, currentY + 7)
+          currentY += 15
         }
-      } catch (e) {
+      } catch (e) { 
         console.error("Error cargando imagen en PDF:", e)
+        doc.text("CATCH_IMG_ERR", margin, currentY)
+        currentY += 10
       }
     }
 
     // Opciones
     const opciones = Array.isArray(p.opciones) ? p.opciones : []
+    let tipoActualNoNormalizado = p.tipo?.toUpperCase()
+    
     if (opciones.length > 0) {
       doc.setFontSize(10)
       for (const opc of opciones) {
-        const opcText = `${opc.id || ''}) ${opc.text || ''}`
-        const opcLines = doc.splitTextToSize(opcText, contentWidth - 15)
-        
-        if (currentY + (opcLines.length * 5) > (doc.internal.pageSize.getHeight() - 20)) {
-          doc.addPage()
-          currentY = margin
+        let textToShow = opc.text || ''
+        if (['FALSO_VERDADERO', 'FV'].includes(tipoActualNoNormalizado)) {
+          const lower = textToShow.toLowerCase().trim()
+          if (lower === 'true') textToShow = 'Verdadero'
+          if (lower === 'false') textToShow = 'Falsa'
         }
-
+        const opcText = `${opc.id || ''}) ${textToShow}`
+        const opcLines = doc.splitTextToSize(opcText, contentWidth - 15)
+        if (currentY + (opcLines.length * 5) > (doc.internal.pageSize.getHeight() - 20)) {
+          doc.addPage(); currentY = margin
+        }
         doc.text(opcLines, margin + 12, currentY)
         currentY += (opcLines.length * 5) + 1
       }
     }
-    currentY += 5
+    currentY += (esHeader ? 2 : 5)
   }
+
+  // Corregir la numeración en el PDF (Los headers PR/EM no deberían tener número si el usuario dice que no cuentan)
+  // Pero actualmente uso `${i + 1}. ` en la línea 1203. 
+  // Voy a ajustar eso arriba.
 
   const rawFilename = `${examen.codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_Var${letra}.pdf`
   const blob = doc.output('blob')
@@ -1264,8 +1606,8 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
 
 async function fetchImageAsBase64(url) {
   try {
-    const response = await fetch(url)
-    const blob = await response.blob()
+    const response = await api.get(url, { responseType: 'blob' })
+    const blob = response.data
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result)
@@ -1273,7 +1615,7 @@ async function fetchImageAsBase64(url) {
       reader.readAsDataURL(blob)
     })
   } catch (e) {
-    console.error('Error convirtiendo imagen a Base64:', e)
+    console.error('Error convirtiendo imagen a Base64 con API:', e)
     return null
   }
 }
