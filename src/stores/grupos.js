@@ -108,6 +108,34 @@ export const useGruposStore = defineStore(
       }
     }
 
+    async function updateGrupo(id, data) {
+      loading.value = true
+      try {
+        await grupoService.updateGrupo(id, data)
+        await fetchGrupos({ page: currentPage.value })
+        return true
+      } catch (err) {
+        error.value = err
+        return false
+      } finally {
+        loading.value = false
+      }
+    }
+
+    async function deleteGrupo(id) {
+      loading.value = true
+      try {
+        await grupoService.deleteGrupo(id)
+        await fetchGrupos({ page: currentPage.value })
+        return true
+      } catch (err) {
+        error.value = err
+        return false
+      } finally {
+        loading.value = false
+      }
+    }
+
     return {
       // State
       materias,
@@ -125,6 +153,8 @@ export const useGruposStore = defineStore(
       fetchGruposExterno,
       refrescarGruposExterno,
       createGrupo,
+      updateGrupo,
+      deleteGrupo,
     }
   },
   {

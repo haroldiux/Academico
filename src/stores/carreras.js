@@ -23,6 +23,56 @@ export const useCarrerasStore = defineStore('carreras', () => {
     }
   }
 
+  async function createCarrera(data) {
+    loading.value = true
+    try {
+      const response = await carreraService.createCarrera(data)
+      // Agregar la nueva carrera a la lista
+      carreras.value.push(response.data)
+      return response.data
+    } catch (err) {
+      console.error('Error creating carrera:', err)
+      error.value = err
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateCarrera(id, data) {
+    loading.value = true
+    try {
+      const response = await carreraService.updateCarrera(id, data)
+      // Actualizar la carrera en la lista
+      const index = carreras.value.findIndex(c => c.id === id)
+      if (index !== -1) {
+        carreras.value[index] = response.data
+      }
+      return response.data
+    } catch (err) {
+      console.error('Error updating carrera:', err)
+      error.value = err
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteCarrera(id) {
+    loading.value = true
+    try {
+      await carreraService.deleteCarrera(id)
+      // Eliminar la carrera de la lista
+      carreras.value = carreras.value.filter(c => c.id !== id)
+    } catch (err) {
+      console.error('Error deleting carrera:', err)
+      error.value = err
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   function getCarreraById(id) {
     return carreras.value.find((c) => c.id === id)
   }
@@ -49,6 +99,9 @@ export const useCarrerasStore = defineStore('carreras', () => {
     loading,
     error,
     fetchCarreras,
+    createCarrera,
+    updateCarrera,
+    deleteCarrera,
     getCarreraById,
     getCarrerasBySede,
     getCarrerasByNombre,

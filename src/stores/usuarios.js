@@ -81,16 +81,40 @@ export const useUsuariosStore = defineStore('usuarios', () => {
     loading.value = true
     try {
       // Adapt frontend data to backend payload
-      // Frontend sends { nombre, apellido, ... } but User model needs { username, email, password, rol_id }
-      // This is a discrepancy! Frontend form creates academic profiles?
-      // For now, we assume basic User creation.
-      const payload = {
-        ...usuario,
-        rol_id: usuario.rolId,
-        sede_id: usuario.sedeId,
-        carrera: Array.isArray(usuario.carrera) ? usuario.carrera.join(', ') : usuario.carrera,
-        estado: usuario.estado === 'activo',
+      const payload = { ...usuario }
+
+      // Mapear campos frontend a backend
+      if (payload.rolId !== undefined) {
+        payload.rol_id = payload.rolId
+        delete payload.rolId
       }
+      if (payload.sedeId !== undefined) {
+        payload.sede_id = payload.sedeId
+        delete payload.sedeId
+      }
+
+      // Convertir carrera array a string separado por comas
+      if (payload.carrera !== undefined) {
+        if (Array.isArray(payload.carrera)) {
+          payload.carrera = payload.carrera.join(', ')
+        } else if (payload.carrera === null || payload.carrera === '') {
+          payload.carrera = ''
+        }
+        // Si ya es string, mantenerlo
+      }
+
+      // Convertir estado string a booleano
+      if (payload.estado !== undefined) {
+        if (typeof payload.estado === 'string') {
+          payload.estado = payload.estado === 'activo'
+        } else if (typeof payload.estado === 'boolean') {
+          // Ya es booleano, mantener
+        } else {
+          // Valor inesperado, default a true
+          payload.estado = true
+        }
+      }
+
       const response = await userService.createUsuario(payload)
       usuarios.value.push(response.data)
       return response.data.id
@@ -102,12 +126,38 @@ export const useUsuariosStore = defineStore('usuarios', () => {
   async function updateUsuario(id, datosActualizados) {
     try {
       const payload = { ...datosActualizados }
-      if (payload.rolId) payload.rol_id = payload.rolId
-      if (payload.sedeId) payload.sede_id = payload.sedeId
-      if (payload.carrera && Array.isArray(payload.carrera)) {
-        payload.carrera = payload.carrera.join(', ')
+
+      // Mapear campos frontend a backend
+      if (payload.rolId !== undefined) {
+        payload.rol_id = payload.rolId
+        delete payload.rolId
       }
-      if (payload.estado) payload.estado = payload.estado === 'activo'
+      if (payload.sedeId !== undefined) {
+        payload.sede_id = payload.sedeId
+        delete payload.sedeId
+      }
+
+      // Convertir carrera array a string separado por comas
+      if (payload.carrera !== undefined) {
+        if (Array.isArray(payload.carrera)) {
+          payload.carrera = payload.carrera.join(', ')
+        } else if (payload.carrera === null || payload.carrera === '') {
+          payload.carrera = ''
+        }
+        // Si ya es string, mantenerlo
+      }
+
+      // Convertir estado string a booleano
+      if (payload.estado !== undefined) {
+        if (typeof payload.estado === 'string') {
+          payload.estado = payload.estado === 'activo'
+        } else if (typeof payload.estado === 'boolean') {
+          // Ya es booleano, mantener
+        } else {
+          // Valor inesperado, default a true
+          payload.estado = true
+        }
+      }
 
       await userService.updateUsuario(id, payload)
       // Refresh local
