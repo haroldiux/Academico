@@ -959,16 +959,23 @@ function editarUsuario(usuario) {
   usuarioSeleccionado.value = usuario
 
   // Transformar carrera string a array si es necesario para el q-select multiple
-  // Transformar carrera string a array si es necesario para el q-select multiple
   let carrerasVal = []
   if (Array.isArray(usuario.carreraIds) && usuario.carreraIds.length > 0) {
     carrerasVal = usuario.carreraIds
   } else if (Array.isArray(usuario.carrera)) {
     carrerasVal = usuario.carrera
   } else if (usuario.carrera) {
-    // Si viene separado por comas o es solo uno
-    // INTENTO DE SPLIT SI ES STRING CSV? A veces guardan 'SIS, MED'
-    carrerasVal = [usuario.carrera] // Asumimos string simple por ahora o array
+    // Si es string, verificar si parece una lista de IDs numéricos separados por comas
+    if (typeof usuario.carrera === 'string' && /^[\d,\s]+$/.test(usuario.carrera)) {
+      // Es una lista de IDs, convertir a array de números
+      carrerasVal = usuario.carrera
+        .split(',')
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id))
+    } else {
+      // Es un texto literal, dejarlo como array de un elemento (no será seleccionable en el selector de IDs)
+      carrerasVal = [usuario.carrera]
+    }
   }
 
   formUsuario.value = {
