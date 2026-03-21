@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import aulaService from 'src/services/aulaService'
 
 export const useAulasStore = defineStore('aulas', () => {
-  const aulas   = ref([])
+  const aulas = ref([])
   const loading = ref(false)
 
   async function fetchAulas(params = {}) {
@@ -36,7 +36,7 @@ export const useAulasStore = defineStore('aulas', () => {
     loading.value = true
     try {
       const response = await aulaService.updateAula(id, data)
-      const idx = aulas.value.findIndex(a => a.id === id)
+      const idx = aulas.value.findIndex((a) => a.id === id)
       if (idx !== -1) aulas.value[idx] = response.data
       return response.data
     } catch (err) {
@@ -51,7 +51,7 @@ export const useAulasStore = defineStore('aulas', () => {
     loading.value = true
     try {
       await aulaService.deleteAula(id)
-      aulas.value = aulas.value.filter(a => a.id !== id)
+      aulas.value = aulas.value.filter((a) => a.id !== id)
     } catch (err) {
       console.error('Error deleting aula:', err)
       throw err
@@ -61,7 +61,7 @@ export const useAulasStore = defineStore('aulas', () => {
   }
 
   function getAulaById(id) {
-    return aulas.value.find(a => a.id === id)
+    return aulas.value.find((a) => a.id === id)
   }
 
   return { aulas, loading, fetchAulas, createAula, updateAula, deleteAula, getAulaById }

@@ -44,7 +44,7 @@ export const useCarrerasStore = defineStore('carreras', () => {
     try {
       const response = await carreraService.updateCarrera(id, data)
       // Actualizar la carrera en la lista
-      const index = carreras.value.findIndex(c => c.id === id)
+      const index = carreras.value.findIndex((c) => c.id === id)
       if (index !== -1) {
         carreras.value[index] = response.data
       }
@@ -63,7 +63,7 @@ export const useCarrerasStore = defineStore('carreras', () => {
     try {
       await carreraService.deleteCarrera(id)
       // Eliminar la carrera de la lista
-      carreras.value = carreras.value.filter(c => c.id !== id)
+      carreras.value = carreras.value.filter((c) => c.id !== id)
     } catch (err) {
       console.error('Error deleting carrera:', err)
       error.value = err

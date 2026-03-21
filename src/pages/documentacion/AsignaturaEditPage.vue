@@ -1346,13 +1346,16 @@
                         </q-btn>
                       </div>
 
-                      <div class="text-subtitle1 text-weight-bold q-mb-sm" v-html="pregunta.enunciado"></div>
-                      
+                      <div
+                        class="text-subtitle1 text-weight-bold q-mb-sm"
+                        v-html="pregunta.enunciado"
+                      ></div>
+
                       <!-- Imagen de la pregunta -->
                       <div v-if="pregunta.imagen" class="q-mb-md">
-                        <q-img 
-                          :src="`${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${pregunta.imagen}`" 
-                          style="max-width: 300px; border-radius: 8px;"
+                        <q-img
+                          :src="`${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${pregunta.imagen}`"
+                          style="max-width: 300px; border-radius: 8px"
                           class="shadow-1"
                         >
                           <template v-slot:error>
@@ -1365,7 +1368,9 @@
 
                       <div class="opciones-grid">
                         <div
-                          v-for="(opc, oidx) in (Array.isArray(pregunta.opciones) ? pregunta.opciones : [])"
+                          v-for="(opc, oidx) in Array.isArray(pregunta.opciones)
+                            ? pregunta.opciones
+                            : []"
                           :key="oidx"
                           class="opcion-item"
                           :class="{
@@ -1596,7 +1601,11 @@
             color="deep-purple"
             icon="upload"
             :label="`Importar ${preguntasImportadas.length} pregunta(s)`"
-            :disable="preguntasImportadas.length === 0 || !validacionDistribucion || !grupoTeoricoSeleccionado"
+            :disable="
+              preguntasImportadas.length === 0 ||
+              !validacionDistribucion ||
+              !grupoTeoricoSeleccionado
+            "
             :loading="importandoBanco"
             @click="confirmarImportacionBanco"
           />
@@ -1936,14 +1945,20 @@
                   </template>
                 </q-file>
               </div>
-              <div class="col-12 col-sm-6 text-center" v-if="formPregunta.imagen || previewImagenEdit">
-                 <div class="text-caption text-grey-7 q-mb-xs">Previsualización:</div>
-                 <q-img 
-                   :src="previewImagenEdit || `${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${formPregunta.imagen}`"
-                   style="height: 100px; max-width: 150px; border-radius: 4px;"
-                   fit="contain"
-                   class="bg-grey-2"
-                 />
+              <div
+                class="col-12 col-sm-6 text-center"
+                v-if="formPregunta.imagen || previewImagenEdit"
+              >
+                <div class="text-caption text-grey-7 q-mb-xs">Previsualización:</div>
+                <q-img
+                  :src="
+                    previewImagenEdit ||
+                    `${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${formPregunta.imagen}`
+                  "
+                  style="height: 100px; max-width: 150px; border-radius: 4px"
+                  fit="contain"
+                  class="bg-grey-2"
+                />
               </div>
             </div>
 
@@ -1985,36 +2000,52 @@
 
             <div class="row q-col-gutter-md">
               <div class="col-6">
-                 <q-input v-model="formPregunta.parcial" label="Parcial (1P, 2P, EF, 2I)" outlined dense />
+                <q-input
+                  v-model="formPregunta.parcial"
+                  label="Parcial (1P, 2P, EF, 2I)"
+                  outlined
+                  dense
+                />
               </div>
               <div class="col-6">
-                 <q-input v-model="formPregunta.grupo" label="Grupo/Referencia" outlined dense />
+                <q-input v-model="formPregunta.grupo" label="Grupo/Referencia" outlined dense />
               </div>
             </div>
 
             <!-- Opciones (Si aplica) -->
-            <div v-if="['SELECCION_UNICA', 'SELECCION_MULTIPLE', 'SP', 'FALSO_VERDADERO'].includes(formPregunta.tipo)">
+            <div
+              v-if="
+                ['SELECCION_UNICA', 'SELECCION_MULTIPLE', 'SP', 'FALSO_VERDADERO'].includes(
+                  formPregunta.tipo,
+                )
+              "
+            >
               <div class="text-subtitle2 q-mb-sm">Opciones de Respuesta</div>
               <div class="q-gutter-y-xs">
-                <div v-for="(op, i) in formPregunta.opciones" :key="i" class="row items-center q-gutter-x-sm">
-                  <q-avatar size="sm" color="grey-3" text-color="grey-8" font-size="12px">{{ String.fromCharCode(65 + i) }}</q-avatar>
+                <div
+                  v-for="(op, i) in formPregunta.opciones"
+                  :key="i"
+                  class="row items-center q-gutter-x-sm"
+                >
+                  <q-avatar size="sm" color="grey-3" text-color="grey-8" font-size="12px">{{
+                    String.fromCharCode(65 + i)
+                  }}</q-avatar>
                   <q-input v-model="formPregunta.opciones[i]" dense outlined class="col" />
-                  <q-checkbox 
-                    v-model="formPregunta.respuesta_correcta" 
-                    :val="String.fromCharCode(65 + i)" 
-                    label="Correcta" 
+                  <q-checkbox
+                    v-model="formPregunta.respuesta_correcta"
+                    :val="String.fromCharCode(65 + i)"
+                    label="Correcta"
                     v-if="formPregunta.tipo === 'SELECCION_MULTIPLE'"
                   />
-                  <q-radio 
-                    v-model="formPregunta.respuesta_correcta" 
-                    :val="String.fromCharCode(65 + i)" 
-                    label="Correcta" 
+                  <q-radio
+                    v-model="formPregunta.respuesta_correcta"
+                    :val="String.fromCharCode(65 + i)"
+                    label="Correcta"
                     v-else
                   />
                 </div>
               </div>
             </div>
-
           </q-form>
         </q-card-section>
 
@@ -2022,14 +2053,14 @@
 
         <q-card-actions align="right" class="q-pa-md">
           <q-btn flat label="Cancelar" v-close-popup no-caps />
-          <q-btn 
-            unelevated 
-            label="Guardar Cambios" 
-            color="deep-purple" 
-            icon="save" 
+          <q-btn
+            unelevated
+            label="Guardar Cambios"
+            color="deep-purple"
+            icon="save"
             :loading="guardandoEditPreg"
             @click="guardarEdicionPregunta"
-            no-caps 
+            no-caps
           />
         </q-card-actions>
       </q-card>
@@ -4166,7 +4197,12 @@ function previsualizarArchivoExcel(file) {
 }
 
 async function confirmarImportacionBanco() {
-  if (preguntasImportadas.value.length === 0 || !archivoBancoFile.value || !grupoTeoricoSeleccionado.value) return
+  if (
+    preguntasImportadas.value.length === 0 ||
+    !archivoBancoFile.value ||
+    !grupoTeoricoSeleccionado.value
+  )
+    return
   importandoBanco.value = true
 
   try {

@@ -819,7 +819,11 @@ function eliminarTodo() {
     cancel: { label: 'Cancelar', color: 'primary' },
   }).onOk(async () => {
     try {
-      const res = await store.deleteAll(filtros.value.gestion, filtros.value.carrera_id, authStore.sedeId)
+      const res = await store.deleteAll(
+        filtros.value.gestion,
+        filtros.value.carrera_id,
+        authStore.sedeId,
+      )
       $q.notify({
         type: 'positive',
         message: res.message || 'Se eliminaron los exámenes correctamente',
