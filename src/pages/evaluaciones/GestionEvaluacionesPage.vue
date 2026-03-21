@@ -993,35 +993,48 @@ const ejecutarGeneracionManual = async () => {
       window.URL.revokeObjectURL(url)
     }
 
-    const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, manualConfig.value.cantVariantes)
+    const variantesLetters = ['A', 'B', 'C', 'D', 'E'].slice(0, manualConfig.value.cantVariantes)
+    const examenesPDF = new jsPDF({ format: manualConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330] })
+    const patronesPDF = new jsPDF()
 
-    for (const letra of variantes) {
-      const seleccion = obtenerSeleccion7167(manualPreguntas.value, config)
-      const mezcladas = mezclarIncisos7167(seleccion)
+    for (let i = 0; i < variantesLetters.length; i++) {
+        const letra = variantesLetters[i]
+        const seleccion = obtenerSeleccion7167(manualPreguntas.value, config)
+        const mezcladas = mezclarIncisos7167(seleccion)
+        
+        const sorted = mezcladas.sort((a, b) => {
+          if (a.grupo && b.grupo && a.grupo === b.grupo) return 0 
+          let ta = a.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
+          let tb = b.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
+          const isAMacro = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(ta) && a.grupo
+          const isBMacro = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(tb) && b.grupo
+          if (isAMacro && !isBMacro) return -1
+          if (!isAMacro && isBMacro) return 1
+          return typeOrder.indexOf(ta) - typeOrder.indexOf(tb)
+        })
+
+        if (i > 0) {
+          examenesPDF.addPage()
+          patronesPDF.addPage()
+        }
+        
+        // 1. Examen PDF (Acumulativo)
+        await generarExamenPDF(examenesPDF, fakeExamen, config, letra, sorted)
+        
+        // 2. Patron PDF (Acumulativo)
+        await generarPatronPDF(patronesPDF, letra, sorted, fakeExamen)
       
-      const sorted = mezcladas.sort((a, b) => {
-        if (a.grupo && b.grupo && a.grupo === b.grupo) return 0 
-        let ta = a.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
-        let tb = b.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
-        const isAMacro = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(ta) && a.grupo
-        const isBMacro = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(tb) && b.grupo
-        if (isAMacro && !isBMacro) return -1
-        if (!isAMacro && isBMacro) return 1
-        return typeOrder.indexOf(ta) - typeOrder.indexOf(tb)
-      })
-      
-      // 1. Examen PDF
-      const { blob: eBlob, filename: eName } = await generarExamenPDF(fakeExamen, config, letra, sorted)
-      downloadFile(eBlob, eName)
-      
-      // 2. Patron PDF
-      const { blob: pBlob, filename: pName } = await generarPatronPDF(fakeExamen, letra, sorted)
-      downloadFile(pBlob, pName)
-      
-      // 3. Patron XLSX
+      // Generar Patrón XLSX (Se mantiene por variante por ahora para Remark)
       const { blob: xBlob, filename: xName } = generarPatronXLSX(fakeExamen, letra, sorted)
       downloadFile(xBlob, xName)
     }
+
+    // Descarga final de PDFs consolidados
+    const exBlob = examenesPDF.output('blob')
+    downloadFile(exBlob, `${manualConfig.value.materia}_Examenes_A_E.pdf`)
+    
+    const patBlob = patronesPDF.output('blob')
+    downloadFile(patBlob, `${manualConfig.value.materia}_Patrones_A_E.pdf`)
     
     $q.notify({
       type: 'positive',
@@ -1386,6 +1399,10 @@ const ejecutarAccionGestion = async () => {
         }
         $q.loading.hide()
         const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
+        const formatPaper = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
+        const mergedExamenesDoc = new jsPDF({ format: formatPaper })
+        const mergedPatronesDoc = new jsPDF()
+
         payload.config_generacion = { 
           facil: tempConfig.value.facil, medio: tempConfig.value.medio, dificil: tempConfig.value.dificil,
           total: tempConfig.value.facil + tempConfig.value.medio + tempConfig.value.dificil,
@@ -1395,7 +1412,10 @@ const ejecutarAccionGestion = async () => {
         const todas = Array.isArray(bancoPreguntas) ? bancoPreguntas : (bancoPreguntas.preguntas || [])
         const ordenTipos = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA', 'SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO', 'SS', 'SM', 'FV']
 
-        for (const letra of variantes) {
+        const resultadosVariantes = []
+
+        for (let i = 0; i < variantes.length; i++) {
+          const letra = variantes[i]
           const seleccion = obtenerSeleccion7167(todas, payload.config_generacion)
           const mezcladas = mezclarIncisos7167(seleccion)
           
@@ -1410,39 +1430,56 @@ const ejecutarAccionGestion = async () => {
             return ordenTipos.indexOf(ta) - ordenTipos.indexOf(tb)
           })
 
-          const { blob, filename } = await generarExamenPDF(examen, tempConfig.value, letra, sorted)
+          if (i > 0) {
+            mergedExamenesDoc.addPage()
+            mergedPatronesDoc.addPage()
+          }
+
+          // Generar contenido en documentos compartidos
+          await generarExamenPDF(mergedExamenesDoc, examen, payload.config_generacion, letra, sorted)
+          await generarPatronPDF(mergedPatronesDoc, letra, sorted, examen)
           
-          const formData = new FormData()
-          formData.append('archivo', blob, filename)
-          formData.append('variante', letra)
-          formData.append('filename', filename)
+          // Generar XLSX (siempre por variante para Remark)
+          const { blob: xBlob, filename: xName } = generarPatronXLSX(examen, letra, sorted)
+          
+          resultadosVariantes.push({ letra, sorted, xBlob, xName })
+        }
 
+        // 1. Preparar Blobs consolidados
+        const finalExBlob = mergedExamenesDoc.output('blob')
+        const finalExName = `${examen.codigo}_Examenes_Consolidados.pdf`
+        
+        const finalPatOMRBlob = mergedPatronesDoc.output('blob')
+        const finalPatOMRName = `${examen.codigo}_Patrones_OMR_Consolidados.pdf`
+
+        $q.loading.show({ message: 'Subiendo documentos consolidados...' })
+
+        for (const res of resultadosVariantes) {
           try {
-            // 1. Subir EXAMEN PDF
-            await api.post(`/rol-examenes/${examen.id}/upload-examen`, formData, {
-              headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            // Subir Examen (Consolidado) para cada variante para que el link funcione
+            const fdEx = new FormData()
+            fdEx.append('archivo', finalExBlob, finalExName)
+            fdEx.append('variante', res.letra)
+            fdEx.append('filename', finalExName)
+            await api.post(`/rol-examenes/${examen.id}/upload-examen`, fdEx, { headers: { 'Content-Type': 'multipart/form-data' } })
 
-            // 2. Generar y Subir PATRON PDF (usando el mismo orden 'sorted')
-            const pPDF = await generarPatronPDF(examen, letra, sorted)
+            // Subir Patron OMR (Consolidado)
             const fPatronPDF = new FormData()
-            fPatronPDF.append('archivo', pPDF.blob, pPDF.filename)
-            fPatronPDF.append('variante', letra)
+            fPatronPDF.append('archivo', finalPatOMRBlob, finalPatOMRName)
+            fPatronPDF.append('variante', res.letra)
             fPatronPDF.append('tipo', 'pdf')
-            fPatronPDF.append('filename', pPDF.filename)
+            fPatronPDF.append('filename', finalPatOMRName)
             await api.post(`/rol-examenes/${examen.id}/upload-patron`, fPatronPDF)
 
-            // 3. Generar y Subir PATRON XLSX (usando el mismo orden 'sorted')
-            const pXLSX = generarPatronXLSX(examen, letra, sorted)
+            // Subir Patron XLSX (Individual)
             const fPatronXLSX = new FormData()
-            fPatronXLSX.append('archivo', pXLSX.blob, pXLSX.filename)
-            fPatronXLSX.append('variante', letra)
+            fPatronXLSX.append('archivo', res.xBlob, res.xName)
+            fPatronXLSX.append('variante', res.letra)
             fPatronXLSX.append('tipo', 'xlsx')
-            fPatronXLSX.append('filename', pXLSX.filename)
+            fPatronXLSX.append('filename', res.xName)
             await api.post(`/rol-examenes/${examen.id}/upload-patron`, fPatronXLSX)
-
           } catch (uploadErr) {
-            console.error(`Error subiendo archivos variante ${letra}:`, uploadErr)
+            console.error(`Error subiendo archivos variante ${res.letra}:`, uploadErr)
           }
         }
       }
@@ -1523,8 +1560,9 @@ const getPatronUrl = (p, tipo) => {
   return `${baseUrl}/storage/patrones/${filename}`
 }
 
-const generarPatronPDF = async (examen, letra, preguntas = []) => {
-  const doc = new jsPDF()
+const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = null) => {
+  const doc = pdfDoc || new jsPDF()
+  const examen = examenInput || { materia: 'MATERIA', docente: 'DOCENTE', carrera: 'CARRERA', sede: 'SEDE', grupo: 'G1', parcial: '1er PARCIAL', codigo: '0000' }
   const margin = 15
   const pageWidth = doc.internal.pageSize.getWidth()
   const PURPLE = [121, 40, 169]
@@ -1731,7 +1769,7 @@ const generarPatronXLSX = (examen, letra, preguntas = []) => {
   return { blob, filename }
 }
 
-const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => {
+const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas = []) => {
   const formatMap = {
     'Carta': 'letter',
     'Oficio': 'legal',
@@ -1739,7 +1777,7 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
   }
   const paperFormat = formatMap[config.formatoHoja] || [215.9, 330.2]
   
-  const doc = new jsPDF({
+  const doc = pdfDoc || new jsPDF({
     orientation: 'p',
     unit: 'mm',
     format: paperFormat
