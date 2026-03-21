@@ -147,8 +147,9 @@ export const useAuthStore = defineStore(
           email: user.email,
           ci: user.ci,
           rol: rolNombre,
-          // Fix: prioritize docente.sede_id, then user.sede_id (if any), then null
-          sede_id: user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || null,
+          campus_id: user.campus_id || null,
+          // Fix: prioritize docente.sede_id, then user.sede_id, then campus.sede_id
+          sede_id: user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || user.campus?.sede_id || user.campus?.sede?.id || null,
           // Persist full sede object for UI use if available
           docente: {
             ...user.docente,
@@ -355,7 +356,8 @@ export const useAuthStore = defineStore(
           email: user.email,
           ci: user.ci,
           rol: rolNombre,
-          sede_id: user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || null,
+          campus_id: user.campus_id || null,
+          sede_id: user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || user.campus?.sede_id || user.campus?.sede?.id || null,
           carrera_id: user.director?.carrera_id || user.carrera_id || null,
           docente: {
             ...user.docente,

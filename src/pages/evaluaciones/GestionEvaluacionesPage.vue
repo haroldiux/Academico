@@ -219,7 +219,7 @@
         <!-- Documentos (Examenes + Patrones) -->
         <template v-slot:body-cell-documentos="props">
           <q-td :props="props" align="center">
-            <div class="flex items-center justify-center gap-1">
+            <div class="flex items-center justify-center gap-1" v-if="props.row.estado !== 'programados'">
               <!-- Variantes generadas -->
               <template v-if="props.row.variantes && props.row.variantes.length > 0">
                 <q-btn 
@@ -251,6 +251,9 @@
                   </q-btn>
                 </div>
               </template>
+            </div>
+            <div v-else class="text-caption text-grey-4 text-xs">
+              Esperando generación
             </div>
           </q-td>
         </template>
@@ -515,8 +518,9 @@ const fetchSedes = async () => {
     sedesOptions.value = rawSedes.map(s => ({ label: s.nombre, value: s.id }))
     
     // Si es restringido, pre-seleccionar su sede
-    if (esSedeRestringida.value && authStore.sedeId) {
-      const sedeUsuario = sedesOptions.value.find(s => s.value === authStore.sedeId)
+    const currentSedeId = authStore.usuarioActual?.sede_id
+    if (esSedeRestringida.value && currentSedeId) {
+      const sedeUsuario = sedesOptions.value.find(s => Number(s.value) === Number(currentSedeId))
       if (sedeUsuario) {
         filtros.value.sede = sedeUsuario
       }
@@ -528,14 +532,15 @@ const fetchSedes = async () => {
   }
 }
 
-const fetchCarreras = async (sedeId) => {
-  if (!sedeId) {
+const fetchCarreras = async (sedeId, campusId = null) => {
+  if (!sedeId && !campusId) {
     carrerasOptions.value = []
     return
   }
   loadingOptions.value.carreras = true
   try {
-    const response = await api.get(`/sedes/${sedeId}/carreras`)
+    const url = campusId ? `/campus/${campusId}/carreras` : `/sedes/${sedeId}/carreras`
+    const response = await api.get(url)
     carrerasOptions.value = response.data.map(c => ({ label: c.nombre, value: c.id }))
   } catch (error) {
     console.error('Error carreras:', error)
@@ -547,14 +552,26 @@ const fetchCarreras = async (sedeId) => {
 watch(() => filtros.value.sede, (newSede) => {
   filtros.value.carrera = null
   if (newSede) {
-    fetchCarreras(newSede.value)
+    const userSedeId = Number(authStore.usuarioActual?.sede_id)
+    const selectedSedeId = Number(newSede.value)
+    // Si la sede seleccionada es la del usuario y tiene campus_id, cargar por campus
+    if (authStore.usuarioActual?.campus_id && selectedSedeId === userSedeId) {
+       fetchCarreras(null, authStore.usuarioActual.campus_id)
+    } else {
+       fetchCarreras(selectedSedeId)
+    }
   } else {
     carrerasOptions.value = []
   }
 })
 
-onMounted(() => {
-  fetchSedes()
+onMounted(async () => {
+  // Asegurar que tenemos los últimos datos del usuario (con relaciones campus/sede)
+  if (authStore.isAuthenticated) {
+    await authStore.fetchUser()
+  }
+  await fetchSedes()
+  cargarDatos()
 })
 
 const dialogGestion = ref({
@@ -600,11 +617,11 @@ const cargarDatos = async () => {
       ...e,
       id: e.id,
       codigo: e.materia_codigo,
-      materia: e.materia_nombre,
-      carrera: e.carrera_nombre || 'Carrera',
-      sede: e.sede_nombre || 'Sede',
+      materia: e.materia,
+      carrera: e.carrera || 'Carrera',
+      sede: e.sede || 'Sede',
       grupo: e.grupo || '-',
-      docente: e.docente_nombre || 'POR ASIGNAR', // Ajustar si viene del join
+      docente: e.docente || 'POR ASIGNAR', 
       parcial: e.tipo_examen || e.parcial,
       fecha_examen: e.fecha,
       hora: e.hora_inicio?.substring(0, 5) || '00:00',
@@ -802,11 +819,17 @@ const ejecutarAccionGestion = async () => {
             params: { 
               asignatura_id: examen.asignatura_id, 
               docente_id: examen.docente_id,
-              parcial: examen.parcial,
+              grupoTeorico: examen.grupo,
+              parcial: {
+                '1er Parcial': '1P',
+                '2do Parcial': '2P',
+                'Final': 'EF',
+                '2da Instancia': '2I'
+              }[examen.parcial] || examen.parcial,
               all_docentes: true 
             } 
           })
-          bancoPreguntas = resp.data
+          bancoPreguntas = resp.data.preguntas || resp.data
         } catch (err) {
           console.error('Error al obtener banco:', err)
           $q.notify({ type: 'negative', message: 'No se pudo obtener el banco de preguntas' })
@@ -816,27 +839,59 @@ const ejecutarAccionGestion = async () => {
         $q.loading.hide()
 
         // Agrupar por dificultad
-        const pf = bancoPreguntas.filter(p => p.dificultad === '1' || p.dificultad === 'FACIL')
-        const pm = bancoPreguntas.filter(p => p.dificultad === '2' || p.dificultad === 'MEDIO' || p.dificultad === 'MEDIA')
-        const pd = bancoPreguntas.filter(p => p.dificultad === '3' || p.dificultad === 'DIFICIL')
-
-        const v = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
+        const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
         payload.config_generacion = { 
           facil: tempConfig.value.facil, medio: tempConfig.value.medio, dificil: tempConfig.value.dificil,
           total: tempConfig.value.facil + tempConfig.value.medio + tempConfig.value.dificil,
           formatoHoja: tempConfig.value.formatoHoja
         }
 
-        // Generar y Subir PDFs para cada variante
-        for (const letra of v) {
-          // MUESTREO ALEATORIO PARA CADA VARIANTE
-          const seleccionadas = [
-             ...shuffle([...pf]).slice(0, tempConfig.value.facil),
-             ...shuffle([...pm]).slice(0, tempConfig.value.medio),
-             ...shuffle([...pd]).slice(0, tempConfig.value.dificil)
+        const todas = bancoPreguntas.preguntas || []
+        
+        // Separar por especiales (PR, EM) y dificultad (SM, SU, FV, etc.)
+        const especiales = todas.filter(p => ['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo))
+        const faciles = todas.filter(p => !especiales.includes(p) && (p.dificultad === 'FACIL' || p.dificultad === '1'))
+        const medios = todas.filter(p => !especiales.includes(p) && (p.dificultad === 'MEDIA' || p.dificultad === 'MEDIO' || p.dificultad === '2'))
+        const dificiles = todas.filter(p => !especiales.includes(p) && (p.dificultad === 'DIFICIL' || p.dificultad === '3'))
+
+        for (const letra of variantes) {
+          // Muestreo PRIORITARIO (Meta: 30 preguntas)
+          let seleccionadas = []
+          
+          // 1. Priorizar Especiales (PR/EM)
+          const poolEspeciales = shuffle([...especiales])
+          // Seleccionamos un máximo de 5 especiales si hay, o todas si hay menos
+          const pickedEspeciales = poolEspeciales.slice(0, 5) 
+          seleccionadas = [...pickedEspeciales]
+          
+          // 2. Calcular cupo restante para completar 30
+          const faltantes = 30 - seleccionadas.length
+          
+          // 3. Rellenar proporcionalmente (7/16/7 original -> 23.3%/53.3%/23.3%)
+          const nFacil = Math.round(faltantes * (7 / 30))
+          const nDificil = Math.round(faltantes * (7 / 30))
+          const nMedio = faltantes - nFacil - nDificil
+          
+          seleccionadas = [
+            ...seleccionadas,
+            ...shuffle([...faciles]).slice(0, nFacil),
+            ...shuffle([...medios]).slice(0, nMedio),
+            ...shuffle([...dificiles]).slice(0, nDificil)
           ]
 
-          const { blob, filename } = await generarExamenPDF(examen, tempConfig.value, letra, seleccionadas)
+          // Barajar el orden final? No, mejor agrupar por tipo luego en el PDF
+          // Pero barajamos para que no siempre salgan las mismas al inicio del tipo
+          seleccionadas = shuffle(seleccionadas)
+
+          // 4. Agrupar por tipo para el PDF final
+          const ordenTipos = ['SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO', 'PROBLEMA', 'EMPAREJAMIENTO', 'SUBPREGUNTA']
+          const sorted = [...seleccionadas].sort((a, b) => {
+            let ta = a.tipo === 'PR' ? 'PROBLEMA' : (a.tipo === 'EM' ? 'EMPAREJAMIENTO' : (a.tipo === 'SP' ? 'SUBPREGUNTA' : a.tipo))
+            let tb = b.tipo === 'PR' ? 'PROBLEMA' : (b.tipo === 'EM' ? 'EMPAREJAMIENTO' : (b.tipo === 'SP' ? 'SUBPREGUNTA' : b.tipo))
+            return ordenTipos.indexOf(ta) - ordenTipos.indexOf(tb)
+          })
+
+          const { blob, filename } = await generarExamenPDF(examen, tempConfig.value, letra, sorted)
           
           const formData = new FormData()
           formData.append('archivo', blob, filename)
@@ -844,38 +899,37 @@ const ejecutarAccionGestion = async () => {
           formData.append('filename', filename)
 
           try {
+            // 1. Subir EXAMEN PDF
             await api.post(`/rol-examenes/${examen.id}/upload-examen`, formData, {
               headers: { 'Content-Type': 'multipart/form-data' }
             })
+
+            // 2. Generar y Subir PATRON PDF (usando el mismo orden 'sorted')
+            const pPDF = generarPatronPDF(examen, letra, sorted)
+            const fPatronPDF = new FormData()
+            fPatronPDF.append('archivo', pPDF.blob, pPDF.filename)
+            fPatronPDF.append('variante', letra)
+            fPatronPDF.append('tipo', 'pdf')
+            fPatronPDF.append('filename', pPDF.filename)
+            await api.post(`/rol-examenes/${examen.id}/upload-patron`, fPatronPDF)
+
+            // 3. Generar y Subir PATRON XLSX (usando el mismo orden 'sorted')
+            const pXLSX = generarPatronXLSX(examen, letra, sorted)
+            const fPatronXLSX = new FormData()
+            fPatronXLSX.append('archivo', pXLSX.blob, pXLSX.filename)
+            fPatronXLSX.append('variante', letra)
+            fPatronXLSX.append('tipo', 'xlsx')
+            fPatronXLSX.append('filename', pXLSX.filename)
+            await api.post(`/rol-examenes/${examen.id}/upload-patron`, fPatronXLSX)
+
           } catch (uploadErr) {
-            console.error(`Error subiendo variante ${letra}:`, uploadErr)
+            console.error(`Error subiendo archivos variante ${letra}:`, uploadErr)
           }
         }
       }
 
-      if (examen.estado === 'entregados') {
-        // Generar y subir patrones PDF y XLSX
-        const variants = examen.variantes.map(v => typeof v === 'string' ? v : v.letra)
-        for (const letra of variants) {
-          // 1. PDF Patron
-          const { blob: pdfBlob, filename: pdfName } = generarPatronPDF(examen, letra)
-          const f1 = new FormData()
-          f1.append('archivo', pdfBlob, pdfName)
-          f1.append('variante', letra)
-          f1.append('tipo', 'pdf')
-          f1.append('filename', pdfName)
-          await api.post(`/rol-examenes/${examen.id}/upload-patron`, f1, { headers: { 'Content-Type': 'multipart/form-data' } })
-
-          // 2. XLSX Patron
-          const { blob: excelBlob, filename: excelName } = generarPatronXLSX(examen, letra)
-          const f2 = new FormData()
-          f2.append('archivo', excelBlob, excelName)
-          f2.append('variante', letra)
-          f2.append('tipo', 'xlsx')
-          f2.append('filename', excelName)
-          await api.post(`/rol-examenes/${examen.id}/upload-patron`, f2, { headers: { 'Content-Type': 'multipart/form-data' } })
-        }
-      }
+      // La generación de patrones ahora ocurre en el estado 'programados'
+      // para asegurar consistencia con las preguntas seleccionadas aleatoriamente.
 
       await api.put(`/rol-examenes/${examen.id}`, payload)
       
@@ -954,33 +1008,61 @@ const getPatronUrl = (p, tipo) => {
   return `${baseUrl}/storage/patrones/${filename}`
 }
 
-const generarPatronPDF = (examen, letra) => {
+const generarPatronPDF = (examen, letra, preguntas = []) => {
   const doc = new jsPDF()
-  doc.text(`Patrón de Respuestas - Variante ${letra}`, 20, 20)
-  doc.text(`Asignatura: ${examen.materia}`, 20, 30)
-  doc.text(`Grupo: ${examen.grupo}`, 20, 40)
+  const margin = 20
   
-  const rawFilename = `${examen.materia_codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_PatronVar${letra}.pdf`
+  const formatFecha = (f) => {
+    if (!f) return '-'
+    const d = new Date(f)
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.text(`Patrón de Respuestas - VAR ${letra}`, margin, 20)
+  
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Asignatura: ${examen.materia}`, margin, 30)
+  doc.text(`Docente: ${examen.docente}`, margin, 37)
+  doc.text(`Sede: ${examen.sede} | Grupo: ${examen.grupo}`, margin, 44)
+  doc.text(`Evaluación: ${examen.parcial} | Fecha: ${formatFecha(examen.fecha_examen)}`, margin, 51)
+  
+  const tableBody = preguntas.map((p, i) => [
+    (i + 1).toString(),
+    p.respuesta_correcta?.replace(/["']/g, '') || '-'
+  ])
+
+  autoTable(doc, {
+    startY: 60,
+    margin: { left: margin },
+    head: [['Pregunta', 'Respuesta Correcta']],
+    body: tableBody,
+    theme: 'grid',
+    headStyles: { fillColor: [79, 70, 229] }, // Indigo
+    styles: { halign: 'center' },
+    columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 50 } }
+  })
+  
+  const rawFilename = `${examen.codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_PatronVar${letra}.pdf`
   const blob = doc.output('blob')
   return { blob, filename: rawFilename }
 }
 
-const generarPatronXLSX = (examen, letra) => {
+const generarPatronXLSX = (examen, letra, preguntas = []) => {
+  // Formato para Remark: Suele ser una lista simple de respuestas
   const data = [
-    ["Patrón de Respuestas", `Variante ${letra}`],
-    ["Asignatura", examen.materia],
-    ["Grupo", examen.grupo],
-    ["", ""],
-    ["Pregunta", "Respuesta Correcta"],
-    ["1", "A"],
-    ["2", "B"]
+    ["Pregunta", "Respuesta"],
+    ...preguntas.map((p, i) => [i + 1, p.respuesta_correcta?.replace(/["']/g, '') || '-'])
   ]
+  
   const ws = XLSX.utils.aoa_to_sheet(data)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, "Patron")
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
   const blob = new Blob([wbout], { type: 'application/octet-stream' })
-  const rawFilename = `${examen.materia_codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_PatronVar${letra}.xlsx`
+  const rawFilename = `${examen.codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_PatronVar${letra}.xlsx`
   return { blob, filename: rawFilename }
 }
 
@@ -1002,7 +1084,21 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
   const pageWidth = doc.internal.pageSize.getWidth()
   const contentWidth = pageWidth - (margin * 2)
 
+  const formatFecha = (f) => {
+    if (!f) return '-'
+    const d = new Date(f)
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+
   // LOGO / TITULO TABLE
+  const logoUrl = `${api.defaults.baseURL.replace('/api', '')}/descargas/unitepc-logo.png`
+  let logoBase64 = null
+  try {
+     logoBase64 = await fetchImageAsBase64(logoUrl)
+  } catch (e) {
+    console.warn('No se pudo cargar el logo oficial:', e)
+  }
+
   autoTable(doc, {
     startY: margin,
     margin: { left: margin, right: margin },
@@ -1010,26 +1106,43 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
     styles: { fontSize: 11, font: 'helvetica', textColor: [0, 0, 0], lineWidth: 0.1, lineColor: [0,0,0] },
     body: [
       [
-        { content: 'LOGO\nUNITEPC', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fontSize: 8, cellWidth: 30 } },
-        { content: 'UNIVERSIDAD TECNICA PRIVADA COSMOS\nGESTION I-2026', styles: { halign: 'center', fontSize: 12, fontStyle: 'bold' } },
-        { content: '', rowSpan: 2, styles: { cellWidth: 30 } }
+        { 
+          content: logoBase64 ? '' : 'LOGO\nUNITEPC', 
+          rowSpan: 2, 
+          styles: { 
+            halign: 'center', 
+            valign: 'middle', 
+            fontSize: 8, 
+            cellWidth: 35,
+            minCellHeight: 20
+          } 
+        },
+        { content: 'UNIVERSIDAD TECNICA PRIVADA COSMOS\nGESTION I-2026', styles: { halign: 'center', fontSize: 13, fontStyle: 'bold' } },
+        { content: '', rowSpan: 2, styles: { cellWidth: 35 } }
       ],
       [
         { content: `EVALUACION TEÓRICA ${examen.parcial.toUpperCase()}`, styles: { halign: 'center', fontStyle: 'bold' } }
       ]
-    ]
+    ],
+    didDrawCell: (data) => {
+      if (data.section === 'body' && data.column.index === 0 && data.row.index === 0 && logoBase64) {
+        const padding = 2
+        doc.addImage(logoBase64, 'PNG', data.cell.x + padding, data.cell.y + padding, data.cell.width - (padding*2), data.cell.height - (padding*2))
+      }
+    }
   })
 
   // INFO TABLE
   autoTable(doc, {
     startY: doc.lastAutoTable.finalY,
     margin: { left: margin, right: margin },
+    tableWidth: pageWidth - (margin * 2),
     theme: 'grid',
     styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.1, lineColor: [0,0,0] },
     body: [
       [
-        { content: 'NOMBRE ESTUDIANTE:', styles: { minCellHeight: 10, cellWidth: 100 } },
-        { content: 'TIEMPO:', styles: { cellWidth: 70 } }
+        { content: 'NOMBRE ESTUDIANTE:', styles: { minCellHeight: 10, cellWidth: (pageWidth - margin*2) * 0.6 } },
+        { content: 'TIEMPO:', styles: { cellWidth: (pageWidth - margin*2) * 0.4 } }
       ],
       [
         { content: `CODIGO:\nCARRERA: ${examen.carrera || ''}` },
@@ -1037,11 +1150,11 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
       ],
       [
         { content: `DOCENTE: ${examen.docente}` },
-        { content: `TIPO DE EXAMEN: ${examen.parcial}` }
+        { content: `TIPO DE EXAMEN: ${examen.parcial} - VAR ${letra}` }
       ],
       [
         { content: `MATERIA: ${examen.materia}` },
-        { content: `FECHA: ${examen.fecha_examen}` }
+        { content: `FECHA: ${formatFecha(examen.fecha_examen)}` }
       ],
       [
         { content: `SEMESTRE: ${examen.semestre || '-'}` },
@@ -1052,9 +1165,37 @@ const generarExamenPDF = async (examen, config, letra = 'A', preguntas = []) => 
 
   let currentY = doc.lastAutoTable.finalY + 10
 
+  // AGRUPAR POR TIPO PARA RENDERIZAR SECCIONES
+  const descripciones = {
+    'SELECCION_UNICA': 'SECCIÓN: SELECCIÓN ÚNICA - Seleccione la respuesta correcta entre las opciones presentadas.',
+    'SELECCION_MULTIPLE': 'SECCIÓN: SELECCIÓN MÚLTIPLE - Seleccione todas las respuestas correctas. Puede haber más de una.',
+    'FALSO_VERDADERO': 'SECCIÓN: FALSO O VERDADERO - Marque si la afirmación es Verdadera (V) o Falsa (F).',
+    'PROBLEMA': 'SECCIÓN: PROBLEMAS - Resuelva los siguientes planteamientos.',
+    'EMPAREJAMIENTO': 'SECCIÓN: EMPAREJAMIENTO - Relacione los elementos de la columna izquierda con la derecha.',
+    'SUBPREGUNTA': 'SECCIÓN: SUBPREGUNTAS - Responda a las preguntas derivadas del caso anterior.'
+  }
+
+  let ultimoTipo = null
+
   // RENDER PREGUNTAS
   for (let i = 0; i < preguntas.length; i++) {
     const p = preguntas[i]
+    let tipoActual = p.tipo === 'PR' ? 'PROBLEMA' : (p.tipo === 'EM' ? 'EMPAREJAMIENTO' : (p.tipo === 'SP' ? 'SUBPREGUNTA' : p.tipo))
+    
+    // Encabezado de sección
+    if (tipoActual !== ultimoTipo) {
+      if (currentY > (doc.internal.pageSize.getHeight() - 40)) {
+        doc.addPage()
+        currentY = margin
+      }
+      doc.setFillColor(240, 240, 240)
+      doc.rect(margin, currentY, contentWidth, 8, 'F')
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      doc.text(descripciones[tipoActual] || `SECCIÓN: ${tipoActual.replace('_', ' ')}`, margin + 2, currentY + 5.5)
+      currentY += 12
+      ultimoTipo = tipoActual
+    }
     
     // Check for page break
     if (currentY > (doc.internal.pageSize.getHeight() - 30)) {
@@ -1132,6 +1273,7 @@ async function fetchImageAsBase64(url) {
       reader.readAsDataURL(blob)
     })
   } catch (e) {
+    console.error('Error convirtiendo imagen a Base64:', e)
     return null
   }
 }

@@ -210,9 +210,9 @@ export function usePermisos() {
 
     if (esEvaluaciones.value) {
       return [
-        ...itemsBase,
+        // ...itemsBase, // Ocultar Dashboard para Evaluaciones
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
-        { label: 'Rol de Exámenes', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
+        // { label: 'Rol de Exámenes', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
       ]
     }
 

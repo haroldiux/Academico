@@ -1300,14 +1300,26 @@
                           {{ pregunta.tipo?.replace('_', ' ') }}
                         </q-chip>
                         <q-chip
-                          v-if="pregunta.grupo || pregunta.grupoTeorico"
-                          color="grey-2"
-                          text-color="grey-9"
-                          size="xs"
-                          icon="groups"
+                          v-if="pregunta.grupoTeorico"
+                          color="blue-1"
+                          text-color="blue-10"
+                          size="sm"
+                          icon="school"
                           dense
+                          class="text-weight-bold"
                         >
-                          {{ pregunta.grupo || pregunta.grupoTeorico }}
+                          GT: {{ pregunta.grupoTeorico }}
+                        </q-chip>
+                        <q-chip
+                          v-if="pregunta.grupo"
+                          color="amber-2"
+                          text-color="orange-10"
+                          size="sm"
+                          icon="tag"
+                          dense
+                          class="text-weight-bolder shadow-1"
+                        >
+                          Ref: {{ pregunta.grupo }}
                         </q-chip>
                         <q-space />
                         <q-btn
@@ -3525,7 +3537,7 @@ async function cargarBancoPreguntas() {
     }
 
     const { data } = await api.get(url)
-    bancoPreguntasLocal.value = data
+    bancoPreguntasLocal.value = data.preguntas || data
   } catch (error) {
     console.error('Error al cargar banco de preguntas:', error)
   }
