@@ -1,15 +1,24 @@
 import { api } from 'boot/axios'
 
 export default {
+  /**
+   * Lista asignaturas con sus grupos anidados (vista docente/director).
+   * GET /api/grupos — devuelve { data: [...asignaturas con grupos[]], meta }
+   */
   getGrupos(params) {
     return api.get('/grupos', { params })
   },
 
-  // Create group (assign teacher to subject)
+  /**
+   * Lista grupos reales (modelo Grupo) con relaciones — para CRUD admin.
+   * GET /api/grupos-flat — devuelve { data: [...grupos], meta }
+   * Soporta: sede_id, carrera_id, search, per_page, page
+   */
+  getGruposFlat(params) {
+    return api.get('/grupos-flat', { params })
+  },
+
   createGrupo(data) {
-    // We don't have a specific pivot-create endpoint, usually we use Asignatura controller or a specific store method.
-    // For now let's assume valid API endpoint or handle it via existing controllers.
-    // Actually, GrupoController.store could handle creation.
     return api.post('/grupos', data)
   },
 

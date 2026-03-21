@@ -6,6 +6,7 @@ const routes = [
     component: () => import('pages/LoginPage.vue'),
     meta: { title: 'Iniciar Sesión', public: true },
   },
+  {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
@@ -267,6 +268,13 @@ const routes = [
             component: () => import('pages/admin/CarrerasPage.vue'),
             meta: { title: 'Gestión de Carreras' },
           },
+          {
+            path: 'gestion-academica',
+            name: 'gestion-academica',
+            component: () => import('pages/admin/GestionAcademicaPage.vue'),
+            meta: { title: 'Gestión Académica', rol: 'SUPER_ADMIN' },
+          },
+          // Rutas legacy mantenidas por compatibilidad con el menú lateral
           {
             path: 'carreras-admin',
             name: 'carreras-admin',

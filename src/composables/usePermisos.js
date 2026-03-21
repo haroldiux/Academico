@@ -271,8 +271,13 @@ export function usePermisos() {
           to: '/admin/recuperacion-manual',
         },
       ]
-      // Sincronización solo para SUPER_ADMIN
+      // Opciones adicionales solo para SUPER_ADMIN
       if (esSuperAdmin.value) {
+        items.push({
+          label: 'Gestión Académica',
+          icon: 'grid_view',
+          to: '/admin/gestion-academica',
+        })
         items.push({
           label: 'Sincronización',
           icon: 'sync',
