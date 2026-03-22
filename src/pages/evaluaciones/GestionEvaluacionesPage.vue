@@ -327,31 +327,29 @@
           </div>
         </q-card-section>
 
-        <q-card-section class="q-pa-xl">
+        <q-card-section class="q-pa-lg">
           <!-- CASO 1: PROGRAMADOS (Generación) -->
-            <div v-if="dialogGestion.examen?.estado === 'programados'" class="config-generacion">
-              <div 
-                class="q-pa-md rounded-borders q-mb-lg flex justify-between items-center bg-indigo-50 border-indigo-200 shadow-1"
-                v-if="bancoStats.total > 0"
-              >
-                <div class="flex items-center text-indigo-9">
-                  <q-icon name="help_center" size="24px" class="q-mr-md" />
-                  <div class="column">
-                    <span class="text-weight-bold">Banco Disponible para esta Evaluación</span>
-                    <span class="text-caption">Se encontraron preguntas que coinciden con el Parcial y Grupo.</span>
-                  </div>
-                </div>
-                <div class="text-h4 text-indigo-7 text-weight-bolder">
-                  {{ bancoStats.total }}
+          <div v-if="dialogGestion.examen?.estado === 'programados'" class="config-generacion">
+            <div v-if="bancoStats.total > 0" class="q-pa-md rounded-borders q-mb-lg flex justify-between items-center bg-indigo-50 border-indigo-200 shadow-1">
+              <div class="flex items-center text-indigo-9">
+                <q-icon name="help_center" size="24px" class="q-mr-md" />
+                <div class="column">
+                  <span class="text-weight-bold">Banco Disponible para esta Evaluación</span>
+                  <span class="text-caption">Se encontraron preguntas que coinciden con el Parcial y Grupo.</span>
                 </div>
               </div>
+              <div class="text-h4 text-indigo-7 text-weight-bolder">
+                {{ bancoStats.total }}
+              </div>
+            </div>
 
-              <q-banner v-if="bancoStats.total === 0 && (bancoTotalAsignatura || 0) > 0" class="bg-amber-1 text-amber-9 rounded-borders q-mb-lg border-amber" dense bordered>
-                <template v-slot:avatar><q-icon name="warning" color="amber-9" size="32px" /></template>
-                <div class="text-weight-bold">Aviso de Disponibilidad:</div>
-                No hay preguntas para este <b>Grupo o Parcial</b>, pero tienes <b>{{ bancoTotalAsignatura }}</b> preguntas en total en la asignatura. 
-                Verifica que el Grupo en el Excel coincida con el del Rol de Examen.
-              </q-banner>
+            <q-banner v-if="bancoStats.total === 0 && (bancoTotalAsignatura || 0) > 0" class="bg-amber-1 text-amber-9 rounded-borders q-mb-lg border-amber" dense bordered>
+              <template v-slot:avatar><q-icon name="warning" color="amber-9" size="32px" /></template>
+              <div class="text-weight-bold">Aviso de Disponibilidad:</div>
+              No hay preguntas para este <b>Grupo o Parcial</b>, pero tienes <b>{{ bancoTotalAsignatura }}</b> preguntas en total en la asignatura. 
+              Verifica que el Grupo en el Excel coincida con el del Rol de Examen.
+            </q-banner>
+
             <div class="text-subtitle1 text-weight-bold q-mb-md flex items-center">
               <q-icon name="tune" color="primary" class="q-mr-xs" />
               Parámetros de Generación
@@ -407,13 +405,51 @@
               </div>
             </div>
             
-            <div class="total-badge q-mt-sm row justify-end items-center q-gutter-x-sm">
-              <q-chip v-if="!bancoSuficiente" dense color="red-1" text-color="red-7" icon="error_outline" label="Banco Insuficiente" class="text-weight-bold" />
-              <q-chip label outline :color="bancoSuficiente ? 'primary' : 'red'" class="text-weight-bold">
-                TOTAL PREGUNTAS: {{ tempConfig.facil + tempConfig.medio + tempConfig.dificil }}
-              </q-chip>
+            <q-separator class="q-my-md" />
+            <div class="row q-mb-sm">
+              <div class="text-subtitle2 text-grey-8 flex items-center">
+                <q-icon name="print" color="grey-6" class="q-mr-xs" />
+                Configuración de Impresión
+              </div>
             </div>
             
+            <div class="row q-col-gutter-sm">
+              <div class="col-12 col-md-6">
+                <q-select
+                  v-model="tempConfig.fontFamily"
+                  :options="optionsFuente"
+                  outlined dense
+                  label="Fuente"
+                  emit-value
+                  map-options
+                >
+                  <template v-slot:prepend><q-icon name="font_download" size="xs" /></template>
+                </q-select>
+              </div>
+              <div class="col-6 col-md-3">
+                <q-select
+                  v-model="tempConfig.fontSize"
+                  :options="optionsTamanio"
+                  outlined dense
+                  label="Tamaño"
+                >
+                  <template v-slot:prepend><q-icon name="format_size" size="xs" /></template>
+                </q-select>
+              </div>
+              <div class="col-6 col-md-3">
+                <q-select
+                  v-model="tempConfig.lineSpacing"
+                  :options="optionsEspaciado"
+                  outlined dense
+                  label="Espacio"
+                  emit-value
+                  map-options
+                >
+                  <template v-slot:prepend><q-icon name="format_line_spacing" size="xs" /></template>
+                </q-select>
+              </div>
+            </div>
+
             <q-banner class="bg-blue-1 text-blue-9 q-mt-lg rounded-borders row items-center" dense>
               <template v-slot:avatar><q-icon name="verified" /></template>
               Regla aplicada desde nivel: 
@@ -447,7 +483,7 @@
             </div>
           </div>
 
-          <!-- CASO GENERAL (Si existiera) -->
+          <!-- CASO GENERAL -->
           <div v-else class="text-center q-pa-xl">
              <q-icon :name="configGestion.icon" size="64px" color="grey-4" class="q-mb-md" />
              <p class="text-body1 text-grey-7">{{ configGestion.descripcion }}</p>
@@ -475,73 +511,168 @@
 
     <!-- Modal: Generación Manual desde Excel -->
     <q-dialog v-model="dialogManual.show" backdrop-filter="blur(4px)" persistent>
-      <q-card style="width: 800px; max-width: 95vw; border-radius: 20px;">
-        <q-card-section class="bg-deep-purple-8 text-white row items-center no-wrap">
-          <q-icon name="auto_awesome" size="24px" class="q-mr-sm" />
-          <div class="text-h6 text-weight-bold">Generación Offline (Excel)</div>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+      <q-card style="width: 850px; max-width: 95vw; border-radius: 20px;" class="shadow-24">
+        <q-card-section class="bg-deep-purple-8 text-white q-pa-lg">
+          <div class="row items-center no-wrap">
+            <div class="col">
+              <div class="text-h6 text-weight-bold flex items-center">
+                <q-icon name="auto_awesome" class="q-mr-sm" size="24px" />
+                Generación Manual (Excel)
+              </div>
+              <div class="text-caption opacity-80">Configure la cabecera del examen y suba su banco de preguntas</div>
+            </div>
+            <q-btn icon="close" flat round dense v-close-popup />
+          </div>
         </q-card-section>
 
         <q-card-section class="q-pa-lg">
           <div class="row q-col-gutter-lg">
             <!-- Columna Izquierda: Metadatos -->
             <div class="col-12 col-md-6 border-right">
-              <div class="text-subtitle1 text-weight-bold q-mb-md text-primary">Cabecera del Examen</div>
+              <div class="text-subtitle1 text-weight-bold q-mb-md text-primary flex items-center">
+                <q-icon name="assignment" class="q-mr-xs" />
+                Cabecera del Examen
+              </div>
               
               <div class="row q-col-gutter-sm">
-                <div class="col-12">
-                  <q-input v-model="manualConfig.materia" label="Nombre de la Materia" outlined dense stack-label />
+                <!-- Sede y Carrera -->
+                <div class="col-6">
+                  <q-select 
+                    v-model="manualConfig.sede" 
+                    :options="sedesOptions" 
+                    label="Sede" 
+                    outlined dense 
+                    emit-value map-options 
+                    use-input
+                    input-debounce="0"
+                    behavior="menu"
+                  >
+                    <template v-slot:prepend><q-icon name="apartment" size="xs" /></template>
+                  </q-select>
                 </div>
-                <div class="row q-col-gutter-sm q-mb-sm">
-                  <div class="col-8">
-                    <q-input v-model="manualConfig.docente" label="Nombre del Docente" dense outlined />
-                  </div>
-                  <div class="col-4">
-                    <q-input v-model="manualConfig.grupo" label="Grupo" placeholder="ej: Grupo 1" dense outlined />
+                <div class="col-6">
+                  <q-select 
+                    v-model="manualConfig.carrera" 
+                    :options="carrerasOptionsManual" 
+                    label="Carrera" 
+                    outlined dense 
+                    emit-value map-options 
+                    :disable="!manualConfig.sede"
+                    use-input
+                    input-debounce="0"
+                    behavior="menu"
+                  >
+                    <template v-slot:prepend><q-icon name="school" size="xs" /></template>
+                  </q-select>
+                </div>
+
+                <!-- Asignatura -->
+                <div class="col-12">
+                  <q-select
+                    v-model="manualConfig.materia"
+                    :options="asignaturasOptionsManual"
+                    label="Asignatura / Materia"
+                    outlined dense
+                    use-input
+                    fill-input
+                    hide-selected
+                    emit-value
+                    map-options
+                    input-debounce="300"
+                    hint="Seleccione o escriba manualmente"
+                    :disable="!manualConfig.carrera"
+                    @input-value="val => { if(val) manualConfig.materia = val }"
+                  >
+                    <template v-slot:prepend><q-icon name="book" size="xs" /></template>
+                  </q-select>
+                </div>
+                
+                <!-- Docente -->
+                <div class="col-8">
+                  <q-select
+                    v-model="manualConfig.docente"
+                    :options="docentesOptionsManual"
+                    label="Docente"
+                    outlined dense
+                    use-input
+                    fill-input
+                    hide-selected
+                    emit-value
+                    map-options
+                    input-debounce="300"
+                    @filter="(val, update) => { update(() => { fetchDocentesManual(val) }) }"
+                    @input-value="val => { if(val) manualConfig.docente = val }"
+                  >
+                    <template v-slot:prepend><q-icon name="person" size="xs" /></template>
+                  </q-select>
+                </div>
+                <div class="col-4">
+                  <q-input v-model="manualConfig.grupo" label="Grupo" outlined dense placeholder="G-1" />
+                </div>
+
+                <!-- Detalles adicionales -->
+                <div class="col-4">
+                  <q-input v-model="manualConfig.semestre" label="Semestre" outlined dense placeholder="5to" />
+                </div>
+                <div class="col-4">
+                  <q-input v-model="manualConfig.hora" label="Hora" outlined dense placeholder="08:30" />
+                </div>
+                <div class="col-4">
+                  <q-select v-model="manualConfig.cantVariantes" :options="[1,2,3,4,5]" label="Variantes" outlined dense />
+                </div>
+
+                <div class="col-6">
+                  <q-select v-model="manualConfig.parcial" :options="parcialesOptions" label="Parcial" outlined dense />
+                </div>
+                <div class="col-6">
+                   <q-input v-model="manualConfig.fecha" label="Fecha" type="date" outlined dense stack-label />
+                </div>
+
+                <div class="col-12">
+                  <q-separator class="q-my-sm" />
+                  <div class="row q-mb-xs">
+                    <div class="text-caption text-weight-bold text-grey-7 flex items-center">
+                      <q-icon name="palette" class="q-mr-xs" />
+                      Configuración de Impresión:
+                    </div>
                   </div>
                 </div>
 
-                <div class="row q-col-gutter-sm q-mb-sm">
-                  <div class="col-6">
-                    <q-input v-model="manualConfig.semestre" label="Semestre" placeholder="ej: 5to" dense outlined />
-                  </div>
-                  <div class="col-6">
-                    <q-input v-model="manualConfig.hora" label="Hora de Inicio" placeholder="ej: 08:30" dense outlined />
-                  </div>
-                </div>
-
-                <div class="row q-col-gutter-sm q-mb-sm items-center">
-                  <div class="col-auto" style="min-width: 120px">
-                     <q-select 
-                      v-model="manualConfig.cantVariantes" 
-                      label="Variante" 
-                      :options="[1, 2, 3, 4, 5]" 
-                      dense outlined 
-                      emit-value 
-                      map-options 
-                    />
-                  </div>
-                  <div class="col">
-                    <q-select v-model="manualConfig.sede" :options="sedesOptions" label="Sede" outlined dense stack-label emit-value map-options />
-                  </div>
-                </div>
-                <div class="col-6">
-                  <q-select v-model="manualConfig.carrera" :options="carrerasOptionsManual" label="Carrera" outlined dense stack-label emit-value map-options />
-                </div>
-                <div class="col-6">
-                   <q-select v-model="manualConfig.parcial" :options="parcialesOptions" label="Tipo de Examen" outlined dense stack-label />
-                </div>
-                <div class="col-6">
-                  <q-input v-model="manualConfig.fecha" label="Fecha del Examen" type="date" outlined dense stack-label />
-                </div>
-                <div class="col-12">
-                   <q-select
+                <div class="col-12 col-md-6">
+                  <q-select
                     v-model="manualConfig.formatoHoja"
                     :options="optionsHoja"
                     outlined dense
                     label="Tamaño Hoja"
                     bg-color="blue-50"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <q-select
+                    v-model="manualConfig.fontFamily"
+                    :options="optionsFuente"
+                    outlined dense
+                    label="Fuente"
+                    emit-value
+                    map-options
+                  />
+                </div>
+                <div class="col-6">
+                  <q-select
+                    v-model="manualConfig.fontSize"
+                    :options="optionsTamanio"
+                    outlined dense
+                    label="Tamaño"
+                  />
+                </div>
+                <div class="col-6">
+                  <q-select
+                    v-model="manualConfig.lineSpacing"
+                    :options="optionsEspaciado"
+                    outlined dense
+                    label="Interlineado"
+                    emit-value
+                    map-options
                   />
                 </div>
               </div>
@@ -665,6 +796,17 @@ const shuffle = (array) => {
   return array;
 }
 
+const normalizeTipo = (t) => {
+  const s = String(t || '').toUpperCase().trim();
+  if (['PR', 'PROBLEMA'].includes(s)) return 'PROBLEMA'
+  if (['EM', 'EMPAREJAMIENTO'].includes(s)) return 'EMPAREJAMIENTO'
+  if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(s)) return 'SUBPROBLEMA'
+  if (['SU', 'SS', 'SELECCION_UNICA'].includes(s)) return 'SELECCION_UNICA'
+  if (['SM', 'SELECCION_MULTIPLE'].includes(s)) return 'SELECCION_MULTIPLE'
+  if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO'].includes(s)) return 'FALSO_VERDADERO'
+  return s
+}
+
 const filtros = ref({
   sede: null,
   carrera: null,
@@ -677,6 +819,16 @@ const sedesOptions = ref([])
 const carrerasOptions = ref([])
 const parcialesOptions = ['1er Parcial', '2do Parcial', 'Final', '2da Instancia']
 const optionsHoja = ['Oficio (8.5" x 13")', 'Carta', 'Oficio']
+const optionsFuente = [
+  { label: 'Arial / Helvetica', value: 'helvetica' },
+  { label: 'Times New Roman', value: 'times' }
+]
+const optionsTamanio = [8, 9, 10, 11, 12, 13, 14]
+const optionsEspaciado = [
+  { label: 'Simple', value: 1.0 },
+  { label: 'Relajado (1.2)', value: 1.2 },
+  { label: 'Doble (1.5)', value: 1.5 }
+]
 const loadingOptions = ref({ sedes: false, carreras: false })
 
 const esSedeRestringida = computed(() => {
@@ -759,7 +911,11 @@ const tempConfig = ref({
   facil: 10,
   medio: 10,
   dificil: 5,
-  formatoHoja: 'Oficio (8.5" x 13")'
+  formatoHoja: 'Oficio (8.5" x 13")',
+  fontFamily: 'helvetica',
+  fontSize: 11,
+  lineSpacing: 1.2,
+  aleatorizarSecciones: true
 })
 
 const configOrigenActual = ref('nacional')
@@ -796,9 +952,15 @@ const manualConfig = ref({
   formatoHoja: 'Oficio (8.5" x 13")',
   semestre: '',
   hora: '',
-  cantVariantes: 2
+  cantVariantes: 1,
+  fontFamily: 'helvetica',
+  fontSize: 11,
+  lineSpacing: 1.2,
+  aleatorizarSecciones: true
 })
 const carrerasOptionsManual = ref([])
+const asignaturasOptionsManual = ref([])
+const docentesOptionsManual = ref([])
 
 watch(() => manualConfig.value.sede, (newSedeId) => {
   manualConfig.value.carrera = null
@@ -809,12 +971,40 @@ watch(() => manualConfig.value.sede, (newSedeId) => {
   }
 })
 
+watch(() => manualConfig.value.carrera, (newCarreraId) => {
+  manualConfig.value.materia = null
+  if (newCarreraId) {
+     fetchAsignaturasManual(newCarreraId)
+  } else {
+     asignaturasOptionsManual.value = []
+  }
+})
+
 const fetchCarrerasParaManual = async (sedeId) => {
   try {
     const response = await api.get(`/sedes/${sedeId}/carreras`)
     carrerasOptionsManual.value = response.data.map(c => ({ label: c.nombre, value: c.id }))
   } catch (error) {
     console.error('Error carreras manual:', error)
+  }
+}
+
+const fetchAsignaturasManual = async (carreraId) => {
+  try {
+    const response = await api.get(`/asignaturas`, { params: { carrera_id: carreraId } })
+    asignaturasOptionsManual.value = response.data.map(a => ({ label: a.nombre, value: a.id }))
+  } catch (error) {
+    console.error('Error asignaturas manual:', error)
+  }
+}
+
+const fetchDocentesManual = async (q = '') => {
+  try {
+    const response = await api.get('/docentes', { params: { q, per_page: 50 } })
+    const raw = Array.isArray(response.data) ? response.data : (response.data.data || [])
+    docentesOptionsManual.value = raw.map(d => ({ label: d.nombre, value: d.id }))
+  } catch (error) {
+    console.error('Error docentes manual:', error)
   }
 }
 
@@ -848,8 +1038,16 @@ const abrirGeneracionManual = () => {
     carrera: null,
     parcial: '1er Parcial',
     fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
-    formatoHoja: 'Oficio (8.5" x 13")'
+    formatoHoja: 'Oficio (8.5" x 13")',
+    semestre: '',
+    hora: '',
+    cantVariantes: 1,
+    fontFamily: 'helvetica',
+    fontSize: 11,
+    lineSpacing: 1.2,
+    aleatorizarSecciones: true
   }
+  fetchDocentesManual()
   dialogManual.value.show = true
 }
 
@@ -879,11 +1077,16 @@ const onExcelUploaded = (file) => {
       const mapped = jsonData.map((row, idx) => {
         const upperRow = {}
         Object.keys(row).forEach(k => {
-          upperRow[String(k).toUpperCase().trim()] = row[k]
+          // Normalizar: quitar acentos, espacios a _, todo a UPPER
+          const normalizedKey = String(k).toUpperCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, '_').trim()
+          upperRow[normalizedKey] = row[k]
         })
         
         // Estandarizar tipos para que activen los encabezados del PDF
-        let tipoRaw = String(upperRow.TIPO || 'SU').toUpperCase().trim()
+        let tipoRaw = String(upperRow.TIPO || 'SU').toUpperCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim()
         let tipoFinal = tipoRaw
         if (['SU', 'SS', 'SELECCION_UNICA'].includes(tipoRaw)) tipoFinal = 'SELECCION_UNICA'
         else if (['SM', 'SELECCION_MULTIPLE'].includes(tipoRaw)) tipoFinal = 'SELECCION_MULTIPLE'
@@ -899,13 +1102,19 @@ const onExcelUploaded = (file) => {
           grupo: String(upperRow.GRUPO || '').trim(),
           dificultad: String(upperRow.DIFICULTAD || '1').trim(), // 1: Fácil, 2: Medio, 3: Difícil
           opciones: [
-            { id: 'A', text: upperRow.A || upperRow.OPCION_A || null },
-            { id: 'B', text: upperRow.B || upperRow.OPCION_B || null },
-            { id: 'C', text: upperRow.C || upperRow.OPCION_C || null },
-            { id: 'D', text: upperRow.D || upperRow.OPCION_D || null },
-            { id: 'E', text: upperRow.E || upperRow.OPCION_E || null }
-          ].filter(o => o.text),
-          respuesta_correcta: String(upperRow.RESPUESTA_CORRECTA || upperRow.RESPUESTA || '').toUpperCase().split(';').map(r => r.trim()).filter(r => r)
+            { id: 'A', text: upperRow.A ?? upperRow.OPCION_A ?? null },
+            { id: 'B', text: upperRow.B ?? upperRow.OPCION_B ?? null },
+            { id: 'C', text: upperRow.C ?? upperRow.OPCION_C ?? null },
+            { id: 'D', text: upperRow.D ?? upperRow.OPCION_D ?? null },
+            { id: 'E', text: upperRow.E ?? upperRow.OPCION_E ?? null }
+          ].filter(o => o.text !== null && o.text !== undefined && o.text !== ''),
+          respuesta_correcta: String(
+            upperRow.RESPUESTA_CORRECTA ?? 
+            upperRow.RESPUESTA_CORRECT ?? 
+            upperRow.RESPUESTA ?? 
+            upperRow.CORRECTA ?? 
+            ''
+          ).toUpperCase().split(';').map(r => r.trim()).filter(r => r)
         }
       }).filter(p => p.enunciado)
       
@@ -958,28 +1167,33 @@ const ejecutarGeneracionManual = async () => {
   $q.loading.show({ message: 'Generando variantes A y B...' })
   
   try {
-    const sedeObj = sedesOptions.value.find(s => s.value === manualConfig.value.sede)
-    const carreraObj = carrerasOptionsManual.value.find(c => c.value === manualConfig.value.carrera)
+    const resolvedSede = sedesOptions.value.find(s => s.value === manualConfig.value.sede)?.label || manualConfig.value.sede || '-'
+    const resolvedCarrera = carrerasOptionsManual.value.find(c => c.value === manualConfig.value.carrera)?.label || manualConfig.value.carrera || '-'
+    const resolvedMateria = asignaturasOptionsManual.value.find(a => a.value === manualConfig.value.materia)?.label || manualConfig.value.materia || '-'
+    const resolvedDocente = docentesOptionsManual.value.find(d => d.value === manualConfig.value.docente)?.label || manualConfig.value.docente || '-'
     
     const fakeExamen = {
-      materia: manualConfig.value.materia,
-      docente: manualConfig.value.docente,
-      grupo: manualConfig.value.grupo,
-      sede: sedeObj?.label || '-',
-      carrera: carreraObj?.label || '-',
-      parcial: manualConfig.value.parcial,
+      materia: String(resolvedMateria || ''),
+      docente: String(resolvedDocente || ''),
+      grupo: String(manualConfig.value.grupo || ''),
+      sede: String(resolvedSede || ''),
+      carrera: String(resolvedCarrera || ''),
+      parcial: String(manualConfig.value.parcial || ''),
       fecha_examen: manualConfig.value.fecha,
-      semestre: manualConfig.value.semestre,
-      hora: manualConfig.value.hora,
+      semestre: String(manualConfig.value.semestre || ''),
+      hora: String(manualConfig.value.hora || ''),
+      ...manualConfig.value, // Incluir fuentes/tamaño
       codigo: 'MANUAL',
       variantes: ['A', 'B', 'C', 'D', 'E'].slice(0, manualConfig.value.cantVariantes)
     }
     
     const config = { 
       formatoHoja: manualConfig.value.formatoHoja,
+      fontFamily: manualConfig.value.fontFamily,
+      fontSize: manualConfig.value.fontSize,
+      lineSpacing: manualConfig.value.lineSpacing,
       facil: 7, medio: 16, dificil: 7 
     }
-    const typeOrder = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA', 'SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO', 'SS', 'SM', 'FV']
     
     // Función auxiliar para descarga
     const downloadFile = (blob, name) => {
@@ -1001,17 +1215,28 @@ const ejecutarGeneracionManual = async () => {
         const letra = variantesLetters[i]
         const seleccion = obtenerSeleccion7167(manualPreguntas.value, config)
         const mezcladas = mezclarIncisos7167(seleccion)
-        
-        const sorted = mezcladas.sort((a, b) => {
-          if (a.grupo && b.grupo && a.grupo === b.grupo) return 0 
-          let ta = a.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
-          let tb = b.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
-          const isAMacro = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(ta) && a.grupo
-          const isBMacro = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(tb) && b.grupo
-          if (isAMacro && !isBMacro) return -1
-          if (!isAMacro && isBMacro) return 1
-          return typeOrder.indexOf(ta) - typeOrder.indexOf(tb)
-        })
+        const ordenBase = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA', 'SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO']
+    let localOrder = [...ordenBase]
+    
+    if (manualConfig.value.aleatorizarSecciones) {
+      const principales = ['PROBLEMA', 'EMPAREJAMIENTO', 'SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO']
+      const shuffled = shuffle([...principales])
+      localOrder = []
+      shuffled.forEach(t => {
+        localOrder.push(t)
+        if (t === 'PROBLEMA' || t === 'EMPAREJAMIENTO') localOrder.push('SUBPROBLEMA')
+      })
+    }
+
+    const sorted = mezcladas.sort((a, b) => {
+      if (a.grupo && b.grupo && a.grupo === b.grupo) return 0 
+      
+      // Intentar heredar el tipo del padre si es una sub-pregunta para que se agrupen en el sort
+      let ta = a._parentTipo || normalizeTipo(a.tipo)
+      let tb = b._parentTipo || normalizeTipo(b.tipo)
+      
+      return localOrder.indexOf(ta) - localOrder.indexOf(tb)
+    })
 
         if (i > 0) {
           examenesPDF.addPage()
@@ -1030,11 +1255,12 @@ const ejecutarGeneracionManual = async () => {
     }
 
     // Descarga final de PDFs consolidados
+    const mName = String(manualConfig.value.materia || 'EXAMEN')
     const exBlob = examenesPDF.output('blob')
-    downloadFile(exBlob, `${manualConfig.value.materia}_Examenes_A_E.pdf`)
+    downloadFile(exBlob, `${mName}_Examenes_A_E.pdf`)
     
     const patBlob = patronesPDF.output('blob')
-    downloadFile(patBlob, `${manualConfig.value.materia}_Patrones_A_E.pdf`)
+    downloadFile(patBlob, `${mName}_Patrones_A_E.pdf`)
     
     $q.notify({
       type: 'positive',
@@ -1187,7 +1413,11 @@ const gestionarEstado = async (examen) => {
       facil: examen.distribucion.facil || 10, 
       medio: examen.distribucion.medio || 10, 
       dificil: examen.distribucion.dificil || 5,
-      formatoHoja: examen.distribucion.formatoHoja || 'Oficio (8.5" x 13")'
+      formatoHoja: examen.distribucion.formatoHoja || 'Oficio (8.5" x 13")',
+      fontFamily: examen.distribucion.fontFamily || 'helvetica',
+      fontSize: examen.distribucion.fontSize || 11,
+      lineSpacing: examen.distribucion.lineSpacing || 1.2,
+      aleatorizarSecciones: true
     }
 
     // Intentar cargar configuración efectiva del backend
@@ -1203,12 +1433,14 @@ const gestionarEstado = async (examen) => {
         configOrigenActual.value = data.nivel_hallado || 'nacional'
         // Buscar el parcial correspondiente en la configuración
         const partialKey = examen.tipo_examen || examen.parcial
-        const confParcial = data.configuracion.parciales.find(p => 
-          p.nombre.toLowerCase().includes('1') && partialKey.toLowerCase().includes('1') ||
-          p.nombre.toLowerCase().includes('2') && partialKey.toLowerCase().includes('2') ||
-          p.nombre.toLowerCase().includes('final') && partialKey.toLowerCase().includes('final') ||
-          p.nombre.toLowerCase().includes('instancia') && partialKey.toLowerCase().includes('instancia')
-        )
+        const confParcial = data.configuracion.parciales.find(p => {
+          const pName = String(p.nombre || '').toLowerCase()
+          const pKey = String(partialKey || '').toLowerCase()
+          return (pName.includes('1') && pKey.includes('1')) ||
+                 (pName.includes('2') && pKey.includes('2')) ||
+                 (pName.includes('final') && pKey.includes('final')) ||
+                 (pName.includes('instancia') && pKey.includes('instancia'))
+        })
 
         // Solo sobreescribir si el examen NO tiene configuración guardada (todos en 0)
         const tieneConfigGuardada = examen.distribucion && (
@@ -1292,8 +1524,12 @@ const obtenerSeleccion7167 = (todas, config) => {
     const macrosShuffled = shuffle([...macroGrupos])
     for (const mg of macrosShuffled) {
       if (contados + mg.children.length <= meta) {
-        seleccionFinal.push(JSON.parse(JSON.stringify(mg.header)))
-        seleccionFinal.push(...JSON.parse(JSON.stringify(shuffle([...mg.children]))))
+        const header = JSON.parse(JSON.stringify(mg.header))
+        seleccionFinal.push(header)
+        const children = JSON.parse(JSON.stringify(shuffle([...mg.children])))
+        // Inyectar herencia para que el sort las mantenga juntas
+        children.forEach(c => { c._parentTipo = normalizeTipo(header.tipo) })
+        seleccionFinal.push(...children)
         contados += mg.children.length
       }
     }
@@ -1315,7 +1551,8 @@ const obtenerSeleccion7167 = (todas, config) => {
 
 const mezclarIncisos7167 = (preguntas) => {
   return preguntas.map(p => {
-    if (['FALSO_VERDADERO', 'FV'].includes(p.tipo?.toUpperCase()) || !p.opciones || p.opciones.length === 0) {
+    const tipoNormalizado = String(p.tipo ?? '').toUpperCase()
+    if (['FALSO_VERDADERO', 'FV'].includes(tipoNormalizado) || !p.opciones || p.opciones.length === 0) {
       return p
     }
     
@@ -1399,35 +1636,48 @@ const ejecutarAccionGestion = async () => {
         }
         $q.loading.hide()
         const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
-        const formatPaper = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-        const mergedExamenesDoc = new jsPDF({ format: formatPaper })
+        const formatoPapel = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
+        const mergedExamenesDoc = new jsPDF({ format: formatoPapel })
         const mergedPatronesDoc = new jsPDF()
 
         payload.config_generacion = { 
           facil: tempConfig.value.facil, medio: tempConfig.value.medio, dificil: tempConfig.value.dificil,
           total: tempConfig.value.facil + tempConfig.value.medio + tempConfig.value.dificil,
-          formatoHoja: tempConfig.value.formatoHoja
+          formatoHoja: tempConfig.value.formatoHoja,
+          fontFamily: tempConfig.value.fontFamily,
+          fontSize: tempConfig.value.fontSize,
+          lineSpacing: tempConfig.value.lineSpacing,
+          aleatorizarSecciones: tempConfig.value.aleatorizarSecciones
         }
 
         const todas = Array.isArray(bancoPreguntas) ? bancoPreguntas : (bancoPreguntas.preguntas || [])
-        const ordenTipos = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA', 'SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO', 'SS', 'SM', 'FV']
-
         const resultadosVariantes = []
 
         for (let i = 0; i < variantes.length; i++) {
           const letra = variantes[i]
           const seleccion = obtenerSeleccion7167(todas, payload.config_generacion)
           const mezcladas = mezclarIncisos7167(seleccion)
+
+          const ordenBase = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA', 'SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO']
+          let finalOrder = [...ordenBase]
           
+          if (payload.config_generacion.aleatorizarSecciones) {
+            const principales = ['PROBLEMA', 'EMPAREJAMIENTO', 'SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO']
+            const shuffled = shuffle([...principales])
+            finalOrder = []
+            shuffled.forEach(t => {
+              finalOrder.push(t)
+              if (t === 'PROBLEMA' || t === 'EMPAREJAMIENTO') finalOrder.push('SUBPROBLEMA')
+            })
+          }
+
           const sorted = mezcladas.sort((a, b) => {
             if (a.grupo && b.grupo && a.grupo === b.grupo) return 0 
-            let ta = a.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
-            let tb = b.tipo?.toUpperCase().replace('PR', 'PROBLEMA').replace('EM', 'EMPAREJAMIENTO').replace('SP', 'SUBPROBLEMA')
-            const isAMacro = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(ta) && a.grupo
-            const isBMacro = ['PROBLEMA', 'EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(tb) && b.grupo
-            if (isAMacro && !isBMacro) return -1
-            if (!isAMacro && isBMacro) return 1
-            return ordenTipos.indexOf(ta) - ordenTipos.indexOf(tb)
+            
+            let ta = a._parentTipo || normalizeTipo(a.tipo)
+            let tb = b._parentTipo || normalizeTipo(b.tipo)
+            
+            return finalOrder.indexOf(ta) - finalOrder.indexOf(tb)
           })
 
           if (i > 0) {
@@ -1646,16 +1896,16 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
   ]
   fields.forEach((f, idx) => {
     const fy = currentY + 15 + (idx * 6)
-    doc.text(f.k, margin, fy)
+    doc.text(String(f.k || ''), margin, fy)
     doc.setFont('helvetica', 'normal')
-    doc.text(f.v || '', margin + 20, fy)
+    doc.text(String(f.v ?? ''), margin + 20, fy)
     doc.setFont('helvetica', 'bold')
   })
   
   doc.text('FECHA:', pageWidth - margin - 45, currentY + 21)
   doc.setFont('helvetica', 'normal')
   const fechaStr = examen.fecha_examen ? new Date(examen.fecha_examen).toISOString().split('T')[0] : '-'
-  doc.text(fechaStr, pageWidth - margin - 30, currentY + 21)
+  doc.text(String(fechaStr), pageWidth - margin - 30, currentY + 21)
 
   doc.setLineWidth(0.2)
   doc.setDrawColor(200, 200, 200)
@@ -1712,10 +1962,10 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
        if (Array.isArray(rawAns)) rawAns = rawAns.join('')
        ans = String(rawAns || '').toUpperCase().replace(/["']/g, '')
        
-       const tipo = p.tipo?.toUpperCase()
+       const tipo = String(p.tipo || '').toUpperCase()
        if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
-          if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE' || ans === 'TRUE') ans = 'A'
-          else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE' || ans === 'FALSE') ans = 'B'
+          if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE') ans = 'A'
+          else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE') ans = 'B'
        }
     }
 
@@ -1727,7 +1977,9 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
     doc.line(x, y + 3.5, x + colWidth - 5, y + 3.5)
   }
 
-  const rawFilename = `${examen.codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_PatronVar${letra}.pdf`
+  const cleanSede = String(examen.sede || '').replace(/\s/g, '')
+  const cleanParcial = String(examen.parcial || '').replace(/\s/g, '')
+  const rawFilename = `${examen.codigo || 'EXAM'}_${cleanSede}_G${examen.grupo || ''}_${cleanParcial}_PatronVar${letra}.pdf`
   const blob = doc.output('blob')
   return { blob, filename: rawFilename }
 }
@@ -1749,11 +2001,11 @@ const generarPatronXLSX = (examen, letra, preguntas = []) => {
        if (Array.isArray(rawAns)) rawAns = rawAns.join(',')
        ans = String(rawAns || '').toUpperCase().replace(/["']/g, '').replace(/;/g, ',')
        
-       const tipo = p.tipo?.toUpperCase()
-       if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
-          if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE') ans = 'A'
-          else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE') ans = 'B'
-       }
+    const tipo = String(p.tipo || '').toUpperCase()
+    if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
+       if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE') ans = 'A'
+       else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE') ans = 'B'
+    }
     }
     dataRow.push(ans)
   }
@@ -1783,6 +2035,16 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     format: paperFormat
   })
 
+  // CONFIGURACIÓN DE IMPRESIÓN PERSONALIZADA
+  const baseFont = config.fontFamily || 'helvetica'
+  const baseSize = config.fontSize || 11
+  const spacingMult = config.lineSpacing || 1.2
+  const lineHeight = (baseSize * 0.5) * spacingMult // Factor base para interlineado
+  const sectionFontSize = Math.max(9, baseSize - 1)
+  const metaFontSize = Math.max(8, baseSize - 2)
+
+  doc.setFont(baseFont)
+
   const margin = 20
   const pageWidth = doc.internal.pageSize.getWidth()
   const contentWidth = pageWidth - (margin * 2)
@@ -1806,7 +2068,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     startY: margin,
     margin: { left: margin, right: margin },
     theme: 'grid',
-    styles: { fontSize: 11, font: 'helvetica', textColor: [0, 0, 0], lineWidth: 0.1, lineColor: [0,0,0] },
+    styles: { fontSize: 11, font: baseFont, textColor: [0, 0, 0], lineWidth: 0.1, lineColor: [0,0,0] },
     body: [
       [
         { 
@@ -1848,11 +2110,11 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     tableWidth: pageWidth - (margin * 2),
     theme: 'grid',
     styles: { 
-      fontSize: 9, 
+      fontSize: metaFontSize, 
       cellPadding: 2.5, 
       lineWidth: 0.15, 
       lineColor: [0,0,0],
-      font: 'helvetica'
+      font: baseFont
     },
     body: [
       [
@@ -1860,20 +2122,20 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         { content: 'CÓDIGO:', styles: { fontStyle: 'bold', cellWidth: (pageWidth - margin*2) * 0.35 } }
       ],
       [
-        { content: `CARRERA: ${examen.carrera || ''}`, styles: { fontStyle: 'bold' } },
-        { content: `GRUPO: ${examen.grupo}`, styles: { fontStyle: 'bold' } }
+        { content: `CARRERA: ${String(examen.carrera || '')}`, styles: { fontStyle: 'bold' } },
+        { content: `GRUPO: ${String(examen.grupo || '')}`, styles: { fontStyle: 'bold' } }
       ],
       [
-        { content: `DOCENTE: ${examen.docente}`, styles: { fontStyle: 'bold' } },
-        { content: `TIPO DE EXAMEN: ${examen.parcial} - VAR ${letra}`, styles: { fontStyle: 'bold' } }
+        { content: `DOCENTE: ${String(examen.docente || '')}`, styles: { fontStyle: 'bold' } },
+        { content: `TIPO DE EXAMEN: ${String(examen.parcial || '')} - VAR ${letra}`, styles: { fontStyle: 'bold' } }
       ],
       [
-        { content: `MATERIA: ${examen.materia}`, styles: { fontStyle: 'bold' } },
+        { content: `MATERIA: ${String(examen.materia || '')}`, styles: { fontStyle: 'bold' } },
         { content: `FECHA: ${formatFecha(examen.fecha_examen)}`, styles: { fontStyle: 'bold' } }
       ],
       [
-        { content: `SEMESTRE: ${examen.semestre || '-'}`, styles: { fontStyle: 'bold' } },
-        { content: `HORA: ${examen.hora}`, styles: { fontStyle: 'bold' } }
+        { content: `SEMESTRE: ${String(examen.semestre || '')}`, styles: { fontStyle: 'bold' } },
+        { content: `HORA: ${String(examen.hora || '')}`, styles: { fontStyle: 'bold' } }
       ]
     ]
   })
@@ -1899,8 +2161,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   // RENDER PREGUNTAS
   for (let i = 0; i < preguntas.length; i++) {
     const p = preguntas[i]
-    let tipoActualOriginal = p.tipo?.toUpperCase()
-    let tipoActual = tipoActualOriginal === 'PR' ? 'PROBLEMA' : (tipoActualOriginal === 'EM' ? 'EMPAREJAMIENTO' : (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(tipoActualOriginal) ? 'SUBPREGUNTA' : tipoActualOriginal))
+    let tipoActual = normalizeTipo(p.tipo)
     
     // Encabezado de sección (Solo para tipos principales)
     const tiposPrincipales = ['SELECCION_UNICA', 'SELECCION_MULTIPLE', 'FALSO_VERDADERO', 'PROBLEMA', 'EMPAREJAMIENTO']
@@ -1919,8 +2180,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       doc.setLineWidth(0.8)
       doc.line(margin, currentY, margin, currentY + rectH - 1)
       
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(sectionFontSize)
+      doc.setFont(baseFont, 'bold')
       doc.text(descLines, margin + 4, currentY + 4)
       currentY += rectH + (tipoActual === 'PROBLEMA' ? 1 : 4) // Espacio mínimo para problemas
       ultimoTipo = tipoActual
@@ -1929,6 +2190,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     // Check for page break
     if (currentY > (doc.internal.pageSize.getHeight() - 30)) {
        doc.addPage()
+       doc.setFont(baseFont) // Re-asegurar fuente tras salto
        currentY = margin
     }
     // RENDER PREGUNTA ACTUAL
@@ -1936,58 +2198,63 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     
     // CASO ESPECIAL: EMPAREJAMIENTO (TABLA 2 COLUMNAS)
     if (tipoActual === 'EMPAREJAMIENTO') {
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(baseSize)
+      doc.setFont(baseFont, 'bold')
       let cleanEnunciado = (p.enunciado || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').trim()
       if (cleanEnunciado.toUpperCase().startsWith('EMPAREJAMIENTO:')) {
         cleanEnunciado = cleanEnunciado.substring(16).trim()
       }
       const enunciadoLines = doc.splitTextToSize(cleanEnunciado, contentWidth - 10)
       doc.text(enunciadoLines, margin + 8, currentY) // Alineado con preguntas normales
-      currentY += (enunciadoLines.length * 6) + 4
+      currentY += (enunciadoLines.length * lineHeight) + 4
+
+      // Opciones (A, B, C...)
+      doc.setFont(baseFont, 'normal')
+      doc.setFontSize(baseSize - 2)
+      const ops = p.opciones || []
+      for (const op of ops) {
+        if (currentY > (doc.internal.pageSize.getHeight() - 20)) { doc.addPage(); currentY = margin; doc.setFont(baseFont) }
+        doc.text(`${op.id}) ${op.text}`, margin + 15, currentY)
+        currentY += lineHeight + 0.5
+      }
+      currentY += 4
 
       // Buscar subpreguntas
       let matchingSubs = []
       let j = i + 1
-      while (j < preguntas.length && (preguntas[j].tipo?.toUpperCase() === 'SUBPROBLEMA' || preguntas[j].tipo?.toUpperCase() === 'SUBPREGUNTA') && preguntas[j].grupo === p.grupo) {
+      while (j < preguntas.length && (normalizeTipo(preguntas[j].tipo) === 'SUBPROBLEMA') && preguntas[j].grupo === p.grupo) {
         matchingSubs.push(preguntas[j])
         j++
       }
 
-      // Tabla
-      const tableData = []
-      const maxRows = Math.max((p.opciones || []).length, matchingSubs.length)
-      for (let r = 0; r < maxRows; r++) {
-        const opt = (p.opciones || [])[r] || null
-        const sub = matchingSubs[r] || null
-        const numReal = enumTextBase + r
-        tableData.push([
-          opt ? `${opt.id}) ${opt.text}` : '',
-          sub ? `(      )  ${numReal}. ${sub.enunciado?.replace(/<[^>]*>/g, '').trim()}` : ''
-        ])
+      // Render Sub-preguntas (Como preguntas normales con paréntesis al final)
+      doc.setFontSize(baseSize)
+      for (let r = 0; r < matchingSubs.length; r++) {
+         const sub = matchingSubs[r]
+         const numReal = enumTextBase + r
+         
+         if (currentY > (doc.internal.pageSize.getHeight() - 25)) { 
+            doc.addPage(); currentY = margin; doc.setFont(baseFont) 
+         }
+         
+         doc.setFont(baseFont, 'bold')
+         doc.text(`${numReal}. `, margin + 10, currentY)
+         
+         doc.setFont(baseFont, 'normal')
+         let subText = sub.enunciado?.replace(/<[^>]*>/g, '').trim() + ' (      )'
+         const subLines = doc.splitTextToSize(subText, contentWidth - 20)
+         doc.text(subLines, margin + 18, currentY)
+         currentY += (subLines.length * lineHeight) + 4
       }
 
-      autoTable(doc, {
-        startY: currentY,
-        margin: { left: margin },
-        tableWidth: contentWidth,
-        theme: 'plain',
-        styles: { fontSize: 10, cellPadding: 2, valign: 'middle' },
-        columnStyles: { 
-          0: { cellWidth: contentWidth * 0.25, fontStyle: 'bold' }, 
-          1: { cellWidth: contentWidth * 0.75 } 
-        },
-        body: tableData
-      })
-
-      currentY = doc.lastAutoTable.finalY + 10
+      currentY += 5
       i = j - 1 // Saltar subpreguntas
       continue
     }
 
     // CASO NORMAL (SU, SM, FV, PR)
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(baseSize)
+    doc.setFont(baseFont, 'bold')
     
     // Solo numeramos si NO es un encabezado PROBLEMA
     const esHeader = ['PR', 'PROBLEMA'].includes(p.tipo?.toUpperCase())
@@ -1997,7 +2264,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       doc.text(`${realNum}. `, margin, currentY)
     }
     
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(baseFont, 'normal')
     let cleanEnunciado = (p.enunciado || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').trim()
     
     // Eliminar prefijos redundantes si la cabecera ya los menciona
@@ -2007,10 +2274,21 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     if (cleanEnunciado.toUpperCase().startsWith('PROBLEMA:')) {
       cleanEnunciado = cleanEnunciado.substring(9).trim()
     }
-
+ 
     const enunciadoLines = doc.splitTextToSize(cleanEnunciado, contentWidth - 10)
     doc.text(enunciadoLines, margin + 8, currentY)
-    currentY += (enunciadoLines.length * 6) + (esHeader ? 1 : 2)
+    currentY += (enunciadoLines.length * lineHeight)
+    
+    // Instrucción para Subproblemas (PR)
+    if (tipoActual === 'SUBPROBLEMA') {
+       doc.setFontSize(metaFontSize)
+       doc.setFont(baseFont, 'italic')
+       doc.text('(Seleccione un solo inciso)', margin + 8, currentY + 3)
+       currentY += 5
+       doc.setFont(baseFont, 'normal')
+    }
+    
+    currentY += (esHeader ? 1 : 2)
 
     // Imagen (si existe)
     if (p.imagen) {
@@ -2055,9 +2333,9 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     let tipoActualNoNormalizado = p.tipo?.toUpperCase()
     
     if (opciones.length > 0) {
-      doc.setFontSize(10)
+      doc.setFontSize(baseSize - 1)
       for (const opc of opciones) {
-        let textToShow = opc.text || ''
+        let textToShow = String(opc.text ?? '')
         if (['FALSO_VERDADERO', 'FV'].includes(tipoActualNoNormalizado)) {
           const lower = textToShow.toLowerCase().trim()
           if (lower === 'true') textToShow = 'Verdadero'
@@ -2065,21 +2343,19 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         }
         const opcText = `${opc.id || ''}) ${textToShow}`
         const opcLines = doc.splitTextToSize(opcText, contentWidth - 15)
-        if (currentY + (opcLines.length * 5) > (doc.internal.pageSize.getHeight() - 20)) {
-          doc.addPage(); currentY = margin
+        if (currentY + (opcLines.length * lineHeight) > (doc.internal.pageSize.getHeight() - 20)) {
+          doc.addPage(); currentY = margin; doc.setFont(baseFont)
         }
         doc.text(opcLines, margin + 12, currentY)
-        currentY += (opcLines.length * 5) + 1
+        currentY += (opcLines.length * lineHeight) + 1
       }
     }
     currentY += (esHeader ? 2 : 5)
   }
 
-  // Corregir la numeración en el PDF (Los headers PR/EM no deberían tener número si el usuario dice que no cuentan)
-  // Pero actualmente uso `${i + 1}. ` en la línea 1203. 
-  // Voy a ajustar eso arriba.
-
-  const rawFilename = `${examen.codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_Var${letra}.pdf`
+  const cleanSede = String(examen.sede || '').replace(/\s/g, '')
+  const cleanParcial = String(examen.parcial || '').replace(/\s/g, '')
+  const rawFilename = `${examen.codigo || 'EXAM'}_${cleanSede}_G${examen.grupo || ''}_${cleanParcial}_Var${letra}.pdf`
   const blob = doc.output('blob')
   return { blob, filename: rawFilename }
 }

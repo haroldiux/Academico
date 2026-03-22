@@ -166,34 +166,52 @@
           >
             <template v-slot:body-cell-campus="props">
               <q-td :props="props">
-                <q-chip color="deep-purple" text-color="white" size="sm" dense icon="location_city">
+                <q-chip color="primary" text-color="white" size="sm" dense icon="location_city" class="text-weight-bold">
                   {{ props.row.campus }}
                 </q-chip>
               </q-td>
             </template>
-            <template v-slot:body-cell-carrera="props">
+            <template v-slot:body-cell-carreras="props">
               <q-td :props="props">
-                <div class="flex items-center gap-2">
-                  <q-icon name="school" color="blue" size="18px" class="q-mr-xs" />
-                  <span class="text-weight-medium">{{ props.row.carrera }}</span>
+                <div class="flex wrap gap-2">
+                  <q-chip
+                    v-for="c in props.row.carreras"
+                    :key="c.id"
+                    color="indigo-1"
+                    text-color="indigo-10"
+                    size="sm"
+                    class="q-ma-xs row items-center text-weight-bolder shadow-1"
+                    style="padding-right: 4px"
+                  >
+                    <span class="q-mr-xs">{{ c.nombre }}</span>
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      icon="edit"
+                      size="xs"
+                      color="amber-10"
+                      class="q-ml-xs hover-bg-amber-1"
+                      @click="abrirDialogCarreraCampus({ campus_id: props.row.id, id: c.id, carrera: c.nombre, campus: props.row.campus })"
+                    >
+                      <q-tooltip>Editar</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      icon="close"
+                      size="xs"
+                      color="negative"
+                      @click="eliminarCarreraCampus({ campus_id: props.row.id, id: c.id, carrera: c.nombre, campus: props.row.campus })"
+                    >
+                      <q-tooltip>Quitar</q-tooltip>
+                    </q-btn>
+                  </q-chip>
                 </div>
               </q-td>
             </template>
-            <template v-slot:body-cell-acciones="props">
-              <q-td :props="props">
-                <q-btn
-                  flat
-                  round
-                  dense
-                  icon="delete"
-                  size="sm"
-                  color="red"
-                  @click="eliminarCarreraCampus(props.row)"
-                >
-                  <q-tooltip>Quitar asignación</q-tooltip>
-                </q-btn>
-              </q-td>
-            </template>
+            <!-- Eliminamos body-cell-acciones ya que las acciones están en los chips -->
           </q-table>
         </q-tab-panel>
 
@@ -263,16 +281,18 @@
             </template>
             <template v-slot:body-cell-carreras="props">
               <q-td :props="props">
-                <q-chip
-                  v-for="c in props.row.carreras"
-                  :key="c"
-                  color="blue-1"
-                  text-color="blue-9"
-                  size="sm"
-                  dense
-                  class="q-mr-xs"
-                  >{{ c }}</q-chip
-                >
+                <div class="carreras-chip-container">
+                  <q-chip
+                    v-for="c in props.row.carreras"
+                    :key="c"
+                    color="blue-1"
+                    text-color="blue-9"
+                    size="sm"
+                    dense
+                    class="q-mr-xs"
+                    >{{ c }}</q-chip
+                  >
+                </div>
               </q-td>
             </template>
             <template v-slot:body-cell-acciones="props">
@@ -660,7 +680,7 @@
       <q-card style="min-width: 500px">
         <div class="dialog-header">
           <q-icon name="school" class="q-mr-sm" />
-          Asignar Carrera a Campus
+          {{ carreraCampusForm.original ? 'Editar Asignación' : 'Asignar Carrera a Campus' }}
         </div>
         <q-card-section class="q-gutter-md">
           <q-select
@@ -701,6 +721,20 @@
           {{ usuarioForm.id ? 'Editar Evaluador' : 'Agregar Evaluador' }}
         </div>
         <q-card-section class="q-gutter-md">
+          <div class="row items-center q-mb-md">
+            <div class="text-subtitle2 q-mr-md text-grey-8">Tipo de Usuario:</div>
+            <q-btn-toggle
+              v-model="usuarioForm.rol_id"
+              toggle-color="deep-purple"
+              flat
+              dense
+              :options="[
+                { label: 'Evaluador (Estándar)', value: 7 },
+                { label: 'Responsable (Nacional)', value: 9 }
+              ]"
+            />
+          </div>
+
           <q-toggle
             v-model="usuarioForm.crear_nuevo"
             label="Registrar nuevo usuario Evaluador"
@@ -744,6 +778,7 @@
           </template>
 
           <q-select
+            v-if="usuarioForm.rol_id !== 9"
             v-model="usuarioForm.campus_id"
             :options="campusOptions"
             outlined
@@ -793,12 +828,13 @@ const showDialogUsuario = ref(false)
 
 // Forms
 const campusForm = ref({ id: null, nombre: '', sede_id: null, direccion: '', activo: true })
-const carreraCampusForm = ref({ campus_id: null, carrera_id: null })
+const carreraCampusForm = ref({ campus_id: null, carrera_id: null, original: null })
 const usuarioForm = ref({ 
   id: null, 
   usuario_id: null, 
   campus_id: null, 
   crear_nuevo: false,
+  rol_id: 7,
   nombre: '',
   apellido: '',
   ci: '',
@@ -861,8 +897,7 @@ const columnasCampus = [
 
 const columnasCarrerasCampus = [
   { name: 'campus', label: 'Campus', field: 'campus', align: 'left', sortable: true },
-  { name: 'carrera', label: 'Carrera', field: 'carrera', align: 'left', sortable: true },
-  { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
+  { name: 'carreras', label: 'Carreras Asignadas', field: 'carreras', align: 'left' },
 ]
 
 const columnasUsuarios = [
@@ -881,34 +916,19 @@ const campusFiltrados = computed(() => {
 const carrerasCampusFiltradas = computed(() => {
   let listado = []
   
-  if (filtroCampusCarreras.value) {
-    const camp = campus.value.find(c => c.id === filtroCampusCarreras.value)
-    if (camp && camp.lista_carreras) {
-      listado = camp.lista_carreras.map(c => ({
-        id: c.id,
-        campus: camp.nombre,
-        campus_id: camp.id,
-        carrera: c.nombre
-      }))
-    }
-  } else {
-    // Listar de todos
-    campus.value.forEach(camp => {
-      if (camp.lista_carreras) {
-        camp.lista_carreras.forEach(c => {
-          listado.push({
-            id: c.id,
-            campus: camp.nombre,
-            campus_id: camp.id,
-            carrera: c.nombre
-          })
-        })
-      }
-    })
-  }
+  // Procesar todos los campus o el filtrado
+  const campusAProcesar = filtroCampusCarreras.value 
+    ? campus.value.filter(c => c.id === filtroCampusCarreras.value) 
+    : campus.value
 
-  // Ordenar alfabéticamente
-  return listado.sort((a, b) => a.campus.localeCompare(b.campus) || a.carrera.localeCompare(b.carrera))
+  listado = campusAProcesar.map(camp => ({
+    id: camp.id,
+    campus: camp.nombre,
+    carreras: camp.lista_carreras || []
+  })).filter(c => c.carreras.length > 0)
+
+  // Ordenar alfabéticamente por campus
+  return listado.sort((a, b) => a.campus.localeCompare(b.campus))
 })
 
 const usuariosFiltrados = computed(() => {
@@ -996,8 +1016,16 @@ async function toggleCampus(campus_) {
   }
 }
 
-function abrirDialogCarreraCampus() {
-  carreraCampusForm.value = { campus_id: null, carrera_id: null }
+function abrirDialogCarreraCampus(row = null) {
+  if (row) {
+    carreraCampusForm.value = { 
+      campus_id: row.campus_id, 
+      carrera_id: row.id, // En la tabla, row.id es carrera_id según el computed
+      original: { campus_id: row.campus_id, carrera_id: row.id } 
+    }
+  } else {
+    carreraCampusForm.value = { campus_id: null, carrera_id: null, original: null }
+  }
   showDialogCarreraCampus.value = true
 }
 
@@ -1008,16 +1036,28 @@ async function guardarCarreraCampus() {
   }
 
   try {
-    const payload = { carreras: [carreraCampusForm.value.carrera_id] }
+    // Si es edición, quitar la anterior primero
+    if (carreraCampusForm.value.original) {
+      const { campus_id, carrera_id } = carreraCampusForm.value.original
+      // Solo si cambió algo
+      if (campus_id !== carreraCampusForm.value.campus_id || carrera_id !== carreraCampusForm.value.carrera_id) {
+         await api.delete(`/campus/${campus_id}/carreras/${carrera_id}`)
+      } else {
+        // No cambió nada, cerrar
+        showDialogCarreraCampus.value = false
+        return
+      }
+    }
+
+    const payload = { carreras: [Number(carreraCampusForm.value.carrera_id)] }
     await api.post(`/campus/${carreraCampusForm.value.campus_id}/carreras`, payload)
-    $q.notify({ type: 'positive', message: 'Carrera asignada al campus correctamente' })
+    $q.notify({ type: 'positive', message: carreraCampusForm.value.original ? 'Asignación actualizada' : 'Carrera asignada correctamente' })
     showDialogCarreraCampus.value = false
     
-    // Recargar la data general del campus para refrescar la lista
     cargarCampus()
   } catch (error) {
-    console.error('Error al asignar carrera al campus', error)
-    $q.notify({ type: 'negative', message: 'Error al asignar la carrera' })
+    console.error('Error al guardar asignación de carrera', error)
+    $q.notify({ type: 'negative', message: 'Error al procesar la asignación' })
   }
 }
 
@@ -1041,18 +1081,25 @@ function eliminarCarreraCampus(row) {
 
 function abrirDialogUsuario(usuario = null) {
   if (usuario) {
-    usuarioForm.value = { ...usuario, crear_nuevo: false }
+    usuarioForm.value = { 
+      ...usuario, 
+      usuario_id: usuario.id, 
+      campus_id: usuario.campus_id, 
+      crear_nuevo: false,
+      rol_id: usuario.rol_id || 7 // Por defecto para edición si no viene el rol
+    }
   } else {
     usuarioForm.value = { 
       id: null, 
       usuario_id: null, 
       campus_id: null, 
-      crear_nuevo: false,
-      nombre: '',
-      apellido: '',
-      ci: '',
-      telefono: '',
-      email: ''
+      crear_nuevo: true, // Por defecto true para facilitar el flujo
+      rol_id: 7,
+      nombre: '', 
+      apellido: '', 
+      ci: '', 
+      telefono: '', 
+      email: '' 
     }
   }
   showDialogUsuario.value = true
@@ -1078,7 +1125,8 @@ async function cargarUsuariosDisponibles() {
 }
 
 async function guardarUsuario() {
-  if(!usuarioForm.value.campus_id) {
+  // Si es responsable nacional, no necesita campus_id
+  if(usuarioForm.value.rol_id !== 9 && !usuarioForm.value.campus_id) {
     $q.notify({ type: 'warning', message: 'Debe seleccionar un campus asignado' })
     return
   }
@@ -1090,7 +1138,9 @@ async function guardarUsuario() {
   
   try {
     const payload = { ...usuarioForm.value }
-    await api.post(`/campus/${usuarioForm.value.campus_id}/evaluadores`, payload)
+    // Si es responsable nacional, usamos un campus_id ficticio en la URL (será ignorado por el backend)
+    const campusIdUrl = usuarioForm.value.rol_id === 9 ? 1 : usuarioForm.value.campus_id;
+    await api.post(`/campus/${campusIdUrl}/evaluadores`, payload)
     
     $q.notify({ type: 'positive', message: 'Evaluador asignado correctamente' })
     showDialogUsuario.value = false
@@ -1321,5 +1371,22 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.carreras-chip-container {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  max-width: 350px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+/* Scrollbar sutil para el container de chips */
+.carreras-chip-container::-webkit-scrollbar {
+  height: 4px;
+}
+.carreras-chip-container::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
 }
 </style>

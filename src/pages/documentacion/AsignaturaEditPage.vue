@@ -1246,7 +1246,7 @@
             <!-- Resumen del banco -->
             <div class="row justify-end q-mb-md">
               <q-chip color="deep-purple-1" text-color="deep-purple-9" icon="format_list_numbered">
-                {{ preguntasFiltradas.length }} preguntas en total
+                {{ totalPreguntasContables }} preguntas en total
               </q-chip>
             </div>
 
@@ -1264,7 +1264,7 @@
 
             <div v-else class="q-gutter-sm">
               <q-card
-                v-for="(pregunta, idx) in preguntasFiltradas"
+                v-for="pregunta in preguntasConNumeracion"
                 :key="pregunta.id"
                 flat
                 bordered
@@ -1272,7 +1272,12 @@
               >
                 <q-card-section>
                   <div class="row items-start">
-                    <q-badge color="deep-purple" :label="idx + 1" class="q-mr-sm q-mt-xs" />
+                    <q-badge
+                      v-if="pregunta.numeroVisual"
+                      color="deep-purple"
+                      :label="pregunta.numeroVisual"
+                      class="q-mr-sm q-mt-xs"
+                    />
                     <div class="col">
                       <div class="row items-center q-gutter-xs q-mb-xs">
                         <q-chip
@@ -1462,7 +1467,7 @@
             <!-- Stats -->
             <div class="import-stats q-mb-md font-mono">
               <q-badge color="deep-purple" class="q-pa-sm">
-                Total: {{ preguntasImportadas.length }} preguntas
+                Total: {{ importStats.total }} preguntas
               </q-badge>
               <q-badge color="green-7" class="q-pa-sm q-ml-sm">
                 Fáciles: {{ importStats.faciles || 0 }}
@@ -3521,6 +3526,24 @@ const preguntasFiltradas = computed(() => {
   return bancoPreguntasLocal.value
 })
 
+const totalPreguntasContables = computed(() => {
+  return (bancoPreguntasLocal.value || []).filter(
+    (p) => p.tipo !== 'EMPAREJAMIENTO' && p.tipo !== 'PROBLEMA',
+  ).length
+})
+
+const preguntasConNumeracion = computed(() => {
+  let count = 0
+  return (bancoPreguntasLocal.value || []).map((p) => {
+    let num = null
+    if (p.tipo !== 'EMPAREJAMIENTO' && p.tipo !== 'PROBLEMA') {
+      count++
+      num = count
+    }
+    return { ...p, numeroVisual: num }
+  })
+})
+
 async function cargarBancoPreguntas() {
   if (!asignatura.value?.id) return
 
@@ -3940,7 +3963,7 @@ const validacionDistribucion = computed(() => {
   const countF = importStats.value.faciles || 0
   const countM = importStats.value.medios || 0
   const countD = importStats.value.dificiles || 0
-  return preguntasImportadas.value.length >= 60 && countF >= 15 && countM >= 30 && countD >= 15
+  return importStats.value.total >= 60 && countF >= 15 && countM >= 30 && countD >= 15
 })
 
 const gruposTeoricosOptions = computed(() => {
@@ -4091,6 +4114,26 @@ function previsualizarArchivoExcel(file) {
               errores.push(`Fila ${lineNum}: tipo "${tipo}" requiere respuesta_correcta.`)
               return
             }
+            if (!dificultadRaw) {
+              errores.push(`Fila ${lineNum}: tipo "${tipo}" requiere nivel de dificultad (1, 2 o 3).`)
+              return
+            }
+          } else if (['em', 'pr'].includes(tipo)) {
+            if (respuesta) {
+              errores.push(
+                `Fila ${lineNum}: tipo "${tipo}" NO debe tener respuesta_correcta (debe estar vacía).`,
+              )
+              return
+            }
+            if (dificultadRaw) {
+              errores.push(
+                `Fila ${lineNum}: tipo "${tipo}" NO debe tener dificultad (debe estar vacía).`,
+              )
+              return
+            }
+          }
+
+          if (['ss', 'sm', 'fv', 'sp'].includes(tipo)) {
             if (tipo === 'sm') {
               // SM debe tener exactamente 2 respuestas (ej: A,B o AB)
               const letters = respuesta.replace(/[^A-E]/g, '')
@@ -4099,6 +4142,23 @@ function previsualizarArchivoExcel(file) {
                   `Fila ${lineNum}: Selección Múltiple (SM) DEBE tener exactamente 2 respuestas correctas (ej: A,B).`,
                 )
                 return
+              }
+
+              // Validar que tenga las 5 opciones A-E rellenadas
+              const opcionesRequeridas = [
+                { key: 'opcion_a', label: 'A' },
+                { key: 'opcion_b', label: 'B' },
+                { key: 'opcion_c', label: 'C' },
+                { key: 'opcion_d', label: 'D' },
+                { key: 'opcion_e', label: 'E' },
+              ]
+              for (const op of opcionesRequeridas) {
+                if (!String(row[colsMap[op.key]] || '').trim()) {
+                  errores.push(
+                    `Fila ${lineNum}: Selección Múltiple (SM) DEBE tener la Opción ${op.label} rellenada.`,
+                  )
+                  return
+                }
               }
             } else {
               // SS, FV, SP deben tener solo 1 letra
@@ -4137,9 +4197,10 @@ function previsualizarArchivoExcel(file) {
           })
         })
 
-        // Calcular stats por dificultad
-        const stats = { total: preguntas.length, faciles: 0, medios: 0, dificiles: 0 }
-        preguntas.forEach((p) => {
+        // Calcular stats por dificultad (Excluyendo EM y PR)
+        const preguntasReales = preguntas.filter((p) => !['em', 'pr'].includes(p.tipo))
+        const stats = { total: preguntasReales.length, faciles: 0, medios: 0, dificiles: 0 }
+        preguntasReales.forEach((p) => {
           if (p.dificultad === '1') stats.faciles++
           else if (p.dificultad === '2') stats.medios++
           else if (p.dificultad === '3') stats.dificiles++

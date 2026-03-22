@@ -12,6 +12,7 @@ export const ROLES = {
   DIRECTOR_CARRERA: 'DIRECTOR_CARRERA',
   DOCENTE: 'DOCENTE',
   EVALUACIONES: 'EVALUACIONES',
+  RESPONSABLE_EVALUACIONES: 'RESPONSABLE_EVALUACIONES',
 }
 
 // Mapeo de nombres de rol de BD a constantes del frontend
@@ -26,6 +27,7 @@ const ROLE_NAME_MAP = {
   DIRECTOR_CARRERA: ROLES.DIRECTOR_CARRERA,
   DOCENTE: ROLES.DOCENTE,
   EVALUACIONES: ROLES.EVALUACIONES,
+  RESPONSABLE_EVALUACIONES: ROLES.RESPONSABLE_EVALUACIONES,
   // Variaciones de texto
   'DIRECCIÓN ACADÉMICA': ROLES.DIRECCION_ACADEMICA,
   'DIRECCION ACADEMICA': ROLES.DIRECCION_ACADEMICA,
@@ -96,6 +98,13 @@ export const PERMISOS_ROL = {
     alcance: 'global',
     dashboard: 'EvaluacionesDashboard',
     descripcion: 'Gestión de evaluaciones y exámenes',
+  },
+  [ROLES.RESPONSABLE_EVALUACIONES]: {
+    nivel: 45,
+    puedeEditar: true,
+    alcance: 'global',
+    dashboard: 'EvaluacionesDashboard',
+    descripcion: 'Gestión nacional de evaluaciones y administración',
   },
 }
 

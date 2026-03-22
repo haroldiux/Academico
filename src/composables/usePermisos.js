@@ -40,6 +40,7 @@ export function usePermisos() {
   const esDirectorCarrera = computed(() => rol.value === ROLES.DIRECTOR_CARRERA)
   const esDocente = computed(() => rol.value === ROLES.DOCENTE)
   const esEvaluaciones = computed(() => rol.value === ROLES.EVALUACIONES)
+  const esResponsableEvaluaciones = computed(() => rol.value === ROLES.RESPONSABLE_EVALUACIONES)
 
   // Niveles de acceso
   const tieneAccesoGlobal = computed(() => alcance.value === 'global')
@@ -165,6 +166,7 @@ export function usePermisos() {
       [ROLES.DIRECTOR_CARRERA]: '/carrera/dashboard',
       [ROLES.DOCENTE]: '/docente/dashboard',
       [ROLES.EVALUACIONES]: '/evaluaciones/dashboard',
+      [ROLES.RESPONSABLE_EVALUACIONES]: '/evaluaciones/dashboard',
     }
     return dashboards[rol.value] || '/'
   }
@@ -208,12 +210,18 @@ export function usePermisos() {
       ]
     }
 
-    if (esEvaluaciones.value) {
-      return [
-        // ...itemsBase, // Ocultar Dashboard para Evaluaciones
+    if (esEvaluaciones.value || esResponsableEvaluaciones.value) {
+      const items = [
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
-        // { label: 'Rol de Exámenes', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
       ]
+      if (esResponsableEvaluaciones.value) {
+        items.push({
+          label: 'Adm. Evaluaciones',
+          icon: 'manage_accounts',
+          to: '/admin/administracion-evaluaciones',
+        })
+      }
+      return items
     }
 
     if (esVicerrectorNacional.value) {
