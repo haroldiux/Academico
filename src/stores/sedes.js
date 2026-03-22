@@ -91,7 +91,7 @@ export const useSedesStore = defineStore('sedes', () => {
     loading.value = true
     try {
       const response = await sedeService.updateSede(id, data)
-      const index = sedes.value.findIndex(s => s.id === id)
+      const index = sedes.value.findIndex((s) => s.id === id)
       if (index !== -1) {
         sedes.value[index] = response.data
       }
@@ -108,7 +108,7 @@ export const useSedesStore = defineStore('sedes', () => {
     loading.value = true
     try {
       await sedeService.deleteSede(id)
-      sedes.value = sedes.value.filter(s => s.id !== id)
+      sedes.value = sedes.value.filter((s) => s.id !== id)
     } catch (error) {
       console.error('Error deleting sede:', error)
       throw error

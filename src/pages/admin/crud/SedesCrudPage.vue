@@ -99,7 +99,7 @@
 
     <!-- Diálogo de creación/edición -->
     <q-dialog v-model="showDialog" persistent>
-      <q-card style="width: 600px; max-width: 90vw;">
+      <q-card style="width: 600px; max-width: 90vw">
         <q-card-section class="bg-primary text-white">
           <div class="text-h6">
             <q-icon :name="editing ? 'edit' : 'add'" class="q-mr-sm" />
@@ -116,7 +116,7 @@
                   label="Nombre *"
                   outlined
                   dense
-                  :rules="[val => !!val || 'Campo obligatorio']"
+                  :rules="[(val) => !!val || 'Campo obligatorio']"
                 />
               </div>
               <div class="col-12 col-md-6">
@@ -125,7 +125,7 @@
                   label="Código *"
                   outlined
                   dense
-                  :rules="[val => !!val || 'Campo obligatorio']"
+                  :rules="[(val) => !!val || 'Campo obligatorio']"
                   :disable="editing"
                 />
               </div>
@@ -135,14 +135,11 @@
                   label="Ciudad *"
                   outlined
                   dense
-                  :rules="[val => !!val || 'Campo obligatorio']"
+                  :rules="[(val) => !!val || 'Campo obligatorio']"
                 />
               </div>
               <div class="col-12 col-md-6">
-                <q-toggle
-                  v-model="form.activo"
-                  label="Activo"
-                />
+                <q-toggle v-model="form.activo" label="Activo" />
               </div>
             </div>
 
@@ -172,18 +169,13 @@
 
         <q-card-section class="q-pt-lg">
           ¿Estás seguro de eliminar la sede "{{ sedeToDelete?.nombre }}"?
-          <br>
+          <br />
           <small class="text-grey">Esta acción no se puede deshacer.</small>
         </q-card-section>
 
         <q-card-actions align="right">
           <q-btn flat label="Cancelar" v-close-popup />
-          <q-btn
-            label="Eliminar"
-            color="negative"
-            @click="deleteSede"
-            :loading="deleting"
-          />
+          <q-btn label="Eliminar" color="negative" @click="deleteSede" :loading="deleting" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -209,7 +201,7 @@ const form = ref({
   codigo: '',
   ciudad: '',
   activo: true,
-  modificado_localmente: true
+  modificado_localmente: true,
 })
 const sedeToDelete = ref(null)
 
@@ -218,16 +210,21 @@ const columns = [
   { name: 'codigo', label: 'Código', field: 'codigo', align: 'left', sortable: true },
   { name: 'nombre', label: 'Nombre', field: 'nombre', align: 'left', sortable: true },
   { name: 'ciudad', label: 'Ciudad', field: 'ciudad', align: 'left' },
-  { name: 'modificado_localmente', label: 'Modificado', field: 'modificado_localmente', align: 'center' },
+  {
+    name: 'modificado_localmente',
+    label: 'Modificado',
+    field: 'modificado_localmente',
+    align: 'center',
+  },
   { name: 'activo', label: 'Estado', field: 'activo', align: 'center' },
-  { name: 'actions', label: 'Acciones', align: 'center' }
+  { name: 'actions', label: 'Acciones', align: 'center' },
 ]
 
 const pagination = ref({
   sortBy: 'nombre',
   descending: false,
   page: 1,
-  rowsPerPage: 10
+  rowsPerPage: 10,
 })
 
 const sedes = computed(() => sedesStore.sedes)
@@ -243,7 +240,7 @@ async function loadData() {
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: 'Error cargando datos: ' + error.message
+      message: 'Error cargando datos: ' + error.message,
     })
   } finally {
     loading.value = false
@@ -261,7 +258,7 @@ function openDialog(sede) {
       codigo: '',
       ciudad: '',
       activo: true,
-      modificado_localmente: true
+      modificado_localmente: true,
     }
   }
   showDialog.value = true
@@ -274,20 +271,20 @@ async function saveSede() {
       await sedesStore.updateSede(form.value.id, form.value)
       Notify.create({
         type: 'positive',
-        message: 'Sede actualizada correctamente'
+        message: 'Sede actualizada correctamente',
       })
     } else {
       await sedesStore.createSede(form.value)
       Notify.create({
         type: 'positive',
-        message: 'Sede creada correctamente'
+        message: 'Sede creada correctamente',
       })
     }
     showDialog.value = false
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: 'Error: ' + (error.response?.data?.message || error.message)
+      message: 'Error: ' + (error.response?.data?.message || error.message),
     })
   } finally {
     saving.value = false
@@ -305,13 +302,13 @@ async function deleteSede() {
     await sedesStore.deleteSede(sedeToDelete.value.id)
     Notify.create({
       type: 'positive',
-      message: 'Sede eliminada correctamente'
+      message: 'Sede eliminada correctamente',
     })
     showDeleteDialog.value = false
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: 'Error: ' + (error.response?.data?.message || error.message)
+      message: 'Error: ' + (error.response?.data?.message || error.message),
     })
   } finally {
     deleting.value = false

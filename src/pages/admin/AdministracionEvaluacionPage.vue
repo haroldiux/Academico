@@ -377,9 +377,7 @@
                 >
                   <template v-slot:no-option>
                     <q-item>
-                      <q-item-section class="text-grey">
-                        Sedes no disponibles.
-                      </q-item-section>
+                      <q-item-section class="text-grey"> Sedes no disponibles. </q-item-section>
                     </q-item>
                   </template>
                 </q-select>
@@ -416,12 +414,21 @@
           <div class="row q-col-gutter-lg">
             <!-- Columna izquierda: Estructura del Examen -->
             <div :class="['col-12', nivelConfig === 'nacional' ? 'col-md-6' : 'col-md-12']">
-              <q-banner v-if="!esConfigPropia && nivelConfig !== 'nacional'" class="bg-info text-white q-mb-md rounded-borders" dense>
+              <q-banner
+                v-if="!esConfigPropia && nivelConfig !== 'nacional'"
+                class="bg-info text-white q-mb-md rounded-borders"
+                dense
+              >
                 <template v-slot:avatar>
                   <q-icon name="info" size="sm" />
                 </template>
-                Mostrando configuración heredada de: <strong class="text-uppercase">{{ nivelOrigen }}</strong> <br>
-                <span class="text-caption">Si guardas cambios aquí, se creará una configuración independiente para que {{ nivelConfig === 'sede' ? 'esta sede' : 'esta carrera' }} sobresalga del resto.</span>
+                Mostrando configuración heredada de:
+                <strong class="text-uppercase">{{ nivelOrigen }}</strong> <br />
+                <span class="text-caption"
+                  >Si guardas cambios aquí, se creará una configuración independiente para que
+                  {{ nivelConfig === 'sede' ? 'esta sede' : 'esta carrera' }} sobresalga del
+                  resto.</span
+                >
               </q-banner>
 
               <q-card class="config-section-card">
@@ -772,7 +779,13 @@
                 <q-input v-model="usuarioForm.telefono" outlined dense label="Teléfono" />
               </div>
               <div class="col-12">
-                <q-input v-model="usuarioForm.email" outlined dense type="email" label="Correo Electrónico *" />
+                <q-input
+                  v-model="usuarioForm.email"
+                  outlined
+                  dense
+                  type="email"
+                  label="Correo Electrónico *"
+                />
               </div>
             </div>
           </template>
@@ -839,7 +852,7 @@ const usuarioForm = ref({
   apellido: '',
   ci: '',
   telefono: '',
-  email: ''
+  email: '',
 })
 
 const config = ref({
@@ -957,7 +970,7 @@ async function cargarSedes() {
   try {
     const { data } = await api.get('/sedes')
     const list = data.data || data
-    sedesOptions.value = list.map(s => ({ label: s.nombre, value: s.id }))
+    sedesOptions.value = list.map((s) => ({ label: s.nombre, value: s.id }))
   } catch (error) {
     console.error('Error cargando sedes', error)
   }
@@ -968,7 +981,7 @@ async function cargarCarreras() {
     // El controller devuelve info en json
     const { data } = await api.get('/carreras')
     const list = data.data || data
-    carrerasOptions.value = list.map(c => ({ label: `${c.sigla} - ${c.nombre}`, value: c.id }))
+    carrerasOptions.value = list.map((c) => ({ label: `${c.sigla} - ${c.nombre}`, value: c.id }))
   } catch (error) {
     console.error('Error cargando carreras globales', error)
   }
@@ -978,9 +991,9 @@ async function cargarCampus() {
   try {
     const { data } = await api.get('/campus')
     campus.value = data.data || data
-    campusOptions.value = campus.value.map(c => ({ 
-      label: `${c.nombre} - ${c.sede}`, 
-      value: c.id 
+    campusOptions.value = campus.value.map((c) => ({
+      label: `${c.nombre} - ${c.sede}`,
+      value: c.id,
     }))
   } catch (error) {
     console.error('Error cargando campus', error)
@@ -1006,12 +1019,12 @@ async function guardarCampus() {
 
 async function toggleCampus(campus_) {
   try {
-    campus_.activo = !campus_.activo 
+    campus_.activo = !campus_.activo
     await api.put(`/campus/${campus_.id}`, { activo: campus_.activo })
     $q.notify({ type: 'info', message: `Campus ${campus_.activo ? 'activado' : 'desactivado'}` })
   } catch (error) {
     console.error('Error toggling estado del campus', error)
-    campus_.activo = !campus_.activo 
+    campus_.activo = !campus_.activo
     $q.notify({ type: 'negative', message: 'No se pudo cambiar el estado' })
   }
 }
@@ -1030,7 +1043,7 @@ function abrirDialogCarreraCampus(row = null) {
 }
 
 async function guardarCarreraCampus() {
-  if(!carreraCampusForm.value.campus_id || !carreraCampusForm.value.carrera_id) {
+  if (!carreraCampusForm.value.campus_id || !carreraCampusForm.value.carrera_id) {
     $q.notify({ type: 'warning', message: 'Debe seleccionar un campus y una carrera' })
     return
   }
@@ -1054,6 +1067,7 @@ async function guardarCarreraCampus() {
     $q.notify({ type: 'positive', message: carreraCampusForm.value.original ? 'Asignación actualizada' : 'Carrera asignada correctamente' })
     showDialogCarreraCampus.value = false
     
+    // Recargar la data general del campus para refrescar la lista
     cargarCampus()
   } catch (error) {
     console.error('Error al guardar asignación de carrera', error)
@@ -1072,7 +1086,7 @@ function eliminarCarreraCampus(row) {
       await api.delete(`/campus/${row.campus_id}/carreras/${row.id}`)
       $q.notify({ type: 'warning', message: 'Asignación eliminada correctamente' })
       cargarCampus() // Recargar datos
-    } catch(err) {
+    } catch (err) {
       console.error('Error al quitar asignación de carrera', err)
       $q.notify({ type: 'negative', message: 'Error al desenlazar carrera' })
     }
@@ -1118,7 +1132,10 @@ async function cargarUsuariosDisponibles() {
   try {
     const { data } = await api.get('/evaluadores/disponibles')
     const list = data.data || data
-    usuariosDisponibles.value = list.map(u => ({ label: `${u.nombre} (${u.email})`, value: u.id }))
+    usuariosDisponibles.value = list.map((u) => ({
+      label: `${u.nombre} (${u.email})`,
+      value: u.id,
+    }))
   } catch (err) {
     console.error('Error cargando evaluadores disponibles', err)
   }
@@ -1135,7 +1152,7 @@ async function guardarUsuario() {
     $q.notify({ type: 'warning', message: 'Debe seleccionar un usuario existente' })
     return
   }
-  
+
   try {
     const payload = { ...usuarioForm.value }
     // Si es responsable nacional, usamos un campus_id ficticio en la URL (será ignorado por el backend)
@@ -1144,18 +1161,21 @@ async function guardarUsuario() {
     
     $q.notify({ type: 'positive', message: 'Evaluador asignado correctamente' })
     showDialogUsuario.value = false
-    
+
     cargarUsuarios()
     cargarUsuariosDisponibles()
   } catch (error) {
     console.error('Error asignando evaluador a campus', error)
-    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Error al asignar usuario' })
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Error al asignar usuario',
+    })
   }
 }
 
 function eliminarUsuario(row) {
-  if(!row.campus_id || !row.id) return
-  
+  if (!row.campus_id || !row.id) return
+
   $q.dialog({
     title: 'Quitar Evaluador',
     message: `¿Quitar a "${row.nombre}" del campus "${row.campus}"?`,
@@ -1191,7 +1211,7 @@ async function cargarConfiguracion() {
       // Deep merge avoiding reactivity loss on nested structure could be tricky,
       // simple reassignment of known structure is best
       config.value = JSON.parse(JSON.stringify(data.configuracion))
-      
+
       esConfigPropia.value = data.es_propia
       nivelOrigen.value = data.nivel_hallado
 
@@ -1223,7 +1243,7 @@ async function guardarConfiguracion() {
 async function cargarTiempos() {
   try {
     const { data } = await api.get('/evaluaciones/tiempos', {
-      params: { gestion: gestionConfig.value }
+      params: { gestion: gestionConfig.value },
     })
     if (data.success && data.configuracion) {
       tiemposConfig.value = { ...data.configuracion }
@@ -1237,7 +1257,7 @@ async function guardarTiempos() {
   try {
     const payload = {
       gestion: gestionConfig.value,
-      ...tiemposConfig.value
+      ...tiemposConfig.value,
     }
     const { data } = await api.post('/evaluaciones/tiempos', payload)
     if (data.success) {

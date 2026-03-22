@@ -238,9 +238,14 @@
         </q-card-section>
 
         <q-card-section class="q-pt-lg">
-          ¿Estás seguro de sobrescribir <strong>{{ itemSobrescribir?.nombre || itemSobrescribir?.codigo }}</strong>?
-          <br>
-          <small class="text-grey">Esta acción reemplazará los datos locales con los de la API externa (o viceversa).</small>
+          ¿Estás seguro de sobrescribir
+          <strong>{{ itemSobrescribir?.nombre || itemSobrescribir?.codigo }}</strong
+          >?
+          <br />
+          <small class="text-grey"
+            >Esta acción reemplazará los datos locales con los de la API externa (o
+            viceversa).</small
+          >
         </q-card-section>
 
         <q-card-actions align="right">
@@ -281,20 +286,23 @@ const sobrescExternoLoading = ref(null)
 const filtro = ref({
   entidad: 'grupos',
   sede_id: null,
-  carrera_id: null
+  carrera_id: null,
 })
 
 const entidadesOptions = [
   { label: 'Grupos', value: 'grupos' },
   { label: 'Asignaturas', value: 'asignaturas' },
   { label: 'Carreras', value: 'carreras' },
-  { label: 'Sedes', value: 'sedes' }
+  { label: 'Sedes', value: 'sedes' },
 ]
 
-const sedesOptions = computed(() => sedesStore.sedes.map(s => ({ id: s.id, nombre: s.nombre })))
+const sedesOptions = computed(() => sedesStore.sedes.map((s) => ({ id: s.id, nombre: s.nombre })))
 const carrerasOptions = computed(() => {
-  if (!filtro.value.sede_id) return carrerasStore.carrerasActivas.map(c => ({ id: c.id, nombre: c.nombre }))
-  return carrerasStore.getCarrerasBySede(filtro.value.sede_id).map(c => ({ id: c.id, nombre: c.nombre }))
+  if (!filtro.value.sede_id)
+    return carrerasStore.carrerasActivas.map((c) => ({ id: c.id, nombre: c.nombre }))
+  return carrerasStore
+    .getCarrerasBySede(filtro.value.sede_id)
+    .map((c) => ({ id: c.id, nombre: c.nombre }))
 })
 
 const columnasComparacion = computed(() => {
@@ -302,11 +310,21 @@ const columnasComparacion = computed(() => {
     { name: 'id', label: 'ID', field: 'id', align: 'left' },
     { name: 'nombre', label: 'Nombre', field: 'nombre', align: 'left' },
     { name: 'codigo', label: 'Código', field: 'codigo', align: 'left' },
-    { name: 'modificado_localmente', label: 'Modificado', field: 'modificado_localmente', align: 'center' },
-    { name: 'acciones', label: 'Acciones', align: 'center' }
+    {
+      name: 'modificado_localmente',
+      label: 'Modificado',
+      field: 'modificado_localmente',
+      align: 'center',
+    },
+    { name: 'acciones', label: 'Acciones', align: 'center' },
   ]
   if (filtro.value.entidad === 'grupos') {
-    base.splice(2, 0, { name: 'asignatura', label: 'Asignatura', field: 'asignatura_nombre', align: 'left' })
+    base.splice(2, 0, {
+      name: 'asignatura',
+      label: 'Asignatura',
+      field: 'asignatura_nombre',
+      align: 'left',
+    })
   }
   return base
 })
@@ -316,9 +334,12 @@ const datosExternos = ref([])
 const itemSobrescribir = ref(null)
 const direccionSobrescritura = ref('') // 'local' o 'externo'
 
-watch(() => filtro.value.sede_id, () => {
-  filtro.value.carrera_id = null
-})
+watch(
+  () => filtro.value.sede_id,
+  () => {
+    filtro.value.carrera_id = null
+  },
+)
 
 async function cargarComparacion() {
   loading.value = true
@@ -329,59 +350,56 @@ async function cargarComparacion() {
       case 'grupos':
         await gruposStore.fetchGrupos({
           sede_id: filtro.value.sede_id,
-          carrera_id: filtro.value.carrera_id
+          carrera_id: filtro.value.carrera_id,
         })
-        datosLocales.value = gruposStore.materias.map(m => ({
+        datosLocales.value = gruposStore.materias.map((m) => ({
           id: m.id,
           nombre: m.grupo || m.nombre,
           codigo: m.codigo,
           asignatura_nombre: m.nombre,
-          modificado_localmente: true // Asumir true para simplificar
+          modificado_localmente: true, // Asumir true para simplificar
         }))
         // Datos externos (simulados)
         await gruposStore.fetchGruposExterno({
           sede_id: filtro.value.sede_id,
-          carrera_id: filtro.value.carrera_id
+          carrera_id: filtro.value.carrera_id,
         })
-        datosExternos.value = gruposStore.materiasExterno.map(m => ({
+        datosExternos.value = gruposStore.materiasExterno.map((m) => ({
           id: m.id_externo || m.codigo,
           nombre: m.grupo || m.nombre,
           codigo: m.codigo,
           asignatura_nombre: m.nombre,
-          modificado_localmente: false
+          modificado_localmente: false,
         }))
         break
       case 'asignaturas':
-        await asignaturasStore.fetchAsignaturas(
-          filtro.value.sede_id,
-          filtro.value.carrera_id
-        )
-        datosLocales.value = asignaturasStore.asignaturas.map(a => ({
+        await asignaturasStore.fetchAsignaturas(filtro.value.sede_id, filtro.value.carrera_id)
+        datosLocales.value = asignaturasStore.asignaturas.map((a) => ({
           id: a.id,
           nombre: a.nombre,
           codigo: a.codigo,
-          modificado_localmente: a.modificado_localmente || false
+          modificado_localmente: a.modificado_localmente || false,
         }))
         // No hay API externa directa para asignaturas, usar datos locales como placeholder
         datosExternos.value = []
         break
       case 'carreras':
         await carrerasStore.fetchCarreras()
-        datosLocales.value = carrerasStore.carreras.map(c => ({
+        datosLocales.value = carrerasStore.carreras.map((c) => ({
           id: c.id,
           nombre: c.nombre,
           codigo: c.codigo,
-          modificado_localmente: c.modificado_localmente || false
+          modificado_localmente: c.modificado_localmente || false,
         }))
         datosExternos.value = []
         break
       case 'sedes':
         await sedesStore.fetchSedes()
-        datosLocales.value = sedesStore.sedes.map(s => ({
+        datosLocales.value = sedesStore.sedes.map((s) => ({
           id: s.id,
           nombre: s.nombre,
           codigo: s.codigo,
-          modificado_localmente: s.modificado_localmente || false
+          modificado_localmente: s.modificado_localmente || false,
         }))
         datosExternos.value = []
         break
@@ -390,7 +408,7 @@ async function cargarComparacion() {
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: 'Error cargando comparación: ' + error.message
+      message: 'Error cargando comparación: ' + error.message,
     })
   } finally {
     loading.value = false
@@ -400,35 +418,35 @@ async function cargarComparacion() {
 const diferencias = computed(() => {
   const diffs = []
   // Comparación simple por ID
-  const localIds = datosLocales.value.map(l => l.id)
-  const externoIds = datosExternos.value.map(e => e.id)
-  
+  const localIds = datosLocales.value.map((l) => l.id)
+  const externoIds = datosExternos.value.map((e) => e.id)
+
   // IDs presentes en externo pero no en local
-  externoIds.forEach(id => {
+  externoIds.forEach((id) => {
     if (!localIds.includes(id)) {
-      const ext = datosExternos.value.find(e => e.id === id)
+      const ext = datosExternos.value.find((e) => e.id === id)
       diffs.push({
         id,
         nombre: ext.nombre,
         local: 'No existe',
-        externo: 'Presente'
+        externo: 'Presente',
       })
     }
   })
-  
+
   // IDs presentes en local pero no en externo
-  localIds.forEach(id => {
+  localIds.forEach((id) => {
     if (!externoIds.includes(id)) {
-      const loc = datosLocales.value.find(l => l.id === id)
+      const loc = datosLocales.value.find((l) => l.id === id)
       diffs.push({
         id,
         nombre: loc.nombre,
         local: 'Presente',
-        externo: 'No existe'
+        externo: 'No existe',
       })
     }
   })
-  
+
   return diffs
 })
 
@@ -450,20 +468,20 @@ async function ejecutarSobrescritura() {
   sobrescLoading.value = true
   try {
     // Simular sobrescritura (en un sistema real, llamar a API)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
     Notify.create({
       type: 'positive',
-      message: `Datos ${direccionSobrescritura.value === 'local' ? 'locales' : 'externos'} actualizados correctamente`
+      message: `Datos ${direccionSobrescritura.value === 'local' ? 'locales' : 'externos'} actualizados correctamente`,
     })
-    
+
     showConfirmDialog.value = false
     // Recargar comparación
     await cargarComparacion()
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: 'Error en sobrescritura: ' + error.message
+      message: 'Error en sobrescritura: ' + error.message,
     })
   } finally {
     sobrescLoading.value = false

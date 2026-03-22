@@ -36,7 +36,7 @@ export const useBloquesStore = defineStore('bloques', () => {
     loading.value = true
     try {
       const response = await bloqueService.updateBloque(id, data)
-      const idx = bloques.value.findIndex(b => b.id === id)
+      const idx = bloques.value.findIndex((b) => b.id === id)
       if (idx !== -1) bloques.value[idx] = response.data
       return response.data
     } catch (err) {
@@ -51,7 +51,7 @@ export const useBloquesStore = defineStore('bloques', () => {
     loading.value = true
     try {
       await bloqueService.deleteBloque(id)
-      bloques.value = bloques.value.filter(b => b.id !== id)
+      bloques.value = bloques.value.filter((b) => b.id !== id)
     } catch (err) {
       console.error('Error deleting bloque:', err)
       throw err
@@ -61,8 +61,16 @@ export const useBloquesStore = defineStore('bloques', () => {
   }
 
   function getBloquesBySede(sedeId) {
-    return bloques.value.filter(b => b.sede_id == sedeId)
+    return bloques.value.filter((b) => b.sede_id == sedeId)
   }
 
-  return { bloques, loading, fetchBloques, createBloque, updateBloque, deleteBloque, getBloquesBySede }
+  return {
+    bloques,
+    loading,
+    fetchBloques,
+    createBloque,
+    updateBloque,
+    deleteBloque,
+    getBloquesBySede,
+  }
 })

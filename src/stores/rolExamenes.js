@@ -98,7 +98,7 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
       const response = await rolExamenesService.uploadExcel(formData, {
         gestion,
         carrera_id: carreraId,
-        sede_id: sedeId
+        sede_id: sedeId,
       })
 
       // Recargar exámenes después de subir

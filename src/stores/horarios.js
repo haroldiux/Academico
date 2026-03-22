@@ -43,7 +43,7 @@ export const useHorariosStore = defineStore('horarios', () => {
     try {
       const response = await horarioService.updateHorario(id, data)
       // Actualizar el horario en la lista
-      const index = horarios.value.findIndex(h => h.id === id)
+      const index = horarios.value.findIndex((h) => h.id === id)
       if (index !== -1) {
         horarios.value[index] = response.data
       }
@@ -62,7 +62,7 @@ export const useHorariosStore = defineStore('horarios', () => {
     try {
       await horarioService.deleteHorario(id)
       // Eliminar el horario de la lista
-      horarios.value = horarios.value.filter(h => h.id !== id)
+      horarios.value = horarios.value.filter((h) => h.id !== id)
     } catch (err) {
       console.error('Error deleting horario:', err)
       error.value = err
