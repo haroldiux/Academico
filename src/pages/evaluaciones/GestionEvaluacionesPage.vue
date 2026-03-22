@@ -1429,11 +1429,12 @@ const onExcelUploaded = (file) => {
         else if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(tipoRaw)) tipoFinal = 'SUBPREGUNTA'
         
         return {
+          idx: idx + 2, // Fila en Excel
           id: `m-${idx}-${Date.now()}`,
           enunciado: String(upperRow.ENUNCIADO || '').trim(),
           tipo: tipoFinal,
           grupo: String(upperRow.GRUPO || '').trim(),
-          dificultad: String(upperRow.DIFICULTAD || '1').trim(), // 1: Fácil, 2: Medio, 3: Difícil
+          dificultad: upperRow.DIFICULTAD ? String(upperRow.DIFICULTAD).trim() : '',
           opciones: [
             { id: 'A', text: upperRow.A ?? upperRow.OPCION_A ?? null },
             { id: 'B', text: upperRow.B ?? upperRow.OPCION_B ?? null },
@@ -1450,17 +1451,75 @@ const onExcelUploaded = (file) => {
           ).toUpperCase().split(';').map(r => r.trim()).filter(r => r)
         }
       }).filter(p => p.enunciado)
-      if (mapped.length === 0) {
+
+      // --- VALIDACIÓN DE FORMATO ---
+      const errors = []
+      const invalidGroups = new Set()
+
+      mapped.forEach(p => {
+        let isInvalid = false
+        let reason = ""
+        const isHeaderType = ['PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo)
+
+        if (isHeaderType) {
+          if (p.dificultad !== '') {
+            isInvalid = true
+            reason = "Tipos PR/EM no deben tener dificultad asignada"
+          }
+          if (p.respuesta_correcta.length > 0) {
+            isInvalid = true
+            reason = "Tipos PR/EM no deben tener respuesta asignada"
+          }
+        } else {
+          if (!['1', '2', '3'].includes(p.dificultad)) {
+            isInvalid = true
+            reason = "Falta dificultad (1, 2 o 3) o es inválida"
+          }
+          if (p.respuesta_correcta.length === 0) {
+            isInvalid = true
+            reason = "Falta respuesta correcta"
+          }
+          if (p.tipo === 'SELECCION_MULTIPLE' && p.respuesta_correcta.length < 2) {
+             isInvalid = true
+             reason = "SM requiere al menos 2 respuestas correctas"
+          }
+        }
+
+        if (isInvalid) {
+          errors.push({ fila: p.idx, enunciado: p.enunciado, motivo: reason, grupo: p.grupo })
+          if (p.grupo) invalidGroups.add(p.grupo)
+        }
+      })
+
+      // Filtrado: Excluir inválidas y sus grupos
+      const filtered = mapped.filter(p => {
+        const selfInvalid = errors.some(e => e.fila === p.idx)
+        if (selfInvalid) return false
+        if (p.grupo && invalidGroups.has(p.grupo)) return false
+        return true
+      })
+
+      if (errors.length > 0) {
+        const errorMsg = errors.map(e => `<li><b>Fila ${e.fila}:</b> ${e.motivo} (${e.enunciado.substring(0, 40)}...)</li>`).join('')
+        $q.dialog({
+          title: '<span class="text-red-7 text-weight-bold">Preguntas Ignoradas</span>',
+          message: `Se detectaron <b>${errors.length}</b> errores de formato. Estas preguntas y sus grupos no serán tomados en cuenta para el examen:<br><br><ul class="q-pl-md" style="max-height: 200px; overflow-y: auto">${errorMsg}</ul>`,
+          html: true,
+          ok: { label: 'Entendido', color: 'red-7', unelevated: true, rounded: true }
+        })
+      }
+
+      if (filtered.length === 0) {
         $q.notify({
           type: 'warning',
-          message: `No se encontraron preguntas en la hoja "${wsName}". Verifique las cabeceras.`,
+          message: `No quedaron preguntas válidas después del filtrado en la hoja "${wsName}".`,
           icon: 'warning',
           timeout: 5000,
         })
         manualFile.value = null
       }
 
-      manualPreguntas.value = mapped
+      manualPreguntas.value = filtered
     } catch (err) {
       console.error('Error al procesar Excel:', err)
       $q.notify({ type: 'negative', message: 'El archivo Excel no pudo ser procesado' })

@@ -26,45 +26,44 @@ export const useUsuariosStore = defineStore('usuarios', () => {
     return grupos
   })
 
+  // Helper para mapear usuario del backend a formato frontend
+  function mapUser(u) {
+    let cIds = []
+    if (u.director) {
+      if (u.director.carreras && u.director.carreras.length > 0) {
+        cIds = u.director.carreras.map((c) => c.id)
+      } else if (u.director.carrera) {
+        cIds = [u.director.carrera.id]
+      }
+    }
+    // Fallback a string legacy
+    if (cIds.length === 0 && u.carrera && typeof u.carrera === 'string') {
+      if (/^[\d,\s]+$/.test(u.carrera)) {
+        cIds = u.carrera
+          .split(',')
+          .map((s) => parseInt(s.trim()))
+          .filter((n) => !isNaN(n))
+      }
+    }
+
+    return {
+      ...u,
+      rolNombre: u.rol ? u.rol.nombre : '',
+      rolId: u.rol_id,
+      estado: u.estado ? 'activo' : 'inactivo',
+      carrera: u.carrera_nombre || u.carrera,
+      carreraIds: cIds,
+      sedeNombre: u.sede_nombre || (u.sede ? u.sede.nombre : ''),
+      sedeId: u.sede_id,
+    }
+  }
+
   // Actions
   async function fetchUsuarios(search = '') {
     loading.value = true
     try {
       const response = await userService.getUsuarios(search)
-      // Map response to match expected format if needed, OR user backend format directly
-      // Backend returns User models with 'rol' relation
-      usuarios.value = response.data.map((u) => {
-        // Logic to extract career IDs
-        let cIds = []
-        if (u.director) {
-          if (u.director.carreras && u.director.carreras.length > 0) {
-            cIds = u.director.carreras.map((c) => c.id)
-          } else if (u.director.carrera) {
-            cIds = [u.director.carrera.id]
-          }
-        }
-        // Fallback to legacy string if empty and it looks like IDs
-        if (cIds.length === 0 && u.carrera && typeof u.carrera === 'string') {
-          if (/^[\d,\s]+$/.test(u.carrera)) {
-            cIds = u.carrera
-              .split(',')
-              .map((s) => parseInt(s.trim()))
-              .filter((n) => !isNaN(n))
-          }
-        }
-
-        return {
-          ...u,
-          rolNombre: u.rol ? u.rol.nombre : '',
-          rolId: u.rol_id,
-          // Adapt status boolean to logic if needed (frontend uses 'activo'/'inactivo' strings in mock?)
-          estado: u.estado ? 'activo' : 'inactivo',
-          // Map Resolved Names
-          carrera: u.carrera_nombre || u.carrera,
-          carreraIds: cIds, // New field for edit form
-          sedeNombre: u.sede_nombre || (u.sede ? u.sede.nombre : 'N/A'),
-        }
-      })
+      usuarios.value = response.data.map(mapUser)
     } catch (err) {
       console.error(err)
       error.value = 'Error al cargar usuarios'
@@ -159,9 +158,14 @@ export const useUsuariosStore = defineStore('usuarios', () => {
         }
       }
 
-      await userService.updateUsuario(id, payload)
-      // Refresh local
-      fetchUsuarios()
+      const response = await userService.updateUsuario(id, payload)
+      // Actualización local optimista con datos mapeados de la respuesta
+      const index = usuarios.value.findIndex((u) => u.id === id)
+      if (index !== -1 && response.data) {
+        usuarios.value[index] = mapUser(response.data)
+      } else {
+        fetchUsuarios()
+      }
       return true
     } catch (err) {
       console.error(err)

@@ -958,25 +958,8 @@ function editarUsuario(usuario) {
   editando.value = true
   usuarioSeleccionado.value = usuario
 
-  // Transformar carrera string a array si es necesario para el q-select multiple
-  let carrerasVal = []
-  if (Array.isArray(usuario.carreraIds) && usuario.carreraIds.length > 0) {
-    carrerasVal = usuario.carreraIds
-  } else if (Array.isArray(usuario.carrera)) {
-    carrerasVal = usuario.carrera
-  } else if (usuario.carrera) {
-    // Si es string, verificar si parece una lista de IDs numéricos separados por comas
-    if (typeof usuario.carrera === 'string' && /^[\d,\s]+$/.test(usuario.carrera)) {
-      // Es una lista de IDs, convertir a array de números
-      carrerasVal = usuario.carrera
-        .split(',')
-        .map((id) => parseInt(id.trim()))
-        .filter((id) => !isNaN(id))
-    } else {
-      // Es un texto literal, dejarlo como array de un elemento (no será seleccionable en el selector de IDs)
-      carrerasVal = [usuario.carrera]
-    }
-  }
+  // Usar los IDs ya procesados por el store
+  const carrerasVal = usuario.carreraIds || []
 
   formUsuario.value = {
     nombre: usuario.nombre,
