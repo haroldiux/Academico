@@ -910,44 +910,6 @@
                   />
                 </div>
               </div>
-                  <q-select
-                    v-model="manualConfig.formatoHoja"
-                    :options="optionsHoja"
-                    outlined
-                    dense
-                    label="Tamaño Hoja"
-                    bg-color="blue-50"
-                  />
-                </div>
-                <div class="col-12 col-md-6">
-                  <q-select
-                    v-model="manualConfig.fontFamily"
-                    :options="optionsFuente"
-                    outlined dense
-                    label="Fuente"
-                    emit-value
-                    map-options
-                  />
-                </div>
-                <div class="col-6">
-                  <q-select
-                    v-model="manualConfig.fontSize"
-                    :options="optionsTamanio"
-                    outlined dense
-                    label="Tamaño"
-                  />
-                </div>
-                <div class="col-6">
-                  <q-select
-                    v-model="manualConfig.lineSpacing"
-                    :options="optionsEspaciado"
-                    outlined dense
-                    label="Interlineado"
-                    emit-value
-                    map-options
-                  />
-                </div>
-              </div>
             </div>
 
             <!-- Columna Derecha: Archivo y Cantidades -->
@@ -1554,7 +1516,7 @@ const ejecutarGeneracionManual = async () => {
       ...manualConfig.value, // Incluir fuentes/tamaño
       codigo: 'MANUAL',
       variantes: ['A', 'B', 'C', 'D', 'E'].slice(0, manualConfig.value.cantVariantes),
-    }
+    };
 
     const config = {
       formatoHoja: manualConfig.value.formatoHoja,
@@ -1564,18 +1526,7 @@ const ejecutarGeneracionManual = async () => {
       facil: 7,
       medio: 16,
       dificil: 7,
-    }
-    const typeOrder = [
-      'PROBLEMA',
-      'EMPAREJAMIENTO',
-      'SUBPROBLEMA',
-      'SELECCION_UNICA',
-      'SELECCION_MULTIPLE',
-      'FALSO_VERDADERO',
-      'SS',
-      'SM',
-      'FV',
-    ]
+    };
     // Función auxiliar para descarga
     const downloadFile = (blob, name) => {
       const url = window.URL.createObjectURL(blob)
@@ -2120,17 +2071,6 @@ const ejecutarAccionGestion = async () => {
         }
 
         const todas = Array.isArray(bancoPreguntas) ? bancoPreguntas : (bancoPreguntas.preguntas || [])
-        const ordenTipos = [
-          'PROBLEMA',
-          'EMPAREJAMIENTO',
-          'SUBPROBLEMA',
-          'SELECCION_UNICA',
-          'SELECCION_MULTIPLE',
-          'FALSO_VERDADERO',
-          'SS',
-          'SM',
-          'FV',
-        ]
         const resultadosVariantes = []
 
         for (let i = 0; i < variantes.length; i++) {
