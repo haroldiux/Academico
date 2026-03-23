@@ -768,14 +768,13 @@
               </div>
               
               <div class="row q-col-gutter-sm">
-                <!-- Sede y Carrera -->
-                <div class="col-6">
+                <!-- Sede -->
+                <div class="col-12">
                   <q-select 
                     v-model="manualConfig.sede" 
                     :options="sedesOptions" 
                     label="Sede" 
                     outlined dense 
-                    emit-value map-options 
                     use-input
                     input-debounce="0"
                     behavior="menu"
@@ -783,13 +782,14 @@
                     <template v-slot:prepend><q-icon name="apartment" size="xs" /></template>
                   </q-select>
                 </div>
+
+                <!-- Carrera -->
                 <div class="col-6">
                   <q-select 
-                    v-model="manualConfig.carrera" 
+                    v-model="manualConfig.carrera_obj" 
                     :options="carrerasOptionsManual" 
-                    label="Carrera" 
+                    label="Seleccionar Carrera" 
                     outlined dense 
-                    emit-value map-options 
                     :disable="!manualConfig.sede"
                     use-input
                     input-debounce="0"
@@ -798,66 +798,100 @@
                     <template v-slot:prepend><q-icon name="school" size="xs" /></template>
                   </q-select>
                 </div>
+                <div class="col-6">
+                  <q-input 
+                    v-model="manualConfig.carrera_texto" 
+                    label="Nombre Carrera (Final)" 
+                    outlined dense 
+                    placeholder="Escriba o ajuste el nombre"
+                    bg-color="grey-1"
+                  />
+                </div>
 
                 <!-- Asignatura -->
-                <div class="col-12">
+                <div class="col-6">
                   <q-select
-                    v-model="manualConfig.materia"
-                    :options="asignaturasOptionsManual"
-                    label="Asignatura / Materia"
+                    v-model="manualConfig.materia_obj"
+                    :options="asignaturasOptionsManualFiltered"
+                    label="Seleccionar Materia"
                     outlined dense
                     use-input
-                    fill-input
                     hide-selected
-                    emit-value
-                    map-options
+                    fill-input
                     input-debounce="300"
-                    hint="Seleccione o escriba manualmente"
-                    :disable="!manualConfig.carrera"
-                    @input-value="val => { if(val) manualConfig.materia = val }"
+                    :disable="!manualConfig.carrera_obj"
+                    @filter="filterAsignaturas"
                   >
                     <template v-slot:prepend><q-icon name="book" size="xs" /></template>
                   </q-select>
                 </div>
+                <div class="col-6">
+                  <q-input 
+                    v-model="manualConfig.materia_texto" 
+                    label="Nombre Materia (Final)" 
+                    outlined dense 
+                    placeholder="Escriba o ajuste el nombre"
+                    bg-color="grey-1"
+                  />
+                </div>
                 
                 <!-- Docente -->
-                <div class="col-8">
+                <div class="col-6">
                   <q-select
-                    v-model="manualConfig.docente"
+                    v-model="manualConfig.docente_obj"
                     :options="docentesOptionsManual"
-                    label="Docente"
+                    label="Seleccionar Docente"
                     outlined dense
                     use-input
-                    fill-input
                     hide-selected
-                    emit-value
-                    map-options
+                    fill-input
                     input-debounce="300"
                     @filter="(val, update) => { update(() => { fetchDocentesManual(val) }) }"
-                    @input-value="val => { if(val) manualConfig.docente = val }"
                   >
                     <template v-slot:prepend><q-icon name="person" size="xs" /></template>
                   </q-select>
                 </div>
-                <div class="col-4">
+                <div class="col-6">
+                  <q-input 
+                    v-model="manualConfig.docente_texto" 
+                    label="Nombre Docente (Final)" 
+                    outlined dense 
+                    placeholder="Escriba o ajuste el nombre"
+                    bg-color="grey-1"
+                  />
+                </div>
+                <!-- Detalles adicionales -->
+                <div class="col-6">
                   <q-input v-model="manualConfig.grupo" label="Grupo" outlined dense placeholder="G-1" />
                 </div>
-
-                <!-- Detalles adicionales -->
-                <div class="col-4">
+                <div class="col-6">
                   <q-input v-model="manualConfig.semestre" label="Semestre" outlined dense placeholder="5to" />
                 </div>
-                <div class="col-4">
-                  <q-input v-model="manualConfig.hora" label="Hora" outlined dense placeholder="08:30" />
+                <!-- Hora -->
+                <div class="col-6">
+                  <q-select
+                    v-model="manualConfig.hora"
+                    :options="['6:45', '8:15', '9:45', '11:15', '12:45', '14:15', '15:45', '17:15', '18:45']"
+                    label="Seleccionar Hora"
+                    outlined dense
+                    use-input
+                    hide-selected
+                    fill-input
+                  >
+                    <template v-slot:prepend><q-icon name="schedule" size="xs" /></template>
+                  </q-select>
                 </div>
-                <div class="col-4">
-                  <q-select v-model="manualConfig.cantVariantes" :options="[1,2,3,4,5]" label="Variantes" outlined dense />
+                <div class="col-6">
+                  <q-input v-model="manualConfig.hora_texto" label="Hora (Final)" outlined dense placeholder="8:15" bg-color="grey-1" />
                 </div>
 
-                <div class="col-6">
+                <div class="col-4">
+                  <q-select v-model="manualConfig.cantVariantes" :options="[1,2,3,4,5]" label="Cant. Variantes" outlined dense />
+                </div>
+                <div class="col-4">
                   <q-select v-model="manualConfig.parcial" :options="parcialesOptions" label="Parcial" outlined dense />
                 </div>
-                <div class="col-6">
+                <div class="col-4">
                    <q-input v-model="manualConfig.fecha" label="Fecha" type="date" outlined dense stack-label />
                 </div>
 
@@ -1012,7 +1046,7 @@
             color="deep-purple-7"
             label="Generar Paquete Ahora"
             icon="auto_awesome"
-            :disable="!manualEsSuficiente || !manualConfig.materia"
+            :disable="!manualEsSuficiente || !manualConfig.materia_texto"
             @click="ejecutarGeneracionManual"
             no-caps
             class="q-px-lg shadow-3"
@@ -1111,6 +1145,10 @@ const shuffle = (array) => {
     ;[array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]
   }
   return array
+}
+
+const removeAccents = (str) => {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 }
 
 const normalizeTipo = (t) => {
@@ -1216,6 +1254,13 @@ onMounted(async () => {
     await authStore.fetchUser()
   }
   await fetchSedes()
+
+  // Pre-cargar carreras de la sede del usuario para el diálogo manual (Warm Cache)
+  const userSedeId = authStore.usuarioActual?.sede_id
+  if (userSedeId) {
+    fetchCarrerasParaManual(userSedeId)
+  }
+
   cargarDatos()
 })
 
@@ -1269,16 +1314,21 @@ const manualEsSuficiente = computed(
 )
 
 const manualConfig = ref({
-  materia: '',
-  docente: '',
-  grupo: '',
   sede: null,
-  carrera: null,
+  carrera_obj: null,
+  carrera_texto: '',
+  materia_obj: null,
+  materia_texto: '',
+  materia_codigo: 'MANUAL',
+  docente_obj: null,
+  docente_texto: '',
+  grupo: '1',
   parcial: '1er Parcial',
   fecha: new Date().toISOString().split('T')[0],
   formatoHoja: 'Oficio (8.5" x 13")',
   semestre: '',
   hora: '',
+  hora_texto: '',
   cantVariantes: 1,
   fontFamily: 'helvetica',
   fontSize: 11,
@@ -1286,34 +1336,79 @@ const manualConfig = ref({
   aleatorizarSecciones: true
 })
 const carrerasOptionsManual = ref([])
+const carrerasCache = new Map() // Caché para acelerar selección
 const asignaturasOptionsManual = ref([])
+const asignaturasOptionsManualFiltered = ref([])
 const docentesOptionsManual = ref([])
 
-watch(
-  () => manualConfig.value.sede,
-  (newSedeId) => {
-    manualConfig.value.carrera = null
-    if (newSedeId) {
-      fetchCarrerasParaManual(newSedeId)
-    } else {
-      carrerasOptionsManual.value = []
-    }
-  },
-)
+watch(() => manualConfig.value.sede, (newSede) => {
+  manualConfig.value.carrera_obj = null
+  manualConfig.value.carrera_texto = ''
+  if (newSede) {
+     fetchCarrerasParaManual(newSede.value || newSede)
+  } else {
+     carrerasOptionsManual.value = []
+  }
+})
 
-watch(() => manualConfig.value.carrera, (newCarreraId) => {
-  manualConfig.value.materia = null
-  if (newCarreraId) {
-     fetchAsignaturasManual(newCarreraId)
+watch(() => manualConfig.value.carrera_obj, (newCarrera) => {
+  manualConfig.value.materia_obj = null
+  manualConfig.value.materia_texto = ''
+  manualConfig.value.docente_obj = null
+  manualConfig.value.docente_texto = ''
+  if (newCarrera) {
+     manualConfig.value.carrera_texto = newCarrera.label.toUpperCase()
+     const cid = newCarrera.value || newCarrera
+     fetchAsignaturasManual(cid)
+     fetchDocentesManual('')
   } else {
      asignaturasOptionsManual.value = []
   }
 })
 
+watch(() => manualConfig.value.materia_obj, (newVal) => {
+  if (newVal && typeof newVal === 'object') {
+    manualConfig.value.materia_texto = newVal.nombre.toUpperCase()
+    manualConfig.value.materia_codigo = newVal.codigo
+    if (newVal.semestre) {
+      manualConfig.value.semestre = newVal.semestre
+    }
+    // Cargar docentes específicos de esta materia
+    fetchDocentesManual('')
+  }
+})
+
+watch(() => manualConfig.value.docente_obj, (newVal) => {
+  if (newVal && typeof newVal === 'object') {
+    manualConfig.value.docente_texto = newVal.label.toUpperCase()
+  }
+})
+
+watch(() => manualConfig.value.hora, (newVal) => {
+  if (newVal) {
+    manualConfig.value.hora_texto = newVal
+  }
+})
+
 const fetchCarrerasParaManual = async (sedeId) => {
+  if (carrerasCache.has(sedeId)) {
+    carrerasOptionsManual.value = carrerasCache.get(sedeId)
+    // Auto-seleccionar si solo hay una
+    if (carrerasOptionsManual.value.length === 1 && !manualConfig.value.carrera_obj) {
+      manualConfig.value.carrera_obj = carrerasOptionsManual.value[0]
+    }
+    return
+  }
   try {
     const response = await api.get(`/sedes/${sedeId}/carreras`)
-    carrerasOptionsManual.value = response.data.map((c) => ({ label: c.nombre, value: c.id }))
+    const data = response.data.map((c) => ({ label: c.nombre, value: c.id }))
+    carrerasCache.set(sedeId, data)
+    carrerasOptionsManual.value = data
+    
+    // Auto-seleccionar si solo hay una
+    if (data.length === 1 && !manualConfig.value.carrera_obj) {
+      manualConfig.value.carrera_obj = data[0]
+    }
   } catch (error) {
     console.error('Error carreras manual:', error)
   }
@@ -1321,18 +1416,85 @@ const fetchCarrerasParaManual = async (sedeId) => {
 
 const fetchAsignaturasManual = async (carreraId) => {
   try {
-    const response = await api.get(`/asignaturas`, { params: { carrera_id: carreraId } })
-    asignaturasOptionsManual.value = response.data.map(a => ({ label: a.nombre, value: a.id }))
+    const response = await api.get(`/asignaturas`, { 
+      params: { 
+        carrera_id: carreraId,
+        sede_id: manualConfig.value.sede?.value || manualConfig.value.sede
+      } 
+    })
+    const rawData = response.data || []
+    
+    // Unificar agresivamente por código y nombre (normalizado sin acentos)
+    const uniqueMap = new Map()
+    rawData.forEach(a => {
+      const cleanCodigo = (a.codigo || '').trim().toUpperCase()
+      const cleanNombre = removeAccents(a.nombre || '').trim().toUpperCase()
+      const key = `${cleanCodigo}-${cleanNombre}`
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, { 
+          label: `[${cleanCodigo}] ${a.nombre.trim().toUpperCase()}`, 
+          value: a.id,
+          nombre: a.nombre.trim().toUpperCase(),
+          codigo: cleanCodigo,
+          semestre: a.semestre
+        })
+      }
+    })
+
+    asignaturasOptionsManual.value = Array.from(uniqueMap.values())
+      .sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''))
+    
+    asignaturasOptionsManualFiltered.value = [...asignaturasOptionsManual.value]
   } catch (error) {
     console.error('Error asignaturas manual:', error)
   }
 }
 
+const filterAsignaturas = (val, update) => {
+  update(() => {
+    if (val === '') {
+      asignaturasOptionsManualFiltered.value = [...asignaturasOptionsManual.value]
+      return
+    }
+    const needle = val.toLowerCase()
+    asignaturasOptionsManualFiltered.value = asignaturasOptionsManual.value.filter(
+      v => v.label.toLowerCase().indexOf(needle) > -1
+    )
+  })
+}
+
 const fetchDocentesManual = async (q = '') => {
   try {
-    const response = await api.get('/docentes', { params: { q, per_page: 50 } })
-    const raw = Array.isArray(response.data) ? response.data : (response.data.data || [])
-    docentesOptionsManual.value = raw.map(d => ({ label: d.nombre, value: d.id }))
+    const params = { q, per_page: 50 }
+    const sid = manualConfig.value.sede?.value || manualConfig.value.sede
+    const cid = manualConfig.value.carrera_obj?.value || manualConfig.value.carrera_obj
+    const aid = manualConfig.value.materia_obj?.value || null
+
+    if (sid) params.sede_id = sid
+    if (cid) params.carrera_id = cid
+    if (aid) params.asignatura_id = aid
+
+    let response = await api.get('/docentes', { params })
+    let raw = Array.isArray(response.data) ? response.data : (response.data.data || [])
+    
+    // Fallback: si no hay docentes para la materia, traer todos los de la carrera
+    if (raw.length === 0 && aid) {
+      delete params.asignatura_id
+      const resp2 = await api.get('/docentes', { params })
+      raw = Array.isArray(resp2.data) ? resp2.data : (resp2.data.data || [])
+    }
+
+    // Unificar docentes por nombre completo para evitar duplicados
+    const uniqueMap = new Map()
+    raw.forEach(d => {
+      const name = (d.nombre_completo || d.nombre || '').trim().toUpperCase()
+      if (name && !uniqueMap.has(name)) {
+        uniqueMap.set(name, { label: d.nombre_completo || d.nombre.toUpperCase(), value: d.id })
+      }
+    })
+
+    docentesOptionsManual.value = Array.from(uniqueMap.values())
+      .sort((a, b) => a.label.localeCompare(b.label))
   } catch (error) {
     console.error('Error docentes manual:', error)
   }
@@ -1362,23 +1524,41 @@ const limpiarFiltros = () => {
 const abrirGeneracionManual = () => {
   manualFile.value = null
   manualPreguntas.value = []
+  
+  // Pre-selección inteligente basada en el perfil del usuario
+  const userSedeId = authStore.usuarioActual?.sede_id
+  const initialSede = userSedeId 
+    ? sedesOptions.value.find(s => Number(s.value) === Number(userSedeId)) 
+    : (sedesOptions.value.length > 0 ? sedesOptions.value[0] : null)
+
   manualConfig.value = {
-    materia: '',
-    docente: '',
-    grupo: '',
-    sede: null,
-    carrera: null,
+    sede: initialSede,
+    carrera_obj: null,
+    carrera_texto: '',
+    materia_obj: null,
+    materia_texto: '',
+    materia_codigo: 'MANUAL',
+    docente_obj: null,
+    docente_texto: '',
+    grupo: '1',
     parcial: '1er Parcial',
     fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
     formatoHoja: 'Oficio (8.5" x 13")',
     semestre: '',
     hora: '',
+    hora_texto: '',
     cantVariantes: 1,
     fontFamily: 'helvetica',
     fontSize: 11,
     lineSpacing: 1.2,
     aleatorizarSecciones: true
   }
+
+  // Cargar carreras inmediatamente si ya tenemos sede
+  if (initialSede) {
+    fetchCarrerasParaManual(initialSede.value)
+  }
+
   fetchDocentesManual()
   dialogManual.value.show = true
 }
@@ -1558,10 +1738,13 @@ const ejecutarGeneracionManual = async () => {
   $q.loading.show({ message: 'Generando variantes A y B...' })
 
   try {
-    const resolvedSede = sedesOptions.value.find(s => s.value === manualConfig.value.sede)?.label || manualConfig.value.sede || '-'
-    const resolvedCarrera = carrerasOptionsManual.value.find(c => c.value === manualConfig.value.carrera)?.label || manualConfig.value.carrera || '-'
-    const resolvedMateria = asignaturasOptionsManual.value.find(a => a.value === manualConfig.value.materia)?.label || manualConfig.value.materia || '-'
-    const resolvedDocente = docentesOptionsManual.value.find(d => d.value === manualConfig.value.docente)?.label || manualConfig.value.docente || '-'
+    const resolvedSede = manualConfig.value.sede?.label || manualConfig.value.sede || '-'
+    const resolvedCarrera = manualConfig.value.carrera_texto || '-'
+    const resolvedMateria = manualConfig.value.materia_texto || '-'
+    const resolvedCodigo = manualConfig.value.materia_codigo || 'MANUAL'
+    const resolvedDocente = manualConfig.value.docente_texto || '-'
+    const resolvedHora = manualConfig.value.hora_texto || '-'
+
     const fakeExamen = {
       materia: String(resolvedMateria || ''),
       docente: String(resolvedDocente || ''),
@@ -1571,9 +1754,9 @@ const ejecutarGeneracionManual = async () => {
       parcial: String(manualConfig.value.parcial || ''),
       fecha_examen: manualConfig.value.fecha,
       semestre: String(manualConfig.value.semestre || ''),
-      hora: String(manualConfig.value.hora || ''),
-      ...manualConfig.value, // Incluir fuentes/tamaño
-      codigo: 'MANUAL',
+      hora: String(resolvedHora || ''),
+      ...manualConfig.value, 
+      codigo: resolvedCodigo,
       variantes: ['A', 'B', 'C', 'D', 'E'].slice(0, manualConfig.value.cantVariantes),
     };
 
@@ -1642,18 +1825,41 @@ const ejecutarGeneracionManual = async () => {
       // 2. Patron PDF (Acumulativo)
       await generarPatronPDF(patronesPDF, letra, sorted, fakeExamen)
 
-      // Generar Patrón XLSX (Se mantiene por variante por ahora para Remark)
-      const { blob: xBlob, filename: xName } = generarPatronXLSX(fakeExamen, letra, sorted)
+      // Generar Patrón XLSX (Se mantiene por variante para Remark)
+      const { blob: xBlob } = generarPatronXLSX(fakeExamen, letra, sorted)
+      
+      const pMap = {
+        '1er Parcial': '1P',
+        '2do Parcial': '2P',
+        'Final': 'EF',
+        '2da Instancia': '2I'
+      }
+      const codP = pMap[manualConfig.value.parcial] || 'P'
+      const cleanHora = resolvedHora.replace(/:/g, '-')
+      const xName = `${resolvedCodigo},G-${manualConfig.value.grupo},V-${letra},${codP},(${manualConfig.value.fecha} ${cleanHora})_Remark.xlsx`.replace(/[/\\?%*:|"<>]/g, '-');
+      
       downloadFile(xBlob, xName)
     }
 
     // Descarga final de PDFs consolidados
-    const mName = String(manualConfig.value.materia || 'EXAMEN')
+    // Formato solicitado: codigo,G-1,V-AB,1P,(2026-03-22 8-15)
+    // Ya tenemos pMap, codP, cleanHora arriba pero el loop obscurece el scope si no tenemos cuidado
+    const pMapCons = {
+      '1er Parcial': '1P',
+      '2do Parcial': '2P',
+      'Final': 'EF',
+      '2da Instancia': '2I'
+    }
+    const codPCons = pMapCons[manualConfig.value.parcial] || 'P'
+    const varStrCons = `V-${variantesLetters.join('')}`
+    const cleanHoraCons = (manualConfig.value.hora_texto || '-').replace(/:/g, '-')
+    const fileBase = `${resolvedCodigo},G-${manualConfig.value.grupo},${varStrCons},${codPCons},(${manualConfig.value.fecha} ${cleanHoraCons})`.replace(/[/\\?%*:|"<>]/g, '-');
+
     const exBlob = examenesPDF.output('blob')
-    downloadFile(exBlob, `${mName}_Examenes_A_E.pdf`)
+    downloadFile(exBlob, `${fileBase}_Examenes.pdf`)
     
     const patBlob = patronesPDF.output('blob')
-    downloadFile(patBlob, `${mName}_Patrones_A_E.pdf`)
+    downloadFile(patBlob, `${fileBase}_Patrones.pdf`)
     $q.notify({
       type: 'positive',
       message: 'Paquete de variantes A y B generado exitosamente',

@@ -1102,9 +1102,12 @@ const semestresFiltrados = computed(() => {
         ? `Varios Docentes (${asig.docentes_data.length})`
         : asig.docente_nombre
 
+    let preguntas1pMostrar = asig.preguntas_1p_stats
+
     if (asig.docentes_data && asig.docentes_data.length === 1) {
       progresoMostrar = asig.docentes_data[0].progreso_documentacion
       indicadoresMostrar = asig.docentes_data[0].indicadores_documentacion
+      preguntas1pMostrar = asig.docentes_data[0].preguntas_1p_stats
     }
 
     grupos[sem].asignaturas.push({
@@ -1112,6 +1115,7 @@ const semestresFiltrados = computed(() => {
       row_key: asig.id, // Llave única para la tabla
       progreso_mostrar: progresoMostrar,
       indicadores_mostrar: indicadoresMostrar,
+      preguntas_1p_stats: preguntas1pMostrar,
       docente_nombre_mostrar: docenteNombreMostrar,
     })
   })
