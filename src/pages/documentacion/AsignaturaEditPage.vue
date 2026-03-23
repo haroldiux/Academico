@@ -3488,7 +3488,9 @@ watch(archivoImagenPregunta, (file) => {
 function abrirEditorPregunta(pregunta) {
   formPregunta.value = {
     ...pregunta,
-    opciones: Array.isArray(pregunta.opciones) ? [...pregunta.opciones] : ['', '', '', '', ''],
+    opciones: Array.isArray(pregunta.opciones)
+      ? pregunta.opciones.map((o) => (typeof o === 'object' && o !== null ? o.text : o))
+      : ['', '', '', '', ''],
   }
   archivoImagenPregunta.value = null
   previewImagenEdit.value = null
@@ -3501,7 +3503,13 @@ async function guardarEdicionPregunta() {
     const fd = new FormData()
     fd.append('enunciado', formPregunta.value.enunciado)
     fd.append('tipo', formPregunta.value.tipo)
-    fd.append('opciones', JSON.stringify(formPregunta.value.opciones))
+
+    // Reconstruir objetos de opciones {id: 'A', text: '...'}
+    const opcionesMapeadas = (formPregunta.value.opciones || []).map((txt, i) => ({
+      id: String.fromCharCode(65 + i),
+      text: txt,
+    }))
+    fd.append('opciones', JSON.stringify(opcionesMapeadas))
     fd.append(
       'respuesta_correcta',
       Array.isArray(formPregunta.value.respuesta_correcta)

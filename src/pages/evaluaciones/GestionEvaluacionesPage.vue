@@ -1180,6 +1180,8 @@ const optionsFuente = [
 ]
 const optionsTamanio = [8, 9, 10, 11, 12, 13, 14]
 const optionsEspaciado = [
+  { label: 'Muy Compacto (0.85)', value: 0.85 },
+  { label: 'Compacto (0.95)', value: 0.95 },
   { label: 'Simple', value: 1.0 },
   { label: 'Relajado (1.2)', value: 1.2 },
   { label: 'Doble (1.5)', value: 1.5 }
@@ -2764,8 +2766,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   // CONFIGURACIÓN DE IMPRESIÓN PERSONALIZADA
   const baseFont = config.fontFamily || 'helvetica'
   const baseSize = config.fontSize || 11
-  const spacingMult = config.lineSpacing || 1.2
-  const lineHeight = (baseSize * 0.5) * spacingMult // Factor base para interlineado
+  const spacingMult = config.lineSpacing || 1.1 // Ligeramente más compacto
+  const lineHeight = (baseSize * 0.42) * spacingMult // Factor corregido para escala mm
   const sectionFontSize = Math.max(9, baseSize - 1)
   const metaFontSize = Math.max(8, baseSize - 2)
 
@@ -2779,6 +2781,16 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     if (!f) return '-'
     const d = new Date(f)
     return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+
+  const cleanText = (t) => {
+    return String(t || '')
+      .replace(/<[^>]*>/g, '') // Eliminar HTML
+      .replace(/&nbsp;/g, ' ') // Convertir espacios HTML a normales
+      .replace(/&quot;/g, '"')
+      .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ') // Solo escapes, sin literales
+      .replace(/\s+/g, ' ') // Colapsar múltiples espacios
+      .trim()
   }
 
   // LOGO / TITULO TABLE
@@ -2904,15 +2916,15 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   // AGRUPAR POR TIPO PARA RENDERIZAR SECCIONES
   const descripciones = {
     SELECCION_UNICA:
-      'SECCIÓN: SELECCIÓN ÚNICA - Seleccione la respuesta correcta entre las opciones presentadas.',
+      'SELECCIÓN ÚNICA: Lea atentamente cada pregunta y elija la única respuesta que considere correcta entre las opciones presentadas.',
     SELECCION_MULTIPLE:
-      'SECCIÓN: SELECCIÓN MÚLTIPLE - Seleccione todas las respuestas correctas. Puede haber más de una.',
+      'SELECCIÓN MÚLTIPLE: Analice el enunciado y marque todas las opciones que den una respuesta válida. Tenga en cuenta que puede haber más de una respuesta correcta.',
     FALSO_VERDADERO:
-      'SECCIÓN: FALSO O VERDADERO - Marque si la afirmación es Verdadera (A) o Falsa (B)',
+      'FALSO O VERDADERO: Para cada afirmación, indique si el contenido es Verdadero marcando la opción (A) o Falso marcando la opción (B).',
     PROBLEMA:
-      'SECCIÓN: PROBLEMAS - Resuelva los siguientes planteamientos. Lea detenidamente cada enunciado y resuelva las preguntas asociadas:',
+      'PROBLEMAS Y CASOS: Lea detenidamente el caso planteado y resuelva cada una de las preguntas que se presentan a continuación.',
     EMPAREJAMIENTO:
-      'SECCIÓN: EMPAREJAMIENTO - Relacione los términos o conceptos con sus definiciones o descripciones correspondientes.',
+      'EMPAREJAMIENTO: Relacione cada término con su concepto o definición correcta, seleccionando la letra que corresponda en cada espacio.',
   }
 
   let ultimoTipo = null
@@ -2939,15 +2951,23 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         currentY = margin
       }
 
-      // Diseño minimalista para secciones: Línea de acento izquierda y sin fondo
-      doc.setDrawColor(70, 70, 70) // Gris oscuro para la línea
+      // Diseño Minimalista Moderno (Doble Línea)
+      doc.setDrawColor(40, 40, 40)
+      
+      // Línea superior gruesa
       doc.setLineWidth(0.8)
-      doc.line(margin, currentY, margin, currentY + rectH - 1)
+      doc.line(margin, currentY, margin + contentWidth, currentY)
       
       doc.setFontSize(sectionFontSize)
       doc.setFont(baseFont, 'bold')
-      doc.text(descLines, margin + 4, currentY + 4)
-      currentY += rectH + (tipoActual === 'PROBLEMA' ? 1 : 4) // Espacio mínimo para problemas
+      doc.setTextColor(0, 0, 0)
+      doc.text(descLines, margin, currentY + 5)
+      
+      // Línea inferior fina
+      doc.setLineWidth(0.2)
+      doc.line(margin, currentY + rectH, margin + contentWidth, currentY + rectH)
+      
+      currentY += rectH + (tipoActual === 'PROBLEMA' ? 8 : 10) // Mayor separación para evitar solapamiento
       ultimoTipo = tipoActual
     }
 
@@ -3039,9 +3059,9 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     }
     
     doc.setFont(baseFont, 'normal')
-    let cleanEnunciado = (p.enunciado || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').trim()
+    let cleanEnunciado = cleanText(p.enunciado)
     
-    // Eliminar prefijos redundantes si la cabecera ya los menciona
+    // Eliminar prefijos redundantes
     if (cleanEnunciado.toUpperCase().startsWith('EMPAREJAMIENTO:')) {
       cleanEnunciado = cleanEnunciado.substring(16).trim()
     }
@@ -3049,20 +3069,20 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       cleanEnunciado = cleanEnunciado.substring(9).trim()
     }
  
-    const enunciadoLines = doc.splitTextToSize(cleanEnunciado, contentWidth - 10)
+    const enunciadoLines = doc.splitTextToSize(cleanEnunciado, contentWidth - 12)
     doc.text(enunciadoLines, margin + 8, currentY)
     currentY += (enunciadoLines.length * lineHeight)
     
-    // Instrucción para Subproblemas (PR)
+    // Instrucción para Subpreguntas (PR)
     if (tipoActual === 'SUBPROBLEMA') {
        doc.setFontSize(metaFontSize)
        doc.setFont(baseFont, 'italic')
-       doc.text('(Seleccione un solo inciso)', margin + 8, currentY + 3)
-       currentY += 5
+       doc.text('(Seleccione un solo inciso)', margin + 8, currentY + 2.5)
+       currentY += 4
        doc.setFont(baseFont, 'normal')
     }
     
-    currentY += (esHeader ? 1 : 2)
+    currentY += (esHeader ? 0.5 : 2) // Casi nada de espacio extra si es el header del caso
 
     // Imagen (si existe)
     if (p.imagen) {
@@ -3109,15 +3129,17 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
 
     if (opciones.length > 0) {
       doc.setFontSize(baseSize - 1)
+      doc.setFont(baseFont, 'normal') // Asegurar fuente normal
       for (const opc of opciones) {
-        let textToShow = String(opc.text ?? '')
+        let textToShow = cleanText(opc.text)
         if (['FALSO_VERDADERO', 'FV'].includes(tipoActualNoNormalizado)) {
-          const lower = textToShow.toLowerCase().trim()
+          const lower = textToShow.toLowerCase()
           if (lower === 'true') textToShow = 'Verdadero'
           if (lower === 'false') textToShow = 'Falsa'
         }
         const opcText = `${opc.id || ''}) ${textToShow}`
-        const opcLines = doc.splitTextToSize(opcText, contentWidth - 15)
+        // Margen de seguridad mayor para opciones (22mm de reserva a la derecha)
+        const opcLines = doc.splitTextToSize(opcText, contentWidth - 22)
         if (currentY + (opcLines.length * lineHeight) > (doc.internal.pageSize.getHeight() - 20)) {
           doc.addPage(); currentY = margin; doc.setFont(baseFont)
         }
@@ -3125,7 +3147,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         currentY += (opcLines.length * lineHeight) + 1
       }
     }
-    currentY += esHeader ? 2 : 5
+    currentY += esHeader ? 0 : 5 // Si es header, la siguiente pregunta viene pegada
   }
 
   const cleanSede = String(examen.sede || '').replace(/\s/g, '')
