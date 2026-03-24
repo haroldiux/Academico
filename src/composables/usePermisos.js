@@ -268,6 +268,7 @@ export function usePermisos() {
           to: '/admin/administracion-evaluaciones',
         },
         { label: 'Rol Exámenes (Eval)', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
+        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
         { label: 'Documentación', icon: 'description', to: '/documentacion' },
         { label: 'Reportes', icon: 'assessment', to: '/admin/reportes' },
         { label: 'Estadísticas', icon: 'analytics', to: '/admin/estadisticas' },

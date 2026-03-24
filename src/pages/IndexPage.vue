@@ -33,7 +33,9 @@ const dashboards = {
     () => import('pages/dashboards/DirectorCarreraDashboard.vue'),
   ),
   DocenteDashboard: defineAsyncComponent(() => import('pages/dashboards/DocenteDashboard.vue')),
-  EvaluacionesDashboard: defineAsyncComponent(() => import('pages/dashboards/EvaluacionesDashboard.vue')),
+  EvaluacionesDashboard: defineAsyncComponent(
+    () => import('pages/dashboards/EvaluacionesDashboard.vue'),
+  ),
 }
 
 const currentDashboardComponent = computed(() => {

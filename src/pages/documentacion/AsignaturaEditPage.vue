@@ -1192,7 +1192,9 @@
               bordered
               class="q-mb-md border-primary rounded-borders bg-blue-grey-1"
             >
-              <q-card-section class="bg-primary text-white q-py-xs q-px-sm row items-center shadow-1">
+              <q-card-section
+                class="bg-primary text-white q-py-xs q-px-sm row items-center shadow-1"
+              >
                 <q-icon name="event" size="16px" class="q-mr-sm" />
                 <span class="text-weight-bold text-caption">Fechas de Exámenes Programadas</span>
               </q-card-section>
@@ -1222,15 +1224,28 @@
                     <q-separator />
                     <q-card-section class="q-pa-xs text-center full-width">
                       <div class="text-caption text-weight-bold text-grey-9">
-                        <q-icon name="calendar_today" size="12px" color="indigo-4" class="q-mr-xs" />
+                        <q-icon
+                          name="calendar_today"
+                          size="12px"
+                          color="indigo-4"
+                          class="q-mr-xs"
+                        />
                         {{ formatoFecha(examen.fecha) }}
                       </div>
                       <div style="font-size: 10px" class="text-grey-7">
                         <q-icon name="schedule" size="10px" color="grey-5" class="q-mr-xs" />
                         {{ examen.hora_inicio }} - {{ examen.hora_fin }}
                       </div>
-                      <div style="font-size: 10px" class="text-orange-9" v-if="examen.semana">
-                        Semana {{ examen.semana }}
+                      <div class="row justify-center q-gutter-x-sm q-mt-xs" style="font-size: 10px">
+                        <div class="text-orange-9" v-if="examen.semana">
+                          Semana {{ examen.semana }}
+                        </div>
+                        <div v-if="examen.grupo" class="text-teal-9 text-weight-bolder">
+                          <q-icon name="groups" size="10px" class="q-mr-xs" />Grp {{ examen.grupo }}
+                        </div>
+                        <div v-else class="text-grey-8 text-weight-bolder">
+                          <q-icon name="groups" size="10px" class="q-mr-xs" />General
+                        </div>
                       </div>
                     </q-card-section>
                   </q-card>
@@ -4192,7 +4207,9 @@ function previsualizarArchivoExcel(file) {
               return
             }
             if (!dificultadRaw) {
-              errores.push(`Fila ${lineNum}: tipo "${tipo}" requiere nivel de dificultad (1, 2 o 3).`)
+              errores.push(
+                `Fila ${lineNum}: tipo "${tipo}" requiere nivel de dificultad (1, 2 o 3).`,
+              )
               return
             }
           } else if (['em', 'pr'].includes(tipo)) {

@@ -48,7 +48,19 @@
     <q-card class="q-mb-lg">
       <q-card-section>
         <div class="row q-col-gutter-md items-end">
-          <div class="col-12 col-md-3">
+          <div class="col-12 col-md-2" v-if="esRolGlobal">
+            <q-select
+              v-model="filtros.sede_id"
+              :options="sedesOptions"
+              outlined
+              dense
+              label="Sede"
+              emit-value
+              map-options
+              @update:model-value="onSedeChange"
+            />
+          </div>
+          <div class="col-12" :class="esRolGlobal ? 'col-md-2' : 'col-md-3'">
             <q-select
               v-model="filtros.gestion"
               :options="gestionesOptions"
@@ -59,7 +71,7 @@
               map-options
             />
           </div>
-          <div class="col-12 col-md-4">
+          <div class="col-12" :class="esRolGlobal ? 'col-md-3' : 'col-md-4'">
             <q-select
               v-model="filtros.carrera_id"
               :options="carrerasOptions"
@@ -490,11 +502,13 @@ import { useQuasar } from 'quasar'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useCarrerasStore } from 'src/stores/carreras'
+import { useSedesStore } from 'src/stores/sedes'
 import rolExamenesService from 'src/services/rolExamenesService'
 
 const $q = useQuasar()
 const store = useRolExamenesStore()
 const carrerasStore = useCarrerasStore()
+const sedesStore = useSedesStore()
 
 // State
 const showUploadDialog = ref(false)
@@ -506,6 +520,7 @@ const filtroTipo = ref(null)
 
 const filtros = ref({
   gestion: '2026-I',
+  sede_id: null,
   carrera_id: null,
 })
 
@@ -529,7 +544,38 @@ const gestionesOptions = [
 
 const authStore = useAuthStore()
 
+const esRolGlobal = computed(() => {
+  return [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.VICERRECTOR_NACIONAL, ROLES.EVALUACIONES, ROLES.RESPONSABLE_EVALUACIONES].includes(authStore.rol)
+})
+
+const sedesOptions = computed(() => {
+  return sedesStore.sedesActivas.map((s) => ({
+    label: s.nombre,
+    value: s.id,
+  }))
+})
+
+function onSedeChange() {
+  filtros.value.carrera_id = null
+  store.examenes = []
+}
+
+const targetSedeId = computed(() => {
+  return filtros.value.sede_id || authStore.sedeId
+})
+
 const carrerasOptions = computed(() => {
+  // Para roles globales
+  if (esRolGlobal.value) {
+    if (filtros.value.sede_id) {
+      return carrerasStore.getCarrerasBySede(filtros.value.sede_id).map((c) => ({
+        label: c.nombre,
+        value: c.id,
+      }))
+    }
+    return []
+  }
+
   // Para Vicerrector Sede
   if (authStore.rol === ROLES.VICERRECTOR_SEDE) {
     return carrerasStore.getCarrerasBySede(authStore.sedeId).map((c) => ({
@@ -689,7 +735,7 @@ async function subirExcel() {
       selectedFile.value,
       filtros.value.gestion,
       filtros.value.carrera_id,
-      authStore.sedeId,
+      targetSedeId.value,
     )
 
     // Show warnings/errors if any
@@ -822,7 +868,7 @@ function eliminarTodo() {
       const res = await store.deleteAll(
         filtros.value.gestion,
         filtros.value.carrera_id,
-        authStore.sedeId,
+        targetSedeId.value,
       )
       $q.notify({
         type: 'positive',
@@ -895,6 +941,12 @@ async function generarReporte() {
 }
 
 onMounted(async () => {
+  // Asegurar que las sedes y carreras estén precargadas para roles globales
+  if (esRolGlobal.value) {
+    if (sedesStore.sedes.length === 0) await sedesStore.fetchSedes()
+    if (carrerasStore.carreras.length === 0) await carrerasStore.fetchCarreras()
+  }
+
   // Auto-seleccionar si hay carreras disponibles y ninguna seleccionada
   if (!filtros.value.carrera_id && carrerasOptions.value.length > 0) {
     filtros.value.carrera_id = carrerasOptions.value[0].value
@@ -903,7 +955,7 @@ onMounted(async () => {
   // Solo cargar si hay carrera seleccionada o si es un rol global
   if (
     filtros.value.carrera_id ||
-    [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.VICERRECTOR_NACIONAL].includes(authStore.rol)
+    esRolGlobal.value
   ) {
     await cargarExamenes()
   }

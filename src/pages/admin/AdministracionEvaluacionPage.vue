@@ -166,7 +166,14 @@
           >
             <template v-slot:body-cell-campus="props">
               <q-td :props="props">
-                <q-chip color="primary" text-color="white" size="sm" dense icon="location_city" class="text-weight-bold">
+                <q-chip
+                  color="primary"
+                  text-color="white"
+                  size="sm"
+                  dense
+                  icon="location_city"
+                  class="text-weight-bold"
+                >
                   {{ props.row.campus }}
                 </q-chip>
               </q-td>
@@ -192,7 +199,14 @@
                       size="xs"
                       color="amber-10"
                       class="q-ml-xs hover-bg-amber-1"
-                      @click="abrirDialogCarreraCampus({ campus_id: props.row.id, id: c.id, carrera: c.nombre, campus: props.row.campus })"
+                      @click="
+                        abrirDialogCarreraCampus({
+                          campus_id: props.row.id,
+                          id: c.id,
+                          carrera: c.nombre,
+                          campus: props.row.campus,
+                        })
+                      "
                     >
                       <q-tooltip>Editar</q-tooltip>
                     </q-btn>
@@ -203,7 +217,14 @@
                       icon="close"
                       size="xs"
                       color="negative"
-                      @click="eliminarCarreraCampus({ campus_id: props.row.id, id: c.id, carrera: c.nombre, campus: props.row.campus })"
+                      @click="
+                        eliminarCarreraCampus({
+                          campus_id: props.row.id,
+                          id: c.id,
+                          carrera: c.nombre,
+                          campus: props.row.campus,
+                        })
+                      "
                     >
                       <q-tooltip>Quitar</q-tooltip>
                     </q-btn>
@@ -737,7 +758,7 @@
               dense
               :options="[
                 { label: 'Evaluador (Estándar)', value: 7 },
-                { label: 'Responsable (Nacional)', value: 9 }
+                { label: 'Responsable (Nacional)', value: 9 },
               ]"
             />
           </div>
@@ -842,10 +863,10 @@ const showDialogUsuario = ref(false)
 // Forms
 const campusForm = ref({ id: null, nombre: '', sede_id: null, direccion: '', activo: true })
 const carreraCampusForm = ref({ campus_id: null, carrera_id: null, original: null })
-const usuarioForm = ref({ 
-  id: null, 
-  usuario_id: null, 
-  campus_id: null, 
+const usuarioForm = ref({
+  id: null,
+  usuario_id: null,
+  campus_id: null,
   crear_nuevo: false,
   rol_id: 7,
   nombre: '',
@@ -928,17 +949,19 @@ const campusFiltrados = computed(() => {
 
 const carrerasCampusFiltradas = computed(() => {
   let listado = []
-  
+
   // Procesar todos los campus o el filtrado
-  const campusAProcesar = filtroCampusCarreras.value 
-    ? campus.value.filter(c => c.id === filtroCampusCarreras.value) 
+  const campusAProcesar = filtroCampusCarreras.value
+    ? campus.value.filter((c) => c.id === filtroCampusCarreras.value)
     : campus.value
 
-  listado = campusAProcesar.map(camp => ({
-    id: camp.id,
-    campus: camp.nombre,
-    carreras: camp.lista_carreras || []
-  })).filter(c => c.carreras.length > 0)
+  listado = campusAProcesar
+    .map((camp) => ({
+      id: camp.id,
+      campus: camp.nombre,
+      carreras: camp.lista_carreras || [],
+    }))
+    .filter((c) => c.carreras.length > 0)
 
   // Ordenar alfabéticamente por campus
   return listado.sort((a, b) => a.campus.localeCompare(b.campus))
@@ -1031,10 +1054,10 @@ async function toggleCampus(campus_) {
 
 function abrirDialogCarreraCampus(row = null) {
   if (row) {
-    carreraCampusForm.value = { 
-      campus_id: row.campus_id, 
+    carreraCampusForm.value = {
+      campus_id: row.campus_id,
       carrera_id: row.id, // En la tabla, row.id es carrera_id según el computed
-      original: { campus_id: row.campus_id, carrera_id: row.id } 
+      original: { campus_id: row.campus_id, carrera_id: row.id },
     }
   } else {
     carreraCampusForm.value = { campus_id: null, carrera_id: null, original: null }
@@ -1053,8 +1076,11 @@ async function guardarCarreraCampus() {
     if (carreraCampusForm.value.original) {
       const { campus_id, carrera_id } = carreraCampusForm.value.original
       // Solo si cambió algo
-      if (campus_id !== carreraCampusForm.value.campus_id || carrera_id !== carreraCampusForm.value.carrera_id) {
-         await api.delete(`/campus/${campus_id}/carreras/${carrera_id}`)
+      if (
+        campus_id !== carreraCampusForm.value.campus_id ||
+        carrera_id !== carreraCampusForm.value.carrera_id
+      ) {
+        await api.delete(`/campus/${campus_id}/carreras/${carrera_id}`)
       } else {
         // No cambió nada, cerrar
         showDialogCarreraCampus.value = false
@@ -1064,9 +1090,14 @@ async function guardarCarreraCampus() {
 
     const payload = { carreras: [Number(carreraCampusForm.value.carrera_id)] }
     await api.post(`/campus/${carreraCampusForm.value.campus_id}/carreras`, payload)
-    $q.notify({ type: 'positive', message: carreraCampusForm.value.original ? 'Asignación actualizada' : 'Carrera asignada correctamente' })
+    $q.notify({
+      type: 'positive',
+      message: carreraCampusForm.value.original
+        ? 'Asignación actualizada'
+        : 'Carrera asignada correctamente',
+    })
     showDialogCarreraCampus.value = false
-    
+
     // Recargar la data general del campus para refrescar la lista
     cargarCampus()
   } catch (error) {
@@ -1095,25 +1126,25 @@ function eliminarCarreraCampus(row) {
 
 function abrirDialogUsuario(usuario = null) {
   if (usuario) {
-    usuarioForm.value = { 
-      ...usuario, 
-      usuario_id: usuario.id, 
-      campus_id: usuario.campus_id, 
+    usuarioForm.value = {
+      ...usuario,
+      usuario_id: usuario.id,
+      campus_id: usuario.campus_id,
       crear_nuevo: false,
-      rol_id: usuario.rol_id || 7 // Por defecto para edición si no viene el rol
+      rol_id: usuario.rol_id || 7, // Por defecto para edición si no viene el rol
     }
   } else {
-    usuarioForm.value = { 
-      id: null, 
-      usuario_id: null, 
-      campus_id: null, 
+    usuarioForm.value = {
+      id: null,
+      usuario_id: null,
+      campus_id: null,
       crear_nuevo: true, // Por defecto true para facilitar el flujo
       rol_id: 7,
-      nombre: '', 
-      apellido: '', 
-      ci: '', 
-      telefono: '', 
-      email: '' 
+      nombre: '',
+      apellido: '',
+      ci: '',
+      telefono: '',
+      email: '',
     }
   }
   showDialogUsuario.value = true
@@ -1143,7 +1174,7 @@ async function cargarUsuariosDisponibles() {
 
 async function guardarUsuario() {
   // Si es responsable nacional, no necesita campus_id
-  if(usuarioForm.value.rol_id !== 9 && !usuarioForm.value.campus_id) {
+  if (usuarioForm.value.rol_id !== 9 && !usuarioForm.value.campus_id) {
     $q.notify({ type: 'warning', message: 'Debe seleccionar un campus asignado' })
     return
   }
@@ -1156,9 +1187,9 @@ async function guardarUsuario() {
   try {
     const payload = { ...usuarioForm.value }
     // Si es responsable nacional, usamos un campus_id ficticio en la URL (será ignorado por el backend)
-    const campusIdUrl = usuarioForm.value.rol_id === 9 ? 1 : usuarioForm.value.campus_id;
+    const campusIdUrl = usuarioForm.value.rol_id === 9 ? 1 : usuarioForm.value.campus_id
     await api.post(`/campus/${campusIdUrl}/evaluadores`, payload)
-    
+
     $q.notify({ type: 'positive', message: 'Evaluador asignado correctamente' })
     showDialogUsuario.value = false
 

@@ -161,6 +161,8 @@ const routes = [
                 'DIRECCION_ACADEMICA',
                 'VICERRECTOR_SEDE',
                 'VICERRECTOR_NACIONAL',
+                'ADMIN',
+                'SUPER_ADMIN',
               ],
             },
           },
