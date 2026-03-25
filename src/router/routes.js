@@ -130,6 +130,15 @@ const routes = [
             component: () => import('pages/vicerrector/ReportesNacionalesPage.vue'),
             meta: { title: 'Reportes Nacionales', rol: 'VICERRECTOR_NACIONAL' },
           },
+          {
+            path: 'rol-examenes-nacional',
+            name: 'vicerrector-rol-examenes-nacional',
+            component: () => import('pages/vicerrector/RolExamenesNacionalPage.vue'),
+            meta: {
+              title: 'Rol de Exámenes por Carrera',
+              rol: ['VICERRECTOR_NACIONAL', 'DIRECCION_ACADEMICA'],
+            },
+          },
         ],
       },
       // Director de Carrera Routes
@@ -341,7 +350,10 @@ const routes = [
             path: 'evaluaciones',
             name: 'evaluaciones',
             component: () => import('pages/evaluaciones/GestionEvaluacionesPage.vue'),
-            meta: { title: 'Gestión de Evaluaciones' },
+            meta: { 
+              title: 'Gestión de Evaluaciones',
+              rol: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL', 'DIRECCION_ACADEMICA', 'EVALUACIONES']
+            },
           },
           {
             path: 'administracion-evaluaciones',
