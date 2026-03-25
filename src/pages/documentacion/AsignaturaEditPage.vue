@@ -46,7 +46,14 @@
         />
 
         <!-- Herramientas Dropdown -->
-        <q-btn-dropdown outline color="indigo" icon="settings" label="Gestión" no-caps disable>
+        <q-btn-dropdown
+          outline
+          color="indigo"
+          icon="settings"
+          label="Gestión"
+          no-caps
+          :disable="!['SUPER_ADMIN', 'DIRECTOR_CARRERA'].includes(authStore.rol)"
+        >
           <q-list>
             <q-item
               clickable
