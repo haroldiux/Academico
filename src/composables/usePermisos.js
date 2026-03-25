@@ -195,7 +195,7 @@ export function usePermisos() {
     }
 
     if (esDireccionAcademica.value || esVicerrectorSede.value) {
-      return [
+      const items = [
         ...itemsBase,
         { label: 'Carreras', icon: 'school', to: '/carreras' },
         { label: 'Asignaturas', icon: 'menu_book', to: '/director/asignaturas' },
@@ -206,6 +206,12 @@ export function usePermisos() {
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
       ]
+      // Solo Dirección Académica ve el panel de estado por carrera
+      if (esDireccionAcademica.value) {
+        items.push({ label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' })
+        items.push({ label: 'Estado Rol por Carrera', icon: 'fact_check', to: '/vicerrector/rol-examenes-nacional' })
+      }
+      return items
     }
 
     if (esEvaluaciones.value) {
@@ -226,16 +232,12 @@ export function usePermisos() {
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
-        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'Rol Exámenes por Carrera', icon: 'fact_check', to: '/vicerrector/rol-examenes-nacional' },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
-        },
-        {
-          label: 'Gestión de Evaluaciones',
-          icon: 'assignment',
-          to: '/admin/evaluaciones',
         },
         { label: 'Reportes Nacionales', icon: 'analytics', to: '/vicerrector/reportes' },
       ]

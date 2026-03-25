@@ -116,7 +116,8 @@ export const useUsuariosStore = defineStore('usuarios', () => {
       }
 
       const response = await userService.createUsuario(payload)
-      usuarios.value.push(response.data)
+      // Refetch completo para que el backend cargue las relaciones y el parseo se aplique
+      await fetchUsuarios()
       return response.data.id
     } finally {
       loading.value = false

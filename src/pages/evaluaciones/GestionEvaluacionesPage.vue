@@ -257,7 +257,7 @@
 
         <!-- Acciones -->
         <template v-slot:body-cell-acciones="props">
-          <q-td :props="props" align="center">
+          <q-td v-if="!esSoloLectura" :props="props" align="center">
             <div class="acciones-row justify-center no-wrap">
               <q-btn flat round dense color="primary" icon="visibility" size="sm" @click="verDetalles(props.row)">
                 <q-tooltip>Ver detalles</q-tooltip>
@@ -292,6 +292,11 @@
                 <q-btn flat dense icon="check_circle" color="green-8" label="Subido" disable no-caps />
               </template>
             </div>
+          </q-td>
+          <q-td v-else :props="props" align="center">
+            <q-chip color="blue-1" text-color="blue-8" size="sm" icon="visibility">
+              Solo lectura
+            </q-chip>
           </q-td>
         </template>
       </q-table>
@@ -624,16 +629,25 @@ watch([() => filtros.value.sede, () => filtros.value.carrera, () => filtros.valu
 
 const estadosOptions = ESTADOS_FLOW.map(e => ({ label: e.label, value: e.key }))
 
-const columns = [
-  { name: 'materia', label: 'MATERIA / GRUPO', field: 'materia', align: 'left', sortable: true },
-  { name: 'docente', label: 'DOCENTE', field: 'docente', align: 'left', sortable: true },
-  { name: 'parcial', label: 'PARCIAL', field: 'parcial', align: 'center' },
-  { name: 'fecha', label: 'FECHA / HORA', field: row => row.fecha_examen + ' ' + row.hora, align: 'left', sortable: true },
-  { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
-  { name: 'estado', label: 'ESTADO', align: 'center' },
-  { name: 'documentos', label: 'DOCUMENTOS', align: 'center' },
-  { name: 'acciones', label: 'ACCIONES', align: 'center' }
-]
+const esSoloLectura = computed(() =>
+  authStore.rol === ROLES.VICERRECTOR_NACIONAL || authStore.rol === ROLES.DIRECCION_ACADEMICA
+)
+
+const columns = computed(() => {
+  const base = [
+    { name: 'materia', label: 'MATERIA / GRUPO', field: 'materia', align: 'left', sortable: true },
+    { name: 'docente', label: 'DOCENTE', field: 'docente', align: 'left', sortable: true },
+    { name: 'parcial', label: 'PARCIAL', field: 'parcial', align: 'center' },
+    { name: 'fecha', label: 'FECHA / HORA', field: row => row.fecha_examen + ' ' + row.hora, align: 'left', sortable: true },
+    { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
+    { name: 'estado', label: 'ESTADO', align: 'center' },
+    { name: 'documentos', label: 'DOCUMENTOS', align: 'center' },
+  ]
+  if (!esSoloLectura.value) {
+    base.push({ name: 'acciones', label: 'ACCIONES', align: 'center' })
+  }
+  return base
+})
 
 const statsDesglose = computed(() => {
   return ESTADOS_FLOW.map(st => {
