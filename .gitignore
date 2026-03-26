@@ -28,5 +28,5 @@ yarn-error.log*
 *.njsproj
 *.sln
 
-# Ignorar carpeta de construcción (producción)
-dist
+# Carpeta de construcción (producción) subida para despliegue en cPanel
+# dist
