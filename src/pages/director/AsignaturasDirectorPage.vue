@@ -27,8 +27,23 @@
       </div>
     </div>
 
+    <!-- Banner: director sin carrera asignada -->
+    <q-banner
+      v-if="sinCarreraAsignada"
+      class="bg-warning text-white q-mb-lg"
+      rounded
+      inline-actions
+    >
+      <template #avatar>
+        <q-icon name="warning" color="white" />
+      </template>
+      <strong>Tu perfil de director no tiene una carrera asignada.</strong>
+      Contacta al administrador del sistema para que asigne tu carrera en la gestión de usuarios.
+      No podrás ver asignaturas hasta que se configure correctamente.
+    </q-banner>
+
     <!-- Filters -->
-    <div class="row q-col-gutter-md q-mb-lg">
+    <div class="row q-col-gutter-md q-mb-lg" v-if="!sinCarreraAsignada">
       <div
         class="col-12 col-md-3"
         v-if="['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)"
@@ -111,7 +126,7 @@
     </div>
 
     <!-- Stats -->
-    <div class="row q-col-gutter-md q-mb-lg">
+    <div class="row q-col-gutter-md q-mb-lg" v-if="!sinCarreraAsignada">
       <div class="col-12 col-md-4">
         <q-card flat bordered class="metric-card">
           <q-card-section>
@@ -154,7 +169,7 @@
     </div>
 
     <!-- Semesters List -->
-    <div class="q-gutter-md">
+    <div class="q-gutter-md" v-if="!sinCarreraAsignada">
       <div v-for="semestre in semestresFiltrados" :key="semestre.id">
         <q-expansion-item
           header-class="bg-white text-primary text-weight-bold shadow-1"
@@ -925,6 +940,15 @@ const carrerasOptions = computed(() => {
   return []
 })
 
+// Detectar si el director no tiene carrera asignada
+// Solo aplica para rol DIRECTOR_CARRERA, no para admin/vicerrector
+const sinCarreraAsignada = computed(() => {
+  const rolesConAccesoTotal = ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_SEDE', 'DIRECCION_ACADEMICA']
+  if (rolesConAccesoTotal.includes(authStore.rol)) return false
+  if (authStore.rol !== 'DIRECTOR_CARRERA') return false
+  return carrerasOptions.value.length === 0
+})
+
 // Cargar datos
 async function cargarAsignaturas() {
   if (!filtros.value.carreraId) return
@@ -967,6 +991,9 @@ onMounted(async () => {
   if (carrerasOptions.value.length > 0) {
     filtros.value.carreraId = carrerasOptions.value[0].value
     cargarAsignaturas()
+  } else if (sinCarreraAsignada.value) {
+    // Limpiar cualquier dato previo en el store para no mostrar asignaturas de otro usuario
+    asignaturasStore.asignaturas = []
   }
 })
 

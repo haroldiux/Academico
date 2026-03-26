@@ -724,6 +724,34 @@
             icon="library_add"
             no-caps
           />
+          <q-tab
+            name="grupos_inactivados"
+            v-if="diffData.diff?.grupos_inactivados?.length"
+            :label="`Inactivados (${diffData.diff.grupos_inactivados.length})`"
+            icon="pause_circle"
+            no-caps
+          />
+          <q-tab
+            name="duplicados_fusionados"
+            v-if="diffData.diff?.duplicados_fusionados?.length"
+            :label="`Fusionados (${diffData.diff.duplicados_fusionados.length})`"
+            icon="merge"
+            no-caps
+          />
+          <q-tab
+            name="asignaturas_desvinculadas"
+            v-if="diffData.diff?.asignaturas_desvinculadas?.length"
+            :label="`Desvinculadas (${diffData.diff.asignaturas_desvinculadas.length})`"
+            icon="link_off"
+            no-caps
+          />
+          <q-tab
+            name="conflictos_locales"
+            v-if="diffData.diff?.conflictos_locales?.length"
+            :label="`Conflictos (${diffData.diff.conflictos_locales.length})`"
+            icon="warning"
+            no-caps
+          />
         </q-tabs>
 
         <q-tab-panels v-model="tabDiff" animated>
@@ -870,6 +898,112 @@
                 <q-item-section>{{ a }}</q-item-section>
               </q-item>
             </q-list>
+          </q-tab-panel>
+
+          <!-- Grupos inactivados -->
+          <q-tab-panel name="grupos_inactivados" class="q-pa-none">
+            <q-banner class="bg-grey-2 q-mb-sm" dense>
+              <template #avatar><q-icon name="info" color="grey-7" /></template>
+              Estos grupos ya no están en la API. Se marcaron como INACTIVOS y no aparecerán en el sistema.
+            </q-banner>
+            <q-table
+              :rows="diffData.diff?.grupos_inactivados ?? []"
+              :columns="colsGruposInactivados"
+              row-key="id"
+              dense flat
+              :rows-per-page-options="[0]"
+              hide-pagination
+            />
+          </q-tab-panel>
+
+          <!-- Duplicados fusionados -->
+          <q-tab-panel name="duplicados_fusionados" class="q-pa-none">
+            <q-banner class="bg-purple-1 q-mb-sm" dense>
+              <template #avatar><q-icon name="merge" color="purple" /></template>
+              Se detectaron asignaturas duplicadas. El banco de preguntas fue migrado al registro correcto.
+            </q-banner>
+            <q-table
+              :rows="diffData.diff?.duplicados_fusionados ?? []"
+              :columns="colsDuplicadosFusionados"
+              row-key="correcta_id"
+              dense flat
+              :rows-per-page-options="[0]"
+              hide-pagination
+            >
+              <template #body-cell-preguntas_migradas="props">
+                <q-td :props="props">
+                  <q-chip dense size="sm" color="purple-1" text-color="purple-9" icon="quiz">
+                    {{ props.value }} preguntas
+                  </q-chip>
+                </q-td>
+              </template>
+            </q-table>
+          </q-tab-panel>
+
+          <!-- Asignaturas desvinculadas -->
+          <q-tab-panel name="asignaturas_desvinculadas" class="q-pa-none">
+            <q-banner class="bg-brown-1 q-mb-sm" dense>
+              <template #avatar><q-icon name="link_off" color="brown" /></template>
+              Estas asignaturas no tienen grupos activos en esta carrera/sede. Se desvincularon del plan pero su contenido (banco de preguntas, documentación) se conserva.
+            </q-banner>
+            <q-list bordered separator>
+              <q-item v-for="a in diffData.diff?.asignaturas_desvinculadas ?? []" :key="a.id" dense>
+                <q-item-section avatar>
+                  <q-icon name="link_off" color="brown" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ a.nombre }}</q-item-label>
+                  <q-item-label caption>{{ a.codigo }} · Plan {{ a.plan ?? 'N' }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-tab-panel>
+
+          <!-- Conflictos locales -->
+          <q-tab-panel name="conflictos_locales" class="q-pa-none">
+            <q-banner class="bg-deep-orange-1 q-mb-sm" dense>
+              <template #avatar><q-icon name="warning" color="deep-orange" /></template>
+              Estos grupos fueron modificados localmente pero la API tiene datos diferentes. Decide qué versión conservar.
+            </q-banner>
+            <q-table
+              :rows="diffData.diff?.conflictos_locales ?? []"
+              :columns="colsConflictos"
+              row-key="grupo_id"
+              dense flat
+              :rows-per-page-options="[0]"
+              hide-pagination
+            >
+              <template #body-cell-valor_local="props">
+                <q-td :props="props">
+                  <q-chip dense size="sm" color="blue-1" text-color="blue-9" icon="edit">
+                    {{ props.value }}
+                  </q-chip>
+                </q-td>
+              </template>
+              <template #body-cell-valor_api="props">
+                <q-td :props="props">
+                  <q-chip dense size="sm" color="green-1" text-color="green-9" icon="cloud">
+                    {{ props.value }}
+                  </q-chip>
+                </q-td>
+              </template>
+              <template #body-cell-acciones="props">
+                <q-td :props="props">
+                  <div class="row q-gutter-xs no-wrap">
+                    <q-btn
+                      dense size="xs" unelevated
+                      color="green" label="Aceptar API"
+                      @click="resolverConflicto(props.row, 'aceptar_api')"
+                    />
+                    <q-btn
+                      dense size="xs" unelevated
+                      color="blue-grey" label="Mantener local"
+                      @click="resolverConflicto(props.row, 'mantener_local')"
+                    />
+                  </div>
+                </q-td>
+              </template>
+            </q-table>
           </q-tab-panel>
         </q-tab-panels>
       </q-card-section>
@@ -1219,6 +1353,34 @@ const resumenChips = computed(() => {
       color: 'indigo',
       icon: 'library_add',
     }
+  if (r.grupos_inactivados)
+    chips.grupos_inactivados = {
+      label: 'Grupos inactivados',
+      valor: r.grupos_inactivados,
+      color: 'grey',
+      icon: 'pause_circle',
+    }
+  if (r.duplicados_fusionados)
+    chips.duplicados_fusionados = {
+      label: 'Duplicados fusionados',
+      valor: r.duplicados_fusionados,
+      color: 'purple',
+      icon: 'merge',
+    }
+  if (r.asignaturas_desvinculadas)
+    chips.asignaturas_desvinculadas = {
+      label: 'Asignaturas desvinculadas',
+      valor: r.asignaturas_desvinculadas,
+      color: 'brown',
+      icon: 'link_off',
+    }
+  if (r.conflictos_locales)
+    chips.conflictos_locales = {
+      label: 'Conflictos locales',
+      valor: r.conflictos_locales,
+      color: 'deep-orange',
+      icon: 'warning',
+    }
   return chips
 })
 
@@ -1246,6 +1408,24 @@ const colsHorariosEliminados = [
   { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
   { name: 'horario', label: 'Horario', field: 'horario', align: 'left' },
 ]
+const colsGruposInactivados = [
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'codigo', label: 'Código', field: 'codigo', align: 'center' },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
+]
+const colsDuplicadosFusionados = [
+  { name: 'correcta_nombre', label: 'Asignatura correcta', field: 'correcta_nombre', align: 'left' },
+  { name: 'duplicada_nombre', label: 'Duplicado eliminado', field: 'duplicada_nombre', align: 'left' },
+  { name: 'preguntas_migradas', label: 'Preguntas migradas', field: row => row.preguntas?.migradas ?? 0, align: 'center' },
+]
+const colsConflictos = [
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
+  { name: 'campo', label: 'Campo', field: 'campo', align: 'center' },
+  { name: 'valor_local', label: 'Valor local', field: 'valor_local', align: 'left' },
+  { name: 'valor_api', label: 'Valor API', field: 'valor_api', align: 'left' },
+  { name: 'acciones', label: 'Acción', field: 'acciones', align: 'center' },
+]
 
 async function verDiff(logId) {
   showDiff.value = true
@@ -1257,7 +1437,10 @@ async function verDiff(logId) {
     diffData.value = res.data
     // Auto-seleccionar primer tab con datos
     const d = res.data.diff
-    if (d?.grupos_nuevos?.length) tabDiff.value = 'grupos_nuevos'
+    if (d?.conflictos_locales?.length) tabDiff.value = 'conflictos_locales'
+    else if (d?.grupos_inactivados?.length) tabDiff.value = 'grupos_inactivados'
+    else if (d?.duplicados_fusionados?.length) tabDiff.value = 'duplicados_fusionados'
+    else if (d?.grupos_nuevos?.length) tabDiff.value = 'grupos_nuevos'
     else if (d?.grupos_docente_cambio?.length) tabDiff.value = 'docente_cambio'
     else if (d?.grupos_horario_cambio?.length) tabDiff.value = 'horario_cambio'
     else if (d?.horarios_eliminados?.length) tabDiff.value = 'horarios_eliminados'
@@ -1269,6 +1452,28 @@ async function verDiff(logId) {
     showDiff.value = false
   } finally {
     loadingDiff.value = false
+  }
+}
+
+async function resolverConflicto(conflicto, accion) {
+  try {
+    await api.post('/sync/resolver-conflictos', {
+      grupo_id: conflicto.grupo_id,
+      accion,
+      docente_ci_api: accion === 'aceptar_api' ? conflicto.docente_ci_api : undefined,
+    })
+    // Quitar el conflicto de la lista local
+    if (diffData.value?.diff?.conflictos_locales) {
+      diffData.value.diff.conflictos_locales = diffData.value.diff.conflictos_locales.filter(
+        c => c.grupo_id !== conflicto.grupo_id
+      )
+    }
+    $q.notify({
+      type: 'positive',
+      message: accion === 'aceptar_api' ? 'Actualizado con datos de la API' : 'Mantenidos datos locales',
+    })
+  } catch {
+    $q.notify({ type: 'negative', message: 'Error al resolver el conflicto' })
   }
 }
 

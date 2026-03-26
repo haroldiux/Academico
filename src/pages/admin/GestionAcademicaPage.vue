@@ -1274,7 +1274,7 @@ const asignaturasFiltradas = computed(() => {
   if (filtTexto.value) {
     const n = filtTexto.value.toLowerCase()
     list = list.filter((a) => {
-      if (a.nombre.toLowerCase().includes(n) || a.codigo.toLowerCase().includes(n)) return true
+      if ((a.nombre || '').toLowerCase().includes(n) || (a.codigo || '').toLowerCase().includes(n)) return true
       return a.grupos?.some(
         (g) =>
           (g.docente_nombre || '').toLowerCase().includes(n) ||
@@ -1370,13 +1370,21 @@ function diaTextColor(dia) {
 // CARGA DE DATOS
 // ══════════════════════════════════════════════
 onMounted(async () => {
-  await Promise.all([
+  // Promise.allSettled: si falla docentes (u otro), los demás datos siguen cargando
+  const results = await Promise.allSettled([
     sedesStore.fetchSedes(),
     carrerasStore.fetchCarreras(),
     docentesStore.fetchDocentes(),
     aulasStore.fetchAulas(),
     bloquesStore.fetchBloques(),
   ])
+  // Informar silenciosamente de errores parciales (sin bloquear la UI)
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      const nombres = ['sedes', 'carreras', 'docentes', 'aulas', 'bloques']
+      console.warn(`[GestionAcademica] Error cargando ${nombres[i]}:`, r.reason)
+    }
+  })
   opcionesDocentes.value = allDocentes.value
   // Preseleccionar Cochabamba
   const cbba = sedesStore.sedes.find((s) => s.nombre?.toLowerCase().includes('cochabamba'))
@@ -1423,24 +1431,28 @@ async function cargarDatos() {
       horarios: horariosPorGrupo[g.id] || [],
     }))
 
-    // 5. Agrupar por asignatura_id
+    // 5. Agrupar por asignatura_id (filtrar grupos sin asignatura válida)
     const asigMap = {}
-    gruposEnriquecidos.forEach((g) => {
-      if (!asigMap[g.asignatura_id]) {
-        asigMap[g.asignatura_id] = {
-          id: g.asignatura_id,
-          nombre: g.asignatura_nombre,
-          codigo: g.asignatura_codigo,
-          plan_estudios: g.asignatura_plan || null,
-          grupos: [],
+    gruposEnriquecidos
+      .filter((g) => g.asignatura_id && g.asignatura_nombre) // Excluir huérfanos residuales
+      .forEach((g) => {
+        if (!asigMap[g.asignatura_id]) {
+          asigMap[g.asignatura_id] = {
+            id: g.asignatura_id,
+            nombre: g.asignatura_nombre,
+            codigo: g.asignatura_codigo,
+            plan_estudios: g.asignatura_plan || null,
+            grupos: [],
+          }
         }
-      }
-      asigMap[g.asignatura_id].grupos.push(g)
-    })
+        asigMap[g.asignatura_id].grupos.push(g)
+      })
 
     // 6. También agregar asignaturas que no tienen grupos (desde asignaturasStore si está cargado)
     // Nota: por simplicidad, mostramos solo las que tienen grupos o las del store
-    asignaturas.value = Object.values(asigMap).sort((a, b) => a.nombre.localeCompare(b.nombre))
+    asignaturas.value = Object.values(asigMap)
+      .filter((a) => a.nombre) // Descartar entradas con nombre nulo (grupos huérfanos residuales)
+      .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
   } catch (err) {
     Notify.create({ type: 'negative', message: 'Error cargando datos: ' + err.message })
   } finally {
