@@ -1274,7 +1274,8 @@ const asignaturasFiltradas = computed(() => {
   if (filtTexto.value) {
     const n = filtTexto.value.toLowerCase()
     list = list.filter((a) => {
-      if ((a.nombre || '').toLowerCase().includes(n) || (a.codigo || '').toLowerCase().includes(n)) return true
+      if ((a.nombre || '').toLowerCase().includes(n) || (a.codigo || '').toLowerCase().includes(n))
+        return true
       return a.grupos?.some(
         (g) =>
           (g.docente_nombre || '').toLowerCase().includes(n) ||

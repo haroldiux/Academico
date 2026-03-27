@@ -1,2 +1,134 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/AdminDashboard-DCJ6T3Ei.js","assets/index-CVgKKHHv.js","assets/index-BLlNTyMo.css","assets/QChip-g_JHqrFQ.js","assets/QBadge-BSFZG2oj.js","assets/QBtnToggle-F0dqsGUs.js","assets/QBtnGroup-vR5Xmbr5.js","assets/QCircularProgress-BnUwnxy_.js","assets/format-DyQxkAtJ.js","assets/QPage-D-YrLEJA.js","assets/usePermisos-jkywVW5f.js","assets/sedes-xi7lRAei.js","assets/carreras-B-7e1Sez.js","assets/asignaturas-C0o3NZaO.js","assets/dashboardService-wbHYPS9Q.js","assets/_plugin-vue_export-helper-DlAUqK2U.js","assets/AdminDashboard-NB2aLE6M.css","assets/VicerrectorNacionalDashboard-9jmrGKWr.js","assets/QLinearProgress-CGVvufhy.js","assets/VicerrectorNacionalDashboard-IK4bubxF.css","assets/VicerrectorSedeDashboard-Cw7tr5Bb.js","assets/VicerrectorSedeDashboard-B8j1VL8g.css","assets/DireccionAcademicaDashboard-DkbDdAky.js","assets/QInnerLoading-CKwhUHov.js","assets/DireccionAcademicaDashboard-CNJF-Cmo.css","assets/DirectorCarreraDashboard--zRa-Yvc.js","assets/DirectorCarreraDashboard-6GakSkgo.css","assets/DocenteDashboard-D18rxY10.js","assets/DocenteDashboard-Co5kZj4n.css","assets/EvaluacionesDashboard-DnrTM3yi.js","assets/QItem-C23xClkh.js","assets/QItemLabel-wP2Wn6Fb.js","assets/QList-BSXQR-9A.js","assets/EvaluacionesDashboard-Br96UgwK.css"])))=>i.map(i=>d[i]);
-import{e as c,P as i,ac as e,i as s,j as a,k as n,y as m,ad as p,l as u,ae as o}from"./index-CVgKKHHv.js";import{Q as D}from"./QSpinnerDots-Cc_75p2S.js";import{Q as h}from"./QPage-D-YrLEJA.js";import{_ as l}from"./_plugin-vue_export-helper-DlAUqK2U.js";const E={key:1,class:"flex flex-center full-height"},v={__name:"IndexPage",setup(b){const d=c(),r={SuperAdminDashboard:e(()=>o(()=>import("./AdminDashboard-DCJ6T3Ei.js"),__vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]))),AdminDashboard:e(()=>o(()=>import("./AdminDashboard-DCJ6T3Ei.js"),__vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]))),VicerrectorNacionalDashboard:e(()=>o(()=>import("./VicerrectorNacionalDashboard-9jmrGKWr.js"),__vite__mapDeps([17,1,2,3,4,18,9,10,11,12,13,15,19]))),VicerrectorSedeDashboard:e(()=>o(()=>import("./VicerrectorSedeDashboard-Cw7tr5Bb.js"),__vite__mapDeps([20,1,2,3,4,7,8,18,9,10,11,12,13,15,21]))),DireccionAcademicaDashboard:e(()=>o(()=>import("./DireccionAcademicaDashboard-DkbDdAky.js"),__vite__mapDeps([22,1,2,3,4,18,23,9,11,15,24]))),DirectorCarreraDashboard:e(()=>o(()=>import("./DirectorCarreraDashboard--zRa-Yvc.js"),__vite__mapDeps([25,3,1,2,4,18,7,8,9,10,11,12,13,14,15,26]))),DocenteDashboard:e(()=>o(()=>import("./DocenteDashboard-D18rxY10.js"),__vite__mapDeps([27,1,2,3,4,7,8,9,11,13,15,28]))),EvaluacionesDashboard:e(()=>o(()=>import("./EvaluacionesDashboard-DnrTM3yi.js"),__vite__mapDeps([29,1,2,30,31,3,32,4,9,15,33])))},t=i(()=>{const _=d.dashboard;return r[_]||r.DocenteDashboard});return(_,f)=>(a(),s(h,{class:"dashboard-wrapper"},{default:n(()=>[t.value?(a(),s(p(t.value),{key:0})):(a(),m("div",E,[u(D,{size:"40px",color:"primary"})]))]),_:1}))}},x=l(v,[["__scopeId","data-v-95c010f9"]]);export{x as default};
+const __vite__mapDeps = (
+  i,
+  m = __vite__mapDeps,
+  d = m.f ||
+    (m.f = [
+      'assets/AdminDashboard-DCJ6T3Ei.js',
+      'assets/index-CVgKKHHv.js',
+      'assets/index-BLlNTyMo.css',
+      'assets/QChip-g_JHqrFQ.js',
+      'assets/QBadge-BSFZG2oj.js',
+      'assets/QBtnToggle-F0dqsGUs.js',
+      'assets/QBtnGroup-vR5Xmbr5.js',
+      'assets/QCircularProgress-BnUwnxy_.js',
+      'assets/format-DyQxkAtJ.js',
+      'assets/QPage-D-YrLEJA.js',
+      'assets/usePermisos-jkywVW5f.js',
+      'assets/sedes-xi7lRAei.js',
+      'assets/carreras-B-7e1Sez.js',
+      'assets/asignaturas-C0o3NZaO.js',
+      'assets/dashboardService-wbHYPS9Q.js',
+      'assets/_plugin-vue_export-helper-DlAUqK2U.js',
+      'assets/AdminDashboard-NB2aLE6M.css',
+      'assets/VicerrectorNacionalDashboard-9jmrGKWr.js',
+      'assets/QLinearProgress-CGVvufhy.js',
+      'assets/VicerrectorNacionalDashboard-IK4bubxF.css',
+      'assets/VicerrectorSedeDashboard-Cw7tr5Bb.js',
+      'assets/VicerrectorSedeDashboard-B8j1VL8g.css',
+      'assets/DireccionAcademicaDashboard-DkbDdAky.js',
+      'assets/QInnerLoading-CKwhUHov.js',
+      'assets/DireccionAcademicaDashboard-CNJF-Cmo.css',
+      'assets/DirectorCarreraDashboard--zRa-Yvc.js',
+      'assets/DirectorCarreraDashboard-6GakSkgo.css',
+      'assets/DocenteDashboard-D18rxY10.js',
+      'assets/DocenteDashboard-Co5kZj4n.css',
+      'assets/EvaluacionesDashboard-DnrTM3yi.js',
+      'assets/QItem-C23xClkh.js',
+      'assets/QItemLabel-wP2Wn6Fb.js',
+      'assets/QList-BSXQR-9A.js',
+      'assets/EvaluacionesDashboard-Br96UgwK.css',
+    ]),
+) => i.map((i) => d[i])
+import {
+  e as c,
+  P as i,
+  ac as e,
+  i as s,
+  j as a,
+  k as n,
+  y as m,
+  ad as p,
+  l as u,
+  ae as o,
+} from './index-CVgKKHHv.js'
+import { Q as D } from './QSpinnerDots-Cc_75p2S.js'
+import { Q as h } from './QPage-D-YrLEJA.js'
+import { _ as l } from './_plugin-vue_export-helper-DlAUqK2U.js'
+const E = { key: 1, class: 'flex flex-center full-height' },
+  v = {
+    __name: 'IndexPage',
+    setup(b) {
+      const d = c(),
+        r = {
+          SuperAdminDashboard: e(() =>
+            o(
+              () => import('./AdminDashboard-DCJ6T3Ei.js'),
+              __vite__mapDeps([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]),
+            ),
+          ),
+          AdminDashboard: e(() =>
+            o(
+              () => import('./AdminDashboard-DCJ6T3Ei.js'),
+              __vite__mapDeps([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]),
+            ),
+          ),
+          VicerrectorNacionalDashboard: e(() =>
+            o(
+              () => import('./VicerrectorNacionalDashboard-9jmrGKWr.js'),
+              __vite__mapDeps([17, 1, 2, 3, 4, 18, 9, 10, 11, 12, 13, 15, 19]),
+            ),
+          ),
+          VicerrectorSedeDashboard: e(() =>
+            o(
+              () => import('./VicerrectorSedeDashboard-Cw7tr5Bb.js'),
+              __vite__mapDeps([20, 1, 2, 3, 4, 7, 8, 18, 9, 10, 11, 12, 13, 15, 21]),
+            ),
+          ),
+          DireccionAcademicaDashboard: e(() =>
+            o(
+              () => import('./DireccionAcademicaDashboard-DkbDdAky.js'),
+              __vite__mapDeps([22, 1, 2, 3, 4, 18, 23, 9, 11, 15, 24]),
+            ),
+          ),
+          DirectorCarreraDashboard: e(() =>
+            o(
+              () => import('./DirectorCarreraDashboard--zRa-Yvc.js'),
+              __vite__mapDeps([25, 3, 1, 2, 4, 18, 7, 8, 9, 10, 11, 12, 13, 14, 15, 26]),
+            ),
+          ),
+          DocenteDashboard: e(() =>
+            o(
+              () => import('./DocenteDashboard-D18rxY10.js'),
+              __vite__mapDeps([27, 1, 2, 3, 4, 7, 8, 9, 11, 13, 15, 28]),
+            ),
+          ),
+          EvaluacionesDashboard: e(() =>
+            o(
+              () => import('./EvaluacionesDashboard-DnrTM3yi.js'),
+              __vite__mapDeps([29, 1, 2, 30, 31, 3, 32, 4, 9, 15, 33]),
+            ),
+          ),
+        },
+        t = i(() => {
+          const _ = d.dashboard
+          return r[_] || r.DocenteDashboard
+        })
+      return (_, f) => (
+        a(),
+        s(
+          h,
+          { class: 'dashboard-wrapper' },
+          {
+            default: n(() => [
+              t.value
+                ? (a(), s(p(t.value), { key: 0 }))
+                : (a(), m('div', E, [u(D, { size: '40px', color: 'primary' })])),
+            ]),
+            _: 1,
+          },
+        )
+      )
+    },
+  },
+  x = l(v, [['__scopeId', 'data-v-95c010f9']])
+export { x as default }

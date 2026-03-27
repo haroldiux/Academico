@@ -545,14 +545,31 @@ const gestionesOptions = [
 const authStore = useAuthStore()
 
 const esRolGlobal = computed(() => {
-  return [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.VICERRECTOR_NACIONAL, ROLES.EVALUACIONES, ROLES.RESPONSABLE_EVALUACIONES].includes(authStore.rol)
+  return [
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN,
+    ROLES.VICERRECTOR_NACIONAL,
+    ROLES.EVALUACIONES,
+    ROLES.RESPONSABLE_EVALUACIONES,
+    ROLES.VICERRECTOR_SEDE,
+    ROLES.DIRECCION_ACADEMICA,
+  ].includes(authStore.rol)
 })
 
 const sedesOptions = computed(() => {
-  return sedesStore.sedesActivas.map((s) => ({
+  const all = sedesStore.sedesActivas.map((s) => ({
     label: s.nombre,
     value: s.id,
   }))
+
+  if (
+    [ROLES.VICERRECTOR_SEDE, ROLES.DIRECCION_ACADEMICA].includes(authStore.rol) &&
+    authStore.sedeId
+  ) {
+    return all.filter((s) => Number(s.value) === Number(authStore.sedeId))
+  }
+
+  return all
 })
 
 function onSedeChange() {
@@ -576,8 +593,8 @@ const carrerasOptions = computed(() => {
     return []
   }
 
-  // Para Vicerrector Sede
-  if (authStore.rol === ROLES.VICERRECTOR_SEDE) {
+  // Para Vicerrector Sede y Dirección Académica
+  if (authStore.rol === ROLES.VICERRECTOR_SEDE || authStore.rol === ROLES.DIRECCION_ACADEMICA) {
     return carrerasStore.getCarrerasBySede(authStore.sedeId).map((c) => ({
       label: c.nombre,
       value: c.id,
@@ -945,6 +962,14 @@ onMounted(async () => {
   if (esRolGlobal.value) {
     if (sedesStore.sedes.length === 0) await sedesStore.fetchSedes()
     if (carrerasStore.carreras.length === 0) await carrerasStore.fetchCarreras()
+
+    // Pre-seleccionar sede para autoridades de sede que ahora son "global-like" en la UI
+    if (
+      [ROLES.VICERRECTOR_SEDE, ROLES.DIRECCION_ACADEMICA].includes(authStore.rol) &&
+      authStore.sedeId
+    ) {
+      filtros.value.sede_id = Number(authStore.sedeId)
+    }
   }
 
   // Auto-seleccionar si hay carreras disponibles y ninguna seleccionada
@@ -953,10 +978,7 @@ onMounted(async () => {
   }
 
   // Solo cargar si hay carrera seleccionada o si es un rol global
-  if (
-    filtros.value.carrera_id ||
-    esRolGlobal.value
-  ) {
+  if (filtros.value.carrera_id || esRolGlobal.value) {
     await cargarExamenes()
   }
 })

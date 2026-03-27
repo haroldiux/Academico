@@ -1,1 +1,1466 @@
-import{r as m,P as K,a as X,ax as v,i as x,j as b,k as t,m as s,l,s as r,x as p,D as Q,E as A,Q as n,A as d,B as c,C as O,z as U,q as Y,ar as Z,as as ee,a2 as ae,af as M,W as k,y as le}from"./index-CVgKKHHv.js";import{Q as E}from"./QSelect-B2vk19AQ.js";import{Q as oe,a as V}from"./QTable-HDg5LzBZ.js";import{Q as y}from"./QChip-g_JHqrFQ.js";import{Q as S}from"./QTooltip-xFvievHl.js";import{Q as T}from"./QSpace-PwS5FTKD.js";import{Q as se,a as D}from"./QItem-C23xClkh.js";import{Q as te}from"./QItemLabel-wP2Wn6Fb.js";import{Q as ie}from"./QForm-D4j4qENs.js";import{Q as re}from"./QScrollArea-BRqlJGl2.js";import{Q as ne}from"./QPage-D-YrLEJA.js";import{C as R}from"./ClosePopup-srUPe2x8.js";import{u as de}from"./asignaturas-C0o3NZaO.js";import{u as ue}from"./carreras-B-7e1Sez.js";import{_ as me}from"./_plugin-vue_export-helper-DlAUqK2U.js";import"./QMenu-C5EVwErB.js";import"./selection-Dzil4kq6.js";import"./rtl-DFPa-2ov.js";import"./format-DyQxkAtJ.js";import"./QList-BSXQR-9A.js";import"./QLinearProgress-CGVvufhy.js";import"./use-fullscreen-DP5Hoaa-.js";import"./QResizeObserver-DSbEROZH.js";import"./QScrollObserver-CGZlLTHV.js";import"./TouchPan-DnCl_CE3.js";import"./touch-BjYP5sR0.js";const ce={class:"row items-center q-mb-lg"},ve={class:"col"},pe={class:"q-ma-none text-weight-bold"},_e={class:"col-auto q-gutter-sm"},ge={class:"row q-col-gutter-md items-end"},fe={class:"col-12 col-md-3"},be={class:"col-12 col-md-3"},Ve={class:"text-weight-bold"},ye={class:"text-caption"},xe={class:"row no-wrap q-gutter-xs"},Ae={class:"text-h6"},qe={class:"form-section q-mb-lg"},Ce={class:"form-section-title row items-center q-mb-md"},we={class:"row q-col-gutter-md"},Ee={class:"col-12 col-md-3"},he={class:"col-12 col-md-6"},Pe={class:"col-12 col-md-3"},Ne={class:"form-section q-mb-lg"},Qe={class:"form-section-title row items-center q-mb-md"},Se={class:"row q-col-gutter-md"},ze={class:"col-12 col-md-4"},Ie={class:"col-12 col-md-4"},Oe={class:"col-12 col-md-4"},Ue={class:"form-section q-mb-lg"},Me={class:"form-section-title row items-center q-mb-md"},ke={class:"row q-col-gutter-md"},Te={class:"col-6 col-md-2"},De={class:"col-6 col-md-2"},Re={class:"col-6 col-md-2"},Be={class:"col-6 col-md-2"},je={class:"col-6 col-md-2"},He={class:"col-6 col-md-2"},Le={class:"col-6 col-md-2"},$e={class:"col-6 col-md-2"},Fe={class:"form-section q-mb-lg"},Ge={class:"form-section-title row items-center q-mb-md"},We={class:"row q-col-gutter-md"},Je={class:"col-12 col-md-4"},Ke={class:"col-12 col-md-4"},Xe={class:"col-12 col-md-4"},Ye={class:"text-h6"},Ze={key:0,class:"q-pa-sm bg-grey-2 rounded-borders q-mb-sm"},ea={__name:"AsignaturasCrudPage",setup(aa){const f=de(),B=ue(),_=m(!1),h=m(!1),P=m(!1),q=m(!1),C=m(!1),u=m(!1),N=m(""),w=m(null),o=m({id:null,codigo:"",sigla:"",nombre:"",plan_estudios:null,estado:"EN_PROCESO",modalidad:null,creditos:0,carga_horaria_total:0,horas_teoricas:0,horas_practicas:0,horas_laboratorio:0,sesiones_semanales:0,sesiones_semanales_teoricas:0,sesiones_semanales_practicas:0,area_desempenio:"",tipo_curso:"",requisitos:"",modificado_localmente:!1}),g=m(null),j=[{label:"Nueva (N)",value:"N"},{label:"Antigua (A)",value:"A"}],H=[{name:"id",label:"ID",field:"id",align:"left",sortable:!0},{name:"codigo",label:"Código",field:"codigo",align:"left",sortable:!0},{name:"nombre",label:"Nombre",field:"nombre",align:"left",sortable:!0},{name:"plan_estudios",label:"Malla",field:"plan_estudios",align:"center"},{name:"estado",label:"Estado",field:"estado",align:"center"},{name:"creditos",label:"Créd.",field:"creditos",align:"center"},{name:"horas",label:"Horas (T/P)",field:"horas_teoricas",align:"center"},{name:"modificado_localmente",label:"Origen",field:"modificado_localmente",align:"center"},{name:"actions",label:"Acciones",align:"center"}],L=m({sortBy:"nombre",descending:!1,page:1,rowsPerPage:15}),$=K(()=>{let i=f.asignaturas;return w.value&&(i=i.filter(e=>e.plan_estudios===w.value)),i});X(async()=>{_.value=!0;try{await Promise.all([f.fetchAsignaturas(),B.fetchCarreras()])}catch(i){v.create({type:"negative",message:"Error cargando datos: "+i.message})}finally{_.value=!1}});async function F(){_.value=!0;try{await f.fetchAsignaturas()}catch(i){v.create({type:"negative",message:"Error: "+i.message})}finally{_.value=!1}}function z(i){i?(u.value=!0,o.value={id:i.id,codigo:i.codigo||"",sigla:i.sigla||"",nombre:i.nombre||"",plan_estudios:i.plan_estudios||null,estado:i.estado||"EN_PROCESO",modalidad:i.modalidad||null,creditos:i.creditos??0,carga_horaria_total:i.carga_horaria_total??0,horas_teoricas:i.horas_teoricas??0,horas_practicas:i.horas_practicas??0,horas_laboratorio:i.horas_laboratorio??0,sesiones_semanales:i.sesiones_semanales??0,sesiones_semanales_teoricas:i.sesiones_semanales_teoricas??0,sesiones_semanales_practicas:i.sesiones_semanales_practicas??0,area_desempenio:i.area_desempenio||"",tipo_curso:i.tipo_curso||"",requisitos:i.requisitos||"",modificado_localmente:i.modificado_localmente}):(u.value=!1,o.value={id:null,codigo:"",sigla:"",nombre:"",plan_estudios:null,estado:"EN_PROCESO",modalidad:null,creditos:0,carga_horaria_total:0,horas_teoricas:0,horas_practicas:0,horas_laboratorio:0,sesiones_semanales:0,sesiones_semanales_teoricas:0,sesiones_semanales_practicas:0,area_desempenio:"",tipo_curso:"",requisitos:"",modificado_localmente:!1}),q.value=!0}async function I(){if(!o.value.codigo?.trim()){v.create({type:"warning",message:"Ingresa el código"});return}if(!o.value.nombre?.trim()){v.create({type:"warning",message:"Ingresa el nombre"});return}h.value=!0;try{const i={codigo:o.value.codigo.trim(),sigla:o.value.sigla?.trim()||null,nombre:o.value.nombre.trim(),plan_estudios:o.value.plan_estudios||null,estado:o.value.estado||"EN_PROCESO",modalidad:o.value.modalidad||null,creditos:o.value.creditos??0,carga_horaria_total:o.value.carga_horaria_total??0,horas_teoricas:o.value.horas_teoricas??0,horas_practicas:o.value.horas_practicas??0,horas_laboratorio:o.value.horas_laboratorio??0,sesiones_semanales:o.value.sesiones_semanales??0,sesiones_semanales_teoricas:o.value.sesiones_semanales_teoricas??0,sesiones_semanales_practicas:o.value.sesiones_semanales_practicas??0,area_desempenio:o.value.area_desempenio?.trim()||null,tipo_curso:o.value.tipo_curso?.trim()||null,requisitos:o.value.requisitos?.trim()||null,modificado_localmente:!0};u.value?(await f.updateAsignatura(o.value.id,i),v.create({type:"positive",message:"Asignatura actualizada correctamente"})):(await f.createAsignatura(i),v.create({type:"positive",message:"Asignatura creada correctamente"})),q.value=!1}catch(i){const e=i.response?.data,a=e?.message||(e?.errors?Object.values(e.errors).flat().join(" | "):i.message);v.create({type:"negative",message:"Error: "+a})}finally{h.value=!1}}function G(i){g.value=i,C.value=!0}async function W(){P.value=!0;try{await f.deleteAsignatura(g.value.id),v.create({type:"positive",message:"Asignatura eliminada correctamente"}),C.value=!1}catch(i){v.create({type:"negative",message:"Error: "+(i.response?.data?.message||i.message)})}finally{P.value=!1}}return(i,e)=>(b(),x(ne,{class:"q-pa-lg"},{default:t(()=>[s("div",ce,[s("div",ve,[s("h4",pe,[l(r,{name:"book",size:"36px",color:"primary",class:"q-mr-sm"}),e[22]||(e[22]=s("span",{class:"text-gradient"},"Administración de Asignaturas",-1))]),e[23]||(e[23]=s("p",{class:"q-ma-none q-mt-xs text-grey-6"}," Edita directamente los datos locales — corrige errores de la API sin necesidad de sincronizar ",-1))]),s("div",_e,[l(p,{outline:"",color:"primary",icon:"refresh",label:"Actualizar",onClick:F,loading:_.value},null,8,["loading"]),l(p,{color:"primary",icon:"add",label:"Nueva Asignatura",onClick:e[0]||(e[0]=a=>z(null)),disable:_.value},null,8,["disable"])])]),l(Q,{flat:"",bordered:"",class:"q-mb-lg filter-card"},{default:t(()=>[l(A,null,{default:t(()=>[s("div",ge,[s("div",fe,[l(n,{modelValue:N.value,"onUpdate:modelValue":e[1]||(e[1]=a=>N.value=a),outlined:"",dense:"",clearable:"",placeholder:"Buscar por nombre o código..."},{prepend:t(()=>[l(r,{name:"search",size:"18px"})]),_:1},8,["modelValue"])]),s("div",be,[l(E,{modelValue:w.value,"onUpdate:modelValue":e[2]||(e[2]=a=>w.value=a),options:j,label:"Plan de Malla",outlined:"",dense:"",clearable:"","emit-value":"","map-options":""},{prepend:t(()=>[l(r,{name:"account_tree",size:"18px"})]),_:1},8,["modelValue"])])])]),_:1})]),_:1}),l(oe,{rows:$.value,columns:H,"row-key":"id",loading:_.value,filter:N.value,pagination:L.value,class:"shadow-1 asig-table",flat:"",bordered:""},{"body-cell-codigo":t(a=>[l(V,{props:a},{default:t(()=>[s("code",Ve,c(a.value),1)]),_:2},1032,["props"])]),"body-cell-plan_estudios":t(a=>[l(V,{props:a},{default:t(()=>[a.value?(b(),x(y,{key:0,size:"sm",dense:"",color:a.value==="A"?"blue-3":"orange-3","text-color":a.value==="A"?"blue-9":"orange-9"},{default:t(()=>[l(r,{name:a.value==="A"?"history":"new_releases",size:"14px",class:"q-mr-xs"},null,8,["name"]),d(" "+c(a.value==="A"?"Antigua":"Nueva"),1)]),_:2},1032,["color","text-color"])):(b(),x(y,{key:1,size:"sm",dense:"",color:"grey-3","text-color":"red-7"},{default:t(()=>[l(r,{name:"warning",size:"14px",class:"q-mr-xs"}),e[24]||(e[24]=d("Sin definir ",-1))]),_:1}))]),_:2},1032,["props"])]),"body-cell-estado":t(a=>[l(V,{props:a},{default:t(()=>[l(y,{size:"sm",dense:"",color:a.value==="ACTIVO"?"green-2":a.value==="EN_PROCESO"?"blue-2":"grey-3","text-color":a.value==="ACTIVO"?"green-9":a.value==="EN_PROCESO"?"blue-9":"grey-7"},{default:t(()=>[d(c(a.value||"—"),1)]),_:2},1032,["color","text-color"])]),_:2},1032,["props"])]),"body-cell-horas":t(a=>[l(V,{props:a},{default:t(()=>[s("span",ye,"T:"+c(a.row.horas_teoricas||0)+" P:"+c(a.row.horas_practicas||0),1)]),_:2},1032,["props"])]),"body-cell-modificado_localmente":t(a=>[l(V,{props:a},{default:t(()=>[l(r,{name:a.value?"edit_note":"cloud_done",color:a.value?"orange-8":"green-6",size:"20px"},{default:t(()=>[l(S,null,{default:t(()=>[d(c(a.value?"Modificado localmente":"Sincronizado con API"),1)]),_:2},1024)]),_:2},1032,["name","color"])]),_:2},1032,["props"])]),"body-cell-actions":t(a=>[l(V,{props:a},{default:t(()=>[s("div",xe,[l(p,{flat:"",dense:"",round:"",icon:"edit",color:"primary",size:"sm",onClick:J=>z(a.row)},{default:t(()=>[l(S,null,{default:t(()=>[...e[25]||(e[25]=[d("Editar",-1)])]),_:1})]),_:2},1032,["onClick"]),l(p,{flat:"",dense:"",round:"",icon:"delete",color:"negative",size:"sm",onClick:J=>G(a.row)},{default:t(()=>[l(S,null,{default:t(()=>[...e[26]||(e[26]=[d("Eliminar",-1)])]),_:1})]),_:2},1032,["onClick"])])]),_:2},1032,["props"])]),_:1},8,["rows","loading","filter","pagination"]),l(O,{modelValue:q.value,"onUpdate:modelValue":e[20]||(e[20]=a=>q.value=a),persistent:""},{default:t(()=>[l(Q,{style:{width:"860px","max-width":"97vw","max-height":"94vh",display:"flex","flex-direction":"column"}},{default:t(()=>[l(A,{class:"bg-primary text-white q-py-md row items-center"},{default:t(()=>[l(r,{name:u.value?"edit":"add",size:"22px",class:"q-mr-sm"},null,8,["name"]),s("span",Ae,c(u.value?"Editar Asignatura":"Nueva Asignatura"),1),l(T),u.value&&o.value.modificado_localmente?(b(),x(y,{key:0,color:"orange-2","text-color":"orange-9",dense:"",size:"sm"},{default:t(()=>[l(r,{name:"edit_note",size:"14px",class:"q-mr-xs"}),e[27]||(e[27]=d("Modificado localmente ",-1))]),_:1})):u.value?(b(),x(y,{key:1,color:"green-2","text-color":"green-9",dense:"",size:"sm"},{default:t(()=>[l(r,{name:"cloud_done",size:"14px",class:"q-mr-xs"}),e[28]||(e[28]=d("Sincronizado API ",-1))]),_:1})):U("",!0)]),_:1}),l(re,{style:{flex:"1","min-height":"0"}},{default:t(()=>[l(A,{class:"q-pt-md q-px-lg"},{default:t(()=>[l(ie,{onSubmit:Y(I,["prevent"])},{default:t(()=>[s("div",qe,[s("div",Ce,[l(r,{name:"badge",color:"primary",size:"18px",class:"q-mr-xs"}),e[29]||(e[29]=s("span",null,"Identificación",-1))]),s("div",we,[s("div",Ee,[l(n,{modelValue:o.value.codigo,"onUpdate:modelValue":e[3]||(e[3]=a=>o.value.codigo=a),label:"Código *",outlined:"",dense:"",disable:u.value,hint:"No editable una vez creado",rules:[a=>!!a||"Obligatorio"]},null,8,["modelValue","disable","rules"])]),s("div",he,[l(n,{modelValue:o.value.nombre,"onUpdate:modelValue":e[4]||(e[4]=a=>o.value.nombre=a),label:"Nombre *",outlined:"",dense:"",rules:[a=>!!a||"Obligatorio"]},null,8,["modelValue","rules"])]),s("div",Pe,[l(n,{modelValue:o.value.sigla,"onUpdate:modelValue":e[5]||(e[5]=a=>o.value.sigla=a),label:"Sigla",outlined:"",dense:"",clearable:""},null,8,["modelValue"])])])]),s("div",Ne,[s("div",Qe,[l(r,{name:"account_tree",color:"orange-8",size:"18px",class:"q-mr-xs"}),e[31]||(e[31]=s("span",null,"Malla Curricular y Estado",-1)),l(T),l(y,{dense:"",size:"sm",color:"orange-1","text-color":"orange-9",icon:"info"},{default:t(()=>[...e[30]||(e[30]=[d(" Campo clave — corrige si la API trajo un valor incorrecto ",-1)])]),_:1})]),s("div",Se,[s("div",ze,[l(E,{modelValue:o.value.plan_estudios,"onUpdate:modelValue":e[6]||(e[6]=a=>o.value.plan_estudios=a),options:[{label:"Nueva (N) — Plan vigente",value:"N"},{label:"Antigua (A) — Plan anterior",value:"A"}],label:"Plan de Malla *",outlined:"",dense:"","emit-value":"","map-options":"",clearable:""},{prepend:t(()=>[l(r,{name:o.value.plan_estudios==="A"?"history":"new_releases",color:o.value.plan_estudios==="A"?"blue-7":"orange-7",size:"20px"},null,8,["name","color"])]),option:t(a=>[l(se,Z(ee(a.itemProps)),{default:t(()=>[l(D,{avatar:""},{default:t(()=>[l(r,{name:a.opt.value==="A"?"history":"new_releases",color:a.opt.value==="A"?"blue-7":"orange-7"},null,8,["name","color"])]),_:2},1024),l(D,null,{default:t(()=>[l(te,null,{default:t(()=>[d(c(a.opt.label),1)]),_:2},1024)]),_:2},1024)]),_:2},1040)]),_:1},8,["modelValue"])]),s("div",Ie,[l(E,{modelValue:o.value.estado,"onUpdate:modelValue":e[7]||(e[7]=a=>o.value.estado=a),options:[{label:"Activo",value:"ACTIVO"},{label:"En Proceso",value:"EN_PROCESO"},{label:"Inactivo",value:"INACTIVO"},{label:"Pendiente",value:"PENDIENTE"}],label:"Estado",outlined:"",dense:"","emit-value":"","map-options":""},null,8,["modelValue"])]),s("div",Oe,[l(E,{modelValue:o.value.modalidad,"onUpdate:modelValue":e[8]||(e[8]=a=>o.value.modalidad=a),options:[{label:"Presencial",value:"PRESENCIAL"},{label:"Semi-presencial",value:"SEMI_PRESENCIAL"},{label:"Virtual",value:"VIRTUAL"}],label:"Modalidad",outlined:"",dense:"",clearable:"","emit-value":"","map-options":""},null,8,["modelValue"])])])]),s("div",Ue,[s("div",Me,[l(r,{name:"schedule",color:"teal",size:"18px",class:"q-mr-xs"}),e[32]||(e[32]=s("span",null,"Carga Horaria y Créditos",-1))]),s("div",ke,[s("div",Te,[l(n,{modelValue:o.value.creditos,"onUpdate:modelValue":e[9]||(e[9]=a=>o.value.creditos=a),modelModifiers:{number:!0},label:"Créditos",type:"number",min:"0",outlined:"",dense:""},null,8,["modelValue"])]),s("div",De,[l(n,{modelValue:o.value.carga_horaria_total,"onUpdate:modelValue":e[10]||(e[10]=a=>o.value.carga_horaria_total=a),modelModifiers:{number:!0},label:"Horas Total",type:"number",min:"0",outlined:"",dense:""},null,8,["modelValue"])]),s("div",Re,[l(n,{modelValue:o.value.horas_teoricas,"onUpdate:modelValue":e[11]||(e[11]=a=>o.value.horas_teoricas=a),modelModifiers:{number:!0},label:"Horas Teóricas",type:"number",min:"0",outlined:"",dense:""},null,8,["modelValue"])]),s("div",Be,[l(n,{modelValue:o.value.horas_practicas,"onUpdate:modelValue":e[12]||(e[12]=a=>o.value.horas_practicas=a),modelModifiers:{number:!0},label:"Horas Prácticas",type:"number",min:"0",outlined:"",dense:""},null,8,["modelValue"])]),s("div",je,[l(n,{modelValue:o.value.horas_laboratorio,"onUpdate:modelValue":e[13]||(e[13]=a=>o.value.horas_laboratorio=a),modelModifiers:{number:!0},label:"Horas Lab.",type:"number",min:"0",outlined:"",dense:""},null,8,["modelValue"])]),s("div",He,[l(n,{modelValue:o.value.sesiones_semanales,"onUpdate:modelValue":e[14]||(e[14]=a=>o.value.sesiones_semanales=a),modelModifiers:{number:!0},label:"Sesiones/Semana",type:"number",min:"0",outlined:"",dense:""},null,8,["modelValue"])]),s("div",Le,[l(n,{modelValue:o.value.sesiones_semanales_teoricas,"onUpdate:modelValue":e[15]||(e[15]=a=>o.value.sesiones_semanales_teoricas=a),modelModifiers:{number:!0},label:"Ses. Teóricas",type:"number",min:"0",outlined:"",dense:""},null,8,["modelValue"])]),s("div",$e,[l(n,{modelValue:o.value.sesiones_semanales_practicas,"onUpdate:modelValue":e[16]||(e[16]=a=>o.value.sesiones_semanales_practicas=a),modelModifiers:{number:!0},label:"Ses. Prácticas",type:"number",min:"0",outlined:"",dense:""},null,8,["modelValue"])])])]),s("div",Fe,[s("div",Ge,[l(r,{name:"category",color:"purple",size:"18px",class:"q-mr-xs"}),e[33]||(e[33]=s("span",null,"Clasificación",-1))]),s("div",We,[s("div",Je,[l(n,{modelValue:o.value.area_desempenio,"onUpdate:modelValue":e[17]||(e[17]=a=>o.value.area_desempenio=a),label:"Área de Desempeño",outlined:"",dense:"",clearable:""},null,8,["modelValue"])]),s("div",Ke,[l(n,{modelValue:o.value.tipo_curso,"onUpdate:modelValue":e[18]||(e[18]=a=>o.value.tipo_curso=a),label:"Tipo de Curso",outlined:"",dense:"",clearable:"",placeholder:"Ej: Obligatorio, Electivo..."},null,8,["modelValue"])]),s("div",Xe,[l(n,{modelValue:o.value.requisitos,"onUpdate:modelValue":e[19]||(e[19]=a=>o.value.requisitos=a),label:"Requisitos (prerrequisitos)",outlined:"",dense:"",clearable:"",placeholder:"Ej: MAT-101, QUIM-101..."},null,8,["modelValue"])])])])]),_:1})]),_:1})]),_:1}),l(ae),l(M,{align:"right",class:"q-pa-md"},{default:t(()=>[k(l(p,{flat:"",label:"Cancelar"},null,512),[[R]]),l(p,{color:u.value?"primary":"positive",icon:u.value?"save":"add",label:u.value?"Guardar cambios":"Crear Asignatura",loading:h.value,disable:!o.value.nombre||!o.value.codigo,onClick:I},null,8,["color","icon","label","loading","disable"])]),_:1})]),_:1})]),_:1},8,["modelValue"]),l(O,{modelValue:C.value,"onUpdate:modelValue":e[21]||(e[21]=a=>C.value=a),persistent:""},{default:t(()=>[l(Q,{style:{"min-width":"360px"}},{default:t(()=>[l(A,{class:"bg-negative text-white"},{default:t(()=>[s("div",Ye,[l(r,{name:"warning",class:"q-mr-sm"}),e[34]||(e[34]=d("Confirmar Eliminación",-1))])]),_:1}),l(A,{class:"q-pt-lg"},{default:t(()=>[g.value?(b(),le("div",Ze,[s("div",null,[e[35]||(e[35]=s("strong",null,"Código:",-1)),d(" "+c(g.value.codigo),1)]),s("div",null,[e[36]||(e[36]=s("strong",null,"Nombre:",-1)),d(" "+c(g.value.nombre),1)]),s("div",null,[e[37]||(e[37]=s("strong",null,"Malla:",-1)),d(" "+c(g.value.plan_estudios==="A"?"Antigua":g.value.plan_estudios==="N"?"Nueva":"Sin definir"),1)])])):U("",!0),e[38]||(e[38]=d(" ¿Estás seguro? Esta acción eliminará también los grupos y cronogramas asociados.",-1)),e[39]||(e[39]=s("br",null,null,-1)),e[40]||(e[40]=s("small",{class:"text-grey"},"Esta acción no se puede deshacer.",-1))]),_:1}),l(M,{align:"right"},{default:t(()=>[k(l(p,{flat:"",label:"Cancelar"},null,512),[[R]]),l(p,{label:"Eliminar",color:"negative",onClick:W,loading:P.value},null,8,["loading"])]),_:1})]),_:1})]),_:1},8,["modelValue"])]),_:1}))}},Pa=me(ea,[["__scopeId","data-v-2f266f27"]]);export{Pa as default};
+import {
+  r as m,
+  P as K,
+  a as X,
+  ax as v,
+  i as x,
+  j as b,
+  k as t,
+  m as s,
+  l,
+  s as r,
+  x as p,
+  D as Q,
+  E as A,
+  Q as n,
+  A as d,
+  B as c,
+  C as O,
+  z as U,
+  q as Y,
+  ar as Z,
+  as as ee,
+  a2 as ae,
+  af as M,
+  W as k,
+  y as le,
+} from './index-CVgKKHHv.js'
+import { Q as E } from './QSelect-B2vk19AQ.js'
+import { Q as oe, a as V } from './QTable-HDg5LzBZ.js'
+import { Q as y } from './QChip-g_JHqrFQ.js'
+import { Q as S } from './QTooltip-xFvievHl.js'
+import { Q as T } from './QSpace-PwS5FTKD.js'
+import { Q as se, a as D } from './QItem-C23xClkh.js'
+import { Q as te } from './QItemLabel-wP2Wn6Fb.js'
+import { Q as ie } from './QForm-D4j4qENs.js'
+import { Q as re } from './QScrollArea-BRqlJGl2.js'
+import { Q as ne } from './QPage-D-YrLEJA.js'
+import { C as R } from './ClosePopup-srUPe2x8.js'
+import { u as de } from './asignaturas-C0o3NZaO.js'
+import { u as ue } from './carreras-B-7e1Sez.js'
+import { _ as me } from './_plugin-vue_export-helper-DlAUqK2U.js'
+import './QMenu-C5EVwErB.js'
+import './selection-Dzil4kq6.js'
+import './rtl-DFPa-2ov.js'
+import './format-DyQxkAtJ.js'
+import './QList-BSXQR-9A.js'
+import './QLinearProgress-CGVvufhy.js'
+import './use-fullscreen-DP5Hoaa-.js'
+import './QResizeObserver-DSbEROZH.js'
+import './QScrollObserver-CGZlLTHV.js'
+import './TouchPan-DnCl_CE3.js'
+import './touch-BjYP5sR0.js'
+const ce = { class: 'row items-center q-mb-lg' },
+  ve = { class: 'col' },
+  pe = { class: 'q-ma-none text-weight-bold' },
+  _e = { class: 'col-auto q-gutter-sm' },
+  ge = { class: 'row q-col-gutter-md items-end' },
+  fe = { class: 'col-12 col-md-3' },
+  be = { class: 'col-12 col-md-3' },
+  Ve = { class: 'text-weight-bold' },
+  ye = { class: 'text-caption' },
+  xe = { class: 'row no-wrap q-gutter-xs' },
+  Ae = { class: 'text-h6' },
+  qe = { class: 'form-section q-mb-lg' },
+  Ce = { class: 'form-section-title row items-center q-mb-md' },
+  we = { class: 'row q-col-gutter-md' },
+  Ee = { class: 'col-12 col-md-3' },
+  he = { class: 'col-12 col-md-6' },
+  Pe = { class: 'col-12 col-md-3' },
+  Ne = { class: 'form-section q-mb-lg' },
+  Qe = { class: 'form-section-title row items-center q-mb-md' },
+  Se = { class: 'row q-col-gutter-md' },
+  ze = { class: 'col-12 col-md-4' },
+  Ie = { class: 'col-12 col-md-4' },
+  Oe = { class: 'col-12 col-md-4' },
+  Ue = { class: 'form-section q-mb-lg' },
+  Me = { class: 'form-section-title row items-center q-mb-md' },
+  ke = { class: 'row q-col-gutter-md' },
+  Te = { class: 'col-6 col-md-2' },
+  De = { class: 'col-6 col-md-2' },
+  Re = { class: 'col-6 col-md-2' },
+  Be = { class: 'col-6 col-md-2' },
+  je = { class: 'col-6 col-md-2' },
+  He = { class: 'col-6 col-md-2' },
+  Le = { class: 'col-6 col-md-2' },
+  $e = { class: 'col-6 col-md-2' },
+  Fe = { class: 'form-section q-mb-lg' },
+  Ge = { class: 'form-section-title row items-center q-mb-md' },
+  We = { class: 'row q-col-gutter-md' },
+  Je = { class: 'col-12 col-md-4' },
+  Ke = { class: 'col-12 col-md-4' },
+  Xe = { class: 'col-12 col-md-4' },
+  Ye = { class: 'text-h6' },
+  Ze = { key: 0, class: 'q-pa-sm bg-grey-2 rounded-borders q-mb-sm' },
+  ea = {
+    __name: 'AsignaturasCrudPage',
+    setup(aa) {
+      const f = de(),
+        B = ue(),
+        _ = m(!1),
+        h = m(!1),
+        P = m(!1),
+        q = m(!1),
+        C = m(!1),
+        u = m(!1),
+        N = m(''),
+        w = m(null),
+        o = m({
+          id: null,
+          codigo: '',
+          sigla: '',
+          nombre: '',
+          plan_estudios: null,
+          estado: 'EN_PROCESO',
+          modalidad: null,
+          creditos: 0,
+          carga_horaria_total: 0,
+          horas_teoricas: 0,
+          horas_practicas: 0,
+          horas_laboratorio: 0,
+          sesiones_semanales: 0,
+          sesiones_semanales_teoricas: 0,
+          sesiones_semanales_practicas: 0,
+          area_desempenio: '',
+          tipo_curso: '',
+          requisitos: '',
+          modificado_localmente: !1,
+        }),
+        g = m(null),
+        j = [
+          { label: 'Nueva (N)', value: 'N' },
+          { label: 'Antigua (A)', value: 'A' },
+        ],
+        H = [
+          { name: 'id', label: 'ID', field: 'id', align: 'left', sortable: !0 },
+          { name: 'codigo', label: 'Código', field: 'codigo', align: 'left', sortable: !0 },
+          { name: 'nombre', label: 'Nombre', field: 'nombre', align: 'left', sortable: !0 },
+          { name: 'plan_estudios', label: 'Malla', field: 'plan_estudios', align: 'center' },
+          { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
+          { name: 'creditos', label: 'Créd.', field: 'creditos', align: 'center' },
+          { name: 'horas', label: 'Horas (T/P)', field: 'horas_teoricas', align: 'center' },
+          {
+            name: 'modificado_localmente',
+            label: 'Origen',
+            field: 'modificado_localmente',
+            align: 'center',
+          },
+          { name: 'actions', label: 'Acciones', align: 'center' },
+        ],
+        L = m({ sortBy: 'nombre', descending: !1, page: 1, rowsPerPage: 15 }),
+        $ = K(() => {
+          let i = f.asignaturas
+          return (w.value && (i = i.filter((e) => e.plan_estudios === w.value)), i)
+        })
+      X(async () => {
+        _.value = !0
+        try {
+          await Promise.all([f.fetchAsignaturas(), B.fetchCarreras()])
+        } catch (i) {
+          v.create({ type: 'negative', message: 'Error cargando datos: ' + i.message })
+        } finally {
+          _.value = !1
+        }
+      })
+      async function F() {
+        _.value = !0
+        try {
+          await f.fetchAsignaturas()
+        } catch (i) {
+          v.create({ type: 'negative', message: 'Error: ' + i.message })
+        } finally {
+          _.value = !1
+        }
+      }
+      function z(i) {
+        ;(i
+          ? ((u.value = !0),
+            (o.value = {
+              id: i.id,
+              codigo: i.codigo || '',
+              sigla: i.sigla || '',
+              nombre: i.nombre || '',
+              plan_estudios: i.plan_estudios || null,
+              estado: i.estado || 'EN_PROCESO',
+              modalidad: i.modalidad || null,
+              creditos: i.creditos ?? 0,
+              carga_horaria_total: i.carga_horaria_total ?? 0,
+              horas_teoricas: i.horas_teoricas ?? 0,
+              horas_practicas: i.horas_practicas ?? 0,
+              horas_laboratorio: i.horas_laboratorio ?? 0,
+              sesiones_semanales: i.sesiones_semanales ?? 0,
+              sesiones_semanales_teoricas: i.sesiones_semanales_teoricas ?? 0,
+              sesiones_semanales_practicas: i.sesiones_semanales_practicas ?? 0,
+              area_desempenio: i.area_desempenio || '',
+              tipo_curso: i.tipo_curso || '',
+              requisitos: i.requisitos || '',
+              modificado_localmente: i.modificado_localmente,
+            }))
+          : ((u.value = !1),
+            (o.value = {
+              id: null,
+              codigo: '',
+              sigla: '',
+              nombre: '',
+              plan_estudios: null,
+              estado: 'EN_PROCESO',
+              modalidad: null,
+              creditos: 0,
+              carga_horaria_total: 0,
+              horas_teoricas: 0,
+              horas_practicas: 0,
+              horas_laboratorio: 0,
+              sesiones_semanales: 0,
+              sesiones_semanales_teoricas: 0,
+              sesiones_semanales_practicas: 0,
+              area_desempenio: '',
+              tipo_curso: '',
+              requisitos: '',
+              modificado_localmente: !1,
+            })),
+          (q.value = !0))
+      }
+      async function I() {
+        if (!o.value.codigo?.trim()) {
+          v.create({ type: 'warning', message: 'Ingresa el código' })
+          return
+        }
+        if (!o.value.nombre?.trim()) {
+          v.create({ type: 'warning', message: 'Ingresa el nombre' })
+          return
+        }
+        h.value = !0
+        try {
+          const i = {
+            codigo: o.value.codigo.trim(),
+            sigla: o.value.sigla?.trim() || null,
+            nombre: o.value.nombre.trim(),
+            plan_estudios: o.value.plan_estudios || null,
+            estado: o.value.estado || 'EN_PROCESO',
+            modalidad: o.value.modalidad || null,
+            creditos: o.value.creditos ?? 0,
+            carga_horaria_total: o.value.carga_horaria_total ?? 0,
+            horas_teoricas: o.value.horas_teoricas ?? 0,
+            horas_practicas: o.value.horas_practicas ?? 0,
+            horas_laboratorio: o.value.horas_laboratorio ?? 0,
+            sesiones_semanales: o.value.sesiones_semanales ?? 0,
+            sesiones_semanales_teoricas: o.value.sesiones_semanales_teoricas ?? 0,
+            sesiones_semanales_practicas: o.value.sesiones_semanales_practicas ?? 0,
+            area_desempenio: o.value.area_desempenio?.trim() || null,
+            tipo_curso: o.value.tipo_curso?.trim() || null,
+            requisitos: o.value.requisitos?.trim() || null,
+            modificado_localmente: !0,
+          }
+          ;(u.value
+            ? (await f.updateAsignatura(o.value.id, i),
+              v.create({ type: 'positive', message: 'Asignatura actualizada correctamente' }))
+            : (await f.createAsignatura(i),
+              v.create({ type: 'positive', message: 'Asignatura creada correctamente' })),
+            (q.value = !1))
+        } catch (i) {
+          const e = i.response?.data,
+            a = e?.message || (e?.errors ? Object.values(e.errors).flat().join(' | ') : i.message)
+          v.create({ type: 'negative', message: 'Error: ' + a })
+        } finally {
+          h.value = !1
+        }
+      }
+      function G(i) {
+        ;((g.value = i), (C.value = !0))
+      }
+      async function W() {
+        P.value = !0
+        try {
+          ;(await f.deleteAsignatura(g.value.id),
+            v.create({ type: 'positive', message: 'Asignatura eliminada correctamente' }),
+            (C.value = !1))
+        } catch (i) {
+          v.create({
+            type: 'negative',
+            message: 'Error: ' + (i.response?.data?.message || i.message),
+          })
+        } finally {
+          P.value = !1
+        }
+      }
+      return (i, e) => (
+        b(),
+        x(
+          ne,
+          { class: 'q-pa-lg' },
+          {
+            default: t(() => [
+              s('div', ce, [
+                s('div', ve, [
+                  s('h4', pe, [
+                    l(r, { name: 'book', size: '36px', color: 'primary', class: 'q-mr-sm' }),
+                    e[22] ||
+                      (e[22] = s(
+                        'span',
+                        { class: 'text-gradient' },
+                        'Administración de Asignaturas',
+                        -1,
+                      )),
+                  ]),
+                  e[23] ||
+                    (e[23] = s(
+                      'p',
+                      { class: 'q-ma-none q-mt-xs text-grey-6' },
+                      ' Edita directamente los datos locales — corrige errores de la API sin necesidad de sincronizar ',
+                      -1,
+                    )),
+                ]),
+                s('div', _e, [
+                  l(
+                    p,
+                    {
+                      outline: '',
+                      color: 'primary',
+                      icon: 'refresh',
+                      label: 'Actualizar',
+                      onClick: F,
+                      loading: _.value,
+                    },
+                    null,
+                    8,
+                    ['loading'],
+                  ),
+                  l(
+                    p,
+                    {
+                      color: 'primary',
+                      icon: 'add',
+                      label: 'Nueva Asignatura',
+                      onClick: e[0] || (e[0] = (a) => z(null)),
+                      disable: _.value,
+                    },
+                    null,
+                    8,
+                    ['disable'],
+                  ),
+                ]),
+              ]),
+              l(
+                Q,
+                { flat: '', bordered: '', class: 'q-mb-lg filter-card' },
+                {
+                  default: t(() => [
+                    l(A, null, {
+                      default: t(() => [
+                        s('div', ge, [
+                          s('div', fe, [
+                            l(
+                              n,
+                              {
+                                modelValue: N.value,
+                                'onUpdate:modelValue': e[1] || (e[1] = (a) => (N.value = a)),
+                                outlined: '',
+                                dense: '',
+                                clearable: '',
+                                placeholder: 'Buscar por nombre o código...',
+                              },
+                              { prepend: t(() => [l(r, { name: 'search', size: '18px' })]), _: 1 },
+                              8,
+                              ['modelValue'],
+                            ),
+                          ]),
+                          s('div', be, [
+                            l(
+                              E,
+                              {
+                                modelValue: w.value,
+                                'onUpdate:modelValue': e[2] || (e[2] = (a) => (w.value = a)),
+                                options: j,
+                                label: 'Plan de Malla',
+                                outlined: '',
+                                dense: '',
+                                clearable: '',
+                                'emit-value': '',
+                                'map-options': '',
+                              },
+                              {
+                                prepend: t(() => [l(r, { name: 'account_tree', size: '18px' })]),
+                                _: 1,
+                              },
+                              8,
+                              ['modelValue'],
+                            ),
+                          ]),
+                        ]),
+                      ]),
+                      _: 1,
+                    }),
+                  ]),
+                  _: 1,
+                },
+              ),
+              l(
+                oe,
+                {
+                  rows: $.value,
+                  columns: H,
+                  'row-key': 'id',
+                  loading: _.value,
+                  filter: N.value,
+                  pagination: L.value,
+                  class: 'shadow-1 asig-table',
+                  flat: '',
+                  bordered: '',
+                },
+                {
+                  'body-cell-codigo': t((a) => [
+                    l(
+                      V,
+                      { props: a },
+                      { default: t(() => [s('code', Ve, c(a.value), 1)]), _: 2 },
+                      1032,
+                      ['props'],
+                    ),
+                  ]),
+                  'body-cell-plan_estudios': t((a) => [
+                    l(
+                      V,
+                      { props: a },
+                      {
+                        default: t(() => [
+                          a.value
+                            ? (b(),
+                              x(
+                                y,
+                                {
+                                  key: 0,
+                                  size: 'sm',
+                                  dense: '',
+                                  color: a.value === 'A' ? 'blue-3' : 'orange-3',
+                                  'text-color': a.value === 'A' ? 'blue-9' : 'orange-9',
+                                },
+                                {
+                                  default: t(() => [
+                                    l(
+                                      r,
+                                      {
+                                        name: a.value === 'A' ? 'history' : 'new_releases',
+                                        size: '14px',
+                                        class: 'q-mr-xs',
+                                      },
+                                      null,
+                                      8,
+                                      ['name'],
+                                    ),
+                                    d(' ' + c(a.value === 'A' ? 'Antigua' : 'Nueva'), 1),
+                                  ]),
+                                  _: 2,
+                                },
+                                1032,
+                                ['color', 'text-color'],
+                              ))
+                            : (b(),
+                              x(
+                                y,
+                                {
+                                  key: 1,
+                                  size: 'sm',
+                                  dense: '',
+                                  color: 'grey-3',
+                                  'text-color': 'red-7',
+                                },
+                                {
+                                  default: t(() => [
+                                    l(r, { name: 'warning', size: '14px', class: 'q-mr-xs' }),
+                                    e[24] || (e[24] = d('Sin definir ', -1)),
+                                  ]),
+                                  _: 1,
+                                },
+                              )),
+                        ]),
+                        _: 2,
+                      },
+                      1032,
+                      ['props'],
+                    ),
+                  ]),
+                  'body-cell-estado': t((a) => [
+                    l(
+                      V,
+                      { props: a },
+                      {
+                        default: t(() => [
+                          l(
+                            y,
+                            {
+                              size: 'sm',
+                              dense: '',
+                              color:
+                                a.value === 'ACTIVO'
+                                  ? 'green-2'
+                                  : a.value === 'EN_PROCESO'
+                                    ? 'blue-2'
+                                    : 'grey-3',
+                              'text-color':
+                                a.value === 'ACTIVO'
+                                  ? 'green-9'
+                                  : a.value === 'EN_PROCESO'
+                                    ? 'blue-9'
+                                    : 'grey-7',
+                            },
+                            { default: t(() => [d(c(a.value || '—'), 1)]), _: 2 },
+                            1032,
+                            ['color', 'text-color'],
+                          ),
+                        ]),
+                        _: 2,
+                      },
+                      1032,
+                      ['props'],
+                    ),
+                  ]),
+                  'body-cell-horas': t((a) => [
+                    l(
+                      V,
+                      { props: a },
+                      {
+                        default: t(() => [
+                          s(
+                            'span',
+                            ye,
+                            'T:' +
+                              c(a.row.horas_teoricas || 0) +
+                              ' P:' +
+                              c(a.row.horas_practicas || 0),
+                            1,
+                          ),
+                        ]),
+                        _: 2,
+                      },
+                      1032,
+                      ['props'],
+                    ),
+                  ]),
+                  'body-cell-modificado_localmente': t((a) => [
+                    l(
+                      V,
+                      { props: a },
+                      {
+                        default: t(() => [
+                          l(
+                            r,
+                            {
+                              name: a.value ? 'edit_note' : 'cloud_done',
+                              color: a.value ? 'orange-8' : 'green-6',
+                              size: '20px',
+                            },
+                            {
+                              default: t(() => [
+                                l(
+                                  S,
+                                  null,
+                                  {
+                                    default: t(() => [
+                                      d(
+                                        c(
+                                          a.value
+                                            ? 'Modificado localmente'
+                                            : 'Sincronizado con API',
+                                        ),
+                                        1,
+                                      ),
+                                    ]),
+                                    _: 2,
+                                  },
+                                  1024,
+                                ),
+                              ]),
+                              _: 2,
+                            },
+                            1032,
+                            ['name', 'color'],
+                          ),
+                        ]),
+                        _: 2,
+                      },
+                      1032,
+                      ['props'],
+                    ),
+                  ]),
+                  'body-cell-actions': t((a) => [
+                    l(
+                      V,
+                      { props: a },
+                      {
+                        default: t(() => [
+                          s('div', xe, [
+                            l(
+                              p,
+                              {
+                                flat: '',
+                                dense: '',
+                                round: '',
+                                icon: 'edit',
+                                color: 'primary',
+                                size: 'sm',
+                                onClick: (J) => z(a.row),
+                              },
+                              {
+                                default: t(() => [
+                                  l(S, null, {
+                                    default: t(() => [...(e[25] || (e[25] = [d('Editar', -1)]))]),
+                                    _: 1,
+                                  }),
+                                ]),
+                                _: 2,
+                              },
+                              1032,
+                              ['onClick'],
+                            ),
+                            l(
+                              p,
+                              {
+                                flat: '',
+                                dense: '',
+                                round: '',
+                                icon: 'delete',
+                                color: 'negative',
+                                size: 'sm',
+                                onClick: (J) => G(a.row),
+                              },
+                              {
+                                default: t(() => [
+                                  l(S, null, {
+                                    default: t(() => [...(e[26] || (e[26] = [d('Eliminar', -1)]))]),
+                                    _: 1,
+                                  }),
+                                ]),
+                                _: 2,
+                              },
+                              1032,
+                              ['onClick'],
+                            ),
+                          ]),
+                        ]),
+                        _: 2,
+                      },
+                      1032,
+                      ['props'],
+                    ),
+                  ]),
+                  _: 1,
+                },
+                8,
+                ['rows', 'loading', 'filter', 'pagination'],
+              ),
+              l(
+                O,
+                {
+                  modelValue: q.value,
+                  'onUpdate:modelValue': e[20] || (e[20] = (a) => (q.value = a)),
+                  persistent: '',
+                },
+                {
+                  default: t(() => [
+                    l(
+                      Q,
+                      {
+                        style: {
+                          width: '860px',
+                          'max-width': '97vw',
+                          'max-height': '94vh',
+                          display: 'flex',
+                          'flex-direction': 'column',
+                        },
+                      },
+                      {
+                        default: t(() => [
+                          l(
+                            A,
+                            { class: 'bg-primary text-white q-py-md row items-center' },
+                            {
+                              default: t(() => [
+                                l(
+                                  r,
+                                  {
+                                    name: u.value ? 'edit' : 'add',
+                                    size: '22px',
+                                    class: 'q-mr-sm',
+                                  },
+                                  null,
+                                  8,
+                                  ['name'],
+                                ),
+                                s(
+                                  'span',
+                                  Ae,
+                                  c(u.value ? 'Editar Asignatura' : 'Nueva Asignatura'),
+                                  1,
+                                ),
+                                l(T),
+                                u.value && o.value.modificado_localmente
+                                  ? (b(),
+                                    x(
+                                      y,
+                                      {
+                                        key: 0,
+                                        color: 'orange-2',
+                                        'text-color': 'orange-9',
+                                        dense: '',
+                                        size: 'sm',
+                                      },
+                                      {
+                                        default: t(() => [
+                                          l(r, {
+                                            name: 'edit_note',
+                                            size: '14px',
+                                            class: 'q-mr-xs',
+                                          }),
+                                          e[27] || (e[27] = d('Modificado localmente ', -1)),
+                                        ]),
+                                        _: 1,
+                                      },
+                                    ))
+                                  : u.value
+                                    ? (b(),
+                                      x(
+                                        y,
+                                        {
+                                          key: 1,
+                                          color: 'green-2',
+                                          'text-color': 'green-9',
+                                          dense: '',
+                                          size: 'sm',
+                                        },
+                                        {
+                                          default: t(() => [
+                                            l(r, {
+                                              name: 'cloud_done',
+                                              size: '14px',
+                                              class: 'q-mr-xs',
+                                            }),
+                                            e[28] || (e[28] = d('Sincronizado API ', -1)),
+                                          ]),
+                                          _: 1,
+                                        },
+                                      ))
+                                    : U('', !0),
+                              ]),
+                              _: 1,
+                            },
+                          ),
+                          l(
+                            re,
+                            { style: { flex: '1', 'min-height': '0' } },
+                            {
+                              default: t(() => [
+                                l(
+                                  A,
+                                  { class: 'q-pt-md q-px-lg' },
+                                  {
+                                    default: t(() => [
+                                      l(
+                                        ie,
+                                        { onSubmit: Y(I, ['prevent']) },
+                                        {
+                                          default: t(() => [
+                                            s('div', qe, [
+                                              s('div', Ce, [
+                                                l(r, {
+                                                  name: 'badge',
+                                                  color: 'primary',
+                                                  size: '18px',
+                                                  class: 'q-mr-xs',
+                                                }),
+                                                e[29] ||
+                                                  (e[29] = s('span', null, 'Identificación', -1)),
+                                              ]),
+                                              s('div', we, [
+                                                s('div', Ee, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.codigo,
+                                                      'onUpdate:modelValue':
+                                                        e[3] ||
+                                                        (e[3] = (a) => (o.value.codigo = a)),
+                                                      label: 'Código *',
+                                                      outlined: '',
+                                                      dense: '',
+                                                      disable: u.value,
+                                                      hint: 'No editable una vez creado',
+                                                      rules: [(a) => !!a || 'Obligatorio'],
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue', 'disable', 'rules'],
+                                                  ),
+                                                ]),
+                                                s('div', he, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.nombre,
+                                                      'onUpdate:modelValue':
+                                                        e[4] ||
+                                                        (e[4] = (a) => (o.value.nombre = a)),
+                                                      label: 'Nombre *',
+                                                      outlined: '',
+                                                      dense: '',
+                                                      rules: [(a) => !!a || 'Obligatorio'],
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue', 'rules'],
+                                                  ),
+                                                ]),
+                                                s('div', Pe, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.sigla,
+                                                      'onUpdate:modelValue':
+                                                        e[5] || (e[5] = (a) => (o.value.sigla = a)),
+                                                      label: 'Sigla',
+                                                      outlined: '',
+                                                      dense: '',
+                                                      clearable: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                              ]),
+                                            ]),
+                                            s('div', Ne, [
+                                              s('div', Qe, [
+                                                l(r, {
+                                                  name: 'account_tree',
+                                                  color: 'orange-8',
+                                                  size: '18px',
+                                                  class: 'q-mr-xs',
+                                                }),
+                                                e[31] ||
+                                                  (e[31] = s(
+                                                    'span',
+                                                    null,
+                                                    'Malla Curricular y Estado',
+                                                    -1,
+                                                  )),
+                                                l(T),
+                                                l(
+                                                  y,
+                                                  {
+                                                    dense: '',
+                                                    size: 'sm',
+                                                    color: 'orange-1',
+                                                    'text-color': 'orange-9',
+                                                    icon: 'info',
+                                                  },
+                                                  {
+                                                    default: t(() => [
+                                                      ...(e[30] ||
+                                                        (e[30] = [
+                                                          d(
+                                                            ' Campo clave — corrige si la API trajo un valor incorrecto ',
+                                                            -1,
+                                                          ),
+                                                        ])),
+                                                    ]),
+                                                    _: 1,
+                                                  },
+                                                ),
+                                              ]),
+                                              s('div', Se, [
+                                                s('div', ze, [
+                                                  l(
+                                                    E,
+                                                    {
+                                                      modelValue: o.value.plan_estudios,
+                                                      'onUpdate:modelValue':
+                                                        e[6] ||
+                                                        (e[6] = (a) => (o.value.plan_estudios = a)),
+                                                      options: [
+                                                        {
+                                                          label: 'Nueva (N) — Plan vigente',
+                                                          value: 'N',
+                                                        },
+                                                        {
+                                                          label: 'Antigua (A) — Plan anterior',
+                                                          value: 'A',
+                                                        },
+                                                      ],
+                                                      label: 'Plan de Malla *',
+                                                      outlined: '',
+                                                      dense: '',
+                                                      'emit-value': '',
+                                                      'map-options': '',
+                                                      clearable: '',
+                                                    },
+                                                    {
+                                                      prepend: t(() => [
+                                                        l(
+                                                          r,
+                                                          {
+                                                            name:
+                                                              o.value.plan_estudios === 'A'
+                                                                ? 'history'
+                                                                : 'new_releases',
+                                                            color:
+                                                              o.value.plan_estudios === 'A'
+                                                                ? 'blue-7'
+                                                                : 'orange-7',
+                                                            size: '20px',
+                                                          },
+                                                          null,
+                                                          8,
+                                                          ['name', 'color'],
+                                                        ),
+                                                      ]),
+                                                      option: t((a) => [
+                                                        l(
+                                                          se,
+                                                          Z(ee(a.itemProps)),
+                                                          {
+                                                            default: t(() => [
+                                                              l(
+                                                                D,
+                                                                { avatar: '' },
+                                                                {
+                                                                  default: t(() => [
+                                                                    l(
+                                                                      r,
+                                                                      {
+                                                                        name:
+                                                                          a.opt.value === 'A'
+                                                                            ? 'history'
+                                                                            : 'new_releases',
+                                                                        color:
+                                                                          a.opt.value === 'A'
+                                                                            ? 'blue-7'
+                                                                            : 'orange-7',
+                                                                      },
+                                                                      null,
+                                                                      8,
+                                                                      ['name', 'color'],
+                                                                    ),
+                                                                  ]),
+                                                                  _: 2,
+                                                                },
+                                                                1024,
+                                                              ),
+                                                              l(
+                                                                D,
+                                                                null,
+                                                                {
+                                                                  default: t(() => [
+                                                                    l(
+                                                                      te,
+                                                                      null,
+                                                                      {
+                                                                        default: t(() => [
+                                                                          d(c(a.opt.label), 1),
+                                                                        ]),
+                                                                        _: 2,
+                                                                      },
+                                                                      1024,
+                                                                    ),
+                                                                  ]),
+                                                                  _: 2,
+                                                                },
+                                                                1024,
+                                                              ),
+                                                            ]),
+                                                            _: 2,
+                                                          },
+                                                          1040,
+                                                        ),
+                                                      ]),
+                                                      _: 1,
+                                                    },
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', Ie, [
+                                                  l(
+                                                    E,
+                                                    {
+                                                      modelValue: o.value.estado,
+                                                      'onUpdate:modelValue':
+                                                        e[7] ||
+                                                        (e[7] = (a) => (o.value.estado = a)),
+                                                      options: [
+                                                        { label: 'Activo', value: 'ACTIVO' },
+                                                        {
+                                                          label: 'En Proceso',
+                                                          value: 'EN_PROCESO',
+                                                        },
+                                                        { label: 'Inactivo', value: 'INACTIVO' },
+                                                        { label: 'Pendiente', value: 'PENDIENTE' },
+                                                      ],
+                                                      label: 'Estado',
+                                                      outlined: '',
+                                                      dense: '',
+                                                      'emit-value': '',
+                                                      'map-options': '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', Oe, [
+                                                  l(
+                                                    E,
+                                                    {
+                                                      modelValue: o.value.modalidad,
+                                                      'onUpdate:modelValue':
+                                                        e[8] ||
+                                                        (e[8] = (a) => (o.value.modalidad = a)),
+                                                      options: [
+                                                        {
+                                                          label: 'Presencial',
+                                                          value: 'PRESENCIAL',
+                                                        },
+                                                        {
+                                                          label: 'Semi-presencial',
+                                                          value: 'SEMI_PRESENCIAL',
+                                                        },
+                                                        { label: 'Virtual', value: 'VIRTUAL' },
+                                                      ],
+                                                      label: 'Modalidad',
+                                                      outlined: '',
+                                                      dense: '',
+                                                      clearable: '',
+                                                      'emit-value': '',
+                                                      'map-options': '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                              ]),
+                                            ]),
+                                            s('div', Ue, [
+                                              s('div', Me, [
+                                                l(r, {
+                                                  name: 'schedule',
+                                                  color: 'teal',
+                                                  size: '18px',
+                                                  class: 'q-mr-xs',
+                                                }),
+                                                e[32] ||
+                                                  (e[32] = s(
+                                                    'span',
+                                                    null,
+                                                    'Carga Horaria y Créditos',
+                                                    -1,
+                                                  )),
+                                              ]),
+                                              s('div', ke, [
+                                                s('div', Te, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.creditos,
+                                                      'onUpdate:modelValue':
+                                                        e[9] ||
+                                                        (e[9] = (a) => (o.value.creditos = a)),
+                                                      modelModifiers: { number: !0 },
+                                                      label: 'Créditos',
+                                                      type: 'number',
+                                                      min: '0',
+                                                      outlined: '',
+                                                      dense: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', De, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.carga_horaria_total,
+                                                      'onUpdate:modelValue':
+                                                        e[10] ||
+                                                        (e[10] = (a) =>
+                                                          (o.value.carga_horaria_total = a)),
+                                                      modelModifiers: { number: !0 },
+                                                      label: 'Horas Total',
+                                                      type: 'number',
+                                                      min: '0',
+                                                      outlined: '',
+                                                      dense: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', Re, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.horas_teoricas,
+                                                      'onUpdate:modelValue':
+                                                        e[11] ||
+                                                        (e[11] = (a) =>
+                                                          (o.value.horas_teoricas = a)),
+                                                      modelModifiers: { number: !0 },
+                                                      label: 'Horas Teóricas',
+                                                      type: 'number',
+                                                      min: '0',
+                                                      outlined: '',
+                                                      dense: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', Be, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.horas_practicas,
+                                                      'onUpdate:modelValue':
+                                                        e[12] ||
+                                                        (e[12] = (a) =>
+                                                          (o.value.horas_practicas = a)),
+                                                      modelModifiers: { number: !0 },
+                                                      label: 'Horas Prácticas',
+                                                      type: 'number',
+                                                      min: '0',
+                                                      outlined: '',
+                                                      dense: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', je, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.horas_laboratorio,
+                                                      'onUpdate:modelValue':
+                                                        e[13] ||
+                                                        (e[13] = (a) =>
+                                                          (o.value.horas_laboratorio = a)),
+                                                      modelModifiers: { number: !0 },
+                                                      label: 'Horas Lab.',
+                                                      type: 'number',
+                                                      min: '0',
+                                                      outlined: '',
+                                                      dense: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', He, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.sesiones_semanales,
+                                                      'onUpdate:modelValue':
+                                                        e[14] ||
+                                                        (e[14] = (a) =>
+                                                          (o.value.sesiones_semanales = a)),
+                                                      modelModifiers: { number: !0 },
+                                                      label: 'Sesiones/Semana',
+                                                      type: 'number',
+                                                      min: '0',
+                                                      outlined: '',
+                                                      dense: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', Le, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue:
+                                                        o.value.sesiones_semanales_teoricas,
+                                                      'onUpdate:modelValue':
+                                                        e[15] ||
+                                                        (e[15] = (a) =>
+                                                          (o.value.sesiones_semanales_teoricas =
+                                                            a)),
+                                                      modelModifiers: { number: !0 },
+                                                      label: 'Ses. Teóricas',
+                                                      type: 'number',
+                                                      min: '0',
+                                                      outlined: '',
+                                                      dense: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', $e, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue:
+                                                        o.value.sesiones_semanales_practicas,
+                                                      'onUpdate:modelValue':
+                                                        e[16] ||
+                                                        (e[16] = (a) =>
+                                                          (o.value.sesiones_semanales_practicas =
+                                                            a)),
+                                                      modelModifiers: { number: !0 },
+                                                      label: 'Ses. Prácticas',
+                                                      type: 'number',
+                                                      min: '0',
+                                                      outlined: '',
+                                                      dense: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                              ]),
+                                            ]),
+                                            s('div', Fe, [
+                                              s('div', Ge, [
+                                                l(r, {
+                                                  name: 'category',
+                                                  color: 'purple',
+                                                  size: '18px',
+                                                  class: 'q-mr-xs',
+                                                }),
+                                                e[33] ||
+                                                  (e[33] = s('span', null, 'Clasificación', -1)),
+                                              ]),
+                                              s('div', We, [
+                                                s('div', Je, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.area_desempenio,
+                                                      'onUpdate:modelValue':
+                                                        e[17] ||
+                                                        (e[17] = (a) =>
+                                                          (o.value.area_desempenio = a)),
+                                                      label: 'Área de Desempeño',
+                                                      outlined: '',
+                                                      dense: '',
+                                                      clearable: '',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', Ke, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.tipo_curso,
+                                                      'onUpdate:modelValue':
+                                                        e[18] ||
+                                                        (e[18] = (a) => (o.value.tipo_curso = a)),
+                                                      label: 'Tipo de Curso',
+                                                      outlined: '',
+                                                      dense: '',
+                                                      clearable: '',
+                                                      placeholder: 'Ej: Obligatorio, Electivo...',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                                s('div', Xe, [
+                                                  l(
+                                                    n,
+                                                    {
+                                                      modelValue: o.value.requisitos,
+                                                      'onUpdate:modelValue':
+                                                        e[19] ||
+                                                        (e[19] = (a) => (o.value.requisitos = a)),
+                                                      label: 'Requisitos (prerrequisitos)',
+                                                      outlined: '',
+                                                      dense: '',
+                                                      clearable: '',
+                                                      placeholder: 'Ej: MAT-101, QUIM-101...',
+                                                    },
+                                                    null,
+                                                    8,
+                                                    ['modelValue'],
+                                                  ),
+                                                ]),
+                                              ]),
+                                            ]),
+                                          ]),
+                                          _: 1,
+                                        },
+                                      ),
+                                    ]),
+                                    _: 1,
+                                  },
+                                ),
+                              ]),
+                              _: 1,
+                            },
+                          ),
+                          l(ae),
+                          l(
+                            M,
+                            { align: 'right', class: 'q-pa-md' },
+                            {
+                              default: t(() => [
+                                k(l(p, { flat: '', label: 'Cancelar' }, null, 512), [[R]]),
+                                l(
+                                  p,
+                                  {
+                                    color: u.value ? 'primary' : 'positive',
+                                    icon: u.value ? 'save' : 'add',
+                                    label: u.value ? 'Guardar cambios' : 'Crear Asignatura',
+                                    loading: h.value,
+                                    disable: !o.value.nombre || !o.value.codigo,
+                                    onClick: I,
+                                  },
+                                  null,
+                                  8,
+                                  ['color', 'icon', 'label', 'loading', 'disable'],
+                                ),
+                              ]),
+                              _: 1,
+                            },
+                          ),
+                        ]),
+                        _: 1,
+                      },
+                    ),
+                  ]),
+                  _: 1,
+                },
+                8,
+                ['modelValue'],
+              ),
+              l(
+                O,
+                {
+                  modelValue: C.value,
+                  'onUpdate:modelValue': e[21] || (e[21] = (a) => (C.value = a)),
+                  persistent: '',
+                },
+                {
+                  default: t(() => [
+                    l(
+                      Q,
+                      { style: { 'min-width': '360px' } },
+                      {
+                        default: t(() => [
+                          l(
+                            A,
+                            { class: 'bg-negative text-white' },
+                            {
+                              default: t(() => [
+                                s('div', Ye, [
+                                  l(r, { name: 'warning', class: 'q-mr-sm' }),
+                                  e[34] || (e[34] = d('Confirmar Eliminación', -1)),
+                                ]),
+                              ]),
+                              _: 1,
+                            },
+                          ),
+                          l(
+                            A,
+                            { class: 'q-pt-lg' },
+                            {
+                              default: t(() => [
+                                g.value
+                                  ? (b(),
+                                    le('div', Ze, [
+                                      s('div', null, [
+                                        e[35] || (e[35] = s('strong', null, 'Código:', -1)),
+                                        d(' ' + c(g.value.codigo), 1),
+                                      ]),
+                                      s('div', null, [
+                                        e[36] || (e[36] = s('strong', null, 'Nombre:', -1)),
+                                        d(' ' + c(g.value.nombre), 1),
+                                      ]),
+                                      s('div', null, [
+                                        e[37] || (e[37] = s('strong', null, 'Malla:', -1)),
+                                        d(
+                                          ' ' +
+                                            c(
+                                              g.value.plan_estudios === 'A'
+                                                ? 'Antigua'
+                                                : g.value.plan_estudios === 'N'
+                                                  ? 'Nueva'
+                                                  : 'Sin definir',
+                                            ),
+                                          1,
+                                        ),
+                                      ]),
+                                    ]))
+                                  : U('', !0),
+                                e[38] ||
+                                  (e[38] = d(
+                                    ' ¿Estás seguro? Esta acción eliminará también los grupos y cronogramas asociados.',
+                                    -1,
+                                  )),
+                                e[39] || (e[39] = s('br', null, null, -1)),
+                                e[40] ||
+                                  (e[40] = s(
+                                    'small',
+                                    { class: 'text-grey' },
+                                    'Esta acción no se puede deshacer.',
+                                    -1,
+                                  )),
+                              ]),
+                              _: 1,
+                            },
+                          ),
+                          l(
+                            M,
+                            { align: 'right' },
+                            {
+                              default: t(() => [
+                                k(l(p, { flat: '', label: 'Cancelar' }, null, 512), [[R]]),
+                                l(
+                                  p,
+                                  {
+                                    label: 'Eliminar',
+                                    color: 'negative',
+                                    onClick: W,
+                                    loading: P.value,
+                                  },
+                                  null,
+                                  8,
+                                  ['loading'],
+                                ),
+                              ]),
+                              _: 1,
+                            },
+                          ),
+                        ]),
+                        _: 1,
+                      },
+                    ),
+                  ]),
+                  _: 1,
+                },
+                8,
+                ['modelValue'],
+              ),
+            ]),
+            _: 1,
+          },
+        )
+      )
+    },
+  },
+  Pa = me(ea, [['__scopeId', 'data-v-2f266f27']])
+export { Pa as default }

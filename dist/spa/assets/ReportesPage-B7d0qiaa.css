@@ -1,1 +1,97 @@
-.reportes-page[data-v-6315b96f]{padding:24px;background:var(--bg-primary);min-height:100vh}.page-header[data-v-6315b96f]{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.header-left[data-v-6315b96f]{display:flex;flex-direction:column}.header-actions[data-v-6315b96f]{display:flex;gap:12px}.page-title[data-v-6315b96f]{font-size:1.75rem;font-weight:700;color:var(--text-primary);margin:0;display:flex;align-items:center}.page-subtitle[data-v-6315b96f]{color:var(--text-secondary);margin:4px 0 0}.filtros-card[data-v-6315b96f]{background:var(--bg-secondary)!important;border:1px solid var(--border-color);border-radius:16px}.reporte-header[data-v-6315b96f]{display:flex;justify-content:space-between;align-items:center}.reporte-titulo[data-v-6315b96f]{font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:0}.reporte-fecha[data-v-6315b96f]{color:var(--text-muted);font-size:.85rem;margin:0}.stat-card[data-v-6315b96f]{border-radius:12px;text-align:center;color:#fff}.stat-card .q-card-section[data-v-6315b96f]{padding:20px}.stat-primary[data-v-6315b96f]{background:linear-gradient(135deg,#6366f1,#4f46e5)}.stat-success[data-v-6315b96f]{background:linear-gradient(135deg,#10b981,#059669)}.stat-warning[data-v-6315b96f]{background:linear-gradient(135deg,#f59e0b,#d97706)}.stat-info[data-v-6315b96f]{background:linear-gradient(135deg,#3b82f6,#2563eb)}.stat-value[data-v-6315b96f]{font-size:2rem;font-weight:700;margin:8px 0}.stat-label[data-v-6315b96f]{font-size:.85rem;opacity:.9}.data-card[data-v-6315b96f]{background:var(--bg-secondary)!important;border:1px solid var(--border-color);border-radius:16px}.empty-state[data-v-6315b96f]{text-align:center;padding:80px 20px}.empty-state h3[data-v-6315b96f]{color:var(--text-secondary);margin:16px 0 8px}.empty-state p[data-v-6315b96f]{color:var(--text-muted)}
+.reportes-page[data-v-6315b96f] {
+  padding: 24px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+.page-header[data-v-6315b96f] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.header-left[data-v-6315b96f] {
+  display: flex;
+  flex-direction: column;
+}
+.header-actions[data-v-6315b96f] {
+  display: flex;
+  gap: 12px;
+}
+.page-title[data-v-6315b96f] {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+.page-subtitle[data-v-6315b96f] {
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+}
+.filtros-card[data-v-6315b96f] {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+.reporte-header[data-v-6315b96f] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.reporte-titulo[data-v-6315b96f] {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.reporte-fecha[data-v-6315b96f] {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+.stat-card[data-v-6315b96f] {
+  border-radius: 12px;
+  text-align: center;
+  color: #fff;
+}
+.stat-card .q-card-section[data-v-6315b96f] {
+  padding: 20px;
+}
+.stat-primary[data-v-6315b96f] {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+.stat-success[data-v-6315b96f] {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+.stat-warning[data-v-6315b96f] {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.stat-info[data-v-6315b96f] {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+.stat-value[data-v-6315b96f] {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 8px 0;
+}
+.stat-label[data-v-6315b96f] {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+.data-card[data-v-6315b96f] {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+.empty-state[data-v-6315b96f] {
+  text-align: center;
+  padding: 80px 20px;
+}
+.empty-state h3[data-v-6315b96f] {
+  color: var(--text-secondary);
+  margin: 16px 0 8px;
+}
+.empty-state p[data-v-6315b96f] {
+  color: var(--text-muted);
+}

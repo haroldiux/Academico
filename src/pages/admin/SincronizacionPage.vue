@@ -904,13 +904,15 @@
           <q-tab-panel name="grupos_inactivados" class="q-pa-none">
             <q-banner class="bg-grey-2 q-mb-sm" dense>
               <template #avatar><q-icon name="info" color="grey-7" /></template>
-              Estos grupos ya no están en la API. Se marcaron como INACTIVOS y no aparecerán en el sistema.
+              Estos grupos ya no están en la API. Se marcaron como INACTIVOS y no aparecerán en el
+              sistema.
             </q-banner>
             <q-table
               :rows="diffData.diff?.grupos_inactivados ?? []"
               :columns="colsGruposInactivados"
               row-key="id"
-              dense flat
+              dense
+              flat
               :rows-per-page-options="[0]"
               hide-pagination
             />
@@ -920,13 +922,15 @@
           <q-tab-panel name="duplicados_fusionados" class="q-pa-none">
             <q-banner class="bg-purple-1 q-mb-sm" dense>
               <template #avatar><q-icon name="merge" color="purple" /></template>
-              Se detectaron asignaturas duplicadas. El banco de preguntas fue migrado al registro correcto.
+              Se detectaron asignaturas duplicadas. El banco de preguntas fue migrado al registro
+              correcto.
             </q-banner>
             <q-table
               :rows="diffData.diff?.duplicados_fusionados ?? []"
               :columns="colsDuplicadosFusionados"
               row-key="correcta_id"
-              dense flat
+              dense
+              flat
               :rows-per-page-options="[0]"
               hide-pagination
             >
@@ -944,7 +948,8 @@
           <q-tab-panel name="asignaturas_desvinculadas" class="q-pa-none">
             <q-banner class="bg-brown-1 q-mb-sm" dense>
               <template #avatar><q-icon name="link_off" color="brown" /></template>
-              Estas asignaturas no tienen grupos activos en esta carrera/sede. Se desvincularon del plan pero su contenido (banco de preguntas, documentación) se conserva.
+              Estas asignaturas no tienen grupos activos en esta carrera/sede. Se desvincularon del
+              plan pero su contenido (banco de preguntas, documentación) se conserva.
             </q-banner>
             <q-list bordered separator>
               <q-item v-for="a in diffData.diff?.asignaturas_desvinculadas ?? []" :key="a.id" dense>
@@ -963,13 +968,15 @@
           <q-tab-panel name="conflictos_locales" class="q-pa-none">
             <q-banner class="bg-deep-orange-1 q-mb-sm" dense>
               <template #avatar><q-icon name="warning" color="deep-orange" /></template>
-              Estos grupos fueron modificados localmente pero la API tiene datos diferentes. Decide qué versión conservar.
+              Estos grupos fueron modificados localmente pero la API tiene datos diferentes. Decide
+              qué versión conservar.
             </q-banner>
             <q-table
               :rows="diffData.diff?.conflictos_locales ?? []"
               :columns="colsConflictos"
               row-key="grupo_id"
-              dense flat
+              dense
+              flat
               :rows-per-page-options="[0]"
               hide-pagination
             >
@@ -991,13 +998,19 @@
                 <q-td :props="props">
                   <div class="row q-gutter-xs no-wrap">
                     <q-btn
-                      dense size="xs" unelevated
-                      color="green" label="Aceptar API"
+                      dense
+                      size="xs"
+                      unelevated
+                      color="green"
+                      label="Aceptar API"
                       @click="resolverConflicto(props.row, 'aceptar_api')"
                     />
                     <q-btn
-                      dense size="xs" unelevated
-                      color="blue-grey" label="Mantener local"
+                      dense
+                      size="xs"
+                      unelevated
+                      color="blue-grey"
+                      label="Mantener local"
                       @click="resolverConflicto(props.row, 'mantener_local')"
                     />
                   </div>
@@ -1414,9 +1427,24 @@ const colsGruposInactivados = [
   { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
 ]
 const colsDuplicadosFusionados = [
-  { name: 'correcta_nombre', label: 'Asignatura correcta', field: 'correcta_nombre', align: 'left' },
-  { name: 'duplicada_nombre', label: 'Duplicado eliminado', field: 'duplicada_nombre', align: 'left' },
-  { name: 'preguntas_migradas', label: 'Preguntas migradas', field: row => row.preguntas?.migradas ?? 0, align: 'center' },
+  {
+    name: 'correcta_nombre',
+    label: 'Asignatura correcta',
+    field: 'correcta_nombre',
+    align: 'left',
+  },
+  {
+    name: 'duplicada_nombre',
+    label: 'Duplicado eliminado',
+    field: 'duplicada_nombre',
+    align: 'left',
+  },
+  {
+    name: 'preguntas_migradas',
+    label: 'Preguntas migradas',
+    field: (row) => row.preguntas?.migradas ?? 0,
+    align: 'center',
+  },
 ]
 const colsConflictos = [
   { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
@@ -1465,12 +1493,13 @@ async function resolverConflicto(conflicto, accion) {
     // Quitar el conflicto de la lista local
     if (diffData.value?.diff?.conflictos_locales) {
       diffData.value.diff.conflictos_locales = diffData.value.diff.conflictos_locales.filter(
-        c => c.grupo_id !== conflicto.grupo_id
+        (c) => c.grupo_id !== conflicto.grupo_id,
       )
     }
     $q.notify({
       type: 'positive',
-      message: accion === 'aceptar_api' ? 'Actualizado con datos de la API' : 'Mantenidos datos locales',
+      message:
+        accion === 'aceptar_api' ? 'Actualizado con datos de la API' : 'Mantenidos datos locales',
     })
   } catch {
     $q.notify({ type: 'negative', message: 'Error al resolver el conflicto' })

@@ -38,8 +38,8 @@
         <q-icon name="warning" color="white" />
       </template>
       <strong>Tu perfil de director no tiene una carrera asignada.</strong>
-      Contacta al administrador del sistema para que asigne tu carrera en la gestión de usuarios.
-      No podrás ver asignaturas hasta que se configure correctamente.
+      Contacta al administrador del sistema para que asigne tu carrera en la gestión de usuarios. No
+      podrás ver asignaturas hasta que se configure correctamente.
     </q-banner>
 
     <!-- Filters -->
@@ -943,7 +943,13 @@ const carrerasOptions = computed(() => {
 // Detectar si el director no tiene carrera asignada
 // Solo aplica para rol DIRECTOR_CARRERA, no para admin/vicerrector
 const sinCarreraAsignada = computed(() => {
-  const rolesConAccesoTotal = ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_SEDE', 'DIRECCION_ACADEMICA']
+  const rolesConAccesoTotal = [
+    'VICERRECTOR_NACIONAL',
+    'ADMIN',
+    'SUPER_ADMIN',
+    'VICERRECTOR_SEDE',
+    'DIRECCION_ACADEMICA',
+  ]
   if (rolesConAccesoTotal.includes(authStore.rol)) return false
   if (authStore.rol !== 'DIRECTOR_CARRERA') return false
   return carrerasOptions.value.length === 0

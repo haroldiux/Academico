@@ -1,1 +1,99 @@
-.q-page[data-v-756e63fa]{background:var(--bg-primary);min-height:100vh}.text-gradient[data-v-756e63fa]{background:linear-gradient(135deg,var(--primary),var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.btn-primary-gradient[data-v-756e63fa]{background:linear-gradient(135deg,var(--primary),var(--primary-dark))!important}.stat-card[data-v-756e63fa]{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;padding:20px;transition:all .2s ease}.stat-card[data-v-756e63fa]:hover{border-color:var(--primary);transform:translateY(-2px)}.stat-icon[data-v-756e63fa]{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center}.stat-icon.primary[data-v-756e63fa]{background:#7c3aed26;color:var(--primary-light)}.stat-icon.success[data-v-756e63fa]{background:#22c55e26;color:var(--accent-green)}.stat-icon.warning[data-v-756e63fa]{background:#f9731626;color:var(--accent-orange)}.stat-icon.info[data-v-756e63fa]{background:#3b82f626;color:var(--accent-blue)}.stat-value[data-v-756e63fa]{color:var(--text-primary);font-size:2rem;font-weight:700}.stat-label[data-v-756e63fa]{color:var(--text-secondary);font-size:.875rem}.card-main[data-v-756e63fa]{background:var(--bg-secondary)!important;border:1px solid var(--border-color)!important;border-radius:16px!important}.role-card[data-v-756e63fa]{background:var(--bg-secondary)!important;border:1px solid var(--border-color)!important;border-radius:16px!important;transition:all .2s ease;overflow:hidden}.role-card[data-v-756e63fa]:hover{border-color:var(--primary)!important;transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow-color)}.role-card-header[data-v-756e63fa]{padding:20px;border-bottom:1px solid var(--border-color)}.role-card-body[data-v-756e63fa]{padding:16px 20px}.role-card-footer[data-v-756e63fa]{padding:12px 20px;border-top:1px solid var(--border-color);background:var(--bg-tertiary)}.animate-in[data-v-756e63fa]{animation:fadeIn-756e63fa .4s ease-out}@keyframes fadeIn-756e63fa{0%{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.q-page[data-v-756e63fa] {
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+.text-gradient[data-v-756e63fa] {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.btn-primary-gradient[data-v-756e63fa] {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+}
+.stat-card[data-v-756e63fa] {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+.stat-card[data-v-756e63fa]:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.stat-icon[data-v-756e63fa] {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stat-icon.primary[data-v-756e63fa] {
+  background: #7c3aed26;
+  color: var(--primary-light);
+}
+.stat-icon.success[data-v-756e63fa] {
+  background: #22c55e26;
+  color: var(--accent-green);
+}
+.stat-icon.warning[data-v-756e63fa] {
+  background: #f9731626;
+  color: var(--accent-orange);
+}
+.stat-icon.info[data-v-756e63fa] {
+  background: #3b82f626;
+  color: var(--accent-blue);
+}
+.stat-value[data-v-756e63fa] {
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 700;
+}
+.stat-label[data-v-756e63fa] {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.card-main[data-v-756e63fa] {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 16px !important;
+}
+.role-card[data-v-756e63fa] {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 16px !important;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+.role-card[data-v-756e63fa]:hover {
+  border-color: var(--primary) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--shadow-color);
+}
+.role-card-header[data-v-756e63fa] {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.role-card-body[data-v-756e63fa] {
+  padding: 16px 20px;
+}
+.role-card-footer[data-v-756e63fa] {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+}
+.animate-in[data-v-756e63fa] {
+  animation: fadeIn-756e63fa 0.4s ease-out;
+}
+@keyframes fadeIn-756e63fa {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,1 +1,9 @@
-.sticky-header-table[data-v-11f19577]{height:calc(100vh - 350px)}.sticky-header-table[data-v-11f19577] thead tr th{position:sticky;z-index:1;background-color:#f5f5f5;top:0}
+.sticky-header-table[data-v-11f19577] {
+  height: calc(100vh - 350px);
+}
+.sticky-header-table[data-v-11f19577] thead tr th {
+  position: sticky;
+  z-index: 1;
+  background-color: #f5f5f5;
+  top: 0;
+}

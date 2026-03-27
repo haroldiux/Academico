@@ -1,1 +1,11 @@
-.docentes-page[data-v-8a6a818a]{padding:24px;background-color:#f5f7fa}.metric-card[data-v-8a6a818a]{transition:all .3s ease}.metric-card[data-v-8a6a818a]:hover{transform:translateY(-2px);box-shadow:0 4px 12px #0000001a}
+.docentes-page[data-v-8a6a818a] {
+  padding: 24px;
+  background-color: #f5f7fa;
+}
+.metric-card[data-v-8a6a818a] {
+  transition: all 0.3s ease;
+}
+.metric-card[data-v-8a6a818a]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px #0000001a;
+}

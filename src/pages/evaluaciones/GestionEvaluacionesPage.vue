@@ -17,6 +17,7 @@
             <q-tooltip>Actualizar Lista</q-tooltip>
           </q-btn>
           <q-btn
+            v-if="puedeEditar"
             unelevated
             rounded
             color="deep-purple-7"
@@ -116,7 +117,7 @@
         style="width: 100%; max-width: 600px"
       >
         <q-tab name="rol" icon="assignment" label="Evaluaciones del Rol" />
-        <q-tab name="manual" icon="history_edu" label="Generaciones Manuales" />
+        <q-tab v-if="puedeEditar" name="manual" icon="history_edu" label="Generaciones Manuales" />
       </q-tabs>
     </div>
 
@@ -379,8 +380,8 @@
         <template v-slot:body-cell-documentos="props">
           <q-td :props="props" align="center">
             <div
+              v-if="puedeEditar && props.row.estado !== 'programados'"
               class="flex items-center justify-center gap-1"
-              v-if="props.row.estado !== 'programados'"
             >
               <!-- Variantes generadas -->
               <template v-if="props.row.variantes && props.row.variantes.length > 0">
@@ -457,7 +458,7 @@
         <!-- Acciones -->
         <template v-slot:body-cell-acciones="props">
           <q-td :props="props" align="center">
-            <div class="acciones-row justify-center no-wrap">
+            <div v-if="puedeEditar" class="acciones-row justify-center no-wrap">
               <q-btn
                 flat
                 round
@@ -506,6 +507,19 @@
                   no-caps
                 />
               </template>
+            </div>
+            <div v-else>
+              <q-btn
+                flat
+                round
+                dense
+                color="primary"
+                icon="visibility"
+                size="sm"
+                @click="verDetalles(props.row)"
+              >
+                <q-tooltip>Ver detalles</q-tooltip>
+              </q-btn>
             </div>
           </q-td>
         </template>
@@ -582,17 +596,42 @@
               <div class="flex justify-between items-center q-mb-xs">
                 <span class="text-weight-bold">{{ getManualStats(props.row).total }}</span>
                 <span class="text-caption text-grey-6">
-                  {{ getManualStats(props.row).facil }}F / {{ getManualStats(props.row).medio }}M / {{ getManualStats(props.row).dificil }}D
+                  {{ getManualStats(props.row).facil }}F / {{ getManualStats(props.row).medio }}M /
+                  {{ getManualStats(props.row).dificil }}D
                 </span>
               </div>
               <div class="distribution-bar">
-                <div class="bar-segment facile" :style="{ width: (getManualStats(props.row).facil / (getManualStats(props.row).total || 1)) * 100 + '%' }">
+                <div
+                  class="bar-segment facile"
+                  :style="{
+                    width:
+                      (getManualStats(props.row).facil / (getManualStats(props.row).total || 1)) *
+                        100 +
+                      '%',
+                  }"
+                >
                   <q-tooltip>Fáciles</q-tooltip>
                 </div>
-                <div class="bar-segment medio" :style="{ width: (getManualStats(props.row).medio / (getManualStats(props.row).total || 1)) * 100 + '%' }">
+                <div
+                  class="bar-segment medio"
+                  :style="{
+                    width:
+                      (getManualStats(props.row).medio / (getManualStats(props.row).total || 1)) *
+                        100 +
+                      '%',
+                  }"
+                >
                   <q-tooltip>Medios</q-tooltip>
                 </div>
-                <div class="bar-segment dificil" :style="{ width: (getManualStats(props.row).dificil / (getManualStats(props.row).total || 1)) * 100 + '%' }">
+                <div
+                  class="bar-segment dificil"
+                  :style="{
+                    width:
+                      (getManualStats(props.row).dificil / (getManualStats(props.row).total || 1)) *
+                        100 +
+                      '%',
+                  }"
+                >
                   <q-tooltip>Difíciles</q-tooltip>
                 </div>
               </div>
@@ -603,7 +642,11 @@
         <!-- Estado -->
         <template v-slot:body-cell-estado="props">
           <q-td :props="props" align="center">
-            <q-btn-group rounded unelevated class="bg-grey-2 border-grey-3 overflow-hidden shadow-1">
+            <q-btn-group
+              rounded
+              unelevated
+              class="bg-grey-2 border-grey-3 overflow-hidden shadow-1"
+            >
               <q-btn
                 v-for="est in ['GENERADO', 'ENTREGADO', 'DEVUELTO']"
                 :key="est"
@@ -616,10 +659,21 @@
                 @click="confirmarEstadoManual(props.row, est)"
                 class="transition-all"
               >
-                <div v-if="props.row.estado === est" class="q-ml-sm text-caption text-weight-bolder" style="font-size: 10px; letter-spacing: 0.05em">
+                <div
+                  v-if="props.row.estado === est"
+                  class="q-ml-sm text-caption text-weight-bolder"
+                  style="font-size: 10px; letter-spacing: 0.05em"
+                >
                   {{ est }}
                 </div>
-                <q-tooltip anchor="top middle" self="bottom middle" :offset="[0, 8]" transition-show="scale" transition-hide="scale" class="bg-grey-9">
+                <q-tooltip
+                  anchor="top middle"
+                  self="bottom middle"
+                  :offset="[0, 8]"
+                  transition-show="scale"
+                  transition-hide="scale"
+                  class="bg-grey-9"
+                >
                   Cambiar estado a: <b>{{ est }}</b>
                 </q-tooltip>
               </q-btn>
@@ -632,25 +686,47 @@
           <q-td :props="props" align="center">
             <div class="flex items-center justify-center gap-1">
               <!-- Examen (Consolidado) -->
-              <q-btn flat round dense color="red-8" icon="picture_as_pdf" size="sm" @click="descargarPDFManual(props.row)">
+              <q-btn
+                flat
+                round
+                dense
+                color="red-8"
+                icon="picture_as_pdf"
+                size="sm"
+                @click="descargarPDFManual(props.row)"
+              >
                 <q-tooltip>Examen (Consolidado)</q-tooltip>
               </q-btn>
-              
+
               <q-separator vertical class="q-mx-xs" v-if="props.row.estado === 'DEVUELTO'" />
-              
+
               <!-- Patrón OMR (PDF) -->
-              <q-btn flat round dense color="teal-7" icon="picture_as_pdf" size="sm" 
-                     :disable="props.row.estado !== 'DEVUELTO'" 
-                     @click="descargarPatronPdfManual(props.row)" 
-                     v-if="props.row.estado === 'DEVUELTO'">
+              <q-btn
+                flat
+                round
+                dense
+                color="teal-7"
+                icon="picture_as_pdf"
+                size="sm"
+                :disable="props.row.estado !== 'DEVUELTO'"
+                @click="descargarPatronPdfManual(props.row)"
+                v-if="props.row.estado === 'DEVUELTO'"
+              >
                 <q-tooltip>Patrón OMR (Consolidado)</q-tooltip>
               </q-btn>
-              
+
               <!-- Patrón Excel (XLSX) -->
-              <q-btn flat round dense color="green-8" icon="backup_table" size="sm" 
-                     :disable="props.row.estado !== 'DEVUELTO'" 
-                     @click="descargarPatronXlsxManual(props.row)" 
-                     v-if="props.row.estado === 'DEVUELTO'">
+              <q-btn
+                flat
+                round
+                dense
+                color="green-8"
+                icon="backup_table"
+                size="sm"
+                :disable="props.row.estado !== 'DEVUELTO'"
+                @click="descargarPatronXlsxManual(props.row)"
+                v-if="props.row.estado === 'DEVUELTO'"
+              >
                 <q-tooltip>Patrón Excel (Consolidado)</q-tooltip>
               </q-btn>
             </div>
@@ -665,7 +741,15 @@
                 {{ props.row.user?.name?.charAt(0) }}
                 <q-tooltip>Responsable: {{ props.row.user?.name }}</q-tooltip>
               </q-avatar>
-              <div style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis" class="text-caption italic text-grey">
+              <div
+                style="
+                  max-width: 150px;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                "
+                class="text-caption italic text-grey"
+              >
                 "{{ props.row.motivo }}"
                 <q-tooltip>{{ props.row.motivo }}</q-tooltip>
               </div>
@@ -1363,12 +1447,14 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar, date } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore, ROLES } from 'src/stores/auth'
+import { usePermisos } from 'src/composables/usePermisos'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
+const { puedeEditar } = usePermisos()
 
 // ESTADOS DEL PROCESO
 const ESTADOS_FLOW = [
@@ -1500,7 +1586,18 @@ const fetchSedes = async () => {
   try {
     const response = await api.get('/sedes')
     const rawSedes = response.data.data || []
-    sedesOptions.value = rawSedes.map((s) => ({ label: s.nombre, value: s.id }))
+    const allSedes = rawSedes.map((s) => ({ label: s.nombre, value: s.id }))
+
+    // Si es Vicerrector Sede o Director Académico, mostrar SOLO su sede
+    if (
+      [ROLES.VICERRECTOR_SEDE, ROLES.DIRECCION_ACADEMICA].includes(authStore.rol) &&
+      authStore.usuarioActual?.sede_id
+    ) {
+      const userSedeId = Number(authStore.usuarioActual.sede_id)
+      sedesOptions.value = allSedes.filter((s) => Number(s.value) === userSedeId)
+    } else {
+      sedesOptions.value = allSedes
+    }
 
     // Si es restringido, pre-seleccionar su sede
     const currentSedeId = authStore.usuarioActual?.sede_id
@@ -2204,7 +2301,9 @@ const ejecutarGeneracionManual = async () => {
 
       if (i > 0) {
         // Garantizar que cada variante comience en página impar (anverso)
-        const numPages = examenesPDF.internal.getNumberOfPages ? examenesPDF.internal.getNumberOfPages() : (examenesPDF.internal.pages.length - 1)
+        const numPages = examenesPDF.internal.getNumberOfPages
+          ? examenesPDF.internal.getNumberOfPages()
+          : examenesPDF.internal.pages.length - 1
         if (numPages % 2 !== 0) {
           examenesPDF.addPage()
           examenesPDF.setFontSize(10)
@@ -2212,11 +2311,13 @@ const ejecutarGeneracionManual = async () => {
           examenesPDF.text('PÁGINA EN BLANCO', 105, 150, { align: 'center' })
         }
         examenesPDF.addPage()
-        
-        const patPages = patronesPDF.internal.getNumberOfPages ? patronesPDF.internal.getNumberOfPages() : (patronesPDF.internal.pages.length - 1)
+
+        const patPages = patronesPDF.internal.getNumberOfPages
+          ? patronesPDF.internal.getNumberOfPages()
+          : patronesPDF.internal.pages.length - 1
         if (patPages % 2 !== 0) {
-           // Si el frente es impar, el próximo patrón debería empezar en impar tmb idealmente o dejar el patron uno en cada hoja normal
-           // Opcional: ajustar patrones también si se necesita, pero lo dejamos simple añadiendo 1 hoja.
+          // Si el frente es impar, el próximo patrón debería empezar en impar tmb idealmente o dejar el patron uno en cada hoja normal
+          // Opcional: ajustar patrones también si se necesita, pero lo dejamos simple añadiendo 1 hoja.
         }
         patronesPDF.addPage()
       }
@@ -2236,7 +2337,10 @@ const ejecutarGeneracionManual = async () => {
     const baseNM = `${codN}_${sedeN}_G${gruN}_${parN}_Var${varsN}`
 
     // Generar 1 solo Excel consolidado
-    const { blob: xBlob, filename: xName } = generarPatronXLSXConsolidado(resultadosVariantes, `${baseNM}_Remark.xlsx`)
+    const { blob: xBlob, filename: xName } = generarPatronXLSXConsolidado(
+      resultadosVariantes,
+      `${baseNM}_Remark.xlsx`,
+    )
     xBlobs.push({ blob: xBlob, name: xName })
 
     // --- REGISTRO DE AUDITORÍA (BLOQUEANTE) ---
@@ -2332,7 +2436,7 @@ const cargarDatos = async () => {
       gestion: '2026-I',
       sede_id: filtros.value.sede.value,
       fecha: filtros.value.fecha,
-      estado: filtros.value.estado.length > 0 ? filtros.value.estado.join(',') : undefined
+      estado: filtros.value.estado.length > 0 ? filtros.value.estado.join(',') : undefined,
     }
 
     if (filtros.value.carrera) {
@@ -2380,23 +2484,30 @@ watch([() => filtros.value.sede, () => filtros.value.carrera, () => filtros.valu
   cargarDatos()
 })
 
-const columns = [
-  { name: 'materia', label: 'MATERIA / GRUPO', field: 'materia', align: 'left', sortable: true },
-  { name: 'docente', label: 'DOCENTE', field: 'docente', align: 'left', sortable: true },
-  { name: 'parcial', label: 'PARCIAL', field: 'parcial', align: 'center' },
-  {
-    name: 'fecha',
-    label: 'FECHA / HORA',
-    field: (row) => row.fecha_examen + ' ' + row.hora,
-    align: 'left',
-    sortable: true,
-  },
-  { name: 'banco', label: 'BANCO', align: 'center', sortable: true },
-  { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
-  { name: 'estado', label: 'ESTADO', align: 'center' },
-  { name: 'documentos', label: 'DOCUMENTOS', align: 'center' },
-  { name: 'acciones', label: 'ACCIONES', align: 'center' },
-]
+const columns = computed(() => {
+  const base = [
+    { name: 'materia', label: 'MATERIA / GRUPO', field: 'materia', align: 'left', sortable: true },
+    { name: 'docente', label: 'DOCENTE', field: 'docente', align: 'left', sortable: true },
+    { name: 'parcial', label: 'PARCIAL', field: 'parcial', align: 'center' },
+    {
+      name: 'fecha',
+      label: 'FECHA / HORA',
+      field: (row) => row.fecha_examen + ' ' + row.hora,
+      align: 'left',
+      sortable: true,
+    },
+    { name: 'banco', label: 'BANCO', align: 'center', sortable: true },
+    { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
+    { name: 'estado', label: 'ESTADO', align: 'center' },
+  ]
+
+  if (puedeEditar.value) {
+    base.push({ name: 'documentos', label: 'DOCUMENTOS', align: 'center' })
+    base.push({ name: 'acciones', label: 'ACCIONES', align: 'center' })
+  }
+
+  return base
+})
 
 const statsDesglose = computed(() => {
   return ESTADOS_FLOW.map((st) => {
@@ -2433,9 +2544,9 @@ function imprimirListaDiaria() {
     return
   }
   // ... (mismo código jsPDF pero usando examenesFiltrados del backend)
-  const doc = new jsPDF({ 
+  const doc = new jsPDF({
     orientation: 'landscape',
-    format: [216, 330] // Oficio 8.5x13 pulgadas
+    format: [216, 330], // Oficio 8.5x13 pulgadas
   })
   const fecha = filtros.value.fecha || 'Sin fecha'
   const sedeObj = filtros.value.sede
@@ -2492,15 +2603,15 @@ function imprimirListaDiaria() {
     styles: { fontSize: 7, valign: 'middle' },
     columnStyles: {
       0: { cellWidth: 13, halign: 'center' }, // HORA
-      1: { cellWidth: 70 },                   // MATERIA / GRUPO
-      2: { cellWidth: 58 },                   // DOCENTE
+      1: { cellWidth: 70 }, // MATERIA / GRUPO
+      2: { cellWidth: 58 }, // DOCENTE
       3: { cellWidth: 16, halign: 'center' }, // H. RECOJO
       4: { cellWidth: 11, halign: 'center' }, // CANT.
-      5: { cellWidth: 28 },                   // FIRMA
+      5: { cellWidth: 28 }, // FIRMA
       6: { cellWidth: 16, halign: 'center' }, // H. DEV.
       7: { cellWidth: 11, halign: 'center' }, // CANT.
-      8: { cellWidth: 28 },                   // FIRMA
-      9: { cellWidth: 51 },                   // OBSERVACIONES
+      8: { cellWidth: 28 }, // FIRMA
+      9: { cellWidth: 51 }, // OBSERVACIONES
     },
   })
   doc.save(`Seguimiento_Evaluaciones_${fecha}.pdf`)
@@ -2858,7 +2969,9 @@ const ejecutarAccionGestion = async () => {
 
           if (i > 0) {
             // Garantizar que cada variante comience en página impar (anverso)
-            const numPages = mergedExamenesDoc.internal.getNumberOfPages ? mergedExamenesDoc.internal.getNumberOfPages() : (mergedExamenesDoc.internal.pages.length - 1)
+            const numPages = mergedExamenesDoc.internal.getNumberOfPages
+              ? mergedExamenesDoc.internal.getNumberOfPages()
+              : mergedExamenesDoc.internal.pages.length - 1
             if (numPages % 2 !== 0) {
               mergedExamenesDoc.addPage()
               mergedExamenesDoc.setFontSize(10)
@@ -2882,7 +2995,7 @@ const ejecutarAccionGestion = async () => {
           resultadosVariantes.push({ letra, sorted })
         }
 
-        const varsJoined = resultadosVariantes.map(r => r.letra).join('')
+        const varsJoined = resultadosVariantes.map((r) => r.letra).join('')
         const nCod = String(examen.codigo || 'EXAM').replace(/\s/g, '')
         const nSede = String(examen.sede || '').replace(/\s/g, '')
         const nGru = String(examen.grupo || '1').replace(/\s/g, '')
@@ -2894,7 +3007,10 @@ const ejecutarAccionGestion = async () => {
         const finalXLSXName = `${baseN}_Remark.xlsx`
 
         // Generar XLSX Consolidado
-        const { blob: xBlob, filename: xName } = generarPatronXLSXConsolidado(resultadosVariantes, finalXLSXName)
+        const { blob: xBlob, filename: xName } = generarPatronXLSXConsolidado(
+          resultadosVariantes,
+          finalXLSXName,
+        )
 
         // 1. Preparar Blobs consolidados
         const finalExBlob = mergedExamenesDoc.output('blob')
@@ -3005,14 +3121,20 @@ const tieneGestion = (e) => ['programados', 'entregados'].includes(e)
 
 // --- GESTIÓN DE GENERACIONES MANUALES ---
 const manualColumns = [
-  { name: 'materia', label: 'MATERIA / GRUPO', align: 'left', field: 'asignatura_nombre', sortable: true },
+  {
+    name: 'materia',
+    label: 'MATERIA / GRUPO',
+    align: 'left',
+    field: 'asignatura_nombre',
+    sortable: true,
+  },
   { name: 'docente', label: 'DOCENTE', align: 'left', field: 'docente_nombre', sortable: true },
   { name: 'parcial', label: 'PARCIAL', align: 'center', field: 'parcial', sortable: true },
   { name: 'fecha', label: 'FECHA / HORA', align: 'left', sortable: true },
   { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
   { name: 'estado', label: 'ESTADO', align: 'center', field: 'estado', sortable: true },
   { name: 'documentos', label: 'DOCUMENTOS', align: 'center' },
-  { name: 'datos_auditoria', label: 'AUDITORÍA', align: 'left' }
+  { name: 'datos_auditoria', label: 'AUDITORÍA', align: 'left' },
 ]
 
 const getManualStats = (row) => {
@@ -3020,9 +3142,9 @@ const getManualStats = (row) => {
     return { total: 0, facil: 0, medio: 0, dificil: 0 }
   }
   const preguntas = row.patron_respuestas_json[0].preguntas || []
-  const f = preguntas.filter(p => String(p.dificultad) === '1').length
-  const m = preguntas.filter(p => String(p.dificultad) === '2').length
-  const d = preguntas.filter(p => String(p.dificultad) === '3').length
+  const f = preguntas.filter((p) => String(p.dificultad) === '1').length
+  const m = preguntas.filter((p) => String(p.dificultad) === '2').length
+  const d = preguntas.filter((p) => String(p.dificultad) === '3').length
   const t = f + m + d
   return { total: t, facil: f, medio: m, dificil: d }
 }
@@ -3077,19 +3199,20 @@ const descargarArchivoAPI = async (url, nombreSugerido, openInNewTab = false) =>
   try {
     const response = await api.get(url, { responseType: 'blob' })
     let filename = nombreSugerido
-    const contentDisposition = response.headers['content-disposition'] || response.headers['Content-Disposition']
+    const contentDisposition =
+      response.headers['content-disposition'] || response.headers['Content-Disposition']
     if (contentDisposition) {
       const match = contentDisposition.match(/filename="?([^";]+)"?/)
       if (match && match[1]) filename = match[1]
     }
-    
+
     // Forzar el MIME type correcto para que el navegador lo muestre en lugar de descargar si es PDF
     const isPdf = filename.toLowerCase().endsWith('.pdf')
     const blobType = isPdf ? 'application/pdf' : response.data.type
     const blob = new Blob([response.data], { type: blobType })
-    
+
     const downloadUrl = window.URL.createObjectURL(blob)
-    
+
     if (openInNewTab && isPdf) {
       window.open(downloadUrl, '_blank')
       setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 10000)
@@ -3104,13 +3227,13 @@ const descargarArchivoAPI = async (url, nombreSugerido, openInNewTab = false) =>
     }
   } catch (error) {
     let msgError = 'Error de red o permisos al descargar el archivo.'
-    
+
     if (error.response) {
       console.error('Status:', error.response.status)
       if (error.response.status === 404) {
         msgError = 'El archivo físico no se encontró en el servidor.'
       }
-      
+
       // Intentar leer el mensaje de error del backend si existe (aunque es blob)
       if (error.response.data instanceof Blob) {
         const text = await error.response.data.text()
@@ -3133,7 +3256,11 @@ const descargarArchivoAPI = async (url, nombreSugerido, openInNewTab = false) =>
 const descargarPDFManual = async (row) => {
   if (row.archivo_examen) {
     $q.loading.show({ message: 'Abriendo Examen...' })
-    await descargarArchivoAPI(`/generaciones-manuales/${row.id}/download-examen`, row.archivo_examen, true)
+    await descargarArchivoAPI(
+      `/generaciones-manuales/${row.id}/download-examen`,
+      row.archivo_examen,
+      true,
+    )
     $q.loading.hide()
     return
   }
@@ -3163,30 +3290,46 @@ const descargarPDFManual = async (row) => {
 }
 
 const descargarPatronPdfManual = async (row) => {
-  if (row.estado !== 'DEVUELTO') { return }
+  if (row.estado !== 'DEVUELTO') {
+    return
+  }
   if (row.archivo_patron_pdf) {
     $q.loading.show({ message: 'Abriendo Patrón PDF...' })
-    await descargarArchivoAPI(`/generaciones-manuales/${row.id}/download-patron-pdf`, row.archivo_patron_pdf, true)
+    await descargarArchivoAPI(
+      `/generaciones-manuales/${row.id}/download-patron-pdf`,
+      row.archivo_patron_pdf,
+      true,
+    )
     $q.loading.hide()
     return
   }
-  
-  // Fallback 
+
+  // Fallback
   const doc = new jsPDF()
   const variantesData = row.patron_respuestas_json || []
   variantesData.forEach((v, i) => {
     if (i > 0) doc.addPage()
-    generarPatronPDF(doc, v.letra, v.preguntas, { materia: row.asignatura_nombre, parcial: row.parcial })
+    generarPatronPDF(doc, v.letra, v.preguntas, {
+      materia: row.asignatura_nombre,
+      parcial: row.parcial,
+    })
   })
   window.open(doc.output('bloburl'), '_blank')
 }
 
 const descargarPatronXlsxManual = async (row) => {
-  if (row.estado !== 'DEVUELTO') { return }
+  if (row.estado !== 'DEVUELTO') {
+    return
+  }
   if (row.archivos_patron_xlsx && row.archivos_patron_xlsx.length > 0) {
     $q.loading.show({ message: 'Descargando Patrón Excel...' })
-    const nombreXlsx = typeof row.archivos_patron_xlsx[0] === 'string' ? row.archivos_patron_xlsx[0] : 'Patron.xlsx'
-    await descargarArchivoAPI(`/generaciones-manuales/${row.id}/download-patron-xlsx`, nombreXlsx, false)
+    const nombreXlsx =
+      typeof row.archivos_patron_xlsx[0] === 'string' ? row.archivos_patron_xlsx[0] : 'Patron.xlsx'
+    await descargarArchivoAPI(
+      `/generaciones-manuales/${row.id}/download-patron-xlsx`,
+      nombreXlsx,
+      false,
+    )
     $q.loading.hide()
   }
 }
@@ -3416,7 +3559,7 @@ const generarPatronXLSXConsolidado = (resultadosVariantes, customName) => {
       (p) => !['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase()),
     )
     const dataRow = [res.letra, 'Respuesta']
-    
+
     for (let i = 0; i < 100; i++) {
       const p = preguntasReales[i] || null
       let ans = ''
@@ -3429,7 +3572,9 @@ const generarPatronXLSXConsolidado = (resultadosVariantes, customName) => {
             ans = String(rawAns[0] || '').toUpperCase()
           }
         } else {
-          ans = String(rawAns || '').toUpperCase().replace(/["']/g, '')
+          ans = String(rawAns || '')
+            .toUpperCase()
+            .replace(/["']/g, '')
           if (ans.includes(',') || ans.includes(';')) {
             ans = `(${ans.replace(/;/g, ',')})`
           }
@@ -3717,7 +3862,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         cleanEnunciado = cleanEnunciado.substring(16).trim()
       }
       const enunciadoLines = doc.splitTextToSize(cleanEnunciado, contentWidth - 10)
-      
+
       // Buscar subpreguntas
       let matchingSubs = []
       let j = i + 1
@@ -3740,9 +3885,9 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         estH += subLines.length * lineHeight + 4
       }
       estH += 5
-      
+
       const maxPageHeight = doc.internal.pageSize.getHeight() - 25
-      if (currentY + estH > maxPageHeight && estH < (maxPageHeight - margin)) {
+      if (currentY + estH > maxPageHeight && estH < maxPageHeight - margin) {
         doc.addPage()
         doc.setFont(baseFont)
         currentY = margin
@@ -3803,17 +3948,17 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       cleanEnunciado = cleanEnunciado.substring(9).trim()
     }
     const enunciadoLines = doc.splitTextToSize(cleanEnunciado, contentWidth - 12)
-    
+
     // --- PREDECIR ALTURA TOTAL DE LA PREGUNTA ---
     let estimatedHeight = enunciadoLines.length * lineHeight
     const opciones = Array.isArray(p.opciones) ? p.opciones : []
     let tipoActualNoNormalizado = p.tipo?.toUpperCase()
     const esHeader = ['PR', 'PROBLEMA'].includes(p.tipo?.toUpperCase())
-    
+
     if (tipoActual === 'SUBPROBLEMA') estimatedHeight += 4
     estimatedHeight += esHeader ? 0.5 : 2
     if (p.imagen) estimatedHeight += 47 // Altura típica max de imagen + padding
-    
+
     if (opciones.length > 0) {
       for (const opc of opciones) {
         let textToShow = cleanText(opc.text)
@@ -3834,7 +3979,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
 
     // Si la pregunta no cabe en esta página, pero SÍ cabría en una página vacía, saltamos de página antes de imprimirla
     const maxPageHeight = doc.internal.pageSize.getHeight() - 25
-    if (currentY + estimatedHeight > maxPageHeight && estimatedHeight < (maxPageHeight - margin)) {
+    if (currentY + estimatedHeight > maxPageHeight && estimatedHeight < maxPageHeight - margin) {
       doc.addPage()
       currentY = margin
     }
@@ -3855,7 +4000,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     }
 
     doc.setFont(baseFont, 'normal')
-    
+
     doc.text(enunciadoLines, margin + 8, currentY)
     currentY += enunciadoLines.length * lineHeight
 

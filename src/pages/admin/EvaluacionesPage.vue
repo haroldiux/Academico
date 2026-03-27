@@ -149,7 +149,7 @@
         <template v-slot:body-cell-patron="props">
           <q-td :props="props">
             <q-btn
-              v-if="puedeGenerarPatron(props.row)"
+              v-if="puedeEditar && puedeGenerarPatron(props.row)"
               flat
               dense
               color="green"
@@ -186,6 +186,7 @@
               <q-tooltip>Ver</q-tooltip>
             </q-btn>
             <q-btn
+              v-if="puedeEditar"
               flat
               round
               dense
@@ -932,14 +933,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
-import { useSedesStore } from 'src/stores/sedes'
-import { useCarrerasStore } from 'src/stores/carreras'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
+import { usePermisos } from 'src/composables/usePermisos'
 
 const $q = useQuasar()
-const sedesStore = useSedesStore()
-const carrerasStore = useCarrerasStore()
 const asignaturasStore = useAsignaturasStore()
+const { puedeEditar, sedesFiltradas, carrerasFiltradas } = usePermisos()
 
 const showDialog = ref(false)
 const showImportDialog = ref(false)
@@ -1007,10 +1006,10 @@ const estadosOptions = [
 ]
 
 const sedesOptions = computed(() =>
-  sedesStore.sedesActivas.map((s) => ({ label: s.nombre, value: s.id })),
+  sedesFiltradas.value.map((s) => ({ label: s.nombre, value: s.id })),
 )
 const carrerasOptions = computed(() =>
-  carrerasStore.carreras.map((c) => ({ label: c.nombre, value: c.id })),
+  carrerasFiltradas.value.map((c) => ({ label: c.nombre, value: c.id })),
 )
 
 // Materias desde el store de asignaturas
