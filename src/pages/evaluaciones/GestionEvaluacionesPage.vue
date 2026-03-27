@@ -281,6 +281,25 @@
           </q-td>
         </template>
 
+        <!-- Banco de Preguntas (Indicator) -->
+        <template v-slot:body-cell-banco="props">
+          <q-td :props="props" align="center">
+            <q-chip
+              :color="props.row.total_banco > 0 ? 'green-1' : 'grey-2'"
+              :text-color="props.row.total_banco > 0 ? 'green-9' : 'grey-8'"
+              size="sm"
+              :icon="props.row.total_banco > 0 ? 'check_circle' : 'help_outline'"
+              class="text-weight-bold"
+            >
+              {{ props.row.total_banco > 0 ? 'DISPONIBLE' : 'VACÍO' }}
+              <q-tooltip v-if="props.row.total_banco > 0">
+                Se encontraron {{ props.row.total_banco }} preguntas
+              </q-tooltip>
+              <q-tooltip v-else> No hay preguntas cargadas </q-tooltip>
+            </q-chip>
+          </q-td>
+        </template>
+
         <!-- Preguntas (Progress Bar) -->
         <template v-slot:body-cell-preguntas="props">
           <q-td :props="props">
@@ -2310,9 +2329,10 @@ const cargarDatos = async () => {
   $q.loading.show({ message: 'Cargando evaluaciones...' })
   try {
     const params = {
-      gestion: '2026-I', // Podría ser dinámico si existe un selector de gestión
+      gestion: '2026-I',
       sede_id: filtros.value.sede.value,
       fecha: filtros.value.fecha,
+      estado: filtros.value.estado.length > 0 ? filtros.value.estado.join(',') : undefined
     }
 
     if (filtros.value.carrera) {
@@ -2371,6 +2391,7 @@ const columns = [
     align: 'left',
     sortable: true,
   },
+  { name: 'banco', label: 'BANCO', align: 'center', sortable: true },
   { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
   { name: 'estado', label: 'ESTADO', align: 'center' },
   { name: 'documentos', label: 'DOCUMENTOS', align: 'center' },
