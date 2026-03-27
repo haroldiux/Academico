@@ -394,15 +394,15 @@
                           v-if="props.row.preguntas_1p_stats"
                           class="row q-gutter-xs justify-center"
                         >
-                          <q-chip size="xs" color="blue-1" text-color="blue-9" dense>
+                          <q-chip size="xs" color="blue-7" text-color="white" dense>
                             F: {{ props.row.preguntas_1p_stats.faciles }}
                             <q-tooltip>Fáciles (1P)</q-tooltip>
                           </q-chip>
-                          <q-chip size="xs" color="orange-1" text-color="orange-9" dense>
+                          <q-chip size="xs" color="orange-8" text-color="white" dense>
                             M: {{ props.row.preguntas_1p_stats.medias }}
                             <q-tooltip>Medias (1P)</q-tooltip>
                           </q-chip>
-                          <q-chip size="xs" color="red-1" text-color="red-9" dense>
+                          <q-chip size="xs" color="red-7" text-color="white" dense>
                             D: {{ props.row.preguntas_1p_stats.dificiles }}
                             <q-tooltip>Difíciles (1P)</q-tooltip>
                           </q-chip>
@@ -598,29 +598,34 @@
 
                           <q-item-section>
                             <div
-                              class="row q-gutter-xs justify-center"
+                              class="column items-center"
+                              style="gap: 4px"
                               v-if="docente.preguntas_1p_stats"
                             >
-                              <q-chip size="xs" color="blue-1" text-color="blue-9" outline dense>
-                                F: {{ docente.preguntas_1p_stats.faciles }}
-                              </q-chip>
-                              <q-chip
-                                size="xs"
-                                color="orange-1"
-                                text-color="orange-9"
-                                outline
-                                dense
-                              >
-                                M: {{ docente.preguntas_1p_stats.medias }}
-                              </q-chip>
-                              <q-chip size="xs" color="red-1" text-color="red-9" outline dense>
-                                D: {{ docente.preguntas_1p_stats.dificiles }}
-                              </q-chip>
-                              <div class="text-caption text-grey-6 q-ml-xs">
-                                Total: {{ docente.preguntas_1p_stats.total }}
+                              <div class="text-caption text-grey-7" v-if="docente.preguntas_1p_stats.grupo_teorico">
+                                <q-icon name="class" size="12px" />
+                                Grupo: <strong>{{ docente.preguntas_1p_stats.grupo_teorico }}</strong>
+                              </div>
+                              <div class="row items-center" style="gap: 4px">
+                                <span style="background:#1565C0; color:#fff; font-size:11px; font-weight:600; padding:2px 6px; border-radius:10px">
+                                  F:{{ docente.preguntas_1p_stats.faciles }}
+                                </span>
+                                <span style="background:#E65100; color:#fff; font-size:11px; font-weight:600; padding:2px 6px; border-radius:10px">
+                                  M:{{ docente.preguntas_1p_stats.medias }}
+                                </span>
+                                <span style="background:#C62828; color:#fff; font-size:11px; font-weight:600; padding:2px 6px; border-radius:10px">
+                                  D:{{ docente.preguntas_1p_stats.dificiles }}
+                                </span>
+                                <span style="font-size:11px; font-weight:700; color:#333">
+                                  T:{{ docente.preguntas_1p_stats.total }}
+                                </span>
                               </div>
                             </div>
-                            <div v-else class="text-caption text-grey-4 text-center">
+                            <div v-else-if="docente.tiene_grupo_teorico === false" class="text-caption text-grey-4 text-center">
+                              <q-icon name="info" size="12px" class="q-mr-xs" />
+                              Solo grupos prácticos
+                            </div>
+                            <div v-else class="text-caption text-grey-5 text-center">
                               Sin preguntas 1P
                             </div>
                           </q-item-section>

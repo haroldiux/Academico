@@ -877,8 +877,12 @@ const requiereCarrera = computed(() => {
 // Verificar si requiere sede (casi todos menos Admin Global tal vez, pero asumiremos todos para director)
 const requiereSede = computed(() => {
   const rol = rolesStore.getRolById(formUsuario.value.rolId)
-  // Vicerrectorado Nacional tiene acceso global, no requiere sede específica
-  return rol && rol.codigo !== 'VICERRECTORADO_NACIONAL'
+  // Vicerrectorado Nacional y Responsable de Evaluaciones tienen acceso global, no requieren sede específica
+  return (
+    rol &&
+    rol.codigo !== 'VICERRECTORADO_NACIONAL' &&
+    rol.codigo !== 'RESPONSABLE_EVALUACIONES'
+  )
 })
 
 const usuariosFiltrados = computed(() => {
