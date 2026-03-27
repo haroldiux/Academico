@@ -341,6 +341,7 @@ export function usePermisos() {
     esDirectorCarrera,
     esDocente,
     esEvaluaciones,
+    esResponsableEvaluaciones,
 
     // Niveles de acceso
     tieneAccesoGlobal,

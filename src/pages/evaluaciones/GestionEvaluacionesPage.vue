@@ -17,7 +17,7 @@
             <q-tooltip>Actualizar Lista</q-tooltip>
           </q-btn>
           <q-btn
-            v-if="puedeEditar"
+            v-if="puedeVerGeneracionManual"
             unelevated
             rounded
             color="deep-purple-7"
@@ -117,7 +117,7 @@
         style="width: 100%; max-width: 600px"
       >
         <q-tab name="rol" icon="assignment" label="Evaluaciones del Rol" />
-        <q-tab v-if="puedeEditar" name="manual" icon="history_edu" label="Generaciones Manuales" />
+        <q-tab v-if="puedeVerGeneracionManual" name="manual" icon="history_edu" label="Generaciones Manuales" />
       </q-tabs>
     </div>
 
@@ -380,7 +380,7 @@
         <template v-slot:body-cell-documentos="props">
           <q-td :props="props" align="center">
             <div
-              v-if="puedeEditar && props.row.estado !== 'programados'"
+              v-if="puedeVerAcciones && props.row.estado !== 'programados'"
               class="flex items-center justify-center gap-1"
             >
               <!-- Variantes generadas -->
@@ -458,7 +458,7 @@
         <!-- Acciones -->
         <template v-slot:body-cell-acciones="props">
           <q-td :props="props" align="center">
-            <div v-if="puedeEditar" class="acciones-row justify-center no-wrap">
+            <div v-if="puedeVerAcciones" class="acciones-row justify-center no-wrap">
               <q-btn
                 flat
                 round
@@ -1454,7 +1454,24 @@ import * as XLSX from 'xlsx'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
-const { puedeEditar } = usePermisos()
+const {
+  puedeEditar,
+  esEvaluaciones,
+  esResponsableEvaluaciones,
+  esDireccionAcademica,
+  esVicerrectorSede,
+} = usePermisos()
+
+const puedeVerAcciones = computed(() => {
+  return puedeEditar.value || esEvaluaciones.value || esResponsableEvaluaciones.value
+})
+
+const puedeVerGeneracionManual = computed(() => {
+  if (esDireccionAcademica.value || esVicerrectorSede.value) {
+    return false
+  }
+  return puedeEditar.value || esEvaluaciones.value || esResponsableEvaluaciones.value
+})
 
 // ESTADOS DEL PROCESO
 const ESTADOS_FLOW = [
@@ -2501,7 +2518,7 @@ const columns = computed(() => {
     { name: 'estado', label: 'ESTADO', align: 'center' },
   ]
 
-  if (puedeEditar.value) {
+  if (puedeVerAcciones.value) {
     base.push({ name: 'documentos', label: 'DOCUMENTOS', align: 'center' })
     base.push({ name: 'acciones', label: 'ACCIONES', align: 'center' })
   }
