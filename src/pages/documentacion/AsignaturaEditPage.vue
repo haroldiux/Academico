@@ -1468,20 +1468,87 @@
               <strong>FV, SS, SM, PR, EM y SP</strong>.
             </q-banner>
 
-            <q-select
-              v-model="grupoTeoricoSeleccionado"
-              :options="gruposTeoricosOptions"
-              outlined
-              dense
-              label="Seleccionar Grupo Teórico"
-              class="q-mb-md"
-              hint="Las preguntas se asociarán a este grupo"
-              :rules="[(val) => !!val || 'El grupo es obligatorio']"
-              emit-value
-              map-options
+            <div class="row q-col-gutter-sm q-mb-md">
+              <div class="col-8">
+                <q-select
+                  v-model="grupoTeoricoSeleccionado"
+                  :options="gruposTeoricosOptions"
+                  outlined
+                  dense
+                  label="Seleccionar Grupo Teórico"
+                  hint="Las preguntas se asociarán a este grupo"
+                  :rules="[(val) => !!val || 'El grupo es obligatorio']"
+                  emit-value
+                  map-options
+                >
+                  <template v-slot:prepend><q-icon name="groups" /></template>
+                </q-select>
+              </div>
+              <div class="col-4">
+                <q-select
+                  v-model="parcialSeleccionado"
+                  :options="parcialOptions"
+                  outlined
+                  dense
+                  label="Parcial"
+                  :rules="[(val) => !!val || 'Requerido']"
+                  emit-value
+                  map-options
+                >
+                  <template v-slot:prepend><q-icon name="event_note" /></template>
+                </q-select>
+              </div>
+            </div>
+
+            <div class="row items-center q-mb-md bg-grey-1 q-pa-sm rounded-borders border-dashed">
+              <div class="col">
+                <div class="text-weight-bold text-deep-purple-9">Cartilla de Respuestas</div>
+                <div class="text-caption text-grey-7">Generar hoja óptica automática</div>
+              </div>
+              <div class="col-auto">
+                <q-btn-toggle
+                  v-model="conCartilla"
+                  toggle-color="deep-purple"
+                  flat
+                  stretch
+                  :options="[
+                    { label: 'Con Cartilla', value: true },
+                    { label: 'Sin Cartilla', value: false },
+                  ]"
+                />
+              </div>
+            </div>
+
+            <!-- Advertencia Sin Cartilla -->
+            <transition
+              appear
+              enter-active-class="animated fadeIn"
+              leave-active-class="animated fadeOut"
             >
-              <template v-slot:prepend><q-icon name="groups" /></template>
-            </q-select>
+              <q-banner
+                v-if="!conCartilla"
+                class="bg-deep-orange-1 text-deep-orange-10 q-mb-md border-deep-orange"
+                rounded
+                dense
+              >
+                <template v-slot:avatar>
+                  <q-icon name="mail_outline" color="deep-orange-10" />
+                </template>
+                <div class="text-weight-bold">⚠️ AVISO IMPORTANTE:</div>
+                <div class="text-caption" style="line-height: 1.4">
+                  Al marcar <strong>"Sin Cartilla"</strong>, el sistema NO generará la hoja óptica.
+                  <strong>Se debe enviar el documento de evaluación</strong> al correo de
+                  evaluaciones correspondiente a la sede <strong>{{ nombreSede }}</strong>.
+                  <br /><br />
+                  <strong>Incluir en el correo:</strong><br />
+                  • Carrera: {{ asignatura?.carreras?.[0]?.nombre || 'No especificada' }}<br />
+                  • Asignatura: {{ asignatura?.nombre }} ({{ asignatura?.sigla }})<br />
+                  • Grupo: {{ grupoTeoricoSeleccionado }}<br />
+                  • Docente: {{ authStore.usuarioActual?.docente?.nombre_completo || authStore.nombreCompleto }}<br />
+                  • Fecha y Hora del examen programado.
+                </div>
+              </q-banner>
+            </transition>
 
             <!-- Aviso de bloqueo por grupo -->
             <q-banner
@@ -1495,28 +1562,30 @@
               ya tiene un examen en estado <em>Generado o superior</em>. No es posible reemplazar el banco de preguntas.
             </q-banner>
 
-            <q-file
-              v-model="archivoBancoFile"
-              outlined
-              label="Seleccionar archivo Excel (.xlsx)"
-              accept=".xlsx,.xls"
-              :disable="!grupoTeoricoSeleccionado || gruposBloqueados.has(normalizeGroupName(grupoTeoricoSeleccionado))"
-              @update:model-value="previsualizarArchivoExcel"
-            >
-              <template v-slot:prepend><q-icon name="attach_file" /></template>
-              <template v-slot:append>
-                <q-icon
-                  name="close"
-                  v-if="archivoBancoFile"
-                  class="cursor-pointer"
-                  @click.stop.prevent="archivoBancoFile = null"
-                />
-              </template>
-            </q-file>
+            <div v-if="conCartilla">
+              <q-file
+                v-model="archivoBancoFile"
+                outlined
+                label="Seleccionar archivo Excel (.xlsx)"
+                accept=".xlsx,.xls"
+                :disable="!grupoTeoricoSeleccionado || gruposBloqueados.has(normalizeGroupName(grupoTeoricoSeleccionado))"
+                @update:model-value="previsualizarArchivoExcel"
+              >
+                <template v-slot:prepend><q-icon name="attach_file" /></template>
+                <template v-slot:append>
+                  <q-icon
+                    name="close"
+                    v-if="archivoBancoFile"
+                    class="cursor-pointer"
+                    @click.stop.prevent="archivoBancoFile = null"
+                  />
+                </template>
+              </q-file>
 
-            <div class="text-caption text-grey-6 q-mt-sm q-gutter-xs">
-              <q-icon name="warning" size="14px" />
-              No modifiques los encabezados ni el orden de columnas del formato descargado.
+              <div class="text-caption text-grey-6 q-mt-sm q-gutter-xs">
+                <q-icon name="warning" size="14px" />
+                No modifiques los encabezados ni el orden de columnas del formato descargado.
+              </div>
             </div>
           </div>
 
@@ -1652,7 +1721,27 @@
         </q-card-section>
 
         <q-card-actions align="right" class="q-pa-md">
-          <q-btn flat label="Cancelar" @click="cerrarDialogImportBanco" />
+          <q-btn flat label="Cancelar" @click="cerrarDialogImportBanco" no-caps />
+          <q-btn
+            v-if="!conCartilla && !archivoPreviewBanco"
+            unelevated
+            color="deep-orange"
+            icon="save"
+            label="Guardar Preferencia Sin Cartilla"
+            :loading="importandoBanco"
+            no-caps
+            @click="confirmarConfiguracionSinCartilla"
+          />
+          <q-btn
+            v-if="conCartilla && !archivoPreviewBanco"
+            flat
+            color="primary"
+            icon="settings_backup_restore"
+            label="Restablecer a Con Cartilla"
+            :loading="importandoBanco"
+            no-caps
+            @click="guardarConfiguracionSinCartillaTrue"
+          />
           <q-btn
             v-if="archivoPreviewBanco"
             unelevated
@@ -1665,6 +1754,7 @@
               !grupoTeoricoSeleccionado
             "
             :loading="importandoBanco"
+            no-caps
             @click="confirmarImportacionBanco"
           />
         </q-card-actions>
@@ -3154,11 +3244,44 @@ onMounted(() => {
   }
 })
 
+// Refs para Importación (movidas arriba para evitar ReferenceError en watches)
+const archivoBancoFile = ref(null)
+const archivoPreviewBanco = ref(null)
+const grupoTeoricoSeleccionado = ref(null)
+const preguntasImportadas = ref([])
+const importErrores = ref([])
+const importandoBanco = ref(false)
+const modoImportacion = ref('reemplazar')
+const conCartilla = ref(true)
+const parcialSeleccionado = ref('1P')
+const parcialOptions = [
+  { label: '1er Parcial', value: '1P' },
+  { label: '2do Parcial', value: '2P' },
+  { label: 'Final', value: 'EF' },
+  { label: '2da Instancia', value: '2I' },
+]
+const importStats = ref({
+  total: 0,
+  faciles: 0,
+  medios: 0,
+  dificiles: 0,
+})
+
 watch(asignatura, (newVal) => {
   // Only update fields if we are NOT currently editing (to avoid overwrite)
   // Or check if ID changed (navigation)
   if (newVal && (!formDatos.value.codigo || formDatos.value.codigo !== newVal.codigo)) {
     cargarFormDatos()
+  }
+})
+
+// Si se cambia a "Sin Cartilla", limpiar cualquier archivo seleccionado
+watch(conCartilla, (val) => {
+  if (!val) {
+    archivoBancoFile.value = null
+    archivoPreviewBanco.value = null
+    preguntasImportadas.value = []
+    importErrores.value = []
   }
 })
 
@@ -4097,20 +4220,9 @@ async function descargarFormatoBanco() {
 // ============================================================
 // IMPORTACIÓN BANCO DE PREGUNTAS — REFS Y LÓGICA
 // ============================================================
-const archivoBancoFile = ref(null)
-const archivoPreviewBanco = ref(null)
-const grupoTeoricoSeleccionado = ref(null)
-const preguntasImportadas = ref([])
-const importErrores = ref([])
-const importandoBanco = ref(false)
-const modoImportacion = ref('reemplazar')
-const importStats = ref({
-  total: 0,
-  faciles: 0,
-  medios: 0,
-  dificiles: 0,
-})
-
+// ============================================================
+// IMPORTACIÓN BANCO DE PREGUNTAS — REFS Y LÓGICA
+// ============================================================
 const validacionDistribucion = computed(() => {
   const countF = importStats.value.faciles || 0
   const countM = importStats.value.medios || 0
@@ -4404,6 +4516,8 @@ async function confirmarImportacionBanco() {
     }
     formData.append('sede_id', authStore.usuarioActual?.sede_id || '')
     formData.append('grupoTeorico', grupoTeoricoSeleccionado.value || '')
+    formData.append('con_cartilla', conCartilla.value ? '1' : '0')
+    formData.append('parcial', parcialSeleccionado.value || '1P')
 
     if (modoImportacion.value === 'reemplazar') {
       formData.append('modo', 'reemplazar') // El backend puede manejar esto para limpiar antes de insertar
@@ -4444,6 +4558,79 @@ async function confirmarImportacionBanco() {
   }
 }
 
+async function confirmarConfiguracionSinCartilla() {
+  if (!grupoTeoricoSeleccionado.value) {
+    $q.notify({ type: 'warning', message: 'Debe seleccionar un grupo teórico', icon: 'warning' })
+    return
+  }
+
+  // Verificar si hay preguntas que se borrarán
+  const preguntasGrupo = (store.bancoPreguntas || []).filter(
+    (p) =>
+      p.grupoTeorico === grupoTeoricoSeleccionado.value &&
+      p.parcial === (parcialSeleccionado.value || '1P'),
+  )
+
+  if (preguntasGrupo.length > 0) {
+    $q.dialog({
+      title: '<span class="text-negative">⚠️ Confirmar Acción</span>',
+      message: `Se han detectado <strong>${preguntasGrupo.length} preguntas</strong> en el banco para este grupo y parcial. Al marcar "Sin Cartilla", estas preguntas serán <strong>eliminadas permanentemente</strong>. ¿Desea continuar?`,
+      html: true,
+      persistent: true,
+      ok: { label: 'Sí, borrar y guardar', color: 'negative', unelevated: true, noCaps: true },
+      cancel: { label: 'Cancelar', flat: true, noCaps: true },
+    }).onOk(() => {
+      ejecutarGuardarConfiguracion(false)
+    })
+  } else {
+    ejecutarGuardarConfiguracion(false)
+  }
+}
+
+async function guardarConfiguracionSinCartillaTrue() {
+  if (!grupoTeoricoSeleccionado.value) {
+    $q.notify({ type: 'warning', message: 'Debe seleccionar un grupo teórico', icon: 'warning' })
+    return
+  }
+  ejecutarGuardarConfiguracion(true)
+}
+
+async function ejecutarGuardarConfiguracion(valorConCartilla) {
+  importandoBanco.value = true
+  try {
+    const payload = {
+      asignatura_id: route.params.id,
+      grupo_teorico: grupoTeoricoSeleccionado.value,
+      parcial: parcialSeleccionado.value || '1P',
+      con_cartilla: valorConCartilla,
+    }
+
+    const response = await api.post('/banco-preguntas/save-config', payload)
+
+    if (response.data.success) {
+      $q.notify({
+        type: 'positive',
+        message: valorConCartilla
+          ? 'Preferencia restablecida a "Con Cartilla".'
+          : 'Preferencia "Sin Cartilla" guardada. El banco de preguntas ha sido vaciado.',
+        icon: 'check_circle',
+      })
+      cerrarDialogImportBanco()
+      await cargarBancoPreguntas() // Recargar para ver que se borraron
+    }
+  } catch (error) {
+    console.error('Error al guardar preferencia:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo guardar la preferencia',
+      caption: error.response?.data?.error || error.message,
+      icon: 'error',
+    })
+  } finally {
+    importandoBanco.value = false
+  }
+}
+
 function cerrarDialogImportBanco() {
   showSubirBanco.value = false
   archivoBancoFile.value = null
@@ -4451,6 +4638,7 @@ function cerrarDialogImportBanco() {
   preguntasImportadas.value = []
   importErrores.value = []
   importStats.value = { total: 0, faciles: 0, medios: 0, dificiles: 0 }
+  parcialSeleccionado.value = '1P'
 }
 
 function getChipColorTipo(tipo) {

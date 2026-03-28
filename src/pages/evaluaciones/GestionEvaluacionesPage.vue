@@ -285,19 +285,33 @@
         <!-- Banco de Preguntas (Indicator) -->
         <template v-slot:body-cell-banco="props">
           <q-td :props="props" align="center">
-            <q-chip
-              :color="props.row.total_banco > 0 ? 'green-1' : 'grey-2'"
-              :text-color="props.row.total_banco > 0 ? 'green-9' : 'grey-8'"
-              size="sm"
-              :icon="props.row.total_banco > 0 ? 'check_circle' : 'help_outline'"
-              class="text-weight-bold"
-            >
-              {{ props.row.total_banco > 0 ? 'DISPONIBLE' : 'VACÍO' }}
-              <q-tooltip v-if="props.row.total_banco > 0">
-                Se encontraron {{ props.row.total_banco }} preguntas
-              </q-tooltip>
-              <q-tooltip v-else> No hay preguntas cargadas </q-tooltip>
-            </q-chip>
+            <template v-if="props.row.con_cartilla === 0">
+              <q-chip
+                color="orange-1"
+                text-color="orange-10"
+                size="sm"
+                icon="mail_outline"
+                class="text-weight-bold"
+              >
+                SIN CARTILLA
+                <q-tooltip>Se debe enviar el examen por correo</q-tooltip>
+              </q-chip>
+            </template>
+            <template v-else>
+              <q-chip
+                :color="props.row.total_banco > 0 ? 'green-1' : 'grey-2'"
+                :text-color="props.row.total_banco > 0 ? 'green-9' : 'grey-8'"
+                size="sm"
+                :icon="props.row.total_banco > 0 ? 'check_circle' : 'help_outline'"
+                class="text-weight-bold"
+              >
+                {{ props.row.total_banco > 0 ? 'DISPONIBLE' : 'VACÍO' }}
+                <q-tooltip v-if="props.row.total_banco > 0">
+                  Se encontraron {{ props.row.total_banco }} preguntas
+                </q-tooltip>
+                <q-tooltip v-else> No hay preguntas cargadas </q-tooltip>
+              </q-chip>
+            </template>
           </q-td>
         </template>
 
