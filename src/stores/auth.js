@@ -175,7 +175,7 @@ export const useAuthStore = defineStore(
           carrera_id: user.director?.carrera_id || user.carrera_id || null,
           avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
           materias_asignadas: (() => {
-            // Group grupos by asignatura_id to avoid duplicate cards
+            // Group grupos by asignatura_id + sede_id to show separate cards per sede
             const gruposRaw = user.docente?.grupos || []
             const grouped = {}
 
@@ -183,6 +183,10 @@ export const useAuthStore = defineStore(
               const asig = g.asignatura || {}
               const asigId = asig.id || g.asignatura_id
               if (!asigId) continue
+
+              // Clave compuesta: misma asignatura en sedes distintas → entradas separadas
+              const sedeId = g.sede_id || null
+              const groupKey = `${asigId}_${sedeId ?? 'null'}`
 
               // Format this group's schedule
               const horariosFmt =
@@ -193,9 +197,10 @@ export const useAuthStore = defineStore(
                   )
                   .join(', ') || ''
 
-              if (!grouped[asigId]) {
-                grouped[asigId] = {
+              if (!grouped[groupKey]) {
+                grouped[groupKey] = {
                   id: asigId,
+                  sede_id: sedeId,
                   nombre: asig.nombre || 'Desconocida',
                   codigo: asig.codigo || '---',
                   semestre: asig.semestre || g.semestre,
@@ -206,13 +211,13 @@ export const useAuthStore = defineStore(
                     pendientes: 0,
                   },
                   carreras: asig.carreras?.map((c) => c.nombre) || [],
-                  grupos: [], // All groups for this subject
+                  grupos: [], // All groups for this subject+sede
                   pivot: {}, // Legacy: first group's data
                 }
               }
 
               // Add this group to the list
-              grouped[asigId].grupos.push({
+              grouped[groupKey].grupos.push({
                 id: g.id,
                 nombre: g.nombre,
                 tipo: g.tipo,
@@ -224,8 +229,8 @@ export const useAuthStore = defineStore(
               })
 
               // Set pivot to first group's data (legacy compatibility)
-              if (!grouped[asigId].pivot.grupo) {
-                grouped[asigId].pivot = {
+              if (!grouped[groupKey].pivot.grupo) {
+                grouped[groupKey].pivot = {
                   grupo: g.nombre,
                   aula: g.aula_id,
                   horario: horariosFmt || 'Por definir',
@@ -388,7 +393,7 @@ export const useAuthStore = defineStore(
           },
           avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
           materias_asignadas: (() => {
-            // Group grupos by asignatura_id to avoid duplicate cards
+            // Group grupos by asignatura_id + sede_id to show separate cards per sede
             const gruposRaw = user.docente?.grupos || []
             const grouped = {}
 
@@ -396,6 +401,10 @@ export const useAuthStore = defineStore(
               const asig = g.asignatura || {}
               const asigId = asig.id || g.asignatura_id
               if (!asigId) continue
+
+              // Clave compuesta: misma asignatura en sedes distintas → entradas separadas
+              const sedeId = g.sede_id || null
+              const groupKey = `${asigId}_${sedeId ?? 'null'}`
 
               // Format this group's schedule
               const horariosFmt =
@@ -406,9 +415,10 @@ export const useAuthStore = defineStore(
                   )
                   .join(', ') || ''
 
-              if (!grouped[asigId]) {
-                grouped[asigId] = {
+              if (!grouped[groupKey]) {
+                grouped[groupKey] = {
                   id: asigId,
+                  sede_id: sedeId,
                   nombre: asig.nombre || 'Desconocida',
                   codigo: asig.codigo || '---',
                   semestre: asig.semestre || g.semestre,
@@ -426,19 +436,20 @@ export const useAuthStore = defineStore(
                 }
               }
 
-              grouped[asigId].grupos.push({
+              grouped[groupKey].grupos.push({
                 id: g.id,
                 nombre: g.nombre,
                 tipo: g.tipo,
                 turno: g.turno,
                 gestion: g.gestion,
                 carrera_id: g.carrera_id,
+                sede_id: g.sede_id,
                 horario: horariosFmt,
                 sede_nombre: g.sede?.nombre, // Guardar también por grupo
               })
 
-              if (!grouped[asigId].pivot.grupo) {
-                grouped[asigId].pivot = {
+              if (!grouped[groupKey].pivot.grupo) {
+                grouped[groupKey].pivot = {
                   grupo: g.nombre,
                   aula: g.aula_id,
                   horario: horariosFmt || 'Por definir',

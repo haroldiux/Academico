@@ -125,7 +125,7 @@
         <q-card
           class="card-main cursor-pointer animate-in"
           :style="{ animationDelay: `${0.3 + index * 0.05}s` }"
-          @click="irADocumentacion(asignatura.id)"
+          @click="irADocumentacion(asignatura)"
         >
           <q-card-section>
             <!-- Header -->
@@ -327,7 +327,7 @@
               label="Documentar"
               no-caps
               class="full-width"
-              @click.stop="irADocumentacion(asignatura.id)"
+              @click.stop="irADocumentacion(asignatura)"
             />
           </q-card-actions>
         </q-card>
@@ -428,18 +428,23 @@ async function fetchData() {
       return
     }
 
-    // Cargar detalles completos desde el servidor para cada materia en paralelo
+    // Cargar detalles completos desde el servidor para cada entrada (id + sede_id).
+    // Una misma asignatura en 2 sedes distintas genera 2 peticiones y 2 tarjetas.
     const promesas = misMateriasBasicas.map(async (materiaBase) => {
       const id = typeof materiaBase === 'object' ? materiaBase.id : materiaBase
       try {
         const params = {}
-        if (materiaBase.pivot && materiaBase.pivot.sede_id) {
-          params.sede_id = materiaBase.pivot.sede_id
-        }
+        // Usar sede_id de la entrada directa primero (ya viene de materias_asignadas)
+        const sedeId = materiaBase.sede_id || materiaBase.pivot?.sede_id || null
+        if (sedeId) params.sede_id = sedeId
+
         const response = await asignaturaService.getAsignatura(id, params)
         if (response.data) {
           return {
             ...response.data,
+            // Garantizar que sede_id y _key sean únicos por entrada (id + sede_id)
+            sede_id: response.data.sede_id || sedeId,
+            _entry_key: `${id}_${sedeId ?? 'null'}`,
             pivot: materiaBase.pivot || null,
           }
         }
@@ -503,11 +508,22 @@ const carrerasOptions = computed(() => {
 
 // Computed Asignaturas Visibles (Filtered by Role)
 const asignaturasVisibles = computed(() => {
-  // Si es DOCENTE, solo mostramos las que tiene asignadas
+  // Si es DOCENTE, mostramos una tarjeta por cada entrada de materias_asignadas.
+  // La misma asignatura en 2 sedes distintas genera 2 entradas con _entry_key distinto.
   if (authStore.rol === ROLES.DOCENTE) {
     if (!authStore.usuarioActual?.materias_asignadas?.length) return []
-    const misIds = authStore.usuarioActual.materias_asignadas.map((m) => m.id)
-    return asignaturasStore.asignaturas.filter((a) => misIds.includes(a.id))
+    const misMaterias = authStore.usuarioActual.materias_asignadas || []
+    return misMaterias
+      .map((m) => {
+        const sedeId = m.sede_id || m.pivot?.sede_id || null
+        // Buscar primero con clave exacta (id + sede_id), fallback a solo id
+        return (
+          asignaturasStore.asignaturas.find(
+            (a) => a.id === m.id && (a._entry_key === `${m.id}_${sedeId ?? 'null'}` || a.sede_id === sedeId),
+          ) || asignaturasStore.asignaturas.find((a) => a.id === m.id)
+        )
+      })
+      .filter(Boolean)
   }
   // Si no, mostramos todas (Admin, Directores, etc.)
   return asignaturasStore.asignaturas
@@ -560,19 +576,26 @@ function getProgresoColor(pct) {
   return 'negative'
 }
 
-function irADocumentacion(id) {
-  // Buscar asignatura
-  const asignatura = asignaturasStore.asignaturas.find((a) => a.id === id)
-  if (!asignatura) return
+function irADocumentacion(asignatura) {
+  // Aceptar tanto objeto completo como solo id (compatibilidad)
+  const asignaturaObj =
+    typeof asignatura === 'object'
+      ? asignatura
+      : asignaturasStore.asignaturas.find((a) => a.id === asignatura)
+  if (!asignaturaObj) return
 
+  const id = asignaturaObj.id
   const rolActual = authStore.rol
 
   // CASO 1: Es DOCENTE -> Navega directo a su propia "carpeta"
   if (rolActual === ROLES.DOCENTE) {
-    // Intentar obtener carrera_id del primer grupo asignado de esta materia
-    const miMateria = authStore.usuarioActual?.materias_asignadas?.find((m) => m.id === id)
+    // Usar sede_id de la asignatura cargada (ya tiene el contexto correcto de sede)
+    const sedeId = asignaturaObj.sede_id || asignaturaObj.pivot?.sede_id || ''
+    // Obtener la entrada de materias_asignadas que coincide con este id Y esta sede
+    const miMateria = authStore.usuarioActual?.materias_asignadas?.find(
+      (m) => m.id === id && (m.sede_id === sedeId || !sedeId),
+    ) || authStore.usuarioActual?.materias_asignadas?.find((m) => m.id === id)
     const careerId = miMateria?.grupos?.[0]?.carrera_id || ''
-    const sedeId = miMateria?.grupos?.[0]?.sede_id || ''
 
     router.push({
       path: `/documentacion/${id}`,
@@ -585,11 +608,11 @@ function irADocumentacion(id) {
   }
 
   // CASO 2: DIRECTORES/ADMIN -> Lógica de Selección
-  const docentes = asignatura.docentes_data || []
+  const docentes = asignaturaObj.docentes_data || []
 
   // Contexto de sede para directores
   const baseQuery = {
-    sede_id: filtros.value.sede || asignatura.sede_id,
+    sede_id: filtros.value.sede || asignaturaObj.sede_id,
   }
 
   if (docentes.length === 0) {
@@ -613,7 +636,7 @@ function irADocumentacion(id) {
     })
   } else {
     // Múltiples docentes -> Mostrar diálogo
-    asignaturaSeleccionada.value = { ...asignatura, overrideQuery: baseQuery }
+    asignaturaSeleccionada.value = { ...asignaturaObj, overrideQuery: baseQuery }
     showDocenteDialog.value = true
   }
 }
