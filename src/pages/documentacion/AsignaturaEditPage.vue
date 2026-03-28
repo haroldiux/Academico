@@ -1185,6 +1185,20 @@
           </div>
 
           <div class="q-px-lg q-pb-lg">
+            <!-- Banner: Grupos bloqueados -->
+            <q-banner
+              v-if="gruposBloqueados.size > 0"
+              class="bg-orange-1 text-orange-10 q-mb-md"
+              rounded
+              dense
+            >
+              <template v-slot:avatar><q-icon name="lock" color="orange-9" /></template>
+              <strong>Banco parcialmente bloqueado:</strong>
+              Los grupos
+              <strong>{{ [...gruposBloqueados].map(g => 'Grupo ' + g).join(', ') }}</strong>
+              ya tienen un examen generado (Rol o Manual). No es posible importar, editar ni eliminar sus preguntas.
+            </q-banner>
+
             <!-- Apartado Estratégico: Fechas de Exámenes (Oculto temporalmente a petición) -->
             <q-card
               v-if="examenesAsignatura.length > 0"
@@ -1355,28 +1369,27 @@
                           Ref: {{ pregunta.grupo }}
                         </q-chip>
                         <q-space />
-                        <q-btn
-                          flat
-                          round
-                          dense
-                          color="primary"
-                          icon="edit"
+                        <template v-if="!gruposBloqueados.has(normalizeGroupName(pregunta.grupoTeorico))">
+                          <q-btn
+                            flat
+                            round
+                            dense
+                            color="primary"
+                            icon="edit"
+                            size="sm"
+                            @click="abrirEditorPregunta(pregunta)"
+                          >
+                            <q-tooltip>Editar Pregunta</q-tooltip>
+                          </q-btn>
+                        </template>
+                        <q-icon
+                          v-else
+                          name="lock"
+                          color="orange-7"
                           size="sm"
-                          @click="abrirEditorPregunta(pregunta)"
                         >
-                          <q-tooltip>Editar Pregunta</q-tooltip>
-                        </q-btn>
-                        <q-btn
-                          flat
-                          round
-                          dense
-                          color="red"
-                          icon="delete"
-                          size="sm"
-                          @click="confirmarBorrarPregunta(pregunta)"
-                        >
-                          <q-tooltip>Eliminar Pregunta</q-tooltip>
-                        </q-btn>
+                          <q-tooltip>Grupo bloqueado: examen ya generado</q-tooltip>
+                        </q-icon>
                       </div>
 
                       <div
@@ -1470,12 +1483,24 @@
               <template v-slot:prepend><q-icon name="groups" /></template>
             </q-select>
 
+            <!-- Aviso de bloqueo por grupo -->
+            <q-banner
+              v-if="grupoTeoricoSeleccionado && gruposBloqueados.has(normalizeGroupName(grupoTeoricoSeleccionado))"
+              class="bg-red-1 text-red-10 q-mb-md"
+              rounded
+              dense
+            >
+              <template v-slot:avatar><q-icon name="lock" color="red-10" /></template>
+              <strong>Importación bloqueada:</strong> El <strong>Grupo {{ grupoTeoricoSeleccionado }}</strong>
+              ya tiene un examen en estado <em>Generado o superior</em>. No es posible reemplazar el banco de preguntas.
+            </q-banner>
+
             <q-file
               v-model="archivoBancoFile"
               outlined
               label="Seleccionar archivo Excel (.xlsx)"
               accept=".xlsx,.xls"
-              :disable="!grupoTeoricoSeleccionado"
+              :disable="!grupoTeoricoSeleccionado || gruposBloqueados.has(normalizeGroupName(grupoTeoricoSeleccionado))"
               @update:model-value="previsualizarArchivoExcel"
             >
               <template v-slot:prepend><q-icon name="attach_file" /></template>
@@ -2325,6 +2350,14 @@ import { useAuthStore } from 'src/stores/auth'
 import { api } from 'boot/axios'
 
 // Helpers para contar logros e indicadores (consistente con backend/store)
+function normalizeGroupName(name) {
+  if (!name) return ''
+  return String(name)
+    .trim()
+    .toUpperCase()
+    .replace(/^(GRUPO|G-?)\s*/i, '')
+}
+
 function countLogros(tema) {
   const logros = tema.logros_esperados || tema.logros || []
   return logros.length
@@ -2368,9 +2401,34 @@ const bancoPreguntasLocal = ref([])
 const examenesAsignatura = ref([])
 const cargandoExamenes = ref(false)
 
+// Generaciones manuales (para controlar el bloqueo del banco por grupo)
+const generacionesManuales = ref([])
+
+// Set de nombres de grupo (normalizados) que ya tienen un examen generado
+const gruposBloqueados = computed(() => {
+  const bloqueados = new Set()
+
+  // 1. Manuales (Cualquier registro manual bloquea, pues nacen en GENERADO)
+  generacionesManuales.value.forEach((gen) => {
+    if (gen.grupo) {
+      bloqueados.add(normalizeGroupName(gen.grupo))
+    }
+  })
+
+  // 2. Rol Regular (Cualquier estado != 'programados' bloquea)
+  examenesAsignatura.value.forEach((exam) => {
+    if (exam.estado && exam.estado !== 'programados' && exam.grupo) {
+      bloqueados.add(normalizeGroupName(exam.grupo))
+    }
+  })
+
+  return bloqueados
+})
+
 onMounted(() => {
   cargarBancoPreguntas()
   cargarExamenes()
+  cargarGeneracionesManuales()
 })
 
 // ── Plan de Clase: calculado igual que por-unidad (garantiza coherencia) ──
@@ -2382,6 +2440,7 @@ watch(
     if (newId) {
       cargarBancoPreguntas()
       cargarExamenes()
+      cargarGeneracionesManuales()
     }
   },
   { immediate: true },
@@ -3658,6 +3717,23 @@ async function cargarBancoPreguntas() {
   }
 }
 
+async function cargarGeneracionesManuales() {
+  if (!asignatura.value?.id) return
+  try {
+    const dId =
+      route.query.docente_id ||
+      authStore.usuarioActual?.docente?.id ||
+      authStore.usuarioActual?.docente_id
+    let url = `/generaciones-manuales?asignatura_id=${asignatura.value.id}`
+    if (dId) url += `&docente_id=${dId}`
+    const { data } = await api.get(url)
+    generacionesManuales.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    console.error('Error al cargar generaciones manuales:', e)
+    generacionesManuales.value = []
+  }
+}
+
 function esOpcionCorrecta(pregunta, letra) {
   const resp = pregunta.respuesta_correcta
   if (Array.isArray(resp)) {
@@ -3666,22 +3742,6 @@ function esOpcionCorrecta(pregunta, letra) {
   return resp === letra
 }
 
-function confirmarBorrarPregunta(pregunta) {
-  $q.dialog({
-    title: 'Eliminar Pregunta',
-    message: `¿Eliminar esta pregunta del banco?: "${pregunta.enunciado.substring(0, 60)}..."`,
-    ok: { label: 'Eliminar', color: 'red', unelevated: true },
-    cancel: { label: 'Cancelar', flat: true },
-  }).onOk(async () => {
-    try {
-      await api.delete(`/banco-preguntas/${pregunta.id}`)
-      await cargarBancoPreguntas()
-      $q.notify({ type: 'warning', message: 'Pregunta eliminada del banco' })
-    } catch {
-      $q.notify({ type: 'negative', message: 'Error al eliminar pregunta' })
-    }
-  })
-}
 
 async function descargarFormatoBanco() {
   const ExcelJS = await import('exceljs')
