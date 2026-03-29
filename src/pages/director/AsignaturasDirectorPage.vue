@@ -602,26 +602,60 @@
                               style="gap: 4px"
                               v-if="docente.preguntas_1p_stats"
                             >
-                              <div class="text-caption text-grey-7" v-if="docente.preguntas_1p_stats.grupo_teorico">
+                              <div
+                                class="text-caption text-grey-7"
+                                v-if="docente.preguntas_1p_stats.grupo_teorico"
+                              >
                                 <q-icon name="class" size="12px" />
-                                Grupo: <strong>{{ docente.preguntas_1p_stats.grupo_teorico }}</strong>
+                                Grupo:
+                                <strong>{{ docente.preguntas_1p_stats.grupo_teorico }}</strong>
                               </div>
                               <div class="row items-center" style="gap: 4px">
-                                <span style="background:#1565C0; color:#fff; font-size:11px; font-weight:600; padding:2px 6px; border-radius:10px">
+                                <span
+                                  style="
+                                    background: #1565c0;
+                                    color: #fff;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    padding: 2px 6px;
+                                    border-radius: 10px;
+                                  "
+                                >
                                   F:{{ docente.preguntas_1p_stats.faciles }}
                                 </span>
-                                <span style="background:#E65100; color:#fff; font-size:11px; font-weight:600; padding:2px 6px; border-radius:10px">
+                                <span
+                                  style="
+                                    background: #e65100;
+                                    color: #fff;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    padding: 2px 6px;
+                                    border-radius: 10px;
+                                  "
+                                >
                                   M:{{ docente.preguntas_1p_stats.medias }}
                                 </span>
-                                <span style="background:#C62828; color:#fff; font-size:11px; font-weight:600; padding:2px 6px; border-radius:10px">
+                                <span
+                                  style="
+                                    background: #c62828;
+                                    color: #fff;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    padding: 2px 6px;
+                                    border-radius: 10px;
+                                  "
+                                >
                                   D:{{ docente.preguntas_1p_stats.dificiles }}
                                 </span>
-                                <span style="font-size:11px; font-weight:700; color:#333">
+                                <span style="font-size: 11px; font-weight: 700; color: #333">
                                   T:{{ docente.preguntas_1p_stats.total }}
                                 </span>
                               </div>
                             </div>
-                            <div v-else-if="docente.tiene_grupo_teorico === false" class="text-caption text-grey-4 text-center">
+                            <div
+                              v-else-if="docente.tiene_grupo_teorico === false"
+                              class="text-caption text-grey-4 text-center"
+                            >
                               <q-icon name="info" size="12px" class="q-mr-xs" />
                               Solo grupos prácticos
                             </div>

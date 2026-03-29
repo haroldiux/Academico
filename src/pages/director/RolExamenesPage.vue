@@ -824,7 +824,7 @@ function editarExamen(examen) {
   if (fechaFormat.includes('T')) {
     fechaFormat = fechaFormat.split('T')[0]
   }
-  
+
   examenForm.value = { ...examen, fecha: fechaFormat }
   showEditDialog.value = true
 }

@@ -117,7 +117,12 @@
         style="width: 100%; max-width: 600px"
       >
         <q-tab name="rol" icon="assignment" label="Evaluaciones del Rol" />
-        <q-tab v-if="puedeVerGeneracionManual" name="manual" icon="history_edu" label="Generaciones Manuales" />
+        <q-tab
+          v-if="puedeVerGeneracionManual"
+          name="manual"
+          icon="history_edu"
+          label="Generaciones Manuales"
+        />
       </q-tabs>
     </div>
 
@@ -2731,7 +2736,11 @@ const gestionarEstado = async (examen) => {
     }
 
     // Auto-corregir el legacy bug de 10/10/5 (25 preguntas) a 7/16/7 (30) para 1er/2do parcial
-    if (tempConfig.value.facil === 10 && tempConfig.value.medio === 10 && tempConfig.value.dificil === 5) {
+    if (
+      tempConfig.value.facil === 10 &&
+      tempConfig.value.medio === 10 &&
+      tempConfig.value.dificil === 5
+    ) {
       tempConfig.value.facil = 7
       tempConfig.value.medio = 16
       tempConfig.value.dificil = 7
@@ -2883,7 +2892,9 @@ const obtenerSeleccion7167 = (todas, config) => {
   const seleccionGlobal = [...selF, ...selM, ...selD]
 
   const contarReales = (seleccion) => {
-    return seleccion.filter((p) => !['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase())).length
+    return seleccion.filter(
+      (p) => !['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase()),
+    ).length
   }
 
   const metaTotal = metaFacil + metaMedio + metaDificil

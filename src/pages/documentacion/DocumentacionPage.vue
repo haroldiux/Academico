@@ -519,7 +519,9 @@ const asignaturasVisibles = computed(() => {
         // Buscar primero con clave exacta (id + sede_id), fallback a solo id
         return (
           asignaturasStore.asignaturas.find(
-            (a) => a.id === m.id && (a._entry_key === `${m.id}_${sedeId ?? 'null'}` || a.sede_id === sedeId),
+            (a) =>
+              a.id === m.id &&
+              (a._entry_key === `${m.id}_${sedeId ?? 'null'}` || a.sede_id === sedeId),
           ) || asignaturasStore.asignaturas.find((a) => a.id === m.id)
         )
       })
@@ -592,9 +594,10 @@ function irADocumentacion(asignatura) {
     // Usar sede_id de la asignatura cargada (ya tiene el contexto correcto de sede)
     const sedeId = asignaturaObj.sede_id || asignaturaObj.pivot?.sede_id || ''
     // Obtener la entrada de materias_asignadas que coincide con este id Y esta sede
-    const miMateria = authStore.usuarioActual?.materias_asignadas?.find(
-      (m) => m.id === id && (m.sede_id === sedeId || !sedeId),
-    ) || authStore.usuarioActual?.materias_asignadas?.find((m) => m.id === id)
+    const miMateria =
+      authStore.usuarioActual?.materias_asignadas?.find(
+        (m) => m.id === id && (m.sede_id === sedeId || !sedeId),
+      ) || authStore.usuarioActual?.materias_asignadas?.find((m) => m.id === id)
     const careerId = miMateria?.grupos?.[0]?.carrera_id || ''
 
     router.push({

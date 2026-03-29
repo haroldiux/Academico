@@ -879,9 +879,7 @@ const requiereSede = computed(() => {
   const rol = rolesStore.getRolById(formUsuario.value.rolId)
   // Vicerrectorado Nacional y Responsable de Evaluaciones tienen acceso global, no requieren sede específica
   return (
-    rol &&
-    rol.codigo !== 'VICERRECTORADO_NACIONAL' &&
-    rol.codigo !== 'RESPONSABLE_EVALUACIONES'
+    rol && rol.codigo !== 'VICERRECTORADO_NACIONAL' && rol.codigo !== 'RESPONSABLE_EVALUACIONES'
   )
 })
 

@@ -17421,15 +17421,13 @@ class zs {
       ((this.yaxisLabels = this.graphics.group({ class: 'apexcharts-yaxis' })),
       e.forEach((p, g) => {
         let x = p.length === t.globals.dataPoints,
-          b = this.graphics
-            .group()
-            .attr({
-              class: 'apexcharts-series',
-              'data:longestSeries': x,
-              seriesName: L.escapeString(t.globals.seriesNames[g]),
-              rel: g + 1,
-              'data:realIndex': g,
-            })
+          b = this.graphics.group().attr({
+            class: 'apexcharts-series',
+            'data:longestSeries': x,
+            seriesName: L.escapeString(t.globals.seriesNames[g]),
+            rel: g + 1,
+            'data:realIndex': g,
+          })
         ;((this.dataRadiusOfPercent[g] = []),
           (this.dataRadius[g] = []),
           (this.angleArr[g] = []),

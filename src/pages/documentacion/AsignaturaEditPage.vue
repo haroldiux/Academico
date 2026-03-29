@@ -1195,8 +1195,9 @@
               <template v-slot:avatar><q-icon name="lock" color="orange-9" /></template>
               <strong>Banco parcialmente bloqueado:</strong>
               Los grupos
-              <strong>{{ [...gruposBloqueados].map(g => 'Grupo ' + g).join(', ') }}</strong>
-              ya tienen un examen generado (Rol o Manual). No es posible importar, editar ni eliminar sus preguntas.
+              <strong>{{ [...gruposBloqueados].map((g) => 'Grupo ' + g).join(', ') }}</strong>
+              ya tienen un examen generado (Rol o Manual). No es posible importar, editar ni
+              eliminar sus preguntas.
             </q-banner>
 
             <!-- Apartado Estratégico: Fechas de Exámenes (Oculto temporalmente a petición) -->
@@ -1259,6 +1260,47 @@
                         </div>
                         <div v-else class="text-grey-8 text-weight-bolder">
                           <q-icon name="groups" size="10px" class="q-mr-xs" />General
+                        </div>
+                      </div>
+
+                      <!-- Documentos de Examen Devuelto -->
+                      <div
+                        v-if="['devuelto', 'devueltos'].includes(examen.estado?.toLowerCase())"
+                        class="q-mt-sm"
+                      >
+                        <q-separator class="q-mb-xs" />
+                        <div
+                          class="text-deep-orange-9 text-weight-bold q-mb-xs"
+                          style="font-size: 10px"
+                        >
+                          Examen Devuelto
+                        </div>
+                        <div class="row justify-center q-gutter-x-sm">
+                          <q-btn
+                            v-if="getPrimerExamen(examen)"
+                            flat
+                            round
+                            dense
+                            color="primary"
+                            icon="description"
+                            size="sm"
+                            @click="abrirDocumento(getPrimerExamen(examen), 'examenes')"
+                          >
+                            <q-tooltip>Descargar Examen</q-tooltip>
+                          </q-btn>
+
+                          <q-btn
+                            v-if="getPrimerPatron(examen)"
+                            flat
+                            round
+                            dense
+                            color="teal"
+                            icon="fact_check"
+                            size="sm"
+                            @click="abrirDocumento(getPrimerPatron(examen), 'patrones')"
+                          >
+                            <q-tooltip>Descargar Patrón</q-tooltip>
+                          </q-btn>
                         </div>
                       </div>
                     </q-card-section>
@@ -1369,7 +1411,9 @@
                           Ref: {{ pregunta.grupo }}
                         </q-chip>
                         <q-space />
-                        <template v-if="!gruposBloqueados.has(normalizeGroupName(pregunta.grupoTeorico))">
+                        <template
+                          v-if="!gruposBloqueados.has(normalizeGroupName(pregunta.grupoTeorico))"
+                        >
                           <q-btn
                             flat
                             round
@@ -1382,12 +1426,7 @@
                             <q-tooltip>Editar Pregunta</q-tooltip>
                           </q-btn>
                         </template>
-                        <q-icon
-                          v-else
-                          name="lock"
-                          color="orange-7"
-                          size="sm"
-                        >
+                        <q-icon v-else name="lock" color="orange-7" size="sm">
                           <q-tooltip>Grupo bloqueado: examen ya generado</q-tooltip>
                         </q-icon>
                       </div>
@@ -1538,13 +1577,15 @@
                 <div class="text-caption" style="line-height: 1.4">
                   Al marcar <strong>"Sin Cartilla"</strong>, el sistema NO generará la hoja óptica.
                   <strong>Se debe enviar el documento de evaluación</strong> al correo de
-                  evaluaciones correspondiente a la sede <strong>{{ nombreSede }}</strong>.
-                  <br /><br />
+                  evaluaciones correspondiente a la sede <strong>{{ nombreSede }}</strong
+                  >. <br /><br />
                   <strong>Incluir en el correo:</strong><br />
                   • Carrera: {{ asignatura?.carreras?.[0]?.nombre || 'No especificada' }}<br />
                   • Asignatura: {{ asignatura?.nombre }} ({{ asignatura?.sigla }})<br />
                   • Grupo: {{ grupoTeoricoSeleccionado }}<br />
-                  • Docente: {{ authStore.usuarioActual?.docente?.nombre_completo || authStore.nombreCompleto }}<br />
+                  • Docente:
+                  {{ authStore.usuarioActual?.docente?.nombre_completo || authStore.nombreCompleto
+                  }}<br />
                   • Fecha y Hora del examen programado.
                 </div>
               </q-banner>
@@ -1552,14 +1593,18 @@
 
             <!-- Aviso de bloqueo por grupo -->
             <q-banner
-              v-if="grupoTeoricoSeleccionado && gruposBloqueados.has(normalizeGroupName(grupoTeoricoSeleccionado))"
+              v-if="
+                grupoTeoricoSeleccionado &&
+                gruposBloqueados.has(normalizeGroupName(grupoTeoricoSeleccionado))
+              "
               class="bg-red-1 text-red-10 q-mb-md"
               rounded
               dense
             >
               <template v-slot:avatar><q-icon name="lock" color="red-10" /></template>
-              <strong>Importación bloqueada:</strong> El <strong>Grupo {{ grupoTeoricoSeleccionado }}</strong>
-              ya tiene un examen en estado <em>Generado o superior</em>. No es posible reemplazar el banco de preguntas.
+              <strong>Importación bloqueada:</strong> El
+              <strong>Grupo {{ grupoTeoricoSeleccionado }}</strong> ya tiene un examen en estado
+              <em>Generado o superior</em>. No es posible reemplazar el banco de preguntas.
             </q-banner>
 
             <div v-if="conCartilla">
@@ -1568,7 +1613,10 @@
                 outlined
                 label="Seleccionar archivo Excel (.xlsx)"
                 accept=".xlsx,.xls"
-                :disable="!grupoTeoricoSeleccionado || gruposBloqueados.has(normalizeGroupName(grupoTeoricoSeleccionado))"
+                :disable="
+                  !grupoTeoricoSeleccionado ||
+                  gruposBloqueados.has(normalizeGroupName(grupoTeoricoSeleccionado))
+                "
                 @update:model-value="previsualizarArchivoExcel"
               >
                 <template v-slot:prepend><q-icon name="attach_file" /></template>
@@ -3796,6 +3844,96 @@ async function cargarExamenes() {
   }
 }
 
+function abrirDocumento(filename, folder = 'examenes') {
+  if (!filename) return
+  // Si comienza con http o /, es una ruta absoluta o relativa al servidor
+  if (filename.startsWith('http') || filename.startsWith('/')) {
+    window.open(filename, '_blank')
+    return
+  }
+  const baseUrl = api.defaults.baseURL.replace('/api', '')
+  window.open(`${baseUrl}/storage/${folder}/${filename}`, '_blank')
+}
+
+function getPrimerExamen(examen) {
+  // 1. Soporte para campos directos o anidados
+  if (examen.archivo_examen) return examen.archivo_examen
+  if (examen.generacion_manual?.archivo_examen) return examen.generacion_manual.archivo_examen
+
+  // 2. Buscar en el ref de generacionesManuales (fallback frontend)
+  if (generacionesManuales.value?.length > 0) {
+    const examenParcial = String(examen.tipo_examen || "").trim().toUpperCase()
+    const manual = generacionesManuales.value.find((m) => {
+      const gMatch = normalizeGroupName(m.grupo) === normalizeGroupName(examen.grupo)
+      const mParcial = String(m.parcial || "").trim().toUpperCase()
+      // Coincidencia exacta o mapeo 1P/1er Parcial
+      const pMatch =
+        mParcial === examenParcial ||
+        (mParcial === "1ER PARCIAL" && examenParcial === "1P") ||
+        (mParcial === "1P" && examenParcial === "1ER PARCIAL")
+      return gMatch && pMatch
+    })
+    if (manual?.archivo_examen) return manual.archivo_examen
+  }
+
+  const v = examen.variantes || examen.documento_examen_json
+  if (!v) return null
+
+  if (Array.isArray(v) && v.length > 0) {
+    return typeof v[0] === 'string' ? v[0] : v[0].archivo || null
+  }
+
+  if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+    return typeof v === 'string' ? v : v.archivo || null
+  }
+  return null
+}
+
+function getPrimerPatron(examen) {
+  // 1. Soporte para campos directos o anidados (solo PDF solicitado)
+  let foundFile = examen.archivo_patron_pdf || examen.generacion_manual?.archivo_patron_pdf
+
+  // 2. Buscar en el ref de generacionesManuales (fallback frontend)
+  if (!foundFile && generacionesManuales.value?.length > 0) {
+    const examenParcial = String(examen.tipo_examen || "").trim().toUpperCase()
+    const manual = generacionesManuales.value.find((m) => {
+      const gMatch = normalizeGroupName(m.grupo) === normalizeGroupName(examen.grupo)
+      const mParcial = String(m.parcial || "").trim().toUpperCase()
+      const pMatch =
+        mParcial === examenParcial ||
+        (mParcial === "1ER PARCIAL" && examenParcial === "1P") ||
+        (mParcial === "1P" && examenParcial === "1ER PARCIAL")
+      return gMatch && pMatch
+    })
+    if (manual?.archivo_patron_pdf) foundFile = manual.archivo_patron_pdf
+  }
+
+  if (foundFile) return foundFile
+
+  const json = examen.patrones || examen.patron_respuestas_json
+  if (!json) return null
+
+  if (Array.isArray(json) && json.length > 0) {
+    const item = json[0]
+    if (typeof item === 'string') {
+      return item.toLowerCase().endsWith('.pdf') ? item : null
+    }
+    return item.pdf || null // Preferir PDF
+  }
+
+  if (typeof json === 'object' && json !== null && !Array.isArray(json)) {
+    const keys = Object.keys(json)
+    if (keys.length > 0) {
+      const p = json[keys[0]]
+      if (typeof p === 'string') {
+        return p.toLowerCase().endsWith('.pdf') ? p : null
+      }
+      return p?.pdf || null
+    }
+  }
+  return null
+}
+
 const preguntasFiltradas = computed(() => {
   return bancoPreguntasLocal.value
 })
@@ -3864,7 +4002,6 @@ function esOpcionCorrecta(pregunta, letra) {
   }
   return resp === letra
 }
-
 
 async function descargarFormatoBanco() {
   const ExcelJS = await import('exceljs')
