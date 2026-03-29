@@ -2679,9 +2679,9 @@ const gestionarEstado = async (examen) => {
     // Valores por defecto iniciales (fallback hard)
     tempConfig.value = {
       cantVariantes: examen.variantes.length || 1,
-      facil: examen.distribucion.facil || 10,
-      medio: examen.distribucion.medio || 10,
-      dificil: examen.distribucion.dificil || 5,
+      facil: examen.distribucion.facil || 7,
+      medio: examen.distribucion.medio || 16,
+      dificil: examen.distribucion.dificil || 7,
       formatoHoja: examen.distribucion.formatoHoja || 'Oficio (8.5" x 13")',
       fontFamily: examen.distribucion.fontFamily || 'helvetica',
       fontSize: examen.distribucion.fontSize || 11,
@@ -2730,6 +2730,13 @@ const gestionarEstado = async (examen) => {
       console.error('Error cargando config efectiva:', err)
     }
 
+    // Auto-corregir el legacy bug de 10/10/5 (25 preguntas) a 7/16/7 (30) para 1er/2do parcial
+    if (tempConfig.value.facil === 10 && tempConfig.value.medio === 10 && tempConfig.value.dificil === 5) {
+      tempConfig.value.facil = 7
+      tempConfig.value.medio = 16
+      tempConfig.value.dificil = 7
+    }
+
     // Cargar estadísticas del banco de preguntas
     try {
       const { data } = await api.get('/banco-preguntas/stats', {
@@ -2775,8 +2782,13 @@ const obtenerSeleccion7167 = (todas, config) => {
   const poolM = obtenerPool('2')
   const poolD = obtenerPool('3')
 
+  const usedIds = new Set()
+
   const seleccionarDePool = (pool, meta) => {
-    const headers = pool.filter((p) =>
+    if (meta <= 0) return []
+    const availablePool = pool.filter((p) => !usedIds.has(p.id))
+
+    const headers = availablePool.filter((p) =>
       ['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase()),
     )
     const subpreguntas = todas.filter((p) =>
@@ -2786,11 +2798,13 @@ const obtenerSeleccion7167 = (todas, config) => {
     const macroGrupos = headers
       .map((h) => ({
         header: h,
-        children: subpreguntas.filter((sp) => sp.grupo?.trim() === h.grupo?.trim() && h.grupo),
+        children: subpreguntas.filter(
+          (sp) => sp.grupo?.trim() === h.grupo?.trim() && h.grupo && !usedIds.has(sp.id),
+        ),
       }))
       .filter((mg) => mg.children.length > 0)
 
-    const individuales = pool
+    const individuales = availablePool
       .filter(
         (p) =>
           [
@@ -2810,37 +2824,79 @@ const obtenerSeleccion7167 = (todas, config) => {
       )
       .filter((p) => !headers.some((h) => h.id === p.id))
 
+    let mejorMacros = []
+    let mejorSuma = -1
+
+    for (let i = 0; i < 100; i++) {
+      let suma = 0
+      let seleccion = []
+      const macrosShuffled = shuffle([...macroGrupos])
+      for (const mg of macrosShuffled) {
+        if (suma + mg.children.length <= meta) {
+          seleccion.push(mg)
+          suma += mg.children.length
+        }
+        if (suma === meta) break
+      }
+
+      if (suma === meta || meta - suma <= individuales.length) {
+        mejorMacros = seleccion
+        mejorSuma = suma
+        break
+      }
+
+      if (suma > mejorSuma) {
+        mejorSuma = suma
+        mejorMacros = seleccion
+      }
+    }
+
     let seleccionFinal = []
     let contados = 0
 
-    const macrosShuffled = shuffle([...macroGrupos])
-    for (const mg of macrosShuffled) {
-      if (contados + mg.children.length <= meta) {
-        const header = JSON.parse(JSON.stringify(mg.header))
-        seleccionFinal.push(header)
-        const children = JSON.parse(JSON.stringify(shuffle([...mg.children])))
-        // Inyectar herencia para que el sort las mantenga juntas
-        children.forEach((c) => {
-          c._parentTipo = normalizeTipo(header.tipo)
-        })
-        seleccionFinal.push(...children)
-        contados += mg.children.length
-      }
+    for (const mg of mejorMacros) {
+      usedIds.add(mg.header.id)
+      const header = JSON.parse(JSON.stringify(mg.header))
+      seleccionFinal.push(header)
+      const children = JSON.parse(JSON.stringify(shuffle([...mg.children])))
+      // Inyectar herencia para que el sort las mantenga juntas
+      children.forEach((c) => {
+        usedIds.add(c.id)
+        c._parentTipo = normalizeTipo(header.tipo)
+      })
+      seleccionFinal.push(...children)
+      contados += children.length
     }
 
     const faltantes = meta - contados
     if (faltantes > 0) {
       const extras = shuffle([...individuales]).slice(0, faltantes)
+      extras.forEach((e) => usedIds.add(e.id))
       seleccionFinal.push(...JSON.parse(JSON.stringify(extras)))
     }
     return seleccionFinal
   }
 
-  return [
-    ...seleccionarDePool(poolF, metaFacil),
-    ...seleccionarDePool(poolM, metaMedio),
-    ...seleccionarDePool(poolD, metaDificil),
-  ]
+  const selF = seleccionarDePool(poolF, metaFacil)
+  const selM = seleccionarDePool(poolM, metaMedio)
+  const selD = seleccionarDePool(poolD, metaDificil)
+  const seleccionGlobal = [...selF, ...selM, ...selD]
+
+  const contarReales = (seleccion) => {
+    return seleccion.filter((p) => !['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase())).length
+  }
+
+  const metaTotal = metaFacil + metaMedio + metaDificil
+  const contadosGlobal = contarReales(seleccionGlobal)
+  const faltantesTotales = metaTotal - contadosGlobal
+
+  if (faltantesTotales > 0) {
+    // Relleno global en caso de incompatibilidad matemática de subpreguntas
+    const selExtra = seleccionarDePool(todas, faltantesTotales)
+    seleccionGlobal.push(...selExtra)
+  }
+
+  return seleccionGlobal
 }
 
 const mezclarIncisos7167 = (preguntas) => {

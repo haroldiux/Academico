@@ -384,15 +384,22 @@
 
         <q-card-section class="q-gutter-md">
           <q-input v-model="examenForm.materia_nombre" outlined dense label="Materia" readonly />
-          <q-select
-            v-model="examenForm.tipo_examen"
-            :options="tiposExamenOptions"
-            outlined
-            dense
-            label="Tipo de Examen"
-            emit-value
-            map-options
-          />
+          <div class="row q-col-gutter-md">
+            <div class="col-8">
+              <q-select
+                v-model="examenForm.tipo_examen"
+                :options="tiposExamenOptions"
+                outlined
+                dense
+                label="Tipo de Examen"
+                emit-value
+                map-options
+              />
+            </div>
+            <div class="col-4">
+              <q-input v-model="examenForm.grupo" outlined dense label="Grupo" />
+            </div>
+          </div>
           <div class="row q-col-gutter-md">
             <div class="col-6">
               <q-input v-model="examenForm.semana" outlined dense label="Semana" type="number" />
@@ -529,6 +536,7 @@ const examenForm = ref({
   materia_codigo: '',
   materia_nombre: '',
   tipo_examen: '',
+  grupo: '',
   semana: 0,
   fecha: '',
   hora_inicio: '',
@@ -812,7 +820,12 @@ async function subirExcel() {
 }
 
 function editarExamen(examen) {
-  examenForm.value = { ...examen }
+  let fechaFormat = examen.fecha || ''
+  if (fechaFormat.includes('T')) {
+    fechaFormat = fechaFormat.split('T')[0]
+  }
+  
+  examenForm.value = { ...examen, fecha: fechaFormat }
   showEditDialog.value = true
 }
 
