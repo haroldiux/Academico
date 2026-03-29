@@ -1174,6 +1174,15 @@
               />
               <q-btn
                 unelevated
+                color="amber-14"
+                text-color="black"
+                icon="fact_check"
+                label="Validar Banco"
+                no-caps
+                @click="validarBancoCompleto"
+              />
+              <q-btn
+                unelevated
                 color="white"
                 text-color="deep-purple-9"
                 icon="upload_file"
@@ -1484,6 +1493,83 @@
     </q-card>
 
     <!-- ============================================================ -->
+
+    <!-- DIALOG: Reporte de Validacin de Banco -->
+    <q-dialog v-model="showDialogValidacion" persistent>
+      <q-card style="min-width: 700px; max-width: 95vw; max-height: 80vh" class="column no-wrap">
+        <q-toolbar class="bg-deep-purple text-white shadow-1">
+          <q-toolbar-title>Reporte de Validacin Técnica</q-toolbar-title>
+          <q-btn flat round dense icon="close" v-close-popup />
+        </q-toolbar>
+
+        <q-card-section class="q-pa-md bg-grey-1">
+          <div class="row q-col-gutter-md">
+            <div class="col-12 col-md-4">
+              <q-card flat bordered class="text-center q-pa-sm bg-white">
+                <div class="text-h4 text-weight-bold">{{ reporteValidacion.total }}</div>
+                <div class="text-caption text-grey-7">Total Preguntas</div>
+              </q-card>
+            </div>
+            <div class="col-12 col-md-4">
+              <q-card flat bordered class="text-center q-pa-sm bg-green-1">
+                <div class="text-h4 text-weight-bold text-green-9">{{ reporteValidacion.validas }}</div>
+                <div class="text-caption text-green-7">Sin Errores</div>
+              </q-card>
+            </div>
+            <div class="col-12 col-md-4">
+              <q-card flat bordered class="text-center q-pa-sm" :class="reporteValidacion.errores.length > 0 ? 'bg-red-1' : 'bg-grey-1'">
+                <div class="text-h4 text-weight-bold" :class="reporteValidacion.errores.length > 0 ? 'text-red-9' : 'text-grey-7'">
+                  {{ reporteValidacion.errores.length }}
+                </div>
+                <div class="text-caption" :class="reporteValidacion.errores.length > 0 ? 'text-red-7' : 'text-grey-7'">
+                  Con Observaciones
+                </div>
+              </q-card>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="col scroll q-pa-none">
+          <div v-if="reporteValidacion.errores.length === 0" class="text-center q-pa-xl">
+             <q-icon name="verified" color="green" size="64px" />
+             <div class="text-h6 text-green q-mt-md">¡Todo está correcto!</div>
+             <p class="text-grey-7">El banco de preguntas cumple con todos los requisitos técnicos para la impresión.</p>
+          </div>
+          
+          <q-list v-else bordered separator>
+            <q-item v-for="(err, i) in reporteValidacion.errores" :key="i" class="q-py-md">
+              <q-item-section avatar top>
+                <q-avatar color="red-1" text-color="red" icon="error_outline" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-bold text-indigo-9">
+                  Pregunta #{{ err.numero }} <small class="text-grey-6 q-ml-sm">[{{ err.tipo }}]</small>
+                </q-item-label>
+                <q-item-label caption class="q-mb-sm">
+                  <div v-html="err.enunciado"></div>
+                </q-item-label>
+                
+                <div class="q-gutter-y-xs">
+                  <div v-for="(msg, mi) in err.mensajes" :key="mi" class="row items-center text-red text-caption">
+                    <q-icon name="circle" size="6px" class="q-mr-xs" />
+                    {{ msg }}
+                  </div>
+                </div>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+
+        <q-separator />
+        
+        <q-card-actions align="right" class="bg-grey-1 q-pa-md">
+          <q-btn flat label="Cerrar" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- DIALOG: Subir Banco de Preguntas -->
     <!-- ============================================================ -->
     <q-dialog v-model="showSubirBanco" persistent>
@@ -1681,21 +1767,32 @@
               <div class="text-weight-bold text-caption">Distribución válida para importar.</div>
             </q-banner>
 
-            <!-- Errores -->
-            <q-banner v-if="importErrores.length > 0" class="bg-red-1 text-red-9 q-mb-md" rounded>
-              <template v-slot:avatar><q-icon name="error" /></template>
-              <div class="text-weight-bold q-mb-xs">
+            <!-- Errores Detalles -->
+            <div v-if="importErrores.length > 0" class="q-mb-md">
+              <div class="text-subtitle2 text-red q-mb-xs flex items-center">
+                <q-icon name="error" class="q-mr-xs" />
                 {{ importErrores.length }} error(es) en el archivo:
               </div>
-              <ul class="q-ma-none q-pl-md">
-                <li v-for="(err, i) in importErrores.slice(0, 5)" :key="i" class="text-caption">
-                  {{ err }}
-                </li>
-                <li v-if="importErrores.length > 5" class="text-caption text-weight-bold">
-                  ... y {{ importErrores.length - 5 }} más
-                </li>
-              </ul>
-            </q-banner>
+              <q-scroll-area style="height: 300px; border: 1px solid #ffcdd2" class="bg-red-0 rounded-borders">
+                <q-list separator class="bg-red-1">
+                  <q-item v-for="(err, i) in importErrores" :key="i" class="q-py-sm">
+                    <q-item-section>
+                      <q-item-label class="text-weight-bold text-red-9">
+                        Fila {{ err.fila }} <small class="text-grey-7">[{{ err.tipo?.toUpperCase() }}]</small>
+                      </q-item-label>
+                      <q-item-label caption class="text-grey-7 ellipsis" style="max-width: 400px">
+                        <div v-html="err.enunciado" />
+                      </q-item-label>
+                      <div class="q-mt-xs">
+                        <div v-for="(msg, midx) in err.mensajes" :key="midx" class="text-caption text-red-8 flex items-center">
+                          <q-icon name="arrow_right" size="16px" /> {{ msg }}
+                        </div>
+                      </div>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-scroll-area>
+            </div>
 
             <!-- Previsualización 5 primeras -->
             <div class="text-subtitle2 q-mb-xs">
@@ -2606,6 +2703,14 @@ let lastSavedSnapshot = '' // Snapshot del último estado guardado
 const importOpciones = ref({
   datos: false,
   unidades: true,
+})
+
+// Reporte de validacin
+const showDialogValidacion = ref(false)
+const reporteValidacion = ref({
+  total: 0,
+  validas: 0,
+  errores: [],
 })
 
 // --- CRUD Unidades & Temas ---
@@ -3978,6 +4083,136 @@ async function cargarBancoPreguntas() {
   }
 }
 
+/**
+ * Función de validación unificada para una sola pregunta
+ * @param {Object} p Pregunta a validar
+ * @param {Map} gruposCabeceraMap Map de [grupo -> tipo] para saber si es EM o PR
+ * @returns {Array} Lista de mensajes de error/observaciones
+ */
+function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
+  const fallos = []
+  const tipo = String(p.tipo || '').toUpperCase()
+  const opciones = Array.isArray(p.opciones) ? p.opciones : []
+  const respuesta = p.respuesta_correcta || p.respuesta
+  const enunciado = String(p.enunciado || '').toLowerCase()
+  const grupoNormalizado = String(p.grupo || '').trim().toUpperCase()
+
+  // 1. Validar Respuestas Obligatorias (SM, SS, FV, SP)
+  if (['SM', 'SS', 'FV', 'SP'].includes(tipo)) {
+    if (respuesta === null || respuesta === undefined || respuesta === '' || (Array.isArray(respuesta) && respuesta.length === 0)) {
+      fallos.push('Falta definir la respuesta correcta.')
+    }
+  }
+
+  // 2. Conteo de Opciones (SM, SS, SP -> 5 incisos, EXCEPTO EN GRUPOS EM)
+  const tipoCabecera = grupoNormalizado ? gruposCabeceraMap.get(grupoNormalizado) : null
+  const esGrupoEmparejamiento = ['EM', 'EMPAREJAMIENTO'].includes(tipoCabecera)
+
+  if (['SM', 'SS', 'SP'].includes(tipo) && !esGrupoEmparejamiento) {
+    if (opciones.length !== 5) {
+      fallos.push(`Debe tener exactamente 5 opciones (actualmente: ${opciones.length}).`)
+    }
+  }
+
+  // 3. Regla SM (Solo 2 respuestas exactas)
+  if (tipo === 'SM') {
+    const respSet = Array.isArray(respuesta) 
+      ? respuesta 
+      : String(respuesta).split(/[,;]/).filter(r => r.trim().length > 0)
+    
+    if (respSet.length !== 2) {
+      fallos.push(`Selección Múltiple (SM) debe tener exactamente 2 respuestas correctas.`)
+    }
+  }
+
+  // 3.1 Regla SP (Subpregunta huérfana)
+  if (tipo === 'SP') {
+    if (!grupoNormalizado) {
+      fallos.push('La Subpregunta (SP) requiere un Grupo asignado.')
+    } else if (gruposCabeceraMap.size > 0 && !gruposCabeceraMap.has(grupoNormalizado)) {
+      fallos.push(`La Subpregunta (SP) está huérfana: no existe EM/PR con el grupo "${p.grupo}".`)
+    }
+  }
+
+  // 4. PR y EM no deben tener dificultad
+  if (['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(tipo)) {
+    if (p.dificultad && p.dificultad !== 0 && p.dificultad !== '') {
+      fallos.push(`Tipo ${tipo} no debe tener nivel de dificultad asignado.`)
+    }
+    
+    // Validar incisos en EM (secuencia A, B...)
+    if (['EM', 'EMPAREJAMIENTO'].includes(tipo)) {
+      const textBusqueda = enunciado.toUpperCase()
+      const incisosPosibles = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.']
+      const encontrados = incisosPosibles.filter(inc => textBusqueda.includes(inc))
+      
+      if (encontrados.length < 2) {
+        fallos.push('Emparejamiento (EM) debe contener al menos 2 incisos (A., B., ...) en su enunciado.')
+      } else {
+        for (let i = 0; i < encontrados.length; i++) {
+          if (!textBusqueda.includes(incisosPosibles[i])) {
+            fallos.push(`Secuencia de incisos incompleta en EM: falta el inciso ${incisosPosibles[i]}`)
+            break
+          }
+        }
+      }
+    }
+  }
+
+  // 5. Verificación de Etiquetas (no subindices, potencias, etc.)
+  const tagsProhibidos = ['<sub>', '<sup>', '<math>', '<font>', 'style=']
+  const tieneTags = tagsProhibidos.some(tag => enunciado.includes(tag))
+  if (tieneTags) {
+    fallos.push('El enunciado contiene etiquetas no permitidas para impresión (subíndices, potencias o estilos).')
+  }
+
+  return fallos
+}
+
+function validarBancoCompleto() {
+  const preguntas = bancoPreguntasLocal.value || []
+  if (preguntas.length === 0) {
+    $q.notify({ type: 'warning', message: 'No hay preguntas para validar.' })
+    return
+  }
+
+  const errores = []
+  let validas = 0
+
+  // 0. Mapeo de cabeceras de grupos (EM / PR)
+  const gruposCabeceraMap = new Map()
+  preguntas.forEach((p) => {
+    const t = String(p.tipo || '').toUpperCase()
+    const g = String(p.grupo || '').trim().toUpperCase()
+    if (['EM', 'EMPAREJAMIENTO', 'PR', 'PROBLEMA'].includes(t) && g) {
+      gruposCabeceraMap.set(g, t)
+    }
+  });
+
+  preguntas.forEach((p, index) => {
+    const fallos = validarIntegridadPregunta(p, gruposCabeceraMap)
+
+    if (fallos.length > 0) {
+      errores.push({
+        numero: p.numeroVisual || (index + 1),
+        tipo: p.tipo,
+        enunciado: p.enunciado,
+        mensajes: fallos
+      })
+    } else {
+      validas++
+    }
+  })
+
+  reporteValidacion.value = {
+    total: preguntas.length,
+    validas,
+    errores
+  }
+
+  showDialogValidacion.value = true
+}
+
 async function cargarGeneracionesManuales() {
   if (!asignatura.value?.id) return
   try {
@@ -4473,11 +4708,11 @@ function previsualizarArchivoExcel(file) {
         }
 
         const dataRows = rows.slice(headerRowIdx + 1)
-        const errores = []
+        const erroresListado = [] // Cambiado de array de strings a array de objetos
         const preguntas = []
 
         dataRows.forEach((row, idx) => {
-          const lineNum = headerRowIdx + idx + 2 // número de fila real en Excel
+          const lineNum = headerRowIdx + idx + 2 // nmero de fila real en Excel
           const tipo = String(row[colsMap.tipo] || '')
             .toLowerCase()
             .trim()
@@ -4485,12 +4720,11 @@ function previsualizarArchivoExcel(file) {
           // Ignorar filas vacías
           if (!tipo || !row[colsMap.enunciado]) return
 
+          const filaErrores = []
+
           // Validar tipo
           if (!TIPOS_VALIDOS.includes(tipo)) {
-            errores.push(
-              `Fila ${lineNum}: tipo "${tipo}" no válido. Use: ${TIPOS_VALIDOS.join(', ')}`,
-            )
-            return
+            filaErrores.push(`Tipo "${tipo}" no válido. Use: ${TIPOS_VALIDOS.join(', ')}`)
           }
 
           const enunciadoRaw = String(row[colsMap.enunciado] || '').trim()
@@ -4509,98 +4743,77 @@ function previsualizarArchivoExcel(file) {
           const parcial = PARCIAL_MAP[parcialRaw] || parcialRaw
           const grupoRaw = String(row[colsMap.grupo] || '').trim()
 
-          // Validar campos requeridos por tipo
+          // Validar campos requeridos bsicos (no unificados an solo para frenar parsing)
           if (['ss', 'sm', 'fv', 'sp'].includes(tipo)) {
-            if (!respuesta) {
-              errores.push(`Fila ${lineNum}: tipo "${tipo}" requiere respuesta_correcta.`)
-              return
-            }
-            if (!dificultadRaw) {
-              errores.push(
-                `Fila ${lineNum}: tipo "${tipo}" requiere nivel de dificultad (1, 2 o 3).`,
-              )
-              return
-            }
+            if (!respuesta) filaErrores.push(`Requiere respuesta_correcta.`)
+            if (!dificultadRaw) filaErrores.push(`Requiere nivel de dificultad (1, 2 o 3).`)
           } else if (['em', 'pr'].includes(tipo)) {
-            if (respuesta) {
-              errores.push(
-                `Fila ${lineNum}: tipo "${tipo}" NO debe tener respuesta_correcta (debe estar vacía).`,
-              )
-              return
-            }
-            if (dificultadRaw) {
-              errores.push(
-                `Fila ${lineNum}: tipo "${tipo}" NO debe tener dificultad (debe estar vacía).`,
-              )
-              return
-            }
+            if (respuesta) filaErrores.push(`NO debe tener respuesta_correcta.`)
+            if (dificultadRaw) filaErrores.push(`NO debe tener dificultad asignada.`)
           }
 
-          if (['ss', 'sm', 'fv', 'sp'].includes(tipo)) {
-            if (tipo === 'sm') {
-              // SM debe tener exactamente 2 respuestas (ej: A,B o AB)
-              const letters = respuesta.replace(/[^A-E]/g, '')
-              if (letters.length !== 2) {
-                errores.push(
-                  `Fila ${lineNum}: Selección Múltiple (SM) DEBE tener exactamente 2 respuestas correctas (ej: A,B).`,
-                )
-                return
-              }
+          const getOp = (key) =>
+            String(row[colsMap[key]] || '')
+              .replace(/\r\n|\n/g, '<br>')
+              .trim()
+          const op_a = getOp('opcion_a')
+          const op_b = getOp('opcion_b')
+          const op_c = getOp('opcion_c')
+          const op_d = getOp('opcion_d')
+          const op_e = getOp('opcion_e')
 
-              // Validar que tenga las 5 opciones A-E rellenadas
-              const opcionesRequeridas = [
-                { key: 'opcion_a', label: 'A' },
-                { key: 'opcion_b', label: 'B' },
-                { key: 'opcion_c', label: 'C' },
-                { key: 'opcion_d', label: 'D' },
-                { key: 'opcion_e', label: 'E' },
-              ]
-              for (const op of opcionesRequeridas) {
-                if (!String(row[colsMap[op.key]] || '').trim()) {
-                  errores.push(
-                    `Fila ${lineNum}: Selección Múltiple (SM) DEBE tener la Opción ${op.label} rellenada.`,
-                  )
-                  return
-                }
-              }
-            } else {
-              // SS, FV, SP deben tener solo 1 letra
-              if (!['A', 'B', 'C', 'D', 'E'].includes(respuesta) && respuesta.length > 1) {
-                errores.push(`Fila ${lineNum}: tipo "${tipo}" solo acepta una letra (A-E).`)
-                return
-              }
-            }
-          }
-
-          preguntas.push({
+          const pObj = {
             id: Date.now() + idx + Math.random(),
             tipo,
             enunciado,
             grupo: grupoRaw || null,
-            opciones: [
-              String(row[colsMap.opcion_a] || '')
-                .replace(/\r\n|\n/g, '<br>')
-                .trim(),
-              String(row[colsMap.opcion_b] || '')
-                .replace(/\r\n|\n/g, '<br>')
-                .trim(),
-              String(row[colsMap.opcion_c] || '')
-                .replace(/\r\n|\n/g, '<br>')
-                .trim(),
-              String(row[colsMap.opcion_d] || '')
-                .replace(/\r\n|\n/g, '<br>')
-                .trim(),
-              String(row[colsMap.opcion_e] || '')
-                .replace(/\r\n|\n/g, '<br>')
-                .trim(),
-            ],
+            opciones: [op_a, op_b, op_c, op_d, op_e].filter((o) => o !== ''),
             respuesta,
             dificultad: ['pr', 'em'].includes(tipo) ? '' : dificultad || '1',
             parcial: parcial || '1P',
-          })
+          }
+
+          preguntas.push(pObj)
+
+          if (filaErrores.length > 0) {
+            erroresListado.push({
+              fila: lineNum,
+              tipo: pObj.tipo,
+              enunciado: pObj.enunciado,
+              mensajes: filaErrores
+            })
+          }
         })
 
-        // Calcular stats por dificultad (Excluyendo EM y PR)
+        // Validación unificada de integridad técnica (después de colectar cabeceras)
+        const gruposHeadersMap = new Map()
+        preguntas.forEach((p) => {
+          const t = String(p.tipo || '').trim().toUpperCase()
+          const g = String(p.grupo || '').trim().toUpperCase()
+          if (['EM', 'PR', 'EMPAREJAMIENTO', 'PROBLEMA'].includes(t) && g) {
+            gruposHeadersMap.set(g, t)
+          }
+        })
+
+        preguntas.forEach((p, idxValid) => {
+          const fallosTecnicos = validarIntegridadPregunta(p, gruposHeadersMap)
+          if (fallosTecnicos.length > 0) {
+            const lineNum = headerRowIdx + idxValid + 1 + 1
+            const existeFila = erroresListado.find(e => e.fila === lineNum)
+            if (existeFila) {
+              existeFila.mensajes.push(...fallosTecnicos)
+            } else {
+              erroresListado.push({
+                fila: lineNum,
+                tipo: p.tipo,
+                enunciado: p.enunciado,
+                mensajes: fallosTecnicos
+              })
+            }
+          }
+        })
+
+        // Calcular stats
         const preguntasReales = preguntas.filter((p) => !['em', 'pr'].includes(p.tipo))
         const stats = { total: preguntasReales.length, faciles: 0, medios: 0, dificiles: 0 }
         preguntasReales.forEach((p) => {
@@ -4610,13 +4823,18 @@ function previsualizarArchivoExcel(file) {
         })
 
         preguntasImportadas.value = preguntas
-        importErrores.value = errores
+        importErrores.value = erroresListado
         importStats.value = stats
         archivoPreviewBanco.value = file.name
 
-        if (preguntas.length === 0 && errores.length === 0) {
+        if (preguntas.length === 0 && erroresListado.length === 0) {
           importErrores.value = [
-            'El archivo no tiene filas de datos válidas después del encabezado.',
+            {
+              fila: '-',
+              tipo: '-',
+              enunciado: 'Sin datos',
+              mensajes: ['El archivo no tiene filas de datos válidas después del encabezado.']
+            }
           ]
         }
       } catch (err) {
