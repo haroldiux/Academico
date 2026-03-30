@@ -3102,44 +3102,109 @@ const resetearExamen = (row) => {
   })
 }
 
+  // Función auxiliar para obtener preguntas originales de un examen rol
+const obtenerPreguntasOriginalesRol = (row) => {
+  // 1. Buscar en config_generacion.preguntas_seleccionadas (nuevo campo)
+  if (row.config_generacion?.preguntas_seleccionadas?.length > 0) {
+    return row.config_generacion.preguntas_seleccionadas
+  }
+  
+  // 2. Buscar en config_generacion.seleccion (campo alternativo)
+  if (row.config_generacion?.seleccion?.length > 0) {
+    return row.config_generacion.seleccion
+  }
+  
+  // 3. Buscar en config_generacion.preguntas (campo alternativo)
+  if (row.config_generacion?.preguntas?.length > 0) {
+    return row.config_generacion.preguntas
+  }
+  
+  // 4. Buscar en config_generacion.resultados (campo alternativo)
+  if (row.config_generacion?.resultados?.length > 0) {
+    return row.config_generacion.resultados
+  }
+  
+  // 5. Buscar en patrones[0].preguntas (formato alternativo)
+  if (row.patrones?.length > 0 && row.patrones[0]?.preguntas?.length > 0) {
+    return row.patrones[0].preguntas
+  }
+  
+  // 6. Buscar en variantes (si contienen preguntas)
+  if (row.variantes?.length > 0 && Array.isArray(row.variantes[0]) && row.variantes[0].length > 0) {
+    // Asumir que variantes es array de objetos con letra y preguntas
+    return row.variantes.map(v => ({ 
+      letra: v.letra || v[0], 
+      sorted: v.preguntas || v[1] || [] 
+    }))
+  }
+  
+  // 7. Buscar en campo directo preguntas_seleccionadas
+  if (row.preguntas_seleccionadas?.length > 0) {
+    return row.preguntas_seleccionadas
+  }
+  
+  return null
+}
+
 const regenerarDocumentosRol = async (row) => {
-  $q.dialog({
-    title: 'Regenerar Patrones del Examen',
-    message: `¿Está seguro de que desea regenerar los patrones de este examen?<br><br>
-              <span class="text-amber-7 text-weight-bold">Esta acción sobrescribirá los archivos de patrón PDF y Excel existentes en el servidor (el examen PDF no se modificará).</span><br><br>
-               <span class="text-caption text-grey-7">Se regenerarán: Patrón PDF y Patrón Excel usando las preguntas originales almacenadas (mismo contenido que el examen).</span>`,
-    html: true,
-    persistent: true,
-    ok: { label: 'Sí, Regenerar', color: 'amber-7', unelevated: true },
-    cancel: { label: 'Cancelar', flat: true },
-  }).onOk(async () => {
-    $q.loading.show({ message: 'Regenerando patrones...' })
-    try {
-      // Validar que tenga configuración de generación
-      if (!row.config_generacion) {
-        throw new Error('Este examen no tiene configuración de generación. No se puede regenerar.')
-      }
+   // Verificar primero si hay preguntas originales almacenadas
+   const tienePreguntas = obtenerPreguntasOriginalesRol(row)
+   
+   if (!tienePreguntas || tienePreguntas.length === 0) {
+     // No hay preguntas almacenadas, mostrar diálogo informativo
+     $q.dialog({
+       title: 'No se pueden regenerar patrones',
+       message: `Este examen no tiene almacenadas las preguntas originales usadas en su generación.<br><br>
+                 <span class="text-amber-7 text-weight-bold">Para regenerar patrones que coincidan con el examen existente, necesitamos las preguntas originales.</span><br><br>
+                 <span class="text-caption text-grey-7">Opciones disponibles:</span>
+                 <ul class="q-pl-md">
+                   <li><b>Resetear examen</b>: Volver a estado "programados" y generar nuevo examen con nuevas preguntas (se perderán los archivos actuales)</li>
+                   <li><b>Cancelar</b>: Mantener el examen y patrones actuales</li>
+                 </ul>`,
+       html: true,
+       persistent: true,
+       ok: { label: 'Resetear Examen', color: 'red-7', unelevated: true },
+       cancel: { label: 'Cancelar', flat: true },
+     }).onOk(async () => {
+       // Llamar a función de resetear examen
+       resetearExamen(row)
+     })
+     return
+   }
+   
+   // Hay preguntas almacenadas, proceder con regeneración normal
+   $q.dialog({
+     title: 'Regenerar Patrones del Examen',
+     message: `¿Está seguro de que desea regenerar los patrones de este examen?<br><br>
+               <span class="text-amber-7 text-weight-bold">Esta acción sobrescribirá los archivos de patrón PDF y Excel existentes en el servidor (el examen PDF no se modificará).</span><br><br>
+                <span class="text-caption text-grey-7">Se regenerarán: Patrón PDF y Patrón Excel usando las preguntas originales almacenadas (mismo contenido que el examen).</span>`,
+     html: true,
+     persistent: true,
+     ok: { label: 'Sí, Regenerar', color: 'amber-7', unelevated: true },
+     cancel: { label: 'Cancelar', flat: true },
+   }).onOk(async () => {
+     $q.loading.show({ message: 'Regenerando patrones...' })
+     try {
+       // Validar que tenga configuración de generación
+       if (!row.config_generacion) {
+         throw new Error('Este examen no tiene configuración de generación. No se puede regenerar.')
+       }
 
-      const config = row.config_generacion
-      
-      // Validar que haya preguntas originales almacenadas
-      if (!config.preguntas_seleccionadas || config.preguntas_seleccionadas.length === 0) {
-        throw new Error('No hay preguntas originales almacenadas para este examen. No se pueden regenerar los patrones.')
-      }
-      
-      const mergedPatronesDoc = new jsPDF()
-      const resultadosVariantes = config.preguntas_seleccionadas
+       // Obtener preguntas originales (ya verificamos que existen)
+       const resultadosVariantes = tienePreguntas
+       
+       const mergedPatronesDoc = new jsPDF()
 
-      for (let i = 0; i < resultadosVariantes.length; i++) {
-        const { letra, sorted } = resultadosVariantes[i]
-        
-        if (i > 0) {
-          mergedPatronesDoc.addPage()
-        }
+       for (let i = 0; i < resultadosVariantes.length; i++) {
+         const { letra, sorted } = resultadosVariantes[i]
+         
+         if (i > 0) {
+           mergedPatronesDoc.addPage()
+         }
 
-        // Generar patrón solamente (el examen ya existe)
-        await generarPatronPDF(mergedPatronesDoc, letra, sorted, row)
-      }
+         // Generar patrón solamente (el examen ya existe)
+         await generarPatronPDF(mergedPatronesDoc, letra, sorted, row)
+       }
 
       const varsJoined = resultadosVariantes.map((r) => r.letra).join('')
       const nCod = String(row.codigo || 'EXAM').replace(/\s/g, '')
