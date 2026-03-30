@@ -479,15 +479,16 @@
           <q-td :props="props" align="center">
             <div v-if="puedeVerAcciones" class="acciones-row justify-center no-wrap">
               <q-btn
+                v-if="(esAdmin || esResponsableEvaluaciones || esSuperAdmin) && props.row.estado !== 'programados'"
                 flat
                 round
                 dense
-                color="primary"
-                icon="visibility"
+                color="red-7"
+                icon="restart_alt"
                 size="sm"
-                @click="verDetalles(props.row)"
+                @click="resetearExamen(props.row)"
               >
-                <q-tooltip>Ver detalles</q-tooltip>
+                <q-tooltip>Resetear a Programado</q-tooltip>
               </q-btn>
 
               <!-- Botón Dinámico Llamativo -->
@@ -529,15 +530,16 @@
             </div>
             <div v-else>
               <q-btn
+                v-if="(esAdmin || esResponsableEvaluaciones || esSuperAdmin) && props.row.estado !== 'programados'"
                 flat
                 round
                 dense
-                color="primary"
-                icon="visibility"
+                color="red-7"
+                icon="restart_alt"
                 size="sm"
-                @click="verDetalles(props.row)"
+                @click="resetearExamen(props.row)"
               >
-                <q-tooltip>Ver detalles</q-tooltip>
+                <q-tooltip>Resetear a Programado</q-tooltip>
               </q-btn>
             </div>
           </q-td>
@@ -1479,6 +1481,8 @@ const {
   esResponsableEvaluaciones,
   esDireccionAcademica,
   esVicerrectorSede,
+  esAdmin,
+  esSuperAdmin,
 } = usePermisos()
 
 const puedeVerAcciones = computed(() => {
@@ -1583,7 +1587,7 @@ const normalizeTipo = (t) => {
   if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(s)) return 'SUBPROBLEMA'
   if (['SU', 'SS', 'SELECCION_UNICA'].includes(s)) return 'SELECCION_UNICA'
   if (['SM', 'SELECCION_MULTIPLE'].includes(s)) return 'SELECCION_MULTIPLE'
-  if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO'].includes(s)) return 'FALSO_VERDADERO'
+  if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(s)) return 'FALSO_VERDADERO'
   return s
 }
 
@@ -2074,7 +2078,7 @@ const onExcelUploaded = (file) => {
           let tipoFinal = tipoRaw
           if (['SU', 'SS', 'SELECCION_UNICA'].includes(tipoRaw)) tipoFinal = 'SELECCION_UNICA'
           else if (['SM', 'SELECCION_MULTIPLE'].includes(tipoRaw)) tipoFinal = 'SELECCION_MULTIPLE'
-          else if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO'].includes(tipoRaw))
+          else if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(tipoRaw))
             tipoFinal = 'FALSO_VERDADERO'
           else if (['PR', 'PROBLEMA'].includes(tipoRaw)) tipoFinal = 'PROBLEMA'
           else if (['EM', 'EMPAREJAMIENTO'].includes(tipoRaw)) tipoFinal = 'EMPAREJAMIENTO'
@@ -3440,7 +3444,46 @@ const formatTimestamp = (ts) =>
         minute: '2-digit',
       })
     : ''
-const verDetalles = (ex) => $q.notify({ message: `Materia: ${ex.materia}`, icon: 'info' })
+const resetearExamen = (row) => {
+  $q.dialog({
+    title: '<span class="text-red-7 text-weight-bold">¿Resetear Examen?</span>',
+    message: `¿Está seguro de que desea resetear este examen?
+             <br><br>Esta acción:<br>
+             1. Volverá el estado a <b>PROGRAMADO</b>.<br>
+             2. <b>Borrará</b> la configuración de generación.<br>
+             3. <b>Borrará</b> las variantes y patrones generados.<br><br>
+             <span class="text-caption text-grey-7 italic">Esta acción es irreversible una vez ejecutada.</span>`,
+    html: true,
+    persistent: true,
+    ok: { label: 'Sí, Resetear', color: 'red-7', unelevated: true, rounded: true, noCaps: true },
+    cancel: { label: 'Cancelar', flat: true, noCaps: true },
+  }).onOk(async () => {
+    $q.loading.show({ message: 'Reseteando registro de examen...' })
+    try {
+      // Al enviar estado: 'programados', el backend limpia automáticamente config_generacion, variantes y patrones
+      await api.put(`/rol-examenes/${row.id}`, {
+        estado: 'programados',
+        timestamps_proceso: { programados: new Date().toISOString() },
+      })
+
+      $q.notify({
+        type: 'positive',
+        message: 'Examen reseteado exitosamente',
+        icon: 'restart_alt',
+      })
+      cargarDatos()
+    } catch (error) {
+      console.error('Error al resetear examen:', error)
+      $q.notify({
+        type: 'negative',
+        message: 'No se pudo resetear el examen',
+        caption: error.response?.data?.message || error.message,
+      })
+    } finally {
+      $q.loading.hide()
+    }
+  })
+}
 
 const getExamenUrl = (v) => {
   const filename = typeof v === 'string' ? null : v.archivo
@@ -3720,6 +3763,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   const baseSize = config.fontSize || 11
   const spacingMult = config.lineSpacing || 1.1 // Ligeramente más compacto
   const lineHeight = baseSize * 0.42 * spacingMult // Factor corregido para escala mm
+  // Sincronizar interlineado de jsPDF con nuestro cálculo manual (Factor 1.1905 = 0.42mm/pt)
+  doc.setLineHeightFactor(1.1905 * spacingMult)
   const sectionFontSize = Math.max(9, baseSize - 1)
   const metaFontSize = Math.max(8, baseSize - 2)
 
@@ -3881,7 +3926,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     SELECCION_MULTIPLE:
       'SELECCIÓN MÚLTIPLE: Analice el enunciado y marque todas las opciones que den una respuesta válida. Tenga en cuenta que puede haber más de una respuesta correcta.',
     FALSO_VERDADERO:
-      'FALSO O VERDADERO: Para cada afirmación, indique si el contenido es Verdadero marcando la opción (A) o Falso marcando la opción (B).',
+      'VERDADERO O FALSO: Para cada afirmación, indique si el contenido es Verdadero marcando la opción (A) o Falso marcando la opción (B).',
     PROBLEMA:
       'PROBLEMAS Y CASOS: Lea detenidamente el caso planteado y resuelva cada una de las preguntas que se presentan a continuación.',
     EMPAREJAMIENTO:
@@ -3889,6 +3934,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   }
 
   let ultimoTipo = null
+  let problemCount = 0
 
   // RENDER PREGUNTAS
   for (let i = 0; i < preguntas.length; i++) {
@@ -4095,6 +4141,14 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         ).length
       const realNum = i + 1 - headersAntes
       doc.text(`${realNum}. `, margin, currentY)
+    } else {
+      // Título distintivo para el caso clínico
+      problemCount++
+      doc.setFontSize(baseSize + 1)
+      doc.setFont(baseFont, 'bold')
+      doc.text(`CASO Nº ${problemCount}:`, margin, currentY)
+      currentY += 6
+      doc.setFontSize(baseSize)
     }
 
     doc.setFont(baseFont, 'normal')
@@ -4111,7 +4165,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       doc.setFont(baseFont, 'normal')
     }
 
-    currentY += esHeader ? 0.5 : 2 // Casi nada de espacio extra si es el header del caso
+    // Espacios adicionales de seguridad
+    currentY += esHeader ? 2 : 2 // 2mm tras un caso clínico/problema
 
     // Imagen (si existe)
     if (p.imagen) {
@@ -4179,7 +4234,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         currentY += opcLines.length * lineHeight + 1
       }
     }
-    currentY += esHeader ? 0 : 5 // Si es header, la siguiente pregunta viene pegada
+    currentY += esHeader ? 2 : 5 // Más espacio tras un caso clínico para separar de la 1er pregunta
   }
 
   const cleanSede = String(examen.sede || '').replace(/\s/g, '')
