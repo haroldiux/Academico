@@ -2619,6 +2619,9 @@ const ejecutarAccionGestion = async () => {
           resultadosVariantes.push({ letra, sorted })
         }
 
+        // Guardar preguntas seleccionadas para regeneración futura
+        payload.config_generacion.preguntas_seleccionadas = resultadosVariantes
+
         const varsJoined = resultadosVariantes.map((r) => r.letra).join('')
         const nCod = String(examen.codigo || 'EXAM').replace(/\s/g, '')
         const nSede = String(examen.sede || '').replace(/\s/g, '')
@@ -3104,7 +3107,7 @@ const regenerarDocumentosRol = async (row) => {
     title: 'Regenerar Patrones del Examen',
     message: `¿Está seguro de que desea regenerar los patrones de este examen?<br><br>
               <span class="text-amber-7 text-weight-bold">Esta acción sobrescribirá los archivos de patrón PDF y Excel existentes en el servidor (el examen PDF no se modificará).</span><br><br>
-              <span class="text-caption text-grey-7">Se regenerarán: Patrón PDF y Patrón Excel con nueva selección de preguntas del banco.</span>`,
+               <span class="text-caption text-grey-7">Se regenerarán: Patrón PDF y Patrón Excel usando las preguntas originales almacenadas (mismo contenido que el examen).</span>`,
     html: true,
     persistent: true,
     ok: { label: 'Sí, Regenerar', color: 'amber-7', unelevated: true },
@@ -3117,86 +3120,25 @@ const regenerarDocumentosRol = async (row) => {
         throw new Error('Este examen no tiene configuración de generación. No se puede regenerar.')
       }
 
-      // Obtener preguntas del banco (misma lógica que generación inicial)
-      $q.loading.show({ message: 'Obteniendo banco de preguntas...' })
-      let bancoPreguntas = []
-      try {
-        const resp = await api.get('/banco-preguntas', {
-          params: {
-            asignatura_id: row.asignatura_id,
-            docente_id: row.docente_id,
-            grupoTeorico: row.grupo,
-            parcial: row.parcial,
-            all_docentes: true,
-          },
-        })
-        bancoPreguntas = resp.data.preguntas || resp.data
-      } catch (err) {
-        console.error('Error al obtener banco:', err)
-        $q.notify({ type: 'negative', message: 'No se pudo obtener el banco de preguntas' })
-        $q.loading.hide()
-        return
-      }
-      $q.loading.hide()
-
       const config = row.config_generacion
-      const variantes = row.variantes || ['A', 'B', 'C', 'D', 'E'].slice(0, config.cantVariantes || 1)
-      // mergedExamenesDoc not needed for pattern regeneration
+      
+      // Validar que haya preguntas originales almacenadas
+      if (!config.preguntas_seleccionadas || config.preguntas_seleccionadas.length === 0) {
+        throw new Error('No hay preguntas originales almacenadas para este examen. No se pueden regenerar los patrones.')
+      }
+      
       const mergedPatronesDoc = new jsPDF()
+      const resultadosVariantes = config.preguntas_seleccionadas
 
-      const todas = Array.isArray(bancoPreguntas)
-        ? bancoPreguntas
-        : bancoPreguntas.preguntas || []
-      const resultadosVariantes = []
-
-      for (let i = 0; i < variantes.length; i++) {
-        const letra = variantes[i]
-        const seleccion = obtenerSeleccion7167(todas, config)
-        const mezcladas = mezclarIncisos7167(seleccion)
-
-        const ordenBase = [
-          'PROBLEMA',
-          'EMPAREJAMIENTO',
-          'SUBPROBLEMA',
-          'SELECCION_UNICA',
-          'SELECCION_MULTIPLE',
-          'FALSO_VERDADERO',
-        ]
-        let finalOrder = [...ordenBase]
-
-        if (config.aleatorizarSecciones) {
-          const principales = [
-            'PROBLEMA',
-            'EMPAREJAMIENTO',
-            'SELECCION_UNICA',
-            'SELECCION_MULTIPLE',
-            'FALSO_VERDADERO',
-          ]
-          const shuffled = shuffle([...principales])
-          finalOrder = []
-          shuffled.forEach((t) => {
-            finalOrder.push(t)
-            if (t === 'PROBLEMA' || t === 'EMPAREJAMIENTO') finalOrder.push('SUBPROBLEMA')
-          })
-        }
-
-        const sorted = mezcladas.sort((a, b) => {
-          if (a.grupo && b.grupo && a.grupo === b.grupo) return 0
-
-          let ta = a._parentTipo || normalizeTipo(a.tipo)
-          let tb = b._parentTipo || normalizeTipo(b.tipo)
-
-          return finalOrder.indexOf(ta) - finalOrder.indexOf(tb)
-        })
-
+      for (let i = 0; i < resultadosVariantes.length; i++) {
+        const { letra, sorted } = resultadosVariantes[i]
+        
         if (i > 0) {
           mergedPatronesDoc.addPage()
         }
 
         // Generar patrón solamente (el examen ya existe)
         await generarPatronPDF(mergedPatronesDoc, letra, sorted, row)
-
-        resultadosVariantes.push({ letra, sorted })
       }
 
       const varsJoined = resultadosVariantes.map((r) => r.letra).join('')
