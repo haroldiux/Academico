@@ -415,7 +415,7 @@
             hide-selected
             clearable
             @filter="filterAsignaturas"
-            option-label="nombre"
+            :option-label="getMateriaLabel"
             option-value="codigo"
             hint="Escribe para buscar (código o nombre)"
           >
@@ -430,7 +430,17 @@
               <q-item v-bind="scope.itemProps">
                 <q-item-section>
                   <q-item-label>{{ scope.opt.nombre }}</q-item-label>
-                  <q-item-label caption>{{ scope.opt.codigo }}</q-item-label>
+                  <q-item-label caption>
+                    {{ scope.opt.codigo }}
+                    <q-badge
+                      v-if="scope.opt.plan_estudios"
+                      :color="scope.opt.plan_estudios === 'A' ? 'orange-2' : 'blue-2'"
+                      :text-color="scope.opt.plan_estudios === 'A' ? 'orange-9' : 'blue-9'"
+                      class="q-ml-sm"
+                    >
+                      Plan {{ scope.opt.plan_estudios === 'A' ? 'Antiguo' : 'Nuevo' }}
+                    </q-badge>
+                  </q-item-label>
                 </q-item-section>
               </q-item>
             </template>
@@ -822,6 +832,15 @@ const examenesFiltrados = computed(() => {
 })
 
 // Methods
+function getMateriaLabel(opt) {
+  if (!opt) return ''
+  let label = opt.nombre
+  if (opt.plan_estudios) {
+    label += ` - Plan ${opt.plan_estudios === 'A' ? 'Antiguo' : 'Nuevo'}`
+  }
+  return label
+}
+
 function getExamenColor(tipo) {
   switch (tipo) {
     case '1er Parcial':
