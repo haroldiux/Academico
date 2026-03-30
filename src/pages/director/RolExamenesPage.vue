@@ -12,7 +12,8 @@
         </p>
       </div>
       <div class="col-auto row q-gutter-sm">
-        <q-btn
+        <!-- Ocultado por solicitud -->
+        <!-- <q-btn
           v-if="puedeEditar && store.examenes.length > 0"
           outline
           color="red"
@@ -20,7 +21,7 @@
           label="Borrar Todo"
           no-caps
           @click="eliminarTodo"
-        />
+        /> -->
         <q-btn
           v-if="authStore.rol === 'VICERRECTOR_SEDE'"
           outline
@@ -32,7 +33,8 @@
         />
         <!-- Ocultado por solicitud: se usará plantilla institucional externa -->
         <!-- <q-btn v-if="puedeEditar" outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" /> -->
-        <q-btn
+        <!-- Ocultado temporalmente por solicitud -->
+        <!-- <q-btn
           v-if="puedeEditar"
           unelevated
           color="green"
@@ -40,7 +42,7 @@
           label="Subir Excel"
           no-caps
           @click="showUploadDialog = true"
-        />
+        /> -->
       </div>
     </div>
 
@@ -283,7 +285,8 @@
             <div class="text-center q-pa-xl">
               <q-icon name="event_busy" size="64px" color="grey-4" />
               <p class="text-grey-6 q-mt-md">No hay exámenes cargados para esta gestión</p>
-              <q-btn
+              <!-- Ocultado temporalmente por solicitud -->
+              <!-- <q-btn
                 v-if="puedeEditar"
                 unelevated
                 color="green"
@@ -291,7 +294,7 @@
                 label="Subir Excel"
                 no-caps
                 @click="showUploadDialog = true"
-              />
+              /> -->
             </div>
           </template>
         </q-table>
@@ -871,7 +874,7 @@ function eliminarExamen(examen) {
   })
 }
 
-function eliminarTodo() {
+/* function eliminarTodo() {
   if (!filtros.value.carrera_id) {
     $q.notify({
       type: 'warning',
@@ -914,7 +917,7 @@ function eliminarTodo() {
       })
     }
   })
-}
+} */
 
 // Reporte State
 const showReportDialog = ref(false)
