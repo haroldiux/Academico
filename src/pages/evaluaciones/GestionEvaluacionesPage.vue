@@ -337,11 +337,11 @@
                 class="q-mr-xs">
                 <q-tooltip>Resetear a Programado</q-tooltip>
               </q-btn>
-              <q-btn
-                v-if="(esAdmin || esResponsableEvaluaciones || esSuperAdmin) && props.row.estado !== 'programados' && props.row.config_generacion"
-                flat round dense color="amber-7" icon="refresh" size="sm" @click="regenerarDocumentosRol(props.row)">
-                <q-tooltip>Regenerar Documentos (PDFs y Excel)</q-tooltip>
-              </q-btn>
+               <q-btn
+                 v-if="(esAdmin || esResponsableEvaluaciones || esSuperAdmin) && props.row.estado !== 'programados' && props.row.config_generacion"
+                 flat round dense color="amber-7" icon="refresh" size="sm" @click="regenerarDocumentosRol(props.row)">
+                 <q-tooltip>Regenerar Patrones (PDF y Excel)</q-tooltip>
+               </q-btn>
 
               <!-- Botón Dinámico Llamativo -->
               <template v-if="tieneGestion(props.row.estado)">
@@ -531,12 +531,12 @@
               <q-separator vertical class="q-mx-xs"
                 v-if="['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())" />
 
-              <!-- Botón Regenerar Documentos -->
-              <q-btn flat round dense color="amber-7" icon="refresh" size="sm"
-                @click="regenerarDocumentosManual(props.row)"
-                v-if="['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())">
-                <q-tooltip>Regenerar Documentos (PDFs y Excel)</q-tooltip>
-              </q-btn>
+               <!-- Botón Regenerar Documentos -->
+               <q-btn flat round dense color="amber-7" icon="refresh" size="sm"
+                 @click="regenerarDocumentosManual(props.row)"
+                 v-if="['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())">
+                 <q-tooltip>Regenerar Patrones (PDF y Excel)</q-tooltip>
+               </q-btn>
             </div>
           </q-td>
         </template>
@@ -2960,38 +2960,35 @@ const descargarPatronXlsxManual = async (row) => {
 
 const regenerarDocumentosManual = async (row) => {
   $q.dialog({
-    title: 'Regenerar Documentos',
-    message: `¿Está seguro de que desea regenerar los documentos de esta generación manual?<br><br>
-              <span class="text-amber-7 text-weight-bold">Esta acción sobrescribirá los archivos PDF y Excel existentes en el servidor.</span><br><br>
-              <span class="text-caption text-grey-7">Se regenerarán: Examen PDF, Patrón PDF y Patrón Excel con los mismos datos de preguntas.</span>`,
+    title: 'Regenerar Patrones',
+    message: `¿Está seguro de que desea regenerar los patrones de esta generación manual?<br><br>
+              <span class="text-amber-7 text-weight-bold">Esta acción sobrescribirá los archivos PDF de patrón y Excel existentes en el servidor.</span><br><br>
+              <span class="text-caption text-grey-7">Se regenerarán: Patrón PDF y Patrón Excel con los mismos datos de preguntas (NO se regenera el examen PDF).</span>`,
     html: true,
     persistent: true,
-    ok: { label: 'Sí, Regenerar', color: 'amber-7', unelevated: true },
+    ok: { label: 'Sí, Regenerar Patrones', color: 'amber-7', unelevated: true },
     cancel: { label: 'Cancelar', flat: true },
   }).onOk(async () => {
-    $q.loading.show({ message: 'Regenerando documentos...' })
+    $q.loading.show({ message: 'Regenerando patrones...' })
     try {
       const variantesData = row.patron_respuestas_json || []
-      const config = row.configuracion_json || {}
 
+      
       if (variantesData.length === 0) {
         throw new Error('No hay datos de preguntas para regenerar')
       }
 
-      // Crear documentos consolidados
-      const formatoPapel = config.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-      const examenesPDF = new jsPDF({ format: formatoPapel })
+      // Crear solo documento de patrones (NO examen)
       const patronesPDF = new jsPDF()
 
       // Generar cada variante
       for (let i = 0; i < variantesData.length; i++) {
         const v = variantesData[i]
         if (i > 0) {
-          examenesPDF.addPage()
           patronesPDF.addPage()
         }
-
-        // Datos del examen para cabecera
+        
+        // Datos del examen para cabecera del patrón
         const examenDoc = {
           materia: row.asignatura_nombre,
           docente: row.docente_nombre,
@@ -3005,7 +3002,7 @@ const regenerarDocumentosManual = async (row) => {
           semestre: row.semestre || '',
         }
 
-        await generarExamenPDF(examenesPDF, examenDoc, config, v.letra, v.preguntas)
+        // Solo generar patrón, NO examen
         await generarPatronPDF(patronesPDF, v.letra, v.preguntas, examenDoc)
       }
 
@@ -3015,17 +3012,15 @@ const regenerarDocumentosManual = async (row) => {
         `Patron_${row.asignatura_nombre.replace(/\s/g, '_')}_${row.parcial}.xlsx`
       )
 
-      // Subir archivos al servidor
+      // Subir archivos al servidor (solo patrón PDF y Excel)
       const fd = new FormData()
-      const exBlob = examenesPDF.output('blob')
       const patBlob = patronesPDF.output('blob')
 
       // Nombres de archivos
       const baseName = `${row.asignatura_codigo || 'MANUAL'}_${row.sede_nombre.replace(/\s/g, '')}_G${row.grupo}_${row.parcial}_Var${variantesData.map(v => v.letra).join('')}`
-      const exName = `${baseName}_Examen.pdf`
       const patName = `${baseName}_Patron.pdf`
 
-      fd.append('examen_pdf', exBlob, exName)
+      // Solo subir patrón PDF y Excel
       fd.append('patron_pdf', patBlob, patName)
       fd.append('patrones_xlsx[0]', xBlob, xName)
 
@@ -3035,17 +3030,17 @@ const regenerarDocumentosManual = async (row) => {
 
       $q.notify({
         type: 'positive',
-        message: 'Documentos regenerados exitosamente',
+        message: 'Patrones regenerados exitosamente (PDF y Excel)',
         icon: 'refresh',
       })
-
+      
       // Recargar lista
       cargarManualGenerations()
     } catch (error) {
-      console.error('Error regenerando documentos:', error)
+      console.error('Error regenerando patrones:', error)
       $q.notify({
         type: 'negative',
-        message: 'Error al regenerar documentos',
+        message: 'Error al regenerar patrones',
         caption: error.response?.data?.message || error.message,
       })
     } finally {
@@ -3106,16 +3101,16 @@ const resetearExamen = (row) => {
 
 const regenerarDocumentosRol = async (row) => {
   $q.dialog({
-    title: 'Regenerar Documentos del Examen',
-    message: `¿Está seguro de que desea regenerar los documentos de este examen?<br><br>
-              <span class="text-amber-7 text-weight-bold">Esta acción sobrescribirá los archivos PDF y Excel existentes en el servidor.</span><br><br>
-              <span class="text-caption text-grey-7">Se regenerarán: Examen PDF, Patrón PDF y Patrón Excel con nueva selección de preguntas del banco.</span>`,
+    title: 'Regenerar Patrones del Examen',
+    message: `¿Está seguro de que desea regenerar los patrones de este examen?<br><br>
+              <span class="text-amber-7 text-weight-bold">Esta acción sobrescribirá los archivos de patrón PDF y Excel existentes en el servidor (el examen PDF no se modificará).</span><br><br>
+              <span class="text-caption text-grey-7">Se regenerarán: Patrón PDF y Patrón Excel con nueva selección de preguntas del banco.</span>`,
     html: true,
     persistent: true,
     ok: { label: 'Sí, Regenerar', color: 'amber-7', unelevated: true },
     cancel: { label: 'Cancelar', flat: true },
   }).onOk(async () => {
-    $q.loading.show({ message: 'Regenerando documentos...' })
+    $q.loading.show({ message: 'Regenerando patrones...' })
     try {
       // Validar que tenga configuración de generación
       if (!row.config_generacion) {
@@ -3146,8 +3141,7 @@ const regenerarDocumentosRol = async (row) => {
 
       const config = row.config_generacion
       const variantes = row.variantes || ['A', 'B', 'C', 'D', 'E'].slice(0, config.cantVariantes || 1)
-      const formatoPapel = config.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-      const mergedExamenesDoc = new jsPDF({ format: formatoPapel })
+      // mergedExamenesDoc not needed for pattern regeneration
       const mergedPatronesDoc = new jsPDF()
 
       const todas = Array.isArray(bancoPreguntas)
@@ -3196,22 +3190,10 @@ const regenerarDocumentosRol = async (row) => {
         })
 
         if (i > 0) {
-          // Garantizar que cada variante comience en página impar (anverso)
-          const numPages = mergedExamenesDoc.internal.getNumberOfPages
-            ? mergedExamenesDoc.internal.getNumberOfPages()
-            : mergedExamenesDoc.internal.pages.length - 1
-          if (numPages % 2 !== 0) {
-            mergedExamenesDoc.addPage()
-            mergedExamenesDoc.setFontSize(10)
-            mergedExamenesDoc.setTextColor(150)
-            mergedExamenesDoc.text('PÁGINA EN BLANCO', 105, 150, { align: 'center' })
-          }
-          mergedExamenesDoc.addPage()
           mergedPatronesDoc.addPage()
         }
 
-        // Generar contenido en documentos compartidos
-        await generarExamenPDF(mergedExamenesDoc, row, config, letra, sorted)
+        // Generar patrón solamente (el examen ya existe)
         await generarPatronPDF(mergedPatronesDoc, letra, sorted, row)
 
         resultadosVariantes.push({ letra, sorted })
@@ -3224,7 +3206,6 @@ const regenerarDocumentosRol = async (row) => {
       const nPar = String(row.parcial || '').replace(/\s/g, '')
       const baseN = `${nCod}_${nSede}_G${nGru}_${nPar}_Var${varsJoined}`
 
-      const finalExName = `${baseN}_Examen.pdf`
       const finalPatOMRName = `${baseN}_Patron.pdf`
       const finalXLSXName = `${baseN}_Remark.xlsx`
 
@@ -3234,22 +3215,13 @@ const regenerarDocumentosRol = async (row) => {
         finalXLSXName,
       )
 
-      // Preparar Blobs consolidados
-      const finalExBlob = mergedExamenesDoc.output('blob')
+      // Preparar Blob del patrón
       const finalPatOMRBlob = mergedPatronesDoc.output('blob')
 
-      $q.loading.show({ message: 'Subiendo documentos regenerados...' })
+      $q.loading.show({ message: 'Subiendo patrones regenerados...' })
 
       for (const res of resultadosVariantes) {
         try {
-          // Subir Examen (Consolidado) para cada variante
-          const fdEx = new FormData()
-          fdEx.append('archivo', finalExBlob, finalExName)
-          fdEx.append('variante', res.letra)
-          fdEx.append('filename', finalExName)
-          await api.post(`/rol-examenes/${row.id}/upload-examen`, fdEx, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          })
 
           // Subir Patron OMR (Consolidado)
           const fPatronPDF = new FormData()
@@ -3274,7 +3246,7 @@ const regenerarDocumentosRol = async (row) => {
 
       $q.notify({
         type: 'positive',
-        message: 'Documentos regenerados exitosamente',
+        message: 'Patrones regenerados exitosamente',
         icon: 'refresh',
       })
 
@@ -3284,7 +3256,7 @@ const regenerarDocumentosRol = async (row) => {
       console.error('Error regenerando documentos:', error)
       $q.notify({
         type: 'negative',
-        message: 'Error al regenerar documentos',
+        message: 'Error al regenerar patrones',
         caption: error.response?.data?.message || error.message,
       })
     } finally {
