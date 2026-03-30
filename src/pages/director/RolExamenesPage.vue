@@ -43,6 +43,15 @@
           no-caps
           @click="showUploadDialog = true"
         /> -->
+        <q-btn
+          v-if="puedeEditar"
+          unelevated
+          color="blue"
+          icon="add"
+          label="Añadir Manual"
+          no-caps
+          @click="abrirDialogoAnadir"
+        />
       </div>
     </div>
 
@@ -295,6 +304,15 @@
                 no-caps
                 @click="showUploadDialog = true"
               /> -->
+              <q-btn
+                v-if="puedeEditar"
+                unelevated
+                color="blue"
+                icon="add"
+                label="Añadir Manual"
+                no-caps
+                @click="abrirDialogoAnadir"
+              />
             </div>
           </template>
         </q-table>
@@ -373,6 +391,101 @@
             :disable="!selectedFile"
             :loading="uploading"
             @click="subirExcel"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Añadir Examen Manual -->
+    <q-dialog v-model="showAddDialog">
+      <q-card style="min-width: 450px">
+        <div class="dialog-header bg-blue text-white">
+          <h3><q-icon name="add_circle" class="q-mr-sm" />Añadir Examen</h3>
+        </div>
+
+        <q-card-section class="q-gutter-md">
+          <q-select
+            v-model="nuevoExamenForm.materia"
+            :options="asignaturasOptions"
+            outlined
+            dense
+            label="Materia *"
+            use-input
+            fill-input
+            hide-selected
+            clearable
+            @filter="filterAsignaturas"
+            option-label="nombre"
+            option-value="codigo"
+            hint="Escribe para buscar (código o nombre)"
+          >
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  No se encontraron resultados
+                </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.nombre }}</q-item-label>
+                  <q-item-label caption>{{ scope.opt.codigo }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+
+          <div class="row q-col-gutter-md">
+            <div class="col-8">
+              <q-select
+                v-model="nuevoExamenForm.tipo_examen"
+                :options="tiposExamenOptions"
+                outlined
+                dense
+                label="Tipo de Examen *"
+                emit-value
+                map-options
+              />
+            </div>
+            <div class="col-4">
+              <q-input v-model="nuevoExamenForm.grupo" outlined dense label="Grupo *" />
+            </div>
+          </div>
+          <div class="row q-col-gutter-md">
+            <div class="col-6">
+              <q-input v-model="nuevoExamenForm.semana" outlined dense label="Semana *" type="number" min="1" max="25" />
+            </div>
+            <div class="col-6">
+              <q-input v-model="nuevoExamenForm.fecha" outlined dense label="Fecha *" type="date" />
+            </div>
+          </div>
+          <div class="row q-col-gutter-md">
+            <div class="col-6">
+              <q-input
+                v-model="nuevoExamenForm.hora_inicio"
+                outlined
+                dense
+                label="Hora Inicio *"
+                type="time"
+              />
+            </div>
+            <div class="col-6">
+              <q-input v-model="nuevoExamenForm.hora_fin" outlined dense label="Hora Fin *" type="time" />
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancelar" @click="showAddDialog = false" />
+          <q-btn
+            unelevated
+            color="primary"
+            label="Guardar"
+            icon="save"
+            no-caps
+            :loading="loadingAdd"
+            @click="guardarNuevoExamen"
           />
         </q-card-actions>
       </q-card>
@@ -513,16 +626,33 @@ import { useRolExamenesStore } from 'src/stores/rolExamenes'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useSedesStore } from 'src/stores/sedes'
+import { useAsignaturasStore } from 'src/stores/asignaturas'
 import rolExamenesService from 'src/services/rolExamenesService'
 
 const $q = useQuasar()
 const store = useRolExamenesStore()
 const carrerasStore = useCarrerasStore()
 const sedesStore = useSedesStore()
+const asignaturasStore = useAsignaturasStore()
 
 // State
 const showUploadDialog = ref(false)
 const showEditDialog = ref(false)
+const showAddDialog = ref(false)
+const asignaturasOptions = ref([])
+const asignaturasRaw = ref([])
+const loadingAdd = ref(false)
+
+const nuevoExamenForm = ref({
+  materia: null,
+  tipo_examen: '',
+  grupo: '',
+  semana: '',
+  fecha: '',
+  hora_inicio: '',
+  hora_fin: '',
+})
+
 const selectedFile = ref(null)
 const busqueda = ref('')
 const filtroSemestre = ref(null)
@@ -819,6 +949,105 @@ async function subirExcel() {
       message: 'Error al subir archivo: ' + error.message,
       icon: 'error',
     })
+  }
+}
+
+async function abrirDialogoAnadir() {
+  if (!filtros.value.carrera_id) {
+    $q.notify({
+      type: 'warning',
+      message: 'Debe seleccionar una carrera antes de añadir un examen.',
+      icon: 'warning',
+    })
+    return
+  }
+
+  $q.loading.show({ message: 'Cargando materias...' })
+  try {
+    await asignaturasStore.fetchAsignaturas(targetSedeId.value, filtros.value.carrera_id, null, '')
+    asignaturasRaw.value = asignaturasStore.asignaturas || []
+    asignaturasOptions.value = [...asignaturasRaw.value]
+    
+    nuevoExamenForm.value = {
+      materia: null,
+      tipo_examen: '',
+      grupo: '',
+      semana: '',
+      fecha: '',
+      hora_inicio: '',
+      hora_fin: '',
+    }
+    showAddDialog.value = true
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al cargar asignaturas: ' + (error.message || '') })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
+function filterAsignaturas(val, update) {
+  update(() => {
+    if (val === '') {
+      asignaturasOptions.value = asignaturasRaw.value
+    } else {
+      const needle = val.toLowerCase()
+      asignaturasOptions.value = asignaturasRaw.value.filter(
+        (v) =>
+          (v.nombre && v.nombre.toLowerCase().indexOf(needle) > -1) ||
+          (v.codigo && v.codigo.toLowerCase().indexOf(needle) > -1)
+      )
+    }
+  })
+}
+
+async function guardarNuevoExamen() {
+  if (
+    !nuevoExamenForm.value.materia ||
+    !nuevoExamenForm.value.tipo_examen ||
+    !nuevoExamenForm.value.grupo ||
+    !nuevoExamenForm.value.semana ||
+    !nuevoExamenForm.value.fecha ||
+    !nuevoExamenForm.value.hora_inicio ||
+    !nuevoExamenForm.value.hora_fin
+  ) {
+    $q.notify({
+      type: 'warning',
+      message: 'Por favor, complete todos los campos requeridos',
+    })
+    return
+  }
+
+  loadingAdd.value = true
+  const data = {
+    gestion: filtros.value.gestion,
+    carrera_id: filtros.value.carrera_id,
+    materia_codigo: nuevoExamenForm.value.materia.codigo,
+    materia_nombre: nuevoExamenForm.value.materia.nombre,
+    tipo_examen: nuevoExamenForm.value.tipo_examen,
+    grupo: nuevoExamenForm.value.grupo,
+    semana: Number(nuevoExamenForm.value.semana),
+    fecha: nuevoExamenForm.value.fecha,
+    hora_inicio: nuevoExamenForm.value.hora_inicio,
+    hora_fin: nuevoExamenForm.value.hora_fin,
+    sede_id: targetSedeId.value
+  }
+
+  try {
+    await store.crearExamen(data)
+    $q.notify({
+      type: 'positive',
+      message: 'Examen creado correctamente',
+      icon: 'check',
+    })
+    showAddDialog.value = false
+    await cargarExamenes()
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al crear examen: ' + (error?.response?.data?.message || error.message),
+    })
+  } finally {
+    loadingAdd.value = false
   }
 }
 
