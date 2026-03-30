@@ -33,16 +33,15 @@
         />
         <!-- Ocultado por solicitud: se usará plantilla institucional externa -->
         <!-- <q-btn v-if="puedeEditar" outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" /> -->
-        <!-- Ocultado temporalmente por solicitud -->
-        <!-- <q-btn
-          v-if="puedeEditar"
+        <q-btn
+          v-if="[ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol)"
           unelevated
           color="green"
           icon="upload_file"
           label="Subir Excel"
           no-caps
           @click="showUploadDialog = true"
-        /> -->
+        />
       </div>
     </div>
 
@@ -285,16 +284,15 @@
             <div class="text-center q-pa-xl">
               <q-icon name="event_busy" size="64px" color="grey-4" />
               <p class="text-grey-6 q-mt-md">No hay exámenes cargados para esta gestión</p>
-              <!-- Ocultado temporalmente por solicitud -->
-              <!-- <q-btn
-                v-if="puedeEditar"
+              <q-btn
+                v-if="[ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol)"
                 unelevated
                 color="green"
                 icon="upload_file"
                 label="Subir Excel"
                 no-caps
                 @click="showUploadDialog = true"
-              /> -->
+              />
             </div>
           </template>
         </q-table>
