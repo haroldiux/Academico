@@ -496,18 +496,7 @@
         <template v-slot:body-cell-acciones="props">
           <q-td :props="props" align="center">
             <div v-if="puedeVerAcciones" class="acciones-row justify-center no-wrap">
-              <q-btn
-                v-if="(esAdmin || esResponsableEvaluaciones || esSuperAdmin) && props.row.estado !== 'programados'"
-                flat
-                round
-                dense
-                color="red-7"
-                icon="restart_alt"
-                size="sm"
-                @click="resetearExamen(props.row)"
-              >
-                <q-tooltip>Resetear a Programado</q-tooltip>
-              </q-btn>
+              <!-- Botón Dinámico Llamativo -->
 
               <!-- Botón Dinámico Llamativo -->
               <template v-if="tieneGestion(props.row.estado)">
@@ -545,20 +534,6 @@
                   no-caps
                 />
               </template>
-            </div>
-            <div v-else>
-              <q-btn
-                v-if="(esAdmin || esResponsableEvaluaciones || esSuperAdmin) && props.row.estado !== 'programados'"
-                flat
-                round
-                dense
-                color="red-7"
-                icon="restart_alt"
-                size="sm"
-                @click="resetearExamen(props.row)"
-              >
-                <q-tooltip>Resetear a Programado</q-tooltip>
-              </q-btn>
             </div>
           </q-td>
         </template>
@@ -1515,8 +1490,6 @@ const {
   esResponsableEvaluaciones,
   esDireccionAcademica,
   esVicerrectorSede,
-  esAdmin,
-  esSuperAdmin,
 } = usePermisos()
 
 const puedeVerAcciones = computed(() => {
@@ -3478,46 +3451,7 @@ const formatTimestamp = (ts) =>
         minute: '2-digit',
       })
     : ''
-const resetearExamen = (row) => {
-  $q.dialog({
-    title: '<span class="text-red-7 text-weight-bold">¿Resetear Examen?</span>',
-    message: `¿Está seguro de que desea resetear este examen?
-             <br><br>Esta acción:<br>
-             1. Volverá el estado a <b>PROGRAMADO</b>.<br>
-             2. <b>Borrará</b> la configuración de generación.<br>
-             3. <b>Borrará</b> las variantes y patrones generados.<br><br>
-             <span class="text-caption text-grey-7 italic">Esta acción es irreversible una vez ejecutada.</span>`,
-    html: true,
-    persistent: true,
-    ok: { label: 'Sí, Resetear', color: 'red-7', unelevated: true, rounded: true, noCaps: true },
-    cancel: { label: 'Cancelar', flat: true, noCaps: true },
-  }).onOk(async () => {
-    $q.loading.show({ message: 'Reseteando registro de examen...' })
-    try {
-      // Al enviar estado: 'programados', el backend limpia automáticamente config_generacion, variantes y patrones
-      await api.put(`/rol-examenes/${row.id}`, {
-        estado: 'programados',
-        timestamps_proceso: { programados: new Date().toISOString() },
-      })
 
-      $q.notify({
-        type: 'positive',
-        message: 'Examen reseteado exitosamente',
-        icon: 'restart_alt',
-      })
-      cargarDatos()
-    } catch (error) {
-      console.error('Error al resetear examen:', error)
-      $q.notify({
-        type: 'negative',
-        message: 'No se pudo resetear el examen',
-        caption: error.response?.data?.message || error.message,
-      })
-    } finally {
-      $q.loading.hide()
-    }
-  })
-}
 
 const getExamenUrl = (v) => {
   const filename = typeof v === 'string' ? null : v.archivo
