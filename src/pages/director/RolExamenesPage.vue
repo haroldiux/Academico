@@ -433,11 +433,22 @@
                   <q-item-label caption>
                     {{ scope.opt.codigo }}
                     <q-badge
-                      :color="(scope.opt.plan_estudios || 'N') === 'A' ? 'orange-2' : 'blue-2'"
-                      :text-color="(scope.opt.plan_estudios || 'N') === 'A' ? 'orange-9' : 'blue-9'"
-                      class="q-ml-sm"
+                      v-if="scope.opt.plan_estudios === 'A'"
+                      color="orange-2" text-color="orange-9" class="q-ml-sm"
                     >
-                      Plan {{ (scope.opt.plan_estudios || 'N') === 'A' ? 'Antiguo' : 'Nuevo' }}
+                      Plan Antiguo
+                    </q-badge>
+                    <q-badge
+                      v-else-if="scope.opt.plan_estudios === 'N'"
+                      color="blue-2" text-color="blue-9" class="q-ml-sm"
+                    >
+                      Plan Nuevo
+                    </q-badge>
+                    <q-badge
+                      v-else
+                      color="grey-3" text-color="grey-8" class="q-ml-sm"
+                    >
+                      Sin plan definido
                     </q-badge>
                   </q-item-label>
                 </q-item-section>
@@ -834,8 +845,9 @@ const examenesFiltrados = computed(() => {
 function getMateriaLabel(opt) {
   if (!opt) return ''
   let label = opt.nombre
-  const plan = opt.plan_estudios || 'N'
-  label += ` - Plan ${plan === 'A' ? 'Antiguo' : 'Nuevo'}`
+  if (opt.plan_estudios === 'A') label += ' - Plan Antiguo'
+  else if (opt.plan_estudios === 'N') label += ' - Plan Nuevo'
+  else label += ' - (Sin plan definido)'
   return label
 }
 
