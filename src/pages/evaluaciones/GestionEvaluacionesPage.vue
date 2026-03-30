@@ -426,16 +426,20 @@
                 v-if="
                   props.row.patrones &&
                   props.row.patrones.length > 0 &&
-                  ['devueltos', 'revisados', 'subidos'].includes(props.row.estado)
+                  ['generados', 'impresos', 'entregados', 'devueltos', 'revisados', 'subidos'].includes(
+                    props.row.estado,
+                  )
                 "
               />
 
-              <!-- Patrones generados (Restringidos hasta DEVUELTOS) -->
+              <!-- Patrones generados (Visibles desde generado, bloqueados hasta DEVUELTOS) -->
               <template
                 v-if="
                   props.row.patrones &&
                   props.row.patrones.length > 0 &&
-                  ['devueltos', 'revisados', 'subidos'].includes(props.row.estado)
+                  ['generados', 'impresos', 'entregados', 'devueltos', 'revisados', 'subidos'].includes(
+                    props.row.estado,
+                  )
                 "
               >
                 <div class="row no-wrap">
@@ -450,8 +454,15 @@
                     :href="getPatronUrl(props.row.patrones[0], 'pdf')"
                     target="_blank"
                     v-if="props.row.patrones[0].pdf"
+                    :disable="!['devueltos', 'revisados', 'subidos'].includes(props.row.estado)"
                   >
-                    <q-tooltip>Respuestas OMR (Consolidado)</q-tooltip>
+                    <q-tooltip>
+                      {{
+                        ['devueltos', 'revisados', 'subidos'].includes(props.row.estado)
+                          ? 'Respuestas OMR (Consolidado)'
+                          : 'Bloqueado hasta estado DEVUELTO'
+                      }}
+                    </q-tooltip>
                   </q-btn>
                   <q-btn
                     flat
@@ -464,8 +475,15 @@
                     :href="getPatronUrl(props.row.patrones[0], 'xlsx')"
                     target="_blank"
                     v-if="props.row.patrones[0].xlsx"
+                    :disable="!['devueltos', 'revisados', 'subidos'].includes(props.row.estado)"
                   >
-                    <q-tooltip>Patrón Excel (Consolidado)</q-tooltip>
+                    <q-tooltip>
+                      {{
+                        ['devueltos', 'revisados', 'subidos'].includes(props.row.estado)
+                          ? 'Patrón Excel (Consolidado)'
+                          : 'Bloqueado hasta estado DEVUELTO'
+                      }}
+                    </q-tooltip>
                   </q-btn>
                 </div>
               </template>
@@ -719,7 +737,11 @@
                 <q-tooltip>Examen (Consolidado)</q-tooltip>
               </q-btn>
 
-              <q-separator vertical class="q-mx-xs" v-if="props.row.estado === 'DEVUELTO'" />
+              <q-separator
+                vertical
+                class="q-mx-xs"
+                v-if="['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())"
+              />
 
               <!-- Patrón OMR (PDF) -->
               <q-btn
@@ -729,11 +751,17 @@
                 color="teal-7"
                 icon="picture_as_pdf"
                 size="sm"
-                :disable="props.row.estado !== 'DEVUELTO'"
+                :disable="props.row.estado.toUpperCase() !== 'DEVUELTO'"
                 @click="descargarPatronPdfManual(props.row)"
-                v-if="props.row.estado === 'DEVUELTO'"
+                v-if="['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())"
               >
-                <q-tooltip>Patrón OMR (Consolidado)</q-tooltip>
+                <q-tooltip>
+                  {{
+                    props.row.estado.toUpperCase() === 'DEVUELTO'
+                      ? 'Patrón OMR (Consolidado)'
+                      : 'Bloqueado hasta estado DEVUELTO'
+                  }}
+                </q-tooltip>
               </q-btn>
 
               <!-- Patrón Excel (XLSX) -->
@@ -744,11 +772,17 @@
                 color="green-8"
                 icon="backup_table"
                 size="sm"
-                :disable="props.row.estado !== 'DEVUELTO'"
+                :disable="props.row.estado.toUpperCase() !== 'DEVUELTO'"
                 @click="descargarPatronXlsxManual(props.row)"
-                v-if="props.row.estado === 'DEVUELTO'"
+                v-if="['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())"
               >
-                <q-tooltip>Patrón Excel (Consolidado)</q-tooltip>
+                <q-tooltip>
+                  {{
+                    props.row.estado.toUpperCase() === 'DEVUELTO'
+                      ? 'Patrón Excel (Consolidado)'
+                      : 'Bloqueado hasta estado DEVUELTO'
+                  }}
+                </q-tooltip>
               </q-btn>
             </div>
           </q-td>
