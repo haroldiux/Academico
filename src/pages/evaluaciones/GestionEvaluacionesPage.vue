@@ -324,7 +324,15 @@
                 </div>
               </template>
             </div>
-            <div v-else class="text-caption text-grey-4 text-xs">Esperando generación</div>
+            <div v-else class="flex flex-center">
+              <template v-if="puedeVerAcciones">
+                <q-btn flat round dense color="blue-8" icon="visibility" size="sm" 
+                  @click="descargarExamenLocal(props.row)">
+                  <q-tooltip>Vista previa PDF (local)</q-tooltip>
+                </q-btn>
+              </template>
+              <span v-else class="text-caption text-grey-4 text-xs">Esperando generación</span>
+            </div>
           </q-td>
         </template>
 
@@ -343,12 +351,16 @@
                  <q-tooltip>Regenerar Patrones (PDF y Excel)</q-tooltip>
                </q-btn>
 
-              <!-- Botón Dinámico Llamativo -->
-              <template v-if="tieneGestion(props.row.estado)">
-                <q-btn unelevated dense color="deep-purple"
-                  :icon="props.row.estado === 'programados' ? 'auto_awesome' : 'settings'" label="GESTIONAR" no-caps
-                  class="action-btn-main shadow-2" @click="gestionarEstado(props.row)" />
-              </template>
+               <!-- Botón Dinámico Llamativo -->
+               <template v-if="tieneGestion(props.row.estado)">
+                 <q-btn v-if="props.row.estado === 'programados'" flat round dense color="blue-8" icon="visibility" size="sm"
+                   @click="descargarExamenLocal(props.row)" class="q-mr-xs">
+                   <q-tooltip>Vista previa PDF (local)</q-tooltip>
+                 </q-btn>
+                 <q-btn unelevated dense color="deep-purple"
+                   :icon="props.row.estado === 'programados' ? 'auto_awesome' : 'settings'" label="GESTIONAR" no-caps
+                   class="action-btn-main shadow-2" @click="gestionarEstado(props.row)" />
+               </template>
               <template v-else-if="props.row.estado !== 'subidos'">
                 <q-btn unelevated dense color="teal" icon="arrow_forward" label="PASAR ETAPA" no-caps
                   class="action-btn-main shadow-2" @click="avanzarDirecto(props.row)" />
@@ -3284,6 +3296,104 @@ const getPatronUrl = (p, tipo) => {
   if (!filename) return 'javascript:void(0)'
   const baseUrl = api.defaults.baseURL.replace('/api', '')
   return `${baseUrl}/storage/patrones/${filename}`
+}
+
+const descargarExamenLocal = async (row) => {
+  $q.loading.show({ message: 'Obteniendo banco de preguntas...' })
+  try {
+    // Obtener banco de preguntas desde servidor (con imágenes)
+    const resp = await api.get('/banco-preguntas', {
+      params: {
+        asignatura_id: row.asignatura_id,
+        docente_id: row.docente_id,
+        grupoTeorico: row.grupo,
+        parcial: row.parcial,
+        all_docentes: true,
+      },
+    })
+    const bancoPreguntas = resp.data.preguntas || resp.data
+    
+    if (!bancoPreguntas || bancoPreguntas.length === 0) {
+      $q.notify({ type: 'warning', message: 'No hay preguntas en el banco para esta evaluación' })
+      $q.loading.hide()
+      return
+    }
+    
+    // Configuración (usar config_generacion si existe, sino valores por defecto)
+    const config = row.config_generacion || {
+      facil: 7,
+      medio: 16,
+      dificil: 7,
+      total: 30,
+      formatoHoja: 'Oficio (8.5" x 13")',
+      fontFamily: 'helvetica',
+      fontSize: 11,
+      lineSpacing: 0.85,
+      aleatorizarSecciones: true,
+    }
+    
+    const formatoPapel = config.formatoHoja === 'Carta' ? 'letter' : [216, 330]
+    const doc = new jsPDF({ format: formatoPapel })
+    
+    const todas = Array.isArray(bancoPreguntas) ? bancoPreguntas : bancoPreguntas.preguntas || []
+    const seleccion = obtenerSeleccion7167(todas, config)
+    if (!seleccion || seleccion.length === 0) {
+      $q.notify({ type: 'warning', message: 'No hay suficientes preguntas para generar el examen' })
+      $q.loading.hide()
+      return
+    }
+    const mezcladas = mezclarIncisos7167(seleccion)
+    
+    const ordenBase = [
+      'PROBLEMA',
+      'EMPAREJAMIENTO',
+      'SUBPROBLEMA',
+      'SELECCION_UNICA',
+      'SELECCION_MULTIPLE',
+      'FALSO_VERDADERO',
+    ]
+    let finalOrder = [...ordenBase]
+    
+    if (config.aleatorizarSecciones) {
+      const principales = [
+        'PROBLEMA',
+        'EMPAREJAMIENTO',
+        'SELECCION_UNICA',
+        'SELECCION_MULTIPLE',
+        'FALSO_VERDADERO',
+      ]
+      const shuffled = shuffle([...principales])
+      finalOrder = []
+      shuffled.forEach((t) => {
+        finalOrder.push(t)
+        if (t === 'PROBLEMA' || t === 'EMPAREJAMIENTO') finalOrder.push('SUBPROBLEMA')
+      })
+    }
+    
+    const sorted = mezcladas.sort((a, b) => {
+      if (a.grupo && b.grupo && a.grupo === b.grupo) return 0
+      let ta = a._parentTipo || normalizeTipo(a.tipo)
+      let tb = b._parentTipo || normalizeTipo(b.tipo)
+      return finalOrder.indexOf(ta) - finalOrder.indexOf(tb)
+    })
+    
+    await generarExamenPDF(doc, row, config, 'A', sorted)
+    
+    // Abrir en nueva pestaña sin subir al servidor
+    window.open(doc.output('bloburl'), '_blank')
+    
+  } catch (error) {
+    console.error('Error al generar examen local:', error)
+    let msg = 'Error al generar el examen'
+    if (error.response?.status === 404) {
+      msg = 'No se encontró el banco de preguntas'
+    } else if (error.response?.data?.message) {
+      msg = error.response.data.message
+    }
+    $q.notify({ type: 'negative', message: msg })
+  } finally {
+    $q.loading.hide()
+  }
 }
 
 const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = null) => {
