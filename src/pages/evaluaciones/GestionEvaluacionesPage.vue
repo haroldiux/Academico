@@ -2924,11 +2924,23 @@ const obtenerSeleccion7167 = (todas, config) => {
 const mezclarIncisos7167 = (preguntas) => {
   return preguntas.map((p) => {
     const tipoNormalizado = String(p.tipo ?? '').toUpperCase()
-    if (
-      ['FALSO_VERDADERO', 'FV'].includes(tipoNormalizado) ||
-      !p.opciones ||
-      p.opciones.length === 0
-    ) {
+    if (['FALSO_VERDADERO', 'FV'].includes(tipoNormalizado)) {
+      // Normalización forzada: A=Verdadero, B=Falso
+      const rawAns = Array.isArray(p.respuesta_correcta)
+        ? p.respuesta_correcta[0]
+        : p.respuesta_correcta
+      const ansStr = String(rawAns || '').toUpperCase()
+      const esVerdadero = ansStr === 'VERDADERO' || ansStr === 'V' || ansStr === 'TRUE' || ansStr === 'A'
+
+      p.opciones = [
+        { id: 'A', text: 'Verdadero' },
+        { id: 'B', text: 'Falso' },
+      ]
+      p.respuesta_correcta = esVerdadero ? 'A' : 'B'
+      return p
+    }
+
+    if (!p.opciones || p.opciones.length === 0) {
       return p
     }
 
@@ -3637,8 +3649,10 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
 
       const tipo = String(p.tipo || '').toUpperCase()
       if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
-        if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE') ans = 'A'
-        else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE') ans = 'B'
+        // En el patrón, ya vienen normalizadas por mezclarIncisos7167
+        // pero por seguridad reforzamos el mapeo lógico
+        if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE' || ans === 'A') ans = 'A'
+        else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE' || ans === 'B') ans = 'B'
       }
     }
 
@@ -3690,8 +3704,8 @@ const generarPatronXLSXConsolidado = (resultadosVariantes, customName) => {
         }
         const tipo = String(p.tipo || '').toUpperCase()
         if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
-          if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE') ans = 'A'
-          else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE') ans = 'B'
+          if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE' || ans === 'A') ans = 'A'
+          else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE' || ans === 'B') ans = 'B'
         }
       }
       dataRow.push(ans)
@@ -4075,12 +4089,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       for (const opc of opciones) {
         let textToShow = cleanText(opc.text)
         if (['FALSO_VERDADERO', 'FV'].includes(tipoActualNoNormalizado)) {
-          const lower = textToShow.toLowerCase()
-          if (lower === 'true' || lower === '') {
-            if (opc.id === 'A') textToShow = 'Verdadero'
-            if (opc.id === 'B') textToShow = 'Falso'
-          }
-          if (lower === 'false' || lower === 'falsa') textToShow = 'Falso'
+          if (opc.id === 'A') textToShow = 'Verdadero'
+          else if (opc.id === 'B') textToShow = 'Falso'
         }
         const opcText = `${opc.id || ''}) ${textToShow}`
         const opcLines = doc.splitTextToSize(opcText, contentWidth - 22)
@@ -4183,12 +4193,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       for (const opc of opciones) {
         let textToShow = cleanText(opc.text)
         if (['FALSO_VERDADERO', 'FV'].includes(tipoActualNoNormalizado)) {
-          const lower = textToShow.toLowerCase()
-          if (lower === 'true' || lower === '') {
-            if (opc.id === 'A') textToShow = 'Verdadero'
-            if (opc.id === 'B') textToShow = 'Falso'
-          }
-          if (lower === 'false' || lower === 'falsa') textToShow = 'Falso'
+          if (opc.id === 'A') textToShow = 'Verdadero'
+          else if (opc.id === 'B') textToShow = 'Falso'
         }
         const opcText = `${opc.id || ''}) ${textToShow}`
         // Margen de seguridad mayor para opciones (22mm de reserva a la derecha)
