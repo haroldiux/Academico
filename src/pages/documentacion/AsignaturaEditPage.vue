@@ -4170,8 +4170,12 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
 }
 
 function validarBancoCompleto() {
-  const preguntas = bancoPreguntasLocal.value || []
-  if (preguntas.length === 0) {
+  // Usamos el computed que ya tiene la numeración visual correcta (omitiendo EM/PR)
+  // y nos aseguramos de que sea un array usable por forEach
+  const rawData = bancoPreguntasLocal.value || []
+  const preguntasParaValidar = Array.isArray(rawData) ? rawData : Object.values(rawData)
+
+  if (preguntasParaValidar.length === 0) {
     $q.notify({ type: 'warning', message: 'No hay preguntas para validar.' })
     return
   }
@@ -4181,23 +4185,25 @@ function validarBancoCompleto() {
 
   // 0. Mapeo de cabeceras de grupos (EM / PR)
   const gruposCabeceraMap = new Map()
-  preguntas.forEach((p) => {
+  preguntasParaValidar.forEach((p) => {
     const t = String(p.tipo || '').toUpperCase()
     const g = String(p.grupo || '').trim().toUpperCase()
     if (['EM', 'EMPAREJAMIENTO', 'PR', 'PROBLEMA'].includes(t) && g) {
       gruposCabeceraMap.set(g, t)
     }
-  });
+  })
 
-  preguntas.forEach((p, index) => {
+  // Usamos preguntasConNumeracion para que el reporte coincida con la tabla del docente
+  preguntasConNumeracion.value.forEach((p) => {
     const fallos = validarIntegridadPregunta(p, gruposCabeceraMap)
 
     if (fallos.length > 0) {
       errores.push({
-        numero: p.numeroVisual || (index + 1),
+        // numeroVisual es null para EM/PR, usamos el tipo como identificador
+        numero: p.numeroVisual || `[${p.tipo}]`,
         tipo: p.tipo,
         enunciado: p.enunciado,
-        mensajes: fallos
+        mensajes: fallos,
       })
     } else {
       validas++
@@ -4205,13 +4211,14 @@ function validarBancoCompleto() {
   })
 
   reporteValidacion.value = {
-    total: preguntas.length,
+    total: preguntasParaValidar.length,
     validas,
-    errores
+    errores,
   }
 
   showDialogValidacion.value = true
 }
+
 
 async function cargarGeneracionesManuales() {
   if (!asignatura.value?.id) return
