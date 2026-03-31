@@ -2121,7 +2121,7 @@ const onExcelUploaded = (file) => {
                 '',
             )
               .toUpperCase()
-              .split(';')
+              .split(/[;,]/)
               .map((r) => r.trim())
               .filter((r) => r),
           }
