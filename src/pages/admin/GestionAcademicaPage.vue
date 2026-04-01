@@ -1224,7 +1224,6 @@ import { ref, computed, onMounted } from 'vue'
 import { api } from 'boot/axios'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
-import { useDocentesStore } from 'src/stores/docentes'
 import { useAulasStore } from 'src/stores/aulas'
 import { useBloquesStore } from 'src/stores/bloques'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
@@ -1234,7 +1233,6 @@ import { Notify } from 'quasar'
 // ── Stores ──
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
-const docentesStore = useDocentesStore()
 const aulasStore = useAulasStore()
 const bloquesStore = useBloquesStore()
 const asignaturasStore = useAsignaturasStore()
@@ -1251,6 +1249,7 @@ const filtTexto = ref('')
 const expandidas = ref(new Set())
 const todoExpandido = ref(false)
 const asignaturas = ref([]) // datos enriquecidos: [{...asig, grupos:[{...grupo, horarios:[]}]}]
+const docentesSimple = ref([]) // Lista ligera de docentes para selectores
 
 // ── Filtros cascada ──
 const opcionesSedes = computed(() =>
@@ -1371,27 +1370,30 @@ function diaTextColor(dia) {
 // CARGA DE DATOS
 // ══════════════════════════════════════════════
 onMounted(async () => {
-  // Promise.allSettled: si falla docentes (u otro), los demás datos siguen cargando
+  // Promise.allSettled: si falla alguno, los demás datos siguen cargando
   const results = await Promise.allSettled([
     sedesStore.fetchSedes(),
     carrerasStore.fetchCarreras(),
-    docentesStore.fetchDocentes(),
     aulasStore.fetchAulas(),
     bloquesStore.fetchBloques(),
   ])
   // Informar silenciosamente de errores parciales (sin bloquear la UI)
   results.forEach((r, i) => {
     if (r.status === 'rejected') {
-      const nombres = ['sedes', 'carreras', 'docentes', 'aulas', 'bloques']
+      const nombres = ['sedes', 'carreras', 'aulas', 'bloques']
       console.warn(`[GestionAcademica] Error cargando ${nombres[i]}:`, r.reason)
     }
   })
-  opcionesDocentes.value = allDocentes.value
   // Preseleccionar Cochabamba
   const cbba = sedesStore.sedes.find((s) => s.nombre?.toLowerCase().includes('cochabamba'))
   if (cbba) {
     filtSede.value = cbba.id
+    // Cargar docentes simples filtrados por sede (endpoint ligero, sin error de memoria)
+    await cargarDocentesSimple(cbba.id)
     await cargarDatos()
+  } else {
+    // Sin sede preseleccionada, cargar todos los docentes simples
+    await cargarDocentesSimple()
   }
 })
 
@@ -1466,15 +1468,29 @@ async function recargar() {
   await cargarDatos()
 }
 
+/**
+ * Carga docentes desde el endpoint ligero /docentes-simple.
+ * Llamada directamente a la api (no al store) para evitar problemas de cache HMR.
+ */
+async function cargarDocentesSimple(sedeId = null) {
+  try {
+    const params = sedeId ? { sede_id: sedeId } : {}
+    const resp = await api.get('/docentes-simple', { params })
+    const lista = Array.isArray(resp.data) ? resp.data : []
+    docentesSimple.value = lista
+    opcionesDocentes.value = lista
+    return lista
+  } catch (err) {
+    console.warn('[GestionAcademica] No se pudo cargar docentes-simple:', err.message)
+    return []
+  }
+}
+
 // ══════════════════════════════════════════════
 // OPCIONES DE SELECTS
 // ══════════════════════════════════════════════
-const allDocentes = computed(() =>
-  docentesStore.docentes.map((d) => ({
-    id: d.id,
-    nombre_completo: d.nombre_completo || `${d.nombre || ''} ${d.apellido_paterno || ''}`.trim(),
-  })),
-)
+// allDocentes: lista ligera cargada desde /docentes-simple (sin relaciones pesadas)
+const allDocentes = computed(() => docentesSimple.value)
 const opcionesDocentes = ref([])
 function filtrarDocentes(val, update) {
   update(() => {
@@ -1559,7 +1575,7 @@ const eliminarMensaje = computed(() => {
 // ══════════════════════════════════════════════
 // ABRIR DIÁLOGOS
 // ══════════════════════════════════════════════
-function abrirDialogo(tipo, item, ctx = {}) {
+async function abrirDialogo(tipo, item, ctx = {}) {
   if (tipo === 'asignatura') {
     dlgAsig.value = item
       ? {
@@ -1594,6 +1610,10 @@ function abrirDialogo(tipo, item, ctx = {}) {
     dlg.value.asignatura = true
   } else if (tipo === 'grupo') {
     opcionesDocentes.value = allDocentes.value
+    // Si aún no se cargaron docentes, recargar desde endpoint ligero
+    if (opcionesDocentes.value.length === 0) {
+      await cargarDocentesSimple(filtSede.value || null)
+    }
     dlgGrupo.value = item
       ? {
           id: item.id,
@@ -1606,6 +1626,8 @@ function abrirDialogo(tipo, item, ctx = {}) {
           gestion: item.gestion || '1-2026',
           id_horario_api: item.id_horario_api ? Number(item.id_horario_api) : null,
           asignatura_id: item.asignatura_id || ctx.asignaturaId,
+          carrera_id: item.carrera_id || filtCarrera.value || null,
+          sede_id: item.sede_id || filtSede.value || null,
           _asignaturaNombre: ctx.asignaturaNombre || item.asignatura_nombre || '',
         }
       : {
@@ -1618,6 +1640,8 @@ function abrirDialogo(tipo, item, ctx = {}) {
           gestion: '1-2026',
           id_horario_api: null,
           asignatura_id: ctx.asignaturaId,
+          carrera_id: filtCarrera.value || null,
+          sede_id: filtSede.value || null,
           _asignaturaNombre: ctx.asignaturaNombre || '',
         }
     dlg.value.grupo = true
@@ -1738,6 +1762,8 @@ async function guardarGrupo() {
     const payload = {
       nombre: f.nombre.trim(),
       asignatura_id: f.asignatura_id,
+      carrera_id: f.carrera_id || filtCarrera.value || null,
+      sede_id: f.sede_id || filtSede.value || null,
       tipo: f.tipo,
       turno: f.turno || null,
       estado: f.estado || 'ACTIVO',
