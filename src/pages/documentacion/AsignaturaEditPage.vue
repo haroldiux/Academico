@@ -4140,7 +4140,8 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
       fallos.push(`Tipo ${tipo} no debe tener nivel de dificultad asignado.`)
     }
     
-    // Validar incisos en EM (secuencia A, B...)
+    // Validar incisos en EM (deshabilitado por requerimiento de usuario)
+    /*
     if (['EM', 'EMPAREJAMIENTO'].includes(tipo)) {
       const textBusqueda = enunciado.toUpperCase()
       const incisosPosibles = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.']
@@ -4157,6 +4158,7 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
         }
       }
     }
+    */
   }
 
   // 5. Verificación de Etiquetas (no subindices, potencias, etc.)
