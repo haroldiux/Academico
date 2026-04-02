@@ -42,6 +42,7 @@
       <q-tab name="multiple" icon="checklist" label="Múltiples Carreras" no-caps />
       <q-tab name="sede" icon="location_city" label="Por Sede" no-caps />
       <q-tab name="materia" icon="menu_book" label="Por Materia" no-caps />
+      <q-tab name="asignatura" icon="subject" label="Por Asignatura" no-caps />
     </q-tabs>
     <q-separator class="q-mb-lg" />
 
@@ -464,6 +465,121 @@
           </q-card>
         </div>
       </q-tab-panel>
+
+      <!-- ═══════════════════════════════════════════════
+           TAB 5: POR ASIGNATURA (sede + carrera + asignatura específica)
+           ═══════════════════════════════════════════════ -->
+      <q-tab-panel name="asignatura" class="q-pa-none">
+        <div class="row q-gutter-lg">
+          <!-- Formulario -->
+          <q-card flat bordered class="col-12 col-md-4">
+            <q-card-section>
+              <div class="text-subtitle1 text-weight-bold q-mb-md">
+                <q-icon name="tune" class="q-mr-xs" color="indigo" />
+                Configuración
+              </div>
+              <q-select
+                v-model="selSedeAsignatura"
+                :options="opcionesSedes"
+                option-label="nombre"
+                option-value="id"
+                emit-value
+                map-options
+                outlined
+                dense
+                label="Sede"
+                class="q-mb-md"
+                @update:model-value="cargarAsignaturas"
+              />
+              <q-select
+                v-model="selCarreraAsignatura"
+                :options="opcionesCarrerasAsignatura"
+                outlined
+                dense
+                label="Carrera"
+                use-input
+                fill-input
+                hide-selected
+                input-debounce="0"
+                @filter="filtrarCarrerasAsignatura"
+                @update:model-value="cargarAsignaturas"
+                class="q-mb-md"
+              >
+                <template #no-option>
+                  <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
+                </template>
+              </q-select>
+              <q-select
+                v-model="selAsignatura"
+                :options="opcionesAsignaturas"
+                option-label="nombre"
+                option-value="codigo"
+                emit-value
+                map-options
+                outlined
+                dense
+                label="Asignatura"
+                use-input
+                fill-input
+                hide-selected
+                input-debounce="0"
+                @filter="filtrarAsignaturas"
+                class="q-mb-lg"
+                :disable="!selSedeAsignatura || !selCarreraAsignatura || loadingAsignaturas"
+              >
+                <template #no-option>
+                  <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
+                </template>
+                <template #loading>
+                  <q-item><q-item-section class="text-grey">Cargando asignaturas...</q-item-section></q-item>
+                </template>
+              </q-select>
+              <q-btn
+                unelevated
+                color="indigo"
+                icon="sync"
+                label="Sincronizar Asignatura"
+                no-caps
+                class="full-width"
+                :loading="loadingAsignatura"
+                :disable="!selSedeAsignatura || !selCarreraAsignatura || !selAsignatura"
+                @click="syncAsignatura"
+              />
+            </q-card-section>
+          </q-card>
+
+          <!-- Resultado -->
+          <q-card flat bordered class="col-12 col-md-7" v-if="resultadoAsignatura">
+            <q-card-section>
+              <div class="text-subtitle1 text-weight-bold q-mb-md">
+                <q-icon
+                  :name="resultadoAsignatura.ok ? 'check_circle' : 'error'"
+                  :color="resultadoAsignatura.ok ? 'positive' : 'negative'"
+                  class="q-mr-xs"
+                />
+                Resultado — {{ resultadoAsignatura.codigo_asignatura }} / {{ resultadoAsignatura.carrera }} / {{ resultadoAsignatura.sede }}
+              </div>
+              <template v-if="resultadoAsignatura.ok">
+                <div class="row q-col-gutter-md">
+                  <div class="col-6 col-sm-3" v-for="(val, key) in statsAsignatura" :key="key">
+                    <div class="stat-box">
+                      <div class="stat-val">{{ val.valor }}</div>
+                      <div class="stat-label">{{ val.label }}</div>
+                    </div>
+                  </div>
+                </div>
+                <q-chip color="green-1" text-color="green-9" icon="timer" class="q-mt-md">
+                  Duración: {{ resultadoAsignatura.duracion }}s
+                </q-chip>
+              </template>
+              <q-banner v-else rounded class="bg-red-1 text-red-9">
+                <template #avatar><q-icon name="error" color="negative" /></template>
+                {{ resultadoAsignatura.error }}
+              </q-banner>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-tab-panel>
     </q-tab-panels>
 
     <!-- ═══════════════════════════════════════════════
@@ -518,6 +634,7 @@
               { label: 'Por Carrera', value: 'carrera' },
               { label: 'Por Sede', value: 'sede' },
               { label: 'Por Materia', value: 'materia' },
+              { label: 'Por Asignatura', value: 'asignatura' },
             ]"
             option-label="label"
             option-value="value"
@@ -1266,6 +1383,107 @@ async function syncMateria() {
   }
 }
 
+// ─── Tab: Por Asignatura ──────────────────────────────────────────────────────
+
+const selSedeAsignatura = ref(1)
+const selCarreraAsignatura = ref('CARMED')
+const opcionesCarrerasAsignatura = ref([...CARRERAS])
+const selAsignatura = ref(null)
+const opcionesAsignaturas = ref([])
+const loadingAsignaturas = ref(false)
+const loadingAsignatura = ref(false)
+const resultadoAsignatura = ref(null)
+
+function filtrarCarrerasAsignatura(val, update) {
+  update(() => {
+    const needle = val.toLowerCase()
+    opcionesCarrerasAsignatura.value = needle
+      ? CARRERAS.filter((c) => c.toLowerCase().includes(needle))
+      : [...CARRERAS]
+  })
+}
+
+function filtrarAsignaturas(val, update) {
+  update(() => {
+    const needle = val.toLowerCase()
+    opcionesAsignaturas.value = opcionesAsignaturas.value.filter((a) =>
+      a.nombre.toLowerCase().includes(needle) || a.codigo.toLowerCase().includes(needle)
+    )
+  })
+}
+
+async function cargarAsignaturas() {
+  if (!selSedeAsignatura.value || !selCarreraAsignatura.value) {
+    opcionesAsignaturas.value = []
+    selAsignatura.value = null
+    return
+  }
+  loadingAsignaturas.value = true
+  try {
+    const res = await api.get('/grupos-externo/plan-n', {
+      params: {
+        gestion: gestion.value,
+        carrera: selCarreraAsignatura.value.toLowerCase(),
+        sede: selSedeAsignatura.value
+      }
+    })
+    // La API devuelve un array de materias con codigo, nombre, semestre, plan_estudios, docentes
+    opcionesAsignaturas.value = res.data.data.map(m => ({
+      codigo: m.codigo,
+      nombre: m.nombre,
+      semestre: m.semestre,
+      plan_estudios: m.plan_estudios || 'N'
+    }))
+  } catch (e) {
+    $q.notify({ type: 'negative', message: 'Error al cargar asignaturas: ' + (e.response?.data?.message || e.message) })
+    opcionesAsignaturas.value = []
+  } finally {
+    loadingAsignaturas.value = false
+  }
+}
+
+const statsAsignatura = computed(() => {
+  if (!resultadoAsignatura.value?.stats) return {}
+  const s = resultadoAsignatura.value.stats
+  return {
+    total: { label: 'Registros', valor: s.total ?? 0 },
+    docentes: { label: 'Docentes', valor: s.docentes ?? 0 },
+    grupos: { label: 'Grupos', valor: s.grupos ?? 0 },
+    horarios: { label: 'Horarios', valor: s.horarios ?? 0 },
+  }
+})
+
+async function syncAsignatura() {
+  loadingAsignatura.value = true
+  resultadoAsignatura.value = null
+  try {
+    const res = await api.post('/sync/asignatura', {
+      gestion: gestion.value,
+      sede_id: selSedeAsignatura.value,
+      carrera: selCarreraAsignatura.value,
+      codigo_asignatura: selAsignatura.value,
+      plan_estudios: 'N' // por defecto, podríamos añadir selección de plan si es necesario
+    })
+    resultadoAsignatura.value = res.data
+    $q.notify({
+      type: res.data.ok ? 'positive' : 'negative',
+      message: res.data.ok ? 'Asignatura sincronizada exitosamente' : 'Error en sincronización',
+    })
+    cargarLogs()
+  } catch (e) {
+    resultadoAsignatura.value = {
+      ok: false,
+      error: e.response?.data?.message || e.message,
+      codigo_asignatura: selAsignatura.value,
+      carrera: selCarreraAsignatura.value,
+      sede: '',
+    }
+    $q.notify({ type: 'negative', message: 'Error: ' + (e.response?.data?.message || e.message) })
+  } finally {
+    loadingAsignatura.value = false
+  }
+}
+
 // ─── Historial ───────────────────────────────────────────────────────────────
 
 const logs = ref([])
@@ -1523,7 +1741,7 @@ async function cargarLogs() {
 }
 
 function modoIcon(modo) {
-  return { carrera: 'school', sede: 'location_city', materia: 'menu_book' }[modo] ?? 'sync'
+  return { carrera: 'school', sede: 'location_city', materia: 'menu_book', asignatura: 'subject' }[modo] ?? 'sync'
 }
 
 // Recargar logs al cambiar filtros

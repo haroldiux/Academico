@@ -46,7 +46,7 @@
         />
 
         <!-- Herramientas Dropdown -->
-        <q-btn-dropdown outline color="indigo" icon="settings" label="Gestión" no-caps disable>
+        <q-btn-dropdown outline color="indigo" icon="settings" label="Gestión" no-caps :disable="!esDirectorOAdmin">
           <q-list>
             <q-item
               clickable
