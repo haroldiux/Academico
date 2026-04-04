@@ -2305,9 +2305,12 @@ const ejecutarGeneracionManual = async () => {
 
     const variantesLetters = ['A', 'B', 'C', 'D', 'E'].slice(0, manualConfig.value.cantVariantes)
     const examenesPDF = new jsPDF({
+      compression: true,
+      putOnlyUsedFonts: true,
+      precision: 3,
       format: manualConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330],
     })
-    const patronesPDF = new jsPDF()
+    const patronesPDF = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
     const variantesAudit = []
     const xBlobs = [] // Para guardar los Excel y descargarlos solo si la auditoría es exitosa
     const resultadosVariantes = []
@@ -2608,6 +2611,9 @@ function imprimirListaDiaria() {
   }
   // ... (mismo código jsPDF pero usando examenesFiltrados del backend)
   const doc = new jsPDF({
+    compression: true,
+    putOnlyUsedFonts: true,
+    precision: 3,
     orientation: 'landscape',
     format: [216, 330], // Oficio 8.5x13 pulgadas
   })
@@ -3044,8 +3050,8 @@ const ejecutarAccionGestion = async () => {
         $q.loading.hide()
         const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
         const formatoPapel = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-        const mergedExamenesDoc = new jsPDF({ format: formatoPapel })
-        const mergedPatronesDoc = new jsPDF()
+        const mergedExamenesDoc = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3, format: formatoPapel })
+        const mergedPatronesDoc = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
 
         payload.config_generacion = {
           facil: tempConfig.value.facil,
@@ -3453,7 +3459,7 @@ const descargarPDFManual = async (row) => {
   const config = row.configuracion_json || {}
   const variantesData = row.patron_respuestas_json || []
   const formatoPapel = config.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-  const doc = new jsPDF({ format: formatoPapel })
+  const doc = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3, format: formatoPapel })
   variantesData.forEach(async (v, i) => {
     if (i > 0) doc.addPage()
     await generarExamenPDF(doc, examenDoc, config, v.letra, v.preguntas)
@@ -3477,7 +3483,7 @@ const descargarPatronPdfManual = async (row) => {
   }
 
   // Fallback
-  const doc = new jsPDF()
+  const doc = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
   const variantesData = row.patron_respuestas_json || []
   variantesData.forEach((v, i) => {
     if (i > 0) doc.addPage()
@@ -3531,7 +3537,7 @@ const getPatronUrl = (p, tipo) => {
 }
 
 const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = null) => {
-  const doc = pdfDoc || new jsPDF()
+  const doc = pdfDoc || new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
   const examen = examenInput || {
     materia: 'MATERIA',
     docente: 'DOCENTE',
@@ -3786,6 +3792,9 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   const doc =
     pdfDoc ||
     new jsPDF({
+      compression: true,
+      putOnlyUsedFonts: true,
+      precision: 3,
       orientation: 'p',
       unit: 'mm',
       format: paperFormat,
@@ -4279,10 +4288,42 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   return { blob, filename: rawFilename }
 }
 
+async function compressImage(blob, maxWidth = 800, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
 async function fetchImageAsBase64(url) {
   try {
     const response = await api.get(url, { responseType: 'blob' })
-    const blob = response.data
+    let blob = response.data
+    
+    // Comprimir solo imágenes (JPEG/PNG)
+    if (blob.type.startsWith('image/')) {
+      blob = await compressImage(blob)
+    }
+    
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result)
