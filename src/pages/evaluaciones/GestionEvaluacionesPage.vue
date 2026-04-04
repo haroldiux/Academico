@@ -523,6 +523,20 @@
                   @click="avanzarDirecto(props.row)"
                 />
               </template>
+
+              <!-- Botón Restaurar (Solo Admins) -->
+              <q-btn
+                v-if="(esAdmin || esSuperAdmin) && props.row.estado !== 'programados'"
+                flat
+                dense
+                round
+                color="red-5"
+                icon="restart_alt"
+                class="q-ml-sm"
+                @click="resetearExamen(props.row)"
+              >
+                <q-tooltip>Restaurar a Programado (Limpiar generación)</q-tooltip>
+              </q-btn>
               <template v-else>
                 <q-btn
                   flat
@@ -1490,6 +1504,8 @@ const {
   esResponsableEvaluaciones,
   esDireccionAcademica,
   esVicerrectorSede,
+  esAdmin,
+  esSuperAdmin,
 } = usePermisos()
 
 const puedeVerAcciones = computed(() => {
@@ -3208,6 +3224,41 @@ const avanzarDirecto = (examen) => {
   })
 }
 
+/**
+ * Resetea un examen a estado 'programados' (SOLO PARA ADMINS)
+ */
+const resetearExamen = (examen) => {
+  $q.dialog({
+    title: '<span class="text-red-9 text-weight-bold">ADVERTENCIA DE SEGURIDAD</span>',
+    message: `¿Deseas restaurar el examen <strong>[${examen.codigo}] ${examen.materia}</strong> al estado PROGRAMADO? <br><br> <div class="q-pa-sm bg-red-1 text-red-9 rounded-borders"><b>IMPORTANTE:</b> Esto eliminará permanentemente las variantes y patrones generados.</div>`,
+    html: true,
+    ok: { label: 'Restaurar a Programado', color: 'red-9', unelevated: true, noCaps: true },
+    cancel: { label: 'Cancelar', flat: true, noCaps: true },
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      $q.loading.show({ message: 'Restaurando evaluación...' })
+      const { data } = await api.put(`/rol-examenes/${examen.id}`, {
+        estado: 'programados',
+      })
+      if (data) {
+        $q.notify({
+          type: 'positive',
+          message: 'Examen restaurado exitosamente',
+        })
+        cargarDatos()
+      }
+    } catch (error) {
+      console.error('Error al restaurar examen:', error)
+      const msg = error.response?.data?.message || 'No se pudo restaurar el examen'
+      $q.notify({ type: 'negative', message: msg })
+    } finally {
+      $q.loading.hide()
+    }
+  })
+}
+
+
 // Helpers
 const formatFriendlyDate = (f) => {
   if (!f) return ''
@@ -3767,7 +3818,18 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       .replace(/<[^>]*>/g, '') // Eliminar HTML
       .replace(/&nbsp;/g, ' ') // Convertir espacios HTML a normales
       .replace(/&quot;/g, '"')
-      .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ') // Solo escapes, sin literales
+      .replace(/&rsquo;/g, "'")
+      .replace(/&lsquo;/g, "'")
+      .replace(/&rdquo;/g, '"')
+      .replace(/&ldquo;/g, '"')
+      .replace(/&ndash;/g, '-')
+      .replace(/&mdash;/g, '-')
+      // Reemplazo específico para caracteres que rompen jsPDF (estándar Helvetica)
+      .replace(/ƒ/g, 'f')
+      .replace(/…/g, '...')
+      // Limpiar cualquier carácter fuera del rango Latin-1 (que suelen romper el layout de jsPDF)
+      .replace(/[^\x20-\x7E\xA0-\xFF\s]/g, ' ')
+      .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ')
       .replace(/\s+/g, ' ') // Colapsar múltiples espacios
       .trim()
   }
@@ -3837,7 +3899,6 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       }
     },
   })
-
   // Margen doble para la cabecera superior (homogeneizar con info table)
   doc.setLineWidth(0.4)
   doc.setDrawColor(0, 0, 0)
