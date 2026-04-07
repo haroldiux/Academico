@@ -1458,11 +1458,11 @@ const getStorageUrl = (path) => {
     baseUrl = 'http://127.0.0.1:8000'
   } else if (
     typeof window !== 'undefined' &&
-    window.location.hostname.includes('planificacion.unitepc.edu.bo')
+    window.location.hostname.includes('documentacion.xpertiaplus.com')
   ) {
     baseUrl = ''
   } else {
-    baseUrl = 'https://planificacion.unitepc.edu.bo'
+    baseUrl = 'https://api.documentacion.xpertiaplus.com'
   }
 
   return `${baseUrl}/storage/${path}`
@@ -3220,12 +3220,12 @@ const descargarApk = () => {
     if (!baseUrl.includes(':8000')) {
       baseUrl = 'http://localhost:8000'
     }
-  } else if (baseUrl.includes('unitepc.edu.bo')) {
+  } else if (baseUrl.includes('xpertiaplus.com')) {
     // Estamos en el servidor oficial
-    baseUrl = 'https://planificacion.unitepc.edu.bo'
+    baseUrl = 'https://api.documentacion.xpertiaplus.com'
   } else {
     // Fallback seguro al servidor de producción si no estamos en local
-    baseUrl = 'https://planificacion.unitepc.edu.bo'
+    baseUrl = 'https://api.documentacion.xpertiaplus.com'
   }
 
   window.open(`${baseUrl}/descargas/planificacion.apk`, '_blank')

@@ -12,9 +12,10 @@ const isNative =
   (window.location.protocol.startsWith('capacitor') || window.location.hostname === 'localhost')
 
 const api = axios.create({
-  baseURL: process.env.DEV
-    ? 'http://127.0.0.1:8000/api'
-    : 'https://planificacion.unitepc.edu.bo/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 
+    (process.env.DEV 
+      ? 'http://127.0.0.1:8000/api' 
+      : 'https://api.documentacion.xpertiaplus.com/api'),
   withCredentials: !isNative,
   headers: {
     Accept: 'application/json',
