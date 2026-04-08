@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:dist/spa/assets/planificacionSemestralService-CyaMh0zv.js
-import{aj as e}from"./index-B6QKVl8f.js";const s={getPlanificacion(i,a){return e.get(`/planificacion-semestral/${i}`,{params:a})},savePlanificacion(i,a){return e.post(`/planificacion-semestral/${i}/sesiones`,a)},saveConfig(i,a){return e.post(`/planificacion-semestral/${i}/config`,a)},copiarPlanificacion(i,a){return e.post(`/planificacion-semestral/${i}/copiar`,a)},saveSeguimiento(i){return e.post("/planificacion-semestral/seguimiento",i)}};export{s as p};
-========
-import{aj as e}from"./index-DLvMuRG0.js";const s={getPlanificacion(i,a){return e.get(`/planificacion-semestral/${i}`,{params:a})},savePlanificacion(i,a){return e.post(`/planificacion-semestral/${i}/sesiones`,a)},saveConfig(i,a){return e.post(`/planificacion-semestral/${i}/config`,a)},copiarPlanificacion(i,a){return e.post(`/planificacion-semestral/${i}/copiar`,a)},saveSeguimiento(i){return e.post("/planificacion-semestral/seguimiento",i)}};export{s as p};
->>>>>>>> a60950d8948b69d4377b26812172e466e65d7b4e:dist/spa/assets/planificacionSemestralService-SqkR5DCP.js

@@ -1,5 +1,1 @@
-<<<<<<<< HEAD:dist/spa/assets/ErrorNotFound-D5Nl8LGL.js
 import{y as o,j as s,m as t,l,x as r}from"./index-B6QKVl8f.js";const a={class:"fullscreen bg-blue text-white text-center q-pa-md flex flex-center"},d={__name:"ErrorNotFound",setup(n){return(c,e)=>(s(),o("div",a,[t("div",null,[e[0]||(e[0]=t("div",{style:{"font-size":"30vh"}},"404",-1)),e[1]||(e[1]=t("div",{class:"text-h2",style:{opacity:"0.4"}},"Oops. Nothing here...",-1)),l(r,{class:"q-mt-xl",color:"white","text-color":"blue",unelevated:"",to:"/",label:"Go Home","no-caps":""})])]))}};export{d as default};
-========
-import{y as o,j as s,m as t,l,x as r}from"./index-DLvMuRG0.js";const a={class:"fullscreen bg-blue text-white text-center q-pa-md flex flex-center"},d={__name:"ErrorNotFound",setup(n){return(c,e)=>(s(),o("div",a,[t("div",null,[e[0]||(e[0]=t("div",{style:{"font-size":"30vh"}},"404",-1)),e[1]||(e[1]=t("div",{class:"text-h2",style:{opacity:"0.4"}},"Oops. Nothing here...",-1)),l(r,{class:"q-mt-xl",color:"white","text-color":"blue",unelevated:"",to:"/",label:"Go Home","no-caps":""})])]))}};export{d as default};
->>>>>>>> a60950d8948b69d4377b26812172e466e65d7b4e:dist/spa/assets/ErrorNotFound-BEIyb3iE.js
