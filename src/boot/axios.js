@@ -14,7 +14,7 @@ const isNative =
 const api = axios.create({
   baseURL: process.env.DEV
     ? 'http://127.0.0.1:8000/api'
-    : 'https://planificacion.unitepc.edu.bo/api',
+    : 'https://api.sisa.xpertiaplus.com/api',
   withCredentials: !isNative,
   headers: {
     Accept: 'application/json',
