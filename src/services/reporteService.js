@@ -101,6 +101,11 @@ export default {
   // NIVEL 4: VICERRECTOR
   // ========================================
 
+  /** Monitoreo de avance por carrera */
+  getMonitoreoCarreras(params = {}) {
+    return api.get('/reportes/monitoreo-carreras', { params })
+  },
+
   /** Sedes con avance crítico (solo Nacional) */
   getSedesCriticas(params = {}) {
     return api.get('/reportes/sedes-criticas', { params })

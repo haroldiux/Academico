@@ -131,6 +131,15 @@ const routes = [
             meta: { title: 'Reportes Nacionales', rol: 'VICERRECTOR_NACIONAL' },
           },
           {
+            path: 'monitoreo-carreras',
+            name: 'monitoreo-carreras',
+            component: () => import('pages/vicerrector/MonitoreoCarrerasPage.vue'),
+            meta: {
+              title: 'Monitoreo de Carreras',
+              rol: ['VICERRECTOR_NACIONAL', 'VICERRECTOR_SEDE', 'DIRECCION_ACADEMICA'],
+            },
+          },
+          {
             path: 'rol-examenes-nacional',
             name: 'vicerrector-rol-examenes-nacional',
             component: () => import('pages/vicerrector/RolExamenesNacionalPage.vue'),

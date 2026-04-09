@@ -205,6 +205,7 @@ export function usePermisos() {
         // { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
+        { label: 'Monitoreo de Carreras', icon: 'monitoring', to: '/vicerrector/monitoreo-carreras' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
       ]
@@ -248,6 +249,7 @@ export function usePermisos() {
           to: '/admin/administracion-evaluaciones',
         },
         { label: 'Reportes Nacionales', icon: 'analytics', to: '/vicerrector/reportes' },
+        { label: 'Monitoreo de Carreras', icon: 'monitoring', to: '/vicerrector/monitoreo-carreras' },
       ]
     }
 
