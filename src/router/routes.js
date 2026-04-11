@@ -155,6 +155,22 @@ const routes = [
         path: 'director',
         children: [
           {
+            path: 'restaurar-programas',
+            name: 'director-restaurar-programas',
+            component: () => import('pages/director/RestaurarProgramasPage.vue'),
+            meta: {
+              title: 'Restaurar Programas',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
+            },
+          },
+          {
             path: 'docentes',
             name: 'director-docentes',
             component: () => import('pages/director/DocentesPage.vue'),
