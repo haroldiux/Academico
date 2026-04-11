@@ -406,7 +406,7 @@
                         </q-chip>
                       </template>
 
-                      <!-- Columna Acciones -->
+                       <!-- Columna Acciones -->
                       <template v-else-if="col.name === 'acciones'">
                         <q-btn
                           flat
@@ -435,6 +435,17 @@
                           @click="generarCarpeta(props.row)"
                         >
                           <q-tooltip>Generar Carpeta Docente</q-tooltip>
+                        </q-btn>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="download"
+                          color="positive"
+                          size="sm"
+                          @click="descargarJson(props.row)"
+                        >
+                          <q-tooltip>Descargar JSON completo</q-tooltip>
                         </q-btn>
                       </template>
                     </q-td>
@@ -843,6 +854,43 @@ async function processGenerarPDF(rowSummary, docenteId) {
     $q.notify({
       type: 'negative',
       message: 'Error al generar la carpeta docente.',
+    })
+   } finally {
+    $q.loading.hide()
+  }
+}
+
+// Función para descargar JSON completo de la asignatura
+async function descargarJson(row) {
+  $q.loading.show({
+    message: 'Generando JSON...',
+    boxClass: 'bg-grey-2 text-grey-9',
+    spinnerColor: 'positive',
+  })
+
+  try {
+    const response = await asignaturaService.exportAsignaturaJson(row.id)
+    
+    // Crear blob y enlace de descarga
+    const blob = new Blob([response.data], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `asignatura_${row.codigo}_${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    $q.notify({
+      type: 'positive',
+      message: 'JSON descargado exitosamente',
+    })
+  } catch (error) {
+    console.error('Error descargando JSON:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Error al descargar el JSON',
     })
   } finally {
     $q.loading.hide()
