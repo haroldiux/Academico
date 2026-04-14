@@ -375,9 +375,15 @@ const routes = [
             path: 'evaluaciones',
             name: 'evaluaciones',
             component: () => import('pages/evaluaciones/GestionEvaluacionesPage.vue'),
-            meta: { 
+            meta: {
               title: 'Gestión de Evaluaciones',
-              rol: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL', 'DIRECCION_ACADEMICA', 'EVALUACIONES']
+              rol: [
+                'ADMIN',
+                'SUPER_ADMIN',
+                'VICERRECTOR_NACIONAL',
+                'DIRECCION_ACADEMICA',
+                'EVALUACIONES',
+              ],
             },
           },
           {

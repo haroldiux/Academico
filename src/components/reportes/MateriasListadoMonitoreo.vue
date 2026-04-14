@@ -3,7 +3,7 @@
     <div v-if="materias.length === 0" class="text-center text-grey q-py-md">
       No hay materias en esta categoría
     </div>
-    
+
     <q-table
       v-else
       :rows="materias"
@@ -26,14 +26,7 @@
 
       <template v-slot:body-cell-acciones="props">
         <q-td :props="props">
-          <q-btn
-            flat
-            dense
-            round
-            icon="visibility"
-            size="sm"
-            @click="verDetalle(props.row)"
-          >
+          <q-btn flat dense round icon="visibility" size="sm" @click="verDetalle(props.row)">
             <q-tooltip>Ver detalle de documentación</q-tooltip>
           </q-btn>
         </q-td>
@@ -78,19 +71,31 @@
           <div class="row q-col-gutter-sm">
             <div class="col-4">
               <div class="text-caption text-grey">Programa Asignatura</div>
-              <div :class="getColorIndicador(materiaSeleccionada.indicadores?.programa_asignatura?.porcentaje)">
+              <div
+                :class="
+                  getColorIndicador(
+                    materiaSeleccionada.indicadores?.programa_asignatura?.porcentaje,
+                  )
+                "
+              >
                 {{ materiaSeleccionada.indicadores?.programa_asignatura?.porcentaje ?? 0 }}%
               </div>
             </div>
             <div class="col-4">
               <div class="text-caption text-grey">Programa Analítico</div>
-              <div :class="getColorIndicador(materiaSeleccionada.indicadores?.programa_analitico?.porcentaje)">
+              <div
+                :class="
+                  getColorIndicador(materiaSeleccionada.indicadores?.programa_analitico?.porcentaje)
+                "
+              >
                 {{ materiaSeleccionada.indicadores?.programa_analitico?.porcentaje ?? 0 }}%
               </div>
             </div>
             <div class="col-4">
               <div class="text-caption text-grey">Plan de Clase</div>
-              <div :class="getColorIndicador(materiaSeleccionada.indicadores?.plan_clase?.porcentaje)">
+              <div
+                :class="getColorIndicador(materiaSeleccionada.indicadores?.plan_clase?.porcentaje)"
+              >
                 {{ materiaSeleccionada.indicadores?.plan_clase?.porcentaje ?? 0 }}%
               </div>
             </div>
@@ -111,12 +116,12 @@ import { ref } from 'vue'
 defineProps({
   materias: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   tipo: {
     type: String,
-    default: 'completas'
-  }
+    default: 'completas',
+  },
 })
 
 const mostrarDetalle = ref(false)
@@ -126,8 +131,14 @@ const columnas = [
   { name: 'codigo', label: 'Código', field: 'codigo', align: 'left', style: 'width: 100px' },
   { name: 'nombre', label: 'Materia', field: 'nombre', align: 'left' },
   { name: 'docentes', label: 'Docentes', field: 'docentes', align: 'left' },
-  { name: 'progreso', label: 'Progreso', field: 'progreso', align: 'center', style: 'width: 120px' },
-  { name: 'acciones', label: '', field: 'acciones', align: 'center', style: 'width: 50px' }
+  {
+    name: 'progreso',
+    label: 'Progreso',
+    field: 'progreso',
+    align: 'center',
+    style: 'width: 120px',
+  },
+  { name: 'acciones', label: '', field: 'acciones', align: 'center', style: 'width: 50px' },
 ]
 
 function getColorProgreso(progreso) {

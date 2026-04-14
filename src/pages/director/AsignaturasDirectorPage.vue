@@ -406,7 +406,7 @@
                         </q-chip>
                       </template>
 
-                       <!-- Columna Acciones -->
+                      <!-- Columna Acciones -->
                       <template v-else-if="col.name === 'acciones'">
                         <q-btn
                           flat
@@ -855,7 +855,7 @@ async function processGenerarPDF(rowSummary, docenteId) {
       type: 'negative',
       message: 'Error al generar la carpeta docente.',
     })
-   } finally {
+  } finally {
     $q.loading.hide()
   }
 }
@@ -870,7 +870,7 @@ async function descargarJson(row) {
 
   try {
     const response = await asignaturaService.exportAsignaturaJson(row.id)
-    
+
     // Crear blob y enlace de descarga
     const blob = new Blob([response.data], { type: 'application/json' })
     const url = window.URL.createObjectURL(blob)

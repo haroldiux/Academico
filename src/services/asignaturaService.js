@@ -137,13 +137,13 @@ export default {
 
   exportAsignaturaJson(id) {
     return api.get(`/asignaturas/${id}/export-json`, {
-      responseType: 'blob'
+      responseType: 'blob',
     })
   },
 
   exportAsignaturaJsonByCode(codigo) {
     return api.get(`/asignaturas/codigo/${codigo}/export-json`, {
-      responseType: 'blob'
+      responseType: 'blob',
     })
   },
 }

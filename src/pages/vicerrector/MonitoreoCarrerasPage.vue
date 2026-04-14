@@ -33,7 +33,9 @@
           <q-card class="bg-white">
             <q-card-section>
               <div class="text-caption text-grey">Total Carreras</div>
-              <div class="text-h4 text-weight-bold text-primary">{{ datosSede.carreras.length }}</div>
+              <div class="text-h4 text-weight-bold text-primary">
+                {{ datosSede.carreras.length }}
+              </div>
             </q-card-section>
           </q-card>
         </div>
@@ -70,9 +72,7 @@
             <div class="text-subtitle1 text-weight-bold">
               {{ carrera.carrera.codigo }} - {{ carrera.carrera.nombre }}
             </div>
-            <div class="text-caption text-grey">
-              {{ carrera.total_materias }} materias
-            </div>
+            <div class="text-caption text-grey">{{ carrera.total_materias }} materias</div>
           </div>
           <div class="col-auto">
             <q-btn
@@ -126,22 +126,13 @@
 
               <q-tab-panels v-model="tabDetalle" animated>
                 <q-tab-panel name="completas">
-                  <MateriasListado
-                    :materias="carrera.completas.materias"
-                    tipo="completas"
-                  />
+                  <MateriasListado :materias="carrera.completas.materias" tipo="completas" />
                 </q-tab-panel>
                 <q-tab-panel name="avance_alto">
-                  <MateriasListado
-                    :materias="carrera.avance_alto.materias"
-                    tipo="avance_alto"
-                  />
+                  <MateriasListado :materias="carrera.avance_alto.materias" tipo="avance_alto" />
                 </q-tab-panel>
                 <q-tab-panel name="avance_bajo">
-                  <MateriasListado
-                    :materias="carrera.avance_bajo.materias"
-                    tipo="avance_bajo"
-                  />
+                  <MateriasListado :materias="carrera.avance_bajo.materias" tipo="avance_bajo" />
                 </q-tab-panel>
               </q-tab-panels>
             </q-card-section>
@@ -174,7 +165,7 @@ const tabDetalle = ref('completas')
 const carreraExpandida = ref(null)
 
 const sedesOptions = computed(() => {
-  return sedesStore.sedes.map(s => ({ label: s.nombre, value: s.id }))
+  return sedesStore.sedes.map((s) => ({ label: s.nombre, value: s.id }))
 })
 
 const totalMaterias = computed(() => {
@@ -196,7 +187,7 @@ onMounted(async () => {
   if (sedesStore.sedes.length === 0) {
     await sedesStore.fetchSedes()
   }
-  
+
   // Determinar sede inicial
   const user = authStore.user
   if (user?.roles?.includes('VICERRECTOR_SEDE') && user.sede_id) {
@@ -212,11 +203,11 @@ onMounted(async () => {
 
 async function cargarDatos() {
   if (!sedeSeleccionada.value) return
-  
+
   loading.value = true
   try {
     const response = await reporteService.getMonitoreoCarreras({
-      sede_id: sedeSeleccionada.value
+      sede_id: sedeSeleccionada.value,
     })
     datosSede.value = response.data
   } catch (error) {

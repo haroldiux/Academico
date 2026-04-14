@@ -77,7 +77,15 @@
         </q-input>
       </div>
       <div class="col-auto">
-        <q-btn flat dense icon="filter_alt_off" label="Limpiar" color="grey-7" no-caps @click="limpiarFiltros" />
+        <q-btn
+          flat
+          dense
+          icon="filter_alt_off"
+          label="Limpiar"
+          color="grey-7"
+          no-caps
+          @click="limpiarFiltros"
+        />
       </div>
     </div>
 
@@ -149,12 +157,7 @@
           <div class="row items-center">
             <q-icon name="apartment" color="deep-purple" size="24px" class="q-mr-sm" />
             <span class="text-h6 text-weight-bold text-deep-purple-9">{{ sede.nombre }}</span>
-            <q-chip
-              :color="getSedeColor(sede)"
-              text-color="white"
-              size="sm"
-              class="q-ml-md"
-            >
+            <q-chip :color="getSedeColor(sede)" text-color="white" size="sm" class="q-ml-md">
               {{ sede.subidas }}/{{ sede.carreras.length }} subidas
             </q-chip>
             <!-- Barra de progreso de sede -->
@@ -168,7 +171,11 @@
               />
             </div>
             <span class="q-ml-sm text-caption text-grey-6">
-              {{ sede.carreras.length > 0 ? Math.round(sede.subidas / sede.carreras.length * 100) : 0 }}%
+              {{
+                sede.carreras.length > 0
+                  ? Math.round((sede.subidas / sede.carreras.length) * 100)
+                  : 0
+              }}%
             </span>
           </div>
         </div>
@@ -189,7 +196,7 @@
             >
               <q-card-section class="q-pa-md">
                 <div class="row items-start no-wrap">
-                  <div class="flex-1 q-mr-sm" style="min-width:0">
+                  <div class="flex-1 q-mr-sm" style="min-width: 0">
                     <div class="text-body2 text-weight-bold text-grey-9 ellipsis">
                       {{ carrera.nombre }}
                     </div>
@@ -223,15 +230,21 @@
                   <div class="row q-col-gutter-xs">
                     <div class="col-4 text-center">
                       <div class="text-caption text-grey-5">Pendient.</div>
-                      <div class="text-caption text-weight-bold text-orange-7">{{ carrera.stats.pendientes }}</div>
+                      <div class="text-caption text-weight-bold text-orange-7">
+                        {{ carrera.stats.pendientes }}
+                      </div>
                     </div>
                     <div class="col-4 text-center">
                       <div class="text-caption text-grey-5">En proc.</div>
-                      <div class="text-caption text-weight-bold text-blue-7">{{ carrera.stats.enProceso }}</div>
+                      <div class="text-caption text-weight-bold text-blue-7">
+                        {{ carrera.stats.enProceso }}
+                      </div>
                     </div>
                     <div class="col-4 text-center">
                       <div class="text-caption text-grey-5">Finalizad.</div>
-                      <div class="text-caption text-weight-bold text-green-7">{{ carrera.stats.finalizados }}</div>
+                      <div class="text-caption text-weight-bold text-green-7">
+                        {{ carrera.stats.finalizados }}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -244,7 +257,7 @@
 
     <!-- DIALOG: Detalle de carrera (solo lectura) -->
     <q-dialog v-model="dialogDetalle.show" backdrop-filter="blur(4px)">
-      <q-card style="width: 750px; max-width: 95vw; border-radius: 16px;">
+      <q-card style="width: 750px; max-width: 95vw; border-radius: 16px">
         <q-card-section class="bg-deep-purple text-white q-pa-lg">
           <div class="row items-center no-wrap justify-between">
             <div class="flex items-center no-wrap">
@@ -281,14 +294,25 @@
             </template>
             <template v-slot:body-cell-parcial="props">
               <q-td :props="props" align="center">
-                <q-chip :color="getParcialColor(props.row.parcial)" text-color="white" size="xs" dense>
+                <q-chip
+                  :color="getParcialColor(props.row.parcial)"
+                  text-color="white"
+                  size="xs"
+                  dense
+                >
                   {{ props.row.parcial }}
                 </q-chip>
               </q-td>
             </template>
             <template v-slot:body-cell-estado="props">
               <q-td :props="props" align="center">
-                <q-chip :color="getEstadoColor(props.row.estado)" text-color="white" size="xs" dense :icon="getEstadoIcon(props.row.estado)">
+                <q-chip
+                  :color="getEstadoColor(props.row.estado)"
+                  text-color="white"
+                  size="xs"
+                  dense
+                  :icon="getEstadoIcon(props.row.estado)"
+                >
                   {{ props.row.estado }}
                 </q-chip>
               </q-td>
@@ -343,7 +367,7 @@ const rawData = ref([]) // { sede_id, sede_nombre, carrera_id, carrera_nombre, e
 // Nombre de la sede para Dirección Académica
 const sedeNombre = computed(() => {
   if (!esDireccionAcademica.value) return ''
-  const s = sedesOptions.value.find(s => s.value === authStore.sedeId)
+  const s = sedesOptions.value.find((s) => s.value === authStore.sedeId)
   return s?.label || ''
 })
 
@@ -352,11 +376,11 @@ const fetchSedes = async () => {
   loadingSedes.value = true
   try {
     const res = await api.get('/sedes')
-    sedesOptions.value = (res.data.data || []).map(s => ({ label: s.nombre, value: s.id }))
+    sedesOptions.value = (res.data.data || []).map((s) => ({ label: s.nombre, value: s.id }))
 
     // Para Dirección Académica, preseleccionar su sede
     if (esDireccionAcademica.value && authStore.sedeId) {
-      const found = sedesOptions.value.find(s => s.value === authStore.sedeId)
+      const found = sedesOptions.value.find((s) => s.value === authStore.sedeId)
       if (found) filtros.value.sede = found
     }
   } catch (e) {
@@ -399,7 +423,10 @@ const limpiarFiltros = () => {
   cargarDatos()
 }
 
-watch(() => filtros.value.parcial, () => cargarDatos())
+watch(
+  () => filtros.value.parcial,
+  () => cargarDatos(),
+)
 
 onMounted(async () => {
   await fetchSedes()
@@ -432,20 +459,24 @@ const sedesAgrupadas = computed(() => {
   // Filtro búsqueda
   const q = filtros.value.busqueda?.toLowerCase()
   if (q) {
-    lista = lista.map(s => ({
-      ...s,
-      carreras: s.carreras.filter(c => c.nombre.toLowerCase().includes(q)),
-    })).filter(s => s.carreras.length > 0)
+    lista = lista
+      .map((s) => ({
+        ...s,
+        carreras: s.carreras.filter((c) => c.nombre.toLowerCase().includes(q)),
+      }))
+      .filter((s) => s.carreras.length > 0)
   }
 
   return lista
 })
 
-const totalCarreras = computed(() => sedesAgrupadas.value.reduce((a, s) => a + s.carreras.length, 0))
+const totalCarreras = computed(() =>
+  sedesAgrupadas.value.reduce((a, s) => a + s.carreras.length, 0),
+)
 const totalSubidas = computed(() => sedesAgrupadas.value.reduce((a, s) => a + s.subidas, 0))
 const totalPendientes = computed(() => totalCarreras.value - totalSubidas.value)
 const porcentajeSubidas = computed(() =>
-  totalCarreras.value === 0 ? 0 : Math.round(totalSubidas.value / totalCarreras.value * 100)
+  totalCarreras.value === 0 ? 0 : Math.round((totalSubidas.value / totalCarreras.value) * 100),
 )
 
 // ===================== DIALOG DETALLE =====================
@@ -481,7 +512,12 @@ function getSedeProgressColor(sede) {
 }
 
 function getParcialColor(parcial) {
-  const m = { '1er Parcial': 'blue', '2do Parcial': 'orange', 'Final': 'purple', '2da Instancia': 'red' }
+  const m = {
+    '1er Parcial': 'blue',
+    '2do Parcial': 'orange',
+    Final: 'purple',
+    '2da Instancia': 'red',
+  }
   return m[parcial] || 'grey'
 }
 
@@ -528,8 +564,12 @@ function getEstadoIcon(estado) {
   border-radius: 12px !important;
 }
 
-.border-green { border-color: #43a047 !important; }
-.border-red   { border-color: #e53935 !important; }
+.border-green {
+  border-color: #43a047 !important;
+}
+.border-red {
+  border-color: #e53935 !important;
+}
 
 .sede-header {
   border-left: 4px solid var(--q-deep-purple, #6200ea);
@@ -543,7 +583,7 @@ function getEstadoIcon(estado) {
 
 .carrera-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
 }
 
 .carrera-subida {
@@ -556,6 +596,12 @@ function getEstadoIcon(estado) {
   background: #fff5f5 !important;
 }
 
-.flex-1 { flex: 1; }
-.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flex-1 {
+  flex: 1;
+}
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
