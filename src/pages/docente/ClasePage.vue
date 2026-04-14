@@ -1449,23 +1449,32 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { Geolocation } from '@capacitor/geolocation'
 
+const getPublicBaseUrl = () => {
+  const configuredBaseUrl = process.env.PUBLIC_BASE_URL
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/$/, '')
+  }
+
+  if (process.env.DEV) {
+    return 'http://127.0.0.1:8000'
+  }
+
+  if (
+    typeof window !== 'undefined' &&
+    !window.location.protocol.startsWith('capacitor') &&
+    window.location.origin
+  ) {
+    return window.location.origin.replace(/\/$/, '')
+  }
+
+  return 'http://127.0.0.1:8000'
+}
+
 const getStorageUrl = (path) => {
   if (!path) return ''
   if (path.startsWith('http')) return path
 
-  let baseUrl = ''
-  if (process.env.DEV) {
-    baseUrl = 'http://127.0.0.1:8000'
-  } else if (
-    typeof window !== 'undefined' &&
-    window.location.hostname.includes('sisa.xpertiaplus.com')
-  ) {
-    baseUrl = 'https://api.sisa.xpertiaplus.com'
-  } else {
-    baseUrl = 'https://api.sisa.xpertiaplus.com'
-  }
-
-  return `${baseUrl}/storage/${path}`
+  return `${getPublicBaseUrl()}/storage/${path}`
 }
 
 const formatContent = (val) => {
@@ -3212,7 +3221,7 @@ onMounted(async () => {
 const mostrarGuia = ref(false)
 const descargarApk = () => {
   // Priorizar el origen actual, pero asegurar que sea el de producción si no es localhost
-  let baseUrl = window.location.origin
+  let baseUrl = getPublicBaseUrl()
 
   // Si estamos en la App (Capacitor) o el navegador no reporta el dominio correcto
   if (baseUrl.includes('localhost')) {
@@ -3220,12 +3229,9 @@ const descargarApk = () => {
     if (!baseUrl.includes(':8000')) {
       baseUrl = 'http://localhost:8000'
     }
-  } else if (baseUrl.includes('xpertiaplus.com')) {
-    // Estamos en el servidor oficial
-    baseUrl = 'https://api.sisa.xpertiaplus.com'
   } else {
     // Fallback seguro al servidor de producción si no estamos en local
-    baseUrl = 'https://api.sisa.xpertiaplus.com'
+    baseUrl = getPublicBaseUrl()
   }
 
   window.open(`${baseUrl}/descargas/planificacion.apk`, '_blank')

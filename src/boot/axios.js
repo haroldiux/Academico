@@ -11,8 +11,24 @@ const isNative =
   typeof window !== 'undefined' &&
   (window.location.protocol.startsWith('capacitor') || window.location.hostname === 'localhost')
 
+const resolveApiBaseUrl = () => {
+  if (process.env.API_BASE_URL) {
+    return process.env.API_BASE_URL
+  }
+
+  if (process.env.DEV) {
+    return 'http://127.0.0.1:8000/api'
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin.replace(/\/$/, '')}/api`
+  }
+
+  return '/api'
+}
+
 const api = axios.create({
-  baseURL: process.env.DEV ? 'http://127.0.0.1:8000/api' : 'https://api.sisa.xpertiaplus.com/api',
+  baseURL: resolveApiBaseUrl(),
   withCredentials: !isNative,
   headers: {
     Accept: 'application/json',
