@@ -187,6 +187,11 @@ export function usePermisos() {
       return [
         ...itemsBase,
         { label: 'Asignaturas', icon: 'menu_book', to: '/director/asignaturas' },
+        {
+          label: 'Restaurar Programas',
+          icon: 'cloud_download',
+          to: '/director/restaurar-programas',
+        },
         { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
@@ -205,14 +210,26 @@ export function usePermisos() {
         // { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
-        { label: 'Monitoreo de Carreras', icon: 'monitoring', to: '/vicerrector/monitoreo-carreras' },
+        {
+          label: 'Monitoreo de Carreras',
+          icon: 'monitoring',
+          to: '/vicerrector/monitoreo-carreras',
+        },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
       ]
       // Solo Dirección Académica ve el panel de estado por carrera
       if (esDireccionAcademica.value) {
-        items.push({ label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' })
-        items.push({ label: 'Estado Rol por Carrera', icon: 'fact_check', to: '/vicerrector/rol-examenes-nacional' })
+        items.push({
+          label: 'Gestión de Evaluaciones',
+          icon: 'assignment',
+          to: '/admin/evaluaciones',
+        })
+        items.push({
+          label: 'Estado Rol por Carrera',
+          icon: 'fact_check',
+          to: '/vicerrector/rol-examenes-nacional',
+        })
       }
       return items
     }
@@ -242,14 +259,22 @@ export function usePermisos() {
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
-        { label: 'Rol Exámenes por Carrera', icon: 'fact_check', to: '/vicerrector/rol-examenes-nacional' },
+        {
+          label: 'Rol Exámenes por Carrera',
+          icon: 'fact_check',
+          to: '/vicerrector/rol-examenes-nacional',
+        },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
         },
         { label: 'Reportes Nacionales', icon: 'analytics', to: '/vicerrector/reportes' },
-        { label: 'Monitoreo de Carreras', icon: 'monitoring', to: '/vicerrector/monitoreo-carreras' },
+        {
+          label: 'Monitoreo de Carreras',
+          icon: 'monitoring',
+          to: '/vicerrector/monitoreo-carreras',
+        },
       ]
     }
 

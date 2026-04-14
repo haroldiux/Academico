@@ -12,9 +12,7 @@ const isNative =
   (window.location.protocol.startsWith('capacitor') || window.location.hostname === 'localhost')
 
 const api = axios.create({
-  baseURL: process.env.DEV
-    ? 'http://127.0.0.1:8000/api'
-    : 'https://api.sisa.xpertiaplus.com/api',
+  baseURL: process.env.DEV ? 'http://127.0.0.1:8000/api' : 'https://api.sisa.xpertiaplus.com/api',
   withCredentials: !isNative,
   headers: {
     Accept: 'application/json',

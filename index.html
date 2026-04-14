@@ -14,8 +14,12 @@
     <script>
       /* Fallback for Quasar modes if template logic is not processed */
       if (window.cordova || window.Capacitor) {
-        var viewport = document.querySelector('meta[name="viewport"]');
-        if (viewport) viewport.setAttribute('content', viewport.getAttribute('content') + ', viewport-fit=cover');
+        var viewport = document.querySelector('meta[name="viewport"]')
+        if (viewport)
+          viewport.setAttribute(
+            'content',
+            viewport.getAttribute('content') + ', viewport-fit=cover',
+          )
       }
     </script>
 

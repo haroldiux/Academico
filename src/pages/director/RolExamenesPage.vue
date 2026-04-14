@@ -545,7 +545,13 @@ const gestionesOptions = [
 const authStore = useAuthStore()
 
 const esRolGlobal = computed(() => {
-  return [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.VICERRECTOR_NACIONAL, ROLES.EVALUACIONES, ROLES.RESPONSABLE_EVALUACIONES].includes(authStore.rol)
+  return [
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN,
+    ROLES.VICERRECTOR_NACIONAL,
+    ROLES.EVALUACIONES,
+    ROLES.RESPONSABLE_EVALUACIONES,
+  ].includes(authStore.rol)
 })
 
 const sedesOptions = computed(() => {
@@ -953,10 +959,7 @@ onMounted(async () => {
   }
 
   // Solo cargar si hay carrera seleccionada o si es un rol global
-  if (
-    filtros.value.carrera_id ||
-    esRolGlobal.value
-  ) {
+  if (filtros.value.carrera_id || esRolGlobal.value) {
     await cargarExamenes()
   }
 })
