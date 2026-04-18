@@ -46,7 +46,14 @@
         />
 
         <!-- Herramientas Dropdown -->
-        <q-btn-dropdown outline color="indigo" icon="settings" label="Gestión" no-caps :disable="!esDirectorOAdmin">
+        <q-btn-dropdown
+          outline
+          color="indigo"
+          icon="settings"
+          label="Gestión"
+          no-caps
+          :disable="!esDirectorOAdmin"
+        >
           <q-list>
             <q-item
               clickable
@@ -1512,16 +1519,29 @@
             </div>
             <div class="col-12 col-md-4">
               <q-card flat bordered class="text-center q-pa-sm bg-green-1">
-                <div class="text-h4 text-weight-bold text-green-9">{{ reporteValidacion.validas }}</div>
+                <div class="text-h4 text-weight-bold text-green-9">
+                  {{ reporteValidacion.validas }}
+                </div>
                 <div class="text-caption text-green-7">Sin Errores</div>
               </q-card>
             </div>
             <div class="col-12 col-md-4">
-              <q-card flat bordered class="text-center q-pa-sm" :class="reporteValidacion.errores.length > 0 ? 'bg-red-1' : 'bg-grey-1'">
-                <div class="text-h4 text-weight-bold" :class="reporteValidacion.errores.length > 0 ? 'text-red-9' : 'text-grey-7'">
+              <q-card
+                flat
+                bordered
+                class="text-center q-pa-sm"
+                :class="reporteValidacion.errores.length > 0 ? 'bg-red-1' : 'bg-grey-1'"
+              >
+                <div
+                  class="text-h4 text-weight-bold"
+                  :class="reporteValidacion.errores.length > 0 ? 'text-red-9' : 'text-grey-7'"
+                >
                   {{ reporteValidacion.errores.length }}
                 </div>
-                <div class="text-caption" :class="reporteValidacion.errores.length > 0 ? 'text-red-7' : 'text-grey-7'">
+                <div
+                  class="text-caption"
+                  :class="reporteValidacion.errores.length > 0 ? 'text-red-7' : 'text-grey-7'"
+                >
                   Con Observaciones
                 </div>
               </q-card>
@@ -1533,11 +1553,13 @@
 
         <q-card-section class="col scroll q-pa-none">
           <div v-if="reporteValidacion.errores.length === 0" class="text-center q-pa-xl">
-             <q-icon name="verified" color="green" size="64px" />
-             <div class="text-h6 text-green q-mt-md">¡Todo está correcto!</div>
-             <p class="text-grey-7">El banco de preguntas cumple con todos los requisitos técnicos para la impresión.</p>
+            <q-icon name="verified" color="green" size="64px" />
+            <div class="text-h6 text-green q-mt-md">¡Todo está correcto!</div>
+            <p class="text-grey-7">
+              El banco de preguntas cumple con todos los requisitos técnicos para la impresión.
+            </p>
           </div>
-          
+
           <q-list v-else bordered separator>
             <q-item v-for="(err, i) in reporteValidacion.errores" :key="i" class="q-py-md">
               <q-item-section avatar top>
@@ -1545,14 +1567,19 @@
               </q-item-section>
               <q-item-section>
                 <q-item-label class="text-weight-bold text-indigo-9">
-                  Pregunta #{{ err.numero }} <small class="text-grey-6 q-ml-sm">[{{ err.tipo }}]</small>
+                  Pregunta #{{ err.numero }}
+                  <small class="text-grey-6 q-ml-sm">[{{ err.tipo }}]</small>
                 </q-item-label>
                 <q-item-label caption class="q-mb-sm">
                   <div v-html="err.enunciado"></div>
                 </q-item-label>
-                
+
                 <div class="q-gutter-y-xs">
-                  <div v-for="(msg, mi) in err.mensajes" :key="mi" class="row items-center text-red text-caption">
+                  <div
+                    v-for="(msg, mi) in err.mensajes"
+                    :key="mi"
+                    class="row items-center text-red text-caption"
+                  >
                     <q-icon name="circle" size="6px" class="q-mr-xs" />
                     {{ msg }}
                   </div>
@@ -1563,7 +1590,7 @@
         </q-card-section>
 
         <q-separator />
-        
+
         <q-card-actions align="right" class="bg-grey-1 q-pa-md">
           <q-btn flat label="Cerrar" color="primary" v-close-popup />
         </q-card-actions>
@@ -1773,18 +1800,26 @@
                 <q-icon name="error" class="q-mr-xs" />
                 {{ importErrores.length }} error(es) en el archivo:
               </div>
-              <q-scroll-area style="height: 300px; border: 1px solid #ffcdd2" class="bg-red-0 rounded-borders">
+              <q-scroll-area
+                style="height: 300px; border: 1px solid #ffcdd2"
+                class="bg-red-0 rounded-borders"
+              >
                 <q-list separator class="bg-red-1">
                   <q-item v-for="(err, i) in importErrores" :key="i" class="q-py-sm">
                     <q-item-section>
                       <q-item-label class="text-weight-bold text-red-9">
-                        Fila {{ err.fila }} <small class="text-grey-7">[{{ err.tipo?.toUpperCase() }}]</small>
+                        Fila {{ err.fila }}
+                        <small class="text-grey-7">[{{ err.tipo?.toUpperCase() }}]</small>
                       </q-item-label>
                       <q-item-label caption class="text-grey-7 ellipsis" style="max-width: 400px">
                         <div v-html="err.enunciado" />
                       </q-item-label>
                       <div class="q-mt-xs">
-                        <div v-for="(msg, midx) in err.mensajes" :key="midx" class="text-caption text-red-8 flex items-center">
+                        <div
+                          v-for="(msg, midx) in err.mensajes"
+                          :key="midx"
+                          class="text-caption text-red-8 flex items-center"
+                        >
                           <q-icon name="arrow_right" size="16px" /> {{ msg }}
                         </div>
                       </div>
@@ -3967,15 +4002,19 @@ function getPrimerExamen(examen) {
 
   // 2. Buscar en el ref de generacionesManuales (fallback frontend)
   if (generacionesManuales.value?.length > 0) {
-    const examenParcial = String(examen.tipo_examen || "").trim().toUpperCase()
+    const examenParcial = String(examen.tipo_examen || '')
+      .trim()
+      .toUpperCase()
     const manual = generacionesManuales.value.find((m) => {
       const gMatch = normalizeGroupName(m.grupo) === normalizeGroupName(examen.grupo)
-      const mParcial = String(m.parcial || "").trim().toUpperCase()
+      const mParcial = String(m.parcial || '')
+        .trim()
+        .toUpperCase()
       // Coincidencia exacta o mapeo 1P/1er Parcial
       const pMatch =
         mParcial === examenParcial ||
-        (mParcial === "1ER PARCIAL" && examenParcial === "1P") ||
-        (mParcial === "1P" && examenParcial === "1ER PARCIAL")
+        (mParcial === '1ER PARCIAL' && examenParcial === '1P') ||
+        (mParcial === '1P' && examenParcial === '1ER PARCIAL')
       return gMatch && pMatch
     })
     if (manual?.archivo_examen) return manual.archivo_examen
@@ -4000,14 +4039,18 @@ function getPrimerPatron(examen) {
 
   // 2. Buscar en el ref de generacionesManuales (fallback frontend)
   if (!foundFile && generacionesManuales.value?.length > 0) {
-    const examenParcial = String(examen.tipo_examen || "").trim().toUpperCase()
+    const examenParcial = String(examen.tipo_examen || '')
+      .trim()
+      .toUpperCase()
     const manual = generacionesManuales.value.find((m) => {
       const gMatch = normalizeGroupName(m.grupo) === normalizeGroupName(examen.grupo)
-      const mParcial = String(m.parcial || "").trim().toUpperCase()
+      const mParcial = String(m.parcial || '')
+        .trim()
+        .toUpperCase()
       const pMatch =
         mParcial === examenParcial ||
-        (mParcial === "1ER PARCIAL" && examenParcial === "1P") ||
-        (mParcial === "1P" && examenParcial === "1ER PARCIAL")
+        (mParcial === '1ER PARCIAL' && examenParcial === '1P') ||
+        (mParcial === '1P' && examenParcial === '1ER PARCIAL')
       return gMatch && pMatch
     })
     if (manual?.archivo_patron_pdf) foundFile = manual.archivo_patron_pdf
@@ -4095,11 +4138,18 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
   const opciones = Array.isArray(p.opciones) ? p.opciones : []
   const respuesta = p.respuesta_correcta || p.respuesta
   const enunciado = String(p.enunciado || '').toLowerCase()
-  const grupoNormalizado = String(p.grupo || '').trim().toUpperCase()
+  const grupoNormalizado = String(p.grupo || '')
+    .trim()
+    .toUpperCase()
 
   // 1. Validar Respuestas Obligatorias (SM, SS, FV, SP)
   if (['SM', 'SS', 'FV', 'SP'].includes(tipo)) {
-    if (respuesta === null || respuesta === undefined || respuesta === '' || (Array.isArray(respuesta) && respuesta.length === 0)) {
+    if (
+      respuesta === null ||
+      respuesta === undefined ||
+      respuesta === '' ||
+      (Array.isArray(respuesta) && respuesta.length === 0)
+    ) {
       fallos.push('Falta definir la respuesta correcta.')
     }
   }
@@ -4116,10 +4166,12 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
 
   // 3. Regla SM (Solo 2 respuestas exactas)
   if (tipo === 'SM') {
-    const respSet = Array.isArray(respuesta) 
-      ? respuesta 
-      : String(respuesta).split(/[,;]/).filter(r => r.trim().length > 0)
-    
+    const respSet = Array.isArray(respuesta)
+      ? respuesta
+      : String(respuesta)
+          .split(/[,;]/)
+          .filter((r) => r.trim().length > 0)
+
     if (respSet.length !== 2) {
       fallos.push(`Selección Múltiple (SM) debe tener exactamente 2 respuestas correctas.`)
     }
@@ -4139,7 +4191,7 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
     if (p.dificultad && p.dificultad !== 0 && p.dificultad !== '') {
       fallos.push(`Tipo ${tipo} no debe tener nivel de dificultad asignado.`)
     }
-    
+
     // Validar incisos en EM (deshabilitado por requerimiento de usuario)
     /*
     if (['EM', 'EMPAREJAMIENTO'].includes(tipo)) {
@@ -4163,9 +4215,11 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
 
   // 5. Verificación de Etiquetas (no subindices, potencias, etc.)
   const tagsProhibidos = ['<sub>', '<sup>', '<math>', '<font>', 'style=']
-  const tieneTags = tagsProhibidos.some(tag => enunciado.includes(tag))
+  const tieneTags = tagsProhibidos.some((tag) => enunciado.includes(tag))
   if (tieneTags) {
-    fallos.push('El enunciado contiene etiquetas no permitidas para impresión (subíndices, potencias o estilos).')
+    fallos.push(
+      'El enunciado contiene etiquetas no permitidas para impresión (subíndices, potencias o estilos).',
+    )
   }
 
   return fallos
@@ -4189,7 +4243,9 @@ function validarBancoCompleto() {
   const gruposCabeceraMap = new Map()
   preguntasParaValidar.forEach((p) => {
     const t = String(p.tipo || '').toUpperCase()
-    const g = String(p.grupo || '').trim().toUpperCase()
+    const g = String(p.grupo || '')
+      .trim()
+      .toUpperCase()
     if (['EM', 'EMPAREJAMIENTO', 'PR', 'PROBLEMA'].includes(t) && g) {
       gruposCabeceraMap.set(g, t)
     }
@@ -4220,7 +4276,6 @@ function validarBancoCompleto() {
 
   showDialogValidacion.value = true
 }
-
 
 async function cargarGeneracionesManuales() {
   if (!asignatura.value?.id) return
@@ -4789,7 +4844,7 @@ function previsualizarArchivoExcel(file) {
               fila: lineNum,
               tipo: pObj.tipo,
               enunciado: pObj.enunciado,
-              mensajes: filaErrores
+              mensajes: filaErrores,
             })
           }
         })
@@ -4797,8 +4852,12 @@ function previsualizarArchivoExcel(file) {
         // Validación unificada de integridad técnica (después de colectar cabeceras)
         const gruposHeadersMap = new Map()
         preguntas.forEach((p) => {
-          const t = String(p.tipo || '').trim().toUpperCase()
-          const g = String(p.grupo || '').trim().toUpperCase()
+          const t = String(p.tipo || '')
+            .trim()
+            .toUpperCase()
+          const g = String(p.grupo || '')
+            .trim()
+            .toUpperCase()
           if (['EM', 'PR', 'EMPAREJAMIENTO', 'PROBLEMA'].includes(t) && g) {
             gruposHeadersMap.set(g, t)
           }
@@ -4808,7 +4867,7 @@ function previsualizarArchivoExcel(file) {
           const fallosTecnicos = validarIntegridadPregunta(p, gruposHeadersMap)
           if (fallosTecnicos.length > 0) {
             const lineNum = headerRowIdx + idxValid + 1 + 1
-            const existeFila = erroresListado.find(e => e.fila === lineNum)
+            const existeFila = erroresListado.find((e) => e.fila === lineNum)
             if (existeFila) {
               existeFila.mensajes.push(...fallosTecnicos)
             } else {
@@ -4816,7 +4875,7 @@ function previsualizarArchivoExcel(file) {
                 fila: lineNum,
                 tipo: p.tipo,
                 enunciado: p.enunciado,
-                mensajes: fallosTecnicos
+                mensajes: fallosTecnicos,
               })
             }
           }
@@ -4842,8 +4901,8 @@ function previsualizarArchivoExcel(file) {
               fila: '-',
               tipo: '-',
               enunciado: 'Sin datos',
-              mensajes: ['El archivo no tiene filas de datos válidas después del encabezado.']
-            }
+              mensajes: ['El archivo no tiene filas de datos válidas después del encabezado.'],
+            },
           ]
         }
       } catch (err) {

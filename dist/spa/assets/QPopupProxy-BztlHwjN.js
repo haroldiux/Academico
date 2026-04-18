@@ -1,0 +1,63 @@
+import { G as P, g as b, r as p, P as h, w as x, bt as y, h as Q, C } from './index-BlBvOMGE.js'
+import { e as j, c as k, Q as M } from './QMenu-BQiozE0c.js'
+const H = P({
+  name: 'QPopupProxy',
+  props: { ...j, breakpoint: { type: [String, Number], default: 450 } },
+  emits: ['show', 'hide'],
+  setup(a, { slots: g, emit: c, attrs: v }) {
+    const { proxy: u } = b(),
+      { $q: l } = u,
+      n = p(!1),
+      t = p(null),
+      i = h(() => parseInt(a.breakpoint, 10)),
+      { canShow: f } = k({ showing: n })
+    function r() {
+      return l.screen.width < i.value || l.screen.height < i.value ? 'dialog' : 'menu'
+    }
+    const o = p(r()),
+      m = h(() => (o.value === 'menu' ? { maxHeight: '99vh' } : {}))
+    x(
+      () => r(),
+      (e) => {
+        n.value !== !0 && (o.value = e)
+      },
+    )
+    function d(e) {
+      ;((n.value = !0), c('show', e))
+    }
+    function w(e) {
+      ;((n.value = !1), (o.value = r()), c('hide', e))
+    }
+    return (
+      Object.assign(u, {
+        show(e) {
+          f(e) === !0 && t.value.show(e)
+        },
+        hide(e) {
+          t.value.hide(e)
+        },
+        toggle(e) {
+          t.value.toggle(e)
+        },
+      }),
+      y(u, 'currentComponent', () => ({ type: o.value, ref: t.value })),
+      () => {
+        const e = { ref: t, ...m.value, ...v, onShow: d, onHide: w }
+        let s
+        return (
+          o.value === 'dialog'
+            ? (s = C)
+            : ((s = M),
+              Object.assign(e, {
+                target: a.target,
+                contextMenu: a.contextMenu,
+                noParentEvent: !0,
+                separateClosePopup: !0,
+              })),
+          Q(s, e, g.default)
+        )
+      }
+    )
+  },
+})
+export { H as Q }

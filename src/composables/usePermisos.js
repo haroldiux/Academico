@@ -187,6 +187,11 @@ export function usePermisos() {
       return [
         ...itemsBase,
         { label: 'Asignaturas', icon: 'menu_book', to: '/director/asignaturas' },
+        {
+          label: 'Restaurar Programas',
+          icon: 'cloud_download',
+          to: '/director/restaurar-programas',
+        },
         { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },

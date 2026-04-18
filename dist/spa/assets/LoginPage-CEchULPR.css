@@ -1,0 +1,166 @@
+.fullscreen-bg[data-v-9b82c4b7] {
+  background: radial-gradient(circle at 10% 20%, #002060, #000 90%);
+  position: relative;
+}
+.blob[data-v-9b82c4b7] {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  animation: floatBlobs-9b82c4b7 10s infinite alternate ease-in-out;
+}
+.blob-1[data-v-9b82c4b7] {
+  top: -10%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: #0056b3;
+}
+.blob-2[data-v-9b82c4b7] {
+  bottom: -10%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: #004080;
+  animation-delay: -5s;
+}
+.blob-3[data-v-9b82c4b7] {
+  top: 40%;
+  left: 40%;
+  width: 300px;
+  height: 300px;
+  background: #0af;
+  opacity: 0.2;
+}
+@keyframes floatBlobs-9b82c4b7 {
+  0% {
+    transform: translate(0) scale(1);
+  }
+  to {
+    transform: translate(30px, 50px) scale(1.1);
+  }
+}
+.login-card[data-v-9b82c4b7] {
+  width: 1000px;
+  max-width: 90vw;
+  min-height: 600px;
+  background: #fff;
+  border-radius: 24px;
+  z-index: 10;
+}
+.branding-panel[data-v-9b82c4b7] {
+  background: url(/unitepc-logo-clean.png) no-repeat center center;
+  background-size: cover;
+}
+.overlay-gradient[data-v-9b82c4b7] {
+  background: linear-gradient(135deg, #0d47a1, #002171);
+  opacity: 0.95;
+}
+.logo-circle[data-v-9b82c4b7] {
+  width: 120px;
+  height: 120px;
+  background: #fff;
+  border-radius: 50%;
+  padding: 20px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logo-img[data-v-9b82c4b7] {
+  width: 100%;
+  height: auto;
+}
+.input-premium[data-v-9b82c4b7] .q-field__control {
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.3s;
+}
+.input-premium[data-v-9b82c4b7] .q-field__control:before {
+  border: none;
+}
+.input-premium[data-v-9b82c4b7] .q-field__control:hover {
+  background: #f5f5f5;
+}
+.input-premium[data-v-9b82c4b7] .q-field__native {
+  font-weight: 500;
+}
+.btn-hero[data-v-9b82c4b7] {
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-size: 1rem;
+  background: linear-gradient(90deg, #0d47a1, #1976d2);
+  transition: transform 0.2s;
+}
+.btn-hero[data-v-9b82c4b7]:active {
+  transform: scale(0.98);
+}
+.link-forget[data-v-9b82c4b7] {
+  text-decoration: none;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.link-forget[data-v-9b82c4b7]:hover {
+  opacity: 1;
+}
+.border-red-left[data-v-9b82c4b7] {
+  border-left: 4px solid #d32f2f;
+}
+.opacity-70[data-v-9b82c4b7] {
+  opacity: 0.7;
+}
+.opacity-90[data-v-9b82c4b7] {
+  opacity: 0.9;
+}
+.tracking-wide[data-v-9b82c4b7] {
+  letter-spacing: 1px;
+}
+.tracking-widest[data-v-9b82c4b7] {
+  letter-spacing: 2px;
+}
+.separator-small[data-v-9b82c4b7] {
+  height: 2px;
+  width: 40px;
+}
+.hover-opacity-100[data-v-9b82c4b7]:hover {
+  opacity: 1;
+}
+.animate-pop-in[data-v-9b82c4b7] {
+  animation: popIn-9b82c4b7 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes popIn-9b82c4b7 {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@media (max-width: 1023px) {
+  .login-card[data-v-9b82c4b7] {
+    flex-direction: column;
+    width: 90vw;
+    margin: 20px;
+    height: auto;
+    min-height: auto;
+  }
+  .branding-panel[data-v-9b82c4b7] {
+    padding: 30px;
+    min-height: 200px;
+  }
+  .logo-circle[data-v-9b82c4b7] {
+    width: 80px;
+    height: 80px;
+    padding: 15px;
+  }
+  .branding-panel h1[data-v-9b82c4b7] {
+    font-size: 1.8rem;
+  }
+  .form-content[data-v-9b82c4b7] {
+    padding: 30px !important;
+  }
+}

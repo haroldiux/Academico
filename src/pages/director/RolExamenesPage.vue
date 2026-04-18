@@ -419,9 +419,7 @@
           >
             <template v-slot:no-option>
               <q-item>
-                <q-item-section class="text-grey">
-                  No se encontraron resultados
-                </q-item-section>
+                <q-item-section class="text-grey"> No se encontraron resultados </q-item-section>
               </q-item>
             </template>
             <template v-slot:option="scope">
@@ -432,20 +430,21 @@
                     {{ scope.opt.codigo }}
                     <q-badge
                       v-if="scope.opt.plan_estudios === 'A'"
-                      color="orange-2" text-color="orange-9" class="q-ml-sm"
+                      color="orange-2"
+                      text-color="orange-9"
+                      class="q-ml-sm"
                     >
                       Plan Antiguo
                     </q-badge>
                     <q-badge
                       v-else-if="scope.opt.plan_estudios === 'N'"
-                      color="blue-2" text-color="blue-9" class="q-ml-sm"
+                      color="blue-2"
+                      text-color="blue-9"
+                      class="q-ml-sm"
                     >
                       Plan Nuevo
                     </q-badge>
-                    <q-badge
-                      v-else
-                      color="grey-3" text-color="grey-8" class="q-ml-sm"
-                    >
+                    <q-badge v-else color="grey-3" text-color="grey-8" class="q-ml-sm">
                       Sin plan definido
                     </q-badge>
                   </q-item-label>
@@ -472,7 +471,15 @@
           </div>
           <div class="row q-col-gutter-md">
             <div class="col-6">
-              <q-input v-model="nuevoExamenForm.semana" outlined dense label="Semana *" type="number" min="1" max="25" />
+              <q-input
+                v-model="nuevoExamenForm.semana"
+                outlined
+                dense
+                label="Semana *"
+                type="number"
+                min="1"
+                max="25"
+              />
             </div>
             <div class="col-6">
               <q-input v-model="nuevoExamenForm.fecha" outlined dense label="Fecha *" type="date" />
@@ -489,7 +496,13 @@
               />
             </div>
             <div class="col-6">
-              <q-input v-model="nuevoExamenForm.hora_fin" outlined dense label="Hora Fin *" type="time" />
+              <q-input
+                v-model="nuevoExamenForm.hora_fin"
+                outlined
+                dense
+                label="Hora Fin *"
+                type="time"
+              />
             </div>
           </div>
         </q-card-section>
@@ -994,7 +1007,7 @@ async function abrirDialogoAnadir() {
     await asignaturasStore.fetchAsignaturas(targetSedeId.value, filtros.value.carrera_id, null, '')
     asignaturasRaw.value = asignaturasStore.asignaturas || []
     asignaturasOptions.value = [...asignaturasRaw.value]
-    
+
     nuevoExamenForm.value = {
       materia: null,
       tipo_examen: '',
@@ -1006,7 +1019,10 @@ async function abrirDialogoAnadir() {
     }
     showAddDialog.value = true
   } catch (error) {
-    $q.notify({ type: 'negative', message: 'Error al cargar asignaturas: ' + (error.message || '') })
+    $q.notify({
+      type: 'negative',
+      message: 'Error al cargar asignaturas: ' + (error.message || ''),
+    })
   } finally {
     $q.loading.hide()
   }
@@ -1021,7 +1037,7 @@ function filterAsignaturas(val, update) {
       asignaturasOptions.value = asignaturasRaw.value.filter(
         (v) =>
           (v.nombre && v.nombre.toLowerCase().indexOf(needle) > -1) ||
-          (v.codigo && v.codigo.toLowerCase().indexOf(needle) > -1)
+          (v.codigo && v.codigo.toLowerCase().indexOf(needle) > -1),
       )
     }
   })
@@ -1056,7 +1072,7 @@ async function guardarNuevoExamen() {
     fecha: nuevoExamenForm.value.fecha,
     hora_inicio: nuevoExamenForm.value.hora_inicio,
     hora_fin: nuevoExamenForm.value.hora_fin,
-    sede_id: targetSedeId.value
+    sede_id: targetSedeId.value,
   }
 
   try {

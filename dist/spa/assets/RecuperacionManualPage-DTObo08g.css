@@ -1,0 +1,27 @@
+.rounded-borders[data-v-62ff2f86] {
+  border-radius: 12px;
+}
+.white-space-pre[data-v-62ff2f86] {
+  white-space: pre-wrap;
+}
+.border-blue[data-v-62ff2f86] {
+  border: 1px solid rgba(25, 118, 210, 0.3);
+}
+.border-green[data-v-62ff2f86] {
+  border: 1px solid rgba(46, 125, 50, 0.3);
+}
+.border-amber[data-v-62ff2f86] {
+  border: 1px solid rgba(255, 143, 0, 0.3);
+}
+.border-light[data-v-62ff2f86] {
+  border: 1px solid #ddd;
+}
+.border-top[data-v-62ff2f86] {
+  border-top: 1px solid #eee;
+}
+.border-left-grey[data-v-62ff2f86] {
+  border-left: 2px solid #ddd;
+}
+.border-left-teal[data-v-62ff2f86] {
+  border-left: 4px solid teal;
+}

@@ -1,0 +1,35 @@
+.text-gradient[data-v-f725875a] {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.filter-card[data-v-f725875a] {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  border-radius: 12px;
+}
+.asig-table[data-v-f725875a] {
+  border-radius: 12px;
+  overflow: hidden;
+}
+.asig-table[data-v-f725875a] th {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+.form-section[data-v-f725875a] {
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #fafafa;
+}
+.form-section-title[data-v-f725875a] {
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}

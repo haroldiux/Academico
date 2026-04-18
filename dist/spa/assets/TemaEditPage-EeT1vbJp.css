@@ -1,0 +1,143 @@
+.q-page[data-v-93292cb8] {
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+.text-gradient[data-v-93292cb8] {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.card-main[data-v-93292cb8] {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 16px !important;
+}
+.card-main[data-v-93292cb8] .q-tabs {
+  background: var(--bg-tertiary);
+}
+.card-main[data-v-93292cb8] .q-tab {
+  color: var(--text-secondary);
+}
+.card-main[data-v-93292cb8] .q-tab--active {
+  color: var(--primary-light);
+}
+.card-main[data-v-93292cb8] .q-tab-panel {
+  background: transparent;
+}
+.card-main[data-v-93292cb8] .q-field__control {
+  background: var(--bg-tertiary);
+}
+.card-main[data-v-93292cb8] .q-field__native,
+.card-main[data-v-93292cb8] .q-field__input {
+  color: var(--text-primary) !important;
+}
+.card-main[data-v-93292cb8] .bg-green-1,
+.card-main[data-v-93292cb8] .bg-blue-1,
+.card-main[data-v-93292cb8] .bg-grey-1,
+.card-main[data-v-93292cb8] .bg-amber-1,
+.card-main[data-v-93292cb8] .bg-purple-1,
+.card-main[data-v-93292cb8] .bg-orange-1,
+.card-main[data-v-93292cb8] .bg-red-1,
+.card-main[data-v-93292cb8] .bg-teal-1 {
+  background: var(--bg-tertiary) !important;
+}
+.logro-card[data-v-93292cb8] {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  transition: all 0.3s ease;
+}
+.logro-card[data-v-93292cb8]:hover {
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 20px var(--shadow-color);
+}
+.logro-card[data-v-93292cb8] .bg-green-1 {
+  background: #22c55e26 !important;
+  border-bottom: 1px solid var(--border-color);
+}
+.logro-card[data-v-93292cb8] .q-item {
+  background: transparent !important;
+}
+.card-main[data-v-93292cb8] .q-card.flat.bordered {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+}
+.card-main[data-v-93292cb8] .q-card .q-card-section.bg-blue-1 {
+  background: #3b82f626 !important;
+  border-bottom: 1px solid var(--border-color);
+}
+.card-main[data-v-93292cb8] .q-card .q-card-section.bg-amber-1,
+.card-main[data-v-93292cb8] .q-card .q-card-section.bg-orange-1 {
+  background: #f9731626 !important;
+  border-bottom: 1px solid var(--border-color);
+}
+.card-main[data-v-93292cb8] .q-card .q-card-section.bg-purple-1 {
+  background: #7c3aed26 !important;
+  border-bottom: 1px solid var(--border-color);
+}
+.card-main[data-v-93292cb8] .q-card .q-card-section.bg-pink-1,
+.card-main[data-v-93292cb8] .q-card .q-card-section.bg-red-1 {
+  background: #ef444426 !important;
+  border-bottom: 1px solid var(--border-color);
+}
+.card-main[data-v-93292cb8] .q-list {
+  background: transparent !important;
+}
+.card-main[data-v-93292cb8] .q-item {
+  background: transparent !important;
+  color: var(--text-primary);
+}
+.card-main[data-v-93292cb8] .q-item__label {
+  color: var(--text-primary);
+}
+.momento-card[data-v-93292cb8] {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  transition: all 0.3s ease;
+}
+.momento-card[data-v-93292cb8]:hover {
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 20px var(--shadow-color);
+}
+.section-card[data-v-93292cb8] {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+}
+.dialog-header[data-v-93292cb8] {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  padding: 20px 24px;
+  margin: -16px -16px 0;
+  border-radius: 16px 16px 0 0;
+}
+.dialog-header-title[data-v-93292cb8] {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dialog-actions[data-v-93292cb8] {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+}
+[data-v-93292cb8] .q-linear-progress {
+  background: var(--bg-hover) !important;
+}
+[data-v-93292cb8] .q-separator {
+  background: var(--border-color) !important;
+}
+.card-main[data-v-93292cb8] .rounded-borders.bg-grey-1 {
+  background: var(--bg-tertiary) !important;
+  border: 1px dashed var(--border-color);
+}
+.card-main[data-v-93292cb8] .text-grey-6 {
+  color: var(--text-muted) !important;
+}
+.card-main[data-v-93292cb8] .text-blue-grey-7 {
+  color: var(--text-secondary) !important;
+}

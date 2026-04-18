@@ -531,7 +531,11 @@
                   <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
                 </template>
                 <template #loading>
-                  <q-item><q-item-section class="text-grey">Cargando asignaturas...</q-item-section></q-item>
+                  <q-item
+                    ><q-item-section class="text-grey"
+                      >Cargando asignaturas...</q-item-section
+                    ></q-item
+                  >
                 </template>
               </q-select>
               <q-btn
@@ -557,7 +561,8 @@
                   :color="resultadoAsignatura.ok ? 'positive' : 'negative'"
                   class="q-mr-xs"
                 />
-                Resultado — {{ resultadoAsignatura.codigo_asignatura }} / {{ resultadoAsignatura.carrera }} / {{ resultadoAsignatura.sede }}
+                Resultado — {{ resultadoAsignatura.codigo_asignatura }} /
+                {{ resultadoAsignatura.carrera }} / {{ resultadoAsignatura.sede }}
               </div>
               <template v-if="resultadoAsignatura.ok">
                 <div class="row q-col-gutter-md">
@@ -1406,8 +1411,8 @@ function filtrarCarrerasAsignatura(val, update) {
 function filtrarAsignaturas(val, update) {
   update(() => {
     const needle = val.toLowerCase()
-    opcionesAsignaturas.value = opcionesAsignaturas.value.filter((a) =>
-      a.nombre.toLowerCase().includes(needle) || a.codigo.toLowerCase().includes(needle)
+    opcionesAsignaturas.value = opcionesAsignaturas.value.filter(
+      (a) => a.nombre.toLowerCase().includes(needle) || a.codigo.toLowerCase().includes(needle),
     )
   })
 }
@@ -1424,18 +1429,21 @@ async function cargarAsignaturas() {
       params: {
         gestion: gestion.value,
         carrera: selCarreraAsignatura.value.toLowerCase(),
-        sede: selSedeAsignatura.value
-      }
+        sede: selSedeAsignatura.value,
+      },
     })
     // La API devuelve un array de materias con codigo, nombre, semestre, plan_estudios, docentes
-    opcionesAsignaturas.value = res.data.data.map(m => ({
+    opcionesAsignaturas.value = res.data.data.map((m) => ({
       codigo: m.codigo,
       nombre: m.nombre,
       semestre: m.semestre,
-      plan_estudios: m.plan_estudios || 'N'
+      plan_estudios: m.plan_estudios || 'N',
     }))
   } catch (e) {
-    $q.notify({ type: 'negative', message: 'Error al cargar asignaturas: ' + (e.response?.data?.message || e.message) })
+    $q.notify({
+      type: 'negative',
+      message: 'Error al cargar asignaturas: ' + (e.response?.data?.message || e.message),
+    })
     opcionesAsignaturas.value = []
   } finally {
     loadingAsignaturas.value = false
@@ -1462,7 +1470,7 @@ async function syncAsignatura() {
       sede_id: selSedeAsignatura.value,
       carrera: selCarreraAsignatura.value,
       codigo_asignatura: selAsignatura.value,
-      plan_estudios: 'N' // por defecto, podríamos añadir selección de plan si es necesario
+      plan_estudios: 'N', // por defecto, podríamos añadir selección de plan si es necesario
     })
     resultadoAsignatura.value = res.data
     $q.notify({
@@ -1741,7 +1749,11 @@ async function cargarLogs() {
 }
 
 function modoIcon(modo) {
-  return { carrera: 'school', sede: 'location_city', materia: 'menu_book', asignatura: 'subject' }[modo] ?? 'sync'
+  return (
+    { carrera: 'school', sede: 'location_city', materia: 'menu_book', asignatura: 'subject' }[
+      modo
+    ] ?? 'sync'
+  )
 }
 
 // Recargar logs al cambiar filtros

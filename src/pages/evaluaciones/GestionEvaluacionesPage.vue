@@ -426,9 +426,14 @@
                 v-if="
                   props.row.patrones &&
                   props.row.patrones.length > 0 &&
-                  ['generados', 'impresos', 'entregados', 'devueltos', 'revisados', 'subidos'].includes(
-                    props.row.estado,
-                  )
+                  [
+                    'generados',
+                    'impresos',
+                    'entregados',
+                    'devueltos',
+                    'revisados',
+                    'subidos',
+                  ].includes(props.row.estado)
                 "
               />
 
@@ -437,9 +442,14 @@
                 v-if="
                   props.row.patrones &&
                   props.row.patrones.length > 0 &&
-                  ['generados', 'impresos', 'entregados', 'devueltos', 'revisados', 'subidos'].includes(
-                    props.row.estado,
-                  )
+                  [
+                    'generados',
+                    'impresos',
+                    'entregados',
+                    'devueltos',
+                    'revisados',
+                    'subidos',
+                  ].includes(props.row.estado)
                 "
               >
                 <div class="row no-wrap">
@@ -729,7 +739,9 @@
               <q-separator
                 vertical
                 class="q-mx-xs"
-                v-if="['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())"
+                v-if="
+                  ['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())
+                "
               />
 
               <!-- Patrón OMR (PDF) -->
@@ -742,7 +754,9 @@
                 size="sm"
                 :disable="props.row.estado.toUpperCase() !== 'DEVUELTO'"
                 @click="descargarPatronPdfManual(props.row)"
-                v-if="['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())"
+                v-if="
+                  ['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())
+                "
               >
                 <q-tooltip>
                   {{
@@ -763,7 +777,9 @@
                 size="sm"
                 :disable="props.row.estado.toUpperCase() !== 'DEVUELTO'"
                 @click="descargarPatronXlsxManual(props.row)"
-                v-if="['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())"
+                v-if="
+                  ['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())
+                "
               >
                 <q-tooltip>
                   {{
@@ -1610,7 +1626,8 @@ const normalizeTipo = (t) => {
   if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(s)) return 'SUBPROBLEMA'
   if (['SU', 'SS', 'SELECCION_UNICA'].includes(s)) return 'SELECCION_UNICA'
   if (['SM', 'SELECCION_MULTIPLE'].includes(s)) return 'SELECCION_MULTIPLE'
-  if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(s)) return 'FALSO_VERDADERO'
+  if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(s))
+    return 'FALSO_VERDADERO'
   return s
 }
 
@@ -2101,7 +2118,9 @@ const onExcelUploaded = (file) => {
           let tipoFinal = tipoRaw
           if (['SU', 'SS', 'SELECCION_UNICA'].includes(tipoRaw)) tipoFinal = 'SELECCION_UNICA'
           else if (['SM', 'SELECCION_MULTIPLE'].includes(tipoRaw)) tipoFinal = 'SELECCION_MULTIPLE'
-          else if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(tipoRaw))
+          else if (
+            ['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(tipoRaw)
+          )
             tipoFinal = 'FALSO_VERDADERO'
           else if (['PR', 'PROBLEMA'].includes(tipoRaw)) tipoFinal = 'PROBLEMA'
           else if (['EM', 'EMPAREJAMIENTO'].includes(tipoRaw)) tipoFinal = 'EMPAREJAMIENTO'
@@ -2952,7 +2971,8 @@ const mezclarIncisos7167 = (preguntas) => {
         ? p.respuesta_correcta[0]
         : p.respuesta_correcta
       const ansStr = String(rawAns || '').toUpperCase()
-      const esVerdadero = ansStr === 'VERDADERO' || ansStr === 'V' || ansStr === 'TRUE' || ansStr === 'A'
+      const esVerdadero =
+        ansStr === 'VERDADERO' || ansStr === 'V' || ansStr === 'TRUE' || ansStr === 'A'
 
       p.opciones = [
         { id: 'A', text: 'Verdadero' },
@@ -3050,8 +3070,17 @@ const ejecutarAccionGestion = async () => {
         $q.loading.hide()
         const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
         const formatoPapel = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-        const mergedExamenesDoc = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3, format: formatoPapel })
-        const mergedPatronesDoc = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
+        const mergedExamenesDoc = new jsPDF({
+          compression: true,
+          putOnlyUsedFonts: true,
+          precision: 3,
+          format: formatoPapel,
+        })
+        const mergedPatronesDoc = new jsPDF({
+          compression: true,
+          putOnlyUsedFonts: true,
+          precision: 3,
+        })
 
         payload.config_generacion = {
           facil: tempConfig.value.facil,
@@ -3264,7 +3293,6 @@ const resetearExamen = (examen) => {
   })
 }
 
-
 // Helpers
 const formatFriendlyDate = (f) => {
   if (!f) return ''
@@ -3459,7 +3487,12 @@ const descargarPDFManual = async (row) => {
   const config = row.configuracion_json || {}
   const variantesData = row.patron_respuestas_json || []
   const formatoPapel = config.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-  const doc = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3, format: formatoPapel })
+  const doc = new jsPDF({
+    compression: true,
+    putOnlyUsedFonts: true,
+    precision: 3,
+    format: formatoPapel,
+  })
   variantesData.forEach(async (v, i) => {
     if (i > 0) doc.addPage()
     await generarExamenPDF(doc, examenDoc, config, v.letra, v.preguntas)
@@ -3520,7 +3553,6 @@ const formatTimestamp = (ts) =>
         minute: '2-digit',
       })
     : ''
-
 
 const getExamenUrl = (v) => {
   const filename = typeof v === 'string' ? null : v.archivo
@@ -3823,24 +3855,26 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   }
 
   const cleanText = (t) => {
-    return String(t || '')
-      .replace(/<[^>]*>/g, '') // Eliminar HTML
-      .replace(/&nbsp;/g, ' ') // Convertir espacios HTML a normales
-      .replace(/&quot;/g, '"')
-      .replace(/&rsquo;/g, "'")
-      .replace(/&lsquo;/g, "'")
-      .replace(/&rdquo;/g, '"')
-      .replace(/&ldquo;/g, '"')
-      .replace(/&ndash;/g, '-')
-      .replace(/&mdash;/g, '-')
-      // Reemplazo específico para caracteres que rompen jsPDF (estándar Helvetica)
-      .replace(/ƒ/g, 'f')
-      .replace(/…/g, '...')
-      // Limpiar cualquier carácter fuera del rango Latin-1 (que suelen romper el layout de jsPDF)
-      .replace(/[^\x20-\x7E\xA0-\xFF\s]/g, ' ')
-      .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ')
-      .replace(/\s+/g, ' ') // Colapsar múltiples espacios
-      .trim()
+    return (
+      String(t || '')
+        .replace(/<[^>]*>/g, '') // Eliminar HTML
+        .replace(/&nbsp;/g, ' ') // Convertir espacios HTML a normales
+        .replace(/&quot;/g, '"')
+        .replace(/&rsquo;/g, "'")
+        .replace(/&lsquo;/g, "'")
+        .replace(/&rdquo;/g, '"')
+        .replace(/&ldquo;/g, '"')
+        .replace(/&ndash;/g, '-')
+        .replace(/&mdash;/g, '-')
+        // Reemplazo específico para caracteres que rompen jsPDF (estándar Helvetica)
+        .replace(/ƒ/g, 'f')
+        .replace(/…/g, '...')
+        // Limpiar cualquier carácter fuera del rango Latin-1 (que suelen romper el layout de jsPDF)
+        .replace(/[^\x20-\x7E\xA0-\xFF\s]/g, ' ')
+        .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ')
+        .replace(/\s+/g, ' ') // Colapsar múltiples espacios
+        .trim()
+    )
   }
 
   // LOGO / TITULO TABLE
@@ -4290,40 +4324,40 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
 
 async function compressImage(blob, maxWidth = 800, quality = 0.7) {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
+    const img = new Image()
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
     img.onload = () => {
-      let width = img.width;
-      let height = img.height;
-      
+      let width = img.width
+      let height = img.height
+
       if (width > maxWidth) {
-        height = (height * maxWidth) / width;
-        width = maxWidth;
+        height = (height * maxWidth) / width
+        width = maxWidth
       }
-      
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      canvas.toBlob(resolve, 'image/jpeg', quality);
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(blob);
-  });
+
+      canvas.width = width
+      canvas.height = height
+      ctx.drawImage(img, 0, 0, width, height)
+
+      canvas.toBlob(resolve, 'image/jpeg', quality)
+    }
+    img.onerror = reject
+    img.src = URL.createObjectURL(blob)
+  })
 }
 
 async function fetchImageAsBase64(url) {
   try {
     const response = await api.get(url, { responseType: 'blob' })
     let blob = response.data
-    
+
     // Comprimir solo imágenes (JPEG/PNG)
     if (blob.type.startsWith('image/')) {
       blob = await compressImage(blob)
     }
-    
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result)

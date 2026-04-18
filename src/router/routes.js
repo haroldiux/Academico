@@ -197,6 +197,22 @@ const routes = [
             },
           },
           {
+            path: 'restaurar-programas',
+            name: 'director-restaurar-programas',
+            component: () => import('pages/director/RestaurarProgramasPage.vue'),
+            meta: {
+              title: 'Restaurar Programas',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
+            },
+          },
+          {
             path: 'materias-comunes',
             name: 'director-materias-comunes',
             component: () => import('pages/director/MateriasComunesPage.vue'),
