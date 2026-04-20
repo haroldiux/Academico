@@ -263,6 +263,11 @@ export function usePermisos() {
         { label: 'Carreras', icon: 'school', to: '/admin/carreras' },
         { label: 'Asignaturas', icon: 'menu_book', to: '/admin/asignaturas' },
         { label: 'Plan de Estudios', icon: 'layers', to: '/director/asignaturas' },
+        {
+          label: 'Restaurar Programas',
+          icon: 'cloud_download',
+          to: '/director/restaurar-programas',
+        },
         { label: 'Grupos', icon: 'groups', to: '/admin/grupos' },
         { label: 'Docentes', icon: 'person', to: '/admin/docentes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },

@@ -117,6 +117,7 @@
       </div>
       <div class="col-12 col-md-auto q-pt-xs">
         <q-toggle
+          v-if="canToggleOcultarSinAsignar"
           v-model="filtros.ocultarSinAsignar"
           label="Ocultar sin asignar"
           color="warning"
@@ -768,6 +769,9 @@ const showDocenteDialog = ref(false)
 const docentesDialogOptions = ref([])
 const asignaturaSeleccionada = ref(null)
 const dialogMode = ref('pdf') // 'pdf' | 'nav'
+const canToggleOcultarSinAsignar = computed(() =>
+  [ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol),
+)
 
 // Función para ir a documentación (con selección de docente si es materia común)
 function irADocumentacion(row) {
@@ -910,7 +914,7 @@ const filtros = ref({
     : authStore.usuarioActual?.director?.sede_id || authStore.sedeId,
   carreraId: null,
   buscar: '',
-  ocultarSinAsignar: true,
+  ocultarSinAsignar: canToggleOcultarSinAsignar.value,
   planEstudios: null, // null = todos, 'N' = Plan Nuevo, 'A' = Plan Antiguo
 })
 
@@ -1137,7 +1141,7 @@ const semestresFiltrados = computed(() => {
   }
 
   // 3. Filtro: ocultar sin docente asignado o con nombre inválido (ej. 'A A A')
-  if (filtros.value.ocultarSinAsignar) {
+  if (canToggleOcultarSinAsignar.value && filtros.value.ocultarSinAsignar) {
     lista = lista.filter((a) => {
       const tieneDocente = a.docentes_data && a.docentes_data.length > 0
       if (!tieneDocente) return false
