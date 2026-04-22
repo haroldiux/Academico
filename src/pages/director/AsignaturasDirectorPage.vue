@@ -1141,7 +1141,7 @@ const semestresFiltrados = computed(() => {
   }
 
   // 3. Filtro: ocultar sin docente asignado o con nombre inválido (ej. 'A A A')
-  if (canToggleOcultarSinAsignar.value && filtros.value.ocultarSinAsignar) {
+  if (!canToggleOcultarSinAsignar.value || filtros.value.ocultarSinAsignar) {
     lista = lista.filter((a) => {
       const tieneDocente = a.docentes_data && a.docentes_data.length > 0
       if (!tieneDocente) return false

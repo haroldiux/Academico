@@ -12,7 +12,7 @@
         <div class="text-h6 q-mb-sm text-grey-8">1. Origen de datos</div>
 
         <div class="row q-col-gutter-md items-start">
-          <div class="col-12 col-md-4">
+          <div class="col-12">
             <q-select
               v-model="carreraSeleccionada"
               :options="carrerasOpciones"
@@ -29,39 +29,12 @@
               </template>
             </q-select>
           </div>
-
-          <div class="col-12 col-md-4">
-            <q-input v-model="apiUrl" label="URL base API externa" outlined dense>
-              <template #prepend>
-                <q-icon name="language" />
-              </template>
-              <template #hint>Ej: https://api.sisa.xpertiaplus.com</template>
-            </q-input>
-          </div>
-
-          <div class="col-12 col-md-4">
-            <q-input v-model="apiToken" label="Token de autenticacion" outlined dense>
-              <template #prepend>
-                <q-icon name="key" />
-              </template>
-            </q-input>
-          </div>
         </div>
 
         <div class="row q-col-gutter-md q-mt-sm">
-          <div class="col-12 col-md-4">
+          <div class="col-12">
             <q-banner dense rounded class="bg-blue-1 text-blue-9">
-              Sede destino: {{ sedeSeleccionadaId || 'No detectada' }}
-            </q-banner>
-          </div>
-          <div class="col-12 col-md-4">
-            <q-banner dense rounded class="bg-grey-2 text-grey-9">
-              Plan destino: {{ planEstudiosSeleccionado || 'N' }}
-            </q-banner>
-          </div>
-          <div class="col-12 col-md-4">
-            <q-banner dense rounded class="bg-teal-1 text-teal-9">
-              {{ carrerasOpciones.length }} carrera(s) habilitada(s)
+              Sede destino: {{ sedeSeleccionadaNombre || 'No detectada' }}
             </q-banner>
           </div>
         </div>
@@ -72,7 +45,7 @@
             icon="cloud_download"
             label="Extraer asignaturas"
             :loading="loadingFetch"
-            :disable="!carreraSeleccionada || !apiUrl || !apiToken"
+            :disable="!carreraSeleccionada"
             unelevated
             @click="fetchDesdeApi"
           />
@@ -306,10 +279,7 @@
                     </div>
                     <div class="detail-label q-mt-sm">Sede</div>
                     <div class="detail-value">
-                      {{
-                        asignaturaVisualizada.carrera?.sede ||
-                        `ID ${asignaturaVisualizada.sede_id || 'N/D'}`
-                      }}
+                      {{ getAsignaturaSedeNombre(asignaturaVisualizada) || 'No disponible' }}
                     </div>
                     <div class="detail-label q-mt-sm">Semestre</div>
                     <div class="detail-value">
@@ -344,7 +314,7 @@
                   <q-card-section>
                     <div class="text-subtitle2 text-negative q-mb-sm">Advertencia</div>
                     <div class="text-body2">
-                      Esta vista muestra lo que se volvera a crear en SIDOPA. Al confirmar, se
+                      Esta vista muestra lo que se volvera a crear en SISTEMA. Al confirmar, se
                       purgara la estructura local actual de la materia y se reconstruira con la
                       informacion del origen.
                     </div>
@@ -985,9 +955,44 @@ const sedeSeleccionadaId = computed(() => {
   )
 })
 
+const sedeSeleccionadaNombre = computed(() => {
+  const carrera = carreraActual.value
+  const nameFromCarrera = carrera?.sede || carrera?.sede_nombre || carrera?.nombre_sede
+  if (nameFromCarrera) {
+    return nameFromCarrera
+  }
+
+  const nameFromUser = authStore.usuarioActual?.sede?.nombre || authStore.usuarioActual?.sede_nombre
+  if (nameFromUser) {
+    return nameFromUser
+  }
+
+  const selectedSedeId = Number(sedeSeleccionadaId.value || 0)
+  if (selectedSedeId > 0) {
+    const carreraMatch = carrerasStore.carreras.find(
+      (item) =>
+        Number(item?.sede_id || 0) === selectedSedeId ||
+        (Array.isArray(item?.sedes_ids) && item.sedes_ids.includes(selectedSedeId)),
+    )
+    const nameFromMatch =
+      carreraMatch?.sede || carreraMatch?.sede_nombre || carreraMatch?.nombre_sede
+    if (nameFromMatch) {
+      return nameFromMatch
+    }
+  }
+
+  return null
+})
+
 const planEstudiosSeleccionado = computed(
   () => sanitizePlanEstudios(carreraActual.value?.plan_estudios) || 'N',
 )
+
+const getAsignaturaSedeNombre = (asignatura = {}) =>
+  asignatura?.carrera?.sede ||
+  asignatura?.local_status?.navigation?.nombre_sede ||
+  sedeSeleccionadaNombre.value ||
+  null
 
 onMounted(async () => {
   const storedUrl = localStorage.getItem(SOURCE_URL_STORAGE_KEY)
