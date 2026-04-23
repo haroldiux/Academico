@@ -1810,6 +1810,7 @@ const handleJsonImport = async (event) => {
       title: 'Confirmar restauracion desde JSON',
       message: `
         <p>Se aplicara el contenido del archivo sobre <b>${targetAsignatura.nombre}</b>.</p>
+        ${buildContenidoExistenteWarning(targetAsignatura.local_status)}
         <p class="q-mb-none">
           Origen del archivo: <b>${restorePayload.imported_from?.nombre || 'Sin nombre'}</b>
           (${restorePayload.imported_from?.codigo || 'Sin codigo'})
@@ -1854,6 +1855,20 @@ const buildRestorePayload = (asignatura) => ({
     sanitizePlanEstudios(asignatura.plan_estudios) || planEstudiosSeleccionado.value || 'N',
 })
 
+const buildContenidoExistenteWarning = (status = DEFAULT_LOCAL_STATUS) => {
+  if (!status?.tiene_contenido) {
+    return ''
+  }
+
+  return `
+    <p class="text-weight-bold text-negative q-mb-sm">Advertencia</p>
+    <p class="text-negative">
+      La asignatura destino ya tiene contenido local.
+      Ese contenido se borrara antes de restaurar la nueva estructura.
+    </p>
+  `
+}
+
 const confirmarRestauracion = (asignatura) => {
   if (!asignatura) {
     return
@@ -1881,6 +1896,7 @@ const confirmarRestauracion = (asignatura) => {
       <br><br>
       Estado actual detectado: <b>${asignatura.local_status?.label || 'Sin verificar'}</b>.
       <br><br>
+      ${buildContenidoExistenteWarning(asignatura.local_status)}
       Se restaurara usando el plan <b>${asignatura.plan_estudios || 'N'}</b> para la carrera <b>${asignatura.carrera_id}</b>
       y la sede <b>${asignatura.sede_id || 'N/D'}</b>.
       <br><br>

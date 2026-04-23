@@ -452,6 +452,17 @@
                         >
                           <q-tooltip>Generar Carpeta Docente</q-tooltip>
                         </q-btn>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="upload_file"
+                          color="deep-orange"
+                          size="sm"
+                          @click="abrirImportacionJson(props.row)"
+                        >
+                          <q-tooltip>Restaurar desde JSON</q-tooltip>
+                        </q-btn>
                       </template>
                     </q-td>
                   </q-tr>
@@ -744,10 +755,18 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    <input
+      ref="jsonFileInput"
+      type="file"
+      accept=".json,application/json"
+      style="display: none"
+      @change="handleJsonImport"
+    />
   </q-page>
 </template>
 
 <script setup>
+import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 import asignaturaService from 'src/services/asignaturaService'
 import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
@@ -769,6 +788,8 @@ const showDocenteDialog = ref(false)
 const docentesDialogOptions = ref([])
 const asignaturaSeleccionada = ref(null)
 const dialogMode = ref('pdf') // 'pdf' | 'nav'
+const jsonFileInput = ref(null)
+const jsonImportTarget = ref(null)
 const canToggleOcultarSinAsignar = computed(() =>
   [
     ROLES.DIRECTOR_CARRERA,
@@ -779,6 +800,43 @@ const canToggleOcultarSinAsignar = computed(() =>
     ROLES.SUPER_ADMIN,
   ].includes(authStore.rol),
 )
+
+const DEFAULT_LOCAL_STATUS = {
+  estado: 'pendiente',
+  label: 'Sin verificar',
+  resumen: 'Aun no se verifico el estado local de esta asignatura.',
+  tiene_contenido: false,
+  navigation: null,
+  stats: {
+    unidades: 0,
+    temas: 0,
+    bibliografias: 0,
+    logros: 0,
+    planificaciones: 0,
+    docentes: 0,
+  },
+}
+
+const sanitizePlanEstudios = (value) => {
+  const normalized = String(value || '')
+    .trim()
+    .toUpperCase()
+
+  return normalized || null
+}
+
+const resolvePlanEstudiosForRestore = (row) =>
+  sanitizePlanEstudios(row?.plan_estudios) ||
+  sanitizePlanEstudios(filtros.value.planEstudios) ||
+  'N'
+
+const buildRestoreKey = (row) =>
+  [
+    row?.codigo || 'sin-codigo',
+    resolvePlanEstudiosForRestore(row),
+    Number(row?.carrera_id || filtros.value.carreraId) || 'sin-carrera',
+    Number(row?.sede_id || filtros.value.sedeId) || 'sin-sede',
+  ].join('-')
 
 // Función para ir a documentación (con selección de docente si es materia común)
 function irADocumentacion(row) {
@@ -911,6 +969,299 @@ async function processGenerarPDF(rowSummary, docenteId) {
     })
   } finally {
     $q.loading.hide()
+  }
+}
+
+const abrirImportacionJson = (asignatura) => {
+  if (!asignatura) {
+    return
+  }
+
+  jsonImportTarget.value = asignatura
+
+  if (jsonFileInput.value) {
+    jsonFileInput.value.value = null
+    jsonFileInput.value.click()
+  }
+}
+
+const readJsonFile = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+
+    reader.onload = () => {
+      try {
+        resolve(JSON.parse(String(reader.result || '{}')))
+      } catch (error) {
+        reject(error)
+      }
+    }
+
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo JSON.'))
+    reader.readAsText(file, 'utf-8')
+  })
+
+const resolveAsignaturaFromJson = (payload) => {
+  if (!payload) {
+    return null
+  }
+
+  if (Array.isArray(payload)) {
+    return payload[0] || null
+  }
+
+  if (Array.isArray(payload?.data?.asignaturas)) {
+    return payload.data.asignaturas[0] || null
+  }
+
+  if (Array.isArray(payload?.asignaturas)) {
+    return payload.asignaturas[0] || null
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data[0] || null
+  }
+
+  if (payload.codigo || payload.unidades || payload.bibliografias) {
+    return payload
+  }
+
+  return null
+}
+
+const tryParseStructuredValue = (value) => {
+  if (typeof value !== 'string') {
+    return value
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed || !['[', '{'].includes(trimmed[0])) {
+    return value
+  }
+
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    return value
+  }
+}
+
+const normalizePlanificacion = (planificacion = {}) => ({
+  ...planificacion,
+  estrategias_recursos: tryParseStructuredValue(planificacion.estrategias_recursos),
+  evaluacion_formativa: tryParseStructuredValue(planificacion.evaluacion_formativa),
+  evaluacion_sumativa: tryParseStructuredValue(planificacion.evaluacion_sumativa),
+  secuencia_didactica: tryParseStructuredValue(planificacion.secuencia_didactica),
+})
+
+const normalizeTema = (tema = {}) => ({
+  ...tema,
+  contenido_items: tryParseStructuredValue(tema.contenido_items),
+  contenido_conceptual: tryParseStructuredValue(tema.contenido_conceptual),
+  contenido_procedimental: tryParseStructuredValue(tema.contenido_procedimental),
+  contenido_actitudinal: tryParseStructuredValue(tema.contenido_actitudinal),
+  estrategias_recursos: tryParseStructuredValue(tema.estrategias_recursos),
+  evaluacion_formativa: tryParseStructuredValue(tema.evaluacion_formativa),
+  evaluacion_sumativa: tryParseStructuredValue(tema.evaluacion_sumativa),
+  logros_esperados: Array.isArray(tema.logros_esperados) ? tema.logros_esperados : [],
+  bibliografias: Array.isArray(tema.bibliografias) ? tema.bibliografias : [],
+  planificaciones_personales: Array.isArray(tema.planificaciones_personales)
+    ? tema.planificaciones_personales.map(normalizePlanificacion)
+    : [],
+  secuencias: Array.isArray(tema.secuencias) ? tema.secuencias : [],
+})
+
+const normalizeUnidad = (unidad = {}) => ({
+  ...unidad,
+  temas: Array.isArray(unidad.temas) ? unidad.temas.map(normalizeTema) : [],
+})
+
+const normalizeAsignaturaImportada = (asignatura = {}) => ({
+  ...asignatura,
+  docentes: Array.isArray(asignatura.docentes) ? asignatura.docentes : [],
+  bibliografias: Array.isArray(asignatura.bibliografias) ? asignatura.bibliografias : [],
+  unidades: Array.isArray(asignatura.unidades) ? asignatura.unidades.map(normalizeUnidad) : [],
+})
+
+const buildContenidoExistenteWarning = (status = DEFAULT_LOCAL_STATUS) => {
+  if (!status?.tiene_contenido) {
+    return ''
+  }
+
+  return `
+    <p class="text-weight-bold text-negative q-mb-sm">Advertencia</p>
+    <p class="text-negative">
+      La asignatura destino ya tiene contenido local.
+      Ese contenido se borrara antes de restaurar la nueva estructura.
+    </p>
+  `
+}
+
+const obtenerEstadoRestauracion = async (row) => {
+  const restoreKey = buildRestoreKey(row)
+
+  try {
+    const response = await api.post('/restauracion/estado-asignaturas', {
+      asignaturas: [
+        {
+          restore_key: restoreKey,
+          asignatura_id: Number(row?.id) || null,
+          codigo: row?.codigo,
+          carrera_id: Number(row?.carrera_id || filtros.value.carreraId) || null,
+          sede_id: Number(row?.sede_id || filtros.value.sedeId) || null,
+          plan_estudios: resolvePlanEstudiosForRestore(row),
+        },
+      ],
+    })
+
+    return (
+      response.data?.data?.[0] || {
+        ...DEFAULT_LOCAL_STATUS,
+        restore_key: restoreKey,
+        asignatura_id: Number(row?.id) || null,
+      }
+    )
+  } catch (error) {
+    console.error('Error verificando estado local de restauracion:', error)
+    $q.notify({
+      type: 'warning',
+      message: 'No se pudo verificar el estado local de la asignatura destino.',
+    })
+
+    return {
+      ...DEFAULT_LOCAL_STATUS,
+      restore_key: restoreKey,
+      asignatura_id: Number(row?.id) || null,
+    }
+  }
+}
+
+const buildImportedRestorePayload = (targetAsignatura, importedPayload, localStatus) => {
+  const importedAsignatura = normalizeAsignaturaImportada(importedPayload)
+
+  return {
+    ...importedAsignatura,
+    restore_key: buildRestoreKey(targetAsignatura),
+    asignatura_id: Number(targetAsignatura?.id) || localStatus?.asignatura_id || null,
+    codigo: targetAsignatura.codigo,
+    nombre: targetAsignatura.nombre,
+    sigla: targetAsignatura.sigla || targetAsignatura.codigo,
+    carrera_id: Number(targetAsignatura?.carrera_id || filtros.value.carreraId) || null,
+    sede_id: Number(targetAsignatura?.sede_id || filtros.value.sedeId) || null,
+    plan_estudios: resolvePlanEstudiosForRestore(targetAsignatura),
+    semestre: targetAsignatura?.semestre || importedAsignatura?.semestre || null,
+    local_status: localStatus || { ...DEFAULT_LOCAL_STATUS },
+    imported_from: {
+      codigo: importedAsignatura?.codigo,
+      nombre: importedAsignatura?.nombre,
+      plan_estudios: importedAsignatura?.plan_estudios,
+    },
+  }
+}
+
+const restaurarAsignaturaDesdeJson = async (payload) => {
+  $q.loading.show({
+    message: `Restaurando contenido sobre: ${payload.nombre}...`,
+  })
+
+  try {
+    const response = await api.post('/restauracion/asignatura', payload)
+    const stats = response.data?.stats || {}
+    const detalle = [
+      stats.unidades_restauradas ? `${stats.unidades_restauradas} unidades` : null,
+      stats.temas_restaurados ? `${stats.temas_restaurados} temas` : null,
+      stats.planificaciones_restauradas !== undefined
+        ? `${stats.planificaciones_restauradas} planificaciones enlazadas`
+        : null,
+      stats.planificaciones_omitidas
+        ? `${stats.planificaciones_omitidas} planificaciones omitidas`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' | ')
+
+    $q.notify({
+      type: response.data?.status === 'success' ? 'positive' : 'warning',
+      message: [response.data?.message || 'Restauracion completada.', detalle]
+        .filter(Boolean)
+        .join(' '),
+      timeout: 5000,
+    })
+
+    await cargarAsignaturas()
+  } catch (error) {
+    console.error('RESTORE JSON ERROR:', error)
+    const message = error.response?.data?.message || error.message
+    $q.notify({
+      type: 'negative',
+      message: `Fallo la restauracion: ${message}`,
+      timeout: 5000,
+    })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
+const handleJsonImport = async (event) => {
+  const file = event.target?.files?.[0]
+  const targetAsignatura = jsonImportTarget.value
+
+  if (!file || !targetAsignatura) {
+    return
+  }
+
+  try {
+    const payload = await readJsonFile(file)
+    const importedAsignatura = resolveAsignaturaFromJson(payload)
+
+    if (!importedAsignatura) {
+      throw new Error('El archivo no contiene una asignatura valida para restauracion.')
+    }
+
+    const localStatus = await obtenerEstadoRestauracion(targetAsignatura)
+    const restorePayload = buildImportedRestorePayload(
+      targetAsignatura,
+      importedAsignatura,
+      localStatus,
+    )
+
+    $q.dialog({
+      title: 'Confirmar restauracion desde JSON',
+      message: `
+        <p>Se aplicara el contenido del archivo sobre <b>${targetAsignatura.nombre}</b>.</p>
+        ${buildContenidoExistenteWarning(localStatus)}
+        <p class="q-mb-none">
+          Origen del archivo: <b>${restorePayload.imported_from?.nombre || 'Sin nombre'}</b>
+          (${restorePayload.imported_from?.codigo || 'Sin codigo'})
+        </p>
+      `,
+      html: true,
+      cancel: {
+        label: 'Cancelar',
+        flat: true,
+        color: 'grey-8',
+      },
+      ok: {
+        label: 'Si, restaurar desde JSON',
+        color: 'deep-orange',
+        unelevated: true,
+      },
+      persistent: true,
+    }).onOk(() => {
+      restaurarAsignaturaDesdeJson(restorePayload)
+    })
+  } catch (error) {
+    console.error('JSON IMPORT ERROR:', error)
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo importar el JSON: ${error.message}`,
+      timeout: 5000,
+    })
+  } finally {
+    jsonImportTarget.value = null
+    if (jsonFileInput.value) {
+      jsonFileInput.value.value = null
+    }
   }
 }
 
@@ -1116,7 +1467,7 @@ const columnasAsignaturas = [
     label: 'Acciones',
     field: 'acciones',
     align: 'center',
-    style: 'width: 100px',
+    style: 'width: 140px',
   },
 ]
 
