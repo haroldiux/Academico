@@ -770,7 +770,14 @@ const docentesDialogOptions = ref([])
 const asignaturaSeleccionada = ref(null)
 const dialogMode = ref('pdf') // 'pdf' | 'nav'
 const canToggleOcultarSinAsignar = computed(() =>
-  [ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol),
+  [
+    ROLES.DIRECTOR_CARRERA,
+    ROLES.DIRECCION_ACADEMICA,
+    ROLES.VICERRECTOR_SEDE,
+    ROLES.VICERRECTOR_NACIONAL,
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN,
+  ].includes(authStore.rol),
 )
 
 // Función para ir a documentación (con selección de docente si es materia común)
