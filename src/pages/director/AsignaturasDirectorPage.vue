@@ -955,7 +955,7 @@ async function processGenerarPDF(rowSummary, docenteId) {
     if (!carrera.sede) carrera.sede = sede // Link them if missing
 
     // 3. Generate PDF
-    generarCarpetaDocente(asignaturaFull, carrera, sede)
+    await generarCarpetaDocente(asignaturaFull, carrera, sede)
 
     $q.notify({
       type: 'positive',

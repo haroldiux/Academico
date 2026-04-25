@@ -98,6 +98,11 @@
               <q-item-section>Importar Planificación Personal</q-item-section>
             </q-item>
 
+            <q-item clickable v-close-popup @click="descargarProgramaAnaliticoDesdeGestion">
+              <q-item-section avatar><q-icon name="description" color="primary" /></q-item-section>
+              <q-item-section>Descargar Programa Analítico</q-item-section>
+            </q-item>
+
             <q-item clickable v-close-popup @click="generarCarpetaHtml">
               <q-item-section avatar><q-icon name="auto_stories" color="green" /></q-item-section>
               <q-item-section>Ver Carpeta (HTML)</q-item-section>
@@ -2618,6 +2623,7 @@ import { useSedesStore } from 'src/stores/sedes'
 import { ROLES } from 'src/stores/auth'
 import { useAuthStore } from 'src/stores/auth'
 import { api } from 'boot/axios'
+import { generarProgramaAnaliticoPDF } from 'src/services/carpetaDocenteService'
 
 // Helpers para contar logros e indicadores (consistente con backend/store)
 function normalizeGroupName(name) {
@@ -2649,6 +2655,7 @@ const store = useAsignaturasStore()
 const carrerasStore = useCarrerasStore()
 const sedesStore = useSedesStore()
 const authStore = useAuthStore()
+const descargandoProgramaAnalitico = ref(false)
 
 // Estado
 // Leer el tab inicial desde los query params (para volver al tab correcto desde TemaEditPage)
@@ -3781,28 +3788,17 @@ function eliminarBibliografia(biblio) {
 }
 
 // Generación de PDFs (Legacy/Otros)
-function generarCarpetaHtml() {
-  const asig = asignatura.value // Access ref value
-  if (!asig) {
-    $q.notify({ type: 'warning', message: 'No hay datos de asignatura cargados.' })
-    return
-  }
-
-  console.log('Generando Carpeta HTML. Datos:', asig)
+function resolverGrupoIdAsignatura(asig) {
+  if (!asig) return null
 
   let grupoId = null
 
-  // ESTRATEGIA DE BÚSQUEDA DE GRUPO
-
   // 1. Si hay docentes asignados, suelen tener el grupo en el pivot o estructura
   if (asig.docentes && asig.docentes.length > 0) {
-    // Intentar buscar el primer docente con grupo_id en pivot
     const docConGrupo = asig.docentes.find((d) => d.pivot && d.pivot.grupo_id)
     if (docConGrupo) {
       grupoId = docConGrupo.pivot.grupo_id
-    }
-    // Si no hay pivot, probar si el objeto docente tiene array 'grupos'
-    else if (asig.docentes[0].grupos && asig.docentes[0].grupos.length > 0) {
+    } else if (asig.docentes[0].grupos && asig.docentes[0].grupos.length > 0) {
       grupoId = asig.docentes[0].grupos[0].id
     }
   }
@@ -3817,6 +3813,19 @@ function generarCarpetaHtml() {
     grupoId = asig.horarios_data[0].id
   }
 
+  return grupoId
+}
+
+function generarCarpetaHtml() {
+  const asig = asignatura.value // Access ref value
+  if (!asig) {
+    $q.notify({ type: 'warning', message: 'No hay datos de asignatura cargados.' })
+    return
+  }
+
+  console.log('Generando Carpeta HTML. Datos:', asig)
+  const grupoId = resolverGrupoIdAsignatura(asig)
+
   if (grupoId) {
     const routeData = router.resolve({
       name: 'docente-carpeta',
@@ -3830,6 +3839,44 @@ function generarCarpetaHtml() {
       caption: 'Verifique que la asignatura tenga un grupo y docente asignado.',
       timeout: 5000,
     })
+  }
+}
+
+async function descargarProgramaAnaliticoDesdeGestion() {
+  const asig = asignatura.value
+  if (!asig) {
+    $q.notify({ type: 'warning', message: 'No hay datos de asignatura cargados.' })
+    return
+  }
+
+  const grupoId = resolverGrupoIdAsignatura(asig)
+  if (!grupoId) {
+    $q.notify({
+      type: 'warning',
+      message: 'No se encontró un grupo asociado para esta asignatura/docente.',
+      caption: 'Verifique que la asignatura tenga un grupo y docente asignado.',
+      timeout: 5000,
+    })
+    return
+  }
+
+  descargandoProgramaAnalitico.value = true
+  try {
+    const { data } = await api.get(`/grupos/${grupoId}`)
+    await generarProgramaAnaliticoPDF(data, data.carrera_obj || data.carrera || null, {
+      gestion: data.gestion,
+      grupo: data.grupo,
+    })
+  } catch (error) {
+    console.error('Error generando Programa Analítico desde Gestión:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo descargar el Programa Analítico.',
+      caption: error.response?.data?.message || error.message,
+      timeout: 5000,
+    })
+  } finally {
+    descargandoProgramaAnalitico.value = false
   }
 }
 

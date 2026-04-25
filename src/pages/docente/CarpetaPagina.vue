@@ -10,6 +10,14 @@
         :loading="loading"
       />
       <q-btn
+        icon="description"
+        label="Descargar Programa Analítico"
+        color="primary"
+        outline
+        @click="downloadProgramaAnalitico"
+        :loading="loadingProgramaAnalitico"
+      />
+      <q-btn
         icon="print"
         label="Vista Previa / Imprimir Portada"
         color="primary"
@@ -188,7 +196,10 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from 'src/boot/axios'
-import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
+import {
+  generarCarpetaDocente,
+  generarProgramaAnaliticoPDF,
+} from 'src/services/carpetaDocenteService'
 
 const route = useRoute()
 
@@ -205,6 +216,7 @@ const mision = ref('')
 const vision = ref('')
 const perfil_profesional = ref('')
 const loading = ref(false)
+const loadingProgramaAnalitico = ref(false)
 const fullData = ref(null)
 const logoBase64 = ref(null)
 
@@ -225,6 +237,21 @@ async function downloadPDF() {
     console.error('Error generando PDF:', error)
   } finally {
     loading.value = false
+  }
+}
+
+async function downloadProgramaAnalitico() {
+  if (!fullData.value) return
+  loadingProgramaAnalitico.value = true
+  try {
+    await generarProgramaAnaliticoPDF(fullData.value, fullData.value.carrera_obj, {
+      gestion: fullData.value.gestion,
+      grupo: fullData.value.grupo,
+    })
+  } catch (error) {
+    console.error('Error generando Programa Analítico:', error)
+  } finally {
+    loadingProgramaAnalitico.value = false
   }
 }
 
