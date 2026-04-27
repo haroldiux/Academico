@@ -16,8 +16,8 @@ const COLORS = {
 
 const PROGRAMA_ANALITICO_HEADER = {
   top: 8,
-  bottomLineY: 28,
-  contentStartY: 38,
+  bottomLineY: 33,
+  contentStartY: 43,
 }
 
 let logoProgramaAnaliticoPromise = null
@@ -122,6 +122,7 @@ export async function generarCarpetaDocente(asignatura, carrera, sede, opciones 
   )
   const totalPaginasProgramaAnalitico = contarPaginasProgramaAnalitico({
     asignatura: asignaturaObj,
+    carreraNombre,
     logo: logoProgramaAnalitico,
   })
   generarProgramaAnalitico(doc, {
@@ -172,6 +173,7 @@ export async function generarProgramaAnaliticoPDF(asignatura, carrera, opciones 
 
   const totalPaginasProgramaAnalitico = contarPaginasProgramaAnalitico({
     asignatura: asignaturaObj,
+    carreraNombre,
     logo: logoProgramaAnalitico,
   })
 
@@ -583,10 +585,11 @@ function generarProgramaAnalitico(
   })
 }
 
-function contarPaginasProgramaAnalitico({ asignatura, logo = null }) {
+function contarPaginasProgramaAnalitico({ asignatura, carreraNombre = '', logo = null }) {
   const tempDoc = new jsPDF('p', 'mm', 'letter')
   renderProgramaAnalitico(tempDoc, {
     asignatura,
+    carreraNombre,
     pageWidth: tempDoc.internal.pageSize.getWidth(),
     totalPaginas: 1,
     logo,
@@ -594,7 +597,7 @@ function contarPaginasProgramaAnalitico({ asignatura, logo = null }) {
   return tempDoc.getNumberOfPages()
 }
 
-function renderProgramaAnalitico(doc, { asignatura, pageWidth, totalPaginas, logo }) {
+function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidth, totalPaginas, logo }) {
   const pageHeight = doc.internal.pageSize.getHeight()
   const contentWidth = 162
   const sectionLeft = (pageWidth - contentWidth) / 2
@@ -605,18 +608,19 @@ function renderProgramaAnalitico(doc, { asignatura, pageWidth, totalPaginas, log
   const temaWidth = contentWidth - temaIndent
   const espacioDespuesTabla = 6
   const espacioDespuesTituloUnidad = 2
-  const espacioEntreTemas = 1.8
+  const espacioDespuesTituloTema = 2
+  const espacioEntreTemas = 3.2
   const espacioEntreUnidades = 2
   const lineHeightUnidad = 1
   const lineHeightTemaTitulo = 1
-  const lineHeightTemaCuerpo = 1
+  const lineHeightTemaCuerpo = 1.2
   const fontSizeUnidad = 12
   const fontSizeTema = 12
   const fontSizeBibliografia = 12
   const fontSizeTabla = 9
   const tableCellPadding = 1.9
 
-  let y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo)
+  let y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
   let temaGlobal = 1
 
   const unidades = normalizarUnidadesProgramaAnalitico(asignatura.unidades)
@@ -704,7 +708,7 @@ function renderProgramaAnalitico(doc, { asignatura, pageWidth, totalPaginas, log
   unidades.forEach((unidad) => {
     if (y > pageHeight - 35) {
       doc.addPage()
-      y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo)
+      y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
     }
 
     const unidadTitulo = `UNIDAD DE APRENDIZAJE ${toRomanNumeral(unidad.numero)}: ${String(unidad.titulo || '').toUpperCase()}`
@@ -712,7 +716,10 @@ function renderProgramaAnalitico(doc, { asignatura, pageWidth, totalPaginas, log
 
     doc.setFont('times', 'bold')
     doc.setFontSize(fontSizeUnidad)
-    const alturaUnidad = obtenerAlturaTexto(doc, unidadLineas, { maxWidth: contentWidth })
+    const alturaUnidad = obtenerAlturaTexto(doc, unidadLineas, {
+      maxWidth: contentWidth,
+      lineHeightFactor: lineHeightUnidad,
+    })
     doc.text(unidadLineas, sectionLeft, y, { lineHeightFactor: lineHeightUnidad })
     y += alturaUnidad + espacioDespuesTituloUnidad
 
@@ -723,17 +730,24 @@ function renderProgramaAnalitico(doc, { asignatura, pageWidth, totalPaginas, log
       const cuerpoLineas = doc.splitTextToSize(cuerpoTema, temaWidth)
       doc.setFont('times', 'normal')
       doc.setFontSize(fontSizeTema)
-      const alturaTituloTema = obtenerAlturaTexto(doc, tituloLineas, { maxWidth: temaWidth })
+      const alturaTituloTema = obtenerAlturaTexto(doc, tituloLineas, {
+        maxWidth: temaWidth,
+        lineHeightFactor: lineHeightTemaTitulo,
+      })
       doc.setFont('times', 'normal')
       doc.setFontSize(fontSizeTema)
       const alturaCuerpoTema = cuerpoLineas.length
-        ? obtenerAlturaTexto(doc, cuerpoLineas, { maxWidth: temaWidth })
+        ? obtenerAlturaTexto(doc, cuerpoLineas, {
+            maxWidth: temaWidth,
+            lineHeightFactor: lineHeightTemaCuerpo,
+          })
         : 0
-      const altoTema = alturaTituloTema + alturaCuerpoTema + espacioEntreTemas
+      const altoTema =
+        alturaTituloTema + espacioDespuesTituloTema + alturaCuerpoTema + espacioEntreTemas
 
       if (y + altoTema > pageHeight - 18) {
         doc.addPage()
-        y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo)
+        y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
       }
 
       doc.setFont('times', 'normal')
@@ -742,6 +756,7 @@ function renderProgramaAnalitico(doc, { asignatura, pageWidth, totalPaginas, log
       y += alturaTituloTema
 
       if (cuerpoLineas.length > 0) {
+        y += espacioDespuesTituloTema
         doc.setFont('times', 'normal')
         doc.setFontSize(fontSizeTema)
         doc.text(cuerpoLineas, temaLeft, y, {
@@ -783,7 +798,7 @@ function renderProgramaAnalitico(doc, { asignatura, pageWidth, totalPaginas, log
 
     if (y + alturaBibliografia > pageHeight - 18) {
       doc.addPage()
-      y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo)
+      y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
     }
 
     seccionesBibliografia.forEach((seccion, indice) => {
@@ -802,7 +817,7 @@ function renderProgramaAnalitico(doc, { asignatura, pageWidth, totalPaginas, log
         const lineas = doc.splitTextToSize(referencia.texto, contentWidth)
         if (y + lineas.length * 3.8 > pageHeight - 18) {
           doc.addPage()
-          y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo)
+          y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
         }
         doc.text(referencia.texto, sectionLeft, y, { maxWidth: contentWidth, align: 'justify' })
         y += lineas.length * 3.8 + 1.5
@@ -819,21 +834,33 @@ function obtenerAlturaTexto(doc, lineas, opciones = {}) {
   }
 
   try {
-    return doc.getTextDimensions(texto, opciones).h
+    const lineHeightFactor = Number(opciones?.lineHeightFactor) || 1
+    const fontSize = doc.getFontSize()
+    const scaleFactor = doc.internal.scaleFactor || 1
+    const baseLineHeight = fontSize / scaleFactor
+
+    if (texto.length === 1) {
+      return baseLineHeight
+    }
+
+    return baseLineHeight + baseLineHeight * lineHeightFactor * (texto.length - 1)
   } catch {
-    return texto.length * 3.5
+    const lineHeightFactor = Number(opciones?.lineHeightFactor) || 1
+    return texto.length * 3.5 * lineHeightFactor
   }
 }
 
-function dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo) {
+function dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre = '') {
   const headerTop = PROGRAMA_ANALITICO_HEADER.top
   const lineY = PROGRAMA_ANALITICO_HEADER.bottomLineY
+  const carreraTexto = String(carreraNombre || 'Sin Carrera').trim().toUpperCase()
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(6.8)
   doc.setTextColor(182, 150, 226)
   doc.text('UNIVERSIDAD TÉCNICA PRIVADA COSMOS', 18, headerTop + 2)
   doc.text('“UNITEPC”', 18, headerTop + 8)
+  doc.text(`CARRERA: ${carreraTexto}`, 18, headerTop + 18)
 
   doc.setDrawColor(245, 204, 90)
   doc.setLineWidth(0.5)
@@ -969,7 +996,7 @@ function normalizarTextoImpresionTema(tema) {
   const contenidoLista = extraerListaContenidoTema(tema)
   const contenidoImpresion = limpiarTextoProgramaAnalitico(tema?.contenido_impresion)
 
-  return contenidoLista || contenidoImpresion || 'Contenido pendiente de registro.'
+  return formatearTextoSentenceCase(contenidoLista || contenidoImpresion || 'Contenido pendiente de registro.')
 }
 
 function extraerListaContenidoTema(tema) {
@@ -994,6 +1021,16 @@ function limpiarTextoProgramaAnalitico(texto) {
     .replace(/\.{2,}/g, '.')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function formatearTextoSentenceCase(texto) {
+  const limpio = limpiarTextoProgramaAnalitico(texto)
+  if (!limpio) return ''
+
+  const minusculas = limpio.toLocaleLowerCase('es')
+  return minusculas.replace(/(^\s*|[.!?]\s+)([a-záéíóúñü])/gu, (match, prefijo, letra) => {
+    return `${prefijo}${letra.toLocaleUpperCase('es')}`
+  })
 }
 
 function calcularHrsSemestreImpresion(asignatura) {
