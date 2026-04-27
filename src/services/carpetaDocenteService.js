@@ -629,11 +629,14 @@ function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidt
   const hrsSemestre =
     Number(asignatura.hrs_semestre_impresion) || calcularHrsSemestreImpresion(asignatura)
   const semestre = asignatura.semestre ? `${asignatura.semestre}°` : ''
+  const tituloMateria = String(asignatura.nombre || asignatura.asignatura || '').trim().toUpperCase()
 
   doc.setTextColor(0, 0, 0)
   doc.setFont('times', 'bold')
   doc.setFontSize(11)
-  doc.text('PROGRAMA ANALÍTICO', pageWidth / 2, y, { align: 'center' })
+  doc.text(`PROGRAMA ANALÍTICO: ${tituloMateria || 'SIN ASIGNATURA'}`, pageWidth / 2, y, {
+    align: 'center',
+  })
 
   y += 8
 
@@ -994,9 +997,11 @@ function normalizarTipoBibliografiaProgramaAnalitico(referencia) {
 
 function normalizarTextoImpresionTema(tema) {
   const contenidoLista = extraerListaContenidoTema(tema)
-  const contenidoImpresion = limpiarTextoProgramaAnalitico(tema?.contenido_impresion)
+  const contenidoImpresion = asegurarPuntoFinal(
+    formatearTextoSentenceCase(limpiarTextoProgramaAnalitico(tema?.contenido_impresion)),
+  )
 
-  return formatearTextoSentenceCase(contenidoLista || contenidoImpresion || 'Contenido pendiente de registro.')
+  return contenidoLista || contenidoImpresion || 'Contenido pendiente de registro.'
 }
 
 function extraerListaContenidoTema(tema) {
@@ -1006,12 +1011,12 @@ function extraerListaContenidoTema(tema) {
     tema.contenido_items.forEach((item) => {
       const valor =
         typeof item === 'string' ? item : item?.titulo || item?.descripcion || item?.texto || ''
-      const limpio = limpiarTextoProgramaAnalitico(valor)
+      const limpio = asegurarPuntoFinal(formatearTextoSentenceCase(limpiarTextoProgramaAnalitico(valor)))
       if (limpio) partes.push(limpio)
     })
   }
 
-  return partes.join('. ')
+  return partes.join(' ')
 }
 
 function limpiarTextoProgramaAnalitico(texto) {
@@ -1031,6 +1036,13 @@ function formatearTextoSentenceCase(texto) {
   return minusculas.replace(/(^\s*|[.!?]\s+)([a-záéíóúñü])/gu, (match, prefijo, letra) => {
     return `${prefijo}${letra.toLocaleUpperCase('es')}`
   })
+}
+
+function asegurarPuntoFinal(texto) {
+  const limpio = limpiarTextoProgramaAnalitico(texto)
+  if (!limpio) return ''
+
+  return /[.!?]$/.test(limpio) ? limpio : `${limpio}.`
 }
 
 function calcularHrsSemestreImpresion(asignatura) {
