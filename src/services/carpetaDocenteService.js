@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Servicio para generar la Carpeta Pedagógica Docente en PDF
  * Estructura: PORT, INDICE, MVP, HR, PA, PAC, CT-P, PCT/PCP
  */
@@ -15,9 +15,9 @@ const COLORS = {
 }
 
 const PROGRAMA_ANALITICO_HEADER = {
-  top: 8,
-  bottomLineY: 33,
-  contentStartY: 43,
+  top: 7,
+  bottomLineY: 22,
+  contentStartY: 36,
 }
 
 let logoProgramaAnaliticoPromise = null
@@ -599,26 +599,30 @@ function contarPaginasProgramaAnalitico({ asignatura, carreraNombre = '', logo =
 
 function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidth, totalPaginas, logo }) {
   const pageHeight = doc.internal.pageSize.getHeight()
-  const contentWidth = 162
+  const contentWidth = 168
   const sectionLeft = (pageWidth - contentWidth) / 2
   const tableWidth = contentWidth
   const tableLeft = sectionLeft
   const temaIndent = 6
   const temaLeft = sectionLeft + temaIndent
   const temaWidth = contentWidth - temaIndent
-  const espacioDespuesTabla = 6
-  const espacioDespuesTituloUnidad = 2
+  const lineHeightFactorGeneral = 1.15
+  const espacioTituloATabla = 11
+  const espacioDespuesTabla = 13
+  const espacioDespuesTituloUnidad = 7
   const espacioDespuesTituloTema = 2
-  const espacioEntreTemas = 3.2
-  const espacioEntreUnidades = 2
-  const lineHeightUnidad = 1
-  const lineHeightTemaTitulo = 1
-  const lineHeightTemaCuerpo = 1.2
-  const fontSizeUnidad = 12
-  const fontSizeTema = 12
-  const fontSizeBibliografia = 12
-  const fontSizeTabla = 9
-  const tableCellPadding = 1.9
+  const espacioEntreTemas = 6
+  const espacioEntreUnidades = 4
+  const espacioEntreReferenciasBibliograficas = 2
+  const lineHeightUnidad = lineHeightFactorGeneral
+  const lineHeightTemaTitulo = lineHeightFactorGeneral
+  const lineHeightTemaCuerpo = lineHeightFactorGeneral
+  const fontSizeUnidad = 11
+  const fontSizeTema = 11
+  const fontSizeBibliografia = 11
+  const fontSizeTabla = 5.8
+  const fontSizeTablaBody = 8
+  const tableCellPadding = 0.5
 
   let y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
   let temaGlobal = 1
@@ -638,7 +642,7 @@ function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidt
     align: 'center',
   })
 
-  y += 8
+  y += espacioTituloATabla
 
   autoTable(doc, {
     startY: y,
@@ -664,19 +668,20 @@ function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidt
       valign: 'middle',
     },
     bodyStyles: {
+      fontSize: fontSizeTablaBody,
       halign: 'center',
       valign: 'middle',
     },
     columnStyles: {
-      0: { cellWidth: 17 },
-      1: { cellWidth: 13 },
-      2: { cellWidth: 42 },
-      3: { cellWidth: 15 },
-      4: { cellWidth: 13 },
-      5: { cellWidth: 13 },
+      0: { cellWidth: 16 },
+      1: { cellWidth: 15 },
+      2: { cellWidth: 40 },
+      3: { cellWidth: 14 },
+      4: { cellWidth: 15 },
+      5: { cellWidth: 15 },
       6: { cellWidth: 19 },
       7: { cellWidth: 18 },
-      8: { cellWidth: 12 },
+      8: { cellWidth: 16 },
     },
     head: [
       [
@@ -685,9 +690,9 @@ function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidt
         { content: 'ASIGNATURA', rowSpan: 2 },
         { content: 'CRÉDITOS', rowSpan: 2 },
         { content: 'HORAS', colSpan: 2 },
-        { content: 'HRS.\nSEMESTRE', rowSpan: 2 },
+        { content: 'HRS. SEMESTRE', rowSpan: 2 },
         { content: 'PROGRAMA', rowSpan: 2 },
-        { content: 'N°\nHOJA', rowSpan: 2 },
+        { content: 'N° HOJA', rowSpan: 2 },
       ],
       [{ content: 'TEÓRICAS' }, { content: 'PRÁCTICAS' }],
     ],
@@ -792,8 +797,15 @@ function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidt
     const alturaBibliografia =
       seccionesBibliografia.reduce((total, seccion) => {
         const alturaReferencias = seccion.referencias.reduce((acumulado, referencia) => {
-          const lineas = doc.splitTextToSize(referencia.texto, contentWidth)
-          return acumulado + lineas.length * 3.8 + 1.5
+          const lineas = doc.splitTextToSize(referencia.texto, contentWidth - 10)
+          return (
+            acumulado +
+            obtenerAlturaTexto(doc, lineas, {
+              maxWidth: contentWidth - 10,
+              lineHeightFactor: lineHeightFactorGeneral,
+            }) +
+            espacioEntreReferenciasBibliograficas
+          )
         }, 0)
 
         return total + 8 + alturaReferencias + 5
@@ -817,13 +829,23 @@ function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidt
       doc.setFont('times', 'normal')
       doc.setFontSize(fontSizeBibliografia)
       seccion.referencias.forEach((referencia) => {
-        const lineas = doc.splitTextToSize(referencia.texto, contentWidth)
-        if (y + lineas.length * 3.8 > pageHeight - 18) {
+        const alturaReferencia = medirReferenciaBibliograficaProgramaAnalitico(doc, referencia.texto, {
+          anchoDisponible: contentWidth,
+          fontSize: fontSizeBibliografia,
+          lineHeightFactor: lineHeightFactorGeneral,
+        })
+
+        if (y + alturaReferencia > pageHeight - 18) {
           doc.addPage()
           y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
         }
-        doc.text(referencia.texto, sectionLeft, y, { maxWidth: contentWidth, align: 'justify' })
-        y += lineas.length * 3.8 + 1.5
+
+        y = dibujarReferenciaBibliograficaProgramaAnalitico(doc, referencia.texto, sectionLeft, y, {
+          anchoDisponible: contentWidth,
+          fontSize: fontSizeBibliografia,
+          lineHeightFactor: lineHeightFactorGeneral,
+        })
+        y += espacioEntreReferenciasBibliograficas
       })
     })
   }
@@ -857,28 +879,80 @@ function dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre = 
   const headerTop = PROGRAMA_ANALITICO_HEADER.top
   const lineY = PROGRAMA_ANALITICO_HEADER.bottomLineY
   const carreraTexto = String(carreraNombre || 'Sin Carrera').trim().toUpperCase()
+  const textX = 10
+  const dividerX = pageWidth - 53
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(6.8)
+  doc.setFontSize(6.5)
   doc.setTextColor(182, 150, 226)
-  doc.text('UNIVERSIDAD TÉCNICA PRIVADA COSMOS', 18, headerTop + 2)
-  doc.text('“UNITEPC”', 18, headerTop + 8)
-  doc.text(`CARRERA: ${carreraTexto}`, 18, headerTop + 18)
+  doc.text('UNIVERSIDAD TÉCNICA PRIVADA COSMOS “UNITEPC”', textX, headerTop + 2)
+  doc.text(`CARRERA: ${carreraTexto}`, textX, headerTop + 6)
 
-  doc.setDrawColor(245, 204, 90)
-  doc.setLineWidth(0.5)
-  doc.line(pageWidth - 44, headerTop - 1, pageWidth - 44, lineY - 1)
+  doc.setDrawColor(207, 191, 225)
+  doc.setLineWidth(0.45)
+  doc.line(dividerX, headerTop - 0.5, dividerX, lineY)
 
   if (logo) {
-    doc.addImage(logo, 'PNG', pageWidth - 36, headerTop - 2, 20, 16)
+    doc.addImage(logo, 'PNG', pageWidth - 31, headerTop - 0.5, 16, 12)
   }
 
   doc.setDrawColor(98, 216, 218)
   doc.setLineWidth(0.4)
-  doc.line(8, lineY, pageWidth - 8, lineY)
+  doc.line(7, lineY, pageWidth - 7, lineY)
 
   doc.setTextColor(0, 0, 0)
   return PROGRAMA_ANALITICO_HEADER.contentStartY
+}
+
+function medirReferenciaBibliograficaProgramaAnalitico(
+  doc,
+  texto,
+  { anchoDisponible, fontSize, lineHeightFactor },
+) {
+  doc.setFont('times', 'normal')
+  doc.setFontSize(fontSize)
+  const anchoTexto = Math.max(anchoDisponible - 10, 20)
+  const lineas = doc.splitTextToSize(texto, anchoTexto)
+
+  return obtenerAlturaTexto(doc, lineas, {
+    maxWidth: anchoTexto,
+    lineHeightFactor,
+  })
+}
+
+function dibujarReferenciaBibliograficaProgramaAnalitico(
+  doc,
+  texto,
+  x,
+  y,
+  { anchoDisponible, fontSize, lineHeightFactor },
+) {
+  const checkOffsetX = 2.5
+  const textX = x + 8
+  const anchoTexto = Math.max(anchoDisponible - 10, 20)
+  const lineas = doc.splitTextToSize(texto, anchoTexto)
+  const alturaTexto = obtenerAlturaTexto(doc, lineas, {
+    maxWidth: anchoTexto,
+    lineHeightFactor,
+  })
+
+  dibujarPalomitaProgramaAnalitico(doc, x + checkOffsetX, y - 1.2)
+  doc.setFont('times', 'normal')
+  doc.setFontSize(fontSize)
+  doc.text(lineas, textX, y, {
+    maxWidth: anchoTexto,
+    align: 'justify',
+    lineHeightFactor,
+  })
+
+  return y + alturaTexto
+}
+
+function dibujarPalomitaProgramaAnalitico(doc, x, y) {
+  doc.setDrawColor(0, 0, 0)
+  doc.setLineWidth(0.6)
+  doc.line(x, y + 1.8, x + 1.2, y + 3.4)
+  doc.line(x + 1.2, y + 3.4, x + 4.2, y)
 }
 
 async function obtenerLogoProgramaAnalitico(logoOverride = null) {
@@ -940,6 +1014,7 @@ function normalizarBibliografiasProgramaAnalitico(asignatura) {
 
       const texto =
         referencia?.texto ||
+        referencia?.descripcion ||
         [
           referencia?.autor,
           referencia?.titulo,
@@ -1540,3 +1615,4 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
 export default {
   generarCarpetaDocente,
 }
+

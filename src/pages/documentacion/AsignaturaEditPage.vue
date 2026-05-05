@@ -766,9 +766,14 @@
                 >
                   <div class="biblio-card biblio-card--basica">
                     <div class="biblio-card__content">
-                      <div class="biblio-card__title">{{ biblio.titulo }}</div>
-                      <div class="biblio-card__author" v-if="biblio.autor">{{ biblio.autor }}</div>
-                      <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
+                      <div class="biblio-card__title">{{ textoBibliografia(biblio) }}</div>
+                      <div class="biblio-card__author" v-if="!biblio.descripcion && biblio.autor">
+                        {{ biblio.autor }}
+                      </div>
+                      <div
+                        class="biblio-card__details"
+                        v-if="!biblio.descripcion && (biblio.editorial || biblio.anio)"
+                      >
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
                         }}{{ biblio.anio ? ' (' + biblio.anio + ')' : '' }}
                       </div>
@@ -815,9 +820,14 @@
                 >
                   <div class="biblio-card biblio-card--complementaria">
                     <div class="biblio-card__content">
-                      <div class="biblio-card__title">{{ biblio.titulo }}</div>
-                      <div class="biblio-card__author" v-if="biblio.autor">{{ biblio.autor }}</div>
-                      <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
+                      <div class="biblio-card__title">{{ textoBibliografia(biblio) }}</div>
+                      <div class="biblio-card__author" v-if="!biblio.descripcion && biblio.autor">
+                        {{ biblio.autor }}
+                      </div>
+                      <div
+                        class="biblio-card__details"
+                        v-if="!biblio.descripcion && (biblio.editorial || biblio.anio)"
+                      >
                         {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
                         }}{{ biblio.anio ? ' (' + biblio.anio + ')' : '' }}
                       </div>
@@ -1961,81 +1971,26 @@
         </div>
         <q-card-section class="q-pt-lg">
           <q-form class="q-gutter-y-md">
-            <q-input v-model="formBiblio.titulo" label="Título" outlined dense class="full-width" />
             <q-input
-              v-model="formBiblio.autor"
-              label="Autor(es)"
+              v-model="formBiblio.descripcion"
+              label="Referencia bibliográfica"
+              type="textarea"
               outlined
-              dense
+              autogrow
               class="full-width"
             />
 
             <div class="row q-col-gutter-md">
-              <div class="col-6">
-                <q-input
-                  v-model="formBiblio.editorial"
-                  label="Editorial"
-                  outlined
-                  dense
-                  class="full-width"
-                />
-              </div>
-              <div class="col-6">
-                <q-input
-                  v-model="formBiblio.edicion"
-                  label="Edición"
-                  outlined
-                  dense
-                  class="full-width"
-                />
-              </div>
-            </div>
-
-            <div class="row q-col-gutter-md">
-              <div class="col-6">
-                <q-input
-                  v-model.number="formBiblio.anio"
-                  label="Año"
-                  type="number"
-                  outlined
-                  dense
-                  class="full-width"
-                />
-              </div>
-              <div class="col-6">
+              <div class="col-12">
                 <q-select
                   v-model="formBiblio.tipo"
                   label="Tipo"
                   :options="[
-                    { label: 'Principal', value: 'principal' },
-                    { label: 'Complementario', value: 'complementario' },
+                    { label: 'Básica / Oficial', value: 'BASICA' },
+                    { label: 'Complementaria', value: 'COMPLEMENTARIA' },
                   ]"
                   emit-value
                   map-options
-                  outlined
-                  dense
-                  class="full-width"
-                />
-              </div>
-            </div>
-
-            <div class="row q-col-gutter-md">
-              <div class="col-12">
-                <q-input
-                  v-model="formBiblio.isbn"
-                  label="ISBN (Opcional)"
-                  outlined
-                  dense
-                  class="full-width"
-                />
-              </div>
-            </div>
-
-            <div class="row q-col-gutter-md">
-              <div class="col-12">
-                <q-input
-                  v-model="formBiblio.paginas"
-                  label="Páginas (ej: 100-150) (Opcional)"
                   outlined
                   dense
                   class="full-width"
@@ -3257,11 +3212,10 @@ async function procesarImportacion() {
   if (!archivoImportar.value) return
 
   try {
-    // Word refined: Only units and themes
     const opcionesEnvio = {
       datos: false,
       unidades: true,
-      bibliografia: false,
+      bibliografia: true,
     }
 
     await store.importarWord(asignatura.value.id, archivoImportar.value, opcionesEnvio)
@@ -3763,23 +3717,50 @@ function abrirDialogBibliografia(biblio = null) {
   if (biblio) {
     editandoBiblio.value = true
     biblioSeleccionada.value = biblio
-    formBiblio.value = { ...biblio }
+    formBiblio.value = {
+      ...biblio,
+      descripcion: textoBibliografia(biblio),
+    }
   } else {
     editandoBiblio.value = false
     biblioSeleccionada.value = null
-    formBiblio.value = { tipo: 'complementario', anio: new Date().getFullYear() }
+    formBiblio.value = { descripcion: '', tipo: 'COMPLEMENTARIA' }
   }
   dialogBibliografia.value = true
 }
 
 function guardarBibliografia() {
+  const descripcion = String(formBiblio.value.descripcion || '').trim()
+  if (!descripcion) {
+    $q.notify({
+      type: 'warning',
+      message: 'Ingrese la referencia bibliográfica completa.',
+      position: 'top',
+    })
+    return
+  }
+
+  const payload = {
+    descripcion,
+    tipo: formBiblio.value.tipo || 'COMPLEMENTARIA',
+  }
+
   if (editandoBiblio.value) {
-    store.updateBibliografia(asignatura.value.id, biblioSeleccionada.value.id, formBiblio.value)
+    store.updateBibliografia(asignatura.value.id, biblioSeleccionada.value.id, payload)
   } else {
-    store.addBibliografia(asignatura.value.id, formBiblio.value)
+    store.addBibliografia(asignatura.value.id, payload)
   }
   dialogBibliografia.value = false
   $q.notify({ type: 'positive', message: 'Bibliografía guardada', position: 'top' })
+}
+
+function textoBibliografia(biblio) {
+  if (!biblio) return ''
+  if (biblio.descripcion) return biblio.descripcion
+
+  return [biblio.autor, biblio.titulo, biblio.editorial, biblio.edicion, biblio.anio]
+    .filter(Boolean)
+    .join('. ')
 }
 
 function eliminarBibliografia(biblio) {
