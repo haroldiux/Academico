@@ -597,7 +597,10 @@ function contarPaginasProgramaAnalitico({ asignatura, carreraNombre = '', logo =
   return tempDoc.getNumberOfPages()
 }
 
-function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidth, totalPaginas, logo }) {
+function renderProgramaAnalitico(
+  doc,
+  { asignatura, carreraNombre = '', pageWidth, totalPaginas, logo },
+) {
   const pageHeight = doc.internal.pageSize.getHeight()
   const contentWidth = 168
   const sectionLeft = (pageWidth - contentWidth) / 2
@@ -633,7 +636,9 @@ function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidt
   const hrsSemestre =
     Number(asignatura.hrs_semestre_impresion) || calcularHrsSemestreImpresion(asignatura)
   const semestre = asignatura.semestre ? `${asignatura.semestre}°` : ''
-  const tituloMateria = String(asignatura.nombre || asignatura.asignatura || '').trim().toUpperCase()
+  const tituloMateria = String(asignatura.nombre || asignatura.asignatura || '')
+    .trim()
+    .toUpperCase()
 
   doc.setTextColor(0, 0, 0)
   doc.setFont('times', 'bold')
@@ -829,11 +834,15 @@ function renderProgramaAnalitico(doc, { asignatura, carreraNombre = '', pageWidt
       doc.setFont('times', 'normal')
       doc.setFontSize(fontSizeBibliografia)
       seccion.referencias.forEach((referencia) => {
-        const alturaReferencia = medirReferenciaBibliograficaProgramaAnalitico(doc, referencia.texto, {
-          anchoDisponible: contentWidth,
-          fontSize: fontSizeBibliografia,
-          lineHeightFactor: lineHeightFactorGeneral,
-        })
+        const alturaReferencia = medirReferenciaBibliograficaProgramaAnalitico(
+          doc,
+          referencia.texto,
+          {
+            anchoDisponible: contentWidth,
+            fontSize: fontSizeBibliografia,
+            lineHeightFactor: lineHeightFactorGeneral,
+          },
+        )
 
         if (y + alturaReferencia > pageHeight - 18) {
           doc.addPage()
@@ -878,7 +887,9 @@ function obtenerAlturaTexto(doc, lineas, opciones = {}) {
 function dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre = '') {
   const headerTop = PROGRAMA_ANALITICO_HEADER.top
   const lineY = PROGRAMA_ANALITICO_HEADER.bottomLineY
-  const carreraTexto = String(carreraNombre || 'Sin Carrera').trim().toUpperCase()
+  const carreraTexto = String(carreraNombre || 'Sin Carrera')
+    .trim()
+    .toUpperCase()
   const textX = 10
   const dividerX = pageWidth - 53
 
@@ -1086,7 +1097,9 @@ function extraerListaContenidoTema(tema) {
     tema.contenido_items.forEach((item) => {
       const valor =
         typeof item === 'string' ? item : item?.titulo || item?.descripcion || item?.texto || ''
-      const limpio = asegurarPuntoFinal(formatearTextoSentenceCase(limpiarTextoProgramaAnalitico(valor)))
+      const limpio = asegurarPuntoFinal(
+        formatearTextoSentenceCase(limpiarTextoProgramaAnalitico(valor)),
+      )
       if (limpio) partes.push(limpio)
     })
   }
@@ -1138,7 +1151,9 @@ function calcularHrsSemestreImpresion(asignatura) {
 }
 
 function normalizarProgramaPlanEstudios(planEstudios) {
-  const plan = String(planEstudios || '').trim().toUpperCase()
+  const plan = String(planEstudios || '')
+    .trim()
+    .toUpperCase()
   return plan === 'A' ? 'A' : 'N'
 }
 
@@ -1615,4 +1630,3 @@ function generarPlanClase(doc, { unidad, tema, asignatura, pageWidth, margin }) 
 export default {
   generarCarpetaDocente,
 }
-

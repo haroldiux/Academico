@@ -1623,9 +1623,11 @@ const normalizeTipo = (t) => {
     .trim()
   if (['PR', 'PROBLEMA'].includes(s)) return 'PROBLEMA'
   if (['EM', 'EMPAREJAMIENTO'].includes(s)) return 'EMPAREJAMIENTO'
-  if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(s)) return 'SUBPROBLEMA'
-  if (['SU', 'SS', 'SELECCION_UNICA'].includes(s)) return 'SELECCION_UNICA'
-  if (['SM', 'SELECCION_MULTIPLE'].includes(s)) return 'SELECCION_MULTIPLE'
+  if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(s))
+    return 'SUBPROBLEMA'
+  if (['SU', 'SS', 'SELECCION_UNICA', 'SELECCION_SIMPLE', 'PREGUNTA_CON_CLAVE'].includes(s))
+    return 'SELECCION_UNICA'
+  if (['SM', 'SELECCION_MULTIPLE', 'RESPUESTA_COMPUESTA'].includes(s)) return 'SELECCION_MULTIPLE'
   if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(s))
     return 'FALSO_VERDADERO'
   return s
