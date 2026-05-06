@@ -1306,10 +1306,16 @@
                       Genera un PDF de ejemplo con el banco actual.
                     </div>
                     <div
-                      v-if="!bancoCumpleRequisitosGeneracion"
+                      v-if="puedePrevisualizarExamenBanco && !bancoCumpleRequisitosGeneracion"
                       class="banco-action-tooltip__warning"
                     >
-                      Faltan conteos: {{ faltantesGeneracionLabel }}
+                      Vista de prueba con banco incompleto: {{ faltantesGeneracionLabel }}
+                    </div>
+                    <div
+                      v-else-if="!puedePrevisualizarExamenBanco"
+                      class="banco-action-tooltip__warning"
+                    >
+                      Agrega al menos una pregunta evaluable para previsualizar.
                     </div>
                   </q-tooltip>
                 </span>
@@ -5416,6 +5422,7 @@ const ejemploTipoPregunta = computed(() => {
         { cssClass: 'preview-question-line', text: '1. ____ Sobre hechos cotidianos:' },
         { cssClass: 'preview-detail-line', text: 'I. Una semana tiene siete dias.' },
         { cssClass: 'preview-detail-line', text: 'II. Un dia tiene veinticuatro horas.' },
+        { cssClass: 'preview-option-title', text: 'Opciones de respuesta:' },
         { cssClass: 'preview-option-line', text: 'A. Si la primera es correcta' },
         { cssClass: 'preview-option-line', text: 'B. Si la segunda es correcta' },
         { cssClass: 'preview-option-line', text: 'C. Si ambas son correctas' },
@@ -6902,7 +6909,7 @@ const puedeVisualizarBanco = computed(
 )
 
 const puedePrevisualizarExamenBanco = computed(
-  () => puedeVisualizarBanco.value && bancoCumpleRequisitosGeneracion.value,
+  () => puedeVisualizarBanco.value && totalPreguntasContables.value > 0,
 )
 
 const grupoBancoActualBloqueado = computed(() => {
@@ -7038,7 +7045,7 @@ const REQUISITOS_BANCO_GRUPO_TIPO = [
   },
   {
     key: 'g3',
-    label: 'G3 Subproblema + Opción Emp.',
+    label: 'G3 Problemas o casos y emparejamiento',
     requerido: 15,
     color: 'purple-7',
     tipos: ['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'],
@@ -7372,15 +7379,11 @@ function construirPreguntasPreviewExamenBanco() {
 
 async function previsualizarExamenBanco() {
   if (!puedePrevisualizarExamenBanco.value) {
-    const faltantes = [faltantesDificultadLabel.value, faltantesGrupoTipoLabel.value]
-      .filter(Boolean)
-      .join(' · ')
-
     $q.notify({
       type: 'warning',
-      message: faltantes
-        ? `Aún faltan preguntas para generar el examen: ${faltantes}.`
-        : 'Selecciona un parcial, un grupo y verifica que existan preguntas para previsualizar.',
+      message: !puedeVisualizarBanco.value
+        ? 'Selecciona un parcial y un grupo para previsualizar.'
+        : 'Agrega al menos una pregunta evaluable para previsualizar el examen.',
     })
     return
   }
@@ -9893,6 +9896,15 @@ function getParcialColorBanco(parcial) {
   color: #334155;
   margin-left: 24px;
   margin-top: 4px;
+}
+
+.preview-option-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #1e3a8a;
+  margin-left: 24px;
+  margin-top: 12px;
 }
 
 .preview-detail-line {
