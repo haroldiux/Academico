@@ -1,1 +1,0 @@
-import{aj as a}from"./index-BG7Z4eWo.js";const s=async()=>(await a.get("/admin/stats")).data,e=async t=>(await a.get("/admin/dashboard/director",{params:t})).data,o={getAdminStats:s,getDirectorStats:e};export{o as d};
