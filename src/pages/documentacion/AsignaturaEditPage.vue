@@ -7875,6 +7875,8 @@ async function descargarFormatoBanco() {
     'C. Si ambas son correctas',
     'D. Si ninguna es correcta',
   ]
+  const enunciadoEmparejamientoExcel =
+    'Seleccione la relación correcta entre cada término y el concepto que mejor corresponda.'
   const respuestasPreguntaClaveExcel = [
     'A: 1, 2, 3 son correctas',
     'B: 1 y 3 son correctas',
@@ -7917,7 +7919,23 @@ async function descargarFormatoBanco() {
     return `IF(${allowedTypesFormula},TRUE,LEN(TRIM(${cellRef}))=0)`
   }
 
-  const buildObservacionesFormula = (rowNumber) => {
+  const toExcelColumn = (columnNumber) => {
+    let column = ''
+    let number = columnNumber
+
+    while (number > 0) {
+      const remainder = (number - 1) % 26
+      column = String.fromCharCode(65 + remainder) + column
+      number = Math.floor((number - 1) / 26)
+    }
+
+    return column
+  }
+  const observacionesHelperColumns = Array.from({ length: 24 }, (_, index) =>
+    toExcelColumn(13 + index),
+  )
+
+  const buildObservacionesChecks = (rowNumber) => {
     const tipoRef = `$A${rowNumber}`
     const grupoRef = `$B${rowNumber}`
     const enunciadoRef = `$C${rowNumber}`
@@ -7963,20 +7981,44 @@ async function descargarFormatoBanco() {
         message: 'dificultad debe ir vacia',
       },
       {
-        condition: `AND(${tipoRef}="VERDADERO O FALSO",OR(${filledOptionsFormula('D', 'E')}<2,${filledOptionsFormula('F', 'H')}>0,NOT(${respuestaABFormula})))`,
-        message: 'verdadero o falso',
+        condition: `AND(${tipoRef}="VERDADERO O FALSO",OR(${filledOptionsFormula('D', 'E')}<2,${filledOptionsFormula('F', 'H')}>0))`,
+        message: 'incisos A-B',
       },
       {
-        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",OR(${filledOptionsFormula('D', 'G')}<4,${filledOptionsFormula('H', 'H')}>0,NOT(${respuestaABCDFormula})))`,
-        message: 'respuesta compuesta',
+        condition: `AND(${tipoRef}="VERDADERO O FALSO",TRIM(${respuestaRef})<>"",NOT(${respuestaABFormula}))`,
+        message: 'respuesta A-B',
       },
       {
-        condition: `AND(${tipoRef}="PREGUNTA CON CLAVE",OR(LEN(TRIM(SUBSTITUTE(${opcionARef},"1.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionBRef},"2.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionCRef},"3.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionDRef},"4.","")))=0,${filledOptionsFormula('H', 'H')}>0,NOT(${respuestaABCDEFormula})))`,
-        message: 'pregunta con clave',
+        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",${filledOptionsFormula('D', 'G')}<4)`,
+        message: 'opciones A-D',
       },
       {
-        condition: `AND(OR(${tipoRef}="SELECCION SIMPLE",${tipoRef}="SUB PROBLEMA"),OR(${filledOptionsFormula()}<5,NOT(${respuestaABCDEFormula})))`,
+        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",${filledOptionsFormula('H', 'H')}>0)`,
+        message: 'opcion E deshabilitada',
+      },
+      {
+        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",TRIM(${respuestaRef})<>"",NOT(${respuestaABCDFormula}))`,
+        message: 'respuesta A-D',
+      },
+      {
+        condition: `AND(${tipoRef}="PREGUNTA CON CLAVE",OR(LEN(TRIM(SUBSTITUTE(${opcionARef},"1.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionBRef},"2.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionCRef},"3.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionDRef},"4.","")))=0))`,
+        message: 'incisos 1-4',
+      },
+      {
+        condition: `AND(${tipoRef}="PREGUNTA CON CLAVE",${filledOptionsFormula('H', 'H')}>0)`,
+        message: 'opcion E deshabilitada',
+      },
+      {
+        condition: `AND(${tipoRef}="PREGUNTA CON CLAVE",TRIM(${respuestaRef})<>"",NOT(${respuestaABCDEFormula}))`,
+        message: 'respuesta A-E',
+      },
+      {
+        condition: `AND(OR(${tipoRef}="SELECCION SIMPLE",${tipoRef}="SUB PROBLEMA"),${filledOptionsFormula()}<5)`,
         message: 'incisos A-E',
+      },
+      {
+        condition: `AND(OR(${tipoRef}="SELECCION SIMPLE",${tipoRef}="SUB PROBLEMA"),TRIM(${respuestaRef})<>"",NOT(${respuestaABCDEFormula}))`,
+        message: 'respuesta A-E',
       },
       {
         condition: `AND(OR(${tipoRef}="PROBLEMA O CASO",${tipoRef}="OPCION EMPAREJAMIENTO"),${filledOptionsFormula()}>0)`,
@@ -7991,14 +8033,26 @@ async function descargarFormatoBanco() {
         message: 'respuesta A-E',
       },
     ]
-    const nestedIssues = [...checks]
-      .reverse()
-      .reduce(
-        (fallback, { condition, message }) =>
-          `IF(${condition},"Falta revisar: ${message}",${fallback})`,
-        '"OK"',
-      )
-    return `IF(TRIM(${tipoRef})="","",${nestedIssues})`
+    return checks
+  }
+
+  const buildObservacionesHelperFormula = (rowNumber, check, index) => {
+    const safeMessage = check.message.replace(/"/g, '""')
+
+    if (index === 0) {
+      return `IF(${check.condition},"${safeMessage}","")`
+    }
+
+    const firstColumn = observacionesHelperColumns[0]
+    const previousColumn = observacionesHelperColumns[index - 1]
+    return `IF(${check.condition},IF(COUNTIF($${firstColumn}${rowNumber}:$${previousColumn}${rowNumber},"?*")>0,", ","")&"${safeMessage}","")`
+  }
+
+  const buildObservacionesFormula = (rowNumber, helperColumns) => {
+    const helperRange = `$${helperColumns[0]}${rowNumber}:$${helperColumns[helperColumns.length - 1]}${rowNumber}`
+    const helperConcat = helperColumns.map((column) => `$${column}${rowNumber}`).join('&')
+
+    return `IF(TRIM($A${rowNumber})="","",IF(COUNTIF(${helperRange},"?*")=0,"OK","Falta revisar: "&${helperConcat}))`
   }
 
   workbook.creator = 'Codex'
@@ -8024,6 +8078,7 @@ async function descargarFormatoBanco() {
   fillValidationColumn('F', ['1', '2', '3'])
   fillValidationColumn('G', [parcialActivo])
   fillValidationColumn('H', respuestasPreguntaClaveExcel)
+  wsValidaciones.getCell('I1').value = enunciadoEmparejamientoExcel
 
   workbook.definedNames.add('VALIDACIONES!$A$1:$A$8', 'LISTA_TIPOS_2P')
   workbook.definedNames.add('VALIDACIONES!$B$1:$B$2', 'RESP_VF')
@@ -8055,7 +8110,7 @@ async function descargarFormatoBanco() {
   addGuideHeader('1. CODIGOS DE PREGUNTA (Columna TIPO)')
   wsInst.addRow([
     'VERDADERO O FALSO',
-    'Escriba Verdadero en opcion_a y Falso en opcion_b. respuesta_correcta solo admite A o B.',
+    'opcion_a, opcion_b y respuesta_correcta se preparan automaticamente. Cambie la respuesta si el enunciado es falso.',
   ])
   wsInst.addRow([
     'PREGUNTA CON CLAVE',
@@ -8067,7 +8122,7 @@ async function descargarFormatoBanco() {
   ])
   const rowSM1 = wsInst.addRow([
     'RESPUESTA COMPUESTA',
-    'Use el enunciado con I. y II.; complete opcion_a a opcion_d con las respuestas fijas y la respuesta_correcta va entre A y D.',
+    'Use el enunciado con I. y II.; opcion_a a opcion_d se preparan automaticamente y la respuesta_correcta va entre A y D.',
   ])
   rowSM1.getCell(2).font = redFont
   const rowPR1 = wsInst.addRow([
@@ -8081,7 +8136,7 @@ async function descargarFormatoBanco() {
   ])
   const rowEM1 = wsInst.addRow([
     'EMPAREJAMIENTO',
-    'Llene grupo, enunciado y de 2 a 5 claves en opcion_a a opcion_e. No lleva dificultad ni respuesta directa.',
+    'El enunciado se prepara automaticamente. Llene grupo y de 2 a 5 claves en opcion_a a opcion_e. No lleva dificultad ni respuesta directa.',
   ])
   rowEM1.getCell(2).font = redFont
   wsInst.addRow([
@@ -8222,8 +8277,39 @@ async function descargarFormatoBanco() {
     { width: 12 },
     { width: 46, style: { alignment: { wrapText: true, vertical: 'top' } } },
   ]
+  observacionesHelperColumns.forEach((columnLetter, index) => {
+    const column = wsBanco.getColumn(columnLetter)
+    column.hidden = true
+    column.width = 3
+    wsBanco.getCell(`${columnLetter}1`).value = `_obs_${index + 1}`
+  })
 
   for (let i = filasBancoDesde; i <= filasBancoHasta; i++) {
+    wsBanco.getCell(`C${i}`).value = {
+      formula: `IF($A${i}="EMPAREJAMIENTO",VALIDACIONES!$I$1,"")`,
+      result: '',
+    }
+    wsBanco.getCell(`D${i}`).value = {
+      formula: `IF($A${i}="VERDADERO O FALSO","Verdadero",IF($A${i}="RESPUESTA COMPUESTA","${opcionesRespuestaCompuestaExcel[0]}",""))`,
+      result: '',
+    }
+    wsBanco.getCell(`E${i}`).value = {
+      formula: `IF($A${i}="VERDADERO O FALSO","Falso",IF($A${i}="RESPUESTA COMPUESTA","${opcionesRespuestaCompuestaExcel[1]}",""))`,
+      result: '',
+    }
+    wsBanco.getCell(`F${i}`).value = {
+      formula: `IF($A${i}="RESPUESTA COMPUESTA","${opcionesRespuestaCompuestaExcel[2]}","")`,
+      result: '',
+    }
+    wsBanco.getCell(`G${i}`).value = {
+      formula: `IF($A${i}="RESPUESTA COMPUESTA","${opcionesRespuestaCompuestaExcel[3]}","")`,
+      result: '',
+    }
+    wsBanco.getCell(`I${i}`).value = {
+      formula: `IF($A${i}="VERDADERO O FALSO","A","")`,
+      result: '',
+    }
+
     wsBanco.getCell(`A${i}`).dataValidation = {
       type: 'list',
       allowBlank: true,
@@ -8235,6 +8321,15 @@ async function descargarFormatoBanco() {
       showErrorMessage: true,
       errorTitle: 'Tipo no valido',
       error: 'Seleccione un tipo desde la lista del formato oficial.',
+    }
+    wsBanco.getCell(`C${i}`).dataValidation = {
+      type: 'custom',
+      allowBlank: true,
+      formulae: ['TRUE'],
+      showInputMessage: true,
+      promptTitle: 'Ayuda para enunciado',
+      prompt:
+        'Emparejamiento se completa con el texto base. Respuesta Compuesta usa I. y II. Pregunta con Clave usa solo el enunciado general.',
     }
     wsBanco.getCell(`B${i}`).dataValidation = {
       type: 'custom',
@@ -8256,6 +8351,10 @@ async function descargarFormatoBanco() {
       showErrorMessage: true,
       errorTitle: 'Respuesta invalida',
       error: 'Seleccione una respuesta valida segun el tipo de pregunta.',
+      showInputMessage: true,
+      promptTitle: 'Ayuda para respuesta',
+      prompt:
+        'Verdadero/Falso inicia en A y puede cambiarse a B. Respuesta Compuesta usa A-D. Pregunta con Clave usa combinaciones A-E.',
     }
     wsBanco.getCell(`J${i}`).dataValidation = {
       type: 'list',
@@ -8324,6 +8423,10 @@ async function descargarFormatoBanco() {
         type: 'custom',
         allowBlank: true,
         formulae: [buildOptionValidationFormula(i, columnLetter, allowedTypes)],
+        showInputMessage: true,
+        promptTitle: 'Ayuda para incisos',
+        prompt:
+          'VF y Respuesta Compuesta se preparan automaticamente. Pregunta con Clave usa 1. a 4. Seleccion Simple y Sub Problema usan A-E.',
         showErrorMessage: true,
         errorTitle: 'Inciso no permitido',
         error:
@@ -8331,9 +8434,19 @@ async function descargarFormatoBanco() {
       }
     })
 
+    const observacionesChecks = buildObservacionesChecks(i)
+    const helperColumns = observacionesHelperColumns.slice(0, observacionesChecks.length)
+    observacionesChecks.forEach((check, index) => {
+      const helperCell = wsBanco.getCell(`${helperColumns[index]}${i}`)
+      helperCell.value = {
+        formula: buildObservacionesHelperFormula(i, check, index),
+        result: '',
+      }
+    })
+
     const observacionesCell = wsBanco.getCell(`L${i}`)
     observacionesCell.value = {
-      formula: buildObservacionesFormula(i),
+      formula: buildObservacionesFormula(i, helperColumns),
       result: '',
     }
     observacionesCell.font = { bold: true }
@@ -8386,13 +8499,13 @@ async function descargarFormatoBanco() {
   wsBanco.getCell('A74').value =
     '3. Emparejamiento puede usar de 2 a 5 claves en opcion_a a opcion_e.'
   wsBanco.getCell('A75').value =
-    '4. En Verdadero o Falso, escriba Verdadero en opcion_a y Falso en opcion_b.'
+    '4. En Verdadero o Falso, opcion_a, opcion_b y respuesta_correcta se preparan automaticamente.'
   wsBanco.getCell('A76').value =
-    `5. En Respuesta Compuesta, escriba I. y II. en el enunciado; use estas respuestas en opcion_a a opcion_d: ${opcionesRespuestaCompuestaExcel.join(' | ')}.`
+    `5. En Respuesta Compuesta, escriba I. y II. en el enunciado; opcion_a a opcion_d se preparan con: ${opcionesRespuestaCompuestaExcel.join(' | ')}.`
   wsBanco.getCell('A77').value =
     '6. En Pregunta con Clave, escriba 1. a 4. en opcion_a a opcion_d; opcion_e queda deshabilitada.'
   wsBanco.getCell('A78').value =
-    '7. Opcion Emparejamiento no usa incisos en D-H; solo grupo, enunciado, respuesta_correcta y dificultad.'
+    `7. En Emparejamiento, el enunciado se prepara con: ${enunciadoEmparejamientoExcel}`
   wsBanco.getCell('A79').value =
     `8. Este formato esta preparado para ${parcialActivo} (${parcialActivoLabel}).`
   wsBanco.getCell('A80').value =
