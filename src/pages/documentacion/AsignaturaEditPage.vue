@@ -1239,7 +1239,7 @@
                 </div>
               </div>
               <div class="banco-actions row items-center q-gutter-sm">
-                <span class="banco-action-tooltip-anchor">
+                <span v-if="mostrarAccionesExcelBanco" class="banco-action-tooltip-anchor">
                   <q-btn
                     round
                     unelevated
@@ -1263,7 +1263,7 @@
                     </div>
                   </q-tooltip>
                 </span>
-                <span class="banco-action-tooltip-anchor">
+                <span v-if="mostrarBotonValidarBanco" class="banco-action-tooltip-anchor">
                   <q-btn
                     round
                     unelevated
@@ -1319,7 +1319,7 @@
                     </div>
                   </q-tooltip>
                 </span>
-                <span class="banco-action-tooltip-anchor">
+                <span v-if="mostrarAccionesExcelBanco" class="banco-action-tooltip-anchor">
                   <q-btn
                     round
                     unelevated
@@ -1565,12 +1565,30 @@
 
               <q-banner class="bg-amber-1 text-amber-10 q-mb-md border-amber" rounded dense>
                 <template v-slot:avatar><q-icon name="warning" color="amber-10" /></template>
+                <strong>Metodo de registro:</strong> Actualmente las preguntas se registran
+                directamente desde el sistema para centralizar la validacion y revision del banco.
+              </q-banner>
+
+              <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
+                <template v-slot:avatar><q-icon name="info" /></template>
+                1. Selecciona el parcial y grupo teorico correspondiente. <br />
+                2. Usa el boton <strong>"Registrar pregunta"</strong> para cargar las preguntas
+                desde el sistema y valida el avance con los conteos del banco.
+              </q-banner>
+
+              <q-banner
+                v-if="false"
+                class="bg-amber-1 text-amber-10 q-mb-md border-amber"
+                rounded
+                dense
+              >
+                <template v-slot:avatar><q-icon name="warning" color="amber-10" /></template>
                 <strong>Método de Registro:</strong> Actualmente las preguntas se registran
                 exclusivamente mediante la <strong>importación masiva desde Excel</strong> para
                 garantizar el formato oficial.
               </q-banner>
 
-              <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
+              <q-banner v-if="false" class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
                 <template v-slot:avatar><q-icon name="info" /></template>
                 1. <strong>Descarga el formato Excel</strong> y procede a completarlo con las
                 preguntas adecuadas según tu criterio (15 de dificultad fácil, 30 de dificultad
@@ -1985,8 +2003,9 @@
               <template v-slot:avatar><q-icon name="info" /></template>
               Sube el Excel con el formato oficial. Recuerda que solo se admiten preguntas tipo
               <strong
-                >Verdadero o Falso, Respuesta Compuesta, Pregunta con Clave, Selección Simple,
-                Emparejamiento, Opción Emparejamiento, Problema o Caso y Sub Problema</strong
+                >Verdadero o Falso Simple, Verdadero o Falso Complejas, Respuesta A/B/Ambas/Ninguna,
+                Selección de la mejor respuesta, Emparejamiento Ampliado, Opción de Emparejamiento,
+                Ítems agrupados por caso clínico o problema y Subítem</strong
               >.
             </q-banner>
 
@@ -2719,6 +2738,7 @@
               </div>
 
               <q-input
+                v-if="tipoRegistroPregunta !== 'RESPUESTA_COMPUESTA'"
                 v-model="formPregunta.enunciado"
                 :label="
                   tipoRegistroPregunta === 'RESPUESTA_COMPUESTA'
@@ -2728,7 +2748,7 @@
                 type="textarea"
                 outlined
                 autogrow
-                rows="3"
+                rows="6"
               />
 
               <div v-if="tipoRegistroPregunta === 'FALSO_VERDADERO'">
@@ -2780,8 +2800,8 @@
                 />
                 <q-banner class="bg-indigo-1 text-indigo-10 rounded-borders">
                   <strong>Combinaciones fijas:</strong>
-                  A: 1, 2, 3 correctas. B: 1 y 3 correctas. C: 2 y 4 correctas. D: solo 4 correcta.
-                  E: todas correctas.
+                  A: 1, 2 y 3 verdaderas. B: 1 y 3 verdaderas. C: 2 y 4 verdaderas. D: solo 4
+                  verdadera. E: todas verdaderas.
                 </q-banner>
                 <div class="text-subtitle2 q-mb-sm">Respuesta correcta</div>
                 <q-option-group
@@ -2821,7 +2841,7 @@
             >
               <q-input
                 v-model="formPregunta.enunciado"
-                label="Enunciado general del emparejamiento"
+                label="Enunciado general del emparejamiento ampliado"
                 type="textarea"
                 outlined
                 autogrow
@@ -2833,7 +2853,7 @@
                   <q-select
                     v-model="formPregunta.cantidadClavesEmparejamiento"
                     :options="cantidadClavesEmparejamientoOptions"
-                    label="Cantidad de claves"
+                    label="Cantidad de opciones"
                     outlined
                     dense
                     emit-value
@@ -2842,7 +2862,7 @@
                 </div>
                 <div class="col-12 col-md-8">
                   <q-banner class="bg-teal-1 text-teal-10 rounded-borders">
-                    Puedes trabajar con <strong>2 a 5 claves</strong> y con
+                    Puedes trabajar con <strong>2 a 5 opciones</strong> y con
                     <strong>2 a 5 opciones ligadas</strong>. Las respuestas pueden repetirse; no se
                     exige una relación 1 a 1.
                   </q-banner>
@@ -2850,17 +2870,17 @@
               </div>
 
               <div class="text-subtitle2">
-                Claves activas del emparejamiento ({{ clavesEmparejamientoActivas.length }})
+                Opciones del emparejamiento ({{ clavesEmparejamientoActivas.length }})
               </div>
               <div class="row q-col-gutter-md">
                 <div
                   v-for="clave in clavesEmparejamientoActivas"
                   :key="`termino-emp-${clave.id}`"
-                  class="col-12 col-md-6"
+                  class="col-12"
                 >
                   <q-input
                     v-model="formPregunta.terminosEmparejamiento[clave.index]"
-                    :label="`Clave ${clave.id}`"
+                    :label="`Opción ${clave.id}`"
                     outlined
                     dense
                   />
@@ -2868,7 +2888,7 @@
               </div>
 
               <div class="row items-center">
-                <div class="text-subtitle2">Opciones emparejamiento ligadas</div>
+                <div class="text-subtitle2">Opciones de emparejamiento ampliado ligadas</div>
                 <q-space />
                 <q-btn
                   flat
@@ -2889,7 +2909,7 @@
                 class="q-pa-md"
               >
                 <div class="row items-center q-mb-md">
-                  <div class="text-subtitle2">Opción emparejamiento {{ index + 1 }}</div>
+                  <div class="text-subtitle2">Opción de emparejamiento {{ index + 1 }}</div>
                   <q-space />
                   <q-btn
                     flat
@@ -2904,7 +2924,7 @@
                 <div class="q-gutter-y-sm">
                   <q-input
                     v-model="preguntaLigada.enunciado"
-                    label="Enunciado de la opción emparejamiento"
+                    label="Enunciado de la opción de emparejamiento"
                     type="textarea"
                     outlined
                     autogrow
@@ -2945,7 +2965,7 @@
             >
               <q-input
                 v-model="formPregunta.enunciado"
-                label="Enunciado general del problema o caso"
+                label="Enunciado general del caso clínico o problema"
                 type="textarea"
                 outlined
                 autogrow
@@ -3049,8 +3069,8 @@
               <strong>
                 {{
                   tipoRegistroPregunta === 'OPCION_EMPAREJAMIENTO'
-                    ? 'Emparejamiento'
-                    : 'Problema o Caso'
+                    ? getTipoLabelBanco('EMPAREJAMIENTO')
+                    : getTipoLabelBanco('PROBLEMA')
                 }}
               </strong>
             </q-banner>
@@ -3321,9 +3341,6 @@
               v-else-if="previewRegistroPregunta.tipo === 'RESPUESTA_COMPUESTA'"
               class="preview-question-block"
             >
-              <div class="preview-question-line">
-                1. ____ {{ previewRegistroPregunta.enunciado || 'Enunciado pendiente...' }}
-              </div>
               <div class="preview-detail-line">
                 I. {{ previewRegistroPregunta.premisas[0] || 'Premisa I pendiente...' }}
               </div>
@@ -3342,7 +3359,7 @@
               <div class="preview-question-line">
                 {{
                   previewRegistroPregunta.enunciado ||
-                  'Seleccione la relación correcta entre cada término y el concepto que mejor corresponda.'
+                  'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.'
                 }}
               </div>
               <div
@@ -4496,6 +4513,8 @@ onMounted(() => {
 // Refs para ImportaciÒ�� �"Ò� â����Ò�â��šÒ�a�³n (movidas arriba para evitar ReferenceError en watches)
 const archivoBancoFile = ref(null)
 const archivoPreviewBanco = ref(null)
+const mostrarAccionesExcelBanco = false
+const mostrarBotonValidarBanco = false
 const grupoTeoricoSeleccionado = ref(null)
 const filtroBancoGrupoSeleccionado = ref(null)
 const preguntasImportadas = ref([])
@@ -4504,51 +4523,93 @@ const importandoBanco = ref(false)
 const modoImportacion = ref('reemplazar')
 const conCartilla = ref(true)
 const parcialSeleccionado = ref('1P')
-const filtroBancoParcialSeleccionado = ref('1P')
+const filtroBancoParcialSeleccionado = ref('2P')
 const parcialOptions = [
-  { label: '1er Parcial', value: '1P' },
+  { label: '1er Parcial', value: '1P', disable: true },
   { label: '2do Parcial', value: '2P' },
   { label: 'Examen Final', value: 'EF', disable: true },
   { label: '2da Instancia', value: '2I', disable: true },
 ]
+
+const tipoPreguntaExcelLabels = {
+  FALSO_VERDADERO: 'VERDADERO O FALSO SIMPLE',
+  PREGUNTA_CON_CLAVE: 'VERDADERO O FALSO COMPLEJAS',
+  RESPUESTA_COMPUESTA: 'RESPUESTA A/B/AMBAS/NINGUNA',
+  SELECCION_SIMPLE: 'SELECCION DE LA MEJOR RESPUESTA',
+  EMPAREJAMIENTO: 'EMPAREJAMIENTO AMPLIADO',
+  OPCION_EMPAREJAMIENTO: 'OPCION EMPAREJAMIENTO',
+  PROBLEMA: 'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA',
+  SUBPROBLEMA: 'SUB PROBLEMA',
+}
+
 const tiposPreguntaOptions = [
   {
-    label: 'Verdadero o Falso',
+    label: 'Verdadero o Falso Simple',
     value: 'FALSO_VERDADERO',
-    aliases: ['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'],
+    aliases: [
+      'FV',
+      'FALSO_VERDADERO',
+      'FALSO O VERDADERO',
+      'VERDADERO O FALSO',
+      tipoPreguntaExcelLabels.FALSO_VERDADERO,
+    ],
   },
   {
-    label: 'Respuesta Compuesta',
+    label: 'Respuesta A/B/Ambas/Ninguna',
     value: 'RESPUESTA_COMPUESTA',
-    aliases: ['SM', 'SELECCION_MULTIPLE', 'RESPUESTA COMPUESTA'],
+    aliases: [
+      'SM',
+      'SELECCION_MULTIPLE',
+      'RESPUESTA COMPUESTA',
+      tipoPreguntaExcelLabels.RESPUESTA_COMPUESTA,
+    ],
   },
   {
-    label: 'Pregunta con Clave',
+    label: 'Verdadero o Falso Complejas',
     value: 'PREGUNTA_CON_CLAVE',
-    aliases: ['PREGUNTA CON CLAVE', 'PREGUNTA_CON_CLAVE'],
+    aliases: [
+      'PREGUNTA CON CLAVE',
+      'PREGUNTA_CON_CLAVE',
+      tipoPreguntaExcelLabels.PREGUNTA_CON_CLAVE,
+    ],
   },
   {
-    label: 'Selección Simple',
+    label: 'Selección de la mejor respuesta',
     value: 'SELECCION_SIMPLE',
-    aliases: ['SS', 'SU', 'SELECCION_UNICA', 'SELECCION SIMPLE', 'SELECCION_SIMPLE'],
+    aliases: [
+      'SS',
+      'SU',
+      'SELECCION_UNICA',
+      'SELECCION SIMPLE',
+      'SELECCION_SIMPLE',
+      'SELECCIÓN DE LA MEJOR RESPUESTA',
+      tipoPreguntaExcelLabels.SELECCION_SIMPLE,
+    ],
   },
   {
-    label: 'Emparejamiento',
+    label: 'Emparejamiento Ampliado',
     value: 'EMPAREJAMIENTO',
-    aliases: ['EM', 'EMPAREJAMIENTO'],
+    aliases: ['EM', 'EMPAREJAMIENTO', tipoPreguntaExcelLabels.EMPAREJAMIENTO],
   },
   {
-    label: 'Opción Emparejamiento',
+    label: 'Opción de Emparejamiento Ampliado',
     value: 'OPCION_EMPAREJAMIENTO',
     aliases: ['OPCION EMPAREJAMIENTO', 'OPCION_EMPAREJAMIENTO'],
   },
   {
-    label: 'Problema o Caso',
+    label: 'Ítems agrupados por caso clínico o problema',
     value: 'PROBLEMA',
-    aliases: ['PR', 'PROBLEMA', 'PROBLEMA O CASO'],
+    aliases: [
+      'PR',
+      'PROBLEMA',
+      'PROBLEMA O CASO',
+      'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA',
+      'ÍTEMS AGRUPADOS POR CASO CLÍNICO O PROBLEMA',
+      tipoPreguntaExcelLabels.PROBLEMA,
+    ],
   },
   {
-    label: 'Sub Problema',
+    label: 'Subítem de caso o problema',
     value: 'SUBPROBLEMA',
     aliases: ['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA'],
   },
@@ -4635,7 +4696,7 @@ watch(conCartilla, (val) => {
 watch(
   [filtroBancoParcialSeleccionado, filtroBancoGrupoSeleccionado],
   ([parcial, grupo]) => {
-    parcialSeleccionado.value = parcial || '1P'
+    parcialSeleccionado.value = parcial || '2P'
     grupoTeoricoSeleccionado.value = grupo || null
   },
   { immediate: true },
@@ -5106,17 +5167,17 @@ const respuestaVerdaderoFalsoOptions = [
   { label: 'B. Falso', value: 'B' },
 ]
 const respuestaCompuestaOptions = [
-  { label: 'A. Si la primera es correcta', value: 'A' },
-  { label: 'B. Si la segunda es correcta', value: 'B' },
-  { label: 'C. Si ambas son correctas', value: 'C' },
-  { label: 'D. Si ninguna es correcta', value: 'D' },
+  { label: 'A. Solo la primera es verdadera', value: 'A' },
+  { label: 'B. Solo la segunda es verdadera', value: 'B' },
+  { label: 'C. Ambas son verdaderas', value: 'C' },
+  { label: 'D. Ninguna es verdadera', value: 'D' },
 ]
 const respuestaPreguntaClaveOptions = [
-  { label: 'A. 1, 2, 3 son correctas', value: 'A' },
-  { label: 'B. 1 y 3 son correctas', value: 'B' },
-  { label: 'C. 2 y 4 son correctas', value: 'C' },
-  { label: 'D. Solo 4 es correcta', value: 'D' },
-  { label: 'E. Todas son correctas', value: 'E' },
+  { label: 'A. 1, 2 y 3 son verdaderas', value: 'A' },
+  { label: 'B. 1 y 3 son verdaderas', value: 'B' },
+  { label: 'C. 2 y 4 son verdaderas', value: 'C' },
+  { label: 'D. Solo 4 es verdadera', value: 'D' },
+  { label: 'E. Todas son verdaderas', value: 'E' },
 ]
 const respuestaLetrasOptions = ['A', 'B', 'C', 'D', 'E'].map((letter) => ({
   label: `${letter}.`,
@@ -5149,7 +5210,7 @@ const previsualizandoRegistroPregunta = ref(false)
 const previewRegistroPreguntaVisible = ref(false)
 const ejemploTipoPreguntaVisible = ref(false)
 const DEFAULT_EMPAREJAMIENTO_ENUNCIADO =
-  'Seleccione la relación correcta entre cada término y el concepto que mejor corresponda.'
+  'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.'
 
 const MOJIBAKE_FALLBACK_REPLACEMENTS = [
   ['F�cil', 'Fácil'],
@@ -5381,20 +5442,21 @@ const registroManualRequiereDificultadSimple = computed(
 
 const descripcionRegistroManualPregunta = computed(() => {
   const descriptions = {
-    FALSO_VERDADERO: 'Completa solo el enunciado y marca A si es Verdadero o B si es Falso.',
+    FALSO_VERDADERO: 'Completa una afirmación y marca A si es Verdadero o B si es Falso.',
     RESPUESTA_COMPUESTA:
-      'Registra el enunciado principal y las dos premisas numeradas. La respuesta correcta se elige entre A, B, C o D.',
+      'Registra solo las dos premisas. La respuesta correcta se elige entre A, B, C o D: primera, segunda, ambas o ninguna.',
     PREGUNTA_CON_CLAVE:
-      'Registra un enunciado y cuatro incisos numerados. Las respuestas usan las combinaciones fijas A-E.',
+      'Registra un enunciado y cuatro incisos tipo verdadero/falso complejas. Las respuestas usan las combinaciones fijas A-E.',
     SELECCION_SIMPLE:
-      'Registra un enunciado con cinco incisos. Solo uno debe ser la respuesta correcta.',
+      'Registra un enunciado con cinco alternativas y selecciona la mejor respuesta.',
     EMPAREJAMIENTO:
-      'Registra primero el encabezado general con 2 a 5 claves y luego completa entre 2 y 5 opciones ligadas. Las respuestas pueden repetirse.',
+      'Registra primero el encabezado del emparejamiento ampliado con 2 a 5 claves y luego completa entre 2 y 5 opciones ligadas.',
     OPCION_EMPAREJAMIENTO:
-      'Las opciones emparejadas se registran desde el tipo Emparejamiento completo.',
+      'Las opciones emparejadas se registran desde el tipo Emparejamiento Ampliado completo.',
     PROBLEMA:
-      'Primero registra el caso general y luego completa sus subproblemas con opciones y respuesta correcta.',
-    SUBPROBLEMA: 'Los subproblemas se registran desde el tipo Problema o Caso completo.',
+      'Primero registra el caso clínico o problema y luego completa sus ítems agrupados con opciones y respuesta correcta.',
+    SUBPROBLEMA:
+      'Los subítems se registran desde el tipo Ítems agrupados por caso clínico o problema.',
   }
 
   return descriptions[tipoRegistroPregunta.value] || ''
@@ -5404,100 +5466,180 @@ const ejemploTipoPregunta = computed(() => {
   const tipo = tipoRegistroPregunta.value
   const ejemplos = {
     FALSO_VERDADERO: {
-      tipoHeading: 'VERDADERO O FALSO',
-      instrucciones: ['Marque A si la afirmacion es verdadera o B si es falsa.'],
+      tipoHeading: 'VERDADERO O FALSO SIMPLE',
+      instrucciones: ['Marque A si la afirmación es verdadera o B si es falsa.'],
       lineas: [
-        { cssClass: 'preview-question-line', text: '1. ____ El agua moja.' },
+        {
+          cssClass: 'preview-question-line',
+          text: '1. ____ El agua hierve a 100 grados Celsius al nivel del mar.',
+        },
         { cssClass: 'preview-option-line', text: 'A. Verdadero' },
         { cssClass: 'preview-option-line', text: 'B. Falso' },
         { cssClass: 'preview-answer-note', text: 'Respuesta correcta: A. Verdadero' },
       ],
     },
     RESPUESTA_COMPUESTA: {
-      tipoHeading: 'RESPUESTA COMPUESTA',
+      tipoHeading: 'RESPUESTA A/B/AMBAS/NINGUNA',
       instrucciones: [
-        'Lea las dos premisas y seleccione la alternativa que describa cuales son correctas.',
+        'Lea las dos premisas y seleccione la alternativa que describa cuáles son correctas.',
       ],
       lineas: [
-        { cssClass: 'preview-question-line', text: '1. ____ Sobre hechos cotidianos:' },
-        { cssClass: 'preview-detail-line', text: 'I. Una semana tiene siete dias.' },
-        { cssClass: 'preview-detail-line', text: 'II. Un dia tiene veinticuatro horas.' },
+        {
+          cssClass: 'preview-detail-line',
+          text: 'I. La Tierra gira alrededor del Sol.',
+        },
+        {
+          cssClass: 'preview-detail-line',
+          text: 'II. La Luna produce luz propia como una estrella.',
+        },
         { cssClass: 'preview-option-title', text: 'Opciones de respuesta:' },
-        { cssClass: 'preview-option-line', text: 'A. Si la primera es correcta' },
-        { cssClass: 'preview-option-line', text: 'B. Si la segunda es correcta' },
-        { cssClass: 'preview-option-line', text: 'C. Si ambas son correctas' },
-        { cssClass: 'preview-option-line', text: 'D. Si ninguna es correcta' },
-        { cssClass: 'preview-answer-note', text: 'Respuesta correcta: C. Si ambas son correctas' },
+        { cssClass: 'preview-option-line', text: 'A. Solo la primera es verdadera' },
+        { cssClass: 'preview-option-line', text: 'B. Solo la segunda es verdadera' },
+        { cssClass: 'preview-option-line', text: 'C. Ambas son verdaderas' },
+        { cssClass: 'preview-option-line', text: 'D. Ninguna es verdadera' },
+        {
+          cssClass: 'preview-answer-note',
+          text: 'Respuesta correcta: A. Solo la primera es verdadera',
+        },
       ],
     },
     PREGUNTA_CON_CLAVE: {
-      tipoHeading: 'PREGUNTA CON CLAVE',
+      tipoHeading: 'VERDADERO O FALSO COMPLEJAS',
       instrucciones: [
-        'Seleccione la combinacion correcta segun los incisos verdaderos.',
-        'A: 1, 2, 3 son correctas | B: 1 y 3 son correctas | C: 2 y 4 son correctas',
-        'D: Solo 4 es correcta | E: Todas son correctas',
+        'Seleccione la combinación correcta según los incisos verdaderos.',
+        'A: 1, 2 y 3 son verdaderas | B: 1 y 3 son verdaderas | C: 2 y 4 son verdaderas',
+        'D: Solo 4 es verdadera | E: Todas son verdaderas',
       ],
       lineas: [
-        { cssClass: 'preview-question-line', text: '1. ____ Seleccione los incisos correctos.' },
-        { cssClass: 'preview-detail-line', text: '1. El sol ilumina durante el dia.' },
-        { cssClass: 'preview-detail-line', text: '2. El hielo comun esta caliente.' },
-        { cssClass: 'preview-detail-line', text: '3. Dos mas dos es cuatro.' },
-        { cssClass: 'preview-detail-line', text: '4. Un minuto tiene diez segundos.' },
-        { cssClass: 'preview-answer-note', text: 'Respuesta correcta: B. 1 y 3 son correctas' },
+        {
+          cssClass: 'preview-question-line',
+          text: '1. ____ Seleccione los incisos verdaderos sobre conocimientos generales.',
+        },
+        {
+          cssClass: 'preview-detail-line',
+          text: '1. El planeta Tierra tiene un satélite natural llamado Luna.',
+        },
+        {
+          cssClass: 'preview-detail-line',
+          text: '2. Los seres humanos respiran oxígeno.',
+        },
+        {
+          cssClass: 'preview-detail-line',
+          text: '3. Una semana tiene siete días.',
+        },
+        {
+          cssClass: 'preview-detail-line',
+          text: '4. El océano Atlántico es un continente.',
+        },
+        {
+          cssClass: 'preview-answer-note',
+          text: 'Respuesta correcta: A. 1, 2 y 3 son verdaderas',
+        },
       ],
     },
     SELECCION_SIMPLE: {
-      tipoHeading: 'SELECCION SIMPLE',
-      instrucciones: ['Seleccione una sola alternativa correcta.'],
+      tipoHeading: 'SELECCIÓN DE LA MEJOR RESPUESTA',
+      instrucciones: ['Seleccione la alternativa que mejor resuelve la situación planteada.'],
       lineas: [
-        { cssClass: 'preview-question-line', text: '1. Cuanto es 2 + 2?' },
-        { cssClass: 'preview-option-line', text: 'A. 3' },
-        { cssClass: 'preview-option-line', text: 'B. 4' },
-        { cssClass: 'preview-option-line', text: 'C. 5' },
-        { cssClass: 'preview-option-line', text: 'D. 6' },
-        { cssClass: 'preview-option-line', text: 'E. 7' },
-        { cssClass: 'preview-answer-note', text: 'Respuesta correcta: B. 4' },
+        {
+          cssClass: 'preview-question-line',
+          text: '1. Una persona quiere conservar mejor los alimentos frescos por varios días. ¿Cuál es la mejor acción?',
+        },
+        {
+          cssClass: 'preview-option-line',
+          text: 'A. Dejarlos al sol durante la tarde',
+        },
+        {
+          cssClass: 'preview-option-line',
+          text: 'B. Guardarlos en refrigeración cuando corresponda',
+        },
+        { cssClass: 'preview-option-line', text: 'C. Mezclarlos con tierra seca' },
+        { cssClass: 'preview-option-line', text: 'D. Dejarlos cerca de una fuente de calor' },
+        {
+          cssClass: 'preview-option-line',
+          text: 'E. Guardarlos en una bolsa abierta junto a la basura',
+        },
+        {
+          cssClass: 'preview-answer-note',
+          text: 'Respuesta correcta: B. Guardarlos en refrigeración cuando corresponda',
+        },
       ],
     },
     EMPAREJAMIENTO: {
-      tipoHeading: 'EMPAREJAMIENTO',
-      instrucciones: ['Relacione cada enunciado con la clave correspondiente.'],
+      tipoHeading: 'EMPAREJAMIENTO AMPLIADO',
+      instrucciones: [
+        'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
+      ],
       lineas: [
-        { cssClass: 'preview-question-line', text: 'Relacione la operacion con su resultado.' },
-        { cssClass: 'preview-detail-line', text: 'A. 2' },
-        { cssClass: 'preview-detail-line', text: 'B. 4' },
-        { cssClass: 'preview-detail-line', text: 'C. 6' },
-        { cssClass: 'preview-question-line', text: '1. ____ 1 + 1' },
-        { cssClass: 'preview-answer-note', text: 'Respuesta correcta: A. 2' },
-        { cssClass: 'preview-question-line', text: '2. ____ 2 + 2' },
-        { cssClass: 'preview-answer-note', text: 'Respuesta correcta: B. 4' },
+        {
+          cssClass: 'preview-question-line',
+          text: 'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
+        },
+        { cssClass: 'preview-detail-line', text: 'A. Continente' },
+        { cssClass: 'preview-detail-line', text: 'B. Océano' },
+        { cssClass: 'preview-detail-line', text: 'C. Planeta' },
+        { cssClass: 'preview-detail-line', text: 'D. Satélite natural' },
+        {
+          cssClass: 'preview-question-line',
+          text: '1. ____ Gran masa de agua salada que cubre parte de la superficie terrestre.',
+        },
+        { cssClass: 'preview-answer-note', text: 'Respuesta correcta: B. Océano' },
+        {
+          cssClass: 'preview-question-line',
+          text: '2. ____ Cuerpo celeste que gira alrededor de un planeta.',
+        },
+        { cssClass: 'preview-answer-note', text: 'Respuesta correcta: D. Satélite natural' },
       ],
     },
     PROBLEMA: {
-      tipoHeading: 'PROBLEMA O CASO',
+      tipoHeading: 'ÍTEMS AGRUPADOS POR CASO CLÍNICO O PROBLEMA',
       instrucciones: ['Lea el caso y responda las preguntas asociadas.'],
       lineas: [
         {
           cssClass: 'preview-question-line',
-          text: 'CASO: Ana tiene 2 manzanas y recibe 1 manzana mas.',
+          text: 'CASO: Una familia organiza un viaje corto de fin de semana. Quiere salir temprano, llevar alimentos que no se dañen rápido y evitar olvidar documentos importantes.',
         },
-        { cssClass: 'preview-question-line', text: '1. Cuantas manzanas tiene Ana ahora?' },
-        { cssClass: 'preview-option-line', text: 'A. 2' },
-        { cssClass: 'preview-option-line', text: 'B. 3' },
-        { cssClass: 'preview-option-line', text: 'C. 4' },
-        { cssClass: 'preview-option-line', text: 'D. 5' },
-        { cssClass: 'preview-option-line', text: 'E. 6' },
-        { cssClass: 'preview-answer-note', text: 'Respuesta correcta: B. 3' },
         {
           cssClass: 'preview-question-line',
-          text: '2. Si Ana regala 1 manzana, cuantas le quedan?',
+          text: '1. ¿Qué acción ayuda mejor a evitar olvidos antes de salir?',
         },
-        { cssClass: 'preview-option-line', text: 'A. 1' },
-        { cssClass: 'preview-option-line', text: 'B. 2' },
-        { cssClass: 'preview-option-line', text: 'C. 3' },
-        { cssClass: 'preview-option-line', text: 'D. 4' },
-        { cssClass: 'preview-option-line', text: 'E. 5' },
-        { cssClass: 'preview-answer-note', text: 'Respuesta correcta: B. 2' },
+        {
+          cssClass: 'preview-option-line',
+          text: 'A. Preparar una lista de documentos, ropa y alimentos necesarios',
+        },
+        {
+          cssClass: 'preview-option-line',
+          text: 'B. Empacar al azar justo antes de subir al auto',
+        },
+        {
+          cssClass: 'preview-option-line',
+          text: 'C. Dejar los documentos en casa para viajar ligero',
+        },
+        {
+          cssClass: 'preview-option-line',
+          text: 'D. Comprar alimentos perecederos sin refrigeración',
+        },
+        { cssClass: 'preview-option-line', text: 'E. Salir sin revisar la hora de partida' },
+        {
+          cssClass: 'preview-answer-note',
+          text: 'Respuesta correcta: A. Preparar una lista de documentos, ropa y alimentos necesarios',
+        },
+        {
+          cssClass: 'preview-question-line',
+          text: '2. ¿Qué tipo de alimento conviene priorizar si no habrá refrigeración durante varias horas?',
+        },
+        { cssClass: 'preview-option-line', text: 'A. Helado' },
+        {
+          cssClass: 'preview-option-line',
+          text: 'B. Galletas, frutos secos o alimentos no perecederos',
+        },
+        { cssClass: 'preview-option-line', text: 'C. Pescado crudo' },
+        { cssClass: 'preview-option-line', text: 'D. Leche abierta' },
+        { cssClass: 'preview-option-line', text: 'E. Carne fresca sin conservar' },
+        {
+          cssClass: 'preview-answer-note',
+          text: 'Respuesta correcta: B. Galletas, frutos secos o alimentos no perecederos',
+        },
       ],
     },
   }
@@ -5523,7 +5665,7 @@ function abrirEjemploTipoPregunta() {
 }
 
 const cantidadClavesEmparejamientoOptions = [2, 3, 4, 5].map((value) => ({
-  label: `${value} claves`,
+  label: `${value} opciones`,
   value,
 }))
 
@@ -5589,48 +5731,64 @@ const previewRegistroPregunta = computed(() => {
   const tipo = tipoRegistroPregunta.value
   const baseInstrucciones = {
     FALSO_VERDADERO: [
-      'Instrucciones: En las siguientes preguntas debe indicar si la premisa es verdadera seleccione A o si es falsa seleccione B.',
+      'Instrucciones: Marque A si el enunciado es verdadero o B si el enunciado es falso.',
     ],
     SELECCION_SIMPLE: [
-      'Instrucciones: Lea atentamente cada pregunta y seleccione la única alternativa que considere correcta.',
+      'Instrucciones: Las siguientes preguntas están compuestas por un caso clínico, una pregunta y cinco opciones de respuesta. Seleccione la mejor respuesta.',
     ],
     PREGUNTA_CON_CLAVE: [
-      'Instrucciones: Seleccione todas las respuestas correctas de acuerdo a la siguiente regla:',
-      'A: 1, 2, 3 son correctas',
-      'B: 1, 3 son correctas',
-      'C: 2, 4 son correctas',
-      'D: Solo 4 es correcta',
-      'E: Todas son correctas',
+      'Instrucciones: Seleccione la opción correcta de acuerdo con la siguiente clave:',
+      'A: 1, 2 y 3 son verdaderas.',
+      'B: 1 y 3 son verdaderas.',
+      'C: 2 y 4 son verdaderas.',
+      'D: Solo 4 es verdadera.',
+      'E: Todas son verdaderas.',
     ],
     RESPUESTA_COMPUESTA: [
-      'Instrucciones: Las siguientes preguntas están compuestas de dos premisas relacionadas.',
-      'A si la primera es correcta.',
-      'B si la segunda es correcta.',
-      'C si ambas son correctas.',
-      'D si ninguna es correcta.',
+      'Instrucciones: Las siguientes preguntas están compuestas por dos premisas. Responda con:',
+      'A: si solo la primera premisa es verdadera.',
+      'B: si solo la segunda premisa es verdadera.',
+      'C: si ambas premisas son verdaderas.',
+      'D: si ninguna premisa es verdadera.',
     ],
     EMPAREJAMIENTO: [
-      'Instrucciones: Relacione cada enunciado con una de las claves disponibles y escriba la letra correspondiente en el espacio en blanco.',
+      'Instrucciones: De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
     ],
     PROBLEMA: [
-      'Instrucciones: Lea cuidadosamente el caso y responda las preguntas asociadas con base en la información presentada.',
+      'Instrucciones: El siguiente caso clínico o problema tendrá varias preguntas. Seleccione la respuesta correcta en cada una.',
+    ],
+  }
+
+  const previewHeadings = {
+    FALSO_VERDADERO: 'VERDADERO O FALSO SIMPLE',
+    SELECCION_SIMPLE: 'SELECCIÓN DE LA MEJOR RESPUESTA',
+    PREGUNTA_CON_CLAVE: 'VERDADERO O FALSO COMPLEJAS',
+    RESPUESTA_COMPUESTA: 'RESPUESTA A/B/AMBAS/NINGUNA',
+    EMPAREJAMIENTO: 'EMPAREJAMIENTO AMPLIADO',
+    PROBLEMA: 'ÍTEMS AGRUPADOS POR CASO CLÍNICO O PROBLEMA',
+    SUBPROBLEMA: 'SUBÍTEM DE CASO O PROBLEMA',
+  }
+  const previewInstrucciones = {
+    SELECCION_SIMPLE: [
+      'Instrucciones: Las siguientes preguntas están compuestas por un caso clínico, una pregunta y cinco opciones de respuesta. Seleccione la mejor respuesta.',
+    ],
+    RESPUESTA_COMPUESTA: [
+      'Instrucciones: Las siguientes preguntas están compuestas por dos premisas. Responda con:',
+      'A: si solo la primera premisa es verdadera.',
+      'B: si solo la segunda premisa es verdadera.',
+      'C: si ambas premisas son verdaderas.',
+      'D: si ninguna premisa es verdadera.',
+    ],
+    PROBLEMA: [
+      'Instrucciones: El siguiente caso clínico o problema tendrá varias preguntas. Seleccione la respuesta correcta en cada una.',
     ],
   }
 
   return {
     tipo,
     tipoLabel: getTipoLabelBanco(tipo),
-    tipoHeading:
-      {
-        FALSO_VERDADERO: 'VERDADERO O FALSO',
-        SELECCION_SIMPLE: 'SELECCIÓN SIMPLE',
-        PREGUNTA_CON_CLAVE: 'PREGUNTAS CON CLAVE',
-        RESPUESTA_COMPUESTA: 'RESPUESTAS COMPUESTAS',
-        EMPAREJAMIENTO: 'EMPAREJAMIENTO',
-        PROBLEMA: 'PROBLEMAS O CASOS',
-        SUBPROBLEMA: 'SUB PROBLEMA',
-      }[tipo] || getTipoLabelBanco(tipo),
-    instrucciones: baseInstrucciones[tipo] || [],
+    tipoHeading: previewHeadings[tipo] || getTipoLabelBanco(tipo),
+    instrucciones: previewInstrucciones[tipo] || baseInstrucciones[tipo] || [],
     parcial: formPregunta.value.parcial || filtroBancoParcialSeleccionado.value || '2P',
     grupoTeorico: formPregunta.value.grupoTeorico || filtroBancoGrupoSeleccionado.value || '',
     grupoReferencia: formPregunta.value.grupo || '',
@@ -5852,7 +6010,7 @@ async function previsualizarRegistroPreguntaPdf() {
       currentY = agregarTextoPreviewPdf(
         doc,
         preview.enunciado ||
-          'Seleccione la relación correcta entre cada término y el concepto que mejor corresponda.',
+          'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
         margin,
         currentY,
         maxWidth,
@@ -6250,7 +6408,7 @@ function construirEnunciadoRegistroManual() {
     const premisas = (formPregunta.value.premisas || [])
       .map((premisa, index) => `${index + 1}. ${String(premisa || '').trim()}`)
       .join('<br>')
-    return [enunciadoBase, premisas].filter(Boolean).join('<br>')
+    return premisas
   }
 
   if (tipo === 'PREGUNTA_CON_CLAVE') {
@@ -6292,7 +6450,7 @@ function construirPayloadBaseRegistro() {
 function validarRegistroManualPregunta() {
   const tipo = tipoRegistroPregunta.value
 
-  if (!String(formPregunta.value.enunciado || '').trim()) {
+  if (tipo !== 'RESPUESTA_COMPUESTA' && !String(formPregunta.value.enunciado || '').trim()) {
     return 'Debes registrar el enunciado principal.'
   }
 
@@ -6302,19 +6460,19 @@ function validarRegistroManualPregunta() {
 
   if (tipo === 'RESPUESTA_COMPUESTA') {
     if ((formPregunta.value.premisas || []).some((premisa) => !String(premisa || '').trim())) {
-      return 'Debes completar las dos premisas de la respuesta compuesta.'
+      return 'Debes completar las dos premisas de la respuesta A/B/Ambas/Ninguna.'
     }
   }
 
   if (tipo === 'PREGUNTA_CON_CLAVE') {
     if ((formPregunta.value.incisosClave || []).some((inciso) => !String(inciso || '').trim())) {
-      return 'Debes completar los 4 incisos de la pregunta con clave.'
+      return 'Debes completar los 4 incisos de verdadero o falso complejas.'
     }
   }
 
   if (tipo === 'SELECCION_SIMPLE') {
     if ((formPregunta.value.opciones || []).some((opcion) => !String(opcion || '').trim())) {
-      return 'Debes completar las 5 opciones de la selección simple.'
+      return 'Debes completar las 5 opciones de la selección de la mejor respuesta.'
     }
   }
 
@@ -6327,16 +6485,16 @@ function validarRegistroManualPregunta() {
       clavesActivas.slice(primeraClaveVaciaIndex + 1).some((clave) => clave.text)
 
     if (hayClavePosteriorCompletada) {
-      return 'Completa las claves del emparejamiento en orden, sin saltar letras intermedias.'
+      return 'Completa las claves del emparejamiento ampliado en orden, sin saltar letras intermedias.'
     }
 
     if (clavesCompletas.length < 2 || clavesCompletas.length > 5) {
-      return 'Debes completar entre 2 y 5 claves para el emparejamiento.'
+      return 'Debes completar entre 2 y 5 claves para el emparejamiento ampliado.'
     }
 
     const preguntasLigadas = formPregunta.value.preguntasLigadas || []
     if (preguntasLigadas.length < 2 || preguntasLigadas.length > 5) {
-      return 'Debes registrar entre 2 y 5 opciones emparejamiento.'
+      return 'Debes registrar entre 2 y 5 opciones de emparejamiento.'
     }
 
     const respuestasValidas = clavesCompletas.map((clave) => clave.id)
@@ -6352,13 +6510,13 @@ function validarRegistroManualPregunta() {
         ),
     )
     if (filaIncompleta) {
-      return 'Debes completar cada opción emparejamiento con enunciado, dificultad y una respuesta válida según las claves activas.'
+      return 'Debes completar cada opción de emparejamiento con enunciado, dificultad y una respuesta válida según las claves activas.'
     }
   }
 
   if (tipo === 'PROBLEMA') {
     if (!(formPregunta.value.preguntasLigadas || []).length) {
-      return 'Debes registrar al menos un sub problema.'
+      return 'Debes registrar al menos un subítem.'
     }
 
     const filaIncompleta = formPregunta.value.preguntasLigadas.some(
@@ -6369,7 +6527,7 @@ function validarRegistroManualPregunta() {
         !String(item.dificultad || '').trim(),
     )
     if (filaIncompleta) {
-      return 'Debes completar todos los subproblemas con opciones, dificultad y respuesta.'
+      return 'Debes completar todos los subítems con opciones, dificultad y respuesta.'
     }
   }
 
@@ -7031,21 +7189,21 @@ const REQUISITOS_BANCO_DIFICULTAD_ITEMS = [
 const REQUISITOS_BANCO_GRUPO_TIPO = [
   {
     key: 'g1',
-    label: 'G1 VF + Clave + Compuesta',
+    label: 'G1 VF simple + VF complejas + A/B',
     requerido: 15,
     color: 'green-7',
     tipos: ['FALSO_VERDADERO', 'PREGUNTA_CON_CLAVE', 'RESPUESTA_COMPUESTA'],
   },
   {
     key: 'g2',
-    label: 'G2 Selección Simple',
+    label: 'G2 Mejor respuesta',
     requerido: 30,
     color: 'blue-7',
     tipos: ['SELECCION_SIMPLE'],
   },
   {
     key: 'g3',
-    label: 'G3 Problemas o casos y emparejamiento',
+    label: 'G3 Casos/problemas + emparejamiento',
     requerido: 15,
     color: 'purple-7',
     tipos: ['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'],
@@ -7476,7 +7634,7 @@ function esOpcionCorrecta(pregunta, letra) {
 async function descargarFormatoBancoLegacy() {
   const ExcelJS = await import('exceljs')
   const workbook = new ExcelJS.default.Workbook()
-  const parcialActivo = normalizarParcialBanco(filtroBancoParcialSeleccionado.value || '1P')
+  const parcialActivo = normalizarParcialBanco(filtroBancoParcialSeleccionado.value || '2P')
   const parcialActivoLabel = getParcialLabelBanco(parcialActivo)
   const tiposExcelPermitidos = tiposPreguntaOptions.map((tipo) => tipo.label)
 
@@ -7714,7 +7872,7 @@ async function descargarFormatoBancoLegacy() {
 
   // Ejemplos FV
   addEjRow(
-    'VERDADERO O FALSO',
+    tipoPreguntaExcelLabels.FALSO_VERDADERO,
     '1',
     parcialActivo,
     'Bolivia cuenta con una salida soberana al OcÒ�� �"Ò� â����Ò�â��šÒ�a�©ano PacÒ�� �"Ò� â����Ò�â��šÒ�a�­fico.',
@@ -7722,7 +7880,7 @@ async function descargarFormatoBancoLegacy() {
     ['Verdadero', 'Falso'],
   )
   addEjRow(
-    'VERDADERO O FALSO',
+    tipoPreguntaExcelLabels.FALSO_VERDADERO,
     '1',
     parcialActivo,
     'La capital constitucional de Bolivia es Sucre.',
@@ -7732,7 +7890,7 @@ async function descargarFormatoBancoLegacy() {
 
   // Ejemplos de pregunta objetiva
   addEjRow(
-    'PREGUNTA CON CLAVE',
+    tipoPreguntaExcelLabels.PREGUNTA_CON_CLAVE,
     '2',
     parcialActivo,
     '¿Cuál es el símbolo químico del oro en la tabla periódica?',
@@ -7859,49 +8017,50 @@ async function descargarFormatoBanco() {
   const workbook = new ExcelJS.default.Workbook()
   const parcialActivo = normalizarParcialBanco(filtroBancoParcialSeleccionado.value || '1P')
   const parcialActivoLabel = getParcialLabelBanco(parcialActivo)
+  const excelTipos = tipoPreguntaExcelLabels
   const tiposExcelPermitidos = [
-    'VERDADERO O FALSO',
-    'RESPUESTA COMPUESTA',
-    'PREGUNTA CON CLAVE',
-    'SELECCION SIMPLE',
-    'EMPAREJAMIENTO',
-    'OPCION EMPAREJAMIENTO',
-    'PROBLEMA O CASO',
-    'SUB PROBLEMA',
+    excelTipos.FALSO_VERDADERO,
+    excelTipos.RESPUESTA_COMPUESTA,
+    excelTipos.PREGUNTA_CON_CLAVE,
+    excelTipos.SELECCION_SIMPLE,
+    excelTipos.EMPAREJAMIENTO,
+    excelTipos.OPCION_EMPAREJAMIENTO,
+    excelTipos.PROBLEMA,
+    excelTipos.SUBPROBLEMA,
   ]
   const opcionesRespuestaCompuestaExcel = [
-    'A. Si la primera es correcta',
-    'B. Si la segunda es correcta',
-    'C. Si ambas son correctas',
-    'D. Si ninguna es correcta',
+    'A. Solo la primera es verdadera',
+    'B. Solo la segunda es verdadera',
+    'C. Ambas son verdaderas',
+    'D. Ninguna es verdadera',
   ]
   const enunciadoEmparejamientoExcel =
-    'Seleccione la relación correcta entre cada término y el concepto que mejor corresponda.'
+    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.'
   const respuestasPreguntaClaveExcel = [
-    'A: 1, 2, 3 son correctas',
-    'B: 1 y 3 son correctas',
-    'C: 2 y 4 son correctas',
-    'D: Solo 4 es correcta',
-    'E: Todas son correctas',
+    'A: 1, 2 y 3 son verdaderas',
+    'B: 1 y 3 son verdaderas',
+    'C: 2 y 4 son verdaderas',
+    'D: Solo 4 es verdadera',
+    'E: Todas son verdaderas',
   ]
   const filasBancoDesde = 2
   const filasBancoHasta = 61
   const tiposRequierenGrupo = [
-    'PROBLEMA O CASO',
-    'SUB PROBLEMA',
-    'EMPAREJAMIENTO',
-    'OPCION EMPAREJAMIENTO',
+    excelTipos.PROBLEMA,
+    excelTipos.SUBPROBLEMA,
+    excelTipos.EMPAREJAMIENTO,
+    excelTipos.OPCION_EMPAREJAMIENTO,
   ]
   const tiposRequierenRespuesta = [
-    'VERDADERO O FALSO',
-    'RESPUESTA COMPUESTA',
-    'PREGUNTA CON CLAVE',
-    'SELECCION SIMPLE',
-    'SUB PROBLEMA',
-    'OPCION EMPAREJAMIENTO',
+    excelTipos.FALSO_VERDADERO,
+    excelTipos.RESPUESTA_COMPUESTA,
+    excelTipos.PREGUNTA_CON_CLAVE,
+    excelTipos.SELECCION_SIMPLE,
+    excelTipos.SUBPROBLEMA,
+    excelTipos.OPCION_EMPAREJAMIENTO,
   ]
   const tiposRequierenDificultad = [...tiposRequierenRespuesta]
-  const tiposSinRespuestaYDificultad = ['PROBLEMA O CASO', 'EMPAREJAMIENTO']
+  const tiposSinRespuestaYDificultad = [excelTipos.PROBLEMA, excelTipos.EMPAREJAMIENTO]
   const rangoTiposBanco = `$A$${filasBancoDesde}:$A$${filasBancoHasta}`
 
   const excelOr = (cellRef, values) =>
@@ -7911,12 +8070,9 @@ async function descargarFormatoBanco() {
   const countByTiposFormula = (tipos) =>
     tipos.map((tipo) => `COUNTIF(${rangoTiposBanco},"${tipo}")`).join('+')
 
-  const buildOptionValidationFormula = (rowNumber, columnLetter, allowedTypes) => {
+  const buildOptionValidationFormula = (rowNumber, columnLetter, allowedRangeName) => {
     const cellRef = `$${columnLetter}${rowNumber}`
-    const allowedTypesFormula = allowedTypes.length
-      ? excelOr(`$A${rowNumber}`, allowedTypes)
-      : 'FALSE'
-    return `IF(${allowedTypesFormula},TRUE,LEN(TRIM(${cellRef}))=0)`
+    return `IF(ISNUMBER(MATCH($A${rowNumber},${allowedRangeName},0)),TRUE,LEN(TRIM(${cellRef}))=0)`
   }
 
   const toExcelColumn = (columnNumber) => {
@@ -7981,55 +8137,55 @@ async function descargarFormatoBanco() {
         message: 'dificultad debe ir vacia',
       },
       {
-        condition: `AND(${tipoRef}="VERDADERO O FALSO",OR(${filledOptionsFormula('D', 'E')}<2,${filledOptionsFormula('F', 'H')}>0))`,
+        condition: `AND(${tipoRef}="${excelTipos.FALSO_VERDADERO}",OR(${filledOptionsFormula('D', 'E')}<2,${filledOptionsFormula('F', 'H')}>0))`,
         message: 'incisos A-B',
       },
       {
-        condition: `AND(${tipoRef}="VERDADERO O FALSO",TRIM(${respuestaRef})<>"",NOT(${respuestaABFormula}))`,
+        condition: `AND(${tipoRef}="${excelTipos.FALSO_VERDADERO}",TRIM(${respuestaRef})<>"",NOT(${respuestaABFormula}))`,
         message: 'respuesta A-B',
       },
       {
-        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",${filledOptionsFormula('D', 'G')}<4)`,
+        condition: `AND(${tipoRef}="${excelTipos.RESPUESTA_COMPUESTA}",${filledOptionsFormula('D', 'G')}<4)`,
         message: 'opciones A-D',
       },
       {
-        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",${filledOptionsFormula('H', 'H')}>0)`,
+        condition: `AND(${tipoRef}="${excelTipos.RESPUESTA_COMPUESTA}",${filledOptionsFormula('H', 'H')}>0)`,
         message: 'opcion E deshabilitada',
       },
       {
-        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",TRIM(${respuestaRef})<>"",NOT(${respuestaABCDFormula}))`,
+        condition: `AND(${tipoRef}="${excelTipos.RESPUESTA_COMPUESTA}",TRIM(${respuestaRef})<>"",NOT(${respuestaABCDFormula}))`,
         message: 'respuesta A-D',
       },
       {
-        condition: `AND(${tipoRef}="PREGUNTA CON CLAVE",OR(LEN(TRIM(SUBSTITUTE(${opcionARef},"1.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionBRef},"2.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionCRef},"3.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionDRef},"4.","")))=0))`,
+        condition: `AND(${tipoRef}="${excelTipos.PREGUNTA_CON_CLAVE}",OR(LEN(TRIM(SUBSTITUTE(${opcionARef},"1.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionBRef},"2.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionCRef},"3.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionDRef},"4.","")))=0))`,
         message: 'incisos 1-4',
       },
       {
-        condition: `AND(${tipoRef}="PREGUNTA CON CLAVE",${filledOptionsFormula('H', 'H')}>0)`,
+        condition: `AND(${tipoRef}="${excelTipos.PREGUNTA_CON_CLAVE}",${filledOptionsFormula('H', 'H')}>0)`,
         message: 'opcion E deshabilitada',
       },
       {
-        condition: `AND(${tipoRef}="PREGUNTA CON CLAVE",TRIM(${respuestaRef})<>"",NOT(${respuestaABCDEFormula}))`,
+        condition: `AND(${tipoRef}="${excelTipos.PREGUNTA_CON_CLAVE}",TRIM(${respuestaRef})<>"",NOT(${respuestaABCDEFormula}))`,
         message: 'respuesta A-E',
       },
       {
-        condition: `AND(OR(${tipoRef}="SELECCION SIMPLE",${tipoRef}="SUB PROBLEMA"),${filledOptionsFormula()}<5)`,
+        condition: `AND(OR(${tipoRef}="${excelTipos.SELECCION_SIMPLE}",${tipoRef}="${excelTipos.SUBPROBLEMA}"),${filledOptionsFormula()}<5)`,
         message: 'incisos A-E',
       },
       {
-        condition: `AND(OR(${tipoRef}="SELECCION SIMPLE",${tipoRef}="SUB PROBLEMA"),TRIM(${respuestaRef})<>"",NOT(${respuestaABCDEFormula}))`,
+        condition: `AND(OR(${tipoRef}="${excelTipos.SELECCION_SIMPLE}",${tipoRef}="${excelTipos.SUBPROBLEMA}"),TRIM(${respuestaRef})<>"",NOT(${respuestaABCDEFormula}))`,
         message: 'respuesta A-E',
       },
       {
-        condition: `AND(OR(${tipoRef}="PROBLEMA O CASO",${tipoRef}="OPCION EMPAREJAMIENTO"),${filledOptionsFormula()}>0)`,
+        condition: `AND(OR(${tipoRef}="${excelTipos.PROBLEMA}",${tipoRef}="${excelTipos.OPCION_EMPAREJAMIENTO}"),${filledOptionsFormula()}>0)`,
         message: 'sin incisos',
       },
       {
-        condition: `AND(${tipoRef}="EMPAREJAMIENTO",${filledOptionsFormula()}<2)`,
+        condition: `AND(${tipoRef}="${excelTipos.EMPAREJAMIENTO}",${filledOptionsFormula()}<2)`,
         message: 'minimo 2 claves',
       },
       {
-        condition: `AND(${tipoRef}="OPCION EMPAREJAMIENTO",NOT(${respuestaABCDEFormula}))`,
+        condition: `AND(${tipoRef}="${excelTipos.OPCION_EMPAREJAMIENTO}",NOT(${respuestaABCDEFormula}))`,
         message: 'respuesta A-E',
       },
     ]
@@ -8069,6 +8225,13 @@ async function descargarFormatoBanco() {
       wsValidaciones.getCell(`${column}${index + 1}`).value = value
     })
   }
+  const fillValidationPairs = (firstColumn, secondColumn, pairs) => {
+    pairs.forEach(([firstValue, secondValue], index) => {
+      const rowNumber = index + 1
+      wsValidaciones.getCell(`${firstColumn}${rowNumber}`).value = firstValue
+      wsValidaciones.getCell(`${secondColumn}${rowNumber}`).value = secondValue
+    })
+  }
 
   fillValidationColumn('A', tiposExcelPermitidos)
   fillValidationColumn('B', ['A', 'B'])
@@ -8080,6 +8243,57 @@ async function descargarFormatoBanco() {
   fillValidationColumn('H', respuestasPreguntaClaveExcel)
   wsValidaciones.getCell('I1').value = enunciadoEmparejamientoExcel
 
+  const mapaRespuestaPorTipo = [
+    [excelTipos.FALSO_VERDADERO, 'RESP_VF'],
+    [excelTipos.RESPUESTA_COMPUESTA, 'RESP_ABCD'],
+    [excelTipos.PREGUNTA_CON_CLAVE, 'RESP_CLAVE'],
+    [excelTipos.SELECCION_SIMPLE, 'RESP_ABCDE'],
+    [excelTipos.SUBPROBLEMA, 'RESP_ABCDE'],
+    [excelTipos.OPCION_EMPAREJAMIENTO, 'RESP_ABCDE'],
+  ]
+  const tiposOpcionesPorColumna = {
+    D: [
+      excelTipos.FALSO_VERDADERO,
+      excelTipos.RESPUESTA_COMPUESTA,
+      excelTipos.PREGUNTA_CON_CLAVE,
+      excelTipos.SELECCION_SIMPLE,
+      excelTipos.SUBPROBLEMA,
+      excelTipos.EMPAREJAMIENTO,
+    ],
+    E: [
+      excelTipos.FALSO_VERDADERO,
+      excelTipos.RESPUESTA_COMPUESTA,
+      excelTipos.PREGUNTA_CON_CLAVE,
+      excelTipos.SELECCION_SIMPLE,
+      excelTipos.SUBPROBLEMA,
+      excelTipos.EMPAREJAMIENTO,
+    ],
+    F: [
+      excelTipos.RESPUESTA_COMPUESTA,
+      excelTipos.PREGUNTA_CON_CLAVE,
+      excelTipos.SELECCION_SIMPLE,
+      excelTipos.SUBPROBLEMA,
+      excelTipos.EMPAREJAMIENTO,
+    ],
+    G: [
+      excelTipos.RESPUESTA_COMPUESTA,
+      excelTipos.PREGUNTA_CON_CLAVE,
+      excelTipos.SELECCION_SIMPLE,
+      excelTipos.SUBPROBLEMA,
+      excelTipos.EMPAREJAMIENTO,
+    ],
+    H: [excelTipos.SELECCION_SIMPLE, excelTipos.SUBPROBLEMA, excelTipos.EMPAREJAMIENTO],
+  }
+
+  fillValidationPairs('J', 'K', mapaRespuestaPorTipo)
+  fillValidationColumn('L', tiposRequierenGrupo)
+  fillValidationColumn('M', tiposSinRespuestaYDificultad)
+  fillValidationColumn('N', tiposOpcionesPorColumna.D)
+  fillValidationColumn('O', tiposOpcionesPorColumna.E)
+  fillValidationColumn('P', tiposOpcionesPorColumna.F)
+  fillValidationColumn('Q', tiposOpcionesPorColumna.G)
+  fillValidationColumn('R', tiposOpcionesPorColumna.H)
+
   workbook.definedNames.add('VALIDACIONES!$A$1:$A$8', 'LISTA_TIPOS_2P')
   workbook.definedNames.add('VALIDACIONES!$B$1:$B$2', 'RESP_VF')
   workbook.definedNames.add('VALIDACIONES!$C$1:$C$4', 'RESP_ABCD')
@@ -8088,6 +8302,38 @@ async function descargarFormatoBanco() {
   workbook.definedNames.add('VALIDACIONES!$F$1:$F$3', 'DIFICULTADES_123')
   workbook.definedNames.add('VALIDACIONES!$G$1', 'PARCIAL_ACTIVO_BANCO')
   workbook.definedNames.add('VALIDACIONES!$H$1:$H$5', 'RESP_CLAVE')
+  workbook.definedNames.add(
+    `VALIDACIONES!$J$1:$K$${mapaRespuestaPorTipo.length}`,
+    'MAPA_RESPUESTA_TIPO',
+  )
+  workbook.definedNames.add(
+    `VALIDACIONES!$L$1:$L$${tiposRequierenGrupo.length}`,
+    'TIPOS_REQUIEREN_GRUPO',
+  )
+  workbook.definedNames.add(
+    `VALIDACIONES!$M$1:$M$${tiposSinRespuestaYDificultad.length}`,
+    'TIPOS_SIN_DIFICULTAD',
+  )
+  workbook.definedNames.add(
+    `VALIDACIONES!$N$1:$N$${tiposOpcionesPorColumna.D.length}`,
+    'TIPOS_OPCION_D',
+  )
+  workbook.definedNames.add(
+    `VALIDACIONES!$O$1:$O$${tiposOpcionesPorColumna.E.length}`,
+    'TIPOS_OPCION_E',
+  )
+  workbook.definedNames.add(
+    `VALIDACIONES!$P$1:$P$${tiposOpcionesPorColumna.F.length}`,
+    'TIPOS_OPCION_F',
+  )
+  workbook.definedNames.add(
+    `VALIDACIONES!$Q$1:$Q$${tiposOpcionesPorColumna.G.length}`,
+    'TIPOS_OPCION_G',
+  )
+  workbook.definedNames.add(
+    `VALIDACIONES!$R$1:$R$${tiposOpcionesPorColumna.H.length}`,
+    'TIPOS_OPCION_H',
+  )
 
   const wsInst = workbook.addWorksheet('Instrucciones')
   wsInst.getColumn(1).width = 40
@@ -8109,67 +8355,73 @@ async function descargarFormatoBanco() {
 
   addGuideHeader('1. CODIGOS DE PREGUNTA (Columna TIPO)')
   wsInst.addRow([
-    'VERDADERO O FALSO',
+    excelTipos.FALSO_VERDADERO,
     'opcion_a, opcion_b y respuesta_correcta se preparan automaticamente. Cambie la respuesta si el enunciado es falso.',
   ])
   wsInst.addRow([
-    'PREGUNTA CON CLAVE',
+    excelTipos.PREGUNTA_CON_CLAVE,
     'Use opcion_a a opcion_d para los incisos 1-4; opcion_e queda deshabilitada. La respuesta usa la lista A-E.',
   ])
   wsInst.addRow([
-    'SELECCION SIMPLE',
-    'Pregunta objetiva con 5 opciones y una sola respuesta correcta.',
+    excelTipos.SELECCION_SIMPLE,
+    'Pregunta objetiva con 5 opciones donde se selecciona la mejor respuesta.',
   ])
   const rowSM1 = wsInst.addRow([
-    'RESPUESTA COMPUESTA',
-    'Use el enunciado con I. y II.; opcion_a a opcion_d se preparan automaticamente y la respuesta_correcta va entre A y D.',
+    excelTipos.RESPUESTA_COMPUESTA,
+    'Use el enunciado solo con las premisas I. y II.; opcion_a a opcion_d se preparan automaticamente y la respuesta_correcta va entre A y D.',
   ])
   rowSM1.getCell(2).font = redFont
   const rowPR1 = wsInst.addRow([
-    'PROBLEMA O CASO',
+    excelTipos.PROBLEMA,
     'Solo llenar grupo y enunciado. No lleva opciones, dificultad ni respuesta directa.',
   ])
   rowPR1.getCell(2).font = redFont
   wsInst.addRow([
-    'SUB PROBLEMA',
-    'Pregunta hija de un Problema o Caso. Lleva 5 opciones y una respuesta correcta.',
+    excelTipos.SUBPROBLEMA,
+    'Pregunta hija de un caso clinico o problema. Lleva 5 opciones y una respuesta correcta.',
   ])
   const rowEM1 = wsInst.addRow([
-    'EMPAREJAMIENTO',
+    excelTipos.EMPAREJAMIENTO,
     'El enunciado se prepara automaticamente. Llene grupo y de 2 a 5 claves en opcion_a a opcion_e. No lleva dificultad ni respuesta directa.',
   ])
   rowEM1.getCell(2).font = redFont
   wsInst.addRow([
-    'OPCION EMPAREJAMIENTO',
+    excelTipos.OPCION_EMPAREJAMIENTO,
     'Pregunta hija de un Emparejamiento. No lleva opciones en columnas, solo grupo, enunciado, dificultad y respuesta.',
   ])
   wsInst.addRow([])
 
   addGuideHeader('2. RESPUESTAS VALIDAS')
   wsInst.addRow([
-    'Pregunta con Clave',
+    excelTipos.PREGUNTA_CON_CLAVE,
     'Use una de las combinaciones fijas: A: 1, 2, 3 correctas; B: 1 y 3 correctas; C: 2 y 4 correctas; D: Solo 4 es correcta; E: Todas son correctas.',
   ])
-  wsInst.addRow(['Seleccion Simple / Sub Problema', 'Use una sola letra: A, B, C, D o E.'])
-  wsInst.addRow(['Emparejamiento / Problema o Caso', 'Deje respuesta_correcta vacia.'])
+  wsInst.addRow([
+    `${excelTipos.SELECCION_SIMPLE} / ${excelTipos.SUBPROBLEMA}`,
+    'Use una sola letra: A, B, C, D o E.',
+  ])
+  wsInst.addRow([
+    `${excelTipos.EMPAREJAMIENTO} / ${excelTipos.PROBLEMA}`,
+    'Deje respuesta_correcta vacia.',
+  ])
   const rowSM2 = wsInst.addRow([
-    'Respuesta Compuesta',
+    excelTipos.RESPUESTA_COMPUESTA,
     'La respuesta_correcta solo puede ser A, B, C o D.',
   ])
   rowSM2.getCell(2).font = redFont
-  wsInst.addRow(['Verdadero o Falso', 'A para Verdadero, B para Falso.'])
+  wsInst.addRow([excelTipos.FALSO_VERDADERO, 'A para Verdadero, B para Falso.'])
   wsInst.addRow([
-    'Opcion Emparejamiento',
+    excelTipos.OPCION_EMPAREJAMIENTO,
     'Use la letra correcta segun las claves activas definidas en el encabezado del emparejamiento.',
   ])
-  const rowPR2 = wsInst.addRow(['Problema o Caso', 'No debe llevar respuesta_correcta.'])
+  const rowPR2 = wsInst.addRow([excelTipos.PROBLEMA, 'No debe llevar respuesta_correcta.'])
   rowPR2.getCell(2).font = redFont
   wsInst.addRow([])
 
   addGuideHeader('3. CONFIGURACION DEL EXAMEN')
   const rowDif = wsInst.addRow([
     'Dificultad (Nivel)',
-    '1 (Facil), 2 (Medio), 3 (Dificil). Problema o Caso y Emparejamiento no llevan dificultad.',
+    '1 (Facil), 2 (Medio), 3 (Dificil). Casos/problemas y Emparejamiento Ampliado no llevan dificultad.',
   ])
   rowDif.getCell(1).font = redFont
   rowDif.getCell(2).font = redFont
@@ -8190,15 +8442,15 @@ async function descargarFormatoBanco() {
   const note = wsInst.addRow(['- No elimine columnas ni cambie el nombre de la hoja "Banco".'])
   note.font = { italic: true, color: { argb: 'FFC62828' } }
   const noteSM = wsInst.addRow([
-    '- IMPORTANTE: Respuesta Compuesta usa la estructura I. y II. en enunciado; opcion_a a opcion_d lleva las respuestas fijas y opcion_e no se usa.',
+    '- IMPORTANTE: Respuesta A/B/Ambas/Ninguna usa solo las premisas I. y II. en enunciado; opcion_a a opcion_d lleva las respuestas fijas y opcion_e no se usa.',
   ])
   noteSM.font = redFont
   const notePC = wsInst.addRow([
-    '- IMPORTANTE: Pregunta con Clave usa solo los incisos 1, 2, 3 y 4 en opcion_a a opcion_d. No llene opcion_e.',
+    '- IMPORTANTE: Verdadero o Falso Complejas usa solo los incisos 1, 2, 3 y 4 en opcion_a a opcion_d. No llene opcion_e.',
   ])
   notePC.font = redFont
   const notePREM = wsInst.addRow([
-    '- IMPORTANTE: Problema o Caso y Emparejamiento son encabezados y no deben tener dificultad.',
+    '- IMPORTANTE: Casos/problemas y Emparejamiento Ampliado son encabezados y no deben tener dificultad.',
   ])
   notePREM.font = redFont
   const noteObs = wsInst.addRow([
@@ -8206,7 +8458,7 @@ async function descargarFormatoBanco() {
   ])
   noteObs.font = redFont
   wsInst.addRow([
-    '- Conteo por grupos de tipo: Grupo 1 = Verdadero/Falso + Pregunta con Clave + Respuesta Compuesta. Grupo 2 = Seleccion Simple. Grupo 3 = Problemas o casos y emparejamiento.',
+    '- Conteo por grupos de tipo: Grupo 1 = VF simple + VF complejas + A/B/Ambas/Ninguna. Grupo 2 = mejor respuesta. Grupo 3 = casos/problemas y emparejamiento ampliado.',
   ])
 
   const wsBanco = workbook.addWorksheet('Banco')
@@ -8286,27 +8538,27 @@ async function descargarFormatoBanco() {
 
   for (let i = filasBancoDesde; i <= filasBancoHasta; i++) {
     wsBanco.getCell(`C${i}`).value = {
-      formula: `IF($A${i}="EMPAREJAMIENTO",VALIDACIONES!$I$1,"")`,
+      formula: `IF($A${i}="${excelTipos.EMPAREJAMIENTO}",VALIDACIONES!$I$1,IF($A${i}="${excelTipos.RESPUESTA_COMPUESTA}","I. "&CHAR(10)&"II. ",""))`,
       result: '',
     }
     wsBanco.getCell(`D${i}`).value = {
-      formula: `IF($A${i}="VERDADERO O FALSO","Verdadero",IF($A${i}="RESPUESTA COMPUESTA","${opcionesRespuestaCompuestaExcel[0]}",""))`,
+      formula: `IF($A${i}="${excelTipos.FALSO_VERDADERO}","Verdadero",IF($A${i}="${excelTipos.RESPUESTA_COMPUESTA}","${opcionesRespuestaCompuestaExcel[0]}",""))`,
       result: '',
     }
     wsBanco.getCell(`E${i}`).value = {
-      formula: `IF($A${i}="VERDADERO O FALSO","Falso",IF($A${i}="RESPUESTA COMPUESTA","${opcionesRespuestaCompuestaExcel[1]}",""))`,
+      formula: `IF($A${i}="${excelTipos.FALSO_VERDADERO}","Falso",IF($A${i}="${excelTipos.RESPUESTA_COMPUESTA}","${opcionesRespuestaCompuestaExcel[1]}",""))`,
       result: '',
     }
     wsBanco.getCell(`F${i}`).value = {
-      formula: `IF($A${i}="RESPUESTA COMPUESTA","${opcionesRespuestaCompuestaExcel[2]}","")`,
+      formula: `IF($A${i}="${excelTipos.RESPUESTA_COMPUESTA}","${opcionesRespuestaCompuestaExcel[2]}","")`,
       result: '',
     }
     wsBanco.getCell(`G${i}`).value = {
-      formula: `IF($A${i}="RESPUESTA COMPUESTA","${opcionesRespuestaCompuestaExcel[3]}","")`,
+      formula: `IF($A${i}="${excelTipos.RESPUESTA_COMPUESTA}","${opcionesRespuestaCompuestaExcel[3]}","")`,
       result: '',
     }
     wsBanco.getCell(`I${i}`).value = {
-      formula: `IF($A${i}="VERDADERO O FALSO","A","")`,
+      formula: `IF($A${i}="${excelTipos.FALSO_VERDADERO}","A","")`,
       result: '',
     }
 
@@ -8329,42 +8581,40 @@ async function descargarFormatoBanco() {
       showInputMessage: true,
       promptTitle: 'Ayuda para enunciado',
       prompt:
-        'Emparejamiento se completa con el texto base. Respuesta Compuesta usa I. y II. Pregunta con Clave usa solo el enunciado general.',
+        'Emparejamiento Ampliado se completa con el texto base. Respuesta A/B/Ambas/Ninguna usa solo I. y II. Verdadero o Falso Complejas usa solo el enunciado general.',
     }
     wsBanco.getCell(`B${i}`).dataValidation = {
       type: 'custom',
       allowBlank: true,
       formulae: [
-        `IF(${excelOr(`$A${i}`, tiposRequierenGrupo)},LEN(TRIM($B${i}))>0,LEN(TRIM($B${i}))=0)`,
+        `IF(ISNUMBER(MATCH($A${i},TIPOS_REQUIEREN_GRUPO,0)),LEN(TRIM($B${i}))>0,LEN(TRIM($B${i}))=0)`,
       ],
       showErrorMessage: true,
       errorTitle: 'Grupo invalido',
       error:
-        'El grupo solo se llena en Problema o Caso, Sub Problema, Emparejamiento y Opcion Emparejamiento.',
+        'El grupo solo se llena en casos/problemas, subitems, emparejamiento ampliado y opciones de emparejamiento.',
     }
     wsBanco.getCell(`I${i}`).dataValidation = {
       type: 'list',
       allowBlank: true,
-      formulae: [
-        `INDIRECT(IF($A${i}="VERDADERO O FALSO","RESP_VF",IF($A${i}="RESPUESTA COMPUESTA","RESP_ABCD",IF($A${i}="PREGUNTA CON CLAVE","RESP_CLAVE",IF(OR($A${i}="SELECCION SIMPLE",$A${i}="SUB PROBLEMA",$A${i}="OPCION EMPAREJAMIENTO"),"RESP_ABCDE","RESP_VACIA")))))`,
-      ],
+      formulae: [`INDIRECT(IFERROR(VLOOKUP($A${i},MAPA_RESPUESTA_TIPO,2,FALSE),"RESP_VACIA"))`],
       showErrorMessage: true,
       errorTitle: 'Respuesta invalida',
       error: 'Seleccione una respuesta valida segun el tipo de pregunta.',
       showInputMessage: true,
       promptTitle: 'Ayuda para respuesta',
       prompt:
-        'Verdadero/Falso inicia en A y puede cambiarse a B. Respuesta Compuesta usa A-D. Pregunta con Clave usa combinaciones A-E.',
+        'Verdadero/Falso Simple inicia en A y puede cambiarse a B. Respuesta A/B/Ambas/Ninguna usa A-D. Verdadero/Falso Complejas usa combinaciones A-E.',
     }
     wsBanco.getCell(`J${i}`).dataValidation = {
       type: 'list',
       allowBlank: true,
       formulae: [
-        `INDIRECT(IF(OR($A${i}="PROBLEMA O CASO",$A${i}="EMPAREJAMIENTO"),"RESP_VACIA","DIFICULTADES_123"))`,
+        `INDIRECT(IF(ISNUMBER(MATCH($A${i},TIPOS_SIN_DIFICULTAD,0)),"RESP_VACIA","DIFICULTADES_123"))`,
       ],
       showErrorMessage: true,
       errorTitle: 'Dificultad invalida',
-      error: 'Use 1, 2 o 3. Problema o Caso y Emparejamiento no llevan dificultad.',
+      error: 'Use 1, 2 o 3. Casos/problemas y Emparejamiento Ampliado no llevan dificultad.',
     }
     wsBanco.getCell(`K${i}`).dataValidation = {
       type: 'list',
@@ -8375,58 +8625,20 @@ async function descargarFormatoBanco() {
       error: `Use unicamente ${parcialActivo} para este formato.`,
     }
     ;[
-      [
-        'D',
-        [
-          'VERDADERO O FALSO',
-          'RESPUESTA COMPUESTA',
-          'PREGUNTA CON CLAVE',
-          'SELECCION SIMPLE',
-          'SUB PROBLEMA',
-          'EMPAREJAMIENTO',
-        ],
-      ],
-      [
-        'E',
-        [
-          'VERDADERO O FALSO',
-          'RESPUESTA COMPUESTA',
-          'PREGUNTA CON CLAVE',
-          'SELECCION SIMPLE',
-          'SUB PROBLEMA',
-          'EMPAREJAMIENTO',
-        ],
-      ],
-      [
-        'F',
-        [
-          'RESPUESTA COMPUESTA',
-          'PREGUNTA CON CLAVE',
-          'SELECCION SIMPLE',
-          'SUB PROBLEMA',
-          'EMPAREJAMIENTO',
-        ],
-      ],
-      [
-        'G',
-        [
-          'RESPUESTA COMPUESTA',
-          'PREGUNTA CON CLAVE',
-          'SELECCION SIMPLE',
-          'SUB PROBLEMA',
-          'EMPAREJAMIENTO',
-        ],
-      ],
-      ['H', ['SELECCION SIMPLE', 'SUB PROBLEMA', 'EMPAREJAMIENTO']],
-    ].forEach(([columnLetter, allowedTypes]) => {
+      ['D', 'TIPOS_OPCION_D'],
+      ['E', 'TIPOS_OPCION_E'],
+      ['F', 'TIPOS_OPCION_F'],
+      ['G', 'TIPOS_OPCION_G'],
+      ['H', 'TIPOS_OPCION_H'],
+    ].forEach(([columnLetter, allowedRangeName]) => {
       wsBanco.getCell(`${columnLetter}${i}`).dataValidation = {
         type: 'custom',
         allowBlank: true,
-        formulae: [buildOptionValidationFormula(i, columnLetter, allowedTypes)],
+        formulae: [buildOptionValidationFormula(i, columnLetter, allowedRangeName)],
         showInputMessage: true,
         promptTitle: 'Ayuda para incisos',
         prompt:
-          'VF y Respuesta Compuesta se preparan automaticamente. Pregunta con Clave usa 1. a 4. Seleccion Simple y Sub Problema usan A-E.',
+          'VF simple y Respuesta A/B/Ambas/Ninguna se preparan automaticamente. VF complejas usa 1. a 4. Mejor respuesta y subitem usan A-E.',
         showErrorMessage: true,
         errorTitle: 'Inciso no permitido',
         error:
@@ -8468,26 +8680,26 @@ async function descargarFormatoBanco() {
   rowD.getCell(10).value = { formula: 'COUNTIF(J2:J61, 3)' }
 
   const rowGrupo1 = wsBanco.getRow(67)
-  rowGrupo1.getCell(9).value = 'Grupo 1 (VF + PC + RC):'
+  rowGrupo1.getCell(9).value = 'Grupo 1 (VF simple + complejas + A/B):'
   rowGrupo1.getCell(9).font = { bold: true }
   rowGrupo1.getCell(10).value = {
     formula: countByTiposFormula([
-      'VERDADERO O FALSO',
-      'PREGUNTA CON CLAVE',
-      'RESPUESTA COMPUESTA',
+      excelTipos.FALSO_VERDADERO,
+      excelTipos.PREGUNTA_CON_CLAVE,
+      excelTipos.RESPUESTA_COMPUESTA,
     ]),
   }
 
   const rowGrupo2 = wsBanco.getRow(68)
-  rowGrupo2.getCell(9).value = 'Grupo 2 (Selección Simple):'
+  rowGrupo2.getCell(9).value = 'Grupo 2 (Mejor respuesta):'
   rowGrupo2.getCell(9).font = { bold: true }
-  rowGrupo2.getCell(10).value = { formula: countByTiposFormula(['SELECCION SIMPLE']) }
+  rowGrupo2.getCell(10).value = { formula: countByTiposFormula([excelTipos.SELECCION_SIMPLE]) }
 
   const rowGrupo3 = wsBanco.getRow(69)
-  rowGrupo3.getCell(9).value = 'Grupo 3 (Problemas/Casos y Emp.):'
+  rowGrupo3.getCell(9).value = 'Grupo 3 (Casos/problemas y emp.):'
   rowGrupo3.getCell(9).font = { bold: true }
   rowGrupo3.getCell(10).value = {
-    formula: countByTiposFormula(['SUB PROBLEMA', 'OPCION EMPAREJAMIENTO']),
+    formula: countByTiposFormula([excelTipos.SUBPROBLEMA, excelTipos.OPCION_EMPAREJAMIENTO]),
   }
 
   wsBanco.getCell('A71').value = 'NOTAS DE CARGA'
@@ -8495,21 +8707,21 @@ async function descargarFormatoBanco() {
   wsBanco.getCell('A72').value =
     '1. La columna L te dira si la fila esta OK o que campos faltan/revisar.'
   wsBanco.getCell('A73').value =
-    '2. Problema o Caso y Emparejamiento usan grupo y enunciado, pero no respuesta_correcta ni dificultad.'
+    '2. Casos/problemas y Emparejamiento Ampliado usan grupo y enunciado, pero no respuesta_correcta ni dificultad.'
   wsBanco.getCell('A74').value =
-    '3. Emparejamiento puede usar de 2 a 5 claves en opcion_a a opcion_e.'
+    '3. Emparejamiento Ampliado puede usar de 2 a 5 claves en opcion_a a opcion_e.'
   wsBanco.getCell('A75').value =
-    '4. En Verdadero o Falso, opcion_a, opcion_b y respuesta_correcta se preparan automaticamente.'
+    '4. En Verdadero o Falso Simple, opcion_a, opcion_b y respuesta_correcta se preparan automaticamente.'
   wsBanco.getCell('A76').value =
-    `5. En Respuesta Compuesta, escriba I. y II. en el enunciado; opcion_a a opcion_d se preparan con: ${opcionesRespuestaCompuestaExcel.join(' | ')}.`
+    `5. En Respuesta A/B/Ambas/Ninguna, escriba solo I. y II. en el enunciado; opcion_a a opcion_d se preparan con: ${opcionesRespuestaCompuestaExcel.join(' | ')}.`
   wsBanco.getCell('A77').value =
-    '6. En Pregunta con Clave, escriba 1. a 4. en opcion_a a opcion_d; opcion_e queda deshabilitada.'
+    '6. En Verdadero o Falso Complejas, escriba 1. a 4. en opcion_a a opcion_d; opcion_e queda deshabilitada.'
   wsBanco.getCell('A78').value =
-    `7. En Emparejamiento, el enunciado se prepara con: ${enunciadoEmparejamientoExcel}`
+    `7. En Emparejamiento Ampliado, el enunciado se prepara con: ${enunciadoEmparejamientoExcel}`
   wsBanco.getCell('A79').value =
     `8. Este formato esta preparado para ${parcialActivo} (${parcialActivoLabel}).`
   wsBanco.getCell('A80').value =
-    '9. Los grupos de conteo por tipo no consideran Problema o Caso ni Emparejamiento porque funcionan como cabeceras.'
+    '9. Los grupos de conteo por tipo no consideran casos/problemas ni emparejamientos porque funcionan como cabeceras.'
 
   const disabledCellStyle = {
     fill: {
@@ -8527,7 +8739,7 @@ async function descargarFormatoBanco() {
     rules: [
       {
         type: 'expression',
-        formulae: ['OR($A2="PROBLEMA O CASO",$A2="OPCION EMPAREJAMIENTO")'],
+        formulae: [`OR($A2="${excelTipos.PROBLEMA}",$A2="${excelTipos.OPCION_EMPAREJAMIENTO}")`],
         style: disabledCellStyle,
       },
     ],
@@ -8537,7 +8749,7 @@ async function descargarFormatoBanco() {
     rules: [
       {
         type: 'expression',
-        formulae: ['$A2="VERDADERO O FALSO"'],
+        formulae: [`$A2="${excelTipos.FALSO_VERDADERO}"`],
         style: disabledCellStyle,
       },
     ],
@@ -8547,7 +8759,9 @@ async function descargarFormatoBanco() {
     rules: [
       {
         type: 'expression',
-        formulae: ['OR($A2="RESPUESTA COMPUESTA",$A2="PREGUNTA CON CLAVE")'],
+        formulae: [
+          `OR($A2="${excelTipos.RESPUESTA_COMPUESTA}",$A2="${excelTipos.PREGUNTA_CON_CLAVE}")`,
+        ],
         style: disabledCellStyle,
       },
     ],
@@ -8557,7 +8771,7 @@ async function descargarFormatoBanco() {
     rules: [
       {
         type: 'expression',
-        formulae: ['OR($A2="PROBLEMA O CASO",$A2="EMPAREJAMIENTO")'],
+        formulae: [`OR($A2="${excelTipos.PROBLEMA}",$A2="${excelTipos.EMPAREJAMIENTO}")`],
         style: disabledCellStyle,
       },
     ],
@@ -8616,7 +8830,7 @@ async function descargarFormatoBanco() {
   }
 
   addEjRow(
-    'VERDADERO O FALSO',
+    excelTipos.FALSO_VERDADERO,
     '1',
     parcialActivo,
     'En STP, el root bridge se elige utilizando el Bridge ID mas bajo.',
@@ -8624,7 +8838,7 @@ async function descargarFormatoBanco() {
     ['Verdadero', 'Falso'],
   )
   addEjRow(
-    'VERDADERO O FALSO',
+    excelTipos.FALSO_VERDADERO,
     '1',
     parcialActivo,
     'OSPF es un protocolo de routing por vector de distancia.',
@@ -8632,7 +8846,7 @@ async function descargarFormatoBanco() {
     ['Verdadero', 'Falso'],
   )
   addEjRow(
-    'PREGUNTA CON CLAVE',
+    excelTipos.PREGUNTA_CON_CLAVE,
     '2',
     parcialActivo,
     'Seleccione los incisos correctos sobre switching.',
@@ -8645,7 +8859,7 @@ async function descargarFormatoBanco() {
     ],
   )
   addEjRow(
-    'PREGUNTA CON CLAVE',
+    excelTipos.PREGUNTA_CON_CLAVE,
     '2',
     parcialActivo,
     'Seleccione los incisos correctos sobre routing.',
@@ -8658,7 +8872,7 @@ async function descargarFormatoBanco() {
     ],
   )
   addEjRow(
-    'SELECCION SIMPLE',
+    excelTipos.SELECCION_SIMPLE,
     '2',
     parcialActivo,
     'Que comando configura un puerto como trunk en un switch Cisco?',
@@ -8672,7 +8886,7 @@ async function descargarFormatoBanco() {
     ],
   )
   addEjRow(
-    'SELECCION SIMPLE',
+    excelTipos.SELECCION_SIMPLE,
     '2',
     parcialActivo,
     'Cual de los siguientes protocolos es de estado de enlace?',
@@ -8680,27 +8894,25 @@ async function descargarFormatoBanco() {
     ['RIP', 'BGP', 'OSPF', 'VRRP', 'HSRP'],
   )
   addEjRow(
-    'RESPUESTA COMPUESTA',
+    excelTipos.RESPUESTA_COMPUESTA,
     '3',
     parcialActivo,
-    'Las siguientes preguntas estan compuestas de dos premisas relacionadas:' +
-      '\nI. Un puerto access transporta trafico de una sola VLAN.' +
+    'I. Un puerto access transporta trafico de una sola VLAN.' +
       '\nII. Un puerto trunk puede transportar trafico de multiples VLAN.',
     'C',
     opcionesRespuestaCompuestaExcel,
   )
   addEjRow(
-    'RESPUESTA COMPUESTA',
+    excelTipos.RESPUESTA_COMPUESTA,
     '3',
     parcialActivo,
-    'Las siguientes preguntas estan compuestas de dos premisas relacionadas:' +
-      '\nI. RIP utiliza el algoritmo de Dijkstra para calcular rutas.' +
+    'I. RIP utiliza el algoritmo de Dijkstra para calcular rutas.' +
       '\nII. OSPF utiliza el costo como metrica.',
     'B',
     opcionesRespuestaCompuestaExcel,
   )
   addEjRow(
-    'PROBLEMA O CASO',
+    excelTipos.PROBLEMA,
     '',
     parcialActivo,
     'Caso de Switching 1: Dos switches estan unidos por un troncal 802.1Q. Los usuarios de la VLAN 10 dejaron de llegar al gateway despues de cambiar la VLAN nativa en un extremo.',
@@ -8709,7 +8921,7 @@ async function descargarFormatoBanco() {
     'CASO-SW1',
   )
   addEjRow(
-    'SUB PROBLEMA',
+    excelTipos.SUBPROBLEMA,
     '3',
     parcialActivo,
     'Cual es la causa mas probable del problema?',
@@ -8724,7 +8936,7 @@ async function descargarFormatoBanco() {
     'CASO-SW1',
   )
   addEjRow(
-    'PROBLEMA O CASO',
+    excelTipos.PROBLEMA,
     '',
     parcialActivo,
     'Caso de Routing 1: Un router participa en OSPF, pero las redes LAN no aparecen en la tabla de routing porque el proceso fue anunciado en un area incorrecta.',
@@ -8733,7 +8945,7 @@ async function descargarFormatoBanco() {
     'CASO-RO1',
   )
   addEjRow(
-    'SUB PROBLEMA',
+    excelTipos.SUBPROBLEMA,
     '3',
     parcialActivo,
     'Que accion corrige primero el problema?',
@@ -8748,16 +8960,16 @@ async function descargarFormatoBanco() {
     'CASO-RO1',
   )
   addEjRow(
-    'EMPAREJAMIENTO',
+    excelTipos.EMPAREJAMIENTO,
     '',
     parcialActivo,
-    'Seleccione la relacion correcta entre cada termino y el concepto que mejor corresponda.',
+    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
     '',
     ['Access', 'Trunk', 'STP'],
     'EMP-SW1',
   )
   addEjRow(
-    'OPCION EMPAREJAMIENTO',
+    excelTipos.OPCION_EMPAREJAMIENTO,
     '2',
     parcialActivo,
     'Puerto que transporta trafico de una sola VLAN de datos.',
@@ -8766,16 +8978,16 @@ async function descargarFormatoBanco() {
     'EMP-SW1',
   )
   addEjRow(
-    'EMPAREJAMIENTO',
+    excelTipos.EMPAREJAMIENTO,
     '',
     parcialActivo,
-    'Seleccione la relacion correcta entre cada termino y el concepto que mejor corresponda.',
+    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
     '',
     ['OSPF', 'RIP', 'Ruta por defecto'],
     'EMP-RO1',
   )
   addEjRow(
-    'OPCION EMPAREJAMIENTO',
+    excelTipos.OPCION_EMPAREJAMIENTO,
     '2',
     parcialActivo,
     'Protocolo de routing de estado de enlace que usa SPF.',
@@ -9247,7 +9459,7 @@ function cerrarDialogImportBanco() {
   preguntasImportadas.value = []
   importErrores.value = []
   importStats.value = { total: 0, faciles: 0, medios: 0, dificiles: 0 }
-  parcialSeleccionado.value = filtroBancoParcialSeleccionado.value || '1P'
+  parcialSeleccionado.value = filtroBancoParcialSeleccionado.value || '2P'
   grupoTeoricoSeleccionado.value = filtroBancoGrupoSeleccionado.value || null
 }
 

@@ -409,48 +409,46 @@ function cleanQuestionText(text) {
 
 const EXAM_SECTION_COPY = {
   FALSO_VERDADERO: {
-    title: 'VERDADERO O FALSO',
-    lines: [
-      'Instrucciones: En las siguientes preguntas debe indicar si la premisa es verdadera seleccione A o si es falsa seleccione B.',
-    ],
+    title: 'VERDADERO O FALSO SIMPLE',
+    lines: ['Instrucciones: Marque A si el enunciado es verdadero o B si el enunciado es falso.'],
   },
   SELECCION_SIMPLE: {
-    title: 'SELECCION SIMPLE',
+    title: 'SELECCION DE LA MEJOR RESPUESTA',
     lines: [
-      'Instrucciones: Lea atentamente cada pregunta y seleccione la unica alternativa que considere correcta.',
+      'Instrucciones: Las siguientes preguntas estan compuestas por un caso clinico, una pregunta y cinco opciones de respuesta. Seleccione la mejor respuesta.',
     ],
   },
   PREGUNTA_CON_CLAVE: {
-    title: 'PREGUNTAS CON CLAVE',
+    title: 'VERDADERO O FALSO COMPLEJAS',
     lines: [
-      'Instrucciones: Seleccione todas las respuestas correctas de acuerdo a la siguiente regla:',
-      'A: 1, 2, 3 son correctas',
-      'B: 1, 3 son correctas',
-      'C: 2, 4 son correctas',
-      'D: Solo 4 es correcta',
-      'E: Todas son correctas',
+      'Instrucciones: Seleccione la opcion correcta de acuerdo con la siguiente clave:',
+      'A: 1, 2 y 3 son verdaderas.',
+      'B: 1 y 3 son verdaderas.',
+      'C: 2 y 4 son verdaderas.',
+      'D: Solo 4 es verdadera.',
+      'E: Todas son verdaderas.',
     ],
   },
   RESPUESTA_COMPUESTA: {
-    title: 'RESPUESTAS COMPUESTAS',
+    title: 'RESPUESTA A/B/AMBAS/NINGUNA',
     lines: [
-      'Instrucciones: Las siguientes preguntas estan compuestas de dos premisas relacionadas.',
-      'A si la primera es correcta.',
-      'B si la segunda es correcta.',
-      'C si ambas son correctas.',
-      'D si ninguna es correcta.',
+      'Instrucciones: Las siguientes preguntas estan compuestas por dos premisas. Responda con:',
+      'A: si solo la primera premisa es verdadera.',
+      'B: si solo la segunda premisa es verdadera.',
+      'C: si ambas premisas son verdaderas.',
+      'D: si ninguna premisa es verdadera.',
     ],
   },
   PROBLEMA: {
-    title: 'PROBLEMAS O CASOS',
+    title: 'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA',
     lines: [
-      'Instrucciones: Lea cuidadosamente el caso y responda las preguntas asociadas con base en la informacion presentada.',
+      'Instrucciones: El siguiente caso clinico o problema tendra varias preguntas. Seleccione la respuesta correcta en cada una.',
     ],
   },
   EMPAREJAMIENTO: {
-    title: 'EMPAREJAMIENTO',
+    title: 'EMPAREJAMIENTO AMPLIADO',
     lines: [
-      'Instrucciones: Relacione cada enunciado con una de las claves disponibles y escriba la letra correspondiente en el espacio en blanco.',
+      'Instrucciones: De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
     ],
   },
 }
