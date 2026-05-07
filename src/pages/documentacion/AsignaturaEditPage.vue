@@ -7205,10 +7205,13 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
   const tipoCabecera = grupoNormalizado ? gruposCabeceraMap.get(grupoNormalizado) : null
   const esGrupoEmparejamiento = tipoCabecera === 'EMPAREJAMIENTO'
 
-  if (
-    ['PREGUNTA_CON_CLAVE', 'SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(tipo) &&
-    opciones.length !== 5
-  ) {
+  if (tipo === 'PREGUNTA_CON_CLAVE' && opciones.length !== 4) {
+    fallos.push(
+      `Pregunta con Clave debe tener exactamente 4 incisos (actualmente: ${opciones.length}).`,
+    )
+  }
+
+  if (['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(tipo) && opciones.length !== 5) {
     fallos.push(`Debe tener exactamente 5 opciones (actualmente: ${opciones.length}).`)
   }
 
@@ -7235,15 +7238,21 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
   // 3. Respuesta compuesta: una sola clave entre A y D
   if (tipo === 'RESPUESTA_COMPUESTA') {
     const respuestaNormalizada = Array.isArray(respuesta)
-      ? String(respuesta[0] || '')
-          .trim()
-          .toUpperCase()
-      : String(respuesta || '')
-          .trim()
-          .toUpperCase()
+      ? normalizarRespuestaExcelBanco(respuesta[0] || '')
+      : normalizarRespuestaExcelBanco(respuesta)
 
     if (!['A', 'B', 'C', 'D'].includes(respuestaNormalizada)) {
       fallos.push('Respuesta Compuesta debe tener una única respuesta válida entre A, B, C o D.')
+    }
+  }
+
+  if (tipo === 'PREGUNTA_CON_CLAVE') {
+    const respuestaNormalizada = Array.isArray(respuesta)
+      ? normalizarRespuestaExcelBanco(respuesta[0] || '')
+      : normalizarRespuestaExcelBanco(respuesta)
+
+    if (!['A', 'B', 'C', 'D', 'E'].includes(respuestaNormalizada)) {
+      fallos.push('Pregunta con Clave debe tener una respuesta valida entre A, B, C, D o E.')
     }
   }
 
@@ -7860,6 +7869,19 @@ async function descargarFormatoBanco() {
     'PROBLEMA O CASO',
     'SUB PROBLEMA',
   ]
+  const opcionesRespuestaCompuestaExcel = [
+    'A. Si la primera es correcta',
+    'B. Si la segunda es correcta',
+    'C. Si ambas son correctas',
+    'D. Si ninguna es correcta',
+  ]
+  const respuestasPreguntaClaveExcel = [
+    'A: 1, 2, 3 son correctas',
+    'B: 1 y 3 son correctas',
+    'C: 2 y 4 son correctas',
+    'D: Solo 4 es correcta',
+    'E: Todas son correctas',
+  ]
   const filasBancoDesde = 2
   const filasBancoHasta = 61
   const tiposRequierenGrupo = [
@@ -7878,11 +7900,12 @@ async function descargarFormatoBanco() {
   ]
   const tiposRequierenDificultad = [...tiposRequierenRespuesta]
   const tiposSinRespuestaYDificultad = ['PROBLEMA O CASO', 'EMPAREJAMIENTO']
-  const tiposCincoIncisos = ['PREGUNTA CON CLAVE', 'SELECCION SIMPLE', 'SUB PROBLEMA']
   const rangoTiposBanco = `$A$${filasBancoDesde}:$A$${filasBancoHasta}`
 
   const excelOr = (cellRef, values) =>
     `OR(${values.map((value) => `${cellRef}="${value}"`).join(',')})`
+  const excelRespuestaLetraEn = (cellRef, letras) =>
+    `OR(${letras.map((letra) => `LEFT(TRIM(${cellRef}),1)="${letra}"`).join(',')})`
   const countByTiposFormula = (tipos) =>
     tipos.map((tipo) => `COUNTIF(${rangoTiposBanco},"${tipo}")`).join('+')
 
@@ -7891,7 +7914,7 @@ async function descargarFormatoBanco() {
     const allowedTypesFormula = allowedTypes.length
       ? excelOr(`$A${rowNumber}`, allowedTypes)
       : 'FALSE'
-    return `=IF(${allowedTypesFormula},TRUE,LEN(TRIM(${cellRef}))=0)`
+    return `IF(${allowedTypesFormula},TRUE,LEN(TRIM(${cellRef}))=0)`
   }
 
   const buildObservacionesFormula = (rowNumber) => {
@@ -7902,7 +7925,6 @@ async function descargarFormatoBanco() {
     const opcionBRef = `$E${rowNumber}`
     const opcionCRef = `$F${rowNumber}`
     const opcionDRef = `$G${rowNumber}`
-    const opcionERef = `$H${rowNumber}`
     const respuestaRef = `$I${rowNumber}`
     const dificultadRef = `$J${rowNumber}`
     const parcialRef = `$K${rowNumber}`
@@ -7910,11 +7932,19 @@ async function descargarFormatoBanco() {
     const tiposRespuestaFormula = excelOr(tipoRef, tiposRequierenRespuesta)
     const tiposDificultadFormula = excelOr(tipoRef, tiposRequierenDificultad)
     const tiposSinRespuestaFormula = excelOr(tipoRef, tiposSinRespuestaYDificultad)
-    const tiposCincoIncisosFormula = excelOr(tipoRef, tiposCincoIncisos)
-    const countFilledOptionsFormula = (...optionRefs) =>
-      optionRefs.map((optionRef) => `IF(LEN(TRIM(${optionRef}))>0,1,0)`).join('+')
-    const issues = [
+    const respuestaABFormula = excelRespuestaLetraEn(respuestaRef, ['A', 'B'])
+    const respuestaABCDFormula = excelRespuestaLetraEn(respuestaRef, ['A', 'B', 'C', 'D'])
+    const respuestaABCDEFormula = excelRespuestaLetraEn(respuestaRef, ['A', 'B', 'C', 'D', 'E'])
+    const filledOptionsFormula = (fromColumn = 'D', toColumn = 'H') =>
+      `COUNTIF($${fromColumn}${rowNumber}:$${toColumn}${rowNumber},"?*")`
+
+    const checks = [
       { condition: `TRIM(${enunciadoRef})=""`, message: 'enunciado' },
+      { condition: `TRIM(${parcialRef})=""`, message: 'parcial' },
+      {
+        condition: `AND(TRIM(${parcialRef})<>"",TRIM(${parcialRef})<>"${parcialActivo}")`,
+        message: `parcial distinto a ${parcialActivo}`,
+      },
       { condition: `AND(${tiposGrupoFormula},TRIM(${grupoRef})="")`, message: 'grupo' },
       {
         condition: `AND(${tiposRespuestaFormula},TRIM(${respuestaRef})="")`,
@@ -7926,62 +7956,49 @@ async function descargarFormatoBanco() {
       },
       {
         condition: `AND(${tiposSinRespuestaFormula},TRIM(${respuestaRef})<>"")`,
-        message: 'respuesta_correcta debe ir vacia',
+        message: 'respuesta debe ir vacia',
       },
       {
         condition: `AND(${tiposSinRespuestaFormula},TRIM(${dificultadRef})<>"")`,
         message: 'dificultad debe ir vacia',
       },
       {
-        condition: `AND(${tipoRef}="VERDADERO O FALSO",OR(TRIM(${opcionARef})="",TRIM(${opcionBRef})=""))`,
-        message: 'incisos A y B',
+        condition: `AND(${tipoRef}="VERDADERO O FALSO",OR(${filledOptionsFormula('D', 'E')}<2,${filledOptionsFormula('F', 'H')}>0,NOT(${respuestaABFormula})))`,
+        message: 'verdadero o falso',
       },
       {
-        condition: `AND(${tipoRef}="VERDADERO O FALSO",${countFilledOptionsFormula(opcionCRef, opcionDRef, opcionERef)}>0)`,
-        message: 'solo incisos A y B',
+        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",OR(${filledOptionsFormula('D', 'G')}<4,${filledOptionsFormula('H', 'H')}>0,NOT(${respuestaABCDFormula})))`,
+        message: 'respuesta compuesta',
       },
       {
-        condition: `AND(${tipoRef}="VERDADERO O FALSO",NOT(OR(TRIM(${respuestaRef})="A",TRIM(${respuestaRef})="B")))`,
-        message: 'respuesta A o B',
+        condition: `AND(${tipoRef}="PREGUNTA CON CLAVE",OR(LEN(TRIM(SUBSTITUTE(${opcionARef},"1.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionBRef},"2.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionCRef},"3.","")))=0,LEN(TRIM(SUBSTITUTE(${opcionDRef},"4.","")))=0,${filledOptionsFormula('H', 'H')}>0,NOT(${respuestaABCDEFormula})))`,
+        message: 'pregunta con clave',
       },
       {
-        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",OR(TRIM(${opcionARef})="",TRIM(${opcionBRef})="",TRIM(${opcionCRef})="",TRIM(${opcionDRef})=""))`,
-        message: 'incisos A-D',
-      },
-      {
-        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",TRIM(${opcionERef})<>"")`,
-        message: 'solo incisos A-D',
-      },
-      {
-        condition: `AND(${tipoRef}="RESPUESTA COMPUESTA",NOT(OR(TRIM(${respuestaRef})="A",TRIM(${respuestaRef})="B",TRIM(${respuestaRef})="C",TRIM(${respuestaRef})="D")))`,
-        message: 'respuesta A-D',
-      },
-      {
-        condition: `AND(${tiposCincoIncisosFormula},${countFilledOptionsFormula(opcionARef, opcionBRef, opcionCRef, opcionDRef, opcionERef)}<5)`,
+        condition: `AND(OR(${tipoRef}="SELECCION SIMPLE",${tipoRef}="SUB PROBLEMA"),OR(${filledOptionsFormula()}<5,NOT(${respuestaABCDEFormula})))`,
         message: 'incisos A-E',
       },
       {
-        condition: `AND(OR(${tipoRef}="PROBLEMA O CASO",${tipoRef}="OPCION EMPAREJAMIENTO"),${countFilledOptionsFormula(opcionARef, opcionBRef, opcionCRef, opcionDRef, opcionERef)}>0)`,
+        condition: `AND(OR(${tipoRef}="PROBLEMA O CASO",${tipoRef}="OPCION EMPAREJAMIENTO"),${filledOptionsFormula()}>0)`,
         message: 'sin incisos',
       },
       {
-        condition: `AND(OR(${tipoRef}="PREGUNTA CON CLAVE",${tipoRef}="SELECCION SIMPLE",${tipoRef}="SUB PROBLEMA",${tipoRef}="OPCION EMPAREJAMIENTO"),NOT(OR(TRIM(${respuestaRef})="A",TRIM(${respuestaRef})="B",TRIM(${respuestaRef})="C",TRIM(${respuestaRef})="D",TRIM(${respuestaRef})="E")))`,
-        message: 'respuesta A-E',
-      },
-      {
-        condition: `AND(${tipoRef}="EMPAREJAMIENTO",${countFilledOptionsFormula(opcionARef, opcionBRef, opcionCRef, opcionDRef, opcionERef)}<2)`,
+        condition: `AND(${tipoRef}="EMPAREJAMIENTO",${filledOptionsFormula()}<2)`,
         message: 'minimo 2 claves',
       },
       {
-        condition: `AND(TRIM(${parcialRef})<>"",TRIM(${parcialRef})<>"${parcialActivo}")`,
-        message: `parcial distinto a ${parcialActivo}`,
+        condition: `AND(${tipoRef}="OPCION EMPAREJAMIENTO",NOT(${respuestaABCDEFormula}))`,
+        message: 'respuesta A-E',
       },
-      { condition: `TRIM(${parcialRef})=""`, message: 'parcial' },
     ]
-    const issueConcat = issues
-      .map(({ condition, message }) => `IF(${condition},"${message}, ","")`)
-      .join('&')
-    return `IF(TRIM(${tipoRef})="","",IF(LEN(${issueConcat})=0,"OK","Falta revisar: "&LEFT(${issueConcat},LEN(${issueConcat})-2)))`
+    const nestedIssues = [...checks]
+      .reverse()
+      .reduce(
+        (fallback, { condition, message }) =>
+          `IF(${condition},"Falta revisar: ${message}",${fallback})`,
+        '"OK"',
+      )
+    return `IF(TRIM(${tipoRef})="","",${nestedIssues})`
   }
 
   workbook.creator = 'Codex'
@@ -8006,6 +8023,7 @@ async function descargarFormatoBanco() {
   fillValidationColumn('E', [''])
   fillValidationColumn('F', ['1', '2', '3'])
   fillValidationColumn('G', [parcialActivo])
+  fillValidationColumn('H', respuestasPreguntaClaveExcel)
 
   workbook.definedNames.add('VALIDACIONES!$A$1:$A$8', 'LISTA_TIPOS_2P')
   workbook.definedNames.add('VALIDACIONES!$B$1:$B$2', 'RESP_VF')
@@ -8014,6 +8032,7 @@ async function descargarFormatoBanco() {
   workbook.definedNames.add('VALIDACIONES!$E$1', 'RESP_VACIA')
   workbook.definedNames.add('VALIDACIONES!$F$1:$F$3', 'DIFICULTADES_123')
   workbook.definedNames.add('VALIDACIONES!$G$1', 'PARCIAL_ACTIVO_BANCO')
+  workbook.definedNames.add('VALIDACIONES!$H$1:$H$5', 'RESP_CLAVE')
 
   const wsInst = workbook.addWorksheet('Instrucciones')
   wsInst.getColumn(1).width = 40
@@ -8036,11 +8055,11 @@ async function descargarFormatoBanco() {
   addGuideHeader('1. CODIGOS DE PREGUNTA (Columna TIPO)')
   wsInst.addRow([
     'VERDADERO O FALSO',
-    'Llene opcion_a y opcion_b. respuesta_correcta solo admite A o B.',
+    'Escriba Verdadero en opcion_a y Falso en opcion_b. respuesta_correcta solo admite A o B.',
   ])
   wsInst.addRow([
     'PREGUNTA CON CLAVE',
-    'Defina las 5 reglas A-E en opcion_a a opcion_e y marque una sola respuesta correcta.',
+    'Use opcion_a a opcion_d para los incisos 1-4; opcion_e queda deshabilitada. La respuesta usa la lista A-E.',
   ])
   wsInst.addRow([
     'SELECCION SIMPLE',
@@ -8048,7 +8067,7 @@ async function descargarFormatoBanco() {
   ])
   const rowSM1 = wsInst.addRow([
     'RESPUESTA COMPUESTA',
-    'Use exactamente 4 premisas fijas en opcion_a a opcion_d y una sola respuesta correcta entre A y D.',
+    'Use el enunciado con I. y II.; complete opcion_a a opcion_d con las respuestas fijas y la respuesta_correcta va entre A y D.',
   ])
   rowSM1.getCell(2).font = redFont
   const rowPR1 = wsInst.addRow([
@@ -8073,9 +8092,10 @@ async function descargarFormatoBanco() {
 
   addGuideHeader('2. RESPUESTAS VALIDAS')
   wsInst.addRow([
-    'Pregunta con Clave / Seleccion Simple / Sub Problema',
-    'Use una sola letra: A, B, C, D o E.',
+    'Pregunta con Clave',
+    'Use una de las combinaciones fijas: A: 1, 2, 3 correctas; B: 1 y 3 correctas; C: 2 y 4 correctas; D: Solo 4 es correcta; E: Todas son correctas.',
   ])
+  wsInst.addRow(['Seleccion Simple / Sub Problema', 'Use una sola letra: A, B, C, D o E.'])
   wsInst.addRow(['Emparejamiento / Problema o Caso', 'Deje respuesta_correcta vacia.'])
   const rowSM2 = wsInst.addRow([
     'Respuesta Compuesta',
@@ -8115,9 +8135,13 @@ async function descargarFormatoBanco() {
   const note = wsInst.addRow(['- No elimine columnas ni cambie el nombre de la hoja "Banco".'])
   note.font = { italic: true, color: { argb: 'FFC62828' } }
   const noteSM = wsInst.addRow([
-    '- IMPORTANTE: Respuesta Compuesta usa 4 premisas fijas (opcion_a a opcion_d) y la respuesta_correcta solo puede ser A, B, C o D.',
+    '- IMPORTANTE: Respuesta Compuesta usa la estructura I. y II. en enunciado; opcion_a a opcion_d lleva las respuestas fijas y opcion_e no se usa.',
   ])
   noteSM.font = redFont
+  const notePC = wsInst.addRow([
+    '- IMPORTANTE: Pregunta con Clave usa solo los incisos 1, 2, 3 y 4 en opcion_a a opcion_d. No llene opcion_e.',
+  ])
+  notePC.font = redFont
   const notePREM = wsInst.addRow([
     '- IMPORTANTE: Problema o Caso y Emparejamiento son encabezados y no deben tener dificultad.',
   ])
@@ -8127,7 +8151,7 @@ async function descargarFormatoBanco() {
   ])
   noteObs.font = redFont
   wsInst.addRow([
-    '- Conteo por grupos de tipo: Grupo 1 = Verdadero/Falso + Pregunta con Clave + Respuesta Compuesta. Grupo 2 = Seleccion Simple. Grupo 3 = Sub Problema + Opcion Emparejamiento.',
+    '- Conteo por grupos de tipo: Grupo 1 = Verdadero/Falso + Pregunta con Clave + Respuesta Compuesta. Grupo 2 = Seleccion Simple. Grupo 3 = Problemas o casos y emparejamiento.',
   ])
 
   const wsBanco = workbook.addWorksheet('Banco')
@@ -8200,18 +8224,14 @@ async function descargarFormatoBanco() {
   ]
 
   for (let i = filasBancoDesde; i <= filasBancoHasta; i++) {
-    wsBanco.getCell(`D${i}`).value = {
-      formula: `IF($A${i}="VERDADERO O FALSO","Verdadero","")`,
-      result: '',
-    }
-    wsBanco.getCell(`E${i}`).value = {
-      formula: `IF($A${i}="VERDADERO O FALSO","Falso","")`,
-      result: '',
-    }
     wsBanco.getCell(`A${i}`).dataValidation = {
       type: 'list',
       allowBlank: true,
-      formulae: ['=LISTA_TIPOS_2P'],
+      formulae: ['LISTA_TIPOS_2P'],
+      showInputMessage: true,
+      promptTitle: 'Tipo de pregunta',
+      prompt:
+        'Seleccione el tipo desde la lista. La columna L indicara que estructura corresponde completar.',
       showErrorMessage: true,
       errorTitle: 'Tipo no valido',
       error: 'Seleccione un tipo desde la lista del formato oficial.',
@@ -8220,7 +8240,7 @@ async function descargarFormatoBanco() {
       type: 'custom',
       allowBlank: true,
       formulae: [
-        `=IF(${excelOr(`$A${i}`, tiposRequierenGrupo)},LEN(TRIM($B${i}))>0,LEN(TRIM($B${i}))=0)`,
+        `IF(${excelOr(`$A${i}`, tiposRequierenGrupo)},LEN(TRIM($B${i}))>0,LEN(TRIM($B${i}))=0)`,
       ],
       showErrorMessage: true,
       errorTitle: 'Grupo invalido',
@@ -8231,7 +8251,7 @@ async function descargarFormatoBanco() {
       type: 'list',
       allowBlank: true,
       formulae: [
-        `=INDIRECT(IF($A${i}="VERDADERO O FALSO","RESP_VF",IF($A${i}="RESPUESTA COMPUESTA","RESP_ABCD",IF(OR($A${i}="PREGUNTA CON CLAVE",$A${i}="SELECCION SIMPLE",$A${i}="SUB PROBLEMA",$A${i}="OPCION EMPAREJAMIENTO"),"RESP_ABCDE","RESP_VACIA"))))`,
+        `INDIRECT(IF($A${i}="VERDADERO O FALSO","RESP_VF",IF($A${i}="RESPUESTA COMPUESTA","RESP_ABCD",IF($A${i}="PREGUNTA CON CLAVE","RESP_CLAVE",IF(OR($A${i}="SELECCION SIMPLE",$A${i}="SUB PROBLEMA",$A${i}="OPCION EMPAREJAMIENTO"),"RESP_ABCDE","RESP_VACIA")))))`,
       ],
       showErrorMessage: true,
       errorTitle: 'Respuesta invalida',
@@ -8241,7 +8261,7 @@ async function descargarFormatoBanco() {
       type: 'list',
       allowBlank: true,
       formulae: [
-        `=INDIRECT(IF(OR($A${i}="PROBLEMA O CASO",$A${i}="EMPAREJAMIENTO"),"RESP_VACIA","DIFICULTADES_123"))`,
+        `INDIRECT(IF(OR($A${i}="PROBLEMA O CASO",$A${i}="EMPAREJAMIENTO"),"RESP_VACIA","DIFICULTADES_123"))`,
       ],
       showErrorMessage: true,
       errorTitle: 'Dificultad invalida',
@@ -8250,7 +8270,7 @@ async function descargarFormatoBanco() {
     wsBanco.getCell(`K${i}`).dataValidation = {
       type: 'list',
       allowBlank: true,
-      formulae: ['=PARCIAL_ACTIVO_BANCO'],
+      formulae: ['PARCIAL_ACTIVO_BANCO'],
       showErrorMessage: true,
       errorTitle: 'Parcial invalido',
       error: `Use unicamente ${parcialActivo} para este formato.`,
@@ -8298,7 +8318,7 @@ async function descargarFormatoBanco() {
           'EMPAREJAMIENTO',
         ],
       ],
-      ['H', ['PREGUNTA CON CLAVE', 'SELECCION SIMPLE', 'SUB PROBLEMA', 'EMPAREJAMIENTO']],
+      ['H', ['SELECCION SIMPLE', 'SUB PROBLEMA', 'EMPAREJAMIENTO']],
     ].forEach(([columnLetter, allowedTypes]) => {
       wsBanco.getCell(`${columnLetter}${i}`).dataValidation = {
         type: 'custom',
@@ -8311,11 +8331,12 @@ async function descargarFormatoBanco() {
       }
     })
 
-    wsBanco.getCell(`L${i}`).value = {
+    const observacionesCell = wsBanco.getCell(`L${i}`)
+    observacionesCell.value = {
       formula: buildObservacionesFormula(i),
       result: '',
     }
-    wsBanco.getCell(`L${i}`).font = { bold: true }
+    observacionesCell.font = { bold: true }
   }
 
   const rowF = wsBanco.getRow(63)
@@ -8350,7 +8371,7 @@ async function descargarFormatoBanco() {
   rowGrupo2.getCell(10).value = { formula: countByTiposFormula(['SELECCION SIMPLE']) }
 
   const rowGrupo3 = wsBanco.getRow(69)
-  rowGrupo3.getCell(9).value = 'Grupo 3 (SP + OE):'
+  rowGrupo3.getCell(9).value = 'Grupo 3 (Problemas/Casos y Emp.):'
   rowGrupo3.getCell(9).font = { bold: true }
   rowGrupo3.getCell(10).value = {
     formula: countByTiposFormula(['SUB PROBLEMA', 'OPCION EMPAREJAMIENTO']),
@@ -8365,13 +8386,17 @@ async function descargarFormatoBanco() {
   wsBanco.getCell('A74').value =
     '3. Emparejamiento puede usar de 2 a 5 claves en opcion_a a opcion_e.'
   wsBanco.getCell('A75').value =
-    '4. En Verdadero o Falso, opcion_a y opcion_b se completan automaticamente con Verdadero y Falso.'
+    '4. En Verdadero o Falso, escriba Verdadero en opcion_a y Falso en opcion_b.'
   wsBanco.getCell('A76').value =
-    '5. Opcion Emparejamiento no usa incisos en D-H; solo grupo, enunciado, respuesta_correcta y dificultad.'
+    `5. En Respuesta Compuesta, escriba I. y II. en el enunciado; use estas respuestas en opcion_a a opcion_d: ${opcionesRespuestaCompuestaExcel.join(' | ')}.`
   wsBanco.getCell('A77').value =
-    `6. Este formato esta preparado para ${parcialActivo} (${parcialActivoLabel}).`
+    '6. En Pregunta con Clave, escriba 1. a 4. en opcion_a a opcion_d; opcion_e queda deshabilitada.'
   wsBanco.getCell('A78').value =
-    '7. Los grupos de conteo por tipo no consideran Problema o Caso ni Emparejamiento porque funcionan como cabeceras.'
+    '7. Opcion Emparejamiento no usa incisos en D-H; solo grupo, enunciado, respuesta_correcta y dificultad.'
+  wsBanco.getCell('A79').value =
+    `8. Este formato esta preparado para ${parcialActivo} (${parcialActivoLabel}).`
+  wsBanco.getCell('A80').value =
+    '9. Los grupos de conteo por tipo no consideran Problema o Caso ni Emparejamiento porque funcionan como cabeceras.'
 
   const disabledCellStyle = {
     fill: {
@@ -8409,7 +8434,7 @@ async function descargarFormatoBanco() {
     rules: [
       {
         type: 'expression',
-        formulae: ['$A2="RESPUESTA COMPUESTA"'],
+        formulae: ['OR($A2="RESPUESTA COMPUESTA",$A2="PREGUNTA CON CLAVE")'],
         style: disabledCellStyle,
       },
     ],
@@ -8497,36 +8522,26 @@ async function descargarFormatoBanco() {
     'PREGUNTA CON CLAVE',
     '2',
     parcialActivo,
-    'Seleccione todas las respuestas correctas de acuerdo a la siguiente regla:' +
-      '\n1. Un switch opera en la capa 2 del modelo OSI.' +
-      '\n2. VLAN 1 suele existir por defecto en muchos switches Cisco.' +
-      '\n3. Un trunk 802.1Q puede transportar multiples VLAN.' +
-      '\n4. STP elimina la necesidad de direcciones MAC en la tabla CAM.',
-    'A',
+    'Seleccione los incisos correctos sobre switching.',
+    respuestasPreguntaClaveExcel[0],
     [
-      '1, 2, 3 son correctas',
-      '1 y 3 son correctas',
-      '2 y 4 son correctas',
-      'Solo 4 es correcta',
-      'Todas son correctas',
+      '1. Un switch opera en la capa 2 del modelo OSI.',
+      '2. VLAN 1 suele existir por defecto en muchos switches Cisco.',
+      '3. Un trunk 802.1Q puede transportar multiples VLAN.',
+      '4. STP elimina la necesidad de direcciones MAC en la tabla CAM.',
     ],
   )
   addEjRow(
     'PREGUNTA CON CLAVE',
     '2',
     parcialActivo,
-    'Seleccione todas las respuestas correctas de acuerdo a la siguiente regla:' +
-      '\n1. RIP version 1 soporta VLSM de forma nativa.' +
-      '\n2. OSPF utiliza areas para escalar la red.' +
-      '\n3. La ruta 0.0.0.0/32 representa la ruta por defecto.' +
-      '\n4. RIP usa hop count como metrica.',
-    'C',
+    'Seleccione los incisos correctos sobre routing.',
+    respuestasPreguntaClaveExcel[2],
     [
-      '1, 2, 3 son correctas',
-      '1 y 3 son correctas',
-      '2 y 4 son correctas',
-      'Solo 4 es correcta',
-      'Todas son correctas',
+      '1. RIP version 1 soporta VLSM de forma nativa.',
+      '2. OSPF utiliza areas para escalar la red.',
+      '3. La ruta 0.0.0.0/32 representa la ruta por defecto.',
+      '4. RIP usa hop count como metrica.',
     ],
   )
   addEjRow(
@@ -8559,12 +8574,7 @@ async function descargarFormatoBanco() {
       '\nI. Un puerto access transporta trafico de una sola VLAN.' +
       '\nII. Un puerto trunk puede transportar trafico de multiples VLAN.',
     'C',
-    [
-      'A si la primera es correcta.',
-      'B si la segunda es correcta.',
-      'C si ambas son correctas.',
-      'D si ninguna es correcta.',
-    ],
+    opcionesRespuestaCompuestaExcel,
   )
   addEjRow(
     'RESPUESTA COMPUESTA',
@@ -8574,12 +8584,7 @@ async function descargarFormatoBanco() {
       '\nI. RIP utiliza el algoritmo de Dijkstra para calcular rutas.' +
       '\nII. OSPF utiliza el costo como metrica.',
     'B',
-    [
-      'A si la primera es correcta.',
-      'B si la segunda es correcta.',
-      'C si ambas son correctas.',
-      'D si ninguna es correcta.',
-    ],
+    opcionesRespuestaCompuestaExcel,
   )
   addEjRow(
     'PROBLEMA O CASO',
@@ -8749,6 +8754,14 @@ const PARCIAL_MAP = {
   '2I': '2da Instancia',
 }
 
+function normalizarRespuestaExcelBanco(valor) {
+  const respuesta = normalizarTextoMojibake(String(valor || ''))
+    .trim()
+    .toUpperCase()
+  const match = respuesta.match(/^([A-E])(?:\s*[:.)-]|\b)/)
+  return match ? match[1] : respuesta
+}
+
 function previsualizarArchivoExcel(file) {
   if (!file) return
   const reader = new FileReader()
@@ -8830,9 +8843,7 @@ function previsualizarArchivoExcel(file) {
           const enunciadoRaw = normalizarTextoMojibake(String(row[colsMap.enunciado] || '').trim())
           const enunciado = enunciadoRaw.replace(/\r\n|\n/g, '<br>')
 
-          const respuesta = normalizarTextoMojibake(String(row[colsMap.respuesta_correcta] || ''))
-            .trim()
-            .toUpperCase()
+          const respuesta = normalizarRespuestaExcelBanco(row[colsMap.respuesta_correcta])
           const dificultadRaw = normalizarTextoMojibake(String(row[colsMap.dificultad] || ''))
             .trim()
             .toLowerCase()
