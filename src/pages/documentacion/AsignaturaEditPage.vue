@@ -4513,8 +4513,6 @@ onMounted(() => {
 // Refs para ImportaciÒ�� �"Ò� â����Ò�â��šÒ�a�³n (movidas arriba para evitar ReferenceError en watches)
 const archivoBancoFile = ref(null)
 const archivoPreviewBanco = ref(null)
-const mostrarAccionesExcelBanco = false
-const mostrarBotonValidarBanco = false
 const grupoTeoricoSeleccionado = ref(null)
 const filtroBancoGrupoSeleccionado = ref(null)
 const preguntasImportadas = ref([])
@@ -4524,6 +4522,12 @@ const modoImportacion = ref('reemplazar')
 const conCartilla = ref(true)
 const parcialSeleccionado = ref('1P')
 const filtroBancoParcialSeleccionado = ref('2P')
+const mostrarAccionesExcelBanco = computed(
+  () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
+)
+const mostrarBotonValidarBanco = computed(
+  () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
+)
 const parcialOptions = [
   { label: '1er Parcial', value: '1P', disable: true },
   { label: '2do Parcial', value: '2P' },

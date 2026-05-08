@@ -30,3 +30,6 @@ yarn-error.log*
 
 # Carpeta de construcción (producción) subida para despliegue en cPanel
 /dist/
+playwright-report
+test-results
+coverage
