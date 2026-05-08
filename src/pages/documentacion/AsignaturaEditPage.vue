@@ -4513,6 +4513,8 @@ onMounted(() => {
 // Refs para ImportaciÒ�� �"Ò� â����Ò�â��šÒ�a�³n (movidas arriba para evitar ReferenceError en watches)
 const archivoBancoFile = ref(null)
 const archivoPreviewBanco = ref(null)
+const mostrarAccionesExcelBanco = true
+const mostrarBotonValidarBanco = false
 const grupoTeoricoSeleccionado = ref(null)
 const filtroBancoGrupoSeleccionado = ref(null)
 const preguntasImportadas = ref([])
@@ -4536,14 +4538,14 @@ const parcialOptions = [
 ]
 
 const tipoPreguntaExcelLabels = {
-  FALSO_VERDADERO: 'VERDADERO O FALSO SIMPLE',
-  PREGUNTA_CON_CLAVE: 'VERDADERO O FALSO COMPLEJAS',
-  RESPUESTA_COMPUESTA: 'RESPUESTA A/B/AMBAS/NINGUNA',
-  SELECCION_SIMPLE: 'SELECCION DE LA MEJOR RESPUESTA',
-  EMPAREJAMIENTO: 'EMPAREJAMIENTO AMPLIADO',
-  OPCION_EMPAREJAMIENTO: 'OPCION EMPAREJAMIENTO',
-  PROBLEMA: 'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA',
-  SUBPROBLEMA: 'SUB PROBLEMA',
+  FALSO_VERDADERO: 'Verdadero o Falso Simple',
+  PREGUNTA_CON_CLAVE: 'Verdadero o Falso Complejas',
+  RESPUESTA_COMPUESTA: 'Respuesta A/B/Ambas/Ninguna',
+  SELECCION_SIMPLE: 'Selección de la mejor respuesta',
+  EMPAREJAMIENTO: 'Emparejamiento Ampliado',
+  OPCION_EMPAREJAMIENTO: 'Opción de Emparejamiento Ampliado',
+  PROBLEMA: 'Ítems agrupados por caso clínico o problema',
+  SUBPROBLEMA: 'Subítem de caso o problema',
 }
 
 const tiposPreguntaOptions = [
@@ -4565,6 +4567,7 @@ const tiposPreguntaOptions = [
       'SM',
       'SELECCION_MULTIPLE',
       'RESPUESTA COMPUESTA',
+      'RESPUESTA_COMPUESTA',
       tipoPreguntaExcelLabels.RESPUESTA_COMPUESTA,
     ],
   },
@@ -7441,7 +7444,7 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
       const textBusqueda = enunciado.toUpperCase()
       const incisosPosibles = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.']
       const encontrados = incisosPosibles.filter(inc => textBusqueda.includes(inc))
-      
+
       if (encontrados.length < 2) {
         fallos.push('Emparejamiento (EM) debe contener al menos 2 incisos (A., B., ...) en su enunciado.')
       } else {
@@ -7544,7 +7547,8 @@ function construirPreguntasPreviewExamenBanco() {
   const preguntasMezcladas = mixExamQuestionOptions(preguntasBase)
 
   return sortExamQuestionsForPdf(preguntasMezcladas, {
-    aleatorizarSecciones: true,
+    aleatorizarSecciones: false,
+    preservarOrdenOriginalBloques: true,
   })
 }
 
@@ -7840,7 +7844,7 @@ async function descargarFormatoBancoLegacy() {
   }
 
   const rowF = wsBanco.getRow(63)
-  rowF.getCell(9).value = 'Total Fáciles:'
+  rowF.getCell(9).value = 'Total Faciles:'
   rowF.getCell(9).font = { bold: true }
   rowF.getCell(10).value = { formula: 'COUNTIF(J2:J61, 1)' }
 
@@ -8545,6 +8549,7 @@ async function descargarFormatoBanco() {
       formula: `IF($A${i}="${excelTipos.EMPAREJAMIENTO}",VALIDACIONES!$I$1,IF($A${i}="${excelTipos.RESPUESTA_COMPUESTA}","I. "&CHAR(10)&"II. ",""))`,
       result: '',
     }
+    wsBanco.getCell(`C${i}`).alignment = { wrapText: true, vertical: 'top' }
     wsBanco.getCell(`D${i}`).value = {
       formula: `IF($A${i}="${excelTipos.FALSO_VERDADERO}","Verdadero",IF($A${i}="${excelTipos.RESPUESTA_COMPUESTA}","${opcionesRespuestaCompuestaExcel[0]}",""))`,
       result: '',
@@ -8669,7 +8674,7 @@ async function descargarFormatoBanco() {
   }
 
   const rowF = wsBanco.getRow(63)
-  rowF.getCell(9).value = 'Total FÒ�� �"Ò� â����Ò�â��šÒ�a�¡ciles:'
+  rowF.getCell(9).value = 'Total Faciles:'
   rowF.getCell(9).font = { bold: true }
   rowF.getCell(10).value = { formula: 'COUNTIF(J2:J61, 1)' }
 
@@ -8831,13 +8836,17 @@ async function descargarFormatoBanco() {
     }
     const row = wsEj.addRow(rowData)
     row.getCell(1).font = { bold: true }
+    row.getCell(3).alignment = { wrapText: true, vertical: 'top' }
+    if (String(enun || '').includes('\n')) {
+      row.height = 36
+    }
   }
 
   addEjRow(
     excelTipos.FALSO_VERDADERO,
     '1',
     parcialActivo,
-    'En STP, el root bridge se elige utilizando el Bridge ID mas bajo.',
+    'El agua hierve a 100 grados Celsius al nivel del mar.',
     'A',
     ['Verdadero', 'Falso'],
   )
@@ -8845,7 +8854,7 @@ async function descargarFormatoBanco() {
     excelTipos.FALSO_VERDADERO,
     '1',
     parcialActivo,
-    'OSPF es un protocolo de routing por vector de distancia.',
+    'La Antartida es el continente mas calido del planeta.',
     'B',
     ['Verdadero', 'Falso'],
   )
@@ -8853,56 +8862,49 @@ async function descargarFormatoBanco() {
     excelTipos.PREGUNTA_CON_CLAVE,
     '2',
     parcialActivo,
-    'Seleccione los incisos correctos sobre switching.',
+    'Seleccione los incisos correctos sobre geografia mundial.',
     respuestasPreguntaClaveExcel[0],
     [
-      '1. Un switch opera en la capa 2 del modelo OSI.',
-      '2. VLAN 1 suele existir por defecto en muchos switches Cisco.',
-      '3. Un trunk 802.1Q puede transportar multiples VLAN.',
-      '4. STP elimina la necesidad de direcciones MAC en la tabla CAM.',
+      '1. Asia es el continente con mayor superficie.',
+      '2. El rio Nilo se encuentra en Africa.',
+      '3. Brasil esta ubicado en America del Sur.',
+      '4. Australia forma parte de Europa.',
     ],
   )
   addEjRow(
     excelTipos.PREGUNTA_CON_CLAVE,
     '2',
     parcialActivo,
-    'Seleccione los incisos correctos sobre routing.',
+    'Seleccione los incisos correctos sobre ciencias naturales.',
     respuestasPreguntaClaveExcel[2],
     [
-      '1. RIP version 1 soporta VLSM de forma nativa.',
-      '2. OSPF utiliza areas para escalar la red.',
-      '3. La ruta 0.0.0.0/32 representa la ruta por defecto.',
-      '4. RIP usa hop count como metrica.',
+      '1. Los mamiferos respiran por branquias durante toda su vida.',
+      '2. La fotosintesis permite a las plantas producir glucosa.',
+      '3. El oxigeno es necesario para la respiracion celular aerobia.',
+      '4. El agua puede encontrarse en estado solido, liquido y gaseoso.',
     ],
   )
   addEjRow(
     excelTipos.SELECCION_SIMPLE,
     '2',
     parcialActivo,
-    'Que comando configura un puerto como trunk en un switch Cisco?',
+    'Cual es el planeta mas cercano al Sol?',
     'B',
-    [
-      'switchport trunk enable',
-      'switchport mode trunk',
-      'encapsulation dot1q enable',
-      'interface trunk on',
-      'vlan trunk activate',
-    ],
+    ['Venus', 'Mercurio', 'Marte', 'Jupiter', 'Saturno'],
   )
   addEjRow(
     excelTipos.SELECCION_SIMPLE,
     '2',
     parcialActivo,
-    'Cual de los siguientes protocolos es de estado de enlace?',
+    'Que organo bombea la sangre en el cuerpo humano?',
     'C',
-    ['RIP', 'BGP', 'OSPF', 'VRRP', 'HSRP'],
+    ['Pulmon', 'Higado', 'Corazon', 'Estomago', 'Rinon'],
   )
   addEjRow(
     excelTipos.RESPUESTA_COMPUESTA,
     '3',
     parcialActivo,
-    'I. Un puerto access transporta trafico de una sola VLAN.' +
-      '\nII. Un puerto trunk puede transportar trafico de multiples VLAN.',
+    'I. La capital de Bolivia es Sucre.' + '\nII. La sede de gobierno de Bolivia esta en La Paz.',
     'C',
     opcionesRespuestaCompuestaExcel,
   )
@@ -8910,58 +8912,48 @@ async function descargarFormatoBanco() {
     excelTipos.RESPUESTA_COMPUESTA,
     '3',
     parcialActivo,
-    'I. RIP utiliza el algoritmo de Dijkstra para calcular rutas.' +
-      '\nII. OSPF utiliza el costo como metrica.',
-    'B',
+    'I. La Tierra gira alrededor del Sol.' + '\nII. La Luna es una estrella con luz propia.',
+    'A',
     opcionesRespuestaCompuestaExcel,
   )
   addEjRow(
     excelTipos.PROBLEMA,
     '',
     parcialActivo,
-    'Caso de Switching 1: Dos switches estan unidos por un troncal 802.1Q. Los usuarios de la VLAN 10 dejaron de llegar al gateway despues de cambiar la VLAN nativa en un extremo.',
+    'Caso de lectura 1: En una ciudad se organiza una campana para reducir residuos. El equipo municipal instalara puntos de reciclaje, separara materiales y comunicara horarios de recoleccion a los vecinos.',
     '',
     [],
-    'CASO-SW1',
+    'CASO-GEN1',
   )
   addEjRow(
     excelTipos.SUBPROBLEMA,
-    '3',
+    '2',
     parcialActivo,
-    'Cual es la causa mas probable del problema?',
+    'Cual es una accion inicial adecuada para que la campana funcione?',
     'A',
     [
-      'Inconsistencia de VLAN nativa en el enlace troncal',
-      'Fallo del servidor DHCP',
-      'Direccion MAC duplicada en la PC',
-      'Puerto access en modo err-disable',
-      'Capa fisica sin energia PoE',
+      'Definir puntos de reciclaje visibles y accesibles',
+      'Ocultar los horarios de recoleccion',
+      'Mezclar todos los residuos en una sola bolsa',
+      'Eliminar la comunicacion con los vecinos',
+      'Suspender la separacion de materiales',
     ],
-    'CASO-SW1',
-  )
-  addEjRow(
-    excelTipos.PROBLEMA,
-    '',
-    parcialActivo,
-    'Caso de Routing 1: Un router participa en OSPF, pero las redes LAN no aparecen en la tabla de routing porque el proceso fue anunciado en un area incorrecta.',
-    '',
-    [],
-    'CASO-RO1',
+    'CASO-GEN1',
   )
   addEjRow(
     excelTipos.SUBPROBLEMA,
-    '3',
+    '2',
     parcialActivo,
-    'Que accion corrige primero el problema?',
+    'Que tipo de residuo corresponde separar en un contenedor para papel y carton?',
     'C',
     [
-      'Cambiar la direccion MAC del router',
-      'Reiniciar todos los switches de acceso',
-      'Corregir el comando network para asociar la interfaz al area correcta',
-      'Desactivar el spanning-tree en toda la topologia',
-      'Eliminar la ruta por defecto configurada',
+      'Restos de comida',
+      'Botellas de vidrio',
+      'Cajas de carton limpias',
+      'Pilas usadas',
+      'Aceite de cocina',
     ],
-    'CASO-RO1',
+    'CASO-GEN1',
   )
   addEjRow(
     excelTipos.EMPAREJAMIENTO,
@@ -8969,17 +8961,26 @@ async function descargarFormatoBanco() {
     parcialActivo,
     'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
     '',
-    ['Access', 'Trunk', 'STP'],
-    'EMP-SW1',
+    ['Sol', 'Luna'],
+    'EMP-GEN1',
   )
   addEjRow(
     excelTipos.OPCION_EMPAREJAMIENTO,
-    '2',
+    '1',
     parcialActivo,
-    'Puerto que transporta trafico de una sola VLAN de datos.',
+    'Estrella ubicada en el centro del sistema solar.',
     'A',
     [],
-    'EMP-SW1',
+    'EMP-GEN1',
+  )
+  addEjRow(
+    excelTipos.OPCION_EMPAREJAMIENTO,
+    '1',
+    parcialActivo,
+    'Satelite natural de la Tierra.',
+    'B',
+    [],
+    'EMP-GEN1',
   )
   addEjRow(
     excelTipos.EMPAREJAMIENTO,
@@ -8987,17 +8988,26 @@ async function descargarFormatoBanco() {
     parcialActivo,
     'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
     '',
-    ['OSPF', 'RIP', 'Ruta por defecto'],
-    'EMP-RO1',
+    ['Evaporacion', 'Condensacion', 'Precipitacion', 'Infiltracion'],
+    'EMP-GEN2',
   )
   addEjRow(
     excelTipos.OPCION_EMPAREJAMIENTO,
     '2',
     parcialActivo,
-    'Protocolo de routing de estado de enlace que usa SPF.',
-    'A',
+    'Proceso por el cual el vapor de agua se transforma en gotas.',
+    'B',
     [],
-    'EMP-RO1',
+    'EMP-GEN2',
+  )
+  addEjRow(
+    excelTipos.OPCION_EMPAREJAMIENTO,
+    '2',
+    parcialActivo,
+    'Caida de agua desde las nubes hacia la superficie.',
+    'C',
+    [],
+    'EMP-GEN2',
   )
 
   wsEj.columns = wsBanco.columns
@@ -10287,9 +10297,9 @@ function getParcialColorBanco(parcial) {
 .banco-action-btn {
   width: 42px;
   height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   color: #fff;
-  box-shadow: 0 10px 22px rgba(20, 13, 64, 0.22);
+  box-shadow: 0 12px 24px rgba(20, 13, 64, 0.24);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
@@ -10298,37 +10308,38 @@ function getParcialColorBanco(parcial) {
 
 .banco-action-btn:not(.disabled):hover {
   transform: translateY(-2px);
-  filter: saturate(1.1);
-  box-shadow: 0 14px 28px rgba(20, 13, 64, 0.3);
+  filter: brightness(1.06) saturate(1.12);
+  box-shadow: 0 16px 30px rgba(20, 13, 64, 0.34);
 }
 
 .banco-action-btn--download {
-  background: linear-gradient(135deg, #5b35c8, #ffffff22);
+  background: #2563eb;
+  color: #fff;
 }
 
 .banco-action-btn--validate {
-  background: linear-gradient(135deg, #f59e0b, #f97316);
-  color: #211508;
+  background: #f59e0b;
+  color: #fff;
 }
 
 .banco-action-btn--preview {
-  background: linear-gradient(135deg, #bae6fd, #38bdf8);
-  color: #075985;
+  background: #0891b2;
+  color: #fff;
 }
 
 .banco-action-btn--upload {
-  background: linear-gradient(135deg, #ffffff, #e9d5ff);
-  color: #4c1d95;
+  background: #7c3aed;
+  color: #fff;
 }
 
 .banco-action-btn--delete {
-  background: linear-gradient(135deg, #fecdd3, #fb7185);
-  color: #7f1d1d;
+  background: #dc2626;
+  color: #fff;
 }
 
 .banco-action-btn--register {
-  background: linear-gradient(135deg, #99f6e4, #14b8a6);
-  color: #042f2e;
+  background: #059669;
+  color: #fff;
 }
 
 :deep(.banco-action-tooltip) {

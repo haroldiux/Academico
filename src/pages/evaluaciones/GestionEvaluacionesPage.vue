@@ -954,6 +954,64 @@
               </div>
             </div>
 
+            <div v-if="esSegundoParcialGestion" class="row q-col-gutter-sm q-mt-md">
+              <div class="col-12">
+                <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
+                  Conteo referencial por grupo de tipo para 2do Parcial
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <q-card flat bordered class="q-pa-sm bg-green-1">
+                  <div class="text-caption text-weight-bold text-green-9">G1 VF + Clave + A/B</div>
+                  <q-linear-progress
+                    rounded
+                    size="8px"
+                    color="green"
+                    :value="Math.min(1, bancoGrupoTipoStats.g1 / DEFAULT_GRUPOS_TIPO_2P.g1)"
+                    class="q-my-xs"
+                  />
+                  <div class="text-caption text-right text-green-10">
+                    {{ bancoGrupoTipoStats.g1 }}
+                    <span class="text-grey-7">(ref. {{ DEFAULT_GRUPOS_TIPO_2P.g1 }})</span>
+                  </div>
+                </q-card>
+              </div>
+              <div class="col-12 col-md-4">
+                <q-card flat bordered class="q-pa-sm bg-blue-1">
+                  <div class="text-caption text-weight-bold text-blue-9">G2 Mejor respuesta</div>
+                  <q-linear-progress
+                    rounded
+                    size="8px"
+                    color="blue"
+                    :value="Math.min(1, bancoGrupoTipoStats.g2 / DEFAULT_GRUPOS_TIPO_2P.g2)"
+                    class="q-my-xs"
+                  />
+                  <div class="text-caption text-right text-blue-10">
+                    {{ bancoGrupoTipoStats.g2 }}
+                    <span class="text-grey-7">(ref. {{ DEFAULT_GRUPOS_TIPO_2P.g2 }})</span>
+                  </div>
+                </q-card>
+              </div>
+              <div class="col-12 col-md-4">
+                <q-card flat bordered class="q-pa-sm bg-purple-1">
+                  <div class="text-caption text-weight-bold text-purple-9">
+                    G3 Casos + emparejamiento
+                  </div>
+                  <q-linear-progress
+                    rounded
+                    size="8px"
+                    color="purple"
+                    :value="Math.min(1, bancoGrupoTipoStats.g3 / DEFAULT_GRUPOS_TIPO_2P.g3)"
+                    class="q-my-xs"
+                  />
+                  <div class="text-caption text-right text-purple-10">
+                    {{ bancoGrupoTipoStats.g3 }}
+                    <span class="text-grey-7">(ref. {{ DEFAULT_GRUPOS_TIPO_2P.g3 }})</span>
+                  </div>
+                </q-card>
+              </div>
+            </div>
+
             <q-separator class="q-my-md" />
             <div class="row q-mb-sm">
               <div class="text-subtitle2 text-grey-8 flex items-center">
@@ -1042,7 +1100,7 @@
             >
               <template v-slot:avatar><q-icon name="warning" color="red" /></template>
               No existen suficientes preguntas en el banco para cumplir con la distribución
-              solicitada.
+              solicitada por dificultad.
             </q-banner>
 
             <div class="q-mt-lg text-caption text-grey-6 items-center flex">
@@ -1511,6 +1569,13 @@ import { usePermisos } from 'src/composables/usePermisos'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
+import {
+  buildExamQuestionSelection,
+  createExamPdfDocument,
+  generateExamPdf,
+  mixExamQuestionOptions,
+  sortExamQuestionsForPdf,
+} from 'src/services/examPdfService'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
@@ -1618,25 +1683,78 @@ const removeAccents = (str) => {
 }
 
 const normalizeTipo = (t) => {
-  const s = String(t || '')
+  const s = removeAccents(String(t || ''))
     .toUpperCase()
     .trim()
-  if (['PR', 'PROBLEMA'].includes(s)) return 'PROBLEMA'
-  if (['EM', 'EMPAREJAMIENTO'].includes(s)) return 'EMPAREJAMIENTO'
-  if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(s))
-    return 'SUBPROBLEMA'
-  if (['SU', 'SS', 'SELECCION_UNICA', 'SELECCION_SIMPLE', 'PREGUNTA_CON_CLAVE'].includes(s))
+  if (
+    ['PR', 'PROBLEMA', 'PROBLEMA O CASO', 'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA'].includes(s)
+  )
+    return 'PROBLEMA'
+  if (['EM', 'EMPAREJAMIENTO', 'EMPAREJAMIENTO AMPLIADO'].includes(s)) return 'EMPAREJAMIENTO'
+  if (['OPCION_EMPAREJAMIENTO', 'OPCION EMPAREJAMIENTO'].includes(s)) return 'OPCION_EMPAREJAMIENTO'
+  if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA'].includes(s)) return 'SUBPROBLEMA'
+  if (['PREGUNTA_CON_CLAVE', 'PREGUNTA CON CLAVE', 'VERDADERO O FALSO COMPLEJAS'].includes(s))
+    return 'PREGUNTA_CON_CLAVE'
+  if (
+    ['SU', 'SS', 'SELECCION_UNICA', 'SELECCION_SIMPLE', 'SELECCION DE LA MEJOR RESPUESTA'].includes(
+      s,
+    )
+  )
     return 'SELECCION_UNICA'
-  if (['SM', 'SELECCION_MULTIPLE', 'RESPUESTA_COMPUESTA'].includes(s)) return 'SELECCION_MULTIPLE'
-  if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(s))
+  if (
+    [
+      'SM',
+      'SELECCION_MULTIPLE',
+      'RESPUESTA_COMPUESTA',
+      'RESPUESTA COMPUESTA',
+      'RESPUESTA A/B/AMBAS/NINGUNA',
+    ].includes(s)
+  )
+    return 'SELECCION_MULTIPLE'
+  if (
+    [
+      'FV',
+      'FALSO_VERDADERO',
+      'FALSO O VERDADERO',
+      'VERDADERO O FALSO',
+      'VERDADERO O FALSO SIMPLE',
+    ].includes(s)
+  )
     return 'FALSO_VERDADERO'
   return s
+}
+
+const PARCIAL_2DO = '2do Parcial'
+const DEFAULT_DISTRIBUCION_2P = { facil: 7, medio: 16, dificil: 7 }
+const DEFAULT_GRUPOS_TIPO_2P = { g1: 15, g2: 30, g3: 15 }
+
+const esSegundoParcialValor = (parcial) => {
+  const value = removeAccents(String(parcial || '')).toLowerCase()
+  return (
+    value.includes('2do') ||
+    value.includes('segundo') ||
+    value.includes('2p') ||
+    value.includes('2 parcial')
+  )
+}
+
+const grupoTipoPregunta = (pregunta) => {
+  const tipo = normalizeTipo(pregunta?.tipo)
+  if (
+    ['FALSO_VERDADERO', 'PREGUNTA_CON_CLAVE', 'SELECCION_MULTIPLE', 'RESPUESTA_COMPUESTA'].includes(
+      tipo,
+    )
+  )
+    return 'g1'
+  if (['SELECCION_UNICA', 'SELECCION_SIMPLE'].includes(tipo)) return 'g2'
+  if (['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(tipo)) return 'g3'
+  return null
 }
 
 const filtros = ref({
   sede: null,
   carrera: null,
-  parcial: '1er Parcial',
+  parcial: PARCIAL_2DO,
   fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
   estado: [],
 })
@@ -1771,6 +1889,95 @@ const tempConfig = ref({
 const configOrigenActual = ref('nacional')
 const bancoStats = ref({ facil: 0, medio: 0, dificil: 0, total: 0 })
 const bancoTotalAsignatura = ref(0)
+const bancoPorTipo = ref({})
+const bancoPorGrupoTipo = ref({})
+
+const bancoGrupoTipoStats = computed(() => {
+  const statsPlano = {
+    g1: Number(bancoStats.value?.g1 || 0),
+    g2: Number(bancoStats.value?.g2 || 0),
+    g3: Number(bancoStats.value?.g3 || 0),
+  }
+
+  if (statsPlano.g1 + statsPlano.g2 + statsPlano.g3 > 0) {
+    return statsPlano
+  }
+
+  const statsApi = {
+    g1: Number(bancoPorGrupoTipo.value?.g1 || 0),
+    g2: Number(bancoPorGrupoTipo.value?.g2 || 0),
+    g3: Number(bancoPorGrupoTipo.value?.g3 || 0),
+  }
+
+  if (statsApi.g1 + statsApi.g2 + statsApi.g3 > 0) {
+    return statsApi
+  }
+
+  const stats = { g1: 0, g2: 0, g3: 0 }
+  Object.entries(bancoPorTipo.value || {}).forEach(([tipo, total]) => {
+    const grupo = grupoTipoPregunta({ tipo })
+    if (grupo) stats[grupo] += Number(total || 0)
+  })
+  return stats
+})
+
+const tiposNoEvaluablesGrupo2P = ['EMPAREJAMIENTO', 'PROBLEMA']
+
+const contarGruposTipoDesdePreguntas = (preguntas = []) => {
+  const porTipo = {}
+  const porGrupoTipo = { g1: 0, g2: 0, g3: 0 }
+
+  preguntas.forEach((pregunta) => {
+    const tipo = normalizeTipo(pregunta?.tipo)
+    if (!tipo || tiposNoEvaluablesGrupo2P.includes(tipo)) return
+
+    porTipo[tipo] = (porTipo[tipo] || 0) + 1
+
+    const grupo = grupoTipoPregunta({ tipo })
+    if (grupo) {
+      porGrupoTipo[grupo] += 1
+    }
+  })
+
+  return { porTipo, porGrupoTipo }
+}
+
+const normalizarStatsBanco2P = (data, preguntas = []) => {
+  const stats = data?.stats || {}
+  let porTipo = data?.por_tipo || stats.por_tipo || {}
+  let porGrupoTipo = data?.por_grupo_tipo || stats.por_grupo_tipo || {}
+  const gruposCalculados = {
+    g1: Number(stats.g1 || porGrupoTipo.g1 || 0),
+    g2: Number(stats.g2 || porGrupoTipo.g2 || 0),
+    g3: Number(stats.g3 || porGrupoTipo.g3 || 0),
+  }
+
+  if (preguntas.length && gruposCalculados.g1 + gruposCalculados.g2 + gruposCalculados.g3 === 0) {
+    const conteoPreguntas = contarGruposTipoDesdePreguntas(preguntas)
+    porTipo = conteoPreguntas.porTipo
+    porGrupoTipo = conteoPreguntas.porGrupoTipo
+    gruposCalculados.g1 = porGrupoTipo.g1
+    gruposCalculados.g2 = porGrupoTipo.g2
+    gruposCalculados.g3 = porGrupoTipo.g3
+  }
+
+  return {
+    stats: {
+      ...stats,
+      g1: gruposCalculados.g1,
+      g2: gruposCalculados.g2,
+      g3: gruposCalculados.g3,
+    },
+    porTipo,
+    porGrupoTipo,
+  }
+}
+
+const esSegundoParcialGestion = computed(() =>
+  esSegundoParcialValor(
+    dialogGestion.value.examen?.tipo_examen || dialogGestion.value.examen?.parcial,
+  ),
+)
 
 const bancoSuficiente = computed(() => {
   if (dialogGestion.value.examen?.estado !== 'programados') return true
@@ -1811,7 +2018,7 @@ const manualConfig = ref({
   docente_obj: null,
   docente_texto: '',
   grupo: '1',
-  parcial: '1er Parcial',
+  parcial: PARCIAL_2DO,
   fecha: new Date().toISOString().split('T')[0],
   formatoHoja: 'Oficio (8.5" x 13")',
   semestre: '',
@@ -2023,7 +2230,7 @@ const limpiarFiltros = () => {
       ? sedesOptions.value.find((s) => Number(s.value) === Number(authStore.usuarioActual?.sede_id))
       : null,
     carrera: null,
-    parcial: '1er Parcial',
+    parcial: PARCIAL_2DO,
     fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
     estado: [],
   }
@@ -2051,7 +2258,7 @@ const abrirGeneracionManual = () => {
     docente_obj: null,
     docente_texto: '',
     grupo: '1',
-    parcial: '1er Parcial',
+    parcial: PARCIAL_2DO,
     fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
     formatoHoja: 'Oficio (8.5" x 13")',
     semestre: '',
@@ -2735,12 +2942,14 @@ const configGestion = computed(() => {
 const gestionarEstado = async (examen) => {
   dialogGestion.value.examen = examen
   if (examen.estado === 'programados') {
+    const esSegundoParcial = esSegundoParcialValor(examen.tipo_examen || examen.parcial)
     // Valores por defecto iniciales (fallback hard)
     tempConfig.value = {
       cantVariantes: examen.variantes.length || 1,
-      facil: examen.distribucion.facil || 7,
-      medio: examen.distribucion.medio || 16,
-      dificil: examen.distribucion.dificil || 7,
+      facil: examen.distribucion.facil || (esSegundoParcial ? DEFAULT_DISTRIBUCION_2P.facil : 7),
+      medio: examen.distribucion.medio || (esSegundoParcial ? DEFAULT_DISTRIBUCION_2P.medio : 16),
+      dificil:
+        examen.distribucion.dificil || (esSegundoParcial ? DEFAULT_DISTRIBUCION_2P.dificil : 7),
       formatoHoja: examen.distribucion.formatoHoja || 'Oficio (8.5" x 13")',
       fontFamily: examen.distribucion.fontFamily || 'helvetica',
       fontSize: examen.distribucion.fontSize || 11,
@@ -2779,7 +2988,7 @@ const gestionarEstado = async (examen) => {
             examen.distribucion.medio > 0 ||
             examen.distribucion.dificil > 0)
 
-        if (confParcial && !tieneConfigGuardada) {
+        if (confParcial && !tieneConfigGuardada && !esSegundoParcial) {
           tempConfig.value.facil = confParcial.distribucion.facil
           tempConfig.value.medio = confParcial.distribucion.medio
           tempConfig.value.dificil = confParcial.distribucion.dificil
@@ -2789,8 +2998,11 @@ const gestionarEstado = async (examen) => {
       console.error('Error cargando config efectiva:', err)
     }
 
-    // Auto-corregir el legacy bug de 10/10/5 (25 preguntas) a 7/16/7 (30) para 1er/2do parcial
-    if (
+    if (esSegundoParcial) {
+      tempConfig.value.facil = DEFAULT_DISTRIBUCION_2P.facil
+      tempConfig.value.medio = DEFAULT_DISTRIBUCION_2P.medio
+      tempConfig.value.dificil = DEFAULT_DISTRIBUCION_2P.dificil
+    } else if (
       tempConfig.value.facil === 10 &&
       tempConfig.value.medio === 10 &&
       tempConfig.value.dificil === 5
@@ -2802,6 +3014,8 @@ const gestionarEstado = async (examen) => {
 
     // Cargar estadísticas del banco de preguntas
     try {
+      bancoPorTipo.value = {}
+      bancoPorGrupoTipo.value = {}
       const { data } = await api.get('/banco-preguntas/stats', {
         params: {
           asignatura_id: examen.asignatura_id,
@@ -2812,7 +3026,29 @@ const gestionarEstado = async (examen) => {
         },
       })
       if (data.success) {
-        bancoStats.value = data.stats
+        let resumenBanco = normalizarStatsBanco2P(data)
+
+        if (
+          Number(resumenBanco.stats.total || 0) > 0 &&
+          resumenBanco.stats.g1 + resumenBanco.stats.g2 + resumenBanco.stats.g3 === 0
+        ) {
+          const bancoDetalle = await api.get('/banco-preguntas', {
+            params: {
+              asignatura_id: examen.asignatura_id,
+              docente_id: examen.docente_id,
+              sede_id: examen.sede_id,
+              grupoTeorico: examen.grupo,
+              parcial: examen.tipo_examen || examen.parcial,
+              all_docentes: true,
+            },
+          })
+          const preguntas = bancoDetalle.data?.preguntas || bancoDetalle.data || []
+          resumenBanco = normalizarStatsBanco2P(data, Array.isArray(preguntas) ? preguntas : [])
+        }
+
+        bancoStats.value = resumenBanco.stats
+        bancoPorTipo.value = resumenBanco.porTipo
+        bancoPorGrupoTipo.value = resumenBanco.porGrupoTipo
         bancoTotalAsignatura.value = data.total_asignatura || 0
       }
     } catch (err) {
@@ -3023,7 +3259,8 @@ const ejecutarAccionGestion = async () => {
   if (examen.estado === 'programados' && !bancoSuficiente.value) {
     $q.notify({
       type: 'negative',
-      message: 'No hay suficientes preguntas en el banco para la distribución solicitada.',
+      message:
+        'No hay suficientes preguntas en el banco para la distribución por dificultad solicitada.',
       icon: 'warning',
     })
     return
@@ -3058,7 +3295,7 @@ const ejecutarAccionGestion = async () => {
               asignatura_id: examen.asignatura_id,
               docente_id: examen.docente_id,
               grupoTeorico: examen.grupo,
-              parcial: examen.parcial,
+              parcial: examen.tipo_examen || examen.parcial,
               all_docentes: true,
             },
           })
@@ -3071,18 +3308,7 @@ const ejecutarAccionGestion = async () => {
         }
         $q.loading.hide()
         const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
-        const formatoPapel = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-        const mergedExamenesDoc = new jsPDF({
-          compression: true,
-          putOnlyUsedFonts: true,
-          precision: 3,
-          format: formatoPapel,
-        })
-        const mergedPatronesDoc = new jsPDF({
-          compression: true,
-          putOnlyUsedFonts: true,
-          precision: 3,
-        })
+        const esSegundoParcialActual = esSegundoParcialValor(examen.tipo_examen || examen.parcial)
 
         payload.config_generacion = {
           facil: tempConfig.value.facil,
@@ -3094,7 +3320,23 @@ const ejecutarAccionGestion = async () => {
           fontSize: tempConfig.value.fontSize,
           lineSpacing: tempConfig.value.lineSpacing,
           aleatorizarSecciones: tempConfig.value.aleatorizarSecciones,
+          gruposTipoReferencial: esSegundoParcialActual ? { ...bancoGrupoTipoStats.value } : null,
         }
+
+        const formatoPapel = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
+        const mergedExamenesDoc = esSegundoParcialActual
+          ? createExamPdfDocument(payload.config_generacion)
+          : new jsPDF({
+              compression: true,
+              putOnlyUsedFonts: true,
+              precision: 3,
+              format: formatoPapel,
+            })
+        const mergedPatronesDoc = new jsPDF({
+          compression: true,
+          putOnlyUsedFonts: true,
+          precision: 3,
+        })
 
         const todas = Array.isArray(bancoPreguntas)
           ? bancoPreguntas
@@ -3103,43 +3345,71 @@ const ejecutarAccionGestion = async () => {
 
         for (let i = 0; i < variantes.length; i++) {
           const letra = variantes[i]
-          const seleccion = obtenerSeleccion7167(todas, payload.config_generacion)
-          const mezcladas = mezclarIncisos7167(seleccion)
+          const seleccion = esSegundoParcialActual
+            ? buildExamQuestionSelection(todas, payload.config_generacion)
+            : obtenerSeleccion7167(todas, payload.config_generacion)
 
-          const ordenBase = [
-            'PROBLEMA',
-            'EMPAREJAMIENTO',
-            'SUBPROBLEMA',
-            'SELECCION_UNICA',
-            'SELECCION_MULTIPLE',
-            'FALSO_VERDADERO',
-          ]
-          let finalOrder = [...ordenBase]
-
-          if (payload.config_generacion.aleatorizarSecciones) {
-            const principales = [
-              'PROBLEMA',
-              'EMPAREJAMIENTO',
-              'SELECCION_UNICA',
-              'SELECCION_MULTIPLE',
-              'FALSO_VERDADERO',
-            ]
-            const shuffled = shuffle([...principales])
-            finalOrder = []
-            shuffled.forEach((t) => {
-              finalOrder.push(t)
-              if (t === 'PROBLEMA' || t === 'EMPAREJAMIENTO') finalOrder.push('SUBPROBLEMA')
+          if (!seleccion) {
+            $q.notify({
+              type: 'negative',
+              message: 'No se pudo armar una variante que cumpla la distribución por dificultad.',
+              icon: 'warning',
             })
+            $q.loading.hide()
+            return
           }
 
-          const sorted = mezcladas.sort((a, b) => {
-            if (a.grupo && b.grupo && a.grupo === b.grupo) return 0
+          const sorted = esSegundoParcialActual
+            ? sortExamQuestionsForPdf(
+                mixExamQuestionOptions(JSON.parse(JSON.stringify(seleccion))),
+                payload.config_generacion,
+              )
+            : (() => {
+                const mezcladas = mezclarIncisos7167(seleccion)
+                const ordenBase = [
+                  'PROBLEMA',
+                  'SUBPROBLEMA',
+                  'EMPAREJAMIENTO',
+                  'OPCION_EMPAREJAMIENTO',
+                  'SELECCION_UNICA',
+                  'PREGUNTA_CON_CLAVE',
+                  'SELECCION_MULTIPLE',
+                  'FALSO_VERDADERO',
+                ]
+                let finalOrder = [...ordenBase]
 
-            let ta = a._parentTipo || normalizeTipo(a.tipo)
-            let tb = b._parentTipo || normalizeTipo(b.tipo)
+                if (payload.config_generacion.aleatorizarSecciones) {
+                  const principales = [
+                    'PROBLEMA',
+                    'EMPAREJAMIENTO',
+                    'SELECCION_UNICA',
+                    'PREGUNTA_CON_CLAVE',
+                    'SELECCION_MULTIPLE',
+                    'FALSO_VERDADERO',
+                  ]
+                  const shuffled = shuffle([...principales])
+                  finalOrder = []
+                  shuffled.forEach((t) => {
+                    finalOrder.push(t)
+                    if (t === 'PROBLEMA') finalOrder.push('SUBPROBLEMA')
+                    if (t === 'EMPAREJAMIENTO') finalOrder.push('OPCION_EMPAREJAMIENTO')
+                  })
+                }
 
-            return finalOrder.indexOf(ta) - finalOrder.indexOf(tb)
-          })
+                return mezcladas.sort((a, b) => {
+                  if (a.grupo && b.grupo && a.grupo === b.grupo) return 0
+
+                  const ta = a._parentTipo || normalizeTipo(a.tipo)
+                  const tb = b._parentTipo || normalizeTipo(b.tipo)
+
+                  const orderA = finalOrder.indexOf(ta)
+                  const orderB = finalOrder.indexOf(tb)
+                  return (
+                    (orderA === -1 ? finalOrder.length : orderA) -
+                    (orderB === -1 ? finalOrder.length : orderB)
+                  )
+                })
+              })()
 
           if (i > 0) {
             // Garantizar que cada variante comience en página impar (anverso)
@@ -3157,13 +3427,23 @@ const ejecutarAccionGestion = async () => {
           }
 
           // Generar contenido en documentos compartidos
-          await generarExamenPDF(
-            mergedExamenesDoc,
-            examen,
-            payload.config_generacion,
-            letra,
-            sorted,
-          )
+          if (esSegundoParcialActual) {
+            await generateExamPdf(
+              mergedExamenesDoc,
+              examen,
+              payload.config_generacion,
+              letra,
+              sorted,
+            )
+          } else {
+            await generarExamenPDF(
+              mergedExamenesDoc,
+              examen,
+              payload.config_generacion,
+              letra,
+              sorted,
+            )
+          }
           await generarPatronPDF(mergedPatronesDoc, letra, sorted, examen)
 
           resultadosVariantes.push({ letra, sorted })
@@ -3716,7 +3996,7 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
 
   // Mapping Answers - FORZAR 100 FILAS (siempre mostrar 100 burbujas)
   const preguntasReales = preguntas.filter(
-    (p) => !['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase()),
+    (p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeTipo(p.tipo)),
   )
   const totalFilas = 100
   const qPerCol = 25
@@ -3770,7 +4050,7 @@ const generarPatronXLSXConsolidado = (resultadosVariantes, customName) => {
 
   for (const res of resultadosVariantes) {
     const preguntasReales = res.sorted.filter(
-      (p) => !['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase()),
+      (p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeTipo(p.tipo)),
     )
     const dataRow = [res.letra, 'Respuesta']
 
@@ -4011,6 +4291,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   const descripciones = {
     SELECCION_UNICA:
       'SELECCIÓN ÚNICA: Lea atentamente cada pregunta y elija la única respuesta que considere correcta entre las opciones presentadas.',
+    PREGUNTA_CON_CLAVE:
+      'VERDADERO O FALSO COMPLEJAS: Seleccione la respuesta correcta de acuerdo a la clave indicada.',
     SELECCION_MULTIPLE:
       'SELECCIÓN MÚLTIPLE: Analice el enunciado y marque todas las opciones que den una respuesta válida. Tenga en cuenta que puede haber más de una respuesta correcta.',
     FALSO_VERDADERO:
@@ -4031,6 +4313,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     // Encabezado de sección (Solo para tipos principales)
     const tiposPrincipales = [
       'SELECCION_UNICA',
+      'PREGUNTA_CON_CLAVE',
       'SELECCION_MULTIPLE',
       'FALSO_VERDADERO',
       'PROBLEMA',
@@ -4078,8 +4361,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       1 -
       preguntas
         .slice(0, i)
-        .filter((x) => ['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(x.tipo?.toUpperCase()))
-        .length
+        .filter((x) => ['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeTipo(x.tipo))).length
 
     // CASO ESPECIAL: EMPAREJAMIENTO (TABLA 2 COLUMNAS)
     if (tipoActual === 'EMPAREJAMIENTO') {
@@ -4100,7 +4382,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       let j = i + 1
       while (
         j < preguntas.length &&
-        normalizeTipo(preguntas[j].tipo) === 'SUBPROBLEMA' &&
+        normalizeTipo(preguntas[j].tipo) === 'OPCION_EMPAREJAMIENTO' &&
         preguntas[j].grupo === p.grupo
       ) {
         matchingSubs.push(preguntas[j])
@@ -4220,9 +4502,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     if (!esHeader) {
       const headersAntes = preguntas
         .slice(0, i)
-        .filter((x) =>
-          ['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(x.tipo?.toUpperCase()),
-        ).length
+        .filter((x) => ['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeTipo(x.tipo))).length
       const realNum = i + 1 - headersAntes
       doc.text(`${realNum}. `, margin, currentY)
     } else {

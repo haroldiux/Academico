@@ -389,26 +389,105 @@
                         </div>
                       </template>
 
-                      <!-- Columna Preguntas 1P -->
-                      <template v-else-if="col.name === 'preguntas_1p'">
+                      <!-- Columna Preguntas 2P -->
+                      <template v-else-if="col.name === 'preguntas_2p'">
+                        <div v-if="cargandoCampos2P" class="row justify-center">
+                          <q-spinner-dots color="primary" size="20px">
+                            <q-tooltip>Cargando preguntas 2P</q-tooltip>
+                          </q-spinner-dots>
+                        </div>
                         <div
-                          v-if="props.row.preguntas_1p_stats"
-                          class="row q-gutter-xs justify-center"
+                          v-else-if="props.row.preguntas_2p_stats"
+                          class="column items-center"
+                          style="gap: 4px"
                         >
-                          <q-chip size="xs" color="blue-7" text-color="white" dense>
-                            F: {{ props.row.preguntas_1p_stats.faciles }}
-                            <q-tooltip>Fáciles (1P)</q-tooltip>
-                          </q-chip>
-                          <q-chip size="xs" color="orange-8" text-color="white" dense>
-                            M: {{ props.row.preguntas_1p_stats.medias }}
-                            <q-tooltip>Medias (1P)</q-tooltip>
-                          </q-chip>
-                          <q-chip size="xs" color="red-7" text-color="white" dense>
-                            D: {{ props.row.preguntas_1p_stats.dificiles }}
-                            <q-tooltip>Difíciles (1P)</q-tooltip>
-                          </q-chip>
+                          <div class="row q-gutter-xs justify-center">
+                            <q-chip size="xs" color="blue-7" text-color="white" dense>
+                              F: {{ props.row.preguntas_2p_stats.faciles }}
+                              <q-tooltip>
+                                <div>Fáciles (2P)</div>
+                                <div>
+                                  Total:
+                                  {{ totalPreguntasEvaluables(props.row.preguntas_2p_stats) }}
+                                </div>
+                                <div>{{ resumenTiposPregunta(props.row.preguntas_2p_stats) }}</div>
+                              </q-tooltip>
+                            </q-chip>
+                            <q-chip size="xs" color="orange-8" text-color="white" dense>
+                              M: {{ props.row.preguntas_2p_stats.medias }}
+                              <q-tooltip>
+                                <div>Medias (2P)</div>
+                                <div>
+                                  Total:
+                                  {{ totalPreguntasEvaluables(props.row.preguntas_2p_stats) }}
+                                </div>
+                                <div>{{ resumenTiposPregunta(props.row.preguntas_2p_stats) }}</div>
+                              </q-tooltip>
+                            </q-chip>
+                            <q-chip size="xs" color="red-7" text-color="white" dense>
+                              D: {{ props.row.preguntas_2p_stats.dificiles }}
+                              <q-tooltip>
+                                <div>Difíciles (2P)</div>
+                                <div>
+                                  Total:
+                                  {{ totalPreguntasEvaluables(props.row.preguntas_2p_stats) }}
+                                </div>
+                                <div>{{ resumenTiposPregunta(props.row.preguntas_2p_stats) }}</div>
+                              </q-tooltip>
+                            </q-chip>
+                          </div>
+                          <div class="row q-gutter-xs justify-center">
+                            <q-chip size="xs" color="green-7" text-color="white" dense>
+                              G1: {{ contarGruposTipoPregunta(props.row.preguntas_2p_stats).g1 }}
+                              <q-tooltip>
+                                <div>G1 VF simple + VF complejas + A/B</div>
+                                <div>
+                                  {{ resumenGruposTipoPregunta(props.row.preguntas_2p_stats) }}
+                                </div>
+                              </q-tooltip>
+                            </q-chip>
+                            <q-chip size="xs" color="blue-8" text-color="white" dense>
+                              G2: {{ contarGruposTipoPregunta(props.row.preguntas_2p_stats).g2 }}
+                              <q-tooltip>
+                                <div>G2 Mejor respuesta</div>
+                                <div>
+                                  {{ resumenGruposTipoPregunta(props.row.preguntas_2p_stats) }}
+                                </div>
+                              </q-tooltip>
+                            </q-chip>
+                            <q-chip size="xs" color="purple-7" text-color="white" dense>
+                              G3: {{ contarGruposTipoPregunta(props.row.preguntas_2p_stats).g3 }}
+                              <q-tooltip>
+                                <div>G3 Casos/problemas + emparejamiento</div>
+                                <div>
+                                  {{ resumenGruposTipoPregunta(props.row.preguntas_2p_stats) }}
+                                </div>
+                              </q-tooltip>
+                            </q-chip>
+                          </div>
                         </div>
                         <div v-else class="text-grey-4">-</div>
+                      </template>
+
+                      <!-- Columna Fecha 2P -->
+                      <template v-else-if="col.name === 'fecha_2p'">
+                        <div v-if="cargandoCampos2P" class="row justify-center">
+                          <q-spinner-dots color="teal-7" size="20px">
+                            <q-tooltip>Cargando fecha 2P</q-tooltip>
+                          </q-spinner-dots>
+                        </div>
+                        <q-chip
+                          v-else-if="props.row.fecha_2p"
+                          size="sm"
+                          color="teal-7"
+                          text-color="white"
+                          icon="event"
+                          dense
+                        >
+                          {{ formatearFechaHora2P(props.row) }}
+                          <q-tooltip>Fecha del 2do Parcial</q-tooltip>
+                        </q-chip>
+                        <div v-else class="text-grey-4">Sin fecha</div>
                       </template>
 
                       <!-- Columna Estado -->
@@ -612,15 +691,28 @@
                             <div
                               class="column items-center"
                               style="gap: 4px"
-                              v-if="docente.preguntas_1p_stats"
+                              v-if="
+                                obtenerBancoPreguntas2P(props.row, docente) ||
+                                docente.preguntas_2p_stats
+                              "
                             >
                               <div
                                 class="text-caption text-grey-7"
-                                v-if="docente.preguntas_1p_stats.grupo_teorico"
+                                v-if="
+                                  (
+                                    obtenerBancoPreguntas2P(props.row, docente) ||
+                                    docente.preguntas_2p_stats
+                                  ).grupo_teorico
+                                "
                               >
                                 <q-icon name="class" size="12px" />
                                 Grupo:
-                                <strong>{{ docente.preguntas_1p_stats.grupo_teorico }}</strong>
+                                <strong>{{
+                                  (
+                                    obtenerBancoPreguntas2P(props.row, docente) ||
+                                    docente.preguntas_2p_stats
+                                  ).grupo_teorico
+                                }}</strong>
                               </div>
                               <div class="row items-center" style="gap: 4px">
                                 <span
@@ -633,7 +725,12 @@
                                     border-radius: 10px;
                                   "
                                 >
-                                  F:{{ docente.preguntas_1p_stats.faciles }}
+                                  F:{{
+                                    (
+                                      obtenerBancoPreguntas2P(props.row, docente) ||
+                                      docente.preguntas_2p_stats
+                                    ).faciles
+                                  }}
                                 </span>
                                 <span
                                   style="
@@ -645,7 +742,12 @@
                                     border-radius: 10px;
                                   "
                                 >
-                                  M:{{ docente.preguntas_1p_stats.medias }}
+                                  M:{{
+                                    (
+                                      obtenerBancoPreguntas2P(props.row, docente) ||
+                                      docente.preguntas_2p_stats
+                                    ).medias
+                                  }}
                                 </span>
                                 <span
                                   style="
@@ -657,10 +759,89 @@
                                     border-radius: 10px;
                                   "
                                 >
-                                  D:{{ docente.preguntas_1p_stats.dificiles }}
+                                  D:{{
+                                    (
+                                      obtenerBancoPreguntas2P(props.row, docente) ||
+                                      docente.preguntas_2p_stats
+                                    ).dificiles
+                                  }}
                                 </span>
                                 <span style="font-size: 11px; font-weight: 700; color: #333">
-                                  T:{{ docente.preguntas_1p_stats.total }}
+                                  T:{{
+                                    totalPreguntasEvaluables(
+                                      obtenerBancoPreguntas2P(props.row, docente) ||
+                                        docente.preguntas_2p_stats,
+                                    )
+                                  }}
+                                  <q-tooltip>
+                                    {{
+                                      resumenTiposPregunta(
+                                        obtenerBancoPreguntas2P(props.row, docente) ||
+                                          docente.preguntas_2p_stats,
+                                      )
+                                    }}
+                                  </q-tooltip>
+                                </span>
+                              </div>
+                              <div class="row items-center" style="gap: 4px">
+                                <span
+                                  style="
+                                    background: #2e7d32;
+                                    color: #fff;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    padding: 2px 6px;
+                                    border-radius: 10px;
+                                  "
+                                >
+                                  G1:{{
+                                    contarGruposTipoPregunta(
+                                      obtenerBancoPreguntas2P(props.row, docente) ||
+                                        docente.preguntas_2p_stats,
+                                    ).g1
+                                  }}
+                                </span>
+                                <span
+                                  style="
+                                    background: #1565c0;
+                                    color: #fff;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    padding: 2px 6px;
+                                    border-radius: 10px;
+                                  "
+                                >
+                                  G2:{{
+                                    contarGruposTipoPregunta(
+                                      obtenerBancoPreguntas2P(props.row, docente) ||
+                                        docente.preguntas_2p_stats,
+                                    ).g2
+                                  }}
+                                </span>
+                                <span
+                                  style="
+                                    background: #7b1fa2;
+                                    color: #fff;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    padding: 2px 6px;
+                                    border-radius: 10px;
+                                  "
+                                >
+                                  G3:{{
+                                    contarGruposTipoPregunta(
+                                      obtenerBancoPreguntas2P(props.row, docente) ||
+                                        docente.preguntas_2p_stats,
+                                    ).g3
+                                  }}
+                                  <q-tooltip>
+                                    {{
+                                      resumenGruposTipoPregunta(
+                                        obtenerBancoPreguntas2P(props.row, docente) ||
+                                          docente.preguntas_2p_stats,
+                                      )
+                                    }}
+                                  </q-tooltip>
                                 </span>
                               </div>
                             </div>
@@ -672,7 +853,16 @@
                               Solo grupos prácticos
                             </div>
                             <div v-else class="text-caption text-grey-5 text-center">
-                              Sin preguntas 1P
+                              Sin preguntas 2P
+                            </div>
+                          </q-item-section>
+
+                          <q-item-section>
+                            <div class="text-caption text-grey-7 text-center">
+                              <q-icon name="event" size="14px" class="q-mr-xs" />
+                              {{
+                                docente.fecha_2p ? formatearFechaHora2P(docente) : 'Sin fecha 2P'
+                              }}
                             </div>
                           </q-item-section>
 
@@ -770,6 +960,7 @@ import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 import asignaturaService from 'src/services/asignaturaService'
 import { generarCarpetaDocente } from 'src/services/carpetaDocenteService'
+import rolExamenesService from 'src/services/rolExamenesService'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, ROLES } from 'src/stores/auth'
@@ -1276,6 +1467,10 @@ const filtros = ref({
   planEstudios: null, // null = todos, 'N' = Plan Nuevo, 'A' = Plan Antiguo
 })
 
+const rolExamenes2PMap = ref({})
+const bancoPreguntas2PMap = ref({})
+const cargandoCampos2P = ref(false)
+
 const opcionesPlanes = [
   { label: 'Plan Nuevo (N)', value: 'N' },
   { label: 'Plan Antiguo (A)', value: 'A' },
@@ -1363,12 +1558,120 @@ async function cargarAsignaturas() {
   // Usar la sede de los filtros (manual para Nacional, automática para los demás)
   const sedeId = filtros.value.sedeId
 
-  await asignaturasStore.fetchAsignaturas(
-    sedeId,
-    filtros.value.carreraId,
-    null, // Todos los semestres
-    filtros.value.buscar, // Búsqueda backend (opcional, o filtrar en frontend)
-  )
+  cargandoCampos2P.value = true
+  bancoPreguntas2PMap.value = {}
+  rolExamenes2PMap.value = {}
+
+  try {
+    await asignaturasStore.fetchAsignaturas(
+      sedeId,
+      filtros.value.carreraId,
+      null, // Todos los semestres
+      filtros.value.buscar, // Búsqueda backend (opcional, o filtrar en frontend)
+    )
+    await Promise.all([
+      cargarRolExamenes2P(sedeId, filtros.value.carreraId),
+      cargarBancoPreguntas2P(),
+    ])
+  } finally {
+    cargandoCampos2P.value = false
+  }
+}
+
+async function cargarRolExamenes2P(sedeId, carreraId) {
+  if (!sedeId || !carreraId) {
+    rolExamenes2PMap.value = {}
+    return
+  }
+
+  try {
+    const response = await rolExamenesService.getRolExamenes({
+      sede_id: sedeId,
+      carrera_id: carreraId,
+      gestion: '2026-I',
+    })
+    const examenes = response.data?.data || response.data || []
+
+    rolExamenes2PMap.value = examenes
+      .filter((examen) => examen.tipo_examen === '2do Parcial')
+      .reduce((map, examen) => {
+        if (examen.materia_codigo) {
+          map[normalizarCodigoMateria(examen.materia_codigo)] = examen
+        }
+        return map
+      }, {})
+  } catch (error) {
+    console.error('Error cargando rol de examenes 2P:', error)
+    rolExamenes2PMap.value = {}
+  }
+}
+
+async function cargarBancoPreguntas2P() {
+  const solicitudes = []
+
+  asignaturasStore.asignaturas.forEach((asignatura) => {
+    if (!asignatura.docentes_data?.length) return
+
+    asignatura.docentes_data.forEach((docente) => {
+      const grupoTeorico = docente.grupo_teorico_nombre || docente.preguntas_2p_stats?.grupo_teorico
+      if (!docente.id || !grupoTeorico) return
+
+      const sedeId = docente.sede_id || asignatura.sede_id
+      const key = crearBancoPreguntas2PKey(asignatura.id, docente.id, sedeId, grupoTeorico)
+      solicitudes.push(
+        api
+          .get('/banco-preguntas/stats', {
+            params: {
+              asignatura_id: asignatura.id,
+              docente_id: docente.id,
+              sede_id: sedeId,
+              grupo: grupoTeorico,
+              parcial: '2do Parcial',
+            },
+          })
+          .then(async (response) => {
+            let resumenBanco = normalizarStatsBancoPreguntas2P(response.data, grupoTeorico)
+
+            if (
+              Number(resumenBanco.total || 0) > 0 &&
+              resumenBanco.g1 + resumenBanco.g2 + resumenBanco.g3 === 0
+            ) {
+              const bancoDetalle = await api.get('/banco-preguntas', {
+                params: {
+                  asignatura_id: asignatura.id,
+                  docente_id: docente.id,
+                  sede_id: sedeId,
+                  grupoTeorico: grupoTeorico,
+                  parcial: '2do Parcial',
+                  all_docentes: true,
+                },
+              })
+              const preguntas = bancoDetalle.data?.preguntas || bancoDetalle.data || []
+              resumenBanco = normalizarStatsBancoPreguntas2P(
+                response.data,
+                grupoTeorico,
+                Array.isArray(preguntas) ? preguntas : [],
+              )
+            }
+
+            return {
+              key,
+              stats: resumenBanco,
+            }
+          })
+          .catch((error) => {
+            console.error('Error cargando preguntas 2P:', error)
+            return null
+          }),
+      )
+    })
+  })
+
+  const resultados = await Promise.all(solicitudes)
+  bancoPreguntas2PMap.value = resultados.filter(Boolean).reduce((map, item) => {
+    map[item.key] = item.stats
+    return map
+  }, {})
 }
 
 onMounted(async () => {
@@ -1455,11 +1758,18 @@ const columnasAsignaturas = [
     style: 'width: 180px',
   },
   {
-    name: 'preguntas_1p',
-    label: 'Preguntas 1P',
-    field: 'preguntas_1p_stats',
+    name: 'preguntas_2p',
+    label: 'Preguntas 2P',
+    field: 'preguntas_2p_stats',
     align: 'center',
-    style: 'width: 150px',
+    style: 'width: 185px',
+  },
+  {
+    name: 'fecha_2p',
+    label: 'Fecha 2P',
+    field: 'fecha_2p',
+    align: 'center',
+    style: 'width: 120px',
   },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 100px' },
   {
@@ -1536,12 +1846,21 @@ const semestresFiltrados = computed(() => {
         ? `Varios Docentes (${asig.docentes_data.length})`
         : asig.docente_nombre
 
-    let preguntas1pMostrar = asig.preguntas_1p_stats
+    let preguntas2pMostrar = obtenerBancoPreguntas2P(asig) || asig.preguntas_2p_stats
+    const rolExamen2P = obtenerRolExamen2P(asig)
+    let fecha2pMostrar = rolExamen2P?.fecha || asig.fecha_2p
+    let horaInicio2pMostrar = rolExamen2P?.hora_inicio || asig.hora_inicio_2p
+    let horaFin2pMostrar = rolExamen2P?.hora_fin || asig.hora_fin_2p
 
     if (asig.docentes_data && asig.docentes_data.length === 1) {
       progresoMostrar = asig.docentes_data[0].progreso_documentacion
       indicadoresMostrar = asig.docentes_data[0].indicadores_documentacion
-      preguntas1pMostrar = asig.docentes_data[0].preguntas_1p_stats
+      preguntas2pMostrar =
+        obtenerBancoPreguntas2P(asig, asig.docentes_data[0]) ||
+        asig.docentes_data[0].preguntas_2p_stats
+      fecha2pMostrar = rolExamen2P?.fecha || asig.docentes_data[0].fecha_2p
+      horaInicio2pMostrar = rolExamen2P?.hora_inicio || asig.docentes_data[0].hora_inicio_2p
+      horaFin2pMostrar = rolExamen2P?.hora_fin || asig.docentes_data[0].hora_fin_2p
     }
 
     grupos[sem].asignaturas.push({
@@ -1549,7 +1868,10 @@ const semestresFiltrados = computed(() => {
       row_key: asig.id, // Llave única para la tabla
       progreso_mostrar: progresoMostrar,
       indicadores_mostrar: indicadoresMostrar,
-      preguntas_1p_stats: preguntas1pMostrar,
+      preguntas_2p_stats: preguntas2pMostrar,
+      fecha_2p: fecha2pMostrar,
+      hora_inicio_2p: horaInicio2pMostrar,
+      hora_fin_2p: horaFin2pMostrar,
       docente_nombre_mostrar: docenteNombreMostrar,
     })
   })
@@ -1574,6 +1896,236 @@ function getNemotecnicoSemestre(n) {
     'Décimo',
   ]
   return (maps[n] || n) + ' Semestre'
+}
+
+function normalizarCodigoMateria(codigo) {
+  return String(codigo || '')
+    .trim()
+    .toUpperCase()
+}
+
+function obtenerRolExamen2P(asignatura) {
+  return rolExamenes2PMap.value[normalizarCodigoMateria(asignatura.codigo)] || null
+}
+
+function crearBancoPreguntas2PKey(asignaturaId, docenteId, sedeId, grupoTeorico) {
+  return [asignaturaId, docenteId, sedeId, String(grupoTeorico || '').trim()].join('|')
+}
+
+function obtenerBancoPreguntas2P(asignatura, docente = null) {
+  const docenteData = docente || asignatura.docentes_data?.[0]
+  const grupoTeorico =
+    docenteData?.grupo_teorico_nombre || docenteData?.preguntas_2p_stats?.grupo_teorico
+  if (!docenteData?.id || !grupoTeorico) return null
+
+  const sedeId = docenteData.sede_id || asignatura.sede_id
+  return (
+    bancoPreguntas2PMap.value[
+      crearBancoPreguntas2PKey(asignatura.id, docenteData.id, sedeId, grupoTeorico)
+    ] || null
+  )
+}
+
+function formatearFechaCorta(fecha) {
+  if (!fecha) return 'Sin fecha'
+
+  const [year, month, day] = String(fecha).split('T')[0].split('-')
+  if (!year || !month || !day) return fecha
+
+  return `${day}/${month}/${year}`
+}
+
+function formatearHoraCorta(hora) {
+  if (!hora) return ''
+
+  return String(hora).slice(0, 5)
+}
+
+function formatearFechaHora2P(item) {
+  const fecha = formatearFechaCorta(item.fecha_2p)
+  const horaInicio = formatearHoraCorta(item.hora_inicio_2p)
+  const horaFin = formatearHoraCorta(item.hora_fin_2p)
+
+  if (horaInicio && horaFin) return `${fecha} ${horaInicio}-${horaFin}`
+  if (horaInicio) return `${fecha} ${horaInicio}`
+
+  return fecha
+}
+
+function normalizarTipoPregunta2P(tipo) {
+  const valor = String(tipo || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .trim()
+
+  if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(valor)) {
+    return 'FALSO_VERDADERO'
+  }
+
+  if (
+    [
+      'PREGUNTA_CON_CLAVE',
+      'PREGUNTA CON CLAVE',
+      'VERDADERO O FALSO COMPLEJAS',
+      'VF COMPLEJAS',
+    ].includes(valor)
+  ) {
+    return 'PREGUNTA_CON_CLAVE'
+  }
+
+  if (
+    [
+      'SM',
+      'SELECCION_MULTIPLE',
+      'RESPUESTA_COMPUESTA',
+      'RESPUESTA COMPUESTA',
+      'RESPUESTA A/B/AMBAS/NINGUNA',
+    ].includes(valor)
+  ) {
+    return 'SELECCION_MULTIPLE'
+  }
+
+  if (
+    ['SU', 'SS', 'SELECCION_UNICA', 'SELECCION_SIMPLE', 'SELECCION DE LA MEJOR RESPUESTA'].includes(
+      valor,
+    )
+  ) {
+    return 'SELECCION_UNICA'
+  }
+
+  if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA'].includes(valor)) {
+    return 'SUBPROBLEMA'
+  }
+
+  if (['OPCION_EMPAREJAMIENTO', 'OPCION EMPAREJAMIENTO'].includes(valor)) {
+    return 'OPCION_EMPAREJAMIENTO'
+  }
+
+  return valor
+}
+
+function grupoTipoPregunta2P(tipo) {
+  const tipoNormalizado = normalizarTipoPregunta2P(tipo)
+  if (
+    ['FALSO_VERDADERO', 'PREGUNTA_CON_CLAVE', 'SELECCION_MULTIPLE', 'RESPUESTA_COMPUESTA'].includes(
+      tipoNormalizado,
+    )
+  ) {
+    return 'g1'
+  }
+  if (['SELECCION_UNICA', 'SELECCION_SIMPLE'].includes(tipoNormalizado)) return 'g2'
+  if (['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(tipoNormalizado)) return 'g3'
+  return null
+}
+
+function contarGruposTipoDesdePreguntas2P(preguntas = []) {
+  const porTipo = {}
+  const porGrupoTipo = { g1: 0, g2: 0, g3: 0 }
+
+  preguntas.forEach((pregunta) => {
+    const tipo = normalizarTipoPregunta2P(pregunta?.tipo)
+    if (!tipo || ['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipo)) return
+
+    porTipo[tipo] = (porTipo[tipo] || 0) + 1
+
+    const grupo = grupoTipoPregunta2P(tipo)
+    if (grupo) {
+      porGrupoTipo[grupo] += 1
+    }
+  })
+
+  return { porTipo, porGrupoTipo }
+}
+
+function normalizarStatsBancoPreguntas2P(data, grupoTeorico, preguntas = []) {
+  const stats = data?.stats || {}
+  let porTipo = data?.por_tipo || stats.por_tipo || {}
+  let porGrupoTipo = data?.por_grupo_tipo || stats.por_grupo_tipo || {}
+  const resumen = {
+    faciles: Number(stats.facil || stats.faciles || 0),
+    medias: Number(stats.medio || stats.medias || 0),
+    dificiles: Number(stats.dificil || stats.dificiles || 0),
+    total: Number(stats.total || 0),
+    por_tipo: porTipo,
+    por_grupo_tipo: porGrupoTipo,
+    g1: Number(stats.g1 || porGrupoTipo.g1 || 0),
+    g2: Number(stats.g2 || porGrupoTipo.g2 || 0),
+    g3: Number(stats.g3 || porGrupoTipo.g3 || 0),
+    grupo_teorico: grupoTeorico,
+  }
+
+  if (preguntas.length && resumen.g1 + resumen.g2 + resumen.g3 === 0) {
+    const conteoPreguntas = contarGruposTipoDesdePreguntas2P(preguntas)
+    porTipo = conteoPreguntas.porTipo
+    porGrupoTipo = conteoPreguntas.porGrupoTipo
+
+    resumen.por_tipo = porTipo
+    resumen.por_grupo_tipo = porGrupoTipo
+    resumen.g1 = porGrupoTipo.g1
+    resumen.g2 = porGrupoTipo.g2
+    resumen.g3 = porGrupoTipo.g3
+  }
+
+  return resumen
+}
+
+function contarGruposTipoPregunta(stats) {
+  const conteoPlano = {
+    g1: Number(stats?.g1 || 0),
+    g2: Number(stats?.g2 || 0),
+    g3: Number(stats?.g3 || 0),
+  }
+
+  if (conteoPlano.g1 + conteoPlano.g2 + conteoPlano.g3 > 0) {
+    return conteoPlano
+  }
+
+  if (stats?.por_grupo_tipo && Object.keys(stats.por_grupo_tipo).length) {
+    const conteoApi = {
+      g1: Number(stats.por_grupo_tipo.g1 || 0),
+      g2: Number(stats.por_grupo_tipo.g2 || 0),
+      g3: Number(stats.por_grupo_tipo.g3 || 0),
+    }
+
+    if (conteoApi.g1 + conteoApi.g2 + conteoApi.g3 > 0) {
+      return conteoApi
+    }
+  }
+
+  const conteo = { g1: 0, g2: 0, g3: 0 }
+  Object.entries(stats?.por_tipo || {}).forEach(([tipo, total]) => {
+    const grupo = grupoTipoPregunta2P(tipo)
+    if (grupo) conteo[grupo] += Number(total || 0)
+  })
+
+  return conteo
+}
+
+function resumenGruposTipoPregunta(stats) {
+  const conteo = contarGruposTipoPregunta(stats)
+
+  return `G1: ${conteo.g1} | G2: ${conteo.g2} | G3: ${conteo.g3}`
+}
+
+function resumenTiposPregunta(stats) {
+  const porTipo = stats?.por_tipo || {}
+  const resumen = Object.entries(porTipo)
+    .filter(([, total]) => Number(total) > 0)
+    .map(([tipo, total]) => `${formatearTipoPregunta(tipo)}: ${total}`)
+
+  return resumen.length ? resumen.join(' | ') : 'Sin detalle por tipo'
+}
+
+function totalPreguntasEvaluables(stats) {
+  return Number(stats?.faciles || 0) + Number(stats?.medias || 0) + Number(stats?.dificiles || 0)
+}
+
+function formatearTipoPregunta(tipo) {
+  return String(tipo || 'SIN_TIPO')
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
 // Funciones de progreso para documentación

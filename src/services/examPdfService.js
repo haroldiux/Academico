@@ -71,145 +71,99 @@ export const buildExamQuestionSelection = (questions, config = {}) => {
   const metaMedio = parseInt(config.medio, 10) || 16
   const metaDificil = parseInt(config.dificil, 10) || 7
 
-  const getPoolByDifficulty = (nivel) =>
-    questions.filter((question) => {
-      const dificultad = String(
-        question.nivel_dificultad || question.dificultad || '1',
-      ).toUpperCase()
+  const difficultyKey = (question) => {
+    const dificultad = String(question.nivel_dificultad || question.dificultad || '1').toUpperCase()
+    if (['1', 'FACIL'].includes(dificultad)) return 'facil'
+    if (['2', 'MEDIO', 'MEDIA'].includes(dificultad)) return 'medio'
+    if (['3', 'DIFICIL'].includes(dificultad)) return 'dificil'
+    return null
+  }
 
-      if (nivel === '1') return ['1', 'FACIL'].includes(dificultad)
-      if (nivel === '2') return ['2', 'MEDIO', 'MEDIA'].includes(dificultad)
-      if (nivel === '3') return ['3', 'DIFICIL'].includes(dificultad)
+  const headersByGroup = new Map()
+  questions.forEach((question) => {
+    const type = normalizeExamQuestionType(question.tipo)
+    if (!['PROBLEMA', 'EMPAREJAMIENTO'].includes(type)) return
+    const group = String(question.grupo || '').trim()
+    if (!group) return
+    headersByGroup.set(`${type}:${group}`, question)
+  })
 
-      return false
+  const evaluableQuestions = questions
+    .map((question, index) => ({
+      question,
+      index,
+      difficulty: difficultyKey(question),
+      type: normalizeExamQuestionType(question.tipo),
+    }))
+    .filter((item) => item.difficulty && !['PROBLEMA', 'EMPAREJAMIENTO'].includes(item.type))
+
+  const trySelection = () => {
+    const remaining = {
+      facil: metaFacil,
+      medio: metaMedio,
+      dificil: metaDificil,
+    }
+    const selected = []
+    const ordered = shuffle([...evaluableQuestions]).sort((a, b) => {
+      const scarcityA = evaluableQuestions.filter((item) => item.difficulty === a.difficulty).length
+      const scarcityB = evaluableQuestions.filter((item) => item.difficulty === b.difficulty).length
+      return scarcityA - scarcityB
     })
 
-  const poolFacil = getPoolByDifficulty('1')
-  const poolMedio = getPoolByDifficulty('2')
-  const poolDificil = getPoolByDifficulty('3')
-  const usedIds = new Set()
-
-  const selectFromPool = (pool, meta) => {
-    if (meta <= 0) return []
-
-    const availablePool = pool.filter((question) => !usedIds.has(question.id))
-    const headers = availablePool.filter((question) =>
-      ['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeExamQuestionType(question.tipo)),
-    )
-    const subquestions = questions.filter((question) =>
-      ['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(normalizeExamQuestionType(question.tipo)),
-    )
-
-    const macroGroups = headers
-      .map((header) => ({
-        header,
-        children: subquestions.filter(
-          (subquestion) =>
-            subquestion.grupo?.trim() === header.grupo?.trim() &&
-            header.grupo &&
-            !usedIds.has(subquestion.id),
-        ),
-      }))
-      .filter((macro) => macro.children.length > 0)
-
-    const individualQuestions = availablePool
-      .filter(
-        (question) =>
-          [
-            'SELECCION_SIMPLE',
-            'PREGUNTA_CON_CLAVE',
-            'RESPUESTA_COMPUESTA',
-            'FALSO_VERDADERO',
-            'PROBLEMA',
-            'EMPAREJAMIENTO',
-          ].includes(normalizeExamQuestionType(question.tipo)) &&
-          !['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(
-            normalizeExamQuestionType(question.tipo),
-          ),
-      )
-      .filter((question) => !headers.some((header) => header.id === question.id))
-
-    let bestMacros = []
-    let bestSum = -1
-
-    for (let index = 0; index < 100; index += 1) {
-      let sum = 0
-      const selection = []
-      const shuffledMacros = shuffle([...macroGroups])
-
-      for (const macro of shuffledMacros) {
-        if (sum + macro.children.length <= meta) {
-          selection.push(macro)
-          sum += macro.children.length
-        }
-
-        if (sum === meta) break
-      }
-
-      if (sum === meta || meta - sum <= individualQuestions.length) {
-        bestMacros = selection
-        bestSum = sum
-        break
-      }
-
-      if (sum > bestSum) {
-        bestMacros = selection
-        bestSum = sum
-      }
+    for (const item of ordered) {
+      if (remaining[item.difficulty] <= 0) continue
+      selected.push(item)
+      remaining[item.difficulty] -= 1
     }
 
-    const selectedQuestions = []
-    let counted = 0
-
-    for (const macro of bestMacros) {
-      usedIds.add(macro.header.id)
-      const headerClone = JSON.parse(JSON.stringify(macro.header))
-      selectedQuestions.push(headerClone)
-
-      const children = JSON.parse(JSON.stringify(shuffle([...macro.children])))
-      children.forEach((child) => {
-        usedIds.add(child.id)
-        child._parentTipo = normalizeExamQuestionType(headerClone.tipo)
-      })
-
-      selectedQuestions.push(...children)
-      counted += children.length
-    }
-
-    const remaining = meta - counted
-
-    if (remaining > 0) {
-      const extras = shuffle([...individualQuestions]).slice(0, remaining)
-      extras.forEach((extra) => usedIds.add(extra.id))
-      selectedQuestions.push(...JSON.parse(JSON.stringify(extras)))
-    }
-
-    return selectedQuestions
+    return Object.values(remaining).every((total) => total === 0) ? selected : null
   }
 
-  const selectedEasy = selectFromPool(poolFacil, metaFacil)
-  const selectedMedium = selectFromPool(poolMedio, metaMedio)
-  const selectedHard = selectFromPool(poolDificil, metaDificil)
-  const selection = [...selectedEasy, ...selectedMedium, ...selectedHard]
-
-  const countRealQuestions = (items) =>
-    items.filter(
-      (question) =>
-        !['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(
-          String(question.tipo || '').toUpperCase(),
-        ),
-    ).length
-
-  const totalTarget = metaFacil + metaMedio + metaDificil
-  const currentCount = countRealQuestions(selection)
-  const missing = totalTarget - currentCount
-
-  if (missing > 0) {
-    const extraSelection = selectFromPool(questions, missing)
-    selection.push(...extraSelection)
+  let selected = null
+  for (let attempt = 0; attempt < 500 && !selected; attempt += 1) {
+    selected = trySelection()
   }
 
-  return selection
+  if (!selected) {
+    return null
+  }
+
+  const groupedSelections = new Map()
+  const individualSelections = []
+
+  selected.forEach((item) => {
+    const group = String(item.question.grupo || '').trim()
+    if (['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(item.type) && group) {
+      const parentType = item.type === 'OPCION_EMPAREJAMIENTO' ? 'EMPAREJAMIENTO' : 'PROBLEMA'
+      const key = `${parentType}:${group}`
+      if (!groupedSelections.has(key)) {
+        groupedSelections.set(key, {
+          header: headersByGroup.get(key),
+          index: item.index,
+          children: [],
+        })
+      }
+
+      const block = groupedSelections.get(key)
+      block.index = Math.min(block.index, item.index)
+      block.children.push({ ...item.question, _parentTipo: parentType, _originalIndex: item.index })
+    } else {
+      individualSelections.push({ index: item.index, items: [item.question] })
+    }
+  })
+
+  return [
+    ...individualSelections,
+    ...Array.from(groupedSelections.values()).map((block) => ({
+      index: block.index,
+      items: [
+        block.header,
+        ...block.children.sort((a, b) => a._originalIndex - b._originalIndex),
+      ].filter(Boolean),
+    })),
+  ]
+    .sort((a, b) => a.index - b.index)
+    .flatMap((block) => block.items)
 }
 
 export const mixExamQuestionOptions = (questions = []) =>
@@ -279,14 +233,14 @@ export const mixExamQuestionOptions = (questions = []) =>
 
 export const sortExamQuestionsForPdf = (questions = [], config = {}) => {
   const baseOrder = [
-    'PROBLEMA',
-    'EMPAREJAMIENTO',
-    'OPCION_EMPAREJAMIENTO',
-    'SUBPROBLEMA',
     'SELECCION_SIMPLE',
     'PREGUNTA_CON_CLAVE',
     'RESPUESTA_COMPUESTA',
     'FALSO_VERDADERO',
+    'PROBLEMA',
+    'SUBPROBLEMA',
+    'EMPAREJAMIENTO',
+    'OPCION_EMPAREJAMIENTO',
   ]
 
   let localOrder = [...baseOrder]
@@ -312,14 +266,105 @@ export const sortExamQuestionsForPdf = (questions = [], config = {}) => {
     })
   }
 
-  return questions.sort((a, b) => {
-    if (a.grupo && b.grupo && a.grupo === b.grupo) return 0
+  const buildQuestionBlocks = (items) => {
+    const used = new Set()
+    const childTypesByParent = {
+      PROBLEMA: ['SUBPROBLEMA'],
+      EMPAREJAMIENTO: ['OPCION_EMPAREJAMIENTO'],
+    }
 
-    const typeA = a._parentTipo || normalizeExamQuestionType(a.tipo)
-    const typeB = b._parentTipo || normalizeExamQuestionType(b.tipo)
+    return items.reduce((blocks, question, index) => {
+      const uniqueKey = question.id ?? `${index}-${question.tipo}-${question.grupo || ''}`
+      if (used.has(uniqueKey)) return blocks
 
-    return localOrder.indexOf(typeA) - localOrder.indexOf(typeB)
-  })
+      const type = normalizeExamQuestionType(question.tipo)
+      const childTypes = childTypesByParent[type]
+      const group = String(question.grupo || '').trim()
+
+      if (childTypes && group) {
+        const children = items.filter((candidate, candidateIndex) => {
+          const candidateKey =
+            candidate.id ?? `${candidateIndex}-${candidate.tipo}-${candidate.grupo || ''}`
+          return (
+            candidateKey !== uniqueKey &&
+            !used.has(candidateKey) &&
+            String(candidate.grupo || '').trim() === group &&
+            childTypes.includes(normalizeExamQuestionType(candidate.tipo))
+          )
+        })
+
+        used.add(uniqueKey)
+        children.forEach((child) =>
+          used.add(child.id ?? `${items.indexOf(child)}-${child.tipo}-${child.grupo || ''}`),
+        )
+
+        blocks.push({
+          type,
+          index,
+          items: [question, ...children],
+        })
+        return blocks
+      }
+
+      const parentType = question._parentTipo || type
+
+      if (['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(type) && group) {
+        const expectedParent = type === 'SUBPROBLEMA' ? 'PROBLEMA' : 'EMPAREJAMIENTO'
+        const headerIndex = items.findIndex(
+          (candidate) =>
+            String(candidate.grupo || '').trim() === group &&
+            normalizeExamQuestionType(candidate.tipo) === expectedParent,
+        )
+
+        if (headerIndex !== -1 && headerIndex > index) {
+          const header = items[headerIndex]
+          const relatedChildren = items.filter(
+            (candidate) =>
+              String(candidate.grupo || '').trim() === group &&
+              normalizeExamQuestionType(candidate.tipo) === type,
+          )
+
+          used.add(header.id ?? `${headerIndex}-${header.tipo}-${header.grupo || ''}`)
+          relatedChildren.forEach((child) =>
+            used.add(child.id ?? `${items.indexOf(child)}-${child.tipo}-${child.grupo || ''}`),
+          )
+
+          blocks.push({
+            type: expectedParent,
+            index,
+            items: [header, ...relatedChildren],
+          })
+          return blocks
+        }
+      }
+
+      used.add(uniqueKey)
+      blocks.push({
+        type: parentType,
+        index,
+        items: [question],
+      })
+      return blocks
+    }, [])
+  }
+
+  const blocks = buildQuestionBlocks(questions)
+
+  if (!config.aleatorizarSecciones && config.preservarOrdenOriginalBloques) {
+    return blocks.flatMap((block) => block.items)
+  }
+
+  return blocks
+    .sort((a, b) => {
+      const orderA = localOrder.indexOf(a.type)
+      const orderB = localOrder.indexOf(b.type)
+      const safeOrderA = orderA === -1 ? localOrder.length : orderA
+      const safeOrderB = orderB === -1 ? localOrder.length : orderB
+
+      if (safeOrderA !== safeOrderB) return safeOrderA - safeOrderB
+      return a.index - b.index
+    })
+    .flatMap((block) => block.items)
 }
 
 export const createExamPdfDocument = (config = {}) => {
@@ -686,14 +731,19 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
         : rawLines[0] || ''
       const statementLines = buildDisplayLines(doc, statementBase, contentWidth - 10)
       const keyLines = rawLines.slice(1)
+      const matchingOptions = Array.isArray(question.opciones) ? question.opciones : []
+      const optionLines = matchingOptions.length
+        ? matchingOptions.map((option, optionIndex) => {
+            const optionId = option.id || String.fromCharCode(65 + optionIndex)
+            return `${optionId}) ${cleanQuestionText(option.text)}`
+          })
+        : keyLines
       const linkedQuestions = []
       let cursor = index + 1
 
       while (
         cursor < questions.length &&
-        ['OPCION_EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(
-          normalizeExamQuestionType(questions[cursor].tipo),
-        ) &&
+        normalizeExamQuestionType(questions[cursor].tipo) === 'OPCION_EMPAREJAMIENTO' &&
         questions[cursor].grupo === question.grupo
       ) {
         linkedQuestions.push(questions[cursor])
@@ -701,7 +751,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       }
 
       let estimatedHeight = statementLines.length * lineHeight + 4
-      estimatedHeight += keyLines.length * (lineHeight + 0.5) + 4
+      estimatedHeight += optionLines.length * (lineHeight + 0.5) + 4
 
       for (const linked of linkedQuestions) {
         const subText = `${cleanQuestionText(linked.enunciado)} (      )`
@@ -724,7 +774,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       doc.setFont(baseFont, 'normal')
       doc.setFontSize(baseSize - 2)
 
-      for (const option of keyLines) {
+      for (const option of optionLines) {
         if (currentY > doc.internal.pageSize.getHeight() - 20) {
           doc.addPage()
           currentY = margin
@@ -765,7 +815,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
 
     const structuredLines = extractStructuredLines(question.enunciado)
     let statement = structuredLines[0] || cleanQuestionText(question.enunciado)
-    const detailLines = structuredLines.slice(1)
+    let detailLines = structuredLines.slice(1)
 
     if (statement.toUpperCase().startsWith('EMPAREJAMIENTO:')) {
       statement = statement.substring(16).trim()
@@ -775,12 +825,26 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       statement = statement.substring(9).trim()
     }
 
-    const statementLines = doc.splitTextToSize(statement, contentWidth - 12)
+    let premiseDetailStartIndex = 0
+    if (currentType === 'RESPUESTA_COMPUESTA') {
+      const premiseLines =
+        structuredLines.length > 0 ? structuredLines : [statement].filter(Boolean)
+      if (premiseLines.length > 1 || /^[IVX]+[.):]\s*/i.test(premiseLines[0] || '')) {
+        statement = `I. ${stripNumericPrefix(premiseLines[0])}`
+        detailLines = premiseLines.slice(1)
+        premiseDetailStartIndex = 1
+      }
+    }
+
     const options = Array.isArray(question.opciones) ? question.opciones : []
     const isHeader = currentType === 'PROBLEMA'
     const renderOptions = ['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(currentType)
     const prefixedBlankTypes = ['FALSO_VERDADERO', 'PREGUNTA_CON_CLAVE', 'RESPUESTA_COMPUESTA']
     const statementX = prefixedBlankTypes.includes(currentType) ? margin + 18 : margin + 8
+    const statementMaxWidth = margin + contentWidth - statementX
+    const detailMaxWidth = margin + contentWidth - (margin + 12)
+    const optionMaxWidth = margin + contentWidth - (margin + 12)
+    const statementLines = doc.splitTextToSize(statement, statementMaxWidth)
     const hasStatement = statementLines.some((line) => String(line || '').trim().length > 0)
     let estimatedHeight = statementLines.length * lineHeight
 
@@ -792,16 +856,17 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       detailLines.forEach((line, detailIndex) => {
         const claveLines = doc.splitTextToSize(
           `${detailIndex + 1}. ${stripNumericPrefix(line)}`,
-          contentWidth - 22,
+          detailMaxWidth,
         )
         estimatedHeight += claveLines.length * lineHeight + 1
       })
     } else if (currentType === 'RESPUESTA_COMPUESTA') {
       const romanLabels = ['I', 'II']
       detailLines.forEach((line, detailIndex) => {
+        const label = romanLabels[detailIndex + premiseDetailStartIndex] || romanLabels.at(-1)
         const premiseLines = doc.splitTextToSize(
-          `${romanLabels[detailIndex] || romanLabels[romanLabels.length - 1]}. ${stripNumericPrefix(line)}`,
-          contentWidth - 22,
+          `${label}. ${stripNumericPrefix(line)}`,
+          detailMaxWidth,
         )
         estimatedHeight += premiseLines.length * lineHeight + 1
       })
@@ -809,7 +874,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       for (const option of options) {
         const optionLines = doc.splitTextToSize(
           `${option.id || ''}) ${cleanQuestionText(option.text)}`,
-          contentWidth - 22,
+          optionMaxWidth,
         )
         estimatedHeight += optionLines.length * lineHeight + 1
       }
@@ -853,7 +918,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       detailLines.forEach((line, detailIndex) => {
         const claveLines = doc.splitTextToSize(
           `${detailIndex + 1}. ${stripNumericPrefix(line)}`,
-          contentWidth - 18,
+          detailMaxWidth,
         )
         doc.text(claveLines, margin + 12, currentY)
         currentY += claveLines.length * lineHeight + 1
@@ -866,9 +931,10 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       doc.setFontSize(baseSize - 1)
       const romanLabels = ['I', 'II']
       detailLines.forEach((line, detailIndex) => {
+        const label = romanLabels[detailIndex + premiseDetailStartIndex] || romanLabels.at(-1)
         const premiseLines = doc.splitTextToSize(
-          `${romanLabels[detailIndex] || romanLabels[romanLabels.length - 1]}. ${stripNumericPrefix(line)}`,
-          contentWidth - 18,
+          `${label}. ${stripNumericPrefix(line)}`,
+          detailMaxWidth,
         )
         doc.text(premiseLines, margin + 12, currentY)
         currentY += premiseLines.length * lineHeight + 1
@@ -935,7 +1001,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       for (const option of options) {
         const optionLines = doc.splitTextToSize(
           `${option.id || ''}) ${cleanQuestionText(option.text)}`,
-          contentWidth - 22,
+          optionMaxWidth,
         )
 
         if (currentY + optionLines.length * lineHeight > doc.internal.pageSize.getHeight() - 20) {
