@@ -4545,6 +4545,12 @@ const modoImportacion = ref('reemplazar')
 const conCartilla = ref(true)
 const parcialSeleccionado = ref('1P')
 const filtroBancoParcialSeleccionado = ref('2P')
+const mostrarAccionesExcelBanco = computed(
+  () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
+)
+const mostrarBotonValidarBanco = computed(
+  () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
+)
 const parcialOptions = [
   { label: '1er Parcial', value: '1P', disable: true },
   { label: '2do Parcial', value: '2P' },
@@ -7540,7 +7546,7 @@ function validarIntegridadPregunta(p, gruposCabeceraMap = new Map()) {
       const textBusqueda = enunciado.toUpperCase()
       const incisosPosibles = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.']
       const encontrados = incisosPosibles.filter(inc => textBusqueda.includes(inc))
-      
+
       if (encontrados.length < 2) {
         fallos.push('Emparejamiento (EM) debe contener al menos 2 incisos (A., B., ...) en su enunciado.')
       } else {
