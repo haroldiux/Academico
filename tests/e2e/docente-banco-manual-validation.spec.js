@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test'
 import { hasUiCredentials } from '../support/env.js'
-import { openDocenteAsignatura, seedDocenteSession, selectBancoContext } from '../support/ui-helpers.js'
+import {
+  openDocenteAsignatura,
+  seedDocenteSession,
+  selectBancoContext,
+} from '../support/ui-helpers.js'
 
 async function openManualDialog(page, context, request) {
   await seedDocenteSession(page, context, request)
@@ -32,7 +36,11 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
     await expect(page.getByText('Debes registrar el enunciado principal.')).toBeVisible()
   })
 
-  test('bloquea RESPUESTA_COMPUESTA con premisas incompletas', async ({ page, context, request }) => {
+  test('bloquea RESPUESTA_COMPUESTA con premisas incompletas', async ({
+    page,
+    context,
+    request,
+  }) => {
     await openManualDialog(page, context, request)
     await selectQuestionType(page, 'Respuesta A/B/Ambas/Ninguna')
     await page.getByLabel('Premisa 1').fill('La primera premisa está completa')
@@ -70,18 +78,22 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
     ).toBeVisible()
   })
 
-  test('bloquea EMPAREJAMIENTO con opciones ligadas incompletas', async ({ page, context, request }) => {
+  test('bloquea EMPAREJAMIENTO con opciones ligadas incompletas', async ({
+    page,
+    context,
+    request,
+  }) => {
     await openManualDialog(page, context, request)
     await selectQuestionType(page, 'Emparejamiento Ampliado')
-    await page.getByLabel('Enunciado general del emparejamiento ampliado').fill(
-      'Relacione cada concepto con su definición.',
-    )
+    await page
+      .getByLabel('Enunciado general del emparejamiento ampliado')
+      .fill('Relacione cada concepto con su definición.')
     await page.getByLabel('Opción A').fill('Concepto A')
     await page.getByLabel('Opción B').fill('Concepto B')
     await saveManualQuestion(page)
     await expect(
       page.getByText(
-        'Debes completar cada opción de emparejamiento con enunciado, dificultad y una respuesta válida según las claves activas.',
+        'Debes completar cada enunciado del emparejamiento con dificultad y una respuesta válida según las opciones activas.',
       ),
     ).toBeVisible()
   })
@@ -89,9 +101,9 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
   test('bloquea PROBLEMA con subítem incompleto', async ({ page, context, request }) => {
     await openManualDialog(page, context, request)
     await selectQuestionType(page, 'Ítems agrupados por caso clínico o problema')
-    await page.getByLabel('Enunciado general del caso clínico o problema').fill(
-      'Caso clínico de validación QA.',
-    )
+    await page
+      .getByLabel('Enunciado general del caso clínico o problema')
+      .fill('Caso clínico de validación QA.')
     await page.getByLabel('Enunciado del subproblema').fill('¿Cuál es la conducta correcta?')
     const optionInputs = page.locator(
       '.q-dialog input.q-field__native:not([readonly]):not([type="file"])',

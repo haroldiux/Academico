@@ -4513,8 +4513,6 @@ onMounted(() => {
 // Refs para ImportaciÒ�� �"Ò� â����Ò�â��šÒ�a�³n (movidas arriba para evitar ReferenceError en watches)
 const archivoBancoFile = ref(null)
 const archivoPreviewBanco = ref(null)
-const mostrarAccionesExcelBanco = true
-const mostrarBotonValidarBanco = false
 const grupoTeoricoSeleccionado = ref(null)
 const filtroBancoGrupoSeleccionado = ref(null)
 const preguntasImportadas = ref([])
@@ -4548,9 +4546,7 @@ const filtroBancoParcialSeleccionado = ref('2P')
 const mostrarAccionesExcelBanco = computed(
   () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
 )
-const mostrarBotonValidarBanco = computed(
-  () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
-)
+const mostrarBotonValidarBanco = false
 const parcialOptions = [
   { label: '1er Parcial', value: '1P', disable: true },
   { label: '2do Parcial', value: '2P' },
@@ -8522,7 +8518,7 @@ async function descargarFormatoBanco() {
   wsInst.addRow([excelTipos.FALSO_VERDADERO, 'A para Verdadero, B para Falso.'])
   wsInst.addRow([
     excelTipos.OPCION_EMPAREJAMIENTO,
-    'Use la letra correcta segun las claves activas definidas en el encabezado del emparejamiento.',
+    'Use la letra correcta segun las opciones activas definidas en el encabezado del emparejamiento.',
   ])
   const rowPR2 = wsInst.addRow([excelTipos.PROBLEMA, 'No debe llevar respuesta_correcta.'])
   rowPR2.getCell(2).font = redFont
