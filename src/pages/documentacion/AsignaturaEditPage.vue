@@ -2186,17 +2186,17 @@
               </div>
             </q-banner>
             <!-- Errores Detalles -->
-            <div v-if="importErrores.length > 0" class="q-mb-md">
+            <div v-if="importErroresNormalizados.length > 0" class="q-mb-md">
               <div class="text-subtitle2 text-red q-mb-xs flex items-center">
                 <q-icon name="error" class="q-mr-xs" />
-                {{ importErrores.length }} error(es) en el archivo:
+                {{ importErroresNormalizados.length }} error(es) en el archivo:
               </div>
               <q-scroll-area
                 style="height: 300px; border: 1px solid #ffcdd2"
                 class="bg-red-0 rounded-borders"
               >
                 <q-list separator class="bg-red-1">
-                  <q-item v-for="(err, i) in importErrores" :key="i" class="q-py-sm">
+                  <q-item v-for="(err, i) in importErroresNormalizados" :key="i" class="q-py-sm">
                     <q-item-section>
                       <q-item-label class="text-weight-bold text-red-9">
                         Fila {{ err.fila }}
@@ -2328,6 +2328,7 @@
             :label="`Importar ${preguntasImportadas.length} pregunta(s)`"
             :disable="
               preguntasImportadas.length === 0 ||
+              importErroresNormalizados.length > 0 ||
               !validacionDistribucion ||
               !grupoTeoricoSeleccionado
             "
@@ -2845,7 +2846,7 @@
                 type="textarea"
                 outlined
                 autogrow
-                rows="4"
+                rows="8"
               />
 
               <div class="row q-col-gutter-md items-end">
@@ -2888,13 +2889,13 @@
               </div>
 
               <div class="row items-center">
-                <div class="text-subtitle2">Opciones de emparejamiento ampliado ligadas</div>
+                <div class="text-subtitle2">Enunciados del emparejamiento ampliado</div>
                 <q-space />
                 <q-btn
                   flat
                   color="teal-8"
                   icon="add"
-                  label="Agregar opción"
+                  label="Agregar enunciado"
                   no-caps
                   :disable="formPregunta.preguntasLigadas.length >= 5"
                   @click="agregarPreguntaLigadaRegistro"
@@ -2909,7 +2910,7 @@
                 class="q-pa-md"
               >
                 <div class="row items-center q-mb-md">
-                  <div class="text-subtitle2">Opción de emparejamiento {{ index + 1 }}</div>
+                  <div class="text-subtitle2">Enunciado {{ index + 1 }}</div>
                   <q-space />
                   <q-btn
                     flat
@@ -2924,11 +2925,11 @@
                 <div class="q-gutter-y-sm">
                   <q-input
                     v-model="preguntaLigada.enunciado"
-                    label="Enunciado de la opción de emparejamiento"
+                    label="Texto del enunciado"
                     type="textarea"
                     outlined
                     autogrow
-                    rows="2"
+                    rows="4"
                   />
                   <div class="row q-col-gutter-md">
                     <div class="col-12 col-md-6">
@@ -2969,7 +2970,7 @@
                 type="textarea"
                 outlined
                 autogrow
-                rows="5"
+                rows="10"
               />
 
               <div class="row items-center">
@@ -3082,7 +3083,7 @@
                 type="textarea"
                 outlined
                 autogrow
-                rows="3"
+                rows="6"
               />
 
               <div class="row q-col-gutter-md">
@@ -3359,7 +3360,7 @@
               <div class="preview-question-line">
                 {{
                   previewRegistroPregunta.enunciado ||
-                  'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.'
+                  'De la lista de opciones, seleccione la respuesta correcta para cada enunciado'
                 }}
               </div>
               <div
@@ -3367,7 +3368,7 @@
                 :key="`preview-clave-${index}`"
                 class="preview-detail-line"
               >
-                {{ clave.id }}. {{ clave.text || 'Clave pendiente...' }}
+                {{ clave.id }}. {{ clave.text || 'Opción pendiente...' }}
               </div>
               <div
                 v-for="(ligada, index) in previewRegistroPregunta.preguntasLigadas"
@@ -3789,7 +3790,6 @@ watch(
       cargarGeneracionesManuales()
     }
   },
-  { immediate: true },
 )
 
 // Watcher para redirigir a PlanificacionPage cuando se selecciona el tab cronograma
@@ -4519,6 +4519,27 @@ const grupoTeoricoSeleccionado = ref(null)
 const filtroBancoGrupoSeleccionado = ref(null)
 const preguntasImportadas = ref([])
 const importErrores = ref([])
+const importErroresNormalizados = computed(() =>
+  importErrores.value.map((error) => {
+    if (typeof error === 'string') {
+      return {
+        fila: '-',
+        tipo: '-',
+        enunciado: 'Sin datos',
+        mensajes: [normalizarTextoMojibake(error)],
+      }
+    }
+
+    return {
+      fila: error?.fila ?? '-',
+      tipo: normalizarTextoMojibake(error?.tipo || '-'),
+      enunciado: normalizarTextoMojibake(error?.enunciado || 'Sin datos'),
+      mensajes: (Array.isArray(error?.mensajes) ? error.mensajes : [error?.mensajes])
+        .filter(Boolean)
+        .map((mensaje) => normalizarTextoMojibake(mensaje)),
+    }
+  }),
+)
 const importandoBanco = ref(false)
 const modoImportacion = ref('reemplazar')
 const conCartilla = ref(true)
@@ -4595,7 +4616,13 @@ const tiposPreguntaOptions = [
   {
     label: 'Opción de Emparejamiento Ampliado',
     value: 'OPCION_EMPAREJAMIENTO',
-    aliases: ['OPCION EMPAREJAMIENTO', 'OPCION_EMPAREJAMIENTO'],
+    aliases: [
+      'OPCION EMPAREJAMIENTO',
+      'OPCION_EMPAREJAMIENTO',
+      'OPCION DE EMPAREJAMIENTO AMPLIADO',
+      'OPCIÓN DE EMPAREJAMIENTO AMPLIADO',
+      tipoPreguntaExcelLabels.OPCION_EMPAREJAMIENTO,
+    ],
   },
   {
     label: 'Ítems agrupados por caso clínico o problema',
@@ -4606,13 +4633,22 @@ const tiposPreguntaOptions = [
       'PROBLEMA O CASO',
       'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA',
       'ÍTEMS AGRUPADOS POR CASO CLÍNICO O PROBLEMA',
+      'ÍTEMS AGRUPADOS POR CASO CLÍNICO O PROBLEMA',
       tipoPreguntaExcelLabels.PROBLEMA,
     ],
   },
   {
     label: 'Subítem de caso o problema',
     value: 'SUBPROBLEMA',
-    aliases: ['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA'],
+    aliases: [
+      'SP',
+      'SUBPREGUNTA',
+      'SUBPROBLEMA',
+      'SUB PROBLEMA',
+      'SUBITEM DE CASO O PROBLEMA',
+      'SUBÍTEM DE CASO O PROBLEMA',
+      tipoPreguntaExcelLabels.SUBPROBLEMA,
+    ],
   },
 ]
 
@@ -4625,9 +4661,18 @@ const tiposPreguntaRegistroManualOptions = tiposPreguntaOptions.filter(
   (option) => !['OPCION_EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(option.value),
 )
 
+const normalizarTipoAliasKey = (value) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase()
+
 const tipoPreguntaAliasMap = tiposPreguntaOptions.reduce((acc, option) => {
   option.aliases.forEach((alias) => {
     acc[String(alias).trim().toUpperCase()] = option.value
+    acc[normalizarTipoAliasKey(alias)] = option.value
   })
   return acc
 }, {})
@@ -4636,23 +4681,19 @@ function normalizarTipoPregunta(tipo, pregunta = null, gruposCabeceraMap = null)
   const tipoEntrada = String(tipo || '')
     .trim()
     .toUpperCase()
+  const tipoEntradaKey = normalizarTipoAliasKey(tipo)
   const tipoNormalizado =
     tipoPreguntaAliasMap[tipoEntrada] ||
+    tipoPreguntaAliasMap[tipoEntradaKey] ||
     String(tipo || '')
       .trim()
       .toUpperCase()
 
-  if (['SP', 'SUBPREGUNTA'].includes(tipoEntrada)) {
-    const grupoNormalizado = String(pregunta?.grupo || '')
-      .trim()
-      .toUpperCase()
+  if (['SP', 'SUBPREGUNTA'].includes(tipoEntradaKey)) {
+    const grupoNormalizado = normalizarTipoAliasKey(pregunta?.grupo || '')
     const tipoCabecera =
       gruposCabeceraMap?.get(grupoNormalizado) ||
-      tipoPreguntaAliasMap[
-        String(pregunta?.tipoCabecera || '')
-          .trim()
-          .toUpperCase()
-      ]
+      tipoPreguntaAliasMap[normalizarTipoAliasKey(pregunta?.tipoCabecera || '')]
 
     if (tipoCabecera === 'EMPAREJAMIENTO') {
       return 'OPCION_EMPAREJAMIENTO'
@@ -5168,10 +5209,10 @@ const respuestaVerdaderoFalsoOptions = [
   { label: 'B. Falso', value: 'B' },
 ]
 const respuestaCompuestaOptions = [
-  { label: 'A. Solo la primera es verdadera', value: 'A' },
-  { label: 'B. Solo la segunda es verdadera', value: 'B' },
-  { label: 'C. Ambas son verdaderas', value: 'C' },
-  { label: 'D. Ninguna es verdadera', value: 'D' },
+  { label: 'A. Si la primera es verdadera', value: 'A' },
+  { label: 'B. Si la segunda es verdadera', value: 'B' },
+  { label: 'C. Si ambas son verdaderas', value: 'C' },
+  { label: 'D. Si ninguna es verdadera', value: 'D' },
 ]
 const respuestaPreguntaClaveOptions = [
   { label: 'A. 1, 2 y 3 son verdaderas', value: 'A' },
@@ -5211,7 +5252,7 @@ const previsualizandoRegistroPregunta = ref(false)
 const previewRegistroPreguntaVisible = ref(false)
 const ejemploTipoPreguntaVisible = ref(false)
 const DEFAULT_EMPAREJAMIENTO_ENUNCIADO =
-  'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.'
+  'De la lista de opciones, seleccione la respuesta correcta para cada enunciado'
 
 const MOJIBAKE_FALLBACK_REPLACEMENTS = [
   ['F�cil', 'Fácil'],
@@ -5451,7 +5492,7 @@ const descripcionRegistroManualPregunta = computed(() => {
     SELECCION_SIMPLE:
       'Registra un enunciado con cinco alternativas y selecciona la mejor respuesta.',
     EMPAREJAMIENTO:
-      'Registra primero el encabezado del emparejamiento ampliado con 2 a 5 claves y luego completa entre 2 y 5 opciones ligadas.',
+      'Registra primero el encabezado del emparejamiento ampliado con 2 a 5 opciones y luego completa entre 2 y 5 enunciados ligados.',
     OPCION_EMPAREJAMIENTO:
       'Las opciones emparejadas se registran desde el tipo Emparejamiento Ampliado completo.',
     PROBLEMA:
@@ -5467,8 +5508,10 @@ const ejemploTipoPregunta = computed(() => {
   const tipo = tipoRegistroPregunta.value
   const ejemplos = {
     FALSO_VERDADERO: {
-      tipoHeading: 'VERDADERO O FALSO SIMPLE',
-      instrucciones: ['Marque A si la afirmación es verdadera o B si es falsa.'],
+      tipoHeading: 'Preguntas de respuesta verdadero o falso simples',
+      instrucciones: [
+        'Instrucciones: A si el enunciado es verdadero o B si el enunciado es falso.',
+      ],
       lineas: [
         {
           cssClass: 'preview-question-line',
@@ -5480,9 +5523,9 @@ const ejemploTipoPregunta = computed(() => {
       ],
     },
     RESPUESTA_COMPUESTA: {
-      tipoHeading: 'RESPUESTA A/B/AMBAS/NINGUNA',
+      tipoHeading: 'Preguntas de respuesta A/B/Ambas/Ninguna',
       instrucciones: [
-        'Lea las dos premisas y seleccione la alternativa que describa cuáles son correctas.',
+        'Instrucciones: Las siguientes preguntas están compuestas de dos premisas. Responda con A si la primera es verdadera, B si la segunda es verdadera, C si ambas son verdaderas o D si ninguna es verdadera.',
       ],
       lineas: [
         {
@@ -5494,22 +5537,21 @@ const ejemploTipoPregunta = computed(() => {
           text: 'II. La Luna produce luz propia como una estrella.',
         },
         { cssClass: 'preview-option-title', text: 'Opciones de respuesta:' },
-        { cssClass: 'preview-option-line', text: 'A. Solo la primera es verdadera' },
-        { cssClass: 'preview-option-line', text: 'B. Solo la segunda es verdadera' },
-        { cssClass: 'preview-option-line', text: 'C. Ambas son verdaderas' },
-        { cssClass: 'preview-option-line', text: 'D. Ninguna es verdadera' },
+        { cssClass: 'preview-option-line', text: 'A. Si la primera es verdadera' },
+        { cssClass: 'preview-option-line', text: 'B. Si la segunda es verdadera' },
+        { cssClass: 'preview-option-line', text: 'C. Si ambas son verdaderas' },
+        { cssClass: 'preview-option-line', text: 'D. Si ninguna es verdadera' },
         {
           cssClass: 'preview-answer-note',
-          text: 'Respuesta correcta: A. Solo la primera es verdadera',
+          text: 'Respuesta correcta: A. Si la primera es verdadera',
         },
       ],
     },
     PREGUNTA_CON_CLAVE: {
-      tipoHeading: 'VERDADERO O FALSO COMPLEJAS',
+      tipoHeading: 'Preguntas de respuesta verdadero o falso complejas',
       instrucciones: [
-        'Seleccione la combinación correcta según los incisos verdaderos.',
-        'A: 1, 2 y 3 son verdaderas | B: 1 y 3 son verdaderas | C: 2 y 4 son verdaderas',
-        'D: Solo 4 es verdadera | E: Todas son verdaderas',
+        'Instrucciones: Seleccione todas las respuestas correctas de acuerdo con la siguiente clave:',
+        'A: 1, 2 y 3 son verdaderas. B: 1 y 3 son verdaderas. C: 2 y 4 son verdaderas. D: solo 4 es verdadera. E: todas son verdaderas.',
       ],
       lineas: [
         {
@@ -5539,8 +5581,10 @@ const ejemploTipoPregunta = computed(() => {
       ],
     },
     SELECCION_SIMPLE: {
-      tipoHeading: 'SELECCIÓN DE LA MEJOR RESPUESTA',
-      instrucciones: ['Seleccione la alternativa que mejor resuelve la situación planteada.'],
+      tipoHeading: 'Preguntas de selección de la mejor respuesta',
+      instrucciones: [
+        'Instrucciones: Lea el caso clínico o situación, revise la pregunta y seleccione la mejor respuesta entre las cinco opciones.',
+      ],
       lineas: [
         {
           cssClass: 'preview-question-line',
@@ -5567,14 +5611,14 @@ const ejemploTipoPregunta = computed(() => {
       ],
     },
     EMPAREJAMIENTO: {
-      tipoHeading: 'EMPAREJAMIENTO AMPLIADO',
+      tipoHeading: 'Preguntas de Emparejamiento Ampliado',
       instrucciones: [
-        'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
+        'Instrucciones: De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
       ],
       lineas: [
         {
           cssClass: 'preview-question-line',
-          text: 'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
+          text: 'De la lista de opciones, seleccione la respuesta correcta para cada enunciado',
         },
         { cssClass: 'preview-detail-line', text: 'A. Continente' },
         { cssClass: 'preview-detail-line', text: 'B. Océano' },
@@ -5593,8 +5637,10 @@ const ejemploTipoPregunta = computed(() => {
       ],
     },
     PROBLEMA: {
-      tipoHeading: 'ÍTEMS AGRUPADOS POR CASO CLÍNICO O PROBLEMA',
-      instrucciones: ['Lea el caso y responda las preguntas asociadas.'],
+      tipoHeading: 'Preguntas de ítems agrupados por caso clínico o problema',
+      instrucciones: [
+        'Instrucciones: El siguiente caso clínico o problema tendrá varias preguntas. Seleccione las respuestas correctas.',
+      ],
       lineas: [
         {
           cssClass: 'preview-question-line',
@@ -5732,56 +5778,48 @@ const previewRegistroPregunta = computed(() => {
   const tipo = tipoRegistroPregunta.value
   const baseInstrucciones = {
     FALSO_VERDADERO: [
-      'Instrucciones: Marque A si el enunciado es verdadero o B si el enunciado es falso.',
+      'Instrucciones: A si el enunciado es verdadero o B si el enunciado es falso.',
     ],
     SELECCION_SIMPLE: [
-      'Instrucciones: Las siguientes preguntas están compuestas por un caso clínico, una pregunta y cinco opciones de respuesta. Seleccione la mejor respuesta.',
+      'Instrucciones: Lea el caso clínico o situación, revise la pregunta y seleccione la mejor respuesta entre las cinco opciones.',
     ],
     PREGUNTA_CON_CLAVE: [
-      'Instrucciones: Seleccione la opción correcta de acuerdo con la siguiente clave:',
-      'A: 1, 2 y 3 son verdaderas.',
-      'B: 1 y 3 son verdaderas.',
-      'C: 2 y 4 son verdaderas.',
-      'D: Solo 4 es verdadera.',
-      'E: Todas son verdaderas.',
+      'Instrucciones: Seleccione todas las respuestas correctas de acuerdo con la siguiente clave:',
+      'A: 1, 2 y 3 son verdaderas. B: 1 y 3 son verdaderas. C: 2 y 4 son verdaderas. D: solo 4 es verdadera. E: todas son verdaderas.',
     ],
     RESPUESTA_COMPUESTA: [
-      'Instrucciones: Las siguientes preguntas están compuestas por dos premisas. Responda con:',
-      'A: si solo la primera premisa es verdadera.',
-      'B: si solo la segunda premisa es verdadera.',
-      'C: si ambas premisas son verdaderas.',
-      'D: si ninguna premisa es verdadera.',
+      'Instrucciones: Las siguientes preguntas están compuestas de dos premisas. Responda con:',
+      'A: si la primera es verdadera. B: si la segunda es verdadera.',
+      'C: si ambas son verdaderas. D: si ninguna es verdadera.',
     ],
     EMPAREJAMIENTO: [
       'Instrucciones: De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
     ],
     PROBLEMA: [
-      'Instrucciones: El siguiente caso clínico o problema tendrá varias preguntas. Seleccione la respuesta correcta en cada una.',
+      'Instrucciones: El siguiente caso clínico o problema tendrá varias preguntas. Seleccione las respuestas correctas.',
     ],
   }
 
   const previewHeadings = {
-    FALSO_VERDADERO: 'VERDADERO O FALSO SIMPLE',
-    SELECCION_SIMPLE: 'SELECCIÓN DE LA MEJOR RESPUESTA',
-    PREGUNTA_CON_CLAVE: 'VERDADERO O FALSO COMPLEJAS',
-    RESPUESTA_COMPUESTA: 'RESPUESTA A/B/AMBAS/NINGUNA',
-    EMPAREJAMIENTO: 'EMPAREJAMIENTO AMPLIADO',
-    PROBLEMA: 'ÍTEMS AGRUPADOS POR CASO CLÍNICO O PROBLEMA',
-    SUBPROBLEMA: 'SUBÍTEM DE CASO O PROBLEMA',
+    FALSO_VERDADERO: 'Preguntas de respuesta verdadero o falso simples',
+    SELECCION_SIMPLE: 'Preguntas de selección de la mejor respuesta',
+    PREGUNTA_CON_CLAVE: 'Preguntas de respuesta verdadero o falso complejas',
+    RESPUESTA_COMPUESTA: 'Preguntas de respuesta A/B/Ambas/Ninguna',
+    EMPAREJAMIENTO: 'Preguntas de Emparejamiento Ampliado',
+    PROBLEMA: 'Preguntas de ítems agrupados por caso clínico o problema',
+    SUBPROBLEMA: 'Subítem de caso clínico o problema',
   }
   const previewInstrucciones = {
     SELECCION_SIMPLE: [
-      'Instrucciones: Las siguientes preguntas están compuestas por un caso clínico, una pregunta y cinco opciones de respuesta. Seleccione la mejor respuesta.',
+      'Instrucciones: Lea el caso clínico o situación, revise la pregunta y seleccione la mejor respuesta entre las cinco opciones.',
     ],
     RESPUESTA_COMPUESTA: [
-      'Instrucciones: Las siguientes preguntas están compuestas por dos premisas. Responda con:',
-      'A: si solo la primera premisa es verdadera.',
-      'B: si solo la segunda premisa es verdadera.',
-      'C: si ambas premisas son verdaderas.',
-      'D: si ninguna premisa es verdadera.',
+      'Instrucciones: Las siguientes preguntas están compuestas de dos premisas. Responda con:',
+      'A: si la primera es verdadera. B: si la segunda es verdadera.',
+      'C: si ambas son verdaderas. D: si ninguna es verdadera.',
     ],
     PROBLEMA: [
-      'Instrucciones: El siguiente caso clínico o problema tendrá varias preguntas. Seleccione la respuesta correcta en cada una.',
+      'Instrucciones: El siguiente caso clínico o problema tendrá varias preguntas. Seleccione las respuestas correctas.',
     ],
   }
 
@@ -6011,7 +6049,7 @@ async function previsualizarRegistroPreguntaPdf() {
       currentY = agregarTextoPreviewPdf(
         doc,
         preview.enunciado ||
-          'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
+          'De la lista de opciones, seleccione la respuesta correcta para cada enunciado',
         margin,
         currentY,
         maxWidth,
@@ -6021,7 +6059,7 @@ async function previsualizarRegistroPreguntaPdf() {
         ensureSpace(10)
         currentY = agregarTextoPreviewPdf(
           doc,
-          `${clave.id}. ${clave.text || 'Clave pendiente...'}`,
+          `${clave.id}. ${clave.text || 'Opción pendiente...'}`,
           margin,
           currentY,
           maxWidth,
@@ -6486,11 +6524,11 @@ function validarRegistroManualPregunta() {
       clavesActivas.slice(primeraClaveVaciaIndex + 1).some((clave) => clave.text)
 
     if (hayClavePosteriorCompletada) {
-      return 'Completa las claves del emparejamiento ampliado en orden, sin saltar letras intermedias.'
+      return 'Completa las opciones del emparejamiento ampliado en orden, sin saltar letras intermedias.'
     }
 
     if (clavesCompletas.length < 2 || clavesCompletas.length > 5) {
-      return 'Debes completar entre 2 y 5 claves para el emparejamiento ampliado.'
+      return 'Debes completar entre 2 y 5 opciones para el emparejamiento ampliado.'
     }
 
     const preguntasLigadas = formPregunta.value.preguntasLigadas || []
@@ -6511,7 +6549,7 @@ function validarRegistroManualPregunta() {
         ),
     )
     if (filaIncompleta) {
-      return 'Debes completar cada opción de emparejamiento con enunciado, dificultad y una respuesta válida según las claves activas.'
+      return 'Debes completar cada enunciado del emparejamiento con dificultad y una respuesta válida según las opciones activas.'
     }
   }
 
@@ -7012,7 +7050,6 @@ function normalizarEnunciadoBanco(texto) {
 function construirClaveDuplicadoBanco(payload) {
   return [
     normalizarEnunciadoBanco(payload.enunciado),
-    normalizarTipoPregunta(payload.tipo, payload),
     normalizeGroupName(payload.grupoTeorico || payload.grupo_teorico || ''),
     normalizarParcialBanco(payload.parcial),
     String(payload.grupo || '')
@@ -7061,6 +7098,71 @@ function buscarDuplicadoEnPayloadsRegistro(payloads) {
   }
 
   return null
+}
+
+function agregarErrorImportacion(erroresListado, fila, pregunta, mensaje) {
+  const existeFila = erroresListado.find((error) => error.fila === fila)
+
+  if (existeFila) {
+    if (!existeFila.mensajes.includes(mensaje)) {
+      existeFila.mensajes.push(mensaje)
+    }
+    return
+  }
+
+  erroresListado.push({
+    fila,
+    tipo: pregunta?.tipo || '-',
+    enunciado: pregunta?.enunciado || 'Sin datos',
+    mensajes: [mensaje],
+  })
+}
+
+function validarDuplicadosImportacion(preguntas, erroresListado) {
+  const clavesLote = new Map()
+
+  preguntas.forEach((pregunta) => {
+    const payload = {
+      ...pregunta,
+      grupoTeorico:
+        pregunta.grupoTeorico ||
+        grupoTeoricoSeleccionado.value ||
+        filtroBancoGrupoSeleccionado.value ||
+        '',
+      parcial:
+        pregunta.parcial ||
+        parcialSeleccionado.value ||
+        filtroBancoParcialSeleccionado.value ||
+        '2P',
+    }
+    const clave = construirClaveDuplicadoBanco(payload)
+    const fila = pregunta.filaExcel || '-'
+
+    if (!normalizarEnunciadoBanco(payload.enunciado)) {
+      return
+    }
+
+    if (clavesLote.has(clave)) {
+      agregarErrorImportacion(
+        erroresListado,
+        fila,
+        pregunta,
+        `Pregunta duplicada dentro del Excel. Coincide con la fila ${clavesLote.get(clave)} por enunciado, grupo y parcial.`,
+      )
+    } else {
+      clavesLote.set(clave, fila)
+    }
+
+    const duplicadoExistente = buscarDuplicadoBancoExistente(payload)
+    if (duplicadoExistente) {
+      agregarErrorImportacion(
+        erroresListado,
+        fila,
+        pregunta,
+        'Ya existe una pregunta con el mismo enunciado en este grupo y parcial. No se puede importar duplicada.',
+      )
+    }
+  })
 }
 
 const puedeVisualizarBanco = computed(
@@ -8031,13 +8133,13 @@ async function descargarFormatoBanco() {
     excelTipos.SUBPROBLEMA,
   ]
   const opcionesRespuestaCompuestaExcel = [
-    'A. Solo la primera es verdadera',
-    'B. Solo la segunda es verdadera',
-    'C. Ambas son verdaderas',
-    'D. Ninguna es verdadera',
+    'A. Si la primera es verdadera',
+    'B. Si la segunda es verdadera',
+    'C. Si ambas son verdaderas',
+    'D. Si ninguna es verdadera',
   ]
   const enunciadoEmparejamientoExcel =
-    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.'
+    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado'
   const respuestasPreguntaClaveExcel = [
     'A: 1, 2 y 3 son verdaderas',
     'B: 1 y 3 son verdaderas',
@@ -8953,7 +9055,7 @@ async function descargarFormatoBanco() {
     excelTipos.EMPAREJAMIENTO,
     '',
     parcialActivo,
-    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
+    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado',
     '',
     ['Sol', 'Luna'],
     'EMP-GEN1',
@@ -8980,7 +9082,7 @@ async function descargarFormatoBanco() {
     excelTipos.EMPAREJAMIENTO,
     '',
     parcialActivo,
-    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
+    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado',
     '',
     ['Evaporacion', 'Condensacion', 'Precipitacion', 'Infiltracion'],
     'EMP-GEN2',
@@ -9072,9 +9174,16 @@ const COLS = {
   puntaje: 12,
 }
 
-const TIPOS_VALIDOS = tiposPreguntaOptions.flatMap((tipo) =>
-  tipo.aliases.map((alias) => alias.toLowerCase()),
-)
+const TIPOS_VALIDOS = [
+  ...new Set(
+    tiposPreguntaOptions.flatMap((tipo) =>
+      tipo.aliases.flatMap((alias) => [
+        String(alias).toLowerCase().trim(),
+        normalizarTipoAliasKey(alias).toLowerCase(),
+      ]),
+    ),
+  ),
+]
 const DIFICULTAD_MAP = { 1: '1', 2: '2', 3: '3' }
 const PARCIAL_MAP = {
   '1p': '1er Parcial',
@@ -9099,8 +9208,10 @@ function previsualizarArchivoExcel(file) {
   if (!file) return
   const reader = new FileReader()
   reader.onload = (e) => {
-    import('xlsx').then((XLSX) => {
+    import('xlsx').then(async (XLSX) => {
       try {
+        await cargarBancoPreguntas()
+
         const data = new Uint8Array(e.target.result)
         const wb = XLSX.read(data, { type: 'array' })
 
@@ -9145,6 +9256,16 @@ function previsualizarArchivoExcel(file) {
           importErrores.value = [
             'No se encontrÒ�� �"Ò� â����Ò�â��šÒ�a�³ la fila de encabezados con "tipo". Usa el formato descargado.',
           ]
+          importErrores.value = [
+            {
+              fila: '-',
+              tipo: '-',
+              enunciado: 'Sin encabezados',
+              mensajes: [
+                'No se encontró la fila de encabezados con las columnas "tipo" y "enunciado". Usa el formato base descargado.',
+              ],
+            },
+          ]
           archivoPreviewBanco.value = file.name
           preguntasImportadas.value = []
           return
@@ -9159,6 +9280,7 @@ function previsualizarArchivoExcel(file) {
           const tipoEntrada = normalizarTextoMojibake(String(row[colsMap.tipo] || ''))
             .toLowerCase()
             .trim()
+          const tipoEntradaKey = normalizarTipoAliasKey(tipoEntrada).toLowerCase()
           const tipo = normalizarTipoPregunta(tipoEntrada)
 
           // Ignorar filas vacÒ�� �"Ò� â����Ò�â��šÒ�a�­as
@@ -9167,10 +9289,15 @@ function previsualizarArchivoExcel(file) {
           const filaErrores = []
 
           // Validar tipo
-          if (!TIPOS_VALIDOS.includes(tipoEntrada)) {
+          if (!TIPOS_VALIDOS.includes(tipoEntrada) && !TIPOS_VALIDOS.includes(tipoEntradaKey)) {
             filaErrores.push(
               `Tipo "${tipo}" no vÒ�� �"Ò� â����Ò�â��šÒ�a�¡lido. Use: ${TIPOS_VALIDOS.join(', ')}`,
             )
+          }
+
+          if (filaErrores.length > 0 && !TIPOS_VALIDOS.includes(tipoEntradaKey)) {
+            filaErrores[filaErrores.length - 1] =
+              `Tipo "${tipoEntrada}" no válido. Selecciona un tipo desde la lista del formato base.`
           }
 
           const enunciadoRaw = normalizarTextoMojibake(String(row[colsMap.enunciado] || '').trim())
@@ -9220,10 +9347,15 @@ function previsualizarArchivoExcel(file) {
             tipo,
             enunciado,
             grupo: grupoRaw || null,
+            grupoTeorico:
+              grupoTeoricoSeleccionado.value || filtroBancoGrupoSeleccionado.value || '',
             opciones: [op_a, op_b, op_c, op_d, op_e].filter((o) => o !== ''),
             respuesta,
             dificultad: ['PROBLEMA', 'EMPAREJAMIENTO'].includes(tipo) ? '' : dificultad || '1',
-            parcial: parcial || '1P',
+            parcial: normalizarParcialBanco(
+              parcial || parcialSeleccionado.value || filtroBancoParcialSeleccionado.value || '2P',
+            ),
+            filaExcel: lineNum,
           }
 
           preguntas.push(pObj)
@@ -9253,7 +9385,7 @@ function previsualizarArchivoExcel(file) {
         preguntas.forEach((p, idxValid) => {
           const fallosTecnicos = validarIntegridadPregunta(p, gruposHeadersMap)
           if (fallosTecnicos.length > 0) {
-            const lineNum = headerRowIdx + idxValid + 1 + 1
+            const lineNum = p.filaExcel || headerRowIdx + idxValid + 1 + 1
             const existeFila = erroresListado.find((e) => e.fila === lineNum)
             if (existeFila) {
               existeFila.mensajes.push(...fallosTecnicos)
@@ -9267,6 +9399,8 @@ function previsualizarArchivoExcel(file) {
             }
           }
         })
+
+        validarDuplicadosImportacion(preguntas, erroresListado)
 
         // Calcular stats
         const preguntasReales = preguntas.filter(
@@ -9295,9 +9429,26 @@ function previsualizarArchivoExcel(file) {
               ],
             },
           ]
+          importErrores.value = [
+            {
+              fila: '-',
+              tipo: '-',
+              enunciado: 'Sin datos',
+              mensajes: [
+                'El archivo no tiene filas de datos válidas después del encabezado. Revisa que las filas tengan tipo y enunciado.',
+              ],
+            },
+          ]
         }
       } catch (err) {
-        importErrores.value = [`Error al leer el archivo: ${err.message}`]
+        importErrores.value = [
+          {
+            fila: '-',
+            tipo: '-',
+            enunciado: 'Error de lectura',
+            mensajes: [`No se pudo leer el archivo: ${err.message}`],
+          },
+        ]
         archivoPreviewBanco.value = file.name
         preguntasImportadas.value = []
       }
@@ -9313,6 +9464,29 @@ async function confirmarImportacionBanco() {
     !grupoTeoricoSeleccionado.value
   )
     return
+
+  if (importErroresNormalizados.value.length > 0) {
+    $q.notify({
+      type: 'warning',
+      message: 'Corrige los errores detectados antes de importar el banco.',
+    })
+    return
+  }
+
+  await cargarBancoPreguntas()
+
+  const erroresDuplicados = []
+  validarDuplicadosImportacion(preguntasImportadas.value, erroresDuplicados)
+  if (erroresDuplicados.length > 0) {
+    importErrores.value = erroresDuplicados
+    $q.notify({
+      type: 'warning',
+      message:
+        'El archivo contiene preguntas duplicadas. Revisa la vista previa antes de importar.',
+    })
+    return
+  }
+
   importandoBanco.value = true
 
   try {
@@ -9331,7 +9505,10 @@ async function confirmarImportacionBanco() {
     formData.append('sede_id', authStore.usuarioActual?.sede_id || '')
     formData.append('grupoTeorico', grupoTeoricoSeleccionado.value || '')
     formData.append('con_cartilla', conCartilla.value ? '1' : '0')
-    formData.append('parcial', parcialSeleccionado.value || '1P')
+    const parcialImportacion = normalizarParcialBanco(
+      filtroBancoParcialSeleccionado.value || parcialSeleccionado.value || '2P',
+    )
+    formData.append('parcial', parcialImportacion)
 
     if (!importacionAcumulativaSegundoParcial.value && modoImportacion.value === 'reemplazar') {
       formData.append('modo', 'reemplazar') // El backend puede manejar esto para limpiar antes de insertar
