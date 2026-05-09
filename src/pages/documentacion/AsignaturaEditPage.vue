@@ -1238,7 +1238,7 @@
                   <q-icon name="help_outline" class="q-mr-sm" />Banco de Preguntas
                 </div>
               </div>
-              <div class="banco-actions row items-center q-gutter-sm">
+              <div class="banco-actions row items-center">
                 <span v-if="mostrarAccionesExcelBanco" class="banco-action-tooltip-anchor">
                   <q-btn
                     round
@@ -10447,20 +10447,34 @@ function getParcialColorBanco(parcial) {
 
 /* ---- Parametrizacion Banco de Preguntas ---- */
 .banco-header {
-  background: linear-gradient(135deg, #4527a0, #7b1fa2);
-  padding: 20px 24px;
-  border-radius: 0 0 16px 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%),
+    linear-gradient(135deg, #4c1d95, #6d28d9);
+  padding: 18px 22px;
+  border-radius: 0 0 14px 14px;
   margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  box-shadow: 0 4px 20px rgba(123, 31, 162, 0.2);
+  box-shadow: 0 14px 34px rgba(76, 29, 149, 0.18);
+}
+
+.banco-header .text-h6 {
+  display: flex;
+  align-items: center;
+  font-size: 1.05rem;
+  letter-spacing: 0;
 }
 
 .banco-actions {
-  gap: 10px;
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
 }
 
 .banco-action-tooltip-anchor {
@@ -10468,51 +10482,62 @@ function getParcialColorBanco(parcial) {
 }
 
 .banco-action-btn {
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  --banco-action-accent: #e0e7ff;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
-  box-shadow: 0 12px 24px rgba(20, 13, 64, 0.24);
+  box-shadow: none;
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
-    filter 0.18s ease;
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.banco-action-btn :deep(.q-icon) {
+  font-size: 20px;
 }
 
 .banco-action-btn:not(.disabled):hover {
-  transform: translateY(-2px);
-  filter: brightness(1.06) saturate(1.12);
-  box-shadow: 0 16px 30px rgba(20, 13, 64, 0.34);
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.72);
+  background: #fff;
+  color: var(--banco-action-accent);
+  box-shadow: 0 10px 22px rgba(24, 24, 56, 0.2);
+}
+
+.banco-action-btn.disabled,
+.banco-action-btn[disabled] {
+  opacity: 0.42;
+  box-shadow: none;
 }
 
 .banco-action-btn--download {
-  background: #2563eb;
-  color: #fff;
+  --banco-action-accent: #2563eb;
 }
 
 .banco-action-btn--validate {
-  background: #f59e0b;
-  color: #fff;
+  --banco-action-accent: #d97706;
 }
 
 .banco-action-btn--preview {
-  background: #0891b2;
-  color: #fff;
+  --banco-action-accent: #0891b2;
 }
 
 .banco-action-btn--upload {
-  background: #7c3aed;
-  color: #fff;
+  --banco-action-accent: #7c3aed;
 }
 
 .banco-action-btn--delete {
-  background: #dc2626;
-  color: #fff;
+  --banco-action-accent: #dc2626;
 }
 
 .banco-action-btn--register {
-  background: #059669;
-  color: #fff;
+  --banco-action-accent: #059669;
 }
 
 :deep(.banco-action-tooltip) {

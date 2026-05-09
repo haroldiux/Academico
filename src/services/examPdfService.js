@@ -64,7 +64,7 @@ const extractStructuredLines = (text) =>
     .filter(Boolean)
 
 const stripNumericPrefix = (text) =>
-  cleanQuestionText(text).replace(/^([IVX]+|\d+|[A-Z])[.):]\s*/i, '')
+  cleanQuestionText(text).replace(/^([IVX]+|\d+|[A-Z])[.):]\s+/i, '')
 
 export const buildExamQuestionSelection = (questions, config = {}) => {
   const metaFacil = parseInt(config.facil, 10) || 7
@@ -460,7 +460,7 @@ const EXAM_SECTION_COPY = {
   SELECCION_SIMPLE: {
     title: 'SELECCION DE LA MEJOR RESPUESTA',
     lines: [
-      'Instrucciones: Las siguientes preguntas estan compuestas por un caso clinico, una pregunta y cinco opciones de respuesta. Seleccione la mejor respuesta.',
+      'Instrucciones: Lea cuidadosamente cada enunciado y elija una sola respuesta entre las opciones disponibles.',
     ],
   },
   PREGUNTA_CON_CLAVE: {
@@ -627,7 +627,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
     body: [
       [
         {
-          content: 'NOMBRE ESTUDIANTE:',
+          content: 'NOMBRE:',
           styles: {
             fontStyle: 'bold',
             minCellHeight: 10,
@@ -657,6 +657,20 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       [
         { content: `SEMESTRE: ${String(exam.semestre || '')}`, styles: { fontStyle: 'bold' } },
         { content: `HORA: ${String(exam.hora || '')}`, styles: { fontStyle: 'bold' } },
+      ],
+      [
+        {
+          content:
+            'IMPORTANTE: Completar obligatoriamente NOMBRE, CODIGO y marcar el TIPO/VARIANTE en la cartilla.',
+          colSpan: 2,
+          styles: {
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: Math.max(7, metaFontSize - 1),
+            textColor: [180, 40, 40],
+            fillColor: [255, 245, 245],
+          },
+        },
       ],
     ],
   })
@@ -837,6 +851,18 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
     }
 
     const options = Array.isArray(question.opciones) ? question.opciones : []
+    if (currentType === 'PREGUNTA_CON_CLAVE' && options.length > 0) {
+      const orderedKeyOptions = options
+        .map((option) => {
+          if (typeof option === 'string') return cleanQuestionText(option)
+          return cleanQuestionText(option?.text || option?.label || option?.enunciado || '')
+        })
+        .filter(Boolean)
+
+      if (orderedKeyOptions.length > 0) {
+        detailLines = orderedKeyOptions
+      }
+    }
     const isHeader = currentType === 'PROBLEMA'
     const renderOptions = ['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(currentType)
     const prefixedBlankTypes = ['FALSO_VERDADERO', 'PREGUNTA_CON_CLAVE', 'RESPUESTA_COMPUESTA']

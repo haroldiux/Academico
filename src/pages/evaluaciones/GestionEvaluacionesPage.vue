@@ -518,8 +518,16 @@
                   label="GESTIONAR"
                   no-caps
                   class="action-btn-main shadow-2"
+                  :disable="!puedeCambiarEstadoPorTiempo(props.row).permitido"
                   @click="gestionarEstado(props.row)"
-                />
+                >
+                  <q-tooltip>
+                    {{
+                      puedeCambiarEstadoPorTiempo(props.row).mensaje ||
+                      'Gestionar etapa de evaluación'
+                    }}
+                  </q-tooltip>
+                </q-btn>
               </template>
               <template v-else-if="props.row.estado !== 'subidos'">
                 <q-btn
@@ -530,8 +538,16 @@
                   label="PASAR ETAPA"
                   no-caps
                   class="action-btn-main shadow-2"
+                  :disable="!puedeCambiarEstadoPorTiempo(props.row).permitido"
                   @click="avanzarDirecto(props.row)"
-                />
+                >
+                  <q-tooltip>
+                    {{
+                      puedeCambiarEstadoPorTiempo(props.row).mensaje ||
+                      'Avanzar a la siguiente etapa'
+                    }}
+                  </q-tooltip>
+                </q-btn>
               </template>
 
               <!-- Botón Restaurar (Solo Admins) -->
@@ -907,50 +923,99 @@
             </div>
 
             <div class="row q-col-gutter-sm q-mt-sm">
-              <div class="col-4">
-                <q-input
-                  v-model.number="tempConfig.facil"
-                  outlined
-                  label="Fáciles"
-                  type="number"
-                  dense
-                  color="green"
-                  stack-label
-                >
-                  <template v-slot:append>
-                    <div class="text-caption text-grey-6">/ {{ bancoStats.facil }}</div>
-                  </template>
-                </q-input>
+              <div class="col-12">
+                <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
+                  Conteo requerido por dificultad desde configuración
+                </div>
               </div>
-              <div class="col-4">
-                <q-input
-                  v-model.number="tempConfig.medio"
-                  outlined
-                  label="Medios"
-                  type="number"
-                  dense
-                  color="orange"
-                  stack-label
-                >
-                  <template v-slot:append>
-                    <div class="text-caption text-grey-6">/ {{ bancoStats.medio }}</div>
-                  </template>
-                </q-input>
+              <div class="col-12 col-md-4">
+                <q-card flat bordered class="q-pa-sm bg-green-1">
+                  <div class="text-caption text-weight-bold text-green-9">Fáciles</div>
+                  <q-linear-progress
+                    rounded
+                    size="8px"
+                    color="green"
+                    :value="
+                      Number(tempConfig.facil || 0)
+                        ? Math.min(1, bancoStats.facil / Number(tempConfig.facil || 0))
+                        : 0
+                    "
+                    class="q-my-xs"
+                  />
+                  <div class="row items-center no-wrap">
+                    <q-input
+                      v-model.number="tempConfig.facil"
+                      borderless
+                      dense
+                      type="number"
+                      color="green"
+                      readonly
+                      input-class="text-green-10 text-weight-bold"
+                      class="difficulty-count-input"
+                    />
+                    <div class="text-caption text-grey-7 q-ml-xs">disp. {{ bancoStats.facil }}</div>
+                  </div>
+                </q-card>
               </div>
-              <div class="col-4">
-                <q-input
-                  v-model.number="tempConfig.dificil"
-                  outlined
-                  label="Difíciles"
-                  type="number"
-                  dense
-                  color="red"
-                  stack-label
-                >
-                  <template v-slot:append>
-                    <div class="text-caption text-grey-6">/ {{ bancoStats.dificil }}</div>
-                  </template>
-                </q-input>
+              <div class="col-12 col-md-4">
+                <q-card flat bordered class="q-pa-sm bg-orange-1">
+                  <div class="text-caption text-weight-bold text-orange-9">Medios</div>
+                  <q-linear-progress
+                    rounded
+                    size="8px"
+                    color="orange"
+                    :value="
+                      Number(tempConfig.medio || 0)
+                        ? Math.min(1, bancoStats.medio / Number(tempConfig.medio || 0))
+                        : 0
+                    "
+                    class="q-my-xs"
+                  />
+                  <div class="row items-center no-wrap">
+                    <q-input
+                      v-model.number="tempConfig.medio"
+                      borderless
+                      dense
+                      type="number"
+                      color="orange"
+                      readonly
+                      input-class="text-orange-10 text-weight-bold"
+                      class="difficulty-count-input"
+                    />
+                    <div class="text-caption text-grey-7 q-ml-xs">disp. {{ bancoStats.medio }}</div>
+                  </div>
+                </q-card>
+              </div>
+              <div class="col-12 col-md-4">
+                <q-card flat bordered class="q-pa-sm bg-red-1">
+                  <div class="text-caption text-weight-bold text-red-9">Difíciles</div>
+                  <q-linear-progress
+                    rounded
+                    size="8px"
+                    color="red"
+                    :value="
+                      Number(tempConfig.dificil || 0)
+                        ? Math.min(1, bancoStats.dificil / Number(tempConfig.dificil || 0))
+                        : 0
+                    "
+                    class="q-my-xs"
+                  />
+                  <div class="row items-center no-wrap">
+                    <q-input
+                      v-model.number="tempConfig.dificil"
+                      borderless
+                      dense
+                      type="number"
+                      color="red"
+                      readonly
+                      input-class="text-red-10 text-weight-bold"
+                      class="difficulty-count-input"
+                    />
+                    <div class="text-caption text-grey-7 q-ml-xs">
+                      disp. {{ bancoStats.dificil }}
+                    </div>
+                  </div>
+                </q-card>
               </div>
             </div>
 
@@ -1151,11 +1216,15 @@
             color="deep-purple-7"
             :label="configGestion.actionLabel"
             :icon="configGestion.actionIcon"
-            :disable="!bancoSuficiente"
+            :disable="!bancoSuficiente || !permisoTiempoDialog.permitido"
             @click="ejecutarAccionGestion"
             no-caps
             class="q-px-lg shadow-3"
-          />
+          >
+            <q-tooltip v-if="!permisoTiempoDialog.permitido">
+              {{ permisoTiempoDialog.mensaje }}
+            </q-tooltip>
+          </q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -1738,6 +1807,30 @@ const esSegundoParcialValor = (parcial) => {
   )
 }
 
+const obtenerDistribucionConfigurada = (configuracion, parcial) => {
+  const parciales = Array.isArray(configuracion?.parciales) ? configuracion.parciales : []
+  const parcialKey = removeAccents(String(parcial || '')).toLowerCase()
+  const confParcial = parciales.find((p) => {
+    const nombre = removeAccents(String(p.nombre || '')).toLowerCase()
+    return (
+      (nombre.includes('1') && parcialKey.includes('1')) ||
+      (nombre.includes('2') && parcialKey.includes('2')) ||
+      (nombre.includes('final') && parcialKey.includes('final')) ||
+      (nombre.includes('instancia') && parcialKey.includes('instancia'))
+    )
+  })
+  const distribucion = confParcial?.distribucion || null
+  if (!distribucion) return null
+
+  const resultado = {
+    facil: Number(distribucion.facil || 0),
+    medio: Number(distribucion.medio || 0),
+    dificil: Number(distribucion.dificil || 0),
+  }
+
+  return resultado.facil + resultado.medio + resultado.dificil > 0 ? resultado : null
+}
+
 const grupoTipoPregunta = (pregunta) => {
   const tipo = normalizeTipo(pregunta?.tipo)
   if (
@@ -1758,6 +1851,21 @@ const filtros = ref({
   fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
   estado: [],
 })
+
+const tiemposConfigEvaluacion = ref({
+  minutos_antes_entrega: 15,
+  horas_antes_generacion: 48,
+  horas_post_patron: 0,
+  alerta_horas_antes: 24,
+})
+
+const rolRespetaVentanasTiempo = computed(
+  () =>
+    esEvaluaciones.value &&
+    !esResponsableEvaluaciones.value &&
+    !esAdmin.value &&
+    !esSuperAdmin.value,
+)
 
 const sedesOptions = ref([])
 const carrerasOptions = ref([])
@@ -1831,6 +1939,144 @@ const fetchCarreras = async (sedeId, campusId = null) => {
   }
 }
 
+const normalizarGestionTiempos = (gestion = '2026-I') => {
+  const value = String(gestion || '2026-I')
+    .trim()
+    .toUpperCase()
+  const gestionAnioPrimero = value.match(/^(\d{4})-(I|II|1|2)$/)
+  if (gestionAnioPrimero) {
+    return ['II', '2'].includes(gestionAnioPrimero[2])
+      ? `2/${gestionAnioPrimero[1]}`
+      : `1/${gestionAnioPrimero[1]}`
+  }
+
+  const gestionPeriodoPrimero = value.match(/^(I|II|1|2)-(\d{4})$/)
+  if (gestionPeriodoPrimero) {
+    return ['II', '2'].includes(gestionPeriodoPrimero[1])
+      ? `2/${gestionPeriodoPrimero[2]}`
+      : `1/${gestionPeriodoPrimero[2]}`
+  }
+
+  return value
+}
+
+const cargarTiemposEvaluacion = async () => {
+  try {
+    const { data } = await api.get('/evaluaciones/tiempos', {
+      params: { gestion: normalizarGestionTiempos('2026-I') },
+    })
+    if (data.success && data.configuracion) {
+      tiemposConfigEvaluacion.value = { ...tiemposConfigEvaluacion.value, ...data.configuracion }
+    }
+  } catch (error) {
+    console.error('Error cargando tiempos de evaluacion:', error)
+  }
+}
+
+const obtenerFechaHoraExamen = (examen, usarHoraFin = false) => {
+  const fecha = examen?.fecha_examen || examen?.fecha
+  const hora = usarHoraFin
+    ? examen?.hora_fin || examen?.hora || examen?.hora_inicio || '00:00'
+    : examen?.hora || examen?.hora_inicio || '00:00'
+
+  if (!fecha) return null
+
+  const normalizada = `${String(fecha).substring(0, 10)}T${String(hora).substring(0, 5)}:00`
+  const fechaHora = new Date(normalizada)
+
+  return Number.isNaN(fechaHora.getTime()) ? null : fechaHora
+}
+
+const sumarHoras = (fechaHora, horas) => {
+  const resultado = new Date(fechaHora)
+  resultado.setHours(resultado.getHours() + Number(horas || 0))
+  return resultado
+}
+
+const sumarMinutos = (fechaHora, minutos) => {
+  const resultado = new Date(fechaHora)
+  resultado.setMinutes(resultado.getMinutes() + Number(minutos || 0))
+  return resultado
+}
+
+const formatearFechaHoraBloqueo = (fechaHora) => date.formatDate(fechaHora, 'DD/MM/YYYY HH:mm')
+
+const obtenerSiguienteEstado = (estado) => {
+  const currentIndex = ESTADOS_FLOW.findIndex((item) => item.key === estado)
+  return currentIndex >= 0 ? ESTADOS_FLOW[currentIndex + 1]?.key : null
+}
+
+const puedeCambiarEstadoPorTiempo = (examen, estadoDestino = null) => {
+  if (!examen || !rolRespetaVentanasTiempo.value) {
+    return { permitido: true, mensaje: '' }
+  }
+
+  const siguienteEstado = estadoDestino || obtenerSiguienteEstado(examen.estado)
+  const fechaHoraExamen = obtenerFechaHoraExamen(examen)
+  const ahora = new Date()
+
+  if (!fechaHoraExamen || !siguienteEstado) {
+    return { permitido: true, mensaje: '' }
+  }
+
+  if (siguienteEstado === 'generados') {
+    const inicio = sumarHoras(
+      fechaHoraExamen,
+      -tiemposConfigEvaluacion.value.horas_antes_generacion,
+    )
+    if (ahora < inicio) {
+      return {
+        permitido: false,
+        mensaje: `Generación habilitada desde ${formatearFechaHoraBloqueo(inicio)}.`,
+      }
+    }
+  }
+
+  if (siguienteEstado === 'entregados') {
+    const inicio = sumarMinutos(
+      fechaHoraExamen,
+      -tiemposConfigEvaluacion.value.minutos_antes_entrega,
+    )
+    if (ahora < inicio) {
+      return {
+        permitido: false,
+        mensaje: `Entrega habilitada desde ${formatearFechaHoraBloqueo(inicio)}.`,
+      }
+    }
+  }
+
+  if (siguienteEstado === 'devueltos') {
+    const entrega =
+      examen.timestamps?.entregados ||
+      obtenerFechaHoraExamen(examen, true)?.toISOString() ||
+      fechaHoraExamen.toISOString()
+    const inicio = sumarHoras(new Date(entrega), tiemposConfigEvaluacion.value.horas_post_patron)
+    if (ahora < inicio) {
+      return {
+        permitido: false,
+        mensaje: `Patrón habilitado desde ${formatearFechaHoraBloqueo(inicio)}.`,
+      }
+    }
+  }
+
+  return { permitido: true, mensaje: '' }
+}
+
+const permisoTiempoDialog = computed(() => puedeCambiarEstadoPorTiempo(dialogGestion.value.examen))
+
+const notificarBloqueoPorTiempo = (examen) => {
+  const permiso = puedeCambiarEstadoPorTiempo(examen)
+  if (permiso.permitido) return false
+
+  $q.notify({
+    type: 'warning',
+    message: permiso.mensaje,
+    caption: 'Solo Responsable de Evaluaciones o Administrador puede omitir esta ventana.',
+    icon: 'schedule',
+  })
+  return true
+}
+
 watch(
   () => filtros.value.sede,
   (newSede) => {
@@ -1856,6 +2102,7 @@ onMounted(async () => {
     await authStore.fetchUser()
   }
   await fetchSedes()
+  await cargarTiemposEvaluacion()
   await cargarManualGenerations()
 
   // Pre-cargar carreras de la sede del usuario para el diálogo manual (Warm Cache)
@@ -1891,6 +2138,12 @@ const bancoStats = ref({ facil: 0, medio: 0, dificil: 0, total: 0 })
 const bancoTotalAsignatura = ref(0)
 const bancoPorTipo = ref({})
 const bancoPorGrupoTipo = ref({})
+
+const aplicarDistribucionConfigurada = (distribucion) => {
+  tempConfig.value.facil = Number(distribucion?.facil || DEFAULT_DISTRIBUCION_2P.facil)
+  tempConfig.value.medio = Number(distribucion?.medio || DEFAULT_DISTRIBUCION_2P.medio)
+  tempConfig.value.dificil = Number(distribucion?.dificil || DEFAULT_DISTRIBUCION_2P.dificil)
+}
 
 const bancoGrupoTipoStats = computed(() => {
   const statsPlano = {
@@ -2634,6 +2887,7 @@ const ejecutarGeneracionManual = async () => {
     const { blob: xBlob, filename: xName } = generarPatronXLSXConsolidado(
       resultadosVariantes,
       `${baseNM}_Remark.xlsx`,
+      resolvedCodigo,
     )
     xBlobs.push({ blob: xBlob, name: xName })
 
@@ -2940,6 +3194,10 @@ const configGestion = computed(() => {
 })
 
 const gestionarEstado = async (examen) => {
+  if (notificarBloqueoPorTiempo(examen)) {
+    return
+  }
+
   dialogGestion.value.examen = examen
   if (examen.estado === 'programados') {
     const esSegundoParcial = esSegundoParcialValor(examen.tipo_examen || examen.parcial)
@@ -2968,41 +3226,20 @@ const gestionarEstado = async (examen) => {
       })
       if (data.success && data.configuracion) {
         configOrigenActual.value = data.nivel_hallado || 'nacional'
-        // Buscar el parcial correspondiente en la configuración
-        const partialKey = examen.tipo_examen || examen.parcial
-        const confParcial = data.configuracion.parciales.find((p) => {
-          const pName = String(p.nombre || '').toLowerCase()
-          const pKey = String(partialKey || '').toLowerCase()
-          return (
-            (pName.includes('1') && pKey.includes('1')) ||
-            (pName.includes('2') && pKey.includes('2')) ||
-            (pName.includes('final') && pKey.includes('final')) ||
-            (pName.includes('instancia') && pKey.includes('instancia'))
-          )
-        })
+        const distribucionConfigurada = obtenerDistribucionConfigurada(
+          data.configuracion,
+          examen.tipo_examen || examen.parcial,
+        )
 
-        // Solo sobreescribir si el examen NO tiene configuración guardada (todos en 0)
-        const tieneConfigGuardada =
-          examen.distribucion &&
-          (examen.distribucion.facil > 0 ||
-            examen.distribucion.medio > 0 ||
-            examen.distribucion.dificil > 0)
-
-        if (confParcial && !tieneConfigGuardada && !esSegundoParcial) {
-          tempConfig.value.facil = confParcial.distribucion.facil
-          tempConfig.value.medio = confParcial.distribucion.medio
-          tempConfig.value.dificil = confParcial.distribucion.dificil
+        if (distribucionConfigurada) {
+          aplicarDistribucionConfigurada(distribucionConfigurada)
         }
       }
     } catch (err) {
       console.error('Error cargando config efectiva:', err)
     }
 
-    if (esSegundoParcial) {
-      tempConfig.value.facil = DEFAULT_DISTRIBUCION_2P.facil
-      tempConfig.value.medio = DEFAULT_DISTRIBUCION_2P.medio
-      tempConfig.value.dificil = DEFAULT_DISTRIBUCION_2P.dificil
-    } else if (
+    if (
       tempConfig.value.facil === 10 &&
       tempConfig.value.medio === 10 &&
       tempConfig.value.dificil === 5
@@ -3220,6 +3457,13 @@ const mezclarIncisos7167 = (preguntas) => {
       return p
     }
 
+    if (['RESPUESTA_COMPUESTA', 'PREGUNTA_CON_CLAVE'].includes(tipoNormalizado)) {
+      p.respuesta_correcta = Array.isArray(p.respuesta_correcta)
+        ? String(p.respuesta_correcta[0] || '').toUpperCase()
+        : String(p.respuesta_correcta || '').toUpperCase()
+      return p
+    }
+
     if (!p.opciones || p.opciones.length === 0) {
       return p
     }
@@ -3254,6 +3498,7 @@ const mezclarIncisos7167 = (preguntas) => {
 const ejecutarAccionGestion = async () => {
   const examen = dialogGestion.value.examen
   if (!examen) return
+  if (notificarBloqueoPorTiempo(examen)) return
 
   // Validación de disponibilidad en el banco (solo para generación de variantes)
   if (examen.estado === 'programados' && !bancoSuficiente.value) {
@@ -3464,6 +3709,7 @@ const ejecutarAccionGestion = async () => {
         const { blob: xBlob, filename: xName } = generarPatronXLSXConsolidado(
           resultadosVariantes,
           finalXLSXName,
+          examen.codigo,
         )
 
         // 1. Preparar Blobs consolidados
@@ -3514,12 +3760,19 @@ const ejecutarAccionGestion = async () => {
       cargarDatos() // RECARGAR PARA VER CAMBIOS (PDFs/Patrones)
     } catch (error) {
       console.error('Error al actualizar el estado:', error)
-      $q.notify({ type: 'negative', message: 'Error al actualizar el estado' })
+      $q.notify({
+        type: 'negative',
+        message: error.response?.data?.message || 'Error al actualizar el estado',
+      })
     }
   })
 }
 
 const avanzarDirecto = (examen) => {
+  if (notificarBloqueoPorTiempo(examen)) {
+    return
+  }
+
   const currentIndex = ESTADOS_FLOW.findIndex((e) => e.key === examen.estado)
   const nextKey = ESTADOS_FLOW[currentIndex + 1].key
 
@@ -3536,7 +3789,10 @@ const avanzarDirecto = (examen) => {
       cargarDatos()
     } catch (e) {
       console.error('Error de conexión al avanzar etapa:', e)
-      $q.notify({ message: 'Error de conexión', color: 'negative' })
+      $q.notify({
+        message: e.response?.data?.message || 'Error de conexión',
+        color: 'negative',
+      })
     }
   })
 }
@@ -4042,8 +4298,9 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
   return { blob, filename: rawFilename }
 }
 
-const generarPatronXLSXConsolidado = (resultadosVariantes, customName) => {
-  const headerRow = ['Variante', 'ID_Pregunta']
+const generarPatronXLSXConsolidado = (resultadosVariantes, customName, codigoAsignatura = '') => {
+  const codigo = String(codigoAsignatura || 'EXAM').trim()
+  const headerRow = ['Codigo', 'Variante', 'ID_Pregunta']
   for (let i = 1; i <= 100; i++) headerRow.push(`P${i}`)
 
   const dataRows = []
@@ -4052,7 +4309,7 @@ const generarPatronXLSXConsolidado = (resultadosVariantes, customName) => {
     const preguntasReales = res.sorted.filter(
       (p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeTipo(p.tipo)),
     )
-    const dataRow = [res.letra, 'Respuesta']
+    const dataRow = [codigo, res.letra, 'Respuesta']
 
     for (let i = 0; i < 100; i++) {
       const p = preguntasReales[i] || null
@@ -4159,6 +4416,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     )
   }
 
+  const stripIncisoPrefix = (text) => cleanText(text).replace(/^([IVX]+|\d+|[A-Z])[.):]\s+/i, '')
+
   // LOGO / TITULO TABLE
   const logoUrl = `${api.defaults.baseURL}/banco-preguntas/logo-unitepc`
   let logoBase64 = null
@@ -4246,7 +4505,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     body: [
       [
         {
-          content: 'NOMBRE ESTUDIANTE:',
+          content: 'NOMBRE:',
           styles: {
             fontStyle: 'bold',
             minCellHeight: 10,
@@ -4254,7 +4513,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
           },
         },
         {
-          content: 'CÓDIGO:',
+          content: 'CODIGO:',
           styles: { fontStyle: 'bold', cellWidth: (pageWidth - margin * 2) * 0.35 },
         },
       ],
@@ -4277,6 +4536,20 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         { content: `SEMESTRE: ${String(examen.semestre || '')}`, styles: { fontStyle: 'bold' } },
         { content: `HORA: ${String(examen.hora || '')}`, styles: { fontStyle: 'bold' } },
       ],
+      [
+        {
+          content:
+            'IMPORTANTE: Completar obligatoriamente NOMBRE, CODIGO y marcar el TIPO/VARIANTE en la cartilla.',
+          colSpan: 2,
+          styles: {
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: Math.max(7, metaFontSize - 1),
+            textColor: [180, 40, 40],
+            fillColor: [255, 245, 245],
+          },
+        },
+      ],
     ],
   })
 
@@ -4290,7 +4563,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   // AGRUPAR POR TIPO PARA RENDERIZAR SECCIONES
   const descripciones = {
     SELECCION_UNICA:
-      'SELECCIÓN ÚNICA: Lea atentamente cada pregunta y elija la única respuesta que considere correcta entre las opciones presentadas.',
+      'SELECCIÓN DE LA MEJOR RESPUESTA: Lea cuidadosamente cada enunciado y elija una sola respuesta entre las opciones disponibles.',
     PREGUNTA_CON_CLAVE:
       'VERDADERO O FALSO COMPLEJAS: Seleccione la respuesta correcta de acuerdo a la clave indicada.',
     SELECCION_MULTIPLE:
@@ -4468,12 +4741,28 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     const opciones = Array.isArray(p.opciones) ? p.opciones : []
     let tipoActualNoNormalizado = p.tipo?.toUpperCase()
     const esHeader = ['PR', 'PROBLEMA'].includes(p.tipo?.toUpperCase())
+    const incisosPreguntaClave =
+      tipoActual === 'PREGUNTA_CON_CLAVE'
+        ? opciones
+            .map((opc) =>
+              typeof opc === 'string'
+                ? stripIncisoPrefix(opc)
+                : stripIncisoPrefix(opc?.text || opc?.label || opc?.enunciado || ''),
+            )
+            .filter(Boolean)
+        : []
 
     if (tipoActual === 'SUBPROBLEMA') estimatedHeight += 4
     estimatedHeight += esHeader ? 0.5 : 2
     if (p.imagen) estimatedHeight += 47 // Altura típica max de imagen + padding
 
-    if (opciones.length > 0) {
+    if (incisosPreguntaClave.length > 0) {
+      incisosPreguntaClave.forEach((inciso, index) => {
+        const incisoText = `${index + 1}. ${inciso}`
+        const incisoLines = doc.splitTextToSize(incisoText, contentWidth - 22)
+        estimatedHeight += incisoLines.length * lineHeight + 1
+      })
+    } else if (opciones.length > 0) {
       for (const opc of opciones) {
         let textToShow = cleanText(opc.text)
         if (['FALSO_VERDADERO', 'FV'].includes(tipoActualNoNormalizado)) {
@@ -4573,7 +4862,21 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
 
     // Opciones
 
-    if (opciones.length > 0) {
+    if (incisosPreguntaClave.length > 0) {
+      doc.setFontSize(baseSize - 1)
+      doc.setFont(baseFont, 'normal')
+      for (let incisoIndex = 0; incisoIndex < incisosPreguntaClave.length; incisoIndex++) {
+        const incisoText = `${incisoIndex + 1}. ${incisosPreguntaClave[incisoIndex]}`
+        const incisoLines = doc.splitTextToSize(incisoText, contentWidth - 22)
+        if (currentY + incisoLines.length * lineHeight > doc.internal.pageSize.getHeight() - 20) {
+          doc.addPage()
+          currentY = margin
+          doc.setFont(baseFont)
+        }
+        doc.text(incisoLines, margin + 12, currentY)
+        currentY += incisoLines.length * lineHeight + 1
+      }
+    } else if (opciones.length > 0) {
       doc.setFontSize(baseSize - 1)
       doc.setFont(baseFont, 'normal') // Asegurar fuente normal
       for (const opc of opciones) {
@@ -4743,5 +5046,12 @@ async function fetchImageAsBase64(url) {
 }
 .total-badge .q-chip {
   height: 28px;
+}
+.difficulty-count-input {
+  max-width: 56px;
+}
+.difficulty-count-input :deep(input) {
+  padding: 0;
+  font-size: 15px;
 }
 </style>
