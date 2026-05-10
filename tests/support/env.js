@@ -53,8 +53,8 @@ export const hasUiCredentials = Boolean(testEnv.docenteUsername && testEnv.docen
 export const hasApiCredentials = Boolean(testEnv.docenteUsername && testEnv.docentePassword)
 export const hasBancoApiContext = Boolean(
   hasApiCredentials &&
-    testEnv.docenteAsignaturaId &&
-    testEnv.docenteGrupo &&
-    testEnv.docenteParcial &&
-    testEnv.docenteSedeId,
+  testEnv.docenteAsignaturaId &&
+  testEnv.docenteGrupo &&
+  testEnv.docenteParcial &&
+  testEnv.docenteSedeId,
 )

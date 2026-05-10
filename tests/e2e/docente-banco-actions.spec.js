@@ -1,11 +1,19 @@
 import { test, expect } from '@playwright/test'
 import { hasUiCredentials } from '../support/env.js'
-import { openDocenteAsignatura, seedDocenteSession, selectBancoContext } from '../support/ui-helpers.js'
+import {
+  openDocenteAsignatura,
+  seedDocenteSession,
+  selectBancoContext,
+} from '../support/ui-helpers.js'
 
 test.describe('Banco docente acciones clave', () => {
   test.skip(!hasUiCredentials, 'Faltan credenciales UI del docente.')
 
-  test('permite abrir la validación del banco en el contexto activo', async ({ page, context, request }) => {
+  test('permite abrir la validación del banco en el contexto activo', async ({
+    page,
+    context,
+    request,
+  }) => {
     await seedDocenteSession(page, context, request)
     await openDocenteAsignatura(page)
     await selectBancoContext(page)
@@ -13,7 +21,11 @@ test.describe('Banco docente acciones clave', () => {
     await expect(page.getByText(/no hay preguntas para validar|validación/i)).toBeVisible()
   })
 
-  test('permite abrir el flujo de cambio Con Cartilla / Sin Cartilla', async ({ page, context, request }) => {
+  test('permite abrir el flujo de cambio Con Cartilla / Sin Cartilla', async ({
+    page,
+    context,
+    request,
+  }) => {
     await seedDocenteSession(page, context, request)
     await openDocenteAsignatura(page)
     await selectBancoContext(page)
@@ -23,7 +35,11 @@ test.describe('Banco docente acciones clave', () => {
     await expect(page.getByRole('button', { name: 'Sin Cartilla' })).toBeVisible()
   })
 
-  test('mantiene el preview deshabilitado o advertido si no hay banco suficiente', async ({ page, context, request }) => {
+  test('mantiene el preview deshabilitado o advertido si no hay banco suficiente', async ({
+    page,
+    context,
+    request,
+  }) => {
     await seedDocenteSession(page, context, request)
     await openDocenteAsignatura(page)
     await selectBancoContext(page)

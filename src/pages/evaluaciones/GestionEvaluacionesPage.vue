@@ -1545,32 +1545,64 @@
                 <div class="row q-col-gutter-xs q-mb-md">
                   <div class="col-4">
                     <q-chip
-                      :color="manualFaciles.length >= 7 ? 'green-1' : 'red-1'"
-                      :text-color="manualFaciles.length >= 7 ? 'green-9' : 'red-9'"
+                      :color="
+                        manualFaciles.length >= manualDistribucionRequerida.facil
+                          ? 'green-1'
+                          : 'red-1'
+                      "
+                      :text-color="
+                        manualFaciles.length >= manualDistribucionRequerida.facil
+                          ? 'green-9'
+                          : 'red-9'
+                      "
                       icon="sentiment_satisfied_alt"
                       class="full-width q-ma-none"
                     >
-                      <div class="text-caption">Fácil: {{ manualFaciles.length }}/7</div>
+                      <div class="text-caption">
+                        Fácil: {{ manualFaciles.length }}/{{ manualDistribucionRequerida.facil }}
+                      </div>
                     </q-chip>
                   </div>
                   <div class="col-4">
                     <q-chip
-                      :color="manualMedios.length >= 16 ? 'green-1' : 'red-1'"
-                      :text-color="manualMedios.length >= 16 ? 'green-9' : 'red-9'"
+                      :color="
+                        manualMedios.length >= manualDistribucionRequerida.medio
+                          ? 'green-1'
+                          : 'red-1'
+                      "
+                      :text-color="
+                        manualMedios.length >= manualDistribucionRequerida.medio
+                          ? 'green-9'
+                          : 'red-9'
+                      "
                       icon="sentiment_neutral"
                       class="full-width q-ma-none"
                     >
-                      <div class="text-caption">Medio: {{ manualMedios.length }}/16</div>
+                      <div class="text-caption">
+                        Medio: {{ manualMedios.length }}/{{ manualDistribucionRequerida.medio }}
+                      </div>
                     </q-chip>
                   </div>
                   <div class="col-4">
                     <q-chip
-                      :color="manualDificiles.length >= 7 ? 'green-1' : 'red-1'"
-                      :text-color="manualDificiles.length >= 7 ? 'green-9' : 'red-9'"
+                      :color="
+                        manualDificiles.length >= manualDistribucionRequerida.dificil
+                          ? 'green-1'
+                          : 'red-1'
+                      "
+                      :text-color="
+                        manualDificiles.length >= manualDistribucionRequerida.dificil
+                          ? 'green-9'
+                          : 'red-9'
+                      "
                       icon="sentiment_very_dissatisfied"
                       class="full-width q-ma-none"
                     >
-                      <div class="text-caption">Difícil: {{ manualDificiles.length }}/7</div>
+                      <div class="text-caption">
+                        Difícil: {{ manualDificiles.length }}/{{
+                          manualDistribucionRequerida.dificil
+                        }}
+                      </div>
                     </q-chip>
                   </div>
                 </div>
@@ -2250,16 +2282,22 @@ const loadingManual = ref(false)
 const dialogManual = ref({ show: false })
 const manualFile = ref(null)
 const manualPreguntas = ref([])
+const manualDistribucionConfigurada = ref(null)
 
 const manualFaciles = computed(() => manualPreguntas.value.filter((p) => p.dificultad === '1'))
 const manualMedios = computed(() => manualPreguntas.value.filter((p) => p.dificultad === '2'))
 const manualDificiles = computed(() => manualPreguntas.value.filter((p) => p.dificultad === '3'))
-const manualEsSuficiente = computed(
-  () =>
-    manualFaciles.value.length >= 7 &&
-    manualMedios.value.length >= 16 &&
-    manualDificiles.value.length >= 7,
+const manualDistribucionRequerida = computed(
+  () => manualDistribucionConfigurada.value || DEFAULT_DISTRIBUCION_2P,
 )
+const manualEsSuficiente = computed(() => {
+  const requerida = manualDistribucionRequerida.value
+  return (
+    manualFaciles.value.length >= requerida.facil &&
+    manualMedios.value.length >= requerida.medio &&
+    manualDificiles.value.length >= requerida.dificil
+  )
+})
 
 const manualConfig = ref({
   sede: null,
@@ -2322,6 +2360,13 @@ watch(
 )
 
 watch(
+  () => [manualConfig.value.sede, manualConfig.value.carrera_obj, manualConfig.value.parcial],
+  () => {
+    fetchConfigEvaluacionManual()
+  },
+)
+
+watch(
   () => manualConfig.value.materia_obj,
   (newVal) => {
     if (newVal && typeof newVal === 'object') {
@@ -2353,6 +2398,34 @@ watch(
     }
   },
 )
+
+const fetchConfigEvaluacionManual = async () => {
+  const sedeId = manualConfig.value.sede?.value || manualConfig.value.sede
+  const carreraId = manualConfig.value.carrera_obj?.value || manualConfig.value.carrera_obj
+
+  if (!sedeId || !carreraId) {
+    manualDistribucionConfigurada.value = null
+    return
+  }
+
+  try {
+    const { data } = await api.get('/evaluaciones/config', {
+      params: {
+        nivel: 'carrera',
+        sede_id: sedeId,
+        carrera_id: carreraId,
+      },
+    })
+    const distribucion = obtenerDistribucionConfigurada(
+      data?.configuracion,
+      manualConfig.value.parcial,
+    )
+    manualDistribucionConfigurada.value = distribucion || null
+  } catch (error) {
+    console.error('Error cargando config manual:', error)
+    manualDistribucionConfigurada.value = null
+  }
+}
 
 const fetchCarrerasParaManual = async (sedeId) => {
   if (carrerasCache.has(sedeId)) {
@@ -2492,6 +2565,7 @@ const limpiarFiltros = () => {
 const abrirGeneracionManual = () => {
   manualFile.value = null
   manualPreguntas.value = []
+  manualDistribucionConfigurada.value = null
 
   // Pre-selección inteligente basada en el perfil del usuario
   const userSedeId = authStore.usuarioActual?.sede_id
@@ -2522,6 +2596,7 @@ const abrirGeneracionManual = () => {
     fontSize: 11,
     lineSpacing: 0.85,
     aleatorizarSecciones: true,
+    motivo: '',
   }
 
   // Cargar carreras inmediatamente si ya tenemos sede
@@ -2532,6 +2607,104 @@ const abrirGeneracionManual = () => {
   fetchDocentesManual()
   dialogManual.value.show = true
 }
+
+const normalizeManualCellKey = (value) =>
+  removeAccents(String(value || ''))
+    .toUpperCase()
+    .replace(/[._\-/]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const normalizeManualHeaderKey = (value) =>
+  removeAccents(String(value || ''))
+    .toUpperCase()
+    .replace(/[.\-/]+/g, '_')
+    .replace(/\s+/g, '_')
+    .trim()
+
+const getManualRowValue = (row, keys) => {
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== null && row[key] !== '') return row[key]
+  }
+  return ''
+}
+
+const normalizarParcialManual = (value) => {
+  const key = normalizeManualCellKey(value)
+  if (!key) return ''
+  if (key.includes('2') || key.includes('SEGUNDO') || key.includes('2P')) return PARCIAL_2DO
+  if (key.includes('1') || key.includes('PRIMER') || key.includes('1P')) return '1er Parcial'
+  if (key.includes('FINAL')) return 'Final'
+  return String(value || '').trim()
+}
+
+const normalizarTipoManualExcel = (value) => {
+  const key = normalizeManualCellKey(value)
+  if (!key) return ''
+  if (['FV', 'FALSO VERDADERO', 'VERDADERO O FALSO', 'VERDADERO O FALSO SIMPLE'].includes(key))
+    return 'FALSO_VERDADERO'
+  if (
+    [
+      'VF COMPLEJAS',
+      'VERDADERO O FALSO COMPLEJAS',
+      'PREGUNTA CON CLAVE',
+      'PREGUNTA_CON_CLAVE',
+    ].includes(key)
+  )
+    return 'PREGUNTA_CON_CLAVE'
+  if (
+    [
+      'RESPUESTA COMPUESTA',
+      'RESPUESTA_COMPUESTA',
+      'RESPUESTA A B AMBAS NINGUNA',
+      'RESPUESTA A/B/AMBAS/NINGUNA',
+      'A B AMBAS NINGUNA',
+    ].includes(key)
+  )
+    return 'RESPUESTA_COMPUESTA'
+  if (
+    [
+      'SU',
+      'SS',
+      'SELECCION UNICA',
+      'SELECCION_UNICA',
+      'SELECCION SIMPLE',
+      'SELECCION_SIMPLE',
+      'SELECCION DE LA MEJOR RESPUESTA',
+      'MEJOR RESPUESTA',
+    ].includes(key)
+  )
+    return 'SELECCION_SIMPLE'
+  if (
+    ['PR', 'PROBLEMA', 'PROBLEMA O CASO', 'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA'].includes(
+      key,
+    )
+  )
+    return 'PROBLEMA'
+  if (
+    ['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA', 'SUBITEM DE CASO O PROBLEMA'].includes(key)
+  )
+    return 'SUBPROBLEMA'
+  if (['EM', 'EMPAREJAMIENTO', 'EMPAREJAMIENTO AMPLIADO'].includes(key)) return 'EMPAREJAMIENTO'
+  if (['OPCION EMPAREJAMIENTO', 'OPCION_EMPAREJAMIENTO'].includes(key))
+    return 'OPCION_EMPAREJAMIENTO'
+  return key.replace(/\s+/g, '_')
+}
+
+const normalizarDificultadManual = (value) => {
+  const key = normalizeManualCellKey(value)
+  if (['1', 'F', 'FACIL'].includes(key)) return '1'
+  if (['2', 'M', 'MEDIO', 'MEDIA'].includes(key)) return '2'
+  if (['3', 'D', 'DIFICIL'].includes(key)) return '3'
+  return key
+}
+
+const parseRespuestaManual = (value) =>
+  String(value ?? '')
+    .toUpperCase()
+    .split(/[;,]/)
+    .map((r) => r.trim())
+    .filter(Boolean)
 
 const onExcelUploaded = (file) => {
   if (!file) {
@@ -2557,70 +2730,60 @@ const onExcelUploaded = (file) => {
 
       const ws = workbook.Sheets[wsName]
       const jsonData = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      const parcialSeleccionado = normalizarParcialManual(manualConfig.value.parcial)
       const mapped = jsonData
         .map((row, idx) => {
           const upperRow = {}
           Object.keys(row).forEach((k) => {
-            // Normalizar: quitar acentos, espacios a _, todo a UPPER
-            const normalizedKey = String(k)
-              .toUpperCase()
-              .normalize('NFD')
-              .replace(/[\u0300-\u036f]/g, '')
-              .replace(/\s+/g, '_')
-              .trim()
-            upperRow[normalizedKey] = row[k]
+            upperRow[normalizeManualHeaderKey(k)] = row[k]
           })
 
-          // Estandarizar tipos para que activen los encabezados del PDF
-          let tipoRaw = String(upperRow.TIPO || 'SU')
-            .toUpperCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .trim()
-          let tipoFinal = tipoRaw
-          if (['SU', 'SS', 'SELECCION_UNICA'].includes(tipoRaw)) tipoFinal = 'SELECCION_UNICA'
-          else if (['SM', 'SELECCION_MULTIPLE'].includes(tipoRaw)) tipoFinal = 'SELECCION_MULTIPLE'
-          else if (
-            ['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(tipoRaw)
+          const tipoFinal = normalizarTipoManualExcel(getManualRowValue(upperRow, ['TIPO']))
+          const dificultad = normalizarDificultadManual(
+            getManualRowValue(upperRow, ['DIFICULTAD', 'NIVEL_DIFICULTAD']),
           )
-            tipoFinal = 'FALSO_VERDADERO'
-          else if (['PR', 'PROBLEMA'].includes(tipoRaw)) tipoFinal = 'PROBLEMA'
-          else if (['EM', 'EMPAREJAMIENTO'].includes(tipoRaw)) tipoFinal = 'EMPAREJAMIENTO'
-          else if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(tipoRaw)) tipoFinal = 'SUBPREGUNTA'
+          const parcialFila = normalizarParcialManual(
+            getManualRowValue(upperRow, ['PARCIAL', 'TIPO_EXAMEN']),
+          )
+          const enunciado = String(
+            getManualRowValue(upperRow, ['ENUNCIADO', 'PREGUNTA', 'TEXTO', 'DESCRIPCION']),
+          ).trim()
+          const grupo = String(
+            getManualRowValue(upperRow, ['GRUPO', 'CODIGO_GRUPO', 'CODIGO_CASO', 'CASO']),
+          ).trim()
+          const opciones = [
+            { id: 'A', text: getManualRowValue(upperRow, ['A', 'OPCION_A', 'INCISO_A']) },
+            { id: 'B', text: getManualRowValue(upperRow, ['B', 'OPCION_B', 'INCISO_B']) },
+            { id: 'C', text: getManualRowValue(upperRow, ['C', 'OPCION_C', 'INCISO_C']) },
+            { id: 'D', text: getManualRowValue(upperRow, ['D', 'OPCION_D', 'INCISO_D']) },
+            { id: 'E', text: getManualRowValue(upperRow, ['E', 'OPCION_E', 'INCISO_E']) },
+          ]
+            .map((option) => ({ ...option, text: String(option.text || '').trim() }))
+            .filter((option) => option.text)
 
           return {
             idx: idx + 2, // Fila en Excel
             id: `m-${idx}-${Date.now()}`,
-            enunciado: String(upperRow.ENUNCIADO || '').trim(),
+            enunciado,
             tipo: tipoFinal,
-            grupo: String(upperRow.GRUPO || '').trim(),
-            dificultad: upperRow.DIFICULTAD ? String(upperRow.DIFICULTAD).trim() : '',
-            opciones: (() => {
-              let ops = [
-                { id: 'A', text: upperRow.A ?? upperRow.OPCION_A ?? null },
-                { id: 'B', text: upperRow.B ?? upperRow.OPCION_B ?? null },
-                { id: 'C', text: upperRow.C ?? upperRow.OPCION_C ?? null },
-                { id: 'D', text: upperRow.D ?? upperRow.OPCION_D ?? null },
-                { id: 'E', text: upperRow.E ?? upperRow.OPCION_E ?? null },
-              ]
-              if (tipoFinal === 'FALSO_VERDADERO') {
-                if (!ops[0].text) ops[0].text = 'Verdadero'
-                if (!ops[1].text) ops[1].text = 'Falso'
-                return ops.slice(0, 2)
-              }
-              return ops.filter((o) => o.text !== null && o.text !== undefined && o.text !== '')
-            })(),
-            respuesta_correcta: String(
-              upperRow.RESPUESTA_CORRECTA ??
-                upperRow.RESPUESTA_CORRECT ??
-                upperRow.RESPUESTA ??
-                upperRow.CORRECTA ??
-                '',
-            )
-              .toUpperCase()
-              .split(/[;,]/)
-              .map((r) => r.trim())
-              .filter((r) => r),
+            grupo,
+            dificultad,
+            parcial: parcialFila || parcialSeleccionado,
+            opciones:
+              tipoFinal === 'FALSO_VERDADERO'
+                ? [
+                    { id: 'A', text: 'Verdadero' },
+                    { id: 'B', text: 'Falso' },
+                  ]
+                : opciones,
+            respuesta_correcta: parseRespuestaManual(
+              getManualRowValue(upperRow, [
+                'RESPUESTA_CORRECTA',
+                'RESPUESTA_CORRECT',
+                'RESPUESTA',
+                'CORRECTA',
+              ]),
+            ),
           }
         })
         .filter((p) => p.enunciado)
@@ -2628,33 +2791,75 @@ const onExcelUploaded = (file) => {
       // --- VALIDACIÓN DE FORMATO ---
       const errors = []
       const invalidGroups = new Set()
+      const headersPorGrupo = mapped.reduce((acc, p) => {
+        const tipo = normalizarTipoManualExcel(p.tipo)
+        if (['PROBLEMA', 'EMPAREJAMIENTO'].includes(tipo) && p.grupo) {
+          acc.set(`${tipo}:${p.grupo}`, p)
+        }
+        return acc
+      }, new Map())
+      const tiposValidos2P = new Set([
+        'FALSO_VERDADERO',
+        'PREGUNTA_CON_CLAVE',
+        'RESPUESTA_COMPUESTA',
+        'SELECCION_SIMPLE',
+        'PROBLEMA',
+        'SUBPROBLEMA',
+        'EMPAREJAMIENTO',
+        'OPCION_EMPAREJAMIENTO',
+      ])
 
       mapped.forEach((p) => {
         let isInvalid = false
         let reason = ''
-        const isHeaderType = ['PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo)
+        const tipo = normalizarTipoManualExcel(p.tipo)
+        const isHeaderType = ['PROBLEMA', 'EMPAREJAMIENTO'].includes(tipo)
 
-        if (isHeaderType) {
-          if (p.dificultad !== '') {
+        if (!tipo || !tiposValidos2P.has(tipo)) {
+          isInvalid = true
+          reason = 'Tipo de pregunta no reconocido para el formato actual'
+        } else if (p.parcial && normalizarParcialManual(p.parcial) !== parcialSeleccionado) {
+          isInvalid = true
+          reason = `La fila corresponde a ${p.parcial}, pero el parcial seleccionado es ${manualConfig.value.parcial}`
+        } else if (isHeaderType) {
+          if (!p.grupo) {
+            isInvalid = true
+            reason = 'Los encabezados de caso/emparejamiento requieren grupo'
+          } else if (p.dificultad !== '') {
             isInvalid = true
             reason = 'Tipos PR/EM no deben tener dificultad asignada'
-          }
-          if (p.respuesta_correcta.length > 0) {
+          } else if (p.respuesta_correcta.length > 0) {
             isInvalid = true
             reason = 'Tipos PR/EM no deben tener respuesta asignada'
+          } else if (tipo === 'EMPAREJAMIENTO' && p.opciones.length < 2) {
+            isInvalid = true
+            reason = 'Emparejamiento requiere al menos dos opciones/terminos'
           }
         } else {
           if (!['1', '2', '3'].includes(p.dificultad)) {
             isInvalid = true
             reason = 'Falta dificultad (1, 2 o 3) o es inválida'
-          }
-          if (p.respuesta_correcta.length === 0) {
+          } else if (p.respuesta_correcta.length === 0) {
             isInvalid = true
             reason = 'Falta respuesta correcta'
-          }
-          if (p.tipo === 'SELECCION_MULTIPLE' && p.respuesta_correcta.length < 2) {
+          } else if (['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(tipo) && p.opciones.length < 5) {
             isInvalid = true
-            reason = 'SM requiere al menos 2 respuestas correctas'
+            reason = 'La pregunta requiere cinco opciones de respuesta'
+          } else if (tipo === 'PREGUNTA_CON_CLAVE' && p.opciones.length < 4) {
+            isInvalid = true
+            reason = 'Verdadero o falso complejas requiere cuatro incisos'
+          } else if (
+            tipo === 'SUBPROBLEMA' &&
+            (!p.grupo || !headersPorGrupo.has(`PROBLEMA:${p.grupo}`))
+          ) {
+            isInvalid = true
+            reason = 'Subitem de caso requiere un PROBLEMA con el mismo grupo'
+          } else if (
+            tipo === 'OPCION_EMPAREJAMIENTO' &&
+            (!p.grupo || !headersPorGrupo.has(`EMPAREJAMIENTO:${p.grupo}`))
+          ) {
+            isInvalid = true
+            reason = 'Opcion de emparejamiento requiere un EMPAREJAMIENTO con el mismo grupo'
           }
         }
 
@@ -2739,8 +2944,13 @@ const ejecutarGeneracionManual = async () => {
   const faciles = manualPreguntas.value.filter((p) => p.dificultad === '1')
   const medios = manualPreguntas.value.filter((p) => p.dificultad === '2')
   const dificiles = manualPreguntas.value.filter((p) => p.dificultad === '3')
+  const requerida = manualDistribucionRequerida.value
 
-  if (faciles.length < 7 || medios.length < 16 || dificiles.length < 7) {
+  if (
+    faciles.length < requerida.facil ||
+    medios.length < requerida.medio ||
+    dificiles.length < requerida.dificil
+  ) {
     $q.notify({
       type: 'negative',
       message: `Preguntas insuficientes para 7/16/7. Disponibles -> Fácil: ${faciles.length}, Medio: ${medios.length}, Difícil: ${dificiles.length}`,
@@ -2779,18 +2989,23 @@ const ejecutarGeneracionManual = async () => {
       fontFamily: manualConfig.value.fontFamily,
       fontSize: manualConfig.value.fontSize,
       lineSpacing: manualConfig.value.lineSpacing,
-      facil: 7,
-      medio: 16,
-      dificil: 7,
+      facil: requerida.facil,
+      medio: requerida.medio,
+      dificil: requerida.dificil,
+      total: requerida.facil + requerida.medio + requerida.dificil,
+      aleatorizarSecciones: manualConfig.value.aleatorizarSecciones,
     }
 
     const variantesLetters = ['A', 'B', 'C', 'D', 'E'].slice(0, manualConfig.value.cantVariantes)
-    const examenesPDF = new jsPDF({
-      compression: true,
-      putOnlyUsedFonts: true,
-      precision: 3,
-      format: manualConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330],
-    })
+    const esSegundoParcialManual = esSegundoParcialValor(manualConfig.value.parcial)
+    const examenesPDF = esSegundoParcialManual
+      ? createExamPdfDocument(config)
+      : new jsPDF({
+          compression: true,
+          putOnlyUsedFonts: true,
+          precision: 3,
+          format: manualConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330],
+        })
     const patronesPDF = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
     const variantesAudit = []
     const xBlobs = [] // Para guardar los Excel y descargarlos solo si la auditoría es exitosa
@@ -2798,40 +3013,59 @@ const ejecutarGeneracionManual = async () => {
 
     for (let i = 0; i < variantesLetters.length; i++) {
       const letra = variantesLetters[i]
-      const seleccion = obtenerSeleccion7167(manualPreguntas.value, config)
-      const mezcladas = mezclarIncisos7167(seleccion)
-      const ordenBase = [
-        'PROBLEMA',
-        'EMPAREJAMIENTO',
-        'SUBPROBLEMA',
-        'SELECCION_UNICA',
-        'SELECCION_MULTIPLE',
-        'FALSO_VERDADERO',
-      ]
-      let localOrder = [...ordenBase]
+      const seleccion = esSegundoParcialManual
+        ? buildExamQuestionSelection(manualPreguntas.value, config)
+        : obtenerSeleccion7167(manualPreguntas.value, config)
 
-      if (manualConfig.value.aleatorizarSecciones) {
-        const principales = [
-          'PROBLEMA',
-          'EMPAREJAMIENTO',
-          'SELECCION_UNICA',
-          'SELECCION_MULTIPLE',
-          'FALSO_VERDADERO',
-        ]
-        const shuffled = shuffle([...principales])
-        localOrder = []
-        shuffled.forEach((t) => {
-          localOrder.push(t)
-          if (t === 'PROBLEMA' || t === 'EMPAREJAMIENTO') localOrder.push('SUBPROBLEMA')
+      if (!seleccion) {
+        $q.notify({
+          type: 'negative',
+          message: 'No se pudo armar una variante que cumpla la distribucion por dificultad.',
+          icon: 'warning',
         })
+        return
       }
 
-      const sorted = mezcladas.sort((a, b) => {
-        if (a.grupo && b.grupo && a.grupo === b.grupo) return 0
-        let ta = a._parentTipo || normalizeTipo(a.tipo)
-        let tb = b._parentTipo || normalizeTipo(b.tipo)
-        return localOrder.indexOf(ta) - localOrder.indexOf(tb)
-      })
+      const sorted = esSegundoParcialManual
+        ? sortExamQuestionsForPdf(
+            mixExamQuestionOptions(JSON.parse(JSON.stringify(seleccion))),
+            config,
+          )
+        : (() => {
+            const mezcladas = mezclarIncisos7167(seleccion)
+            const ordenBase = [
+              'PROBLEMA',
+              'EMPAREJAMIENTO',
+              'SUBPROBLEMA',
+              'SELECCION_UNICA',
+              'SELECCION_MULTIPLE',
+              'FALSO_VERDADERO',
+            ]
+            let localOrder = [...ordenBase]
+
+            if (manualConfig.value.aleatorizarSecciones) {
+              const principales = [
+                'PROBLEMA',
+                'EMPAREJAMIENTO',
+                'SELECCION_UNICA',
+                'SELECCION_MULTIPLE',
+                'FALSO_VERDADERO',
+              ]
+              const shuffled = shuffle([...principales])
+              localOrder = []
+              shuffled.forEach((t) => {
+                localOrder.push(t)
+                if (t === 'PROBLEMA' || t === 'EMPAREJAMIENTO') localOrder.push('SUBPROBLEMA')
+              })
+            }
+
+            return mezcladas.sort((a, b) => {
+              if (a.grupo && b.grupo && a.grupo === b.grupo) return 0
+              const ta = a._parentTipo || normalizeTipo(a.tipo)
+              const tb = b._parentTipo || normalizeTipo(b.tipo)
+              return localOrder.indexOf(ta) - localOrder.indexOf(tb)
+            })
+          })()
 
       variantesAudit.push({
         letra: letra,
@@ -2869,7 +3103,11 @@ const ejecutarGeneracionManual = async () => {
         patronesPDF.addPage()
       }
 
-      await generarExamenPDF(examenesPDF, fakeExamen, config, letra, sorted)
+      if (esSegundoParcialManual) {
+        await generateExamPdf(examenesPDF, fakeExamen, config, letra, sorted)
+      } else {
+        await generarExamenPDF(examenesPDF, fakeExamen, config, letra, sorted)
+      }
       await generarPatronPDF(patronesPDF, letra, sorted, fakeExamen)
 
       resultadosVariantes.push({ letra, sorted })

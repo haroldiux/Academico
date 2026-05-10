@@ -20,7 +20,11 @@ function normalizeDocenteUser(user) {
     ci: user?.ci || testEnv.docenteUsername,
     rol: 'DOCENTE',
     sede_id: user?.docente?.sede_id || Number(testEnv.docenteSedeId || 0) || null,
-    carrera_id: user?.director?.carrera_id || user?.carrera_id || Number(testEnv.docenteCarreraId || 0) || null,
+    carrera_id:
+      user?.director?.carrera_id ||
+      user?.carrera_id ||
+      Number(testEnv.docenteCarreraId || 0) ||
+      null,
     avatar: `${(user?.nombre || 'D')[0]}${(user?.apellido || '')[0] || ''}`,
     docente: user?.docente || {
       id: Number(testEnv.docenteDocenteId || 0) || null,
@@ -83,7 +87,9 @@ export async function openDocenteAsignatura(page) {
   const sedeId = testEnv.docenteSedeId || '1'
   const docenteId = testEnv.docenteDocenteId || '134'
 
-  await page.goto(`/#/documentacion/${asignaturaId}?carrera_id=${carreraId}&sede_id=${sedeId}&docente_id=${docenteId}`)
+  await page.goto(
+    `/#/documentacion/${asignaturaId}?carrera_id=${carreraId}&sede_id=${sedeId}&docente_id=${docenteId}`,
+  )
   // Esperar a que la página termine de cargar: el título ya no debe decir "Cargando..."
   await expect(page.locator('h4')).not.toContainText('Cargando', { timeout: 15_000 })
   await expect(page.getByText(/banco de preguntas/i)).toBeVisible({ timeout: 15_000 })

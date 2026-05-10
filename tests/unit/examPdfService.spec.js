@@ -71,12 +71,15 @@ describe('examPdfService', () => {
   })
 
   it('ordena encabezados y subpreguntas de forma consistente para PDF', () => {
-    const sorted = sortExamQuestionsForPdf([
-      { id: 2, tipo: 'SUBPROBLEMA', grupo: 'Caso 1' },
-      { id: 1, tipo: 'PROBLEMA', grupo: 'Caso 1' },
-      { id: 4, tipo: 'OPCION_EMPAREJAMIENTO', grupo: 'Emp 1' },
-      { id: 3, tipo: 'EMPAREJAMIENTO', grupo: 'Emp 1' },
-    ], { aleatorizarSecciones: false })
+    const sorted = sortExamQuestionsForPdf(
+      [
+        { id: 2, tipo: 'SUBPROBLEMA', grupo: 'Caso 1' },
+        { id: 1, tipo: 'PROBLEMA', grupo: 'Caso 1' },
+        { id: 4, tipo: 'OPCION_EMPAREJAMIENTO', grupo: 'Emp 1' },
+        { id: 3, tipo: 'EMPAREJAMIENTO', grupo: 'Emp 1' },
+      ],
+      { aleatorizarSecciones: false },
+    )
 
     expect(sorted.map((item) => item.tipo)).toEqual([
       'SUBPROBLEMA',

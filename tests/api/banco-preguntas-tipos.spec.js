@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test'
-import {
-  createAuthenticatedDocenteApi,
-  cleanupBancoFiltrado,
-} from '../support/api-client.js'
+import { createAuthenticatedDocenteApi, cleanupBancoFiltrado } from '../support/api-client.js'
 import { hasBancoApiContext, testEnv } from '../support/env.js'
 import { manualPayloads } from '../fixtures/data/manual-question-payloads.js'
 
@@ -239,9 +236,7 @@ test.describe('API docente banco de preguntas - matriz por tipo', () => {
           tipo: 'SUBPROBLEMA',
           grupo: uniqueText('Caso huérfano'),
           dificultad: '2',
-          opciones: JSON.stringify(
-            manualPayloads.problema.preguntasLigadas[0].opciones || [],
-          ),
+          opciones: JSON.stringify(manualPayloads.problema.preguntasLigadas[0].opciones || []),
           respuesta_correcta: 'A',
         }),
       )

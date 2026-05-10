@@ -1,10 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import { test, expect } from '@playwright/test'
-import {
-  createAuthenticatedDocenteApi,
-  cleanupBancoFiltrado,
-} from '../support/api-client.js'
+import { createAuthenticatedDocenteApi, cleanupBancoFiltrado } from '../support/api-client.js'
 import { hasBancoApiContext } from '../support/env.js'
 import { excelFixtures } from '../support/fixtures.js'
 import { manualPayloads } from '../fixtures/data/manual-question-payloads.js'

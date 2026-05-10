@@ -1807,6 +1807,17 @@
                             Ref: {{ pregunta.grupo }}
                           </q-chip>
                           <q-space />
+                          <q-btn
+                            flat
+                            round
+                            dense
+                            color="indigo-8"
+                            icon="visibility"
+                            size="sm"
+                            @click="abrirPrevisualizacionPreguntaRegistrada(pregunta)"
+                          >
+                            <q-tooltip>Previsualizar pregunta</q-tooltip>
+                          </q-btn>
                           <template
                             v-if="
                               !gruposBloqueados.has(
@@ -2655,6 +2666,15 @@
                   dense
                   no-caps
                   color="blue-10"
+                  icon="checklist"
+                  label="Guía de llenado"
+                  @click.stop="abrirGuiaTipoPregunta"
+                />
+                <q-btn
+                  flat
+                  dense
+                  no-caps
+                  color="blue-10"
                   icon="visibility"
                   label="Ver ejemplo"
                   @click.stop="abrirEjemploTipoPregunta"
@@ -3168,9 +3188,14 @@
             icon="picture_as_pdf"
             label="Previsualizar PDF"
             no-caps
+            :disable="!puedePrevisualizarFormularioPregunta"
             :loading="previsualizandoRegistroPregunta"
             @click="previsualizarRegistroPreguntaPdf"
-          />
+          >
+            <q-tooltip v-if="!puedePrevisualizarFormularioPregunta">
+              {{ mensajeValidacionPrevisualizacion }}
+            </q-tooltip>
+          </q-btn>
           <q-btn
             unelevated
             :label="modoRegistroPregunta === 'create' ? 'Registrar Pregunta' : 'Guardar Cambios'"
@@ -3180,6 +3205,57 @@
             @click="guardarPreguntaBanco"
             no-caps
           />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="guiaTipoPreguntaVisible">
+      <q-card style="width: 680px; max-width: 96vw; border-radius: 18px">
+        <q-card-section class="row items-center bg-teal-9 text-white">
+          <q-icon name="checklist" size="24px" class="q-mr-sm" />
+          <div class="text-h6">Guía de llenado</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="bg-teal-1 text-teal-10">
+          <q-chip color="deep-purple" text-color="white">
+            {{ guiaTipoPregunta.tipoLabel }}
+          </q-chip>
+          <div class="text-caption q-mt-sm">
+            Sigue estos pasos antes de registrar o previsualizar la pregunta.
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="scroll q-pa-lg" style="max-height: 70vh">
+          <div class="guia-llenado-list">
+            <div
+              v-for="(paso, index) in guiaTipoPregunta.pasos"
+              :key="`guia-paso-${index}`"
+              class="guia-llenado-step"
+            >
+              <div class="guia-llenado-step__number">{{ index + 1 }}</div>
+              <div class="guia-llenado-step__text">{{ paso }}</div>
+            </div>
+          </div>
+
+          <q-banner
+            v-if="guiaTipoPregunta.nota"
+            class="bg-amber-1 text-amber-10 rounded-borders q-mt-md"
+          >
+            <template v-slot:avatar>
+              <q-icon name="tips_and_updates" color="amber-9" />
+            </template>
+            {{ guiaTipoPregunta.nota }}
+          </q-banner>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right" class="q-pa-md bg-grey-1">
+          <q-btn flat label="Cerrar" color="teal-9" v-close-popup no-caps />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -3245,22 +3321,22 @@
           <div class="row q-col-gutter-sm items-center">
             <div class="col-auto">
               <q-chip color="deep-purple" text-color="white">
-                {{ previewRegistroPregunta.tipoLabel }}
+                {{ previewPreguntaActiva.tipoLabel }}
               </q-chip>
             </div>
             <div class="col-auto">
               <q-chip color="teal" text-color="white">
-                {{ getParcialLabelBanco(previewRegistroPregunta.parcial) }}
+                {{ getParcialLabelBanco(previewPreguntaActiva.parcial) }}
               </q-chip>
             </div>
             <div class="col-auto">
               <q-chip color="blue-1" text-color="blue-10">
-                Grupo {{ previewRegistroPregunta.grupoTeorico || 'Sin grupo' }}
+                Grupo {{ previewPreguntaActiva.grupoTeorico || 'Sin grupo' }}
               </q-chip>
             </div>
-            <div class="col-auto" v-if="previewRegistroPregunta.grupoReferencia">
+            <div class="col-auto" v-if="previewPreguntaActiva.grupoReferencia">
               <q-chip color="amber-2" text-color="orange-10">
-                Ref: {{ previewRegistroPregunta.grupoReferencia }}
+                Ref: {{ previewPreguntaActiva.grupoReferencia }}
               </q-chip>
             </div>
           </div>
@@ -3270,18 +3346,18 @@
 
         <q-card-section class="scroll q-pa-lg" style="max-height: 72vh">
           <div class="preview-paper">
-            <div class="preview-section-title">{{ previewRegistroPregunta.tipoHeading }}</div>
+            <div class="preview-section-title">{{ previewPreguntaActiva.tipoHeading }}</div>
             <div
-              v-for="(linea, index) in previewRegistroPregunta.instrucciones"
+              v-for="(linea, index) in previewPreguntaActiva.instrucciones"
               :key="`inst-${index}`"
               class="preview-instruction-line"
             >
               {{ linea }}
             </div>
 
-            <div v-if="previewRegistroPregunta.imageSrc" class="q-mt-md text-center">
+            <div v-if="previewPreguntaActiva.imageSrc" class="q-mt-md text-center">
               <q-img
-                :src="previewRegistroPregunta.imageSrc"
+                :src="previewPreguntaActiva.imageSrc"
                 fit="contain"
                 style="max-height: 220px; max-width: 100%; border-radius: 8px"
                 class="bg-grey-2"
@@ -3289,89 +3365,101 @@
             </div>
 
             <div
-              v-if="previewRegistroPregunta.tipo === 'FALSO_VERDADERO'"
+              v-if="previewPreguntaActiva.tipo === 'FALSO_VERDADERO'"
               class="preview-question-block"
             >
               <div class="preview-question-line">
-                1. ____ {{ previewRegistroPregunta.enunciado || 'Enunciado pendiente...' }}
+                1. ____ {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
               </div>
               <div class="preview-answer-note">
-                Respuesta marcada: {{ previewRegistroPregunta.respuestaLabel }}
+                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
               </div>
             </div>
 
             <div
-              v-else-if="previewRegistroPregunta.tipo === 'SELECCION_SIMPLE'"
+              v-else-if="['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(previewPreguntaActiva.tipo)"
               class="preview-question-block"
             >
               <div class="preview-question-line">
-                1. {{ previewRegistroPregunta.enunciado || 'Enunciado pendiente...' }}
+                1. {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
               </div>
               <div
-                v-for="(opcion, index) in previewRegistroPregunta.opciones"
+                v-for="(opcion, index) in previewPreguntaActiva.opciones"
                 :key="`preview-op-simple-${index}`"
                 class="preview-option-line"
               >
                 {{ opcion.id }}. {{ opcion.text || 'Opción pendiente...' }}
               </div>
               <div class="preview-answer-note">
-                Respuesta marcada: {{ previewRegistroPregunta.respuestaLabel }}
+                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
               </div>
             </div>
 
             <div
-              v-else-if="previewRegistroPregunta.tipo === 'PREGUNTA_CON_CLAVE'"
+              v-else-if="previewPreguntaActiva.tipo === 'OPCION_EMPAREJAMIENTO'"
               class="preview-question-block"
             >
               <div class="preview-question-line">
-                1. ____ {{ previewRegistroPregunta.enunciado || 'Enunciado pendiente...' }}
+                1. ____ {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
+              </div>
+              <div class="preview-answer-note">
+                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
+              </div>
+            </div>
+
+            <div
+              v-else-if="previewPreguntaActiva.tipo === 'PREGUNTA_CON_CLAVE'"
+              class="preview-question-block"
+            >
+              <div class="preview-question-line">
+                1. ____ {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
               </div>
               <div
-                v-for="(inciso, index) in previewRegistroPregunta.incisos"
+                v-for="(inciso, index) in previewPreguntaActiva.incisos"
                 :key="`preview-inciso-${index}`"
                 class="preview-detail-line"
               >
                 {{ index + 1 }}. {{ inciso || 'Inciso pendiente...' }}
               </div>
               <div class="preview-answer-note">
-                Respuesta marcada: {{ previewRegistroPregunta.respuestaLabel }}
+                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
               </div>
             </div>
 
             <div
-              v-else-if="previewRegistroPregunta.tipo === 'RESPUESTA_COMPUESTA'"
+              v-else-if="previewPreguntaActiva.tipo === 'RESPUESTA_COMPUESTA'"
               class="preview-question-block"
             >
               <div class="preview-detail-line">
-                I. {{ previewRegistroPregunta.premisas[0] || 'Premisa I pendiente...' }}
+                I. {{ previewPreguntaActiva.premisas[0] || 'Premisa I pendiente...' }}
               </div>
               <div class="preview-detail-line">
-                II. {{ previewRegistroPregunta.premisas[1] || 'Premisa II pendiente...' }}
+                II. {{ previewPreguntaActiva.premisas[1] || 'Premisa II pendiente...' }}
               </div>
               <div class="preview-answer-note">
-                Respuesta marcada: {{ previewRegistroPregunta.respuestaLabel }}
+                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
               </div>
             </div>
 
             <div
-              v-else-if="previewRegistroPregunta.tipo === 'EMPAREJAMIENTO'"
+              v-else-if="previewPreguntaActiva.tipo === 'EMPAREJAMIENTO'"
               class="preview-question-block"
             >
               <div class="preview-question-line">
                 {{
-                  previewRegistroPregunta.enunciado ||
+                  previewPreguntaActiva.enunciado ||
                   'De la lista de opciones, seleccione la respuesta correcta para cada enunciado'
                 }}
               </div>
               <div
-                v-for="(clave, index) in previewRegistroPregunta.claves"
+                v-for="(clave, index) in previewPreguntaActiva.claves"
                 :key="`preview-clave-${index}`"
                 class="preview-detail-line"
               >
                 {{ clave.id }}. {{ clave.text || 'Opción pendiente...' }}
               </div>
               <div
-                v-for="(ligada, index) in previewRegistroPregunta.preguntasLigadas"
+                v-for="(ligada, index) in previewPreguntaActiva.preguntasLigadas"
                 :key="`preview-emp-${index}`"
                 class="preview-question-block q-mt-md"
               >
@@ -3386,14 +3474,14 @@
             </div>
 
             <div
-              v-else-if="previewRegistroPregunta.tipo === 'PROBLEMA'"
+              v-else-if="previewPreguntaActiva.tipo === 'PROBLEMA'"
               class="preview-question-block"
             >
               <div class="preview-question-line">
-                CASO: {{ previewRegistroPregunta.enunciado || 'Caso pendiente...' }}
+                CASO: {{ previewPreguntaActiva.enunciado || 'Caso pendiente...' }}
               </div>
               <div
-                v-for="(ligada, index) in previewRegistroPregunta.preguntasLigadas"
+                v-for="(ligada, index) in previewPreguntaActiva.preguntasLigadas"
                 :key="`preview-sub-${index}`"
                 class="preview-question-block q-mt-md"
               >
@@ -3416,7 +3504,7 @@
 
             <div v-else class="preview-question-block">
               <div class="preview-question-line">
-                {{ previewRegistroPregunta.enunciado || 'Completa la pregunta para visualizarla.' }}
+                {{ previewPreguntaActiva.enunciado || 'Completa la pregunta para visualizarla.' }}
               </div>
             </div>
           </div>
@@ -3660,6 +3748,7 @@ import { useAuthStore } from 'src/stores/auth'
 import { api } from 'boot/axios'
 import { generarProgramaAnaliticoPDF } from 'src/services/carpetaDocenteService'
 import {
+  EXAM_SECTION_COPY,
   EXAM_PDF_DEFAULT_CONFIG,
   createExamPdfDocument,
   generateExamPdf,
@@ -5252,7 +5341,9 @@ const guardandoEditPreg = ref(false)
 const previewImagenEdit = ref(null)
 const previsualizandoRegistroPregunta = ref(false)
 const previewRegistroPreguntaVisible = ref(false)
+const previewPreguntaRegistrada = ref(null)
 const ejemploTipoPreguntaVisible = ref(false)
+const guiaTipoPreguntaVisible = ref(false)
 const DEFAULT_EMPAREJAMIENTO_ENUNCIADO =
   'De la lista de opciones, seleccione la respuesta correcta para cada enunciado'
 
@@ -5506,8 +5597,97 @@ const descripcionRegistroManualPregunta = computed(() => {
   return descriptions[tipoRegistroPregunta.value] || ''
 })
 
+function getBancoOfficialSectionCopy(tipo) {
+  const tipoNormalizado = normalizarTipoPregunta(tipo)
+
+  if (tipoNormalizado === 'SUBPROBLEMA') return EXAM_SECTION_COPY.PROBLEMA
+  if (tipoNormalizado === 'OPCION_EMPAREJAMIENTO') return EXAM_SECTION_COPY.EMPAREJAMIENTO
+
+  return (
+    EXAM_SECTION_COPY[tipoNormalizado] || {
+      title: getTipoLabelBanco(tipoNormalizado),
+      lines: [],
+    }
+  )
+}
+
+const guiaTipoPregunta = computed(() => {
+  const tipo = tipoRegistroPregunta.value
+  const guias = {
+    FALSO_VERDADERO: {
+      pasos: [
+        'Selecciona la dificultad de la pregunta.',
+        'Completa el enunciado con una afirmación clara.',
+        'Marca A si la afirmación es verdadera o B si es falsa.',
+        'Usa Previsualizar PDF para revisar el formato antes de registrar.',
+      ],
+      nota: 'Este tipo no usa incisos ni opciones adicionales.',
+    },
+    RESPUESTA_COMPUESTA: {
+      pasos: [
+        'Selecciona la dificultad de la pregunta.',
+        'Completa la Premisa I con una afirmación independiente.',
+        'Completa la Premisa II con otra afirmación independiente.',
+        'Selecciona A, B, C o D según sea verdadera la primera, la segunda, ambas o ninguna.',
+        'Revisa que las premisas no dependan de un orden mezclado para conservar coherencia.',
+      ],
+      nota: 'El sistema arma el enunciado con I. y II.; no necesitas escribir un enunciado principal.',
+    },
+    PREGUNTA_CON_CLAVE: {
+      pasos: [
+        'Selecciona la dificultad de la pregunta.',
+        'Completa el enunciado general que agrupa los cuatro incisos.',
+        'Llena los incisos 1, 2, 3 y 4 con afirmaciones claras.',
+        'Selecciona la respuesta A, B, C, D o E de acuerdo con la clave indicada.',
+        'Verifica que el orden de los incisos sea el definitivo.',
+      ],
+      nota: 'Los incisos se mantienen en orden porque cambiarlo puede alterar la respuesta correcta.',
+    },
+    SELECCION_SIMPLE: {
+      pasos: [
+        'Selecciona la dificultad de la pregunta.',
+        'Completa el enunciado de la pregunta.',
+        'Llena las cinco alternativas A, B, C, D y E.',
+        'Marca la única mejor respuesta.',
+        'Previsualiza el PDF para confirmar que las opciones se leen completas.',
+      ],
+      nota: 'Todas las alternativas deben ser plausibles y solo una debe ser la mejor respuesta.',
+    },
+    EMPAREJAMIENTO: {
+      pasos: [
+        'Define cuántas opciones de emparejamiento tendrá el grupo.',
+        'Completa cada opción o término disponible para los enunciados.',
+        'Agrega los enunciados que deberán emparejarse con esas opciones.',
+        'En cada enunciado, marca la letra correcta según las opciones definidas arriba.',
+        'Asigna la dificultad a cada enunciado ligado.',
+      ],
+      nota: 'El encabezado puede quedar con el texto por defecto; lo importante es conservar opciones y enunciados del mismo grupo.',
+    },
+    PROBLEMA: {
+      pasos: [
+        'Completa el caso clínico o problema principal.',
+        'Agrega los subproblemas necesarios para ese caso.',
+        'En cada subproblema, completa su enunciado.',
+        'Llena cinco alternativas A, B, C, D y E para cada subproblema.',
+        'Marca la respuesta correcta y dificultad de cada subproblema.',
+      ],
+      nota: 'El caso principal no lleva respuesta directa; las respuestas pertenecen a sus subproblemas.',
+    },
+  }
+
+  return {
+    tipo,
+    tipoLabel: getTipoLabelBanco(tipo),
+    ...(guias[tipo] || {
+      pasos: ['Este tipo se completa desde su pregunta principal correspondiente.'],
+      nota: '',
+    }),
+  }
+})
+
 const ejemploTipoPregunta = computed(() => {
   const tipo = tipoRegistroPregunta.value
+  const sectionCopy = getBancoOfficialSectionCopy(tipo)
   const ejemplos = {
     FALSO_VERDADERO: {
       tipoHeading: 'Preguntas de respuesta verdadero o falso simples',
@@ -5585,7 +5765,7 @@ const ejemploTipoPregunta = computed(() => {
     SELECCION_SIMPLE: {
       tipoHeading: 'Preguntas de selección de la mejor respuesta',
       instrucciones: [
-        'Instrucciones: Lea el caso clínico o situación, revise la pregunta y seleccione la mejor respuesta entre las cinco opciones.',
+        'Instrucciones: Lea cuidadosamente cada enunciado y elija una sola respuesta entre las opciones disponibles.',
       ],
       lineas: [
         {
@@ -5697,8 +5877,6 @@ const ejemploTipoPregunta = computed(() => {
     tipo,
     tipoLabel: getTipoLabelBanco(tipo),
     ...(ejemplos[tipo] || {
-      tipoHeading: getTipoLabelBanco(tipo),
-      instrucciones: ['Este tipo se registra como parte de una estructura mayor.'],
       lineas: [
         {
           cssClass: 'preview-question-line',
@@ -5706,11 +5884,17 @@ const ejemploTipoPregunta = computed(() => {
         },
       ],
     }),
+    tipoHeading: sectionCopy.title,
+    instrucciones: [...(sectionCopy.lines || [])],
   }
 })
 
 function abrirEjemploTipoPregunta() {
   ejemploTipoPreguntaVisible.value = true
+}
+
+function abrirGuiaTipoPregunta() {
+  guiaTipoPreguntaVisible.value = true
 }
 
 const cantidadClavesEmparejamientoOptions = [2, 3, 4, 5].map((value) => ({
@@ -5778,58 +5962,13 @@ function getDificultadPreviewLabel(dificultad) {
 
 const previewRegistroPregunta = computed(() => {
   const tipo = tipoRegistroPregunta.value
-  const baseInstrucciones = {
-    FALSO_VERDADERO: [
-      'Instrucciones: A si el enunciado es verdadero o B si el enunciado es falso.',
-    ],
-    SELECCION_SIMPLE: [
-      'Instrucciones: Lea el caso clínico o situación, revise la pregunta y seleccione la mejor respuesta entre las cinco opciones.',
-    ],
-    PREGUNTA_CON_CLAVE: [
-      'Instrucciones: Seleccione todas las respuestas correctas de acuerdo con la siguiente clave:',
-      'A: 1, 2 y 3 son verdaderas. B: 1 y 3 son verdaderas. C: 2 y 4 son verdaderas. D: solo 4 es verdadera. E: todas son verdaderas.',
-    ],
-    RESPUESTA_COMPUESTA: [
-      'Instrucciones: Las siguientes preguntas están compuestas de dos premisas. Responda con:',
-      'A: si la primera es verdadera. B: si la segunda es verdadera.',
-      'C: si ambas son verdaderas. D: si ninguna es verdadera.',
-    ],
-    EMPAREJAMIENTO: [
-      'Instrucciones: De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
-    ],
-    PROBLEMA: [
-      'Instrucciones: El siguiente caso clínico o problema tendrá varias preguntas. Seleccione las respuestas correctas.',
-    ],
-  }
-
-  const previewHeadings = {
-    FALSO_VERDADERO: 'Preguntas de respuesta verdadero o falso simples',
-    SELECCION_SIMPLE: 'Preguntas de selección de la mejor respuesta',
-    PREGUNTA_CON_CLAVE: 'Preguntas de respuesta verdadero o falso complejas',
-    RESPUESTA_COMPUESTA: 'Preguntas de respuesta A/B/Ambas/Ninguna',
-    EMPAREJAMIENTO: 'Preguntas de Emparejamiento Ampliado',
-    PROBLEMA: 'Preguntas de ítems agrupados por caso clínico o problema',
-    SUBPROBLEMA: 'Subítem de caso clínico o problema',
-  }
-  const previewInstrucciones = {
-    SELECCION_SIMPLE: [
-      'Instrucciones: Lea el caso clínico o situación, revise la pregunta y seleccione la mejor respuesta entre las cinco opciones.',
-    ],
-    RESPUESTA_COMPUESTA: [
-      'Instrucciones: Las siguientes preguntas están compuestas de dos premisas. Responda con:',
-      'A: si la primera es verdadera. B: si la segunda es verdadera.',
-      'C: si ambas son verdaderas. D: si ninguna es verdadera.',
-    ],
-    PROBLEMA: [
-      'Instrucciones: El siguiente caso clínico o problema tendrá varias preguntas. Seleccione las respuestas correctas.',
-    ],
-  }
+  const sectionCopy = getBancoOfficialSectionCopy(tipo)
 
   return {
     tipo,
     tipoLabel: getTipoLabelBanco(tipo),
-    tipoHeading: previewHeadings[tipo] || getTipoLabelBanco(tipo),
-    instrucciones: previewInstrucciones[tipo] || baseInstrucciones[tipo] || [],
+    tipoHeading: sectionCopy.title,
+    instrucciones: [...(sectionCopy.lines || [])],
     parcial: formPregunta.value.parcial || filtroBancoParcialSeleccionado.value || '2P',
     grupoTeorico: formPregunta.value.grupoTeorico || filtroBancoGrupoSeleccionado.value || '',
     grupoReferencia: formPregunta.value.grupo || '',
@@ -5863,6 +6002,210 @@ const previewRegistroPregunta = computed(() => {
     })),
   }
 })
+
+const getPreviewPreguntaHeading = (tipo) => getBancoOfficialSectionCopy(tipo).title
+
+const getPreviewPreguntaInstrucciones = (tipo) => [
+  ...(getBancoOfficialSectionCopy(tipo).lines || []),
+]
+
+function normalizarRespuestaPreviewPregunta(respuesta) {
+  if (Array.isArray(respuesta)) {
+    return String(respuesta[0] || '')
+      .trim()
+      .toUpperCase()
+  }
+
+  if (typeof respuesta === 'string' && respuesta.trim().startsWith('[')) {
+    try {
+      const parsed = JSON.parse(respuesta)
+      if (Array.isArray(parsed)) {
+        return String(parsed[0] || '')
+          .trim()
+          .toUpperCase()
+      }
+    } catch {
+      // Mantener el valor original si no era JSON valido.
+    }
+  }
+
+  return String(respuesta || '')
+    .trim()
+    .toUpperCase()
+}
+
+function normalizarOpcionesPreviewPregunta(opciones = []) {
+  return (Array.isArray(opciones) ? opciones : [])
+    .map((opcion, index) => {
+      if (typeof opcion === 'object' && opcion !== null) {
+        return {
+          id: String(opcion.id || String.fromCharCode(65 + index)).toUpperCase(),
+          text: normalizarTextoMojibake(String(opcion.text || opcion.label || '').trim()),
+        }
+      }
+
+      return {
+        id: String.fromCharCode(65 + index),
+        text: normalizarTextoMojibake(String(opcion || '').trim()),
+      }
+    })
+    .filter((opcion) => opcion.text)
+}
+
+function obtenerLineasEnunciadoPreview(enunciado) {
+  return normalizarTextoPreviewPdf(enunciado)
+    .split('\n')
+    .map((linea) => linea.trim())
+    .filter(Boolean)
+}
+
+function extraerOpcionesDesdeLineasPreview(lineas) {
+  return lineas
+    .map((linea) => {
+      const match = linea.match(/^([A-E])[.)]\s*(.+)$/i)
+      if (!match) return null
+      return { id: match[1].toUpperCase(), text: normalizarTextoMojibake(match[2].trim()) }
+    })
+    .filter(Boolean)
+}
+
+function extraerIncisosDesdeLineasPreview(lineas) {
+  return lineas
+    .map((linea) => {
+      const match = linea.match(/^(?:\d+)[.)]\s*(.+)$/)
+      return match ? normalizarTextoMojibake(match[1].trim()) : null
+    })
+    .filter(Boolean)
+}
+
+function extraerPremisasDesdeLineasPreview(lineas) {
+  const premisas = ['', '']
+
+  lineas.forEach((linea) => {
+    const matchRomano = linea.match(/^(I{1,2})[.)]\s*(.+)$/i)
+    if (matchRomano) {
+      premisas[matchRomano[1].toUpperCase() === 'II' ? 1 : 0] = normalizarTextoMojibake(
+        matchRomano[2].trim(),
+      )
+      return
+    }
+
+    const matchNumerico = linea.match(/^([12])[.)]\s*(.+)$/)
+    if (matchNumerico) {
+      premisas[Number(matchNumerico[1]) - 1] = normalizarTextoMojibake(matchNumerico[2].trim())
+    }
+  })
+
+  if (!premisas[0] && lineas[0]) premisas[0] = normalizarTextoMojibake(lineas[0])
+  if (!premisas[1] && lineas[1]) premisas[1] = normalizarTextoMojibake(lineas[1])
+
+  return premisas
+}
+
+function limpiarEnunciadoPreviewPorTipo(lineas, tipo) {
+  const filtradas = lineas.filter((linea) => {
+    if (['EMPAREJAMIENTO', 'OPCION_EMPAREJAMIENTO'].includes(tipo)) {
+      return !/^([A-E])[.)]\s+.+$/i.test(linea)
+    }
+    if (tipo === 'PREGUNTA_CON_CLAVE') {
+      return !/^\d+[.)]\s+.+$/.test(linea)
+    }
+    if (tipo === 'RESPUESTA_COMPUESTA') {
+      return !/^(I{1,2}|[12])[.)]\s+.+$/i.test(linea)
+    }
+    return true
+  })
+
+  return normalizarTextoMojibake(filtradas.join('\n').trim())
+}
+
+function obtenerImagenPreguntaPreview(pregunta) {
+  if (!pregunta?.imagen) return ''
+  return `${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${pregunta.imagen}`
+}
+
+function obtenerPreguntasLigadasPreview(pregunta, tipo) {
+  const grupo = normalizeGroupName(pregunta?.grupo || '')
+  if (!grupo || !['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipo)) return []
+
+  const tipoHijo = tipo === 'EMPAREJAMIENTO' ? 'OPCION_EMPAREJAMIENTO' : 'SUBPROBLEMA'
+
+  return preguntasFiltradas.value.filter((item) => {
+    if (String(item.id || '') === String(pregunta.id || '')) return false
+    return (
+      normalizeGroupName(item.grupo || '') === grupo &&
+      normalizarTipoPregunta(item.tipo, item, gruposCabeceraBancoMap.value) === tipoHijo
+    )
+  })
+}
+
+function crearPreviewPreguntaRegistrada(pregunta) {
+  const preguntaSanitizada = sanitizarEstructuraMojibake(pregunta || {})
+  const tipo = normalizarTipoPregunta(
+    preguntaSanitizada.tipo,
+    preguntaSanitizada,
+    gruposCabeceraBancoMap.value,
+  )
+  const lineas = obtenerLineasEnunciadoPreview(preguntaSanitizada.enunciado || '')
+  const opciones = normalizarOpcionesPreviewPregunta(preguntaSanitizada.opciones || [])
+  const respuesta = normalizarRespuestaPreviewPregunta(
+    preguntaSanitizada.respuesta_correcta || preguntaSanitizada.respuesta,
+  )
+  const claves = opciones.length ? opciones : extraerOpcionesDesdeLineasPreview(lineas)
+  const incisos =
+    tipo === 'PREGUNTA_CON_CLAVE' && opciones.length === 4
+      ? opciones.map((opcion) => opcion.text)
+      : extraerIncisosDesdeLineasPreview(lineas)
+  const preguntasLigadas = obtenerPreguntasLigadasPreview(preguntaSanitizada, tipo).map((item) => {
+    const tipoLigado = normalizarTipoPregunta(item.tipo, item, gruposCabeceraBancoMap.value)
+    const respuestaLigada = normalizarRespuestaPreviewPregunta(
+      item.respuesta_correcta || item.respuesta,
+    )
+    return {
+      enunciado: normalizarTextoMojibake(String(item.enunciado || '').trim()),
+      opciones: normalizarOpcionesPreviewPregunta(item.opciones || []),
+      dificultadLabel: getDificultadPreviewLabel(item.dificultad),
+      respuestaLabel:
+        claves.find((clave) => clave.id === respuestaLigada)?.text && tipo === 'EMPAREJAMIENTO'
+          ? `${respuestaLigada}. ${claves.find((clave) => clave.id === respuestaLigada)?.text}`
+          : getRespuestaPreviewLabel(tipoLigado, respuestaLigada),
+    }
+  })
+
+  return {
+    tipo,
+    tipoLabel: getTipoLabelBanco(tipo, preguntaSanitizada, gruposCabeceraBancoMap.value),
+    tipoHeading: getPreviewPreguntaHeading(tipo),
+    instrucciones: getPreviewPreguntaInstrucciones(tipo),
+    parcial: normalizarParcialBanco(
+      preguntaSanitizada.parcial || filtroBancoParcialSeleccionado.value || '2P',
+    ),
+    grupoTeorico:
+      obtenerGrupoTeoricoPregunta(preguntaSanitizada) || filtroBancoGrupoSeleccionado.value,
+    grupoReferencia: preguntaSanitizada.grupo || '',
+    enunciado: limpiarEnunciadoPreviewPorTipo(lineas, tipo),
+    imageSrc: obtenerImagenPreguntaPreview(preguntaSanitizada),
+    opciones,
+    incisos,
+    premisas: extraerPremisasDesdeLineasPreview(lineas),
+    claves,
+    respuestaLabel:
+      tipo === 'OPCION_EMPAREJAMIENTO' && claves.find((clave) => clave.id === respuesta)
+        ? `${respuesta}. ${claves.find((clave) => clave.id === respuesta)?.text}`
+        : getRespuestaPreviewLabel(tipo, respuesta),
+    preguntasLigadas,
+  }
+}
+
+const previewPreguntaActiva = computed(
+  () => previewPreguntaRegistrada.value || previewRegistroPregunta.value,
+)
+
+function abrirPrevisualizacionPreguntaRegistrada(pregunta) {
+  const preview = crearPreviewPreguntaRegistrada(pregunta)
+  previewPreguntaRegistrada.value = preview
+  previsualizarRegistroPreguntaPdf(preview)
+}
 
 function normalizarTextoPreviewPdf(texto) {
   return normalizarTextoMojibake(String(texto || ''))
@@ -5912,11 +6255,22 @@ function agregarTextoPreviewPdf(doc, texto, x, y, maxWidth, opciones = {}) {
   return y + lineas.length * lineGap
 }
 
-async function previsualizarRegistroPreguntaPdf() {
+async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
+  if (!previewOverride && mensajeValidacionPrevisualizacion.value) {
+    $q.notify({
+      type: 'warning',
+      message: mensajeValidacionPrevisualizacion.value,
+    })
+    return
+  }
+
+  if (!previewOverride) {
+    previewPreguntaRegistrada.value = null
+  }
   previsualizandoRegistroPregunta.value = true
 
   try {
-    const preview = previewRegistroPregunta.value
+    const preview = previewOverride || previewPreguntaActiva.value
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -5987,7 +6341,7 @@ async function previsualizarRegistroPreguntaPdf() {
       currentY = agregarTextoPreviewPdf(doc, `1. ____ ${enunciado}`, margin, currentY, maxWidth, {
         lineGap: 5.8,
       })
-    } else if (preview.tipo === 'SELECCION_SIMPLE') {
+    } else if (['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(preview.tipo)) {
       ensureSpace(14)
       currentY = agregarTextoPreviewPdf(doc, `1. ${enunciado}`, margin, currentY, maxWidth, {
         lineGap: 5.8,
@@ -6002,6 +6356,11 @@ async function previsualizarRegistroPreguntaPdf() {
           maxWidth,
           { indent: 8, lineGap: 5.4 },
         )
+      })
+    } else if (preview.tipo === 'OPCION_EMPAREJAMIENTO') {
+      ensureSpace(14)
+      currentY = agregarTextoPreviewPdf(doc, `1. ____ ${enunciado}`, margin, currentY, maxWidth, {
+        lineGap: 5.8,
       })
     } else if (preview.tipo === 'PREGUNTA_CON_CLAVE') {
       ensureSpace(14)
@@ -6304,6 +6663,7 @@ function abrirRegistroManualPregunta() {
   archivoImagenPregunta.value = null
   previewImagenEdit.value = null
   previewRegistroPreguntaVisible.value = false
+  previewPreguntaRegistrada.value = null
   dialogEditarPregunta.value = true
 }
 
@@ -6410,6 +6770,7 @@ function abrirEditorPregunta(pregunta) {
   archivoImagenPregunta.value = null
   previewImagenEdit.value = null
   previewRegistroPreguntaVisible.value = false
+  previewPreguntaRegistrada.value = null
   dialogEditarPregunta.value = true
 }
 
@@ -6583,6 +6944,67 @@ function validarRegistroManualPregunta() {
 
   return null
 }
+
+function validarEdicionPreguntaBanco() {
+  const tipo = normalizarTipoPregunta(formPregunta.value.tipo, formPregunta.value)
+
+  if (!String(formPregunta.value.enunciado || '').trim()) {
+    return 'Debes registrar el enunciado de la pregunta.'
+  }
+
+  if (
+    !['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipo) &&
+    !String(formPregunta.value.dificultad || '').trim()
+  ) {
+    return 'Debes seleccionar la dificultad de la pregunta.'
+  }
+
+  const opciones = Array.isArray(formPregunta.value.opciones) ? formPregunta.value.opciones : []
+  const opcionesEsperadas =
+    {
+      FALSO_VERDADERO: 2,
+      RESPUESTA_COMPUESTA: 4,
+      PREGUNTA_CON_CLAVE: 4,
+      SELECCION_SIMPLE: 5,
+      SUBPROBLEMA: 5,
+    }[tipo] || 0
+
+  if (opcionesEsperadas > 0) {
+    const opcionesCompletas = opciones
+      .slice(0, opcionesEsperadas)
+      .every((opcion) => String(opcion || '').trim())
+
+    if (opciones.length < opcionesEsperadas || !opcionesCompletas) {
+      return `Debes completar las ${opcionesEsperadas} opciones requeridas para este tipo de pregunta.`
+    }
+  }
+
+  if (
+    [
+      'FALSO_VERDADERO',
+      'RESPUESTA_COMPUESTA',
+      'PREGUNTA_CON_CLAVE',
+      'SELECCION_SIMPLE',
+      'SUBPROBLEMA',
+      'OPCION_EMPAREJAMIENTO',
+    ].includes(tipo) &&
+    !String(formPregunta.value.respuesta_correcta || '').trim()
+  ) {
+    return 'Debes seleccionar la respuesta correcta.'
+  }
+
+  return null
+}
+
+const mensajeValidacionPrevisualizacion = computed(() =>
+  modoRegistroPregunta.value === 'create'
+    ? validarRegistroManualPregunta()
+    : validarEdicionPreguntaBanco(),
+)
+
+const puedePrevisualizarFormularioPregunta = computed(
+  () => !mensajeValidacionPrevisualizacion.value,
+)
 
 function construirPayloadsRegistroManual() {
   const tipo = tipoRegistroPregunta.value
@@ -10443,6 +10865,42 @@ function getParcialColorBanco(parcial) {
   font-size: 0.88rem;
   font-weight: 600;
   color: #475569;
+}
+
+.guia-llenado-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guia-llenado-step {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+}
+
+.guia-llenado-step__number {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.guia-llenado-step__text {
+  color: #1f2937;
+  font-size: 0.94rem;
+  line-height: 1.45;
 }
 
 /* ---- Parametrizacion Banco de Preguntas ---- */

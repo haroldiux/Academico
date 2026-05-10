@@ -452,7 +452,7 @@ function cleanQuestionText(text) {
     .trim()
 }
 
-const EXAM_SECTION_COPY = {
+export const EXAM_SECTION_COPY = {
   FALSO_VERDADERO: {
     title: 'VERDADERO O FALSO SIMPLE',
     lines: ['Instrucciones: Marque A si el enunciado es verdadero o B si el enunciado es falso.'],
