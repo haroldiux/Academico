@@ -1,7 +1,8 @@
 import { request as playwrightRequest, expect } from '@playwright/test'
 import { testEnv } from './env.js'
+import { getSharedToken, setSharedAuth, hasSharedToken } from './shared-auth.mjs'
 
-let cachedToken = null
+const LOG = (...args) => console.log(`[TEST] [API-Client]`, ...args)
 
 function getBaseURL() {
   return testEnv.apiBaseUrl.replace(/\/?$/, '/')
@@ -10,45 +11,61 @@ function getBaseURL() {
 export async function createApiContext() {
   return playwrightRequest.newContext({
     baseURL: getBaseURL(),
-    extraHTTPHeaders: {
-      Accept: 'application/json',
-    },
+    extraHTTPHeaders: { Accept: 'application/json' },
   })
 }
 
-export async function loginDocenteApi(apiContext) {
-  if (!cachedToken) {
-    const response = await apiContext.post('login', {
-      data: {
-        username: testEnv.docenteUsername,
-        password: testEnv.docentePassword,
-      },
-    })
+async function fetchToken() {
+  LOG('Obteniendo token de API...')
+  const ctx = await playwrightRequest.newContext({
+    baseURL: getBaseURL(),
+    extraHTTPHeaders: { Accept: 'application/json' },
+  })
 
-    expect(response.ok()).toBeTruthy()
-    const payload = await response.json()
-    cachedToken = payload?.token
-    expect(cachedToken).toBeTruthy()
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      const response = await ctx.post('login', {
+        data: { username: testEnv.docenteUsername, password: testEnv.docentePassword },
+      })
+      if (response.ok()) {
+        const payload = await response.json()
+        setSharedAuth(payload.token, payload.user)
+        await ctx.dispose()
+        LOG('Token obtenido y compartido')
+        return
+      }
+      if (response.status() === 429 || response.status() >= 500) {
+        const delay = attempt * 4000
+        LOG(`  ⚠ Status ${response.status()}. Intento ${attempt}/5. Esperando ${delay / 1000}s...`)
+        await new Promise((r) => setTimeout(r, delay))
+      } else {
+        await ctx.dispose()
+        throw new Error(`Login fallo: status ${response.status()}`)
+      }
+    } catch (e) {
+      if (attempt >= 5) { await ctx.dispose(); throw e }
+      await new Promise((r) => setTimeout(r, attempt * 3000))
+    }
   }
+  await ctx.dispose()
+  throw new Error('No se pudo obtener token despues de 5 intentos')
+}
 
-  await apiContext.dispose()
+export async function createAuthenticatedDocenteApi() {
+  if (!hasSharedToken()) await fetchToken()
 
   return playwrightRequest.newContext({
     baseURL: getBaseURL(),
     extraHTTPHeaders: {
       Accept: 'application/json',
-      Authorization: `Bearer ${cachedToken}`,
+      Authorization: `Bearer ${getSharedToken()}`,
     },
   })
 }
 
-export async function createAuthenticatedDocenteApi() {
-  const base = await createApiContext()
-  return loginDocenteApi(base)
-}
-
 export function invalidateApiToken() {
-  cachedToken = null
+  LOG('Invalidando token compartido')
+  setSharedAuth(null, null)
 }
 
 export async function cleanupBancoFiltrado(apiContext, overrides = {}) {
@@ -58,8 +75,6 @@ export async function cleanupBancoFiltrado(apiContext, overrides = {}) {
     parcial: testEnv.docenteParcial,
     ...overrides,
   }
-
-  return apiContext.post('banco-preguntas/bulk-delete', {
-    data: payload,
-  })
+  LOG(`Limpiando banco: asig=${payload.asignatura_id} grupo=${payload.grupo_teorico} parcial=${payload.parcial}`)
+  return apiContext.post('banco-preguntas/bulk-delete', { data: payload })
 }

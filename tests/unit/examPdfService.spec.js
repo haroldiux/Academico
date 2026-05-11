@@ -82,10 +82,10 @@ describe('examPdfService', () => {
     )
 
     expect(sorted.map((item) => item.tipo)).toEqual([
-      'SUBPROBLEMA',
       'PROBLEMA',
-      'OPCION_EMPAREJAMIENTO',
+      'SUBPROBLEMA',
       'EMPAREJAMIENTO',
+      'OPCION_EMPAREJAMIENTO',
     ])
 
     expect(sorted[0].grupo).toBe('Caso 1')

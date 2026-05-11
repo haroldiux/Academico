@@ -1,6 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { defineConfig, devices } from '@playwright/test'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const baseURL = process.env.E2E_BASE_URL || 'http://127.0.0.1:9000'
 const shouldBootServer = process.env.PW_USE_WEBSERVER === '1'
@@ -24,11 +27,17 @@ export default defineConfig({
   reporter: [
     ['list'],
     ['html', { outputFolder: reportDir, open: 'never' }],
+    [path.resolve(__dirname, 'tests/support/reporter-excel.mjs'), {
+      outputFile: path.resolve(__dirname, '..', 'REPORTE_IMPORTACION_EXCEL.md'),
+    }],
+    [path.resolve(__dirname, 'tests/support/reporter-manual.mjs'), {
+      outputFile: path.resolve(__dirname, '..', 'REPORTE_REGISTRO_MANUAL.md'),
+    }],
   ],
   use: {
     baseURL,
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
+    screenshot: 'on',
     video: 'off',
     viewport: { width: 1600, height: 900 },
   },
