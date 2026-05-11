@@ -10319,7 +10319,7 @@ async function confirmarImportacionBanco() {
     console.error('Error al importar banco:', error)
     $q.notify({
       type: 'negative',
-      message: 'No se pudo completar la importaciÒ�� �"Ò� â����Ò�â��šÒ�a�³n',
+      message: 'No se pudo completar la importación',
       caption: error.response?.data?.error || error.message,
       icon: 'error',
     })
