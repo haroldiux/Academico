@@ -3820,7 +3820,17 @@ const importacionAcumulativaSegundoParcial = computed(
   () => parcialBancoActualNormalizado.value === '2P',
 )
 
-// Set de nombres de grupo (normalizados) que ya tienen un examen generado
+const ESTADOS_ROL_EXAMEN_BLOQUEANTES = new Set([
+  'generados',
+  'impresos',
+  'entregados',
+  'devueltos',
+  'revisados',
+  'subidos',
+])
+
+// Set de nombres de grupo (normalizados) bloqueados solo cuando el rol de examen
+// ya avanzó al menos a "generados" para el parcial activo.
 const gruposBloqueados = computed(() => {
   const bloqueados = new Set()
   const parcialActual = parcialBancoActualNormalizado.value
@@ -3829,20 +3839,15 @@ const gruposBloqueados = computed(() => {
     return bloqueados
   }
 
-  // 1. Manuales del parcial activo
-  generacionesManuales.value.forEach((gen) => {
-    const parcialGeneracion = normalizarParcialBanco(gen.parcial || gen.tipo_examen || '')
-    if (gen.grupo && parcialGeneracion === parcialActual) {
-      bloqueados.add(normalizeGroupName(gen.grupo))
-    }
-  })
-
-  // 2. Rol Regular del parcial activo (cualquier estado != programados bloquea)
+  // Rol regular del parcial activo: bloquear solo desde "generados" en adelante.
   examenesAsignatura.value.forEach((exam) => {
     const parcialExamen = normalizarParcialBanco(exam.tipo_examen || exam.parcial || '')
     if (
-      exam.estado &&
-      exam.estado !== 'programados' &&
+      ESTADOS_ROL_EXAMEN_BLOQUEANTES.has(
+        String(exam.estado || '')
+          .trim()
+          .toLowerCase(),
+      ) &&
       exam.grupo &&
       parcialExamen === parcialActual
     ) {

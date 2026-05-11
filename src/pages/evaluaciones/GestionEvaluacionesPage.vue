@@ -411,9 +411,7 @@
                   color="red-8"
                   icon="picture_as_pdf"
                   size="sm"
-                  type="a"
-                  :href="getExamenUrl(props.row.variantes[0])"
-                  target="_blank"
+                  @click="abrirExamenGenerado(props.row)"
                 >
                   <q-tooltip>Examen (Consolidado)</q-tooltip>
                 </q-btn>
@@ -460,9 +458,7 @@
                     color="teal-7"
                     icon="quiz"
                     size="sm"
-                    type="a"
-                    :href="getPatronUrl(props.row.patrones[0], 'pdf')"
-                    target="_blank"
+                    @click="abrirPatronGenerado(props.row, 'pdf')"
                     v-if="props.row.patrones[0].pdf"
                     :disable="!['devueltos', 'revisados', 'subidos'].includes(props.row.estado)"
                   >
@@ -481,9 +477,7 @@
                     color="green-8"
                     icon="description"
                     size="sm"
-                    type="a"
-                    :href="getPatronUrl(props.row.patrones[0], 'xlsx')"
-                    target="_blank"
+                    @click="abrirPatronGenerado(props.row, 'xlsx')"
                     v-if="props.row.patrones[0].xlsx"
                     :disable="!['devueltos', 'revisados', 'subidos'].includes(props.row.estado)"
                   >
@@ -518,12 +512,17 @@
                   label="GESTIONAR"
                   no-caps
                   class="action-btn-main shadow-2"
-                  :disable="!puedeCambiarEstadoPorTiempo(props.row).permitido"
+                  :disable="
+                    !puedeCambiarEstadoPorTiempo(props.row).permitido ||
+                    estaGeneracionEnProceso(props.row)
+                  "
                   @click="gestionarEstado(props.row)"
                 >
                   <q-tooltip>
                     {{
-                      puedeCambiarEstadoPorTiempo(props.row).mensaje ||
+                      (estaGeneracionEnProceso(props.row)
+                        ? 'La generación consolidada sigue en proceso.'
+                        : puedeCambiarEstadoPorTiempo(props.row).mensaje) ||
                       'Gestionar etapa de evaluación'
                     }}
                   </q-tooltip>
@@ -710,6 +709,7 @@
                 :color="props.row.estado === est ? getManualActiveColor(est) : 'transparent'"
                 :text-color="props.row.estado === est ? 'white' : 'grey-5'"
                 :icon="getManualEstadoIcon(est)"
+                :disable="estaGeneracionManualEnProceso(props.row)"
                 @click="confirmarEstadoManual(props.row, est)"
                 class="transition-all"
               >
@@ -732,6 +732,21 @@
                 </q-tooltip>
               </q-btn>
             </q-btn-group>
+            <div class="q-mt-xs">
+              <q-chip
+                v-if="getManualJobStatus(props.row)"
+                dense
+                size="sm"
+                :color="getManualJobColor(props.row)"
+                text-color="white"
+                :icon="estaGeneracionManualEnProceso(props.row) ? 'hourglass_top' : 'task_alt'"
+              >
+                {{ getManualJobLabel(props.row) }}
+                <q-tooltip v-if="props.row.configuracion_json?.job_error">
+                  {{ props.row.configuracion_json.job_error }}
+                </q-tooltip>
+              </q-chip>
+            </div>
           </q-td>
         </template>
 
@@ -747,9 +762,17 @@
                 color="red-8"
                 icon="picture_as_pdf"
                 size="sm"
+                :loading="estaGeneracionManualEnProceso(props.row)"
+                :disable="estaGeneracionManualEnProceso(props.row)"
                 @click="descargarPDFManual(props.row)"
               >
-                <q-tooltip>Examen (Consolidado)</q-tooltip>
+                <q-tooltip>
+                  {{
+                    estaGeneracionManualEnProceso(props.row)
+                      ? 'La generación manual sigue ejecutándose en el servidor'
+                      : 'Examen (Consolidado)'
+                  }}
+                </q-tooltip>
               </q-btn>
 
               <q-separator
@@ -768,7 +791,10 @@
                 color="teal-7"
                 icon="picture_as_pdf"
                 size="sm"
-                :disable="props.row.estado.toUpperCase() !== 'DEVUELTO'"
+                :disable="
+                  props.row.estado.toUpperCase() !== 'DEVUELTO' ||
+                  estaGeneracionManualEnProceso(props.row)
+                "
                 @click="descargarPatronPdfManual(props.row)"
                 v-if="
                   ['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())
@@ -791,7 +817,10 @@
                 color="green-8"
                 icon="backup_table"
                 size="sm"
-                :disable="props.row.estado.toUpperCase() !== 'DEVUELTO'"
+                :disable="
+                  props.row.estado.toUpperCase() !== 'DEVUELTO' ||
+                  estaGeneracionManualEnProceso(props.row)
+                "
                 @click="descargarPatronXlsxManual(props.row)"
                 v-if="
                   ['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())
@@ -1216,13 +1245,23 @@
             color="deep-purple-7"
             :label="configGestion.actionLabel"
             :icon="configGestion.actionIcon"
-            :disable="!bancoSuficiente || !permisoTiempoDialog.permitido"
+            :disable="
+              !bancoSuficiente ||
+              !permisoTiempoDialog.permitido ||
+              estaGeneracionEnProceso(dialogGestion.examen)
+            "
             @click="ejecutarAccionGestion"
             no-caps
             class="q-px-lg shadow-3"
           >
-            <q-tooltip v-if="!permisoTiempoDialog.permitido">
-              {{ permisoTiempoDialog.mensaje }}
+            <q-tooltip
+              v-if="!permisoTiempoDialog.permitido || estaGeneracionEnProceso(dialogGestion.examen)"
+            >
+              {{
+                estaGeneracionEnProceso(dialogGestion.examen)
+                  ? 'La generación consolidada sigue ejecutándose en el servidor.'
+                  : permisoTiempoDialog.mensaje
+              }}
             </q-tooltip>
           </q-btn>
         </q-card-actions>
@@ -1662,7 +1701,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useQuasar, date } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore, ROLES } from 'src/stores/auth'
@@ -2146,6 +2185,10 @@ onMounted(async () => {
   cargarDatos()
 })
 
+onBeforeUnmount(() => {
+  clearGenerationPoller()
+})
+
 const dialogGestion = ref({
   show: false,
   examen: null,
@@ -2277,6 +2320,120 @@ const activeTab = ref('rol')
 const examenesList = ref([])
 const manualGenerations = ref([])
 const loadingManual = ref(false)
+const generationPoller = ref(null)
+
+const clearGenerationPoller = () => {
+  if (generationPoller.value) {
+    clearTimeout(generationPoller.value)
+    generationPoller.value = null
+  }
+}
+
+const monitorExamGeneration = (examId) => {
+  clearGenerationPoller()
+
+  const tick = async () => {
+    try {
+      await cargarDatos()
+      const exam = examenesList.value.find((item) => item.id === examId)
+      const jobStatus = exam?.distribucion?.job_status
+
+      if (jobStatus === 'queued' || jobStatus === 'processing') {
+        generationPoller.value = setTimeout(tick, 8000)
+        return
+      }
+
+      if (jobStatus === 'completed') {
+        $q.notify({
+          type: 'positive',
+          message: 'El PDF consolidado ya está listo para descarga.',
+          icon: 'task_alt',
+        })
+        return
+      }
+
+      if (jobStatus === 'failed') {
+        $q.notify({
+          type: 'negative',
+          message: exam?.distribucion?.job_error || 'La generación en servidor falló.',
+          icon: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error monitoreando generación de examen:', error)
+    }
+  }
+
+  generationPoller.value = setTimeout(tick, 8000)
+}
+
+const estaGeneracionEnProceso = (exam) => {
+  const status = exam?.distribucion?.job_status
+  return status === 'queued' || status === 'processing'
+}
+
+const getManualJobStatus = (row) => row?.configuracion_json?.job_status || null
+
+const estaGeneracionManualEnProceso = (row) => {
+  const status = getManualJobStatus(row)
+  return status === 'queued' || status === 'processing'
+}
+
+const getManualJobLabel = (row) =>
+  ({
+    queued: 'En cola',
+    processing: 'Generando',
+    completed: 'Listo',
+    failed: 'Falló',
+  })[getManualJobStatus(row)] || ''
+
+const getManualJobColor = (row) =>
+  ({
+    queued: 'amber-8',
+    processing: 'blue-7',
+    completed: 'green-7',
+    failed: 'red-7',
+  })[getManualJobStatus(row)] || 'grey-7'
+
+const monitorManualGeneration = (generationId) => {
+  clearGenerationPoller()
+
+  const tick = async () => {
+    try {
+      await cargarManualGenerations()
+      const generation = manualGenerations.value.find((item) => item.id === generationId)
+      const jobStatus = getManualJobStatus(generation)
+
+      if (jobStatus === 'queued' || jobStatus === 'processing') {
+        generationPoller.value = setTimeout(tick, 8000)
+        return
+      }
+
+      if (jobStatus === 'completed') {
+        $q.notify({
+          type: 'positive',
+          message: 'La generación manual ya está lista para descarga.',
+          icon: 'task_alt',
+        })
+        return
+      }
+
+      if (jobStatus === 'failed') {
+        $q.notify({
+          type: 'negative',
+          message:
+            generation?.configuracion_json?.job_error || 'La generación manual en servidor falló.',
+          icon: 'error',
+          timeout: 7000,
+        })
+      }
+    } catch (error) {
+      console.error('Error monitoreando generación manual:', error)
+    }
+  }
+
+  generationPoller.value = setTimeout(tick, 8000)
+}
 
 // ESTADO PARA GENERACION MANUAL (EXCEL)
 const dialogManual = ref({ show: false })
@@ -2935,6 +3092,100 @@ const cargarManualGenerations = async () => {
   }
 }
 
+const buildManualQuestionsPayloadForQueue = () =>
+  manualPreguntas.value.map((pregunta) => ({
+    idx: pregunta.idx,
+    id: pregunta.id,
+    enunciado: pregunta.enunciado,
+    tipo: pregunta.tipo,
+    grupo: pregunta.grupo,
+    dificultad: pregunta.dificultad,
+    parcial: pregunta.parcial,
+    opciones: Array.isArray(pregunta.opciones) ? pregunta.opciones : [],
+    respuesta_correcta: pregunta.respuesta_correcta,
+  }))
+
+const ejecutarGeneracionManualEnCola = async (requerida) => {
+  $q.loading.show({ message: 'Enviando generación manual a la cola del servidor...' })
+
+  try {
+    const resolvedSede = manualConfig.value.sede?.label || manualConfig.value.sede || '-'
+    const resolvedCarrera = manualConfig.value.carrera_texto || '-'
+    const resolvedMateria = manualConfig.value.materia_texto || '-'
+    const resolvedCodigo = manualConfig.value.materia_codigo || 'MANUAL'
+    const resolvedDocente = manualConfig.value.docente_texto || '-'
+    const resolvedHora = manualConfig.value.hora_texto || '-'
+    const questions = buildManualQuestionsPayloadForQueue()
+
+    const configGeneracion = {
+      formatoHoja: manualConfig.value.formatoHoja,
+      fontFamily: manualConfig.value.fontFamily,
+      fontSize: manualConfig.value.fontSize,
+      lineSpacing: manualConfig.value.lineSpacing,
+      aleatorizarSecciones: manualConfig.value.aleatorizarSecciones,
+      facil: requerida.facil,
+      medio: requerida.medio,
+      dificil: requerida.dificil,
+      total: requerida.facil + requerida.medio + requerida.dificil,
+      cantVariantes: manualConfig.value.cantVariantes,
+      materia_codigo: resolvedCodigo,
+      semestre: manualConfig.value.semestre || '',
+      questions,
+    }
+
+    const payloadAuditoria = {
+      sede_id: manualConfig.value.sede?.value || null,
+      carrera_id: manualConfig.value.carrera_obj?.value || null,
+      asignatura_id: manualConfig.value.materia_obj?.value || null,
+      docente_id: manualConfig.value.docente_obj?.value || null,
+      sede_nombre: resolvedSede,
+      carrera_nombre: resolvedCarrera,
+      asignatura_nombre: resolvedMateria,
+      docente_nombre: resolvedDocente,
+      parcial: manualConfig.value.parcial,
+      grupo: manualConfig.value.grupo,
+      hora: resolvedHora,
+      cant_variantes: manualConfig.value.cantVariantes,
+      fecha_examen: manualConfig.value.fecha,
+      motivo: manualConfig.value.motivo,
+      patron_respuestas_json: [],
+      configuracion_json: configGeneracion,
+    }
+
+    const resAudit = await api.post('/generaciones-manuales', payloadAuditoria)
+    const auditId = resAudit.data.id
+
+    await api.post(`/generaciones-manuales/${auditId}/generate-package`, {
+      questions,
+      config: configGeneracion,
+    })
+
+    await cargarManualGenerations()
+    monitorManualGeneration(auditId)
+
+    $q.notify({
+      type: 'positive',
+      message: 'La generación manual fue enviada a la cola del servidor.',
+      caption: 'Puedes cerrar esta ventana; los documentos aparecerán cuando el worker termine.',
+      icon: 'hourglass_top',
+      timeout: 7000,
+    })
+
+    dialogManual.value.show = false
+    manualConfig.value.motivo = ''
+  } catch (error) {
+    console.error('Error al enviar generación manual a cola:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'No se pudo enviar la generación manual a cola.',
+      caption: error.response?.data?.error || error.message,
+      timeout: 8000,
+    })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
 const ejecutarGeneracionManual = async () => {
   if (!manualPreguntas.value.length) {
     $q.notify({ type: 'warning', message: 'No hay preguntas detectadas' })
@@ -2956,6 +3207,12 @@ const ejecutarGeneracionManual = async () => {
       message: `Preguntas insuficientes para 7/16/7. Disponibles -> Fácil: ${faciles.length}, Medio: ${medios.length}, Difícil: ${dificiles.length}`,
       timeout: 6000,
     })
+    return
+  }
+
+  const usarGeneracionManualEnCola = process.env.QUEUE_MANUAL_GENERATION !== 'false'
+  if (usarGeneracionManualEnCola) {
+    await ejecutarGeneracionManualEnCola(requerida)
     return
   }
 
@@ -3408,11 +3665,15 @@ function imprimirListaDiaria() {
 
 const configGestion = computed(() => {
   const estado = dialogGestion.value.examen?.estado
+  const jobStatus = dialogGestion.value.examen?.distribucion?.job_status
   if (estado === 'programados')
     return {
       titulo: 'Parametrización de Generación',
       icon: 'settings_suggest',
-      actionLabel: 'Generar Variantes Ahora',
+      actionLabel:
+        jobStatus === 'queued' || jobStatus === 'processing'
+          ? 'Generación en Proceso'
+          : 'Generar Variantes Ahora',
       actionIcon: 'auto_awesome',
     }
   if (estado === 'entregados')
@@ -3806,6 +4067,32 @@ const ejecutarAccionGestion = async () => {
           gruposTipoReferencial: esSegundoParcialActual ? { ...bancoGrupoTipoStats.value } : null,
         }
 
+        if (esSegundoParcialActual) {
+          $q.loading.show({ message: 'Enviando la generación consolidada al servidor...' })
+          await api.post(`/rol-examenes/${examen.id}/generate-package`, {
+            cantVariantes: tempConfig.value.cantVariantes,
+            facil: tempConfig.value.facil,
+            medio: tempConfig.value.medio,
+            dificil: tempConfig.value.dificil,
+            formatoHoja: tempConfig.value.formatoHoja,
+            fontFamily: tempConfig.value.fontFamily,
+            fontSize: tempConfig.value.fontSize,
+            lineSpacing: tempConfig.value.lineSpacing,
+            aleatorizarSecciones: tempConfig.value.aleatorizarSecciones,
+          })
+
+          $q.loading.hide()
+          $q.notify({
+            type: 'info',
+            message: 'La generación quedó en cola. El examen se consolidará en un solo PDF.',
+            icon: 'hourglass_top',
+          })
+          dialogGestion.value.show = false
+          await cargarDatos()
+          monitorExamGeneration(examen.id)
+          return
+        }
+
         const formatoPapel = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
         const mergedExamenesDoc = esSegundoParcialActual
           ? createExamPdfDocument(payload.config_generacion)
@@ -4121,6 +4408,13 @@ const manualColumns = [
 
 const getManualStats = (row) => {
   if (!row.patron_respuestas_json || row.patron_respuestas_json.length === 0) {
+    const preguntasConfiguradas = row.configuracion_json?.questions || []
+    if (preguntasConfiguradas.length > 0) {
+      const f = preguntasConfiguradas.filter((p) => String(p.dificultad) === '1').length
+      const m = preguntasConfiguradas.filter((p) => String(p.dificultad) === '2').length
+      const d = preguntasConfiguradas.filter((p) => String(p.dificultad) === '3').length
+      return { total: f + m + d, facil: f, medio: m, dificil: d }
+    }
     return { total: 0, facil: 0, medio: 0, dificil: 0 }
   }
   const preguntas = row.patron_respuestas_json[0].preguntas || []
@@ -4144,6 +4438,14 @@ const actualizarEstadoManual = async (id, nuevoEstado) => {
 
 const confirmarEstadoManual = (row, nuevoEstado) => {
   if (row.estado === nuevoEstado) return
+
+  if (estaGeneracionManualEnProceso(row)) {
+    $q.notify({
+      type: 'warning',
+      message: 'Espera a que termine la generación en cola antes de cambiar el estado.',
+    })
+    return
+  }
 
   let message = `¿Confirmar el cambio de estado de "${row.estado}" a "${nuevoEstado}"?`
   if (nuevoEstado === 'DEVUELTO') {
@@ -4330,18 +4632,58 @@ const formatTimestamp = (ts) =>
       })
     : ''
 
-const getExamenUrl = (v) => {
+const getExamenUrl = (row, v) => {
   const filename = typeof v === 'string' ? null : v.archivo
   if (!filename) return 'javascript:void(0)'
   const baseUrl = api.defaults.baseURL.replace('/api', '')
+  if (typeof v === 'object' && v?.path) {
+    return `${baseUrl}/api/rol-examenes/${row.id}/download-examen?file=${encodeURIComponent(filename)}`
+  }
   return `${baseUrl}/storage/examenes/${filename}`
 }
 
-const getPatronUrl = (p, tipo) => {
+const getPatronUrl = (row, p, tipo) => {
   const filename = typeof p === 'string' ? null : p[tipo]
   if (!filename) return 'javascript:void(0)'
   const baseUrl = api.defaults.baseURL.replace('/api', '')
+  const managedPath = tipo === 'pdf' ? p?.pdf_path : p?.xlsx_path
+  if (typeof p === 'object' && managedPath) {
+    return `${baseUrl}/api/rol-examenes/${row.id}/download-patron?tipo=${tipo}&file=${encodeURIComponent(filename)}`
+  }
   return `${baseUrl}/storage/patrones/${filename}`
+}
+
+const abrirExamenGenerado = async (row) => {
+  const variant = row?.variantes?.[0]
+  if (!variant || typeof variant === 'string' || !variant.archivo) return
+
+  if (variant.path) {
+    await descargarArchivoAPI(
+      `/rol-examenes/${row.id}/download-examen?file=${encodeURIComponent(variant.archivo)}`,
+      variant.archivo,
+      true,
+    )
+    return
+  }
+
+  window.open(getExamenUrl(row, variant), '_blank')
+}
+
+const abrirPatronGenerado = async (row, tipo) => {
+  const pattern = row?.patrones?.[0]
+  if (!pattern || typeof pattern === 'string' || !pattern[tipo]) return
+
+  const managedPath = tipo === 'pdf' ? pattern.pdf_path : pattern.xlsx_path
+  if (managedPath) {
+    await descargarArchivoAPI(
+      `/rol-examenes/${row.id}/download-patron?tipo=${tipo}&file=${encodeURIComponent(pattern[tipo])}`,
+      pattern[tipo],
+      tipo === 'pdf',
+    )
+    return
+  }
+
+  window.open(getPatronUrl(row, pattern, tipo), tipo === 'pdf' ? '_blank' : '_self')
 }
 
 const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = null) => {
