@@ -1831,8 +1831,12 @@ const normalizeTipo = (t) => {
   )
     return 'PROBLEMA'
   if (['EM', 'EMPAREJAMIENTO', 'EMPAREJAMIENTO AMPLIADO'].includes(s)) return 'EMPAREJAMIENTO'
-  if (['OPCION_EMPAREJAMIENTO', 'OPCION EMPAREJAMIENTO'].includes(s)) return 'OPCION_EMPAREJAMIENTO'
-  if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA'].includes(s)) return 'SUBPROBLEMA'
+  if (['OPCION_EMPAREJAMIENTO', 'OPCION EMPAREJAMIENTO', 'OPCION DE EMPAREJAMIENTO'].includes(s))
+    return 'OPCION_EMPAREJAMIENTO'
+  if (
+    ['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA', 'SUBITEM DE CASO O PROBLEMA'].includes(s)
+  )
+    return 'SUBPROBLEMA'
   if (['PREGUNTA_CON_CLAVE', 'PREGUNTA CON CLAVE', 'VERDADERO O FALSO COMPLEJAS'].includes(s))
     return 'PREGUNTA_CON_CLAVE'
   if (
@@ -2221,13 +2225,17 @@ const aplicarDistribucionConfigurada = (distribucion) => {
 }
 
 const bancoGrupoTipoStats = computed(() => {
+  const totalEvaluable = Number(bancoStats.value?.total || 0)
   const statsPlano = {
     g1: Number(bancoStats.value?.g1 || 0),
     g2: Number(bancoStats.value?.g2 || 0),
     g3: Number(bancoStats.value?.g3 || 0),
   }
 
-  if (statsPlano.g1 + statsPlano.g2 + statsPlano.g3 > 0) {
+  if (
+    statsPlano.g1 + statsPlano.g2 + statsPlano.g3 > 0 &&
+    (!totalEvaluable || statsPlano.g1 + statsPlano.g2 + statsPlano.g3 === totalEvaluable)
+  ) {
     return statsPlano
   }
 
@@ -2237,7 +2245,10 @@ const bancoGrupoTipoStats = computed(() => {
     g3: Number(bancoPorGrupoTipo.value?.g3 || 0),
   }
 
-  if (statsApi.g1 + statsApi.g2 + statsApi.g3 > 0) {
+  if (
+    statsApi.g1 + statsApi.g2 + statsApi.g3 > 0 &&
+    (!totalEvaluable || statsApi.g1 + statsApi.g2 + statsApi.g3 === totalEvaluable)
+  ) {
     return statsApi
   }
 
@@ -2280,7 +2291,9 @@ const normalizarStatsBanco2P = (data, preguntas = []) => {
     g3: Number(stats.g3 || porGrupoTipo.g3 || 0),
   }
 
-  if (preguntas.length && gruposCalculados.g1 + gruposCalculados.g2 + gruposCalculados.g3 === 0) {
+  const totalEvaluable = Number(stats.total || 0)
+  const totalGruposTipo = gruposCalculados.g1 + gruposCalculados.g2 + gruposCalculados.g3
+  if (preguntas.length && totalGruposTipo !== totalEvaluable) {
     const conteoPreguntas = contarGruposTipoDesdePreguntas(preguntas)
     porTipo = conteoPreguntas.porTipo
     porGrupoTipo = conteoPreguntas.porGrupoTipo
@@ -3766,7 +3779,8 @@ const gestionarEstado = async (examen) => {
 
         if (
           Number(resumenBanco.stats.total || 0) > 0 &&
-          resumenBanco.stats.g1 + resumenBanco.stats.g2 + resumenBanco.stats.g3 === 0
+          resumenBanco.stats.g1 + resumenBanco.stats.g2 + resumenBanco.stats.g3 !==
+            Number(resumenBanco.stats.total || 0)
         ) {
           const bancoDetalle = await api.get('/banco-preguntas', {
             params: {

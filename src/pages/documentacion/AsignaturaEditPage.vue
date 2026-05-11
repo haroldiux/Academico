@@ -1758,7 +1758,9 @@
                 class="text-center q-pa-xl bg-grey-1 rounded-borders"
               >
                 <q-icon name="admin_panel_settings" size="56px" color="blue-grey-5" />
-                <p class="text-h6 text-grey-7 q-mt-md">Vista restringida para Dirección de Carrera</p>
+                <p class="text-h6 text-grey-7 q-mt-md">
+                  Vista restringida para Dirección de Carrera
+                </p>
                 <p class="text-caption text-grey-6 q-mb-sm">
                   Aquí solo se muestra la parte superior del banco para fines de acompañamiento al
                   docente.
@@ -2216,7 +2218,7 @@
             <!-- Stats -->
             <div class="import-stats q-mb-md font-mono">
               <q-badge color="deep-purple" class="q-pa-sm">
-                Total: {{ importStats.total }} preguntas
+                Total evaluables: {{ importStats.total }} preguntas
               </q-badge>
               <q-badge color="green-7" class="q-pa-sm q-ml-sm">
                 Fáciles: {{ importStats.faciles || 0 }}
@@ -2226,6 +2228,17 @@
               </q-badge>
               <q-badge color="red-8" class="q-pa-sm q-ml-sm">
                 Difíciles: {{ importStats.dificiles || 0 }}
+              </q-badge>
+            </div>
+            <div class="import-stats import-stats--group q-mb-md font-mono">
+              <q-badge color="green-8" class="q-pa-sm">
+                G1 VF + clave + A/B: {{ importStats.g1 || 0 }}
+              </q-badge>
+              <q-badge color="blue-8" class="q-pa-sm q-ml-sm">
+                G2 Mejor respuesta: {{ importStats.g2 || 0 }}
+              </q-badge>
+              <q-badge color="purple-8" class="q-pa-sm q-ml-sm">
+                G3 Casos/problemas + emp.: {{ importStats.g3 || 0 }}
               </q-badge>
             </div>
             <!-- Validacion de minimos -->
@@ -2373,6 +2386,15 @@
                   archivoBancoFile = null
                   preguntasImportadas = []
                   importErrores = []
+                  importStats = {
+                    total: 0,
+                    faciles: 0,
+                    medios: 0,
+                    dificiles: 0,
+                    g1: 0,
+                    g2: 0,
+                    g3: 0,
+                  }
                 }
               "
             />
@@ -2408,10 +2430,10 @@
             unelevated
             color="deep-purple"
             icon="upload"
-            :label="`Importar ${preguntasImportadas.length} pregunta(s)`"
+            :label="`Importar ${importStats.total || 0} pregunta(s)`"
             :disable="
               modoBancoSoloVisualDirector ||
-              preguntasImportadas.length === 0 ||
+              importStats.total === 0 ||
               importErroresNormalizados.length > 0 ||
               !validacionDistribucion ||
               !grupoTeoricoSeleccionado
@@ -3272,7 +3294,7 @@
             no-caps
             :disable="!puedePrevisualizarFormularioPregunta || modoBancoSoloVisualDirector"
             :loading="previsualizandoRegistroPregunta"
-            @click="previsualizarRegistroPreguntaPdf"
+            @click="() => previsualizarRegistroPreguntaPdf()"
           >
             <q-tooltip v-if="!puedePrevisualizarFormularioPregunta">
               {{ mensajeValidacionPrevisualizacion }}
@@ -4905,6 +4927,9 @@ const importStats = ref({
   faciles: 0,
   medios: 0,
   dificiles: 0,
+  g1: 0,
+  g2: 0,
+  g3: 0,
 })
 
 watch(asignatura, (newVal) => {
@@ -6358,7 +6383,12 @@ function agregarTextoPreviewPdf(doc, texto, x, y, maxWidth, opciones = {}) {
 }
 
 async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
-  if (!previewOverride && mensajeValidacionPrevisualizacion.value) {
+  const previewManual =
+    previewOverride && typeof previewOverride === 'object' && 'tipo' in previewOverride
+      ? previewOverride
+      : null
+
+  if (!previewManual && mensajeValidacionPrevisualizacion.value) {
     $q.notify({
       type: 'warning',
       message: mensajeValidacionPrevisualizacion.value,
@@ -6366,13 +6396,13 @@ async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
     return
   }
 
-  if (!previewOverride) {
+  if (!previewManual) {
     previewPreguntaRegistrada.value = null
   }
   previsualizandoRegistroPregunta.value = true
 
   try {
-    const preview = previewOverride || previewPreguntaActiva.value
+    const preview = previewManual || previewPreguntaActiva.value
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -6975,7 +7005,10 @@ function confirmarEliminarPreguntaBanco(pregunta) {
   const totalEliminar = preguntasAEliminar.length
   const tipoPregunta = getTipoLabelBanco(pregunta.tipo, pregunta, gruposCabeceraBancoMap.value)
   const textoEnunciado = normalizarTextoMojibake(
-    String(pregunta.enunciado || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+    String(pregunta.enunciado || '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim(),
   )
   const resumenEnunciado =
     textoEnunciado.length > 180 ? `${textoEnunciado.slice(0, 177)}...` : textoEnunciado
@@ -7448,7 +7481,8 @@ async function guardarPreguntaBanco() {
   if (modoBancoSoloVisualDirector.value) {
     $q.notify({
       type: 'info',
-      message: 'Modo demostración: el director puede revisar este formulario, pero no guardar cambios.',
+      message:
+        'Modo demostración: el director puede revisar este formulario, pero no guardar cambios.',
     })
     return
   }
@@ -7952,7 +7986,9 @@ const puedeEliminarBancoFiltrado = computed(
 )
 
 const puedeAbrirEliminarBancoFiltrado = computed(
-  () => puedeVisualizarBanco.value && (modoBancoSoloVisualDirector.value || puedeEliminarBancoFiltrado.value),
+  () =>
+    puedeVisualizarBanco.value &&
+    (modoBancoSoloVisualDirector.value || puedeEliminarBancoFiltrado.value),
 )
 
 const filtroBancoDescripcion = computed(() => {
@@ -8423,7 +8459,7 @@ async function previsualizarExamenBanco() {
         ? 'Selecciona un parcial y un grupo para previsualizar.'
         : modoBancoSoloVisualDirector.value
           ? 'La previsualización del examen está disponible solo para el docente responsable.'
-        : 'Agrega al menos una pregunta evaluable para previsualizar el examen.',
+          : 'Agrega al menos una pregunta evaluable para previsualizar el examen.',
     })
     return
   }
@@ -10175,11 +10211,27 @@ function previsualizarArchivoExcel(file) {
         const preguntasReales = preguntas.filter(
           (p) => !['EMPAREJAMIENTO', 'PROBLEMA'].includes(normalizarTipoPregunta(p.tipo, p)),
         )
-        const stats = { total: preguntasReales.length, faciles: 0, medios: 0, dificiles: 0 }
+        const stats = {
+          total: preguntasReales.length,
+          faciles: 0,
+          medios: 0,
+          dificiles: 0,
+          g1: 0,
+          g2: 0,
+          g3: 0,
+        }
         preguntasReales.forEach((p) => {
           if (p.dificultad === '1') stats.faciles++
           else if (p.dificultad === '2') stats.medios++
           else if (p.dificultad === '3') stats.dificiles++
+
+          const tipoContable = obtenerTipoContableBanco(p, gruposHeadersMap)
+          const grupoTipo = REQUISITOS_BANCO_GRUPO_TIPO.find((grupo) =>
+            grupo.tipos.includes(tipoContable),
+          )
+          if (grupoTipo) {
+            stats[grupoTipo.key]++
+          }
         })
 
         preguntasImportadas.value = preguntas
@@ -10298,9 +10350,17 @@ async function confirmarImportacionBanco() {
     })
 
     if (response.data.success) {
+      const totalEvaluableImportado = importStats.value.total || 0
+      const totalEstructurasAuxiliares = Math.max(
+        0,
+        (preguntasImportadas.value || []).length - totalEvaluableImportado,
+      )
       $q.notify({
         type: 'positive',
-        message: response.data.message || 'Banco actualizado correctamente',
+        message: `Se han importado ${totalEvaluableImportado} preguntas evaluables correctamente.`,
+        caption: totalEstructurasAuxiliares
+          ? `${totalEstructurasAuxiliares} estructura(s) auxiliar(es) de caso/emparejamiento registradas.`
+          : undefined,
         icon: 'cloud_done',
       })
 
@@ -10436,7 +10496,7 @@ function cerrarDialogImportBanco() {
   archivoPreviewBanco.value = null
   preguntasImportadas.value = []
   importErrores.value = []
-  importStats.value = { total: 0, faciles: 0, medios: 0, dificiles: 0 }
+  importStats.value = { total: 0, faciles: 0, medios: 0, dificiles: 0, g1: 0, g2: 0, g3: 0 }
   parcialSeleccionado.value = filtroBancoParcialSeleccionado.value || '2P'
   grupoTeoricoSeleccionado.value = filtroBancoGrupoSeleccionado.value || null
 }

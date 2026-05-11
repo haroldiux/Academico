@@ -1634,7 +1634,8 @@ async function cargarBancoPreguntas2P() {
 
             if (
               Number(resumenBanco.total || 0) > 0 &&
-              resumenBanco.g1 + resumenBanco.g2 + resumenBanco.g3 === 0
+              resumenBanco.g1 + resumenBanco.g2 + resumenBanco.g3 !==
+                Number(resumenBanco.total || 0)
             ) {
               const bancoDetalle = await api.get('/banco-preguntas', {
                 params: {
@@ -1959,8 +1960,28 @@ function normalizarTipoPregunta2P(tipo) {
     .toUpperCase()
     .trim()
 
-  if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(valor)) {
+  if (
+    [
+      'FV',
+      'FALSO_VERDADERO',
+      'FALSO O VERDADERO',
+      'VERDADERO O FALSO',
+      'VERDADERO O FALSO SIMPLE',
+    ].includes(valor)
+  ) {
     return 'FALSO_VERDADERO'
+  }
+
+  if (
+    ['PR', 'PROBLEMA', 'PROBLEMA O CASO', 'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA'].includes(
+      valor,
+    )
+  ) {
+    return 'PROBLEMA'
+  }
+
+  if (['EM', 'EMPAREJAMIENTO', 'EMPAREJAMIENTO AMPLIADO'].includes(valor)) {
+    return 'EMPAREJAMIENTO'
   }
 
   if (
@@ -1994,11 +2015,22 @@ function normalizarTipoPregunta2P(tipo) {
     return 'SELECCION_UNICA'
   }
 
-  if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA'].includes(valor)) {
+  if (
+    [
+      'SP',
+      'SUBPREGUNTA',
+      'SUBPROBLEMA',
+      'SUB PROBLEMA',
+      'SUBITEM',
+      'SUBITEM DE CASO O PROBLEMA',
+    ].includes(valor)
+  ) {
     return 'SUBPROBLEMA'
   }
 
-  if (['OPCION_EMPAREJAMIENTO', 'OPCION EMPAREJAMIENTO'].includes(valor)) {
+  if (
+    ['OPCION_EMPAREJAMIENTO', 'OPCION EMPAREJAMIENTO', 'OPCION DE EMPAREJAMIENTO'].includes(valor)
+  ) {
     return 'OPCION_EMPAREJAMIENTO'
   }
 
@@ -2055,7 +2087,8 @@ function normalizarStatsBancoPreguntas2P(data, grupoTeorico, preguntas = []) {
     grupo_teorico: grupoTeorico,
   }
 
-  if (preguntas.length && resumen.g1 + resumen.g2 + resumen.g3 === 0) {
+  const totalGruposTipo = resumen.g1 + resumen.g2 + resumen.g3
+  if (preguntas.length && totalGruposTipo !== resumen.total) {
     const conteoPreguntas = contarGruposTipoDesdePreguntas2P(preguntas)
     porTipo = conteoPreguntas.porTipo
     porGrupoTipo = conteoPreguntas.porGrupoTipo
@@ -2071,13 +2104,17 @@ function normalizarStatsBancoPreguntas2P(data, grupoTeorico, preguntas = []) {
 }
 
 function contarGruposTipoPregunta(stats) {
+  const totalEvaluable = Number(stats?.total || 0)
   const conteoPlano = {
     g1: Number(stats?.g1 || 0),
     g2: Number(stats?.g2 || 0),
     g3: Number(stats?.g3 || 0),
   }
 
-  if (conteoPlano.g1 + conteoPlano.g2 + conteoPlano.g3 > 0) {
+  if (
+    conteoPlano.g1 + conteoPlano.g2 + conteoPlano.g3 > 0 &&
+    (!totalEvaluable || conteoPlano.g1 + conteoPlano.g2 + conteoPlano.g3 === totalEvaluable)
+  ) {
     return conteoPlano
   }
 
@@ -2088,7 +2125,10 @@ function contarGruposTipoPregunta(stats) {
       g3: Number(stats.por_grupo_tipo.g3 || 0),
     }
 
-    if (conteoApi.g1 + conteoApi.g2 + conteoApi.g3 > 0) {
+    if (
+      conteoApi.g1 + conteoApi.g2 + conteoApi.g3 > 0 &&
+      (!totalEvaluable || conteoApi.g1 + conteoApi.g2 + conteoApi.g3 === totalEvaluable)
+    ) {
       return conteoApi
     }
   }
