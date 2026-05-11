@@ -202,7 +202,7 @@
           no-caps
         />
         <q-tab
-          v-if="authStore.rol === ROLES.DOCENTE"
+          v-if="puedeVerTabBanco"
           name="banco"
           icon="help_outline"
           label="Banco de Preguntas"
@@ -1315,7 +1315,11 @@
                       v-else-if="!puedePrevisualizarExamenBanco"
                       class="banco-action-tooltip__warning"
                     >
-                      Agrega al menos una pregunta evaluable para previsualizar.
+                      {{
+                        modoBancoSoloVisualDirector
+                          ? 'Disponible solo para el docente responsable.'
+                          : 'Agrega al menos una pregunta evaluable para previsualizar.'
+                      }}
                     </div>
                   </q-tooltip>
                 </span>
@@ -1326,7 +1330,7 @@
                     icon="upload_file"
                     class="banco-action-btn banco-action-btn--upload"
                     aria-label="Subir Banco Excel"
-                    @click="showSubirBanco = true"
+                    @click="abrirModalSubirBanco"
                   />
                   <q-tooltip
                     class="banco-action-tooltip"
@@ -1347,7 +1351,7 @@
                     icon="delete_forever"
                     class="banco-action-btn banco-action-btn--delete"
                     aria-label="Eliminar banco actual"
-                    :disable="!puedeEliminarBancoFiltrado"
+                    :disable="!puedeAbrirEliminarBancoFiltrado"
                     @click="confirmarEliminarBancoFiltrado"
                   />
                   <q-tooltip
@@ -1361,16 +1365,22 @@
                       Borra las preguntas del parcial y grupo seleccionado.
                     </div>
                     <div
-                      v-if="preguntasFiltradas.length === 0"
+                      v-if="!modoBancoSoloVisualDirector && preguntasFiltradas.length === 0"
                       class="banco-action-tooltip__warning"
                     >
                       No hay preguntas cargadas para {{ filtroBancoDescripcion }}.
                     </div>
                     <div
-                      v-else-if="grupoBancoActualBloqueado"
+                      v-else-if="!modoBancoSoloVisualDirector && grupoBancoActualBloqueado"
                       class="banco-action-tooltip__warning"
                     >
                       Este grupo ya tiene un examen generado para este parcial.
+                    </div>
+                    <div
+                      v-else-if="modoBancoSoloVisualDirector"
+                      class="banco-action-tooltip__warning"
+                    >
+                      Modo demostración: disponible solo para revisión visual del director.
                     </div>
                   </q-tooltip>
                 </span>
@@ -1381,7 +1391,7 @@
                     icon="add_circle"
                     class="banco-action-btn banco-action-btn--register"
                     aria-label="Registrar nuevas preguntas"
-                    :disable="registroManualBancoBloqueado"
+                    :disable="registroManualBancoBloqueado && !modoBancoSoloVisualDirector"
                     @click="abrirRegistroManualPregunta"
                   />
                   <q-tooltip
@@ -1396,6 +1406,12 @@
                     </div>
                     <div v-if="registroManualBancoBloqueado" class="banco-action-tooltip__warning">
                       Debes seleccionar un grupo teorico para registrar preguntas.
+                    </div>
+                    <div
+                      v-else-if="modoBancoSoloVisualDirector"
+                      class="banco-action-tooltip__warning"
+                    >
+                      Modo demostración: el director puede revisar el formulario, pero no guardar.
                     </div>
                   </q-tooltip>
                 </span>
@@ -1577,6 +1593,18 @@
               </q-banner>
 
               <q-banner
+                v-if="modoBancoSoloVisualDirector"
+                class="bg-blue-1 text-blue-10 q-mb-md"
+                rounded
+                dense
+              >
+                <template v-slot:avatar><q-icon name="visibility" color="blue-9" /></template>
+                <strong>Modo demostración para Dirección de Carrera:</strong>
+                puedes revisar filtros, resúmenes, descarga del formato y los modales del banco sin
+                alterar las preguntas registradas por el docente.
+              </q-banner>
+
+              <q-banner
                 v-if="false"
                 class="bg-amber-1 text-amber-10 q-mb-md border-amber"
                 rounded
@@ -1715,13 +1743,28 @@
               </div>
 
               <div
-                v-else-if="preguntasFiltradas.length === 0"
+                v-else-if="!modoBancoSoloVisualDirector && preguntasFiltradas.length === 0"
                 class="text-center q-pa-xl bg-grey-1 rounded-borders"
               >
                 <q-icon name="quiz" size="56px" color="grey-4" />
                 <p class="text-h6 text-grey-6 q-mt-md">No hay preguntas registradas</p>
                 <p class="text-caption text-grey-5">
                   No se encontraron preguntas para {{ filtroBancoDescripcion }}.
+                </p>
+              </div>
+
+              <div
+                v-else-if="modoBancoSoloVisualDirector"
+                class="text-center q-pa-xl bg-grey-1 rounded-borders"
+              >
+                <q-icon name="admin_panel_settings" size="56px" color="blue-grey-5" />
+                <p class="text-h6 text-grey-7 q-mt-md">Vista restringida para Dirección de Carrera</p>
+                <p class="text-caption text-grey-6 q-mb-sm">
+                  Aquí solo se muestra la parte superior del banco para fines de acompañamiento al
+                  docente.
+                </p>
+                <p class="text-caption text-grey-6 q-mb-none">
+                  La lista de preguntas y la previsualización del examen permanecen ocultas.
                 </p>
               </div>
 
@@ -1835,6 +1878,17 @@
                               @click="abrirEditorPregunta(pregunta)"
                             >
                               <q-tooltip>Editar Pregunta</q-tooltip>
+                            </q-btn>
+                            <q-btn
+                              flat
+                              round
+                              dense
+                              color="negative"
+                              icon="delete"
+                              size="sm"
+                              @click="confirmarEliminarPreguntaBanco(pregunta)"
+                            >
+                              <q-tooltip>Eliminar Pregunta</q-tooltip>
                             </q-btn>
                           </template>
                           <q-icon v-else name="lock" color="orange-7" size="sm">
@@ -2008,6 +2062,17 @@
         </div>
 
         <q-card-section>
+          <q-banner
+            v-if="modoBancoSoloVisualDirector"
+            class="bg-blue-1 text-blue-10 q-mb-md"
+            rounded
+            dense
+          >
+            <template v-slot:avatar><q-icon name="visibility" color="blue-9" /></template>
+            Estás viendo este modal en modo demostración. Puedes revisar el flujo, pero no subir,
+            reemplazar ni vaciar el banco.
+          </q-banner>
+
           <!-- Paso 1: Seleccionar archivo -->
           <div v-if="!archivoPreviewBanco">
             <q-banner class="bg-indigo-1 text-indigo-9 q-mb-md" rounded dense>
@@ -2056,6 +2121,7 @@
                   toggle-color="deep-purple"
                   flat
                   stretch
+                  :disable="modoBancoSoloVisualDirector"
                   :options="[
                     { label: 'Con Cartilla', value: true },
                     { label: 'Sin Cartilla', value: false },
@@ -2120,7 +2186,11 @@
                 outlined
                 label="Seleccionar archivo Excel (.xlsx)"
                 accept=".xlsx,.xls"
-                :disable="!grupoTeoricoSeleccionado || grupoImportacionBloqueado"
+                :disable="
+                  modoBancoSoloVisualDirector ||
+                  !grupoTeoricoSeleccionado ||
+                  grupoImportacionBloqueado
+                "
                 @update:model-value="previsualizarArchivoExcel"
               >
                 <template v-slot:prepend><q-icon name="attach_file" /></template>
@@ -2318,6 +2388,7 @@
             icon="save"
             label="Guardar Preferencia Sin Cartilla"
             :loading="importandoBanco"
+            :disable="modoBancoSoloVisualDirector"
             no-caps
             @click="confirmarConfiguracionSinCartilla"
           />
@@ -2328,6 +2399,7 @@
             icon="settings_backup_restore"
             label="Restablecer a Con Cartilla"
             :loading="importandoBanco"
+            :disable="modoBancoSoloVisualDirector"
             no-caps
             @click="guardarConfiguracionSinCartillaTrue"
           />
@@ -2338,6 +2410,7 @@
             icon="upload"
             :label="`Importar ${preguntasImportadas.length} pregunta(s)`"
             :disable="
+              modoBancoSoloVisualDirector ||
               preguntasImportadas.length === 0 ||
               importErroresNormalizados.length > 0 ||
               !validacionDistribucion ||
@@ -2613,6 +2686,15 @@
         </div>
 
         <q-card-section class="q-pa-lg scroll" style="max-height: 70vh">
+          <q-banner
+            v-if="modoBancoSoloVisualDirector"
+            class="bg-blue-1 text-blue-10 rounded-borders q-mb-md"
+          >
+            <template v-slot:avatar><q-icon name="visibility" color="blue-9" /></template>
+            Modo demostración: puedes revisar la estructura del formulario, pero no registrar,
+            editar ni previsualizar preguntas desde esta cuenta.
+          </q-banner>
+
           <q-form ref="formEditarPregRef" class="q-gutter-y-md">
             <!-- Imagen Actual / Nueva -->
             <div class="row q-col-gutter-md items-center">
@@ -3188,12 +3270,15 @@
             icon="picture_as_pdf"
             label="Previsualizar PDF"
             no-caps
-            :disable="!puedePrevisualizarFormularioPregunta"
+            :disable="!puedePrevisualizarFormularioPregunta || modoBancoSoloVisualDirector"
             :loading="previsualizandoRegistroPregunta"
             @click="previsualizarRegistroPreguntaPdf"
           >
             <q-tooltip v-if="!puedePrevisualizarFormularioPregunta">
               {{ mensajeValidacionPrevisualizacion }}
+            </q-tooltip>
+            <q-tooltip v-else-if="modoBancoSoloVisualDirector">
+              Disponible solo para el docente responsable.
             </q-tooltip>
           </q-btn>
           <q-btn
@@ -3202,6 +3287,7 @@
             color="deep-purple"
             icon="save"
             :loading="guardandoEditPreg"
+            :disable="modoBancoSoloVisualDirector"
             @click="guardarPreguntaBanco"
             no-caps
           />
@@ -3794,7 +3880,9 @@ const descargandoProgramaAnalitico = ref(false)
 const tabInicial = (() => {
   if (authStore.rol === 'DOCENTE') return 'banco'
   return route.query.tab &&
-    ['datos', 'programa', 'bibliografia', 'unidades', 'cronograma'].includes(route.query.tab)
+    ['datos', 'programa', 'bibliografia', 'unidades', 'cronograma', 'banco'].includes(
+      route.query.tab,
+    )
     ? route.query.tab
     : 'datos'
 })()
@@ -4099,6 +4187,12 @@ const esDirectorOAdmin = computed(() => {
   ]
   return rolesPermitidos.includes(rol)
 })
+
+const esDirectorCarrera = computed(() => authStore.rol === ROLES.DIRECTOR_CARRERA)
+const modoBancoSoloVisualDirector = computed(() => esDirectorCarrera.value)
+const puedeVerTabBanco = computed(
+  () => authStore.rol === ROLES.DOCENTE || modoBancoSoloVisualDirector.value,
+)
 
 const puedeAprobarCarpeta = computed(() => {
   // Solo Directores y Admins pueden aprobar/reabrir
@@ -5295,6 +5389,9 @@ const previsualizandoExamenBanco = ref(false)
 const dialogEditarPregunta = ref(false)
 const modoRegistroPregunta = ref('edit')
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+const TARGET_IMAGE_UPLOAD_BYTES = 850 * 1024
+const MAX_IMAGE_UPLOAD_DIMENSION = 1600
+const MIN_IMAGE_UPLOAD_QUALITY = 0.58
 const dificultadPreguntaOptions = [
   { label: 'Fácil', value: '1' },
   { label: 'Medio', value: '2' },
@@ -6532,6 +6629,97 @@ function onArchivoImagenPreguntaRejected() {
   })
 }
 
+function cargarImagenDesdeArchivo(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(image)
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('No se pudo procesar la imagen seleccionada.'))
+    }
+    image.src = objectUrl
+  })
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob)
+          return
+        }
+        reject(new Error('No se pudo comprimir la imagen seleccionada.'))
+      },
+      type,
+      quality,
+    )
+  })
+}
+
+async function comprimirImagenPreguntaParaServidor(file) {
+  if (!file || !file.type?.startsWith('image/') || file.size <= TARGET_IMAGE_UPLOAD_BYTES) {
+    return file
+  }
+
+  try {
+    const image = await cargarImagenDesdeArchivo(file)
+    let maxDimension = MAX_IMAGE_UPLOAD_DIMENSION
+    let bestBlob = null
+
+    while (maxDimension >= 900) {
+      const scale = Math.min(1, maxDimension / Math.max(image.width, image.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(image.width * scale))
+      canvas.height = Math.max(1, Math.round(image.height * scale))
+
+      const ctx = canvas.getContext('2d')
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+
+      let quality = 0.86
+      while (quality >= MIN_IMAGE_UPLOAD_QUALITY) {
+        const blob = await canvasToBlob(canvas, 'image/jpeg', quality)
+        bestBlob = blob
+
+        if (blob.size <= TARGET_IMAGE_UPLOAD_BYTES) {
+          const baseName = String(file.name || 'pregunta')
+            .replace(/\.[^.]+$/, '')
+            .slice(0, 80)
+          return new File([blob], `${baseName}.jpg`, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          })
+        }
+
+        quality -= 0.08
+      }
+
+      maxDimension = Math.floor(maxDimension * 0.82)
+    }
+
+    if (bestBlob && bestBlob.size < file.size) {
+      const baseName = String(file.name || 'pregunta')
+        .replace(/\.[^.]+$/, '')
+        .slice(0, 80)
+      return new File([bestBlob], `${baseName}.jpg`, {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      })
+    }
+  } catch (error) {
+    console.error('Error comprimiendo imagen de pregunta:', error)
+  }
+
+  return file
+}
+
 watch(
   () => formPregunta.value.cantidadClavesEmparejamiento,
   (cantidadActual) => {
@@ -6651,10 +6839,18 @@ watch(
 )
 
 function abrirRegistroManualPregunta() {
-  if (!puedeMostrarRegistroManualBanco.value) {
+  if (!puedeMostrarRegistroManualBanco.value && !modoBancoSoloVisualDirector.value) {
     $q.notify({
       type: 'warning',
       message: 'Selecciona 2do Parcial y un grupo teórico antes de registrar preguntas.',
+    })
+    return
+  }
+
+  if (modoBancoSoloVisualDirector.value && !puedeVisualizarBanco.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'Selecciona el parcial y el grupo antes de revisar el formulario de registro.',
     })
     return
   }
@@ -6672,7 +6868,35 @@ function abrirRegistroManualPregunta() {
   dialogEditarPregunta.value = true
 }
 
+function abrirModalSubirBanco() {
+  if (!puedeVisualizarBanco.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'Selecciona el parcial y el grupo antes de revisar la importación del banco.',
+    })
+    return
+  }
+
+  showSubirBanco.value = true
+}
+
 function confirmarEliminarBancoFiltrado() {
+  if (modoBancoSoloVisualDirector.value) {
+    $q.dialog({
+      title: 'Eliminar banco actual',
+      message:
+        'Modo demostración para Dirección de Carrera.<br><br>Puedes revisar este flujo, pero la eliminación del banco solo está habilitada para el docente responsable.',
+      html: true,
+      ok: {
+        label: 'Entendido',
+        color: 'primary',
+        unelevated: true,
+        noCaps: true,
+      },
+    })
+    return
+  }
+
   if (!puedeEliminarBancoFiltrado.value) {
     return
   }
@@ -6708,6 +6932,104 @@ function confirmarEliminarBancoFiltrado() {
   }).onOk(() => {
     eliminarBancoFiltrado()
   })
+}
+
+function obtenerPreguntasLigadasParaEliminacion(pregunta) {
+  const tipo = normalizarTipoPregunta(pregunta?.tipo, pregunta, gruposCabeceraBancoMap.value)
+  const grupoReferencia = String(pregunta?.grupo || '').trim()
+
+  if (!grupoReferencia) {
+    return [pregunta]
+  }
+
+  if (tipo === 'PROBLEMA') {
+    const ligadas = preguntasFiltradas.value.filter((item) => {
+      if (Number(item.id) === Number(pregunta.id)) return false
+      return (
+        String(item.grupo || '').trim() === grupoReferencia &&
+        normalizarTipoPregunta(item.tipo, item, gruposCabeceraBancoMap.value) === 'SUBPROBLEMA'
+      )
+    })
+
+    return [pregunta, ...ligadas]
+  }
+
+  if (tipo === 'EMPAREJAMIENTO') {
+    const ligadas = preguntasFiltradas.value.filter((item) => {
+      if (Number(item.id) === Number(pregunta.id)) return false
+      return (
+        String(item.grupo || '').trim() === grupoReferencia &&
+        normalizarTipoPregunta(item.tipo, item, gruposCabeceraBancoMap.value) ===
+          'OPCION_EMPAREJAMIENTO'
+      )
+    })
+
+    return [pregunta, ...ligadas]
+  }
+
+  return [pregunta]
+}
+
+function confirmarEliminarPreguntaBanco(pregunta) {
+  const preguntasAEliminar = obtenerPreguntasLigadasParaEliminacion(pregunta)
+  const totalEliminar = preguntasAEliminar.length
+  const tipoPregunta = getTipoLabelBanco(pregunta.tipo, pregunta, gruposCabeceraBancoMap.value)
+  const textoEnunciado = normalizarTextoMojibake(
+    String(pregunta.enunciado || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+  )
+  const resumenEnunciado =
+    textoEnunciado.length > 180 ? `${textoEnunciado.slice(0, 177)}...` : textoEnunciado
+
+  const mensajeExtra =
+    totalEliminar > 1
+      ? `<br><br>Se eliminarán también <strong>${totalEliminar - 1} pregunta(s) ligada(s)</strong> de esta estructura.`
+      : ''
+
+  $q.dialog({
+    title: 'Eliminar pregunta del banco',
+    message: `Vas a eliminar la pregunta <strong>${tipoPregunta}</strong> de <strong>${filtroBancoDescripcion.value}</strong>.<br><br><div class="text-caption">${resumenEnunciado || 'Sin enunciado disponible.'}</div>${mensajeExtra}<br><br>Esta acción no se puede deshacer.`,
+    html: true,
+    cancel: {
+      label: 'Cancelar',
+      flat: true,
+      noCaps: true,
+    },
+    ok: {
+      label: totalEliminar > 1 ? `Eliminar ${totalEliminar} preguntas` : 'Eliminar pregunta',
+      color: 'negative',
+      unelevated: true,
+      noCaps: true,
+    },
+    persistent: true,
+  }).onOk(async () => {
+    await eliminarPreguntaBanco(preguntasAEliminar)
+  })
+}
+
+async function eliminarPreguntaBanco(preguntasAEliminar) {
+  try {
+    for (const item of preguntasAEliminar) {
+      await api.delete(`/banco-preguntas/${item.id}`)
+    }
+
+    $q.notify({
+      type: 'positive',
+      message:
+        preguntasAEliminar.length > 1
+          ? `Se eliminaron ${preguntasAEliminar.length} preguntas vinculadas del banco.`
+          : 'La pregunta fue eliminada correctamente.',
+      icon: 'delete_forever',
+    })
+
+    await cargarBancoPreguntas()
+  } catch (error) {
+    console.error('Error al eliminar pregunta del banco:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo eliminar la pregunta seleccionada.',
+      caption: error.response?.data?.message || error.message,
+    })
+  }
 }
 
 async function eliminarBancoFiltrado() {
@@ -7106,7 +7428,8 @@ async function persistirPreguntaPayload(payload, imageFile = null, preguntaId = 
   )
 
   if (imageFile) {
-    fd.append('image_file', imageFile)
+    const optimizedImageFile = await comprimirImagenPreguntaParaServidor(imageFile)
+    fd.append('image_file', optimizedImageFile)
   }
 
   if (preguntaId) {
@@ -7122,6 +7445,14 @@ async function persistirPreguntaPayload(payload, imageFile = null, preguntaId = 
 }
 
 async function guardarPreguntaBanco() {
+  if (modoBancoSoloVisualDirector.value) {
+    $q.notify({
+      type: 'info',
+      message: 'Modo demostración: el director puede revisar este formulario, pero no guardar cambios.',
+    })
+    return
+  }
+
   guardandoEditPreg.value = true
   try {
     if (modoRegistroPregunta.value === 'create') {
@@ -7599,7 +7930,10 @@ const puedeVisualizarBanco = computed(
 )
 
 const puedePrevisualizarExamenBanco = computed(
-  () => puedeVisualizarBanco.value && totalPreguntasContables.value > 0,
+  () =>
+    !modoBancoSoloVisualDirector.value &&
+    puedeVisualizarBanco.value &&
+    totalPreguntasContables.value > 0,
 )
 
 const grupoBancoActualBloqueado = computed(() => {
@@ -7615,6 +7949,10 @@ const puedeEliminarBancoFiltrado = computed(
     puedeVisualizarBanco.value &&
     preguntasFiltradas.value.length > 0 &&
     !grupoBancoActualBloqueado.value,
+)
+
+const puedeAbrirEliminarBancoFiltrado = computed(
+  () => puedeVisualizarBanco.value && (modoBancoSoloVisualDirector.value || puedeEliminarBancoFiltrado.value),
 )
 
 const filtroBancoDescripcion = computed(() => {
@@ -8083,6 +8421,8 @@ async function previsualizarExamenBanco() {
       type: 'warning',
       message: !puedeVisualizarBanco.value
         ? 'Selecciona un parcial y un grupo para previsualizar.'
+        : modoBancoSoloVisualDirector.value
+          ? 'La previsualización del examen está disponible solo para el docente responsable.'
         : 'Agrega al menos una pregunta evaluable para previsualizar el examen.',
     })
     return
@@ -9887,6 +10227,14 @@ function previsualizarArchivoExcel(file) {
 }
 
 async function confirmarImportacionBanco() {
+  if (modoBancoSoloVisualDirector.value) {
+    $q.notify({
+      type: 'info',
+      message: 'Modo demostración: el director puede revisar la importación, pero no ejecutarla.',
+    })
+    return
+  }
+
   if (
     preguntasImportadas.value.length === 0 ||
     !archivoBancoFile.value ||
@@ -9981,6 +10329,14 @@ async function confirmarImportacionBanco() {
 }
 
 async function confirmarConfiguracionSinCartilla() {
+  if (modoBancoSoloVisualDirector.value) {
+    $q.notify({
+      type: 'info',
+      message: 'Modo demostración: esta preferencia solo puede guardarla el docente responsable.',
+    })
+    return
+  }
+
   if (!grupoTeoricoSeleccionado.value) {
     $q.notify({
       type: 'warning',
@@ -10019,6 +10375,14 @@ async function confirmarConfiguracionSinCartilla() {
 }
 
 async function guardarConfiguracionSinCartillaTrue() {
+  if (modoBancoSoloVisualDirector.value) {
+    $q.notify({
+      type: 'info',
+      message: 'Modo demostración: esta preferencia solo puede guardarla el docente responsable.',
+    })
+    return
+  }
+
   if (!grupoTeoricoSeleccionado.value) {
     $q.notify({
       type: 'warning',
