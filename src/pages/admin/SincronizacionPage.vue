@@ -508,6 +508,22 @@
                 </template>
               </q-select>
               <q-select
+                v-model="selPlanAsignatura"
+                :options="[
+                  { label: 'Malla Nueva (N)', value: 'N' },
+                  { label: 'Malla Antigua (A)', value: 'A' },
+                ]"
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                outlined
+                dense
+                label="Plan de Malla"
+                class="q-mb-md"
+                :disable="!selSedeAsignatura || !selCarreraAsignatura"
+              />
+              <q-select
                 v-model="selAsignatura"
                 :options="opcionesAsignaturas"
                 option-label="nombre"
@@ -1387,7 +1403,10 @@ async function syncMateria() {
 
 const selSedeAsignatura = ref(1)
 const selCarreraAsignatura = ref('CARMED')
+const carrerasAsignaturaMap = ref(new Map()) // sigla → {id, sigla, nombre}
+const carrerasAsignaturaBase = ref([...CARRERAS]) // fuente de verdad para la sede actual
 const opcionesCarrerasAsignatura = ref([...CARRERAS])
+const selPlanAsignatura = ref('N')
 const selAsignatura = ref(null)
 const opcionesAsignaturas = ref([])
 const todasAsignaturas = ref([]) // Fuente de verdad (sin filtrar)
@@ -1399,9 +1418,50 @@ function filtrarCarrerasAsignatura(val, update) {
   update(() => {
     const needle = val.toLowerCase()
     opcionesCarrerasAsignatura.value = needle
-      ? CARRERAS.filter((c) => c.toLowerCase().includes(needle))
-      : [...CARRERAS]
+      ? carrerasAsignaturaBase.value.filter((c) => c.toLowerCase().includes(needle))
+      : [...carrerasAsignaturaBase.value]
   })
+}
+
+async function cargarCarrerasAsignaturaPorSede() {
+  if (!selSedeAsignatura.value) {
+    carrerasAsignaturaBase.value = []
+    carrerasAsignaturaMap.value = new Map()
+    opcionesCarrerasAsignatura.value = []
+    selCarreraAsignatura.value = null
+    return
+  }
+
+  try {
+    const res = await api.get('/carreras', {
+      params: { sede_id: selSedeAsignatura.value },
+    })
+    const carreras = Array.isArray(res.data) ? res.data : (res.data.data || [])
+
+    if (carreras.length > 0) {
+      const map = new Map()
+      const siglas = carreras
+        .filter((c) => c.sigla)
+        .map((c) => {
+          map.set(c.sigla.toUpperCase(), c)
+          return c.sigla.toUpperCase()
+        })
+        .sort()
+      carrerasAsignaturaMap.value = map
+      carrerasAsignaturaBase.value = siglas
+      opcionesCarrerasAsignatura.value = [...siglas]
+    } else {
+      // Fallback: si no hay carreras para esta sede, usar lista estática
+      carrerasAsignaturaMap.value = new Map()
+      carrerasAsignaturaBase.value = [...CARRERAS]
+      opcionesCarrerasAsignatura.value = [...CARRERAS]
+    }
+  } catch (e) {
+    console.warn('[Sync] Error cargando carreras por sede:', e.message)
+    carrerasAsignaturaMap.value = new Map()
+    carrerasAsignaturaBase.value = [...CARRERAS]
+    opcionesCarrerasAsignatura.value = [...CARRERAS]
+  }
 }
 
 async function cargarAsignaturas() {
@@ -1414,16 +1474,51 @@ async function cargarAsignaturas() {
 
   loadingAsignaturas.value = true
   try {
-    // Endpoint externo: obtiene las materias Plan N disponibles para sincronizar
-    const res = await api.get('/grupos-externo/plan-n', {
-      params: {
-        gestion: gestion.value,
-        carrera: selCarreraAsignatura.value.toLowerCase(),
-        sede: selSedeAsignatura.value,
-      },
-    })
+    // Endpoint externo: obtiene las materias del plan seleccionado
+    const params = {
+      gestion: gestion.value,
+      carrera: selCarreraAsignatura.value.toLowerCase(),
+      sede: selSedeAsignatura.value,
+      plan_estudios: selPlanAsignatura.value || 'N',
+    }
+    console.log('[Sync] Cargando asignaturas con params:', params)
 
-    const data = res.data.data || res.data || []
+    const res = await api.get('/grupos-externo/plan-n', { params })
+    console.log('[Sync] Respuesta plan-n:', res.data)
+
+    const data = res.data?.data || res.data || []
+    console.log('[Sync] Datos recibidos:', data.length, 'items')
+
+    if (!Array.isArray(data) || data.length === 0) {
+      console.warn('[Sync] No se recibieron asignaturas del endpoint externo')
+      // Fallback: intentar cargar asignaturas locales de esta carrera/sede
+      try {
+        const carreraObj = carrerasAsignaturaMap.value.get(selCarreraAsignatura.value)
+        const carreraId = carreraObj?.id || selCarreraAsignatura.value
+        const localRes = await api.get('/asignaturas', {
+          params: {
+            carrera_id: carreraId,
+            sede_id: selSedeAsignatura.value,
+          },
+        })
+        const localData = localRes.data?.data || localRes.data || []
+        console.log('[Sync] Fallback locales:', localData.length, 'items')
+        const lista = localData.map((m) => ({
+          codigo: m.codigo,
+          nombre: `${m.codigo} — ${m.nombre}`,
+          semestre: m.semestre,
+          plan_estudios: m.plan_estudios || 'N',
+        }))
+        todasAsignaturas.value = lista
+        opcionesAsignaturas.value = [...lista]
+      } catch (fallbackErr) {
+        console.error('[Sync] Fallback también falló:', fallbackErr)
+        opcionesAsignaturas.value = []
+        todasAsignaturas.value = []
+      }
+      return
+    }
+
     const lista = data.map((m) => ({
       codigo: m.codigo,
       nombre: `${m.codigo} — ${m.nombre}`,
@@ -1433,6 +1528,7 @@ async function cargarAsignaturas() {
 
     todasAsignaturas.value = lista
     opcionesAsignaturas.value = [...lista]
+    console.log('[Sync] Asignaturas cargadas:', lista.length)
   } catch (e) {
     console.error('[Sync] Error cargando asignaturas:', e)
     $q.notify({
@@ -1466,7 +1562,7 @@ async function syncAsignatura() {
       sede_id: selSedeAsignatura.value,
       carrera: selCarreraAsignatura.value,
       codigo_asignatura: selAsignatura.value,
-      plan_estudios: 'N', // por defecto, podríamos añadir selección de plan si es necesario
+      plan_estudios: selPlanAsignatura.value || 'N',
     })
     resultadoAsignatura.value = res.data
     $q.notify({
@@ -1755,16 +1851,34 @@ function modoIcon(modo) {
 // Recargar logs al cambiar filtros
 watch([filtroSede, filtroCarrera, filtroModo], () => cargarLogs())
 
-// Cargar asignaturas automaticamente al entrar a la pestaña "Por Asignatura"
+// Cargar carreras y asignaturas automaticamente al entrar a la pestaña "Por Asignatura"
 watch(tab, async (nuevoTab) => {
   if (nuevoTab === 'asignatura') {
+    await cargarCarrerasAsignaturaPorSede()
     await cargarAsignaturas()
   }
 })
 
-// Recargar asignaturas cuando cambia sede o carrera (en tab asignatura)
-watch([selSedeAsignatura, selCarreraAsignatura], async () => {
+// Recargar carreras disponibles cuando cambia la sede (en tab asignatura)
+watch(selSedeAsignatura, async () => {
   if (tab.value === 'asignatura') {
+    selCarreraAsignatura.value = null
+    selAsignatura.value = null
+    await cargarCarrerasAsignaturaPorSede()
+  }
+})
+
+// Recargar asignaturas cuando cambia la carrera (en tab asignatura)
+watch(selCarreraAsignatura, async () => {
+  if (tab.value === 'asignatura') {
+    selAsignatura.value = null
+    await cargarAsignaturas()
+  }
+})
+
+// Recargar asignaturas cuando cambia el plan de malla (en tab asignatura)
+watch(selPlanAsignatura, async () => {
+  if (tab.value === 'asignatura' && selCarreraAsignatura.value) {
     selAsignatura.value = null
     await cargarAsignaturas()
   }
@@ -1772,8 +1886,9 @@ watch([selSedeAsignatura, selCarreraAsignatura], async () => {
 
 onMounted(async () => {
   cargarLogs()
-  // Si entramos directamente a la pestaña asignatura, cargar
+  // Si entramos directamente a la pestaña asignatura, cargar carreras y asignaturas
   if (tab.value === 'asignatura') {
+    await cargarCarrerasAsignaturaPorSede()
     await cargarAsignaturas()
   }
 })
