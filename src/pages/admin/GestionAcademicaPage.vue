@@ -26,6 +26,15 @@
         <q-btn
           flat
           dense
+          icon="person_add"
+          label="Nuevo docente"
+          color="grey-7"
+          size="sm"
+          @click="abrirDialogo('docente', null)"
+        />
+        <q-btn
+          flat
+          dense
           icon="refresh"
           color="grey-7"
           size="sm"
@@ -235,6 +244,18 @@
               "
             >
               <q-tooltip>Agregar grupo</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              dense
+              round
+              icon="sync"
+              size="xs"
+              color="orange"
+              :loading="cargandoSync === asig.id"
+              @click="sincronizarAsignatura(asig)"
+            >
+              <q-tooltip>Sincronizar materia desde API</q-tooltip>
             </q-btn>
             <q-btn
               flat
@@ -1197,6 +1218,66 @@
       </q-card>
     </q-dialog>
 
+    <!-- ── Diálogo: Docente ── -->
+    <q-dialog v-model="dlg.docente" persistent>
+      <q-card style="width: 520px; max-width: 96vw">
+        <q-card-section class="bg-indigo text-white row items-center q-py-sm">
+          <q-icon name="person_add" class="q-mr-sm" />
+          <span class="text-subtitle1 text-weight-bold">Nuevo Docente</span>
+        </q-card-section>
+        <q-card-section class="q-pt-md">
+          <div class="row q-col-gutter-md">
+            <div class="col-12">
+              <q-input
+                v-model="dlgDocente.nombre_completo"
+                label="Nombre completo *"
+                outlined
+                dense
+                :rules="[(v) => !!v || 'Obligatorio']"
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="dlgDocente.ci"
+                label="CI *"
+                outlined
+                dense
+                :rules="[(v) => !!v || 'Obligatorio']"
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input v-model="dlgDocente.email" label="Email" outlined dense type="email" />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input v-model="dlgDocente.celular" label="Celular" outlined dense />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input v-model="dlgDocente.grado_academico" label="Grado académico" outlined dense />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input v-model="dlgDocente.especialidad" label="Especialidad" outlined dense />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-select
+                v-model="dlgDocente.sede_id"
+                :options="opcionesSedes"
+                label="Sede"
+                outlined
+                dense
+                clearable
+                emit-value
+                map-options
+              />
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancelar" v-close-popup />
+          <q-btn color="indigo" icon="save" label="Crear Docente" :loading="guardando" @click="guardarDocente" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- ── Diálogo: Confirmar eliminación ── -->
     <q-dialog v-model="dlg.eliminar" persistent>
       <q-card style="min-width: 360px">
@@ -1228,6 +1309,7 @@ import { useAulasStore } from 'src/stores/aulas'
 import { useBloquesStore } from 'src/stores/bloques'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
 import { useHorariosStore } from 'src/stores/horarios'
+import cargaAcademicaService from 'src/services/cargaAcademicaService'
 import { Notify } from 'quasar'
 
 // ── Stores ──
@@ -1242,6 +1324,7 @@ useHorariosStore()
 // ── Estado principal ──
 const cargando = ref(false)
 const guardando = ref(false)
+const cargandoSync = ref(null)
 const filtSede = ref(null)
 const filtCarrera = ref(null)
 const filtPlan = ref(null)
@@ -1463,6 +1546,37 @@ async function cargarDatos() {
   }
 }
 
+async function sincronizarAsignatura(asig) {
+  if (!filtSede.value || !filtCarrera.value) {
+    Notify.create({ type: 'warning', message: 'Selecciona sede y carrera para sincronizar' })
+    return
+  }
+  cargandoSync.value = asig.id
+  try {
+    const resp = await cargaAcademicaService.syncMateria({
+      sede_id: filtSede.value,
+      carrera_id: filtCarrera.value,
+      asignatura_id: asig.id,
+      gestion: asig.grupos?.[0]?.gestion || '1-2026',
+    })
+    if (resp.data.ok) {
+      Notify.create({ type: 'positive', message: resp.data.mensaje || 'Sincronización exitosa' })
+      await cargarDatos()
+      // Recargar docentes por si se crearon nuevos
+      await cargarDocentesSimple(filtSede.value)
+    } else {
+      Notify.create({ type: 'warning', message: resp.data.mensaje || 'Sin cambios' })
+    }
+  } catch (err) {
+    Notify.create({
+      type: 'negative',
+      message: 'Error sincronizando: ' + (err.response?.data?.error || err.message),
+    })
+  } finally {
+    cargandoSync.value = null
+  }
+}
+
 async function recargar() {
   await Promise.all([aulasStore.fetchAulas(), bloquesStore.fetchBloques()])
   await cargarDatos()
@@ -1544,6 +1658,7 @@ const dlg = ref({
   aulas: false,
   bloque: false,
   aula: false,
+  docente: false,
   eliminar: false,
 })
 
@@ -1553,6 +1668,7 @@ const dlgGrupo = ref({})
 const dlgHorario = ref({})
 const dlgBloque = ref({})
 const dlgAula = ref({})
+const dlgDocente = ref({})
 
 // Para eliminación
 const eliminarTipo = ref('')
@@ -1645,6 +1761,17 @@ async function abrirDialogo(tipo, item, ctx = {}) {
           _asignaturaNombre: ctx.asignaturaNombre || '',
         }
     dlg.value.grupo = true
+  } else if (tipo === 'docente') {
+    dlgDocente.value = {
+      nombre_completo: '',
+      ci: '',
+      email: '',
+      celular: '',
+      grado_academico: '',
+      especialidad: '',
+      sede_id: filtSede.value || null,
+    }
+    dlg.value.docente = true
   } else if (tipo === 'horario') {
     opcionesAulas.value = allAulas.value.filter(
       (a) => !filtSede.value || a.sede_id == filtSede.value,
@@ -1757,6 +1884,34 @@ async function guardarGrupo() {
     Notify.create({ type: 'warning', message: 'Nombre, tipo y gestión son obligatorios' })
     return
   }
+  // Validar conflictos si se cambió el docente y el grupo tiene horarios
+  if (f.id && f.docente_id) {
+    const grupo = asignaturas.value
+      .flatMap((a) => a.grupos || [])
+      .find((g) => g.id === f.id)
+    if (grupo?.horarios?.length && grupo.docente_id !== f.docente_id) {
+      for (const h of grupo.horarios) {
+        try {
+          const v = await cargaAcademicaService.validar({
+            docente_id: f.docente_id,
+            aula_id: h.aula_id || null,
+            dia: h.dia,
+            hora_inicio: h.hora_inicio,
+            hora_fin: h.hora_fin,
+            exclude_horario_id: h.id,
+            exclude_grupo_id: f.id,
+          })
+          if (!v.data.valido) {
+            const msgs = v.data.conflictos.map((c) => c.mensaje).join('\n')
+            Notify.create({ type: 'negative', message: msgs, multiLine: true, timeout: 5000 })
+            return
+          }
+        } catch {
+          // fallback
+        }
+      }
+    }
+  }
   guardando.value = true
   try {
     const payload = {
@@ -1831,6 +1986,30 @@ async function guardarHorario() {
   if (!f.dia || !f.hora_inicio || !f.hora_fin) {
     Notify.create({ type: 'warning', message: 'Día y horas son obligatorios' })
     return
+  }
+  // Validar conflictos de horario (docente y aula)
+  const grupo = asignaturas.value
+    .flatMap((a) => a.grupos || [])
+    .find((g) => g.id === f.grupo_id)
+  if (grupo?.docente_id || f.aula_id) {
+    try {
+      const v = await cargaAcademicaService.validar({
+        docente_id: grupo?.docente_id || null,
+        aula_id: f.aula_id || null,
+        dia: f.dia,
+        hora_inicio: f.hora_inicio,
+        hora_fin: f.hora_fin,
+        exclude_horario_id: f.id || null,
+        exclude_grupo_id: f.grupo_id,
+      })
+      if (!v.data.valido) {
+        const msgs = v.data.conflictos.map((c) => c.mensaje).join('\n')
+        Notify.create({ type: 'negative', message: msgs, multiLine: true, timeout: 5000 })
+        return
+      }
+    } catch {
+      // Si falla la validación, continuar de todas formas (fallback)
+    }
   }
   guardando.value = true
   try {
@@ -1985,6 +2164,44 @@ async function guardarAula() {
       type: 'negative',
       message: 'Error: ' + (err.response?.data?.message || err.message),
     })
+  } finally {
+    guardando.value = false
+  }
+}
+
+// ══════════════════════════════════════════════
+// GUARDAR: DOCENTE
+// ══════════════════════════════════════════════
+async function guardarDocente() {
+  const f = dlgDocente.value
+  if (!f.nombre_completo?.trim() || !f.ci?.trim()) {
+    Notify.create({ type: 'warning', message: 'Nombre completo y CI son obligatorios' })
+    return
+  }
+  guardando.value = true
+  try {
+    const payload = {
+      nombre_completo: f.nombre_completo.trim(),
+      ci: f.ci.trim(),
+      email: f.email?.trim() || null,
+      celular: f.celular?.trim() || null,
+      grado_academico: f.grado_academico?.trim() || null,
+      especialidad: f.especialidad?.trim() || null,
+      sede_id: f.sede_id || null,
+      estado: true,
+    }
+    const resp = await api.post('/docentes', payload)
+    // Agregar a la lista local para no recargar todo
+    docentesSimple.value.push(resp.data)
+    opcionesDocentes.value = docentesSimple.value
+    Notify.create({ type: 'positive', message: 'Docente creado: ' + resp.data.nombre_completo })
+    dlg.value.docente = false
+  } catch (err) {
+    const msg =
+      err.response?.data?.message ||
+      Object.values(err.response?.data?.errors || {}).flat().join(' | ') ||
+      err.message
+    Notify.create({ type: 'negative', message: 'Error: ' + msg })
   } finally {
     guardando.value = false
   }

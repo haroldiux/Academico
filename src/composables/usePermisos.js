@@ -245,12 +245,6 @@ export function usePermisos() {
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
         },
-        {
-          label: 'Gestión de Evaluaciones',
-          icon: 'assignment',
-          to: '/admin/evaluaciones',
-        },
-        { label: 'Reportes Nacionales', icon: 'analytics', to: '/vicerrector/reportes' },
       ]
     }
 
@@ -289,6 +283,7 @@ export function usePermisos() {
           icon: 'settings_backup_restore',
           to: '/admin/recuperacion-manual',
         },
+
       ]
       // Opciones adicionales solo para SUPER_ADMIN
       if (esSuperAdmin.value) {

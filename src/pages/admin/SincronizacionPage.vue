@@ -489,7 +489,6 @@
                 dense
                 label="Sede"
                 class="q-mb-md"
-                @update:model-value="cargarAsignaturas"
               />
               <q-select
                 v-model="selCarreraAsignatura"
@@ -502,7 +501,6 @@
                 hide-selected
                 input-debounce="0"
                 @filter="filtrarCarrerasAsignatura"
-                @update:model-value="cargarAsignaturas"
                 class="q-mb-md"
               >
                 <template #no-option>
@@ -519,11 +517,8 @@
                 outlined
                 dense
                 label="Asignatura"
-                use-input
-                fill-input
-                hide-selected
-                input-debounce="0"
-                @filter="filtrarAsignaturas"
+                clearable
+                input-debounce="200"
                 class="q-mb-lg"
                 :disable="!selSedeAsignatura || !selCarreraAsignatura || loadingAsignaturas"
               >
@@ -1395,6 +1390,7 @@ const selCarreraAsignatura = ref('CARMED')
 const opcionesCarrerasAsignatura = ref([...CARRERAS])
 const selAsignatura = ref(null)
 const opcionesAsignaturas = ref([])
+const todasAsignaturas = ref([]) // Fuente de verdad (sin filtrar)
 const loadingAsignaturas = ref(false)
 const loadingAsignatura = ref(false)
 const resultadoAsignatura = ref(null)
@@ -1408,23 +1404,17 @@ function filtrarCarrerasAsignatura(val, update) {
   })
 }
 
-function filtrarAsignaturas(val, update) {
-  update(() => {
-    const needle = val.toLowerCase()
-    opcionesAsignaturas.value = opcionesAsignaturas.value.filter(
-      (a) => a.nombre.toLowerCase().includes(needle) || a.codigo.toLowerCase().includes(needle),
-    )
-  })
-}
-
 async function cargarAsignaturas() {
   if (!selSedeAsignatura.value || !selCarreraAsignatura.value) {
     opcionesAsignaturas.value = []
+    todasAsignaturas.value = []
     selAsignatura.value = null
     return
   }
+
   loadingAsignaturas.value = true
   try {
+    // Endpoint externo: obtiene las materias Plan N disponibles para sincronizar
     const res = await api.get('/grupos-externo/plan-n', {
       params: {
         gestion: gestion.value,
@@ -1432,19 +1422,25 @@ async function cargarAsignaturas() {
         sede: selSedeAsignatura.value,
       },
     })
-    // La API devuelve un array de materias con codigo, nombre, semestre, plan_estudios, docentes
-    opcionesAsignaturas.value = res.data.data.map((m) => ({
+
+    const data = res.data.data || res.data || []
+    const lista = data.map((m) => ({
       codigo: m.codigo,
-      nombre: m.nombre,
+      nombre: `${m.codigo} — ${m.nombre}`,
       semestre: m.semestre,
       plan_estudios: m.plan_estudios || 'N',
     }))
+
+    todasAsignaturas.value = lista
+    opcionesAsignaturas.value = [...lista]
   } catch (e) {
+    console.error('[Sync] Error cargando asignaturas:', e)
     $q.notify({
       type: 'negative',
       message: 'Error al cargar asignaturas: ' + (e.response?.data?.message || e.message),
     })
     opcionesAsignaturas.value = []
+    todasAsignaturas.value = []
   } finally {
     loadingAsignaturas.value = false
   }
@@ -1759,7 +1755,28 @@ function modoIcon(modo) {
 // Recargar logs al cambiar filtros
 watch([filtroSede, filtroCarrera, filtroModo], () => cargarLogs())
 
-onMounted(() => cargarLogs())
+// Cargar asignaturas automaticamente al entrar a la pestaña "Por Asignatura"
+watch(tab, async (nuevoTab) => {
+  if (nuevoTab === 'asignatura') {
+    await cargarAsignaturas()
+  }
+})
+
+// Recargar asignaturas cuando cambia sede o carrera (en tab asignatura)
+watch([selSedeAsignatura, selCarreraAsignatura], async () => {
+  if (tab.value === 'asignatura') {
+    selAsignatura.value = null
+    await cargarAsignaturas()
+  }
+})
+
+onMounted(async () => {
+  cargarLogs()
+  // Si entramos directamente a la pestaña asignatura, cargar
+  if (tab.value === 'asignatura') {
+    await cargarAsignaturas()
+  }
+})
 </script>
 
 <style scoped>
