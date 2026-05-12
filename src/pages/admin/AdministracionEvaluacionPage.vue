@@ -316,6 +316,28 @@
                 </div>
               </q-td>
             </template>
+            <template v-slot:body-cell-acceso="props">
+              <q-td :props="props">
+                <div class="row items-center justify-center no-wrap q-gutter-xs">
+                  <q-toggle
+                    :model-value="props.row.estado"
+                    color="positive"
+                    checked-icon="lock_open"
+                    unchecked-icon="lock"
+                    size="sm"
+                    @update:model-value="toggleAccesoUsuario(props.row, $event)"
+                  />
+                  <q-chip
+                    :color="props.row.estado ? 'green-1' : 'red-1'"
+                    :text-color="props.row.estado ? 'green-9' : 'red-9'"
+                    size="sm"
+                    dense
+                  >
+                    {{ props.row.estado ? 'Activo' : 'Inactivo' }}
+                  </q-chip>
+                </div>
+              </q-td>
+            </template>
             <template v-slot:body-cell-acciones="props">
               <q-td :props="props">
                 <q-btn
@@ -938,6 +960,7 @@ const columnasUsuarios = [
   { name: 'usuario', label: 'Usuario', field: 'nombre', align: 'left' },
   { name: 'campus', label: 'Campus', field: 'campus', align: 'left' },
   { name: 'carreras', label: 'Carreras Asignadas', field: 'carreras', align: 'left' },
+  { name: 'acceso', label: 'Acceso al Sistema', field: 'estado', align: 'center' },
   { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
 ]
 
@@ -1153,10 +1176,20 @@ function abrirDialogUsuario(usuario = null) {
 async function cargarUsuarios() {
   try {
     const { data } = await api.get('/evaluadores')
-    usuarios.value = data.data || data
+    const list = data.data || data
+    usuarios.value = list.map((usuario) => ({
+      ...usuario,
+      estado: normalizarEstadoUsuario(usuario.estado),
+    }))
   } catch (err) {
     console.error('Error cargando los usuarios evaluadores', err)
   }
+}
+
+function normalizarEstadoUsuario(estado) {
+  if (typeof estado === 'boolean') return estado
+  if (typeof estado === 'number') return estado === 1
+  return ['activo', 'true', '1', 'si', 'sí'].includes(String(estado || '').toLowerCase())
 }
 
 async function cargarUsuariosDisponibles() {
@@ -1221,6 +1254,34 @@ function eliminarUsuario(row) {
     } catch (error) {
       console.error('Error removiendo evaluador', error)
       $q.notify({ type: 'negative', message: 'No se pudo quitar la asignación de este usuario' })
+    }
+  })
+}
+
+function toggleAccesoUsuario(row, nuevoEstado) {
+  const accion = nuevoEstado ? 'activar' : 'desactivar'
+  const estadoTexto = nuevoEstado ? 'activo' : 'inactivo'
+
+  $q.dialog({
+    title: `${nuevoEstado ? 'Activar' : 'Desactivar'} acceso`,
+    message: `¿Desea ${accion} el acceso al sistema para "${row.nombre}"?`,
+    ok: {
+      label: nuevoEstado ? 'Activar acceso' : 'Desactivar acceso',
+      color: nuevoEstado ? 'positive' : 'negative',
+      unelevated: true,
+    },
+    cancel: { label: 'Cancelar', flat: true },
+  }).onOk(async () => {
+    try {
+      await api.put(`/usuarios/${row.id}`, { estado: estadoTexto })
+      row.estado = nuevoEstado
+      $q.notify({
+        type: nuevoEstado ? 'positive' : 'warning',
+        message: `Acceso ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`,
+      })
+    } catch (error) {
+      console.error('Error cambiando acceso del evaluador', error)
+      $q.notify({ type: 'negative', message: 'No se pudo actualizar el acceso del usuario' })
     }
   })
 }

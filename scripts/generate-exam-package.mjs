@@ -140,7 +140,49 @@ const getQuestionGroup = (question) =>
     .trim()
     .toUpperCase()
 
+const gcd = (a, b) => {
+  let x = Math.abs(a)
+  let y = Math.abs(b)
+  while (y) {
+    const next = x % y
+    x = y
+    y = next
+  }
+  return x
+}
+
+const gcdList = (values) => values.filter(Boolean).reduce((acc, value) => gcd(acc, value), 0)
+
+const buildSelectionDiagnostic = (required, available, units) => {
+  const parts = [
+    `Requerido F:${required.facil}, M:${required.medio}, D:${required.dificil}.`,
+    `Disponible evaluable F:${available.facil}, M:${available.medio}, D:${available.dificil}.`,
+  ]
+
+  const labels = {
+    facil: 'faciles',
+    medio: 'medias',
+    dificil: 'dificiles',
+  }
+
+  ;['facil', 'medio', 'dificil'].forEach((difficulty) => {
+    const sizes = units.map((unit) => unit.counts[difficulty]).filter((value) => Number(value) > 0)
+    const divisor = gcdList(sizes)
+
+    if (divisor > 1 && required[difficulty] % divisor !== 0) {
+      const distinctSizes = [...new Set(sizes)].sort((a, b) => a - b).join(', ')
+      parts.push(
+        `Las preguntas ${labels[difficulty]} disponibles estan en bloques indivisibles de ${distinctSizes}; no se puede formar exactamente ${required[difficulty]}.`,
+      )
+    }
+  })
+
+  return parts.join(' ')
+}
+
 const buildExamQuestionSelection = (questions, config = {}) => {
+  buildExamQuestionSelection.lastError = null
+  buildExamQuestionSelection.appliedDistribution = null
   const metaFacil = parseInt(config.facil, 10) || 7
   const metaMedio = parseInt(config.medio, 10) || 16
   const metaDificil = parseInt(config.dificil, 10) || 7
@@ -266,15 +308,31 @@ const buildExamQuestionSelection = (questions, config = {}) => {
     { facil: 0, medio: 0, dificil: 0 },
   )
 
-  if (
-    available.facil < required.facil ||
-    available.medio < required.medio ||
-    available.dificil < required.dificil
-  ) {
+  const totalRequired = required.facil + required.medio + required.dificil
+  const requirementCandidates = [
+    { ...required, adjusted: false },
+    ...Array.from({ length: required.dificil }, (_, index) => {
+      const dificil = required.dificil - index - 1
+      return {
+        facil: required.facil,
+        medio: totalRequired - required.facil - dificil,
+        dificil,
+        adjusted: true,
+      }
+    }),
+  ].filter(
+    (candidate) =>
+      available.facil >= candidate.facil &&
+      available.medio >= candidate.medio &&
+      available.dificil >= candidate.dificil,
+  )
+
+  if (requirementCandidates.length === 0) {
+    buildExamQuestionSelection.lastError = buildSelectionDiagnostic(required, available, units)
     return null
   }
 
-  const trySelection = () => {
+  const trySelection = (targetRequired) => {
     const orderedUnits = shuffle([...units]).sort((a, b) => {
       if (b.total !== a.total) return b.total - a.total
       const rangeA =
@@ -339,16 +397,32 @@ const buildExamQuestionSelection = (questions, config = {}) => {
       return null
     }
 
-    return backtrack(0, required)
+    return backtrack(0, targetRequired)
   }
 
   let selectedUnits = null
-  for (let attempt = 0; attempt < 250 && !selectedUnits; attempt += 1) {
-    selectedUnits = trySelection()
+  let selectedRequirement = null
+  for (const candidate of requirementCandidates) {
+    for (let attempt = 0; attempt < 250 && !selectedUnits; attempt += 1) {
+      selectedUnits = trySelection(candidate)
+    }
+
+    if (selectedUnits) {
+      selectedRequirement = candidate
+      break
+    }
   }
 
   if (!selectedUnits) {
+    buildExamQuestionSelection.lastError = buildSelectionDiagnostic(required, available, units)
     return null
+  }
+
+  buildExamQuestionSelection.appliedDistribution = {
+    facil: selectedRequirement.facil,
+    medio: selectedRequirement.medio,
+    dificil: selectedRequirement.dificil,
+    adjusted: selectedRequirement.adjusted,
   }
 
   return selectedUnits
@@ -1458,9 +1532,13 @@ const resultadosVariantes = []
 for (let i = 0; i < variants.length; i += 1) {
   const letra = variants[i]
   const selection = buildExamQuestionSelection(payload.questions, config)
+  const appliedDistribution = buildExamQuestionSelection.appliedDistribution
 
   if (!selection) {
-    throw new Error('No se pudo armar una variante que cumpla la distribucion por dificultad.')
+    throw new Error(
+      buildExamQuestionSelection.lastError ||
+        'No se pudo armar una variante que cumpla la distribucion por dificultad.',
+    )
   }
 
   const selectionWithHeaders = completeMacroHeaders(selection, payload.questions)
@@ -1484,7 +1562,7 @@ for (let i = 0; i < variants.length; i += 1) {
 
   await generateExamPdf(mergedExamenesDoc, exam, config, letra, sorted)
   await generatePatronPdf(mergedPatronesDoc, letra, sorted, exam)
-  resultadosVariantes.push({ letra, sorted })
+  resultadosVariantes.push({ letra, sorted, appliedDistribution })
 }
 
 const varsJoined = resultadosVariantes.map((result) => result.letra).join('')
@@ -1537,6 +1615,7 @@ function resultsVariantsToEntries(resultados, filename) {
   return resultados.map((result) => ({
     letra: result.letra,
     archivo: filename,
+    distribucion_aplicada: result.appliedDistribution,
   }))
 }
 
@@ -1551,6 +1630,7 @@ function resultsVariantsToPatternEntries(resultados, pdfFilename, xlsxFilename) 
 function resultsVariantsToAuditEntries(resultados) {
   return resultados.map((result) => ({
     letra: result.letra,
+    distribucion_aplicada: result.appliedDistribution,
     preguntas: result.sorted.map((question, index) => ({
       idx: question.idx || question.id || index + 1,
       id: question.id,
