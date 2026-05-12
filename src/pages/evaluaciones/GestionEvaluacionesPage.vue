@@ -105,6 +105,25 @@
       </div>
     </div>
 
+    <div class="row q-col-gutter-sm q-mb-md">
+      <div class="col-12 col-md-5 col-lg-4">
+        <q-input
+          v-model="filtros.busqueda"
+          outlined
+          dense
+          clearable
+          debounce="250"
+          label="Buscar evaluacion"
+          placeholder="Codigo, asignatura o docente"
+          bg-color="white"
+        >
+          <template #prepend>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </div>
+    </div>
+
     <!-- Tab Selector -->
     <div class="row q-mb-md justify-center">
       <q-tabs
@@ -582,7 +601,7 @@
     <!-- Manual Generations Table -->
     <q-card v-if="activeTab === 'manual'" class="table-card" flat bordered>
       <q-table
-        :rows="manualGenerations"
+        :rows="manualGenerationsFiltradas"
         :columns="manualColumns"
         row-key="id"
         flat
@@ -1710,7 +1729,9 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import {
+  assertNoOrphanMacroQuestions,
   buildExamQuestionSelection,
+  completeMacroHeaders,
   createExamPdfDocument,
   generateExamPdf,
   mixExamQuestionOptions,
@@ -1831,7 +1852,15 @@ const normalizeTipo = (t) => {
   )
     return 'PROBLEMA'
   if (['EM', 'EMPAREJAMIENTO', 'EMPAREJAMIENTO AMPLIADO'].includes(s)) return 'EMPAREJAMIENTO'
-  if (['OPCION_EMPAREJAMIENTO', 'OPCION EMPAREJAMIENTO', 'OPCION DE EMPAREJAMIENTO'].includes(s))
+  if (
+    [
+      'OPCION_EMPAREJAMIENTO',
+      'OPCION EMPAREJAMIENTO',
+      'OPCION DE EMPAREJAMIENTO',
+      'OPCION EMPAREJAMIENTO AMPLIADO',
+      'OPCION DE EMPAREJAMIENTO AMPLIADO',
+    ].includes(s)
+  )
     return 'OPCION_EMPAREJAMIENTO'
   if (
     ['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA', 'SUBITEM DE CASO O PROBLEMA'].includes(s)
@@ -1925,6 +1954,7 @@ const filtros = ref({
   parcial: PARCIAL_2DO,
   fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
   estado: [],
+  busqueda: '',
 })
 
 const tiemposConfigEvaluacion = ref({
@@ -2729,6 +2759,7 @@ const limpiarFiltros = () => {
     parcial: PARCIAL_2DO,
     fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
     estado: [],
+    busqueda: '',
   }
 }
 
@@ -2856,7 +2887,15 @@ const normalizarTipoManualExcel = (value) => {
   )
     return 'SUBPROBLEMA'
   if (['EM', 'EMPAREJAMIENTO', 'EMPAREJAMIENTO AMPLIADO'].includes(key)) return 'EMPAREJAMIENTO'
-  if (['OPCION EMPAREJAMIENTO', 'OPCION_EMPAREJAMIENTO'].includes(key))
+  if (
+    [
+      'OPCION EMPAREJAMIENTO',
+      'OPCION_EMPAREJAMIENTO',
+      'OPCION DE EMPAREJAMIENTO',
+      'OPCION EMPAREJAMIENTO AMPLIADO',
+      'OPCION DE EMPAREJAMIENTO AMPLIADO',
+    ].includes(key)
+  )
     return 'OPCION_EMPAREJAMIENTO'
   return key.replace(/\s+/g, '_')
 }
@@ -3296,9 +3335,12 @@ const ejecutarGeneracionManual = async () => {
         return
       }
 
+      const seleccionConCabeceras = esSegundoParcialManual
+        ? completeMacroHeaders(seleccion, manualPreguntas.value)
+        : seleccion
       const sorted = esSegundoParcialManual
         ? sortExamQuestionsForPdf(
-            mixExamQuestionOptions(JSON.parse(JSON.stringify(seleccion))),
+            mixExamQuestionOptions(JSON.parse(JSON.stringify(seleccionConCabeceras))),
             config,
           )
         : (() => {
@@ -3336,6 +3378,10 @@ const ejecutarGeneracionManual = async () => {
               return localOrder.indexOf(ta) - localOrder.indexOf(tb)
             })
           })()
+
+      if (esSegundoParcialManual) {
+        assertNoOrphanMacroQuestions(sorted)
+      }
 
       variantesAudit.push({
         letra: letra,
@@ -3578,6 +3624,41 @@ const statsDesglose = computed(() => {
   })
 })
 
+const normalizarBusqueda = (value) =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const textoBusquedaEvaluacion = (evaluacion) =>
+  normalizarBusqueda(
+    [
+      evaluacion.codigo,
+      evaluacion.materia_codigo,
+      evaluacion.asignatura_codigo,
+      evaluacion.materia,
+      evaluacion.materia_nombre,
+      evaluacion.asignatura_nombre,
+      evaluacion.docente,
+      evaluacion.docente_nombre,
+    ]
+      .filter(Boolean)
+      .join(' '),
+  )
+
+const filtrarPorBusqueda = (list) => {
+  const busqueda = normalizarBusqueda(filtros.value.busqueda)
+  if (!busqueda) return list
+
+  const tokens = busqueda.split(' ')
+  return list.filter((evaluacion) => {
+    const texto = textoBusquedaEvaluacion(evaluacion)
+    return tokens.every((token) => texto.includes(token))
+  })
+}
+
 const examenesFiltrados = computed(() => {
   let list = [...examenesList.value]
 
@@ -3587,8 +3668,12 @@ const examenesFiltrados = computed(() => {
 
   if (filtros.value.parcial) list = list.filter((e) => e.parcial === filtros.value.parcial)
 
+  list = filtrarPorBusqueda(list)
+
   return list.sort((a, b) => a.hora.localeCompare(b.hora))
 })
+
+const manualGenerationsFiltradas = computed(() => filtrarPorBusqueda([...manualGenerations.value]))
 
 // Función para imprimir PDF consolidada
 function imprimirListaDiaria() {
@@ -3838,18 +3923,27 @@ const obtenerSeleccion7167 = (todas, config) => {
     const availablePool = pool.filter((p) => !usedIds.has(p.id))
 
     const headers = availablePool.filter((p) =>
-      ['PR', 'EM', 'PROBLEMA', 'EMPAREJAMIENTO'].includes(p.tipo?.toUpperCase()),
-    )
-    const subpreguntas = todas.filter((p) =>
-      ['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(p.tipo?.toUpperCase()),
+      ['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeTipo(p.tipo)),
     )
 
     const macroGrupos = headers
       .map((h) => ({
         header: h,
-        children: subpreguntas.filter(
-          (sp) => sp.grupo?.trim() === h.grupo?.trim() && h.grupo && !usedIds.has(sp.id),
-        ),
+        parentType: normalizeTipo(h.tipo),
+        children: todas.filter((candidate) => {
+          const candidateType = normalizeTipo(candidate.tipo)
+          const isProblemChild =
+            normalizeTipo(h.tipo) === 'PROBLEMA' && candidateType === 'SUBPROBLEMA'
+          const isMatchingChild =
+            normalizeTipo(h.tipo) === 'EMPAREJAMIENTO' && candidateType === 'OPCION_EMPAREJAMIENTO'
+
+          return (
+            (isProblemChild || isMatchingChild) &&
+            candidate.grupo?.trim() === h.grupo?.trim() &&
+            h.grupo &&
+            !usedIds.has(candidate.id)
+          )
+        }),
       }))
       .filter((mg) => mg.children.length > 0)
 
@@ -3866,10 +3960,10 @@ const obtenerSeleccion7167 = (todas, config) => {
             'SELECCION_UNICA',
             'SELECCION_MULTIPLE',
             'FALSO_VERDADERO',
-            'PROBLEMA',
-            'EMPAREJAMIENTO',
           ].includes(p.tipo?.toUpperCase()) &&
-          !['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(p.tipo?.toUpperCase()),
+          !['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(
+            p.tipo?.toUpperCase(),
+          ),
       )
       .filter((p) => !headers.some((h) => h.id === p.id))
 
@@ -3907,7 +4001,11 @@ const obtenerSeleccion7167 = (todas, config) => {
       usedIds.add(mg.header.id)
       const header = JSON.parse(JSON.stringify(mg.header))
       seleccionFinal.push(header)
-      const children = JSON.parse(JSON.stringify(shuffle([...mg.children])))
+      const children = JSON.parse(
+        JSON.stringify(
+          mg.parentType === 'EMPAREJAMIENTO' ? shuffle([...mg.children]) : [...mg.children],
+        ),
+      )
       // Inyectar herencia para que el sort las mantenga juntas
       children.forEach((c) => {
         usedIds.add(c.id)
