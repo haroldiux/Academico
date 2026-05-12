@@ -36,20 +36,60 @@ const shuffle = (array) => {
   return array
 }
 
-const normalizeQuestionType = (tipo) => {
-  const value = String(tipo || '')
-    .toUpperCase()
-    .trim()
+const removeAccents = (text) =>
+  String(text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 
-  if (['PR', 'PROBLEMA'].includes(value)) return 'PROBLEMA'
-  if (['EM', 'EMPAREJAMIENTO'].includes(value)) return 'EMPAREJAMIENTO'
-  if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA'].includes(value)) return 'SUBPROBLEMA'
-  if (['OPCION_EMPAREJAMIENTO'].includes(value)) return 'OPCION_EMPAREJAMIENTO'
-  if (['SU', 'SS', 'SELECCION_UNICA', 'SELECCION_SIMPLE'].includes(value)) return 'SELECCION_SIMPLE'
-  if (['PREGUNTA_CON_CLAVE'].includes(value)) return 'PREGUNTA_CON_CLAVE'
-  if (['SM', 'SELECCION_MULTIPLE', 'RESPUESTA_COMPUESTA'].includes(value))
+const normalizeQuestionType = (tipo) => {
+  const value = removeAccents(tipo).toUpperCase().replace(/\s+/g, ' ').trim()
+
+  if (
+    ['PR', 'PROBLEMA', 'PROBLEMA O CASO', 'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA'].includes(
+      value,
+    )
+  )
+    return 'PROBLEMA'
+  if (['EM', 'EMPAREJAMIENTO', 'EMPAREJAMIENTO AMPLIADO'].includes(value)) return 'EMPAREJAMIENTO'
+  if (
+    ['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA', 'SUBITEM DE CASO O PROBLEMA'].includes(
+      value,
+    )
+  )
+    return 'SUBPROBLEMA'
+  if (
+    [
+      'OPCION_EMPAREJAMIENTO',
+      'OPCION EMPAREJAMIENTO',
+      'OPCION DE EMPAREJAMIENTO',
+      'OPCION EMPAREJAMIENTO AMPLIADO',
+      'OPCION DE EMPAREJAMIENTO AMPLIADO',
+    ].includes(value)
+  )
+    return 'OPCION_EMPAREJAMIENTO'
+  if (
+    ['SU', 'SS', 'SELECCION_UNICA', 'SELECCION_SIMPLE', 'SELECCION DE LA MEJOR RESPUESTA'].includes(
+      value,
+    )
+  )
+    return 'SELECCION_SIMPLE'
+  if (['PREGUNTA_CON_CLAVE', 'PREGUNTA CON CLAVE', 'VERDADERO O FALSO COMPLEJAS'].includes(value))
+    return 'PREGUNTA_CON_CLAVE'
+  if (
+    ['SM', 'SELECCION_MULTIPLE', 'RESPUESTA_COMPUESTA', 'RESPUESTA A/B/AMBAS/NINGUNA'].includes(
+      value,
+    )
+  )
     return 'RESPUESTA_COMPUESTA'
-  if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(value))
+  if (
+    [
+      'FV',
+      'FALSO_VERDADERO',
+      'FALSO O VERDADERO',
+      'VERDADERO O FALSO',
+      'VERDADERO O FALSO SIMPLE',
+    ].includes(value)
+  )
     return 'FALSO_VERDADERO'
 
   return value
@@ -95,10 +135,20 @@ const extractStructuredLines = (text) =>
 const stripNumericPrefix = (text) =>
   cleanQuestionText(text).replace(/^([IVX]+|\d+|[A-Z])[.):]\s+/i, '')
 
+const getQuestionGroup = (question) =>
+  String(question?.grupo || question?.grupoTeorico || '')
+    .trim()
+    .toUpperCase()
+
 const buildExamQuestionSelection = (questions, config = {}) => {
   const metaFacil = parseInt(config.facil, 10) || 7
   const metaMedio = parseInt(config.medio, 10) || 16
   const metaDificil = parseInt(config.dificil, 10) || 7
+  const required = {
+    facil: metaFacil,
+    medio: metaMedio,
+    dificil: metaDificil,
+  }
 
   const difficultyKey = (question) => {
     const dificultad = String(question.nivel_dificultad || question.dificultad || '1').toUpperCase()
@@ -108,15 +158,7 @@ const buildExamQuestionSelection = (questions, config = {}) => {
     return null
   }
 
-  const headersByGroup = new Map()
-  questions.forEach((question) => {
-    const type = normalizeQuestionType(question.tipo)
-    if (!['PROBLEMA', 'EMPAREJAMIENTO'].includes(type)) return
-    const group = String(question.grupo || '').trim()
-    if (!group) return
-    headersByGroup.set(`${type}:${group}`, question)
-  })
-
+  const groupMeta = new Map()
   const evaluableQuestions = questions
     .map((question, index) => ({
       question,
@@ -126,71 +168,217 @@ const buildExamQuestionSelection = (questions, config = {}) => {
     }))
     .filter((item) => item.difficulty && !['PROBLEMA', 'EMPAREJAMIENTO'].includes(item.type))
 
-  const trySelection = () => {
-    const remaining = {
-      facil: metaFacil,
-      medio: metaMedio,
-      dificil: metaDificil,
+  questions.forEach((question, index) => {
+    const type = normalizeQuestionType(question.tipo)
+    const group = getQuestionGroup(question)
+    if (!group) return
+
+    if (['PROBLEMA', 'EMPAREJAMIENTO'].includes(type)) {
+      const key = `${type}:${group}`
+      const current = groupMeta.get(key) || { parentType: type, group, header: null, children: [] }
+      current.header = question
+      current.headerIndex = index
+      groupMeta.set(key, current)
+      return
     }
-    const selected = []
-    const ordered = shuffle([...evaluableQuestions]).sort((a, b) => {
-      const scarcityA = evaluableQuestions.filter((item) => item.difficulty === a.difficulty).length
-      const scarcityB = evaluableQuestions.filter((item) => item.difficulty === b.difficulty).length
-      return scarcityA - scarcityB
+
+    if (!['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(type)) return
+
+    const parentType = type === 'OPCION_EMPAREJAMIENTO' ? 'EMPAREJAMIENTO' : 'PROBLEMA'
+    const key = `${parentType}:${group}`
+    const current = groupMeta.get(key) || { parentType, group, header: null, children: [] }
+    current.children.push({
+      question,
+      index,
+      difficulty: difficultyKey(question),
+    })
+    groupMeta.set(key, current)
+  })
+
+  const coveredChildKeys = new Set()
+  const orphanChildKeys = new Set()
+  const units = []
+
+  groupMeta.forEach((meta, key) => {
+    if (!meta.header || meta.children.length === 0) {
+      if (!meta.header) {
+        meta.children.forEach((child) => {
+          orphanChildKeys.add(
+            child.question.id ??
+              `${child.index}-${child.question.tipo}-${getQuestionGroup(child.question)}`,
+          )
+        })
+      }
+      return
+    }
+
+    const counts = { facil: 0, medio: 0, dificil: 0 }
+    meta.children.forEach((child) => {
+      if (child.difficulty) counts[child.difficulty] += 1
+      coveredChildKeys.add(
+        child.question.id ??
+          `${child.index}-${child.question.tipo}-${getQuestionGroup(child.question)}`,
+      )
     })
 
-    for (const item of ordered) {
-      if (remaining[item.difficulty] <= 0) continue
-      selected.push(item)
-      remaining[item.difficulty] -= 1
-    }
+    const total = counts.facil + counts.medio + counts.dificil
+    if (total === 0) return
 
-    return Object.values(remaining).every((total) => total === 0) ? selected : null
-  }
+    units.push({
+      key,
+      kind: 'group',
+      parentType: meta.parentType,
+      index: meta.headerIndex,
+      header: meta.header,
+      children: meta.children,
+      counts,
+      total,
+    })
+  })
 
-  let selected = null
-  for (let attempt = 0; attempt < 500 && !selected; attempt += 1) {
-    selected = trySelection()
-  }
+  evaluableQuestions.forEach((item) => {
+    const itemKey =
+      item.question.id ?? `${item.index}-${item.question.tipo}-${getQuestionGroup(item.question)}`
+    if (coveredChildKeys.has(itemKey) || orphanChildKeys.has(itemKey)) return
 
-  if (!selected) {
+    units.push({
+      key: itemKey,
+      kind: 'single',
+      parentType: item.type,
+      index: item.index,
+      question: item.question,
+      counts: {
+        facil: item.difficulty === 'facil' ? 1 : 0,
+        medio: item.difficulty === 'medio' ? 1 : 0,
+        dificil: item.difficulty === 'dificil' ? 1 : 0,
+      },
+      total: 1,
+    })
+  })
+
+  const available = units.reduce(
+    (acc, unit) => {
+      acc.facil += unit.counts.facil
+      acc.medio += unit.counts.medio
+      acc.dificil += unit.counts.dificil
+      return acc
+    },
+    { facil: 0, medio: 0, dificil: 0 },
+  )
+
+  if (
+    available.facil < required.facil ||
+    available.medio < required.medio ||
+    available.dificil < required.dificil
+  ) {
     return null
   }
 
-  const groupedSelections = new Map()
-  const individualSelections = []
+  const trySelection = () => {
+    const orderedUnits = shuffle([...units]).sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total
+      const rangeA =
+        Number(a.counts.facil > 0) + Number(a.counts.medio > 0) + Number(a.counts.dificil > 0)
+      const rangeB =
+        Number(b.counts.facil > 0) + Number(b.counts.medio > 0) + Number(b.counts.dificil > 0)
+      return rangeB - rangeA
+    })
 
-  selected.forEach((item) => {
-    const group = String(item.question.grupo || '').trim()
-    if (['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(item.type) && group) {
-      const parentType = item.type === 'OPCION_EMPAREJAMIENTO' ? 'EMPAREJAMIENTO' : 'PROBLEMA'
-      const key = `${parentType}:${group}`
-      if (!groupedSelections.has(key)) {
-        groupedSelections.set(key, {
-          header: headersByGroup.get(key),
-          index: item.index,
-          children: [],
-        })
+    const suffixAvailability = new Array(orderedUnits.length + 1)
+    suffixAvailability[orderedUnits.length] = { facil: 0, medio: 0, dificil: 0 }
+    for (let index = orderedUnits.length - 1; index >= 0; index -= 1) {
+      const next = suffixAvailability[index + 1]
+      suffixAvailability[index] = {
+        facil: next.facil + orderedUnits[index].counts.facil,
+        medio: next.medio + orderedUnits[index].counts.medio,
+        dificil: next.dificil + orderedUnits[index].counts.dificil,
+      }
+    }
+
+    const memo = new Set()
+    const backtrack = (index, remaining) => {
+      if (remaining.facil === 0 && remaining.medio === 0 && remaining.dificil === 0) return []
+      if (index >= orderedUnits.length) return null
+
+      const memoKey = `${index}|${remaining.facil}|${remaining.medio}|${remaining.dificil}`
+      if (memo.has(memoKey)) return null
+
+      const possible = suffixAvailability[index]
+      if (
+        possible.facil < remaining.facil ||
+        possible.medio < remaining.medio ||
+        possible.dificil < remaining.dificil
+      ) {
+        memo.add(memoKey)
+        return null
       }
 
-      const block = groupedSelections.get(key)
-      block.index = Math.min(block.index, item.index)
-      block.children.push({ ...item.question, _parentTipo: parentType, _originalIndex: item.index })
-    } else {
-      individualSelections.push({ index: item.index, items: [item.question] })
-    }
-  })
+      const unit = orderedUnits[index]
+      const canTake =
+        unit.counts.facil <= remaining.facil &&
+        unit.counts.medio <= remaining.medio &&
+        unit.counts.dificil <= remaining.dificil
 
-  return [
-    ...individualSelections,
-    ...Array.from(groupedSelections.values()).map((block) => ({
-      index: block.index,
-      items: [
-        block.header,
-        ...block.children.sort((a, b) => a._originalIndex - b._originalIndex),
-      ].filter(Boolean),
-    })),
-  ]
+      const branches = canTake ? ['take', 'skip'] : ['skip']
+      for (const branch of shuffle([...branches])) {
+        if (branch === 'take') {
+          const result = backtrack(index + 1, {
+            facil: remaining.facil - unit.counts.facil,
+            medio: remaining.medio - unit.counts.medio,
+            dificil: remaining.dificil - unit.counts.dificil,
+          })
+          if (result) return [unit, ...result]
+          continue
+        }
+
+        const result = backtrack(index + 1, remaining)
+        if (result) return result
+      }
+
+      memo.add(memoKey)
+      return null
+    }
+
+    return backtrack(0, required)
+  }
+
+  let selectedUnits = null
+  for (let attempt = 0; attempt < 250 && !selectedUnits; attempt += 1) {
+    selectedUnits = trySelection()
+  }
+
+  if (!selectedUnits) {
+    return null
+  }
+
+  return selectedUnits
+    .map((unit) => {
+      if (unit.kind === 'single') {
+        return { index: unit.index, items: [unit.question] }
+      }
+
+      const orderedChildren =
+        unit.parentType === 'EMPAREJAMIENTO'
+          ? shuffle(
+              unit.children.map((child, childIndex) => ({
+                ...child.question,
+                _parentTipo: unit.parentType,
+                _originalIndex: childIndex,
+              })),
+            )
+          : unit.children
+              .map((child, childIndex) => ({
+                ...child.question,
+                _parentTipo: unit.parentType,
+                _originalIndex: childIndex,
+              }))
+              .sort((a, b) => a._originalIndex - b._originalIndex)
+
+      return {
+        index: unit.index,
+        items: [unit.header, ...orderedChildren].filter(Boolean),
+      }
+    })
     .sort((a, b) => a.index - b.index)
     .flatMap((block) => block.items)
 }
@@ -307,7 +495,7 @@ const sortExamQuestionsForPdf = (questions = [], config = {}) => {
 
       const type = normalizeQuestionType(question.tipo)
       const childTypes = childTypesByParent[type]
-      const group = String(question.grupo || '').trim()
+      const group = getQuestionGroup(question)
 
       if (childTypes && group) {
         const children = items.filter((candidate, candidateIndex) => {
@@ -316,7 +504,7 @@ const sortExamQuestionsForPdf = (questions = [], config = {}) => {
           return (
             candidateKey !== uniqueKey &&
             !used.has(candidateKey) &&
-            String(candidate.grupo || '').trim() === group &&
+            getQuestionGroup(candidate) === group &&
             childTypes.includes(normalizeQuestionType(candidate.tipo))
           )
         })
@@ -334,9 +522,41 @@ const sortExamQuestionsForPdf = (questions = [], config = {}) => {
         return blocks
       }
 
+      const parentType = question._parentTipo || type
+
+      if (['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(type) && group) {
+        const expectedParent = type === 'SUBPROBLEMA' ? 'PROBLEMA' : 'EMPAREJAMIENTO'
+        const headerIndex = items.findIndex(
+          (candidate) =>
+            getQuestionGroup(candidate) === group &&
+            normalizeQuestionType(candidate.tipo) === expectedParent,
+        )
+
+        if (headerIndex !== -1 && headerIndex > index) {
+          const header = items[headerIndex]
+          const relatedChildren = items.filter(
+            (candidate) =>
+              getQuestionGroup(candidate) === group &&
+              normalizeQuestionType(candidate.tipo) === type,
+          )
+
+          used.add(header.id ?? `${headerIndex}-${header.tipo}-${header.grupo || ''}`)
+          relatedChildren.forEach((child) =>
+            used.add(child.id ?? `${items.indexOf(child)}-${child.tipo}-${child.grupo || ''}`),
+          )
+
+          blocks.push({
+            type: expectedParent,
+            index,
+            items: [header, ...relatedChildren],
+          })
+          return blocks
+        }
+      }
+
       used.add(uniqueKey)
       blocks.push({
-        type: question._parentTipo || type,
+        type: parentType,
         index,
         items: [question],
       })
@@ -355,6 +575,103 @@ const sortExamQuestionsForPdf = (questions = [], config = {}) => {
       return a.index - b.index
     })
     .flatMap((block) => block.items)
+}
+
+const getQuestionUniqueKey = (question, index = 0) =>
+  question?.id ?? `${index}-${question?.tipo || ''}-${getQuestionGroup(question)}`
+
+const completeMacroHeaders = (selection = [], sourceQuestions = []) => {
+  const headerTypes = ['PROBLEMA', 'EMPAREJAMIENTO']
+  const childTypes = ['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO']
+  const sourceHeaders = new Map()
+  const selectedHeaders = new Set()
+
+  ;[...sourceQuestions, ...selection].forEach((question) => {
+    const type = normalizeQuestionType(question?.tipo)
+    const group = getQuestionGroup(question)
+    if (!group || !headerTypes.includes(type)) return
+    sourceHeaders.set(`${type}:${group}`, question)
+  })
+
+  selection.forEach((question) => {
+    const type = normalizeQuestionType(question?.tipo)
+    const group = getQuestionGroup(question)
+    if (!group || !headerTypes.includes(type)) return
+    selectedHeaders.add(`${type}:${group}`)
+  })
+
+  const emittedKeys = new Set()
+  const emittedHeaders = new Set()
+  const result = []
+
+  const pushOnce = (question, index = 0) => {
+    if (!question) return
+    const key = getQuestionUniqueKey(question, index)
+    if (emittedKeys.has(key)) return
+    emittedKeys.add(key)
+    result.push(question)
+  }
+
+  selection.forEach((question, index) => {
+    const type = normalizeQuestionType(question?.tipo)
+    const group = getQuestionGroup(question)
+
+    if (group && headerTypes.includes(type)) {
+      emittedHeaders.add(`${type}:${group}`)
+      pushOnce(question, index)
+      return
+    }
+
+    if (group && childTypes.includes(type)) {
+      const parentType = type === 'OPCION_EMPAREJAMIENTO' ? 'EMPAREJAMIENTO' : 'PROBLEMA'
+      const parentKey = `${parentType}:${group}`
+      const header = sourceHeaders.get(parentKey)
+
+      if (header && !emittedHeaders.has(parentKey)) {
+        emittedHeaders.add(parentKey)
+        pushOnce(header, -1)
+      }
+
+      if (!selectedHeaders.has(parentKey) && header) {
+        selectedHeaders.add(parentKey)
+      }
+    }
+
+    pushOnce(question, index)
+  })
+
+  return result
+}
+
+const assertNoOrphanMacroQuestions = (questions = []) => {
+  const headers = new Set()
+
+  questions.forEach((question) => {
+    const type = normalizeQuestionType(question.tipo)
+    if (!['PROBLEMA', 'EMPAREJAMIENTO'].includes(type)) return
+    const group = getQuestionGroup(question)
+    if (group) headers.add(`${type}:${group}`)
+  })
+
+  const orphan = questions.find((question) => {
+    const type = normalizeQuestionType(question.tipo)
+    if (!['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(type)) return false
+    const group = getQuestionGroup(question)
+    if (!group) return false
+    const parentType = type === 'OPCION_EMPAREJAMIENTO' ? 'EMPAREJAMIENTO' : 'PROBLEMA'
+    return !headers.has(`${parentType}:${group}`)
+  })
+
+  if (!orphan) return
+
+  const parentLabel =
+    normalizeQuestionType(orphan.tipo) === 'OPCION_EMPAREJAMIENTO'
+      ? 'EMPAREJAMIENTO AMPLIADO'
+      : 'ITEMS AGRUPADOS POR CASO O PROBLEMA'
+
+  throw new Error(
+    `El grupo ${getQuestionGroup(orphan)} tiene subpreguntas de ${parentLabel}, pero no se encontro su encabezado padre en la seleccion.`,
+  )
 }
 
 const createExamPdfDocument = (config = {}) => {
@@ -688,7 +1005,7 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
       while (
         cursor < questions.length &&
         normalizeQuestionType(questions[cursor].tipo) === 'OPCION_EMPAREJAMIENTO' &&
-        questions[cursor].grupo === question.grupo
+        getQuestionGroup(questions[cursor]) === getQuestionGroup(question)
       ) {
         linkedQuestions.push(questions[cursor])
         cursor += 1
@@ -1146,10 +1463,12 @@ for (let i = 0; i < variants.length; i += 1) {
     throw new Error('No se pudo armar una variante que cumpla la distribucion por dificultad.')
   }
 
+  const selectionWithHeaders = completeMacroHeaders(selection, payload.questions)
   const sorted = sortExamQuestionsForPdf(
-    mixExamQuestionOptions(JSON.parse(JSON.stringify(selection))),
+    mixExamQuestionOptions(JSON.parse(JSON.stringify(selectionWithHeaders))),
     config,
   )
+  assertNoOrphanMacroQuestions(sorted)
 
   if (i > 0) {
     const numPages = mergedExamenesDoc.internal.getNumberOfPages()
