@@ -413,6 +413,7 @@ const routes = [
               rol: ['SUPER_ADMIN'],
             },
           },
+
         ],
       },
       // Documentación
