@@ -1263,6 +1263,32 @@
                     </div>
                   </q-tooltip>
                 </span>
+                <span v-if="mostrarAccionesExcelBanco" class="banco-action-tooltip-anchor">
+                  <q-btn
+                    round
+                    unelevated
+                    icon="ios_share"
+                    class="banco-action-btn banco-action-btn--export"
+                    aria-label="Exportar banco actual"
+                    :disable="!puedeExportarBancoPreguntas"
+                    :loading="exportandoBancoPreguntas"
+                    @click="exportarBancoPreguntasActual"
+                  />
+                  <q-tooltip
+                    class="banco-action-tooltip"
+                    anchor="top middle"
+                    self="bottom middle"
+                    :offset="[0, 12]"
+                  >
+                    <div class="banco-action-tooltip__title">Exportar Banco Actual</div>
+                    <div class="banco-action-tooltip__caption">
+                      Descarga las preguntas registradas en formato compatible con el Excel base.
+                    </div>
+                    <div v-if="!preguntasFiltradas.length" class="banco-action-tooltip__warning">
+                      No hay preguntas cargadas para {{ filtroBancoDescripcion }}.
+                    </div>
+                  </q-tooltip>
+                </span>
                 <span v-if="mostrarBotonValidarBanco" class="banco-action-tooltip-anchor">
                   <q-btn
                     round
@@ -1327,7 +1353,7 @@
                   <q-btn
                     round
                     unelevated
-                    icon="upload_file"
+                    icon="move_to_inbox"
                     class="banco-action-btn banco-action-btn--upload"
                     aria-label="Subir Banco Excel"
                     @click="abrirModalSubirBanco"
@@ -1386,13 +1412,15 @@
                 </span>
                 <span v-if="puedeMostrarRegistroManualBanco" class="banco-action-tooltip-anchor">
                   <q-btn
-                    round
+                    rounded
                     unelevated
                     icon="add_circle"
+                    label="Nueva pregunta"
                     class="banco-action-btn banco-action-btn--register"
                     aria-label="Registrar nuevas preguntas"
                     :disable="registroManualBancoBloqueado && !modoBancoSoloVisualDirector"
                     @click="abrirRegistroManualPregunta"
+                    no-caps
                   />
                   <q-tooltip
                     class="banco-action-tooltip"
@@ -2216,10 +2244,21 @@
           <!-- Paso 2: Previsualización -->
           <div v-else>
             <!-- Stats -->
-            <div class="import-stats q-mb-md font-mono">
+            <div class="import-stats q-mb-sm font-mono">
               <q-badge color="deep-purple" class="q-pa-sm">
                 Total evaluables: {{ importStats.total }} preguntas
               </q-badge>
+              <q-badge color="teal-8" class="q-pa-sm q-ml-sm">
+                Nuevas: {{ importStats.nuevas || 0 }}
+              </q-badge>
+              <q-badge color="grey-8" class="q-pa-sm q-ml-sm">
+                Ya registradas: {{ importStats.registradas || 0 }}
+              </q-badge>
+              <q-badge v-if="importStats.duplicadasExcel" color="amber-9" class="q-pa-sm q-ml-sm">
+                Repetidas en Excel: {{ importStats.duplicadasExcel }}
+              </q-badge>
+            </div>
+            <div class="import-stats q-mb-md font-mono">
               <q-badge color="green-7" class="q-pa-sm q-ml-sm">
                 Fáciles: {{ importStats.faciles || 0 }}
               </q-badge>
@@ -2241,6 +2280,18 @@
                 G3 Casos/problemas + emp.: {{ importStats.g3 || 0 }}
               </q-badge>
             </div>
+            <q-banner
+              v-if="importStats.total > 0 && importStats.nuevas === 0"
+              class="bg-grey-2 text-grey-9 q-mb-md"
+              rounded
+              dense
+            >
+              <template v-slot:avatar><q-icon name="info" /></template>
+              <div class="text-caption">
+                Todas las preguntas evaluables del archivo ya están registradas para este grupo y
+                parcial; no hay preguntas nuevas para importar.
+              </div>
+            </q-banner>
             <!-- Validacion de minimos -->
             <q-banner
               v-if="importStats.total > 0 && !validacionDistribucion"
@@ -2430,10 +2481,10 @@
             unelevated
             color="deep-purple"
             icon="upload"
-            :label="`Importar ${importStats.total || 0} pregunta(s)`"
+            :label="`Importar ${importStats.nuevas || 0} nueva(s)`"
             :disable="
               modoBancoSoloVisualDirector ||
-              importStats.total === 0 ||
+              importStats.nuevas === 0 ||
               importErroresNormalizados.length > 0 ||
               !validacionDistribucion ||
               !grupoTeoricoSeleccionado
@@ -4922,7 +4973,7 @@ function normalizarTipoPregunta(tipo, pregunta = null, gruposCabeceraMap = null)
   return tipoNormalizado
 }
 
-const importStats = ref({
+const crearImportStatsVacios = () => ({
   total: 0,
   faciles: 0,
   medios: 0,
@@ -4930,7 +4981,13 @@ const importStats = ref({
   g1: 0,
   g2: 0,
   g3: 0,
+  nuevas: 0,
+  registradas: 0,
+  duplicadasExcel: 0,
+  registrosNuevos: 0,
+  registrosRegistrados: 0,
 })
+const importStats = ref(crearImportStatsVacios())
 
 watch(asignatura, (newVal) => {
   // Only update fields if we are NOT currently editing (to avoid overwrite)
@@ -5407,6 +5464,7 @@ async function descargarProgramaAnaliticoDesdeGestion() {
 
 const showSubirBanco = ref(false)
 const previsualizandoExamenBanco = ref(false)
+const exportandoBancoPreguntas = ref(false)
 
 // ExÒ�� �"Ò� â����Ò�â��šÒ�a�¡menes de la asignatura (desde el rol de exÒ�� �"Ò� â����Ò�â��šÒ�a�¡menes general)
 
@@ -7894,71 +7952,6 @@ function buscarDuplicadoEnPayloadsRegistro(payloads) {
   return null
 }
 
-function agregarErrorImportacion(erroresListado, fila, pregunta, mensaje) {
-  const existeFila = erroresListado.find((error) => error.fila === fila)
-
-  if (existeFila) {
-    if (!existeFila.mensajes.includes(mensaje)) {
-      existeFila.mensajes.push(mensaje)
-    }
-    return
-  }
-
-  erroresListado.push({
-    fila,
-    tipo: pregunta?.tipo || '-',
-    enunciado: pregunta?.enunciado || 'Sin datos',
-    mensajes: [mensaje],
-  })
-}
-
-function validarDuplicadosImportacion(preguntas, erroresListado) {
-  const clavesLote = new Map()
-
-  preguntas.forEach((pregunta) => {
-    const payload = {
-      ...pregunta,
-      grupoTeorico:
-        pregunta.grupoTeorico ||
-        grupoTeoricoSeleccionado.value ||
-        filtroBancoGrupoSeleccionado.value ||
-        '',
-      parcial:
-        pregunta.parcial ||
-        parcialSeleccionado.value ||
-        filtroBancoParcialSeleccionado.value ||
-        '2P',
-    }
-    const clave = construirClaveDuplicadoBanco(payload)
-    const fila = pregunta.filaExcel || '-'
-
-    if (!normalizarEnunciadoBanco(payload.enunciado)) {
-      return
-    }
-
-    if (clavesLote.has(clave)) {
-      agregarErrorImportacion(
-        erroresListado,
-        fila,
-        pregunta,
-        `Pregunta duplicada dentro del Excel. Coincide con la fila ${clavesLote.get(clave)} por enunciado, grupo y parcial.`,
-      )
-    } else {
-      clavesLote.set(clave, fila)
-    }
-
-    const duplicadoExistente = buscarDuplicadoBancoExistente(payload)
-    if (duplicadoExistente) {
-      agregarErrorImportacion(
-        erroresListado,
-        fila,
-        pregunta,
-        'Ya existe una pregunta con el mismo enunciado en este grupo y parcial. No se puede importar duplicada.',
-      )
-    }
-  })
-}
-
 const puedeVisualizarBanco = computed(
   () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
 )
@@ -8037,6 +8030,10 @@ const preguntasFiltradas = computed(() => {
     )
   })
 })
+
+const puedeExportarBancoPreguntas = computed(
+  () => puedeVisualizarBanco.value && preguntasFiltradas.value.length > 0,
+)
 
 const totalPreguntasContables = computed(() => {
   return preguntasFiltradas.value.filter((p) => obtenerTipoContableBanco(p)).length
@@ -9928,15 +9925,256 @@ async function descargarFormatoBanco() {
   $q.notify({ type: 'positive', message: 'Excel generado exitosamente', icon: 'check_circle' })
 }
 
-const validacionDistribucion = computed(() => {
-  if (importacionAcumulativaSegundoParcial.value) {
-    return importStats.value.total > 0
+async function exportarBancoPreguntasActual() {
+  if (!puedeExportarBancoPreguntas.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'No hay preguntas para exportar en el banco seleccionado.',
+      icon: 'warning',
+    })
+    return
   }
 
-  const countF = importStats.value.faciles || 0
-  const countM = importStats.value.medios || 0
-  const countD = importStats.value.dificiles || 0
-  return importStats.value.total >= 60 && countF >= 15 && countM >= 30 && countD >= 15
+  exportandoBancoPreguntas.value = true
+
+  try {
+    const ExcelJS = await import('exceljs')
+    const workbook = new ExcelJS.default.Workbook()
+    const preguntasExportar = preguntasFiltradas.value || []
+    const parcialActivo = normalizarParcialBanco(filtroBancoParcialSeleccionado.value || '2P')
+    const parcialActivoLabel = getParcialLabelBanco(parcialActivo)
+    const grupoActivo = filtroBancoGrupoSeleccionado.value || ''
+    const headers = [
+      'tipo',
+      'grupo',
+      'enunciado',
+      'opcion_a',
+      'opcion_b',
+      'opcion_c',
+      'opcion_d',
+      'opcion_e',
+      'respuesta_correcta',
+      'dificultad',
+      'parcial',
+      'observaciones',
+    ]
+
+    const limpiarTextoExcel = (value) => normalizarTextoMojibake(String(value ?? '')).trim()
+    const letras = ['A', 'B', 'C', 'D', 'E']
+    const obtenerTextoOpcion = (pregunta, letra) => {
+      const opciones = Array.isArray(pregunta?.opciones) ? pregunta.opciones : []
+      const indexLetra = letras.indexOf(letra)
+      const opcion =
+        opciones.find((item, index) => {
+          const id = typeof item === 'object' && item !== null ? item.id || item.letra : null
+          return String(id || letras[index] || '').toUpperCase() === letra
+        }) || opciones[indexLetra]
+
+      if (typeof opcion === 'object' && opcion !== null) {
+        return limpiarTextoExcel(opcion.text ?? opcion.texto ?? opcion.label ?? opcion.valor ?? '')
+      }
+
+      return limpiarTextoExcel(opcion || '')
+    }
+    const normalizarRespuestaExport = (respuesta) => {
+      const valores = Array.isArray(respuesta) ? respuesta : [respuesta]
+      return valores
+        .map((valor) => {
+          if (typeof valor === 'object' && valor !== null) {
+            return normalizarRespuestaExcelBanco(valor.id ?? valor.value ?? valor.text ?? '')
+          }
+          return normalizarRespuestaExcelBanco(valor)
+        })
+        .filter(Boolean)
+        .join(',')
+    }
+    const normalizarDificultadExport = (pregunta, tipoNormalizado) => {
+      if (['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipoNormalizado)) {
+        return ''
+      }
+
+      const dificultad = normalizarTipoAliasKey(pregunta?.dificultad || '')
+      if (['1', 'FACIL'].includes(dificultad)) return '1'
+      if (['2', 'MEDIO', 'MEDIA'].includes(dificultad)) return '2'
+      if (['3', 'DIFICIL'].includes(dificultad)) return '3'
+      return limpiarTextoExcel(pregunta?.dificultad || '')
+    }
+
+    workbook.creator = 'UNITEPC'
+    workbook.lastModifiedBy = 'UNITEPC'
+    workbook.created = new Date()
+    workbook.modified = new Date()
+
+    const wsInst = workbook.addWorksheet('Instrucciones')
+    wsInst.columns = [{ width: 34 }, { width: 92 }]
+    const titleRow = wsInst.addRow(['EXPORTACION DE BANCO DE PREGUNTAS'])
+    titleRow.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }
+    titleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4527A0' } }
+    wsInst.addRow([])
+    wsInst.addRow([
+      'Asignatura',
+      `${asignatura.value?.sigla || asignatura.value?.codigo || ''} - ${asignatura.value?.nombre || ''}`,
+    ])
+    wsInst.addRow(['Banco exportado', `${parcialActivoLabel} - Grupo ${grupoActivo}`])
+    wsInst.addRow(['Registros exportados', preguntasExportar.length])
+    wsInst.addRow(['Preguntas evaluables', totalPreguntasContables.value])
+    wsInst.addRow([])
+    wsInst.addRow([
+      'Uso recomendado',
+      'Este archivo conserva la estructura de la hoja Banco para que el docente pueda respaldar sus preguntas o importarlas en otro grupo/materia compatible.',
+    ])
+    wsInst.addRow([
+      'Imagenes',
+      'Las imagenes adjuntas a preguntas no se incluyen dentro del Excel exportado.',
+    ])
+    wsInst.addRow([
+      'Migracion',
+      'Antes de importar en otra materia, revise parcial, grupo interno de casos/emparejamientos y el contenido de cada fila.',
+    ])
+    wsInst.eachRow((row) => {
+      row.eachCell((cell) => {
+        cell.alignment = { wrapText: true, vertical: 'top' }
+      })
+    })
+
+    const wsBanco = workbook.addWorksheet('Banco')
+    wsBanco.views = [{ state: 'frozen', ySplit: 1 }]
+    wsBanco.autoFilter = 'A1:L1'
+
+    const headerRow = wsBanco.addRow(headers)
+    headerRow.eachCell((cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4527A0' } }
+      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true }
+      cell.alignment = { vertical: 'middle', horizontal: 'center' }
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
+      }
+    })
+
+    preguntasExportar.forEach((pregunta) => {
+      const tipoNormalizado = normalizarTipoPregunta(
+        pregunta.tipo,
+        pregunta,
+        gruposCabeceraBancoMap.value,
+      )
+      const tipoExcel = getTipoLabelBanco(pregunta.tipo, pregunta, gruposCabeceraBancoMap.value)
+      const row = wsBanco.addRow([
+        tipoExcel,
+        limpiarTextoExcel(pregunta.grupo || ''),
+        limpiarTextoExcel(pregunta.enunciado || ''),
+        obtenerTextoOpcion(pregunta, 'A'),
+        obtenerTextoOpcion(pregunta, 'B'),
+        obtenerTextoOpcion(pregunta, 'C'),
+        obtenerTextoOpcion(pregunta, 'D'),
+        obtenerTextoOpcion(pregunta, 'E'),
+        ['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipoNormalizado)
+          ? ''
+          : normalizarRespuestaExport(pregunta.respuesta_correcta),
+        normalizarDificultadExport(pregunta, tipoNormalizado),
+        parcialActivo,
+        'OK - Exportado desde el banco registrado',
+      ])
+
+      row.height = 24
+      row.eachCell((cell) => {
+        cell.alignment = { wrapText: true, vertical: 'top' }
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        }
+      })
+
+      const dificultad = row.getCell(10).value
+      const color =
+        dificultad === '1'
+          ? 'FFC6EFCE'
+          : dificultad === '2'
+            ? 'FFFFEB9C'
+            : dificultad === '3'
+              ? 'FFFFC7CE'
+              : 'FFEDE7F6'
+      row.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } }
+      })
+    })
+
+    wsBanco.columns = [
+      { width: 28 },
+      { width: 18 },
+      { width: 70, style: { alignment: { wrapText: true, vertical: 'top' } } },
+      { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+      { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+      { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+      { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+      { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+      { width: 20 },
+      { width: 12 },
+      { width: 12 },
+      { width: 48, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    ]
+
+    const filasBancoDesde = 2
+    const filasBancoHasta = Math.max(filasBancoDesde, preguntasExportar.length + 1)
+    const resumenInicio = filasBancoHasta + 2
+    wsBanco.getRow(resumenInicio).getCell(9).value = 'Total Faciles:'
+    wsBanco.getRow(resumenInicio).getCell(9).font = { bold: true }
+    wsBanco.getRow(resumenInicio).getCell(10).value = {
+      formula: `COUNTIF(J${filasBancoDesde}:J${filasBancoHasta},1)`,
+    }
+    wsBanco.getRow(resumenInicio + 1).getCell(9).value = 'Total Medias:'
+    wsBanco.getRow(resumenInicio + 1).getCell(9).font = { bold: true }
+    wsBanco.getRow(resumenInicio + 1).getCell(10).value = {
+      formula: `COUNTIF(J${filasBancoDesde}:J${filasBancoHasta},2)`,
+    }
+    wsBanco.getRow(resumenInicio + 2).getCell(9).value = 'Total Dificiles:'
+    wsBanco.getRow(resumenInicio + 2).getCell(9).font = { bold: true }
+    wsBanco.getRow(resumenInicio + 2).getCell(10).value = {
+      formula: `COUNTIF(J${filasBancoDesde}:J${filasBancoHasta},3)`,
+    }
+
+    const filenameSafe = (value) =>
+      String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9_-]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.href = url
+    link.download = `banco_preguntas_${filenameSafe(asignatura.value?.sigla || asignatura.value?.codigo || 'asignatura')}_G${filenameSafe(grupoActivo || 'grupo')}_${parcialActivo}.xlsx`
+    link.click()
+    URL.revokeObjectURL(url)
+
+    $q.notify({
+      type: 'positive',
+      message: `Banco exportado: ${totalPreguntasContables.value} preguntas evaluables.`,
+      caption: `${preguntasExportar.length} registros incluidos en el Excel.`,
+      icon: 'check_circle',
+    })
+  } catch (error) {
+    console.error('Error al exportar banco de preguntas:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo exportar el banco de preguntas.',
+      caption: error.message,
+      timeout: 5000,
+    })
+  } finally {
+    exportandoBancoPreguntas.value = false
+  }
+}
+
+const validacionDistribucion = computed(() => {
+  return importStats.value.total > 0
 })
 
 const gruposTeoricosOptions = computed(() => {
@@ -10011,6 +10249,7 @@ function normalizarRespuestaExcelBanco(valor) {
 
 function previsualizarArchivoExcel(file) {
   if (!file) return
+  importStats.value = crearImportStatsVacios()
   const reader = new FileReader()
   reader.onload = (e) => {
     import('xlsx').then(async (XLSX) => {
@@ -10205,8 +10444,6 @@ function previsualizarArchivoExcel(file) {
           }
         })
 
-        validarDuplicadosImportacion(preguntas, erroresListado)
-
         // Calcular stats
         const preguntasReales = preguntas.filter(
           (p) => !['EMPAREJAMIENTO', 'PROBLEMA'].includes(normalizarTipoPregunta(p.tipo, p)),
@@ -10219,18 +10456,68 @@ function previsualizarArchivoExcel(file) {
           g1: 0,
           g2: 0,
           g3: 0,
+          nuevas: 0,
+          registradas: 0,
+          duplicadasExcel: 0,
+          registrosNuevos: 0,
+          registrosRegistrados: 0,
         }
-        preguntasReales.forEach((p) => {
+
+        const clavesNuevasArchivo = new Set()
+        preguntas.forEach((p) => {
+          const tipoNormalizado = normalizarTipoPregunta(p.tipo, p, gruposHeadersMap)
+          const esContable = !['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipoNormalizado)
+          const payloadDuplicado = {
+            ...p,
+            grupoTeorico:
+              p.grupoTeorico ||
+              grupoTeoricoSeleccionado.value ||
+              filtroBancoGrupoSeleccionado.value ||
+              '',
+            parcial:
+              p.parcial ||
+              parcialSeleccionado.value ||
+              filtroBancoParcialSeleccionado.value ||
+              '2P',
+          }
+          const claveDuplicado = construirClaveDuplicadoBanco(payloadDuplicado)
+          let estadoImportacion = 'nueva'
+
+          if (claveDuplicado && clavesNuevasArchivo.has(claveDuplicado)) {
+            estadoImportacion = 'duplicadaExcel'
+          } else if (buscarDuplicadoBancoExistente(payloadDuplicado)) {
+            estadoImportacion = 'registrada'
+          } else if (claveDuplicado) {
+            clavesNuevasArchivo.add(claveDuplicado)
+          }
+
+          if (estadoImportacion === 'nueva') {
+            stats.registrosNuevos++
+          } else if (estadoImportacion === 'registrada') {
+            stats.registrosRegistrados++
+          }
+
+          if (!esContable) {
+            return
+          }
+
           if (p.dificultad === '1') stats.faciles++
           else if (p.dificultad === '2') stats.medios++
           else if (p.dificultad === '3') stats.dificiles++
 
-          const tipoContable = obtenerTipoContableBanco(p, gruposHeadersMap)
           const grupoTipo = REQUISITOS_BANCO_GRUPO_TIPO.find((grupo) =>
-            grupo.tipos.includes(tipoContable),
+            grupo.tipos.includes(tipoNormalizado),
           )
           if (grupoTipo) {
             stats[grupoTipo.key]++
+          }
+
+          if (estadoImportacion === 'nueva') {
+            stats.nuevas++
+          } else if (estadoImportacion === 'registrada') {
+            stats.registradas++
+          } else if (estadoImportacion === 'duplicadaExcel') {
+            stats.duplicadasExcel++
           }
         })
 
@@ -10302,20 +10589,6 @@ async function confirmarImportacionBanco() {
     return
   }
 
-  await cargarBancoPreguntas()
-
-  const erroresDuplicados = []
-  validarDuplicadosImportacion(preguntasImportadas.value, erroresDuplicados)
-  if (erroresDuplicados.length > 0) {
-    importErrores.value = erroresDuplicados
-    $q.notify({
-      type: 'warning',
-      message:
-        'El archivo contiene preguntas duplicadas. Revisa la vista previa antes de importar.',
-    })
-    return
-  }
-
   importandoBanco.value = true
 
   try {
@@ -10350,17 +10623,20 @@ async function confirmarImportacionBanco() {
     })
 
     if (response.data.success) {
-      const totalEvaluableImportado = importStats.value.total || 0
-      const totalEstructurasAuxiliares = Math.max(
-        0,
-        (preguntasImportadas.value || []).length - totalEvaluableImportado,
-      )
+      const totalEvaluableImportado = Number(response.data?.evaluables || response.data?.total || 0)
+      const totalEstructurasAuxiliares = Number(response.data?.auxiliares || 0)
+      const totalOmitidas = Number(response.data?.omitidas || 0)
       $q.notify({
         type: 'positive',
-        message: `Se han importado ${totalEvaluableImportado} preguntas evaluables correctamente.`,
-        caption: totalEstructurasAuxiliares
-          ? `${totalEstructurasAuxiliares} estructura(s) auxiliar(es) de caso/emparejamiento registradas.`
-          : undefined,
+        message: `Se han importado ${totalEvaluableImportado} pregunta(s) nueva(s) correctamente.`,
+        caption: [
+          totalEstructurasAuxiliares
+            ? `${totalEstructurasAuxiliares} estructura(s) auxiliar(es) registradas.`
+            : null,
+          totalOmitidas ? `${totalOmitidas} duplicada(s) omitida(s) sin afectar el banco.` : null,
+        ]
+          .filter(Boolean)
+          .join(' '),
         icon: 'cloud_done',
       })
 
@@ -10496,7 +10772,7 @@ function cerrarDialogImportBanco() {
   archivoPreviewBanco.value = null
   preguntasImportadas.value = []
   importErrores.value = []
-  importStats.value = { total: 0, faciles: 0, medios: 0, dificiles: 0, g1: 0, g2: 0, g3: 0 }
+  importStats.value = crearImportStatsVacios()
   parcialSeleccionado.value = filtroBancoParcialSeleccionado.value || '2P'
   grupoTeoricoSeleccionado.value = filtroBancoGrupoSeleccionado.value || null
 }
@@ -11407,6 +11683,10 @@ function getParcialColorBanco(parcial) {
   --banco-action-accent: #2563eb;
 }
 
+.banco-action-btn--export {
+  --banco-action-accent: #0f766e;
+}
+
 .banco-action-btn--validate {
   --banco-action-accent: #d97706;
 }
@@ -11425,6 +11705,14 @@ function getParcialColorBanco(parcial) {
 
 .banco-action-btn--register {
   --banco-action-accent: #059669;
+  width: auto;
+  min-width: 136px;
+  padding: 0 14px;
+  border-radius: 999px;
+}
+
+.banco-action-btn--register :deep(.q-btn__content) {
+  gap: 6px;
 }
 
 :deep(.banco-action-tooltip) {

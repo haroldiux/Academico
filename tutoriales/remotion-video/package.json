@@ -1,0 +1,22 @@
+{
+  "name": "tutorial-banco-preguntas-vf",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "build": "remotion render TutorialVerdaderoFalso out/tutorial-verdadero-falso.mp4",
+    "still": "remotion still TutorialVerdaderoFalso --scale=0.25 --frame=120 out/frame-120.png"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.368",
+    "remotion": "^4.0.368",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  }
+}

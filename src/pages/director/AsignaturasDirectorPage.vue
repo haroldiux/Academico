@@ -490,6 +490,27 @@
                         <div v-else class="text-grey-4">Sin fecha</div>
                       </template>
 
+                      <!-- Columna Estado Examen 2P -->
+                      <template v-else-if="col.name === 'estado_examen_2p'">
+                        <div v-if="cargandoCampos2P" class="row justify-center">
+                          <q-spinner-dots color="deep-purple-6" size="20px">
+                            <q-tooltip>Cargando estado del examen 2P</q-tooltip>
+                          </q-spinner-dots>
+                        </div>
+                        <q-chip
+                          v-else-if="props.row.estado_examen_2p"
+                          size="sm"
+                          :color="colorEstadoExamen2P(props.row.estado_examen_2p)"
+                          text-color="white"
+                          :icon="iconoEstadoExamen2P(props.row.estado_examen_2p)"
+                          dense
+                        >
+                          {{ formatearEstadoExamen2P(props.row.estado_examen_2p) }}
+                          <q-tooltip>Estado del examen 2do Parcial</q-tooltip>
+                        </q-chip>
+                        <div v-else class="text-grey-4">Sin estado</div>
+                      </template>
+
                       <!-- Columna Estado -->
                       <template v-else-if="col.name === 'estado'">
                         <q-chip
@@ -860,9 +881,27 @@
                           <q-item-section>
                             <div class="text-caption text-grey-7 text-center">
                               <q-icon name="event" size="14px" class="q-mr-xs" />
-                              {{
-                                docente.fecha_2p ? formatearFechaHora2P(docente) : 'Sin fecha 2P'
-                              }}
+                              {{ formatearFechaHoraDocente2P(props.row, docente) }}
+                            </div>
+                            <div class="q-mt-xs text-center">
+                              <q-chip
+                                v-if="obtenerEstadoExamenDocente2P(props.row, docente)"
+                                size="xs"
+                                :color="
+                                  colorEstadoExamen2P(
+                                    obtenerEstadoExamenDocente2P(props.row, docente),
+                                  )
+                                "
+                                text-color="white"
+                                dense
+                              >
+                                {{
+                                  formatearEstadoExamen2P(
+                                    obtenerEstadoExamenDocente2P(props.row, docente),
+                                  )
+                                }}
+                              </q-chip>
+                              <span v-else class="text-caption text-grey-4">Sin estado 2P</span>
                             </div>
                           </q-item-section>
 
@@ -1596,7 +1635,12 @@ async function cargarRolExamenes2P(sedeId, carreraId) {
       .filter((examen) => examen.tipo_examen === '2do Parcial')
       .reduce((map, examen) => {
         if (examen.materia_codigo) {
-          map[normalizarCodigoMateria(examen.materia_codigo)] = examen
+          const codigo = normalizarCodigoMateria(examen.materia_codigo)
+          map[codigo] = examen
+
+          if (examen.grupo) {
+            map[crearRolExamen2PKey(codigo, examen.grupo)] = examen
+          }
         }
         return map
       }, {})
@@ -1772,6 +1816,13 @@ const columnasAsignaturas = [
     align: 'center',
     style: 'width: 120px',
   },
+  {
+    name: 'estado_examen_2p',
+    label: 'Estado Examen 2P',
+    field: 'estado_examen_2p',
+    align: 'center',
+    style: 'width: 145px',
+  },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 100px' },
   {
     name: 'acciones',
@@ -1852,16 +1903,23 @@ const semestresFiltrados = computed(() => {
     let fecha2pMostrar = rolExamen2P?.fecha || asig.fecha_2p
     let horaInicio2pMostrar = rolExamen2P?.hora_inicio || asig.hora_inicio_2p
     let horaFin2pMostrar = rolExamen2P?.hora_fin || asig.hora_fin_2p
+    let estadoExamen2pMostrar =
+      rolExamen2P?.estado || asig.estado_examen_2p || asig.estado_rol_examen_2p
 
     if (asig.docentes_data && asig.docentes_data.length === 1) {
-      progresoMostrar = asig.docentes_data[0].progreso_documentacion
-      indicadoresMostrar = asig.docentes_data[0].indicadores_documentacion
+      const docenteUnico = asig.docentes_data[0]
+      const rolExamenDocente2P = obtenerRolExamen2P(asig, docenteUnico) || rolExamen2P
+      progresoMostrar = docenteUnico.progreso_documentacion
+      indicadoresMostrar = docenteUnico.indicadores_documentacion
       preguntas2pMostrar =
-        obtenerBancoPreguntas2P(asig, asig.docentes_data[0]) ||
-        asig.docentes_data[0].preguntas_2p_stats
-      fecha2pMostrar = rolExamen2P?.fecha || asig.docentes_data[0].fecha_2p
-      horaInicio2pMostrar = rolExamen2P?.hora_inicio || asig.docentes_data[0].hora_inicio_2p
-      horaFin2pMostrar = rolExamen2P?.hora_fin || asig.docentes_data[0].hora_fin_2p
+        obtenerBancoPreguntas2P(asig, docenteUnico) || docenteUnico.preguntas_2p_stats
+      fecha2pMostrar = rolExamenDocente2P?.fecha || docenteUnico.fecha_2p
+      horaInicio2pMostrar = rolExamenDocente2P?.hora_inicio || docenteUnico.hora_inicio_2p
+      horaFin2pMostrar = rolExamenDocente2P?.hora_fin || docenteUnico.hora_fin_2p
+      estadoExamen2pMostrar =
+        rolExamenDocente2P?.estado ||
+        docenteUnico.estado_examen_2p ||
+        docenteUnico.estado_rol_examen_2p
     }
 
     grupos[sem].asignaturas.push({
@@ -1873,6 +1931,7 @@ const semestresFiltrados = computed(() => {
       fecha_2p: fecha2pMostrar,
       hora_inicio_2p: horaInicio2pMostrar,
       hora_fin_2p: horaFin2pMostrar,
+      estado_examen_2p: estadoExamen2pMostrar,
       docente_nombre_mostrar: docenteNombreMostrar,
     })
   })
@@ -1905,8 +1964,33 @@ function normalizarCodigoMateria(codigo) {
     .toUpperCase()
 }
 
-function obtenerRolExamen2P(asignatura) {
-  return rolExamenes2PMap.value[normalizarCodigoMateria(asignatura.codigo)] || null
+function normalizarGrupoRolExamen(grupo) {
+  return String(grupo || '')
+    .trim()
+    .toUpperCase()
+    .replace(/^GRUPO\s*/, '')
+    .replace(/^G[-.\s]*/, '')
+}
+
+function crearRolExamen2PKey(codigo, grupo) {
+  return `${normalizarCodigoMateria(codigo)}|${normalizarGrupoRolExamen(grupo)}`
+}
+
+function obtenerGrupoDocente2P(docente) {
+  return (
+    docente?.grupo_teorico_nombre || docente?.grupo || docente?.preguntas_2p_stats?.grupo_teorico
+  )
+}
+
+function obtenerRolExamen2P(asignatura, docente = null) {
+  const codigo = normalizarCodigoMateria(asignatura.codigo)
+  const grupo = obtenerGrupoDocente2P(docente)
+
+  if (grupo) {
+    return rolExamenes2PMap.value[crearRolExamen2PKey(codigo, grupo)] || null
+  }
+
+  return rolExamenes2PMap.value[codigo] || null
 }
 
 function crearBancoPreguntas2PKey(asignaturaId, docenteId, sedeId, grupoTeorico) {
@@ -1951,6 +2035,91 @@ function formatearFechaHora2P(item) {
   if (horaInicio) return `${fecha} ${horaInicio}`
 
   return fecha
+}
+
+function obtenerDetalleExamenDocente2P(asignatura, docente) {
+  const rolExamen2P = obtenerRolExamen2P(asignatura, docente)
+
+  return {
+    fecha_2p: rolExamen2P?.fecha || docente?.fecha_2p,
+    hora_inicio_2p: rolExamen2P?.hora_inicio || docente?.hora_inicio_2p,
+    hora_fin_2p: rolExamen2P?.hora_fin || docente?.hora_fin_2p,
+    estado_examen_2p:
+      rolExamen2P?.estado || docente?.estado_examen_2p || docente?.estado_rol_examen_2p,
+  }
+}
+
+function formatearFechaHoraDocente2P(asignatura, docente) {
+  const detalle = obtenerDetalleExamenDocente2P(asignatura, docente)
+
+  return detalle.fecha_2p ? formatearFechaHora2P(detalle) : 'Sin fecha 2P'
+}
+
+function obtenerEstadoExamenDocente2P(asignatura, docente) {
+  return obtenerDetalleExamenDocente2P(asignatura, docente).estado_examen_2p
+}
+
+function normalizarEstadoExamen2P(estado) {
+  return String(estado || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+function formatearEstadoExamen2P(estado) {
+  const normalizado = normalizarEstadoExamen2P(estado)
+  const etiquetas = {
+    programado: 'Programado',
+    programados: 'Programado',
+    generado: 'Generado',
+    generados: 'Generado',
+    impreso: 'Impreso',
+    impresos: 'Impreso',
+    entregado: 'Entregado',
+    entregados: 'Entregado',
+    devuelto: 'Devuelto',
+    devueltos: 'Devuelto',
+    revisado: 'Revisado',
+    revisados: 'Revisado',
+    subido: 'Subido',
+    subidos: 'Subido',
+  }
+
+  if (etiquetas[normalizado]) return etiquetas[normalizado]
+
+  return String(estado || 'Sin estado')
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+function colorEstadoExamen2P(estado) {
+  const normalizado = normalizarEstadoExamen2P(estado)
+
+  if (['programado', 'programados'].includes(normalizado)) return 'blue-7'
+  if (['generado', 'generados'].includes(normalizado)) return 'deep-purple-6'
+  if (['impreso', 'impresos'].includes(normalizado)) return 'orange-8'
+  if (['entregado', 'entregados'].includes(normalizado)) return 'teal-7'
+  if (['devuelto', 'devueltos'].includes(normalizado)) return 'red-7'
+  if (['revisado', 'revisados'].includes(normalizado)) return 'green-7'
+  if (['subido', 'subidos'].includes(normalizado)) return 'indigo-7'
+
+  return 'grey-7'
+}
+
+function iconoEstadoExamen2P(estado) {
+  const normalizado = normalizarEstadoExamen2P(estado)
+
+  if (['programado', 'programados'].includes(normalizado)) return 'schedule'
+  if (['generado', 'generados'].includes(normalizado)) return 'auto_awesome'
+  if (['impreso', 'impresos'].includes(normalizado)) return 'print'
+  if (['entregado', 'entregados'].includes(normalizado)) return 'assignment_turned_in'
+  if (['devuelto', 'devueltos'].includes(normalizado)) return 'assignment_return'
+  if (['revisado', 'revisados'].includes(normalizado)) return 'verified'
+  if (['subido', 'subidos'].includes(normalizado)) return 'cloud_done'
+
+  return 'info'
 }
 
 function normalizarTipoPregunta2P(tipo) {
