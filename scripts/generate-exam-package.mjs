@@ -24,6 +24,49 @@ const EXAM_PDF_DEFAULT_CONFIG = {
   aleatorizarSecciones: true,
 }
 
+const padDatePart = (value) => String(value).padStart(2, '0')
+
+const getExamCivilDateParts = (fecha) => {
+  if (!fecha) return null
+
+  if (fecha instanceof Date && !Number.isNaN(fecha.getTime())) {
+    return {
+      year: fecha.getFullYear(),
+      month: padDatePart(fecha.getMonth() + 1),
+      day: padDatePart(fecha.getDate()),
+    }
+  }
+
+  const value = String(fecha).trim()
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) {
+    return {
+      year: isoMatch[1],
+      month: isoMatch[2],
+      day: isoMatch[3],
+    }
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+
+  return {
+    year: parsed.getFullYear(),
+    month: padDatePart(parsed.getMonth() + 1),
+    day: padDatePart(parsed.getDate()),
+  }
+}
+
+const formatExamCivilDate = (fecha) => {
+  const parts = getExamCivilDateParts(fecha)
+  return parts ? `${parts.day}/${parts.month}/${parts.year}` : '-'
+}
+
+const formatExamCivilDateIso = (fecha) => {
+  const parts = getExamCivilDateParts(fecha)
+  return parts ? `${parts.year}-${parts.month}-${parts.day}` : '-'
+}
+
 const shuffle = (array) => {
   let currentIndex = array.length
 
@@ -860,16 +903,6 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
   doc.setFont(baseFont)
   doc.setLineHeightFactor(1.1905 * spacingMult)
 
-  const formatFecha = (fecha) => {
-    if (!fecha) return '-'
-    const dateValue = new Date(fecha)
-    return dateValue.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-  }
-
   const logoBase64 = await fileToDataUrl(payload.logoPath)
 
   autoTable(doc, {
@@ -974,7 +1007,10 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
       ],
       [
         { content: `MATERIA: ${String(exam.materia || '')}`, styles: { fontStyle: 'bold' } },
-        { content: `FECHA: ${formatFecha(exam.fecha_examen)}`, styles: { fontStyle: 'bold' } },
+        {
+          content: `FECHA: ${formatExamCivilDate(exam.fecha_examen)}`,
+          styles: { fontStyle: 'bold' },
+        },
       ],
       [
         { content: `SEMESTRE: ${String(exam.semestre || '')}`, styles: { fontStyle: 'bold' } },
@@ -1380,9 +1416,7 @@ const generatePatronPdf = async (pdfDoc, letra, preguntas = [], examenInput = nu
 
   doc.text('FECHA:', pageWidth - margin - 45, currentY + 21)
   doc.setFont('helvetica', 'normal')
-  const fechaStr = examen.fecha_examen
-    ? new Date(examen.fecha_examen).toISOString().split('T')[0]
-    : '-'
+  const fechaStr = formatExamCivilDateIso(examen.fecha_examen)
   doc.text(String(fechaStr), pageWidth - margin - 30, currentY + 21)
 
   doc.setLineWidth(0.2)
