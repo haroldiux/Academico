@@ -27,6 +27,31 @@ export const useUsuariosStore = defineStore('usuarios', () => {
   })
 
   // Helper para mapear usuario del backend a formato frontend
+  function normalizarSedesUsuario(u) {
+    const sedes = Array.isArray(u.sedes_asignadas)
+      ? u.sedes_asignadas
+          .map((sede) => ({
+            id: Number(sede.id),
+            nombre: sede.nombre,
+          }))
+          .filter((sede) => sede.id)
+      : []
+
+    if (sedes.length === 0 && (u.sede_id || u.sede_nombre || u.sede?.nombre)) {
+      sedes.push({
+        id: Number(u.sede_id || u.sede?.id),
+        nombre: u.sede_nombre || u.sede?.nombre,
+      })
+    }
+
+    const unique = new Map()
+    sedes.forEach((sede) => {
+      if (sede.id && !unique.has(sede.id)) unique.set(sede.id, sede)
+    })
+
+    return [...unique.values()]
+  }
+
   function mapUser(u) {
     let cIds = []
     if (u.director) {
@@ -46,6 +71,9 @@ export const useUsuariosStore = defineStore('usuarios', () => {
       }
     }
 
+    const sedesAsignadas = normalizarSedesUsuario(u)
+    const sedeId = Number(u.sede_id) || sedesAsignadas[0]?.id || null
+
     return {
       ...u,
       rolNombre: u.rol ? u.rol.nombre : '',
@@ -53,8 +81,13 @@ export const useUsuariosStore = defineStore('usuarios', () => {
       estado: u.estado ? 'activo' : 'inactivo',
       carrera: u.carrera_nombre || u.carrera,
       carreraIds: cIds,
-      sedeNombre: u.sede_nombre || (u.sede ? u.sede.nombre : ''),
-      sedeId: u.sede_id,
+      sedeNombre: sedesAsignadas
+        .map((sede) => sede.nombre)
+        .filter(Boolean)
+        .join(', '),
+      sedeId,
+      sedeIds: sedesAsignadas.map((sede) => sede.id),
+      sedesAsignadas,
     }
   }
 

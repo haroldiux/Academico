@@ -39,7 +39,7 @@
           outlined
           dense
           label="Sede"
-          :clearable="!esSedeRestringida"
+          :clearable="!debeLimitarSedes"
           :readonly="esSedeRestringida"
           :loading="loadingOptions.sedes"
           bg-color="white"
@@ -2233,19 +2233,63 @@ const optionsEspaciado = [
 ]
 const loadingOptions = ref({ sedes: false, carreras: false })
 
-const esSedeRestringida = computed(() => {
+const sedesAsignadasUsuario = computed(() => {
+  const usuario = authStore.usuarioActual || {}
+  const sedes = Array.isArray(usuario.sedes_asignadas) ? usuario.sedes_asignadas : []
+  const fromSedes = sedes
+    .map((sede) => ({
+      label: sede.nombre || sede.label,
+      value: Number(sede.id || sede.value),
+    }))
+    .filter((sede) => sede.value)
+  const fromCampus = Array.isArray(usuario.campus_asignados)
+    ? usuario.campus_asignados
+        .map((campus) => ({
+          label: campus.sede || campus.sede_nombre,
+          value: Number(campus.sede_id),
+        }))
+        .filter((sede) => sede.value)
+    : []
+  const base = usuario.sede_id
+    ? [{ label: usuario.sede?.nombre || usuario.sede_nombre, value: Number(usuario.sede_id) }]
+    : []
+  const unique = new Map()
+
+  ;[...fromSedes, ...fromCampus, ...base].forEach((sede) => {
+    if (!sede.value || unique.has(sede.value)) return
+    unique.set(sede.value, {
+      label: sede.label || `Sede ${sede.value}`,
+      value: sede.value,
+    })
+  })
+
+  return [...unique.values()]
+})
+
+const sedeIdsAsignadasUsuario = computed(() =>
+  sedesAsignadasUsuario.value.map((sede) => Number(sede.value)).filter(Boolean),
+)
+
+const debeLimitarSedes = computed(() => {
   return authStore.rol === ROLES.EVALUACIONES || authStore.alcance === 'sede'
+})
+
+const esSedeRestringida = computed(() => {
+  return debeLimitarSedes.value && sedesOptions.value.length <= 1
 })
 
 const fetchSedes = async () => {
   loadingOptions.value.sedes = true
   try {
     const response = await api.get('/sedes')
-    const rawSedes = response.data.data || []
+    const rawSedes = response.data.data || response.data || []
     const allSedes = rawSedes.map((s) => ({ label: s.nombre, value: s.id }))
+    const sedesAsignadasIds = sedeIdsAsignadasUsuario.value
 
     // Si es Vicerrector Sede o Director Académico, mostrar SOLO su sede
-    if (
+    if (debeLimitarSedes.value && sedesAsignadasIds.length) {
+      sedesOptions.value = allSedes.filter((s) => sedesAsignadasIds.includes(Number(s.value)))
+    } else if (
       [ROLES.VICERRECTOR_SEDE, ROLES.DIRECCION_ACADEMICA].includes(authStore.rol) &&
       authStore.usuarioActual?.sede_id
     ) {
@@ -2257,11 +2301,11 @@ const fetchSedes = async () => {
 
     // Si es restringido, pre-seleccionar su sede
     const currentSedeId = authStore.usuarioActual?.sede_id
-    if (esSedeRestringida.value && currentSedeId) {
-      const sedeUsuario = sedesOptions.value.find((s) => Number(s.value) === Number(currentSedeId))
-      if (sedeUsuario) {
-        filtros.value.sede = sedeUsuario
-      }
+    if (debeLimitarSedes.value) {
+      const sedeUsuario =
+        sedesOptions.value.find((s) => Number(s.value) === Number(currentSedeId)) ||
+        sedesOptions.value[0]
+      filtros.value.sede = sedeUsuario || null
     }
   } catch (error) {
     console.error('Error sedes:', error)
@@ -3173,10 +3217,14 @@ const toggleEstadoFiltro = (key) => {
 }
 
 const limpiarFiltros = () => {
+  const sedeInicial = debeLimitarSedes.value
+    ? sedesOptions.value.find(
+        (s) => Number(s.value) === Number(authStore.usuarioActual?.sede_id),
+      ) || sedesOptions.value[0]
+    : null
+
   filtros.value = {
-    sede: esSedeRestringida.value
-      ? sedesOptions.value.find((s) => Number(s.value) === Number(authStore.usuarioActual?.sede_id))
-      : null,
+    sede: sedeInicial || null,
     carrera: null,
     parcial: PARCIAL_2DO,
     fechaInicio: obtenerFechaHoy(),
@@ -3193,11 +3241,11 @@ const abrirGeneracionManual = () => {
 
   // Pre-selección inteligente basada en el perfil del usuario
   const userSedeId = authStore.usuarioActual?.sede_id
-  const initialSede = userSedeId
-    ? sedesOptions.value.find((s) => Number(s.value) === Number(userSedeId))
-    : sedesOptions.value.length > 0
-      ? sedesOptions.value[0]
-      : null
+  const initialSede =
+    filtros.value.sede ||
+    (userSedeId ? sedesOptions.value.find((s) => Number(s.value) === Number(userSedeId)) : null) ||
+    sedesOptions.value[0] ||
+    null
 
   manualConfig.value = {
     sede: initialSede,

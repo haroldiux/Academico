@@ -812,6 +812,7 @@
               use-input
               input-debounce="300"
               placeholder="Buscar usuario..."
+              :disable="Boolean(usuarioForm.id)"
             />
           </template>
 
@@ -1004,13 +1005,40 @@ const carrerasCampusFiltradas = computed(() => {
 
 const usuariosFiltrados = computed(() => {
   if (!filtroCampusUsuarios.value) return usuarios.value
+  const campusFiltro = Number(filtroCampusUsuarios.value)
   return usuarios.value.filter((u) => {
-    const campusIds = Array.isArray(u.campus_ids) ? u.campus_ids : []
-    return (
-      campusIds.includes(filtroCampusUsuarios.value) || u.campus_id === filtroCampusUsuarios.value
-    )
+    const campusIds = Array.isArray(u.campus_ids) ? u.campus_ids.map(Number) : []
+    return campusIds.includes(campusFiltro) || Number(u.campus_id) === campusFiltro
   })
 })
+
+function normalizarCampusIdsUsuario(usuario) {
+  const campusIds = Array.isArray(usuario.campus_ids) ? usuario.campus_ids : []
+  const campusAsignadosIds = Array.isArray(usuario.campus_asignados)
+    ? usuario.campus_asignados.map((campus) => campus.id)
+    : []
+  const ids = [...campusIds, ...campusAsignadosIds, usuario.campus_id]
+
+  return [...new Set(ids.map(Number).filter(Boolean))]
+}
+
+function normalizarCampusAsignadosUsuario(usuario, campusIds) {
+  if (Array.isArray(usuario.campus_asignados) && usuario.campus_asignados.length) {
+    return usuario.campus_asignados
+      .map((campus) => ({
+        ...campus,
+        id: Number(campus.id),
+        nombre: campus.nombre || campus.label || `Campus ${campus.id}`,
+      }))
+      .filter((campus) => campus.id)
+  }
+
+  return campusIds.map((campusId) => {
+    const option = campusOptions.value.find((campus) => Number(campus.value) === campusId)
+    const nombre = option?.label?.split(' - ')[0] || usuario.campus || `Campus ${campusId}`
+    return { id: campusId, nombre }
+  })
+}
 
 function getCampusChips(usuario) {
   if (Array.isArray(usuario.campus_asignados) && usuario.campus_asignados.length) {
@@ -1018,6 +1046,24 @@ function getCampusChips(usuario) {
   }
 
   return usuario.campus ? [{ id: usuario.campus_id, nombre: usuario.campus }] : []
+}
+
+function crearUsuarioOption(usuario) {
+  const value = Number(usuario.id)
+  const nombre = [usuario.nombre, usuario.apellido].filter(Boolean).join(' ').trim()
+  const label = `${nombre || usuario.name || 'Usuario'}${usuario.email ? ` (${usuario.email})` : ''}`
+
+  return value ? { label, value } : null
+}
+
+function asegurarUsuarioDisponible(usuario) {
+  const option = crearUsuarioOption(usuario)
+  if (!option) return
+
+  const existe = usuariosDisponibles.value.some((item) => Number(item.value) === option.value)
+  if (!existe) {
+    usuariosDisponibles.value = [option, ...usuariosDisponibles.value]
+  }
 }
 
 function sumaDistribucion(parcial) {
@@ -1174,12 +1220,8 @@ function eliminarCarreraCampus(row) {
 
 function abrirDialogUsuario(usuario = null) {
   if (usuario) {
-    const campusIds =
-      Array.isArray(usuario.campus_ids) && usuario.campus_ids.length
-        ? [...usuario.campus_ids]
-        : usuario.campus_id
-          ? [usuario.campus_id]
-          : []
+    asegurarUsuarioDisponible(usuario)
+    const campusIds = normalizarCampusIdsUsuario(usuario)
 
     usuarioForm.value = {
       ...usuario,
@@ -1211,10 +1253,17 @@ async function cargarUsuarios() {
   try {
     const { data } = await api.get('/evaluadores')
     const list = data.data || data
-    usuarios.value = list.map((usuario) => ({
-      ...usuario,
-      estado: normalizarEstadoUsuario(usuario.estado),
-    }))
+    usuarios.value = list.map((usuario) => {
+      const campusIds = normalizarCampusIdsUsuario(usuario)
+      return {
+        ...usuario,
+        campus_id: Number(usuario.campus_id) || campusIds[0] || null,
+        campus_ids: campusIds,
+        campus_asignados: normalizarCampusAsignadosUsuario(usuario, campusIds),
+        carreras: Array.isArray(usuario.carreras) ? usuario.carreras : [],
+        estado: normalizarEstadoUsuario(usuario.estado),
+      }
+    })
   } catch (err) {
     console.error('Error cargando los usuarios evaluadores', err)
   }
@@ -1230,10 +1279,7 @@ async function cargarUsuariosDisponibles() {
   try {
     const { data } = await api.get('/evaluadores/disponibles')
     const list = data.data || data
-    usuariosDisponibles.value = list.map((u) => ({
-      label: `${u.nombre} (${u.email})`,
-      value: u.id,
-    }))
+    usuariosDisponibles.value = list.map(crearUsuarioOption).filter(Boolean)
   } catch (err) {
     console.error('Error cargando evaluadores disponibles', err)
   }
@@ -1268,8 +1314,8 @@ async function guardarUsuario() {
     $q.notify({ type: 'positive', message: 'Evaluador asignado correctamente' })
     showDialogUsuario.value = false
 
-    cargarUsuarios()
-    cargarUsuariosDisponibles()
+    await cargarUsuarios()
+    await cargarUsuariosDisponibles()
   } catch (error) {
     console.error('Error asignando evaluador a campus', error)
     $q.notify({

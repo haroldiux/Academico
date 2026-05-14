@@ -49,6 +49,40 @@ function normalizeCampusAssignments(user) {
   return user.campus_id ? [{ ...user.campus, id: user.campus_id }] : []
 }
 
+function normalizeSedeAssignments(user, campusAsignados = []) {
+  const sedes = Array.isArray(user.sedes_asignadas) ? user.sedes_asignadas : []
+  const unique = new Map()
+
+  sedes.forEach((sede) => {
+    const id = Number(sede.id || sede.value)
+    if (id) unique.set(id, { id, nombre: sede.nombre || sede.label || `Sede ${id}` })
+  })
+
+  campusAsignados.forEach((campus) => {
+    const id = Number(campus.sede_id || campus.sede?.id)
+    if (!id || unique.has(id)) return
+    unique.set(id, {
+      id,
+      nombre:
+        typeof campus.sede === 'string'
+          ? campus.sede
+          : campus.sede?.nombre || campus.sede_nombre || `Sede ${id}`,
+    })
+  })
+
+  const sedeDirectaId = Number(
+    user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || user.sede?.id,
+  )
+  if (sedeDirectaId && !unique.has(sedeDirectaId)) {
+    unique.set(sedeDirectaId, {
+      id: sedeDirectaId,
+      nombre: user.docente?.sede?.nombre || user.sede?.nombre || `Sede ${sedeDirectaId}`,
+    })
+  }
+
+  return [...unique.values()]
+}
+
 // Permisos por rol
 export const PERMISOS_ROL = {
   [ROLES.SUPER_ADMIN]: {
@@ -159,6 +193,16 @@ export const useAuthStore = defineStore(
         const rolNombre = normalizeRoleName(rolRaw)
         const campusAsignados = normalizeCampusAssignments(user)
         const campusIds = campusAsignados.map((campus) => campus.id).filter(Boolean)
+        const sedesAsignadas = normalizeSedeAssignments(user, campusAsignados)
+        const sedeIds = sedesAsignadas.map((sede) => sede.id).filter(Boolean)
+        const sedePrincipalId =
+          user.docente?.sede_id ||
+          user.docente?.sede?.id ||
+          user.sede_id ||
+          user.campus?.sede_id ||
+          user.campus?.sede?.id ||
+          sedeIds[0] ||
+          null
 
         usuarioActual.value = {
           id: user.id,
@@ -169,14 +213,9 @@ export const useAuthStore = defineStore(
           campus_id: user.campus_id || campusIds[0] || null,
           campus_ids: campusIds,
           campus_asignados: campusAsignados,
-          // Fix: prioritize docente.sede_id, then user.sede_id, then campus.sede_id
-          sede_id:
-            user.docente?.sede_id ||
-            user.docente?.sede?.id ||
-            user.sede_id ||
-            user.campus?.sede_id ||
-            user.campus?.sede?.id ||
-            null,
+          sede_id: sedePrincipalId,
+          sede_ids: sedeIds,
+          sedes_asignadas: sedesAsignadas,
           // Persist full sede object for UI use if available
           docente: {
             ...user.docente,
@@ -382,6 +421,16 @@ export const useAuthStore = defineStore(
         const rolNombre = normalizeRoleName(rolRaw)
         const campusAsignados = normalizeCampusAssignments(user)
         const campusIds = campusAsignados.map((campus) => campus.id).filter(Boolean)
+        const sedesAsignadas = normalizeSedeAssignments(user, campusAsignados)
+        const sedeIds = sedesAsignadas.map((sede) => sede.id).filter(Boolean)
+        const sedePrincipalId =
+          user.docente?.sede_id ||
+          user.docente?.sede?.id ||
+          user.sede_id ||
+          user.campus?.sede_id ||
+          user.campus?.sede?.id ||
+          sedeIds[0] ||
+          null
 
         usuarioActual.value = {
           ...usuarioActual.value,
@@ -393,13 +442,9 @@ export const useAuthStore = defineStore(
           campus_id: user.campus_id || campusIds[0] || null,
           campus_ids: campusIds,
           campus_asignados: campusAsignados,
-          sede_id:
-            user.docente?.sede_id ||
-            user.docente?.sede?.id ||
-            user.sede_id ||
-            user.campus?.sede_id ||
-            user.campus?.sede?.id ||
-            null,
+          sede_id: sedePrincipalId,
+          sede_ids: sedeIds,
+          sedes_asignadas: sedesAsignadas,
           carrera_id: user.director?.carrera_id || user.carrera_id || null,
           docente: {
             ...user.docente,

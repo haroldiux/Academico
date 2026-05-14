@@ -204,6 +204,31 @@
           </q-td>
         </template>
 
+        <!-- Sede Column -->
+        <template v-slot:body-cell-sede="props">
+          <q-td :props="props">
+            <q-select
+              v-if="getSedesUsuario(props.row).length > 1"
+              :model-value="props.row.sedeId"
+              :options="getOpcionesSedesUsuario(props.row)"
+              dense
+              outlined
+              emit-value
+              map-options
+              class="sede-select-table"
+              @update:model-value="actualizarSedeUsuario(props.row, $event)"
+            >
+              <template v-slot:prepend>
+                <q-icon name="apartment" color="primary" size="18px" />
+              </template>
+            </q-select>
+            <span v-else-if="props.row.sedeNombre" class="text-body2">
+              {{ props.row.sedeNombre }}
+            </span>
+            <span v-else class="text-caption" style="color: var(--text-secondary)">N/A</span>
+          </q-td>
+        </template>
+
         <!-- Estado Column -->
         <template v-slot:body-cell-estado="props">
           <q-td :props="props">
@@ -465,7 +490,7 @@
                     label="Sede Académica"
                     outlined
                     dense
-                    :options="opcionesSedes"
+                    :options="opcionesSedesForm"
                     emit-value
                     map-options
                     clearable
@@ -822,6 +847,18 @@ const opcionesSedes = computed(() => {
   }))
 })
 
+const opcionesSedesForm = computed(() => {
+  const sedesUsuario = getSedesUsuario(usuarioSeleccionado.value)
+  if (editando.value && sedesUsuario.length > 1) {
+    return sedesUsuario.map((sede) => ({
+      label: sede.nombre,
+      value: sede.id,
+    }))
+  }
+
+  return opcionesSedes.value
+})
+
 // Opciones base de carreras (reactivas al store y sede seleccionada)
 const opcionesCarreras = computed(() => {
   // Si hay sede seleccionada, filtrar por ella (usando el helper del store si existe, o filtrando aquí)
@@ -949,6 +986,57 @@ function limpiarFiltros() {
   filtros.value = { busqueda: '', rol: null, estado: null }
 }
 
+function getSedesUsuario(usuario) {
+  if (!usuario) return []
+
+  if (Array.isArray(usuario.sedesAsignadas) && usuario.sedesAsignadas.length) {
+    return usuario.sedesAsignadas
+  }
+
+  if (Array.isArray(usuario.sedes_asignadas) && usuario.sedes_asignadas.length) {
+    return usuario.sedes_asignadas
+      .map((sede) => ({
+        id: Number(sede.id),
+        nombre: sede.nombre,
+      }))
+      .filter((sede) => sede.id)
+  }
+
+  return usuario.sedeId || usuario.sedeNombre
+    ? [{ id: Number(usuario.sedeId), nombre: usuario.sedeNombre }]
+    : []
+}
+
+function getOpcionesSedesUsuario(usuario) {
+  return getSedesUsuario(usuario).map((sede) => ({
+    label: sede.nombre,
+    value: sede.id,
+  }))
+}
+
+async function actualizarSedeUsuario(usuario, sedeId) {
+  const sedeAnterior = usuario.sedeId
+  const ok = await usuariosStore.updateUsuario(usuario.id, { sedeId })
+
+  if (ok) {
+    $q.notify({
+      type: 'positive',
+      message: 'Sede del usuario actualizada',
+      icon: 'check_circle',
+      position: 'top',
+    })
+    return
+  }
+
+  usuario.sedeId = sedeAnterior
+  $q.notify({
+    type: 'negative',
+    message: 'No se pudo actualizar la sede del usuario',
+    icon: 'error',
+    position: 'top',
+  })
+}
+
 function abrirDialogNuevo() {
   editando.value = false
   formUsuario.value = { ...formUsuarioInicial }
@@ -962,6 +1050,7 @@ function editarUsuario(usuario) {
 
   // Usar los IDs ya procesados por el store
   const carrerasVal = usuario.carreraIds || []
+  const sedesUsuario = getSedesUsuario(usuario)
 
   formUsuario.value = {
     nombre: usuario.nombre,
@@ -973,7 +1062,7 @@ function editarUsuario(usuario) {
     rolNombre: usuario.rolNombre,
     estado: usuario.estado,
     carrera: carrerasVal,
-    sedeId: usuario.sedeId,
+    sedeId: usuario.sedeId || sedesUsuario[0]?.id || null,
   }
   showDialogUsuario.value = true
   actualizarOpcionesCarreras()
@@ -1236,6 +1325,11 @@ function eliminarUsuario() {
 .table-main :deep(td) {
   color: var(--text-primary) !important;
   border-bottom: 1px solid var(--border-color) !important;
+}
+
+.sede-select-table {
+  min-width: 180px;
+  max-width: 240px;
 }
 
 /* Dialog */
