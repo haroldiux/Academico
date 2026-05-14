@@ -43,6 +43,12 @@ export function normalizeRoleName(roleName) {
   return normalized || ROLES.DOCENTE
 }
 
+function normalizeCampusAssignments(user) {
+  const asignados = Array.isArray(user.campus_asignados) ? user.campus_asignados : []
+  if (asignados.length) return asignados
+  return user.campus_id ? [{ ...user.campus, id: user.campus_id }] : []
+}
+
 // Permisos por rol
 export const PERMISOS_ROL = {
   [ROLES.SUPER_ADMIN]: {
@@ -151,6 +157,8 @@ export const useAuthStore = defineStore(
         // Normalizar rol: BD puede enviar 'VICERRECTORADO', frontend usa 'VICERRECTOR_NACIONAL'
         const rolRaw = user.rol?.codigo || user.rol?.nombre || 'DOCENTE'
         const rolNombre = normalizeRoleName(rolRaw)
+        const campusAsignados = normalizeCampusAssignments(user)
+        const campusIds = campusAsignados.map((campus) => campus.id).filter(Boolean)
 
         usuarioActual.value = {
           id: user.id,
@@ -158,7 +166,9 @@ export const useAuthStore = defineStore(
           email: user.email,
           ci: user.ci,
           rol: rolNombre,
-          campus_id: user.campus_id || null,
+          campus_id: user.campus_id || campusIds[0] || null,
+          campus_ids: campusIds,
+          campus_asignados: campusAsignados,
           // Fix: prioritize docente.sede_id, then user.sede_id, then campus.sede_id
           sede_id:
             user.docente?.sede_id ||
@@ -370,6 +380,8 @@ export const useAuthStore = defineStore(
         // Re-utilizar lógica de normalización de login
         const rolRaw = user.rol?.codigo || user.rol?.nombre || 'DOCENTE'
         const rolNombre = normalizeRoleName(rolRaw)
+        const campusAsignados = normalizeCampusAssignments(user)
+        const campusIds = campusAsignados.map((campus) => campus.id).filter(Boolean)
 
         usuarioActual.value = {
           ...usuarioActual.value,
@@ -378,7 +390,9 @@ export const useAuthStore = defineStore(
           email: user.email,
           ci: user.ci,
           rol: rolNombre,
-          campus_id: user.campus_id || null,
+          campus_id: user.campus_id || campusIds[0] || null,
+          campus_ids: campusIds,
+          campus_asignados: campusAsignados,
           sede_id:
             user.docente?.sede_id ||
             user.docente?.sede?.id ||

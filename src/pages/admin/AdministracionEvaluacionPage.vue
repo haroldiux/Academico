@@ -244,7 +244,7 @@
             <div>
               <div class="tab-title">Usuarios de Evaluaciones</div>
               <div class="tab-subtitle">
-                Asigna usuarios con el rol Evaluaciones a un campus específico
+                Asigna usuarios con el rol Evaluaciones a uno o más campus
               </div>
             </div>
             <q-btn
@@ -295,9 +295,18 @@
             </template>
             <template v-slot:body-cell-campus="props">
               <q-td :props="props">
-                <q-chip color="deep-purple" text-color="white" size="sm" dense>
-                  {{ props.row.campus }}
-                </q-chip>
+                <div class="campus-chip-container">
+                  <q-chip
+                    v-for="camp in getCampusChips(props.row)"
+                    :key="camp.id || camp.nombre"
+                    color="deep-purple"
+                    text-color="white"
+                    size="sm"
+                    dense
+                  >
+                    {{ camp.nombre }}
+                  </q-chip>
+                </div>
               </q-td>
             </template>
             <template v-slot:body-cell-carreras="props">
@@ -835,10 +844,12 @@
 
           <q-select
             v-if="usuarioForm.rol_id !== 9"
-            v-model="usuarioForm.campus_id"
+            v-model="usuarioForm.campus_ids"
             :options="campusOptions"
             outlined
-            label="Campus Asignado *"
+            multiple
+            use-chips
+            label="Campus Asignados *"
             emit-value
             map-options
             class="q-mt-md"
@@ -889,6 +900,7 @@ const usuarioForm = ref({
   id: null,
   usuario_id: null,
   campus_id: null,
+  campus_ids: [],
   crear_nuevo: false,
   rol_id: 7,
   nombre: '',
@@ -992,8 +1004,21 @@ const carrerasCampusFiltradas = computed(() => {
 
 const usuariosFiltrados = computed(() => {
   if (!filtroCampusUsuarios.value) return usuarios.value
-  return usuarios.value.filter((u) => u.campus_id === filtroCampusUsuarios.value)
+  return usuarios.value.filter((u) => {
+    const campusIds = Array.isArray(u.campus_ids) ? u.campus_ids : []
+    return (
+      campusIds.includes(filtroCampusUsuarios.value) || u.campus_id === filtroCampusUsuarios.value
+    )
+  })
 })
+
+function getCampusChips(usuario) {
+  if (Array.isArray(usuario.campus_asignados) && usuario.campus_asignados.length) {
+    return usuario.campus_asignados
+  }
+
+  return usuario.campus ? [{ id: usuario.campus_id, nombre: usuario.campus }] : []
+}
 
 function sumaDistribucion(parcial) {
   return (
@@ -1149,10 +1174,18 @@ function eliminarCarreraCampus(row) {
 
 function abrirDialogUsuario(usuario = null) {
   if (usuario) {
+    const campusIds =
+      Array.isArray(usuario.campus_ids) && usuario.campus_ids.length
+        ? [...usuario.campus_ids]
+        : usuario.campus_id
+          ? [usuario.campus_id]
+          : []
+
     usuarioForm.value = {
       ...usuario,
       usuario_id: usuario.id,
-      campus_id: usuario.campus_id,
+      campus_id: campusIds[0] || null,
+      campus_ids: campusIds,
       crear_nuevo: false,
       rol_id: usuario.rol_id || 7, // Por defecto para edición si no viene el rol
     }
@@ -1161,6 +1194,7 @@ function abrirDialogUsuario(usuario = null) {
       id: null,
       usuario_id: null,
       campus_id: null,
+      campus_ids: [],
       crear_nuevo: true, // Por defecto true para facilitar el flujo
       rol_id: 7,
       nombre: '',
@@ -1206,9 +1240,13 @@ async function cargarUsuariosDisponibles() {
 }
 
 async function guardarUsuario() {
-  // Si es responsable nacional, no necesita campus_id
-  if (usuarioForm.value.rol_id !== 9 && !usuarioForm.value.campus_id) {
-    $q.notify({ type: 'warning', message: 'Debe seleccionar un campus asignado' })
+  const campusIds = Array.isArray(usuarioForm.value.campus_ids)
+    ? usuarioForm.value.campus_ids.map(Number).filter(Boolean)
+    : []
+
+  // Si es responsable nacional, no necesita campus
+  if (usuarioForm.value.rol_id !== 9 && campusIds.length === 0) {
+    $q.notify({ type: 'warning', message: 'Debe seleccionar al menos un campus asignado' })
     return
   }
 
@@ -1218,9 +1256,13 @@ async function guardarUsuario() {
   }
 
   try {
-    const payload = { ...usuarioForm.value }
+    const payload = {
+      ...usuarioForm.value,
+      campus_id: campusIds[0] || null,
+      campus_ids: campusIds,
+    }
     // Si es responsable nacional, usamos un campus_id ficticio en la URL (será ignorado por el backend)
-    const campusIdUrl = usuarioForm.value.rol_id === 9 ? 1 : usuarioForm.value.campus_id
+    const campusIdUrl = usuarioForm.value.rol_id === 9 ? 1 : campusIds[0]
     await api.post(`/campus/${campusIdUrl}/evaluadores`, payload)
 
     $q.notify({ type: 'positive', message: 'Evaluador asignado correctamente' })
@@ -1238,16 +1280,25 @@ async function guardarUsuario() {
 }
 
 function eliminarUsuario(row) {
-  if (!row.campus_id || !row.id) return
+  const campusIds =
+    Array.isArray(row.campus_ids) && row.campus_ids.length
+      ? row.campus_ids
+      : row.campus_id
+        ? [row.campus_id]
+        : []
+
+  if (!campusIds.length || !row.id) return
 
   $q.dialog({
     title: 'Quitar Evaluador',
-    message: `¿Quitar a "${row.nombre}" del campus "${row.campus}"?`,
+    message: `¿Quitar a "${row.nombre}" de todos sus campus asignados?`,
     ok: { label: 'Quitar', color: 'red', unelevated: true },
     cancel: { label: 'Cancelar', flat: true },
   }).onOk(async () => {
     try {
-      await api.delete(`/campus/${row.campus_id}/evaluadores/${row.id}`)
+      for (const campusId of campusIds) {
+        await api.delete(`/campus/${campusId}/evaluadores/${row.id}`)
+      }
       $q.notify({ type: 'warning', message: 'Evaluador removido' })
       cargarUsuarios()
       cargarUsuariosDisponibles()
@@ -1491,6 +1542,13 @@ onMounted(() => {
   max-width: 350px;
   overflow-x: auto;
   padding-bottom: 4px;
+}
+
+.campus-chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 260px;
 }
 
 /* Scrollbar sutil para el container de chips */

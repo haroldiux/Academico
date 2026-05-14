@@ -68,29 +68,35 @@
           bg-color="white"
         />
       </div>
-      <div class="col-12 col-md-4 flex items-center no-wrap">
-        <q-input
-          v-model="filtros.fecha"
-          outlined
-          dense
-          type="date"
-          label="Filtrar por Fecha"
-          clearable
-          bg-color="white"
-          class="full-width q-mr-sm"
-        />
-        <q-btn
-          unelevated
-          color="blue-7"
-          icon="assessment"
-          @click="dialogStats = true"
-          class="q-mr-xs"
-        >
-          <q-tooltip>Ver Estadísticas del Día</q-tooltip>
-        </q-btn>
-        <q-btn unelevated color="deep-purple" icon="print" @click="imprimirListaDiaria">
-          <q-tooltip>Imprimir Lista de Seguimiento</q-tooltip>
-        </q-btn>
+      <div class="col-12 col-md-4">
+        <div class="date-range-controls">
+          <q-input
+            v-model="filtros.fechaInicio"
+            outlined
+            dense
+            type="date"
+            label="Fecha inicio"
+            clearable
+            bg-color="white"
+            class="date-range-input"
+          />
+          <q-input
+            v-model="filtros.fechaFin"
+            outlined
+            dense
+            type="date"
+            label="Fecha fin"
+            clearable
+            bg-color="white"
+            class="date-range-input"
+          />
+          <q-btn unelevated color="blue-7" icon="assessment" @click="dialogStats = true">
+            <q-tooltip>Ver Estadisticas del Rango</q-tooltip>
+          </q-btn>
+          <q-btn unelevated color="deep-purple" icon="print" @click="imprimirListaDiaria">
+            <q-tooltip>Imprimir Lista de Seguimiento</q-tooltip>
+          </q-btn>
+        </div>
       </div>
       <div class="col-12 col-md-2 text-right">
         <q-btn
@@ -194,8 +200,8 @@
 
         <q-card-section class="q-pa-lg">
           <div class="text-subtitle2 text-grey-7 q-mb-md">
-            PARA LA FECHA:
-            <span class="text-weight-bold text-black">{{ filtros.fecha || 'TODAS' }}</span>
+            PARA EL RANGO:
+            <span class="text-weight-bold text-black">{{ etiquetaRangoFechas }}</span>
           </div>
 
           <div class="row q-col-gutter-md">
@@ -254,9 +260,9 @@
               <q-chip
                 :color="props.row.color_materia || 'blue-8'"
                 text-color="white"
-                size="xs"
+                size="sm"
                 dense
-                class="q-mr-sm"
+                class="q-mr-sm materia-codigo-chip"
               >
                 {{ props.row.codigo }}
               </q-chip>
@@ -309,33 +315,85 @@
         <!-- Banco de Preguntas (Indicator) -->
         <template v-slot:body-cell-banco="props">
           <q-td :props="props" align="center">
-            <template v-if="props.row.con_cartilla === 0">
+            <template v-if="!examenConCartilla(props.row)">
               <q-chip
-                color="orange-1"
-                text-color="orange-10"
+                color="grey-2"
+                text-color="grey-8"
                 size="sm"
-                icon="mail_outline"
+                icon="remove_circle_outline"
                 class="text-weight-bold"
               >
-                SIN CARTILLA
-                <q-tooltip>Se debe enviar el examen por correo</q-tooltip>
+                NO APLICA
+                <q-tooltip>El examen fue marcado como sin cartilla</q-tooltip>
               </q-chip>
             </template>
             <template v-else>
-              <q-chip
-                :color="props.row.total_banco > 0 ? 'green-1' : 'grey-2'"
-                :text-color="props.row.total_banco > 0 ? 'green-9' : 'grey-8'"
-                size="sm"
-                :icon="props.row.total_banco > 0 ? 'check_circle' : 'help_outline'"
-                class="text-weight-bold"
-              >
-                {{ props.row.total_banco > 0 ? 'DISPONIBLE' : 'VACÍO' }}
-                <q-tooltip v-if="props.row.total_banco > 0">
-                  Se encontraron {{ props.row.total_banco }} preguntas
-                </q-tooltip>
-                <q-tooltip v-else> No hay preguntas cargadas </q-tooltip>
-              </q-chip>
+              <div class="banco-disponibilidad">
+                <q-chip
+                  :color="
+                    getBancoDisponibilidad(props.row).dificultad.disponible ? 'green-1' : 'grey-2'
+                  "
+                  :text-color="
+                    getBancoDisponibilidad(props.row).dificultad.disponible ? 'green-9' : 'grey-8'
+                  "
+                  size="sm"
+                  :icon="
+                    getBancoDisponibilidad(props.row).dificultad.disponible
+                      ? 'check_circle'
+                      : 'help_outline'
+                  "
+                  class="text-weight-bold banco-mini-chip"
+                >
+                  DIF. {{ getBancoDisponibilidad(props.row).dificultad.resumen }}
+                  <q-tooltip>
+                    {{ getBancoDisponibilidad(props.row).dificultad.tooltip }}
+                  </q-tooltip>
+                </q-chip>
+                <q-chip
+                  v-if="getBancoDisponibilidad(props.row).gruposTipo"
+                  :color="
+                    getBancoDisponibilidad(props.row).gruposTipo.disponible ? 'green-1' : 'grey-2'
+                  "
+                  :text-color="
+                    getBancoDisponibilidad(props.row).gruposTipo.disponible ? 'green-9' : 'grey-8'
+                  "
+                  size="sm"
+                  :icon="
+                    getBancoDisponibilidad(props.row).gruposTipo.disponible
+                      ? 'check_circle'
+                      : 'help_outline'
+                  "
+                  class="text-weight-bold banco-mini-chip"
+                >
+                  TIPOS {{ getBancoDisponibilidad(props.row).gruposTipo.resumen }}
+                  <q-tooltip>
+                    {{ getBancoDisponibilidad(props.row).gruposTipo.tooltip }}
+                  </q-tooltip>
+                </q-chip>
+              </div>
             </template>
+          </q-td>
+        </template>
+
+        <!-- Cartilla -->
+        <template v-slot:body-cell-cartilla="props">
+          <q-td :props="props" align="center">
+            <q-chip
+              :color="examenConCartilla(props.row) ? 'indigo-1' : 'orange-1'"
+              :text-color="examenConCartilla(props.row) ? 'indigo-9' : 'orange-10'"
+              size="sm"
+              :icon="examenConCartilla(props.row) ? 'fact_check' : 'mail_outline'"
+              class="text-weight-bold"
+            >
+              {{ examenConCartilla(props.row) ? 'CON CARTILLA' : 'SIN CARTILLA' }}
+              <q-tooltip>
+                {{
+                  examenConCartilla(props.row)
+                    ? 'Se genera con cartilla de respuestas'
+                    : 'Se debe enviar el examen por correo'
+                }}
+              </q-tooltip>
+            </q-chip>
           </q-td>
         </template>
 
@@ -581,17 +639,6 @@
               >
                 <q-tooltip>Restaurar a Programado (Limpiar generación)</q-tooltip>
               </q-btn>
-              <template v-else>
-                <q-btn
-                  flat
-                  dense
-                  icon="check_circle"
-                  color="green-8"
-                  label="Subido"
-                  disable
-                  no-caps
-                />
-              </template>
             </div>
           </q-td>
         </template>
@@ -1070,7 +1117,7 @@
             <div v-if="esSegundoParcialGestion" class="row q-col-gutter-sm q-mt-md">
               <div class="col-12">
                 <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
-                  Conteo referencial por grupo de tipo para 2do Parcial
+                  Conteo requerido por grupo de tipo para 2do Parcial
                 </div>
               </div>
               <div class="col-12 col-md-4">
@@ -1085,7 +1132,7 @@
                   />
                   <div class="text-caption text-right text-green-10">
                     {{ bancoGrupoTipoStats.g1 }}
-                    <span class="text-grey-7">(ref. {{ DEFAULT_GRUPOS_TIPO_2P.g1 }})</span>
+                    <span class="text-grey-7">/ {{ DEFAULT_GRUPOS_TIPO_2P.g1 }}</span>
                   </div>
                 </q-card>
               </div>
@@ -1101,7 +1148,7 @@
                   />
                   <div class="text-caption text-right text-blue-10">
                     {{ bancoGrupoTipoStats.g2 }}
-                    <span class="text-grey-7">(ref. {{ DEFAULT_GRUPOS_TIPO_2P.g2 }})</span>
+                    <span class="text-grey-7">/ {{ DEFAULT_GRUPOS_TIPO_2P.g2 }}</span>
                   </div>
                 </q-card>
               </div>
@@ -1119,7 +1166,7 @@
                   />
                   <div class="text-caption text-right text-purple-10">
                     {{ bancoGrupoTipoStats.g3 }}
-                    <span class="text-grey-7">(ref. {{ DEFAULT_GRUPOS_TIPO_2P.g3 }})</span>
+                    <span class="text-grey-7">/ {{ DEFAULT_GRUPOS_TIPO_2P.g3 }}</span>
                   </div>
                 </q-card>
               </div>
@@ -1177,7 +1224,7 @@
 
             <div class="total-badge q-mt-sm row justify-end items-center q-gutter-x-sm">
               <q-chip
-                v-if="!bancoSuficiente"
+                v-if="!bancoPuedeGenerar"
                 dense
                 color="red-1"
                 text-color="red-7"
@@ -1188,7 +1235,7 @@
               <q-chip
                 label
                 outline
-                :color="bancoSuficiente ? 'primary' : 'red'"
+                :color="bancoPuedeGenerar ? 'primary' : 'red'"
                 class="text-weight-bold"
               >
                 TOTAL PREGUNTAS: {{ tempConfig.facil + tempConfig.medio + tempConfig.dificil }}
@@ -1214,6 +1261,16 @@
               <template v-slot:avatar><q-icon name="warning" color="red" /></template>
               No existen suficientes preguntas en el banco para cumplir con la distribución
               solicitada por dificultad.
+            </q-banner>
+
+            <q-banner
+              v-if="esSegundoParcialGestion && !bancoGrupoTipoSuficiente"
+              class="bg-red-1 text-red-9 q-mt-sm rounded-borders"
+              dense
+            >
+              <template v-slot:avatar><q-icon name="warning" color="red" /></template>
+              No existen suficientes preguntas por grupo de tipo para 2do Parcial.
+              {{ resumenFaltantesGrupoTipoBanco }}
             </q-banner>
 
             <div class="q-mt-lg text-caption text-grey-6 items-center flex">
@@ -1265,7 +1322,7 @@
             :label="configGestion.actionLabel"
             :icon="configGestion.actionIcon"
             :disable="
-              !bancoSuficiente ||
+              !bancoPuedeGenerar ||
               !permisoTiempoDialog.permitido ||
               estaGeneracionEnProceso(dialogGestion.examen)
             "
@@ -1665,6 +1722,54 @@
                   </div>
                 </div>
 
+                <div class="row q-col-gutter-xs q-mb-md">
+                  <div class="col-4">
+                    <q-chip
+                      :color="
+                        manualGrupoTipoStats.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 ? 'green-1' : 'red-1'
+                      "
+                      :text-color="
+                        manualGrupoTipoStats.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 ? 'green-9' : 'red-9'
+                      "
+                      class="full-width q-ma-none"
+                    >
+                      <div class="text-caption">
+                        G1: {{ manualGrupoTipoStats.g1 }}/{{ DEFAULT_GRUPOS_TIPO_2P.g1 }}
+                      </div>
+                    </q-chip>
+                  </div>
+                  <div class="col-4">
+                    <q-chip
+                      :color="
+                        manualGrupoTipoStats.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 ? 'green-1' : 'red-1'
+                      "
+                      :text-color="
+                        manualGrupoTipoStats.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 ? 'green-9' : 'red-9'
+                      "
+                      class="full-width q-ma-none"
+                    >
+                      <div class="text-caption">
+                        G2: {{ manualGrupoTipoStats.g2 }}/{{ DEFAULT_GRUPOS_TIPO_2P.g2 }}
+                      </div>
+                    </q-chip>
+                  </div>
+                  <div class="col-4">
+                    <q-chip
+                      :color="
+                        manualGrupoTipoStats.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3 ? 'green-1' : 'red-1'
+                      "
+                      :text-color="
+                        manualGrupoTipoStats.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3 ? 'green-9' : 'red-9'
+                      "
+                      class="full-width q-ma-none"
+                    >
+                      <div class="text-caption">
+                        G3: {{ manualGrupoTipoStats.g3 }}/{{ DEFAULT_GRUPOS_TIPO_2P.g3 }}
+                      </div>
+                    </q-chip>
+                  </div>
+                </div>
+
                 <div class="q-pa-sm bg-grey-1 rounded-borders scroll" style="max-height: 120px">
                   <div
                     v-for="(p, i) in manualPreguntas"
@@ -1708,7 +1813,7 @@
             color="deep-purple-7"
             label="Generar Paquete Ahora"
             icon="auto_awesome"
-            :disable="!manualEsSuficiente || !manualConfig.materia_texto || !manualConfig.motivo"
+            :disable="!manualPuedeGenerar || !manualConfig.materia_texto || !manualConfig.motivo"
             @click="ejecutarGeneracionManual"
             no-caps
             class="q-px-lg shadow-3"
@@ -1948,13 +2053,151 @@ const grupoTipoPregunta = (pregunta) => {
   return null
 }
 
+const toNumber = (value) => {
+  const number = Number(value ?? 0)
+  return Number.isFinite(number) ? number : 0
+}
+
+const sumarConteo = (conteo = {}) =>
+  Object.values(conteo || {}).reduce((total, value) => total + toNumber(value), 0)
+
+const normalizarConteoGrupoTipo = (conteo = {}) => ({
+  g1: toNumber(conteo?.g1 ?? conteo?.G1),
+  g2: toNumber(conteo?.g2 ?? conteo?.G2),
+  g3: toNumber(conteo?.g3 ?? conteo?.G3),
+})
+
+const contarGruposTipoDesdePorTipo = (porTipo = {}) => {
+  const stats = { g1: 0, g2: 0, g3: 0 }
+  Object.entries(porTipo || {}).forEach(([tipo, total]) => {
+    const grupo = grupoTipoPregunta({ tipo })
+    if (grupo) stats[grupo] += toNumber(total)
+  })
+  return stats
+}
+
+const elegirMayorConteoGrupoTipo = (...candidatos) =>
+  candidatos
+    .map((conteo) => normalizarConteoGrupoTipo(conteo || {}))
+    .reduce((mejor, actual) => (sumarConteo(actual) > sumarConteo(mejor) ? actual : mejor), {
+      g1: 0,
+      g2: 0,
+      g3: 0,
+    })
+
+const normalizarBancoStatsFila = (row = {}) => {
+  const stats = row.banco_stats || row.stats || {}
+  const porTipo = row.banco_por_tipo || row.por_tipo || stats.por_tipo || stats.porTipo || {}
+  const porGrupoTipo = elegirMayorConteoGrupoTipo(
+    { g1: row.banco_g1, g2: row.banco_g2, g3: row.banco_g3 },
+    row.banco_por_grupo_tipo,
+    row.por_grupo_tipo,
+    stats.por_grupo_tipo,
+    stats.porGrupoTipo,
+    contarGruposTipoDesdePorTipo(porTipo),
+  )
+  const dificultad = {
+    facil: toNumber(row.banco_facil ?? row.banco_faciles ?? stats.facil ?? stats.faciles),
+    medio: toNumber(
+      row.banco_medio ?? row.banco_media ?? row.banco_medias ?? stats.medio ?? stats.medias,
+    ),
+    dificil: toNumber(row.banco_dificil ?? row.banco_dificiles ?? stats.dificil ?? stats.dificiles),
+  }
+  const total = Math.max(
+    toNumber(row.total_banco ?? row.banco_total ?? stats.total),
+    sumarConteo(dificultad),
+    sumarConteo(porGrupoTipo),
+  )
+
+  return {
+    total,
+    ...dificultad,
+    ...porGrupoTipo,
+    porTipo,
+    porGrupoTipo,
+  }
+}
+
+const getBancoDisponibilidad = (row) => {
+  const stats = normalizarBancoStatsFila(row)
+  const distribucion = row?.distribucion || {}
+  const requerida = {
+    facil: Number(distribucion.facil || DEFAULT_DISTRIBUCION_2P.facil),
+    medio: Number(distribucion.medio || DEFAULT_DISTRIBUCION_2P.medio),
+    dificil: Number(distribucion.dificil || DEFAULT_DISTRIBUCION_2P.dificil),
+  }
+  const tieneConteoDificultad = stats.facil + stats.medio + stats.dificil > 0
+  const dificultadDisponible = tieneConteoDificultad
+    ? stats.facil >= requerida.facil &&
+      stats.medio >= requerida.medio &&
+      stats.dificil >= requerida.dificil
+    : stats.total > 0
+
+  const disponibilidad = {
+    dificultad: {
+      disponible: dificultadDisponible,
+      etiqueta: dificultadDisponible ? 'DISP.' : 'VACIO',
+      resumen: tieneConteoDificultad
+        ? `${stats.facil}/${stats.medio}/${stats.dificil}`
+        : String(stats.total),
+      tooltip: tieneConteoDificultad
+        ? `Dificultad: ${stats.facil}/${requerida.facil} F, ${stats.medio}/${requerida.medio} M, ${stats.dificil}/${requerida.dificil} D`
+        : `Se encontraron ${stats.total} preguntas`,
+    },
+    gruposTipo: null,
+  }
+
+  if (esSegundoParcialValor(row?.tipo_examen || row?.parcial)) {
+    const gruposDisponible =
+      stats.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 &&
+      stats.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 &&
+      stats.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3
+
+    disponibilidad.gruposTipo = {
+      disponible: gruposDisponible,
+      etiqueta: gruposDisponible ? 'DISP.' : 'VACIO',
+      resumen: `${stats.g1}/${stats.g2}/${stats.g3}`,
+      tooltip: `Tipos: ${stats.g1}/${DEFAULT_GRUPOS_TIPO_2P.g1} G1, ${stats.g2}/${DEFAULT_GRUPOS_TIPO_2P.g2} G2, ${stats.g3}/${DEFAULT_GRUPOS_TIPO_2P.g3} G3`,
+    }
+  }
+
+  return disponibilidad
+}
+
+const obtenerFechaHoy = () => date.formatDate(Date.now(), 'YYYY-MM-DD')
+
 const filtros = ref({
   sede: null,
   carrera: null,
   parcial: PARCIAL_2DO,
-  fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
+  fechaInicio: obtenerFechaHoy(),
+  fechaFin: obtenerFechaHoy(),
   estado: [],
   busqueda: '',
+})
+
+const rangoFechasFiltro = computed(() => {
+  const fechaInicio = filtros.value.fechaInicio || null
+  const fechaFin = filtros.value.fechaFin || null
+
+  if (fechaInicio && fechaFin && fechaInicio > fechaFin) {
+    return { fechaInicio: fechaFin, fechaFin: fechaInicio }
+  }
+
+  return { fechaInicio, fechaFin }
+})
+
+const etiquetaRangoFechas = computed(() => {
+  const { fechaInicio, fechaFin } = rangoFechasFiltro.value
+
+  if (fechaInicio && fechaFin) {
+    return fechaInicio === fechaFin ? fechaInicio : `${fechaInicio} a ${fechaFin}`
+  }
+
+  if (fechaInicio) return `Desde ${fechaInicio}`
+  if (fechaFin) return `Hasta ${fechaFin}`
+
+  return 'TODAS'
 })
 
 const tiemposConfigEvaluacion = ref({
@@ -2039,6 +2282,28 @@ const fetchCarreras = async (sedeId, campusId = null) => {
     carrerasOptions.value = response.data.map((c) => ({ label: c.nombre, value: c.id }))
   } catch (error) {
     console.error('Error carreras:', error)
+  } finally {
+    loadingOptions.value.carreras = false
+  }
+}
+
+const fetchCarrerasPorCampusIds = async (campusIds) => {
+  const ids = [...new Set((campusIds || []).map(Number).filter(Boolean))]
+  if (!ids.length) {
+    carrerasOptions.value = []
+    return
+  }
+
+  loadingOptions.value.carreras = true
+  try {
+    const responses = await Promise.all(
+      ids.map((campusId) => api.get(`/campus/${campusId}/carreras`)),
+    )
+    const carreras = responses.flatMap((response) => response.data || [])
+    const uniqueById = new Map(carreras.map((carrera) => [carrera.id, carrera]))
+    carrerasOptions.value = [...uniqueById.values()].map((c) => ({ label: c.nombre, value: c.id }))
+  } catch (error) {
+    console.error('Error carreras por campus:', error)
   } finally {
     loadingOptions.value.carreras = false
   }
@@ -2189,8 +2454,16 @@ watch(
     if (newSede) {
       const userSedeId = Number(authStore.usuarioActual?.sede_id)
       const selectedSedeId = Number(newSede.value)
-      // Si la sede seleccionada es la del usuario y tiene campus_id, cargar por campus
-      if (authStore.usuarioActual?.campus_id && selectedSedeId === userSedeId) {
+      const campusIds = Array.isArray(authStore.usuarioActual?.campus_asignados)
+        ? authStore.usuarioActual.campus_asignados
+            .filter((campus) => Number(campus.sede_id) === selectedSedeId)
+            .map((campus) => campus.id)
+        : []
+
+      // Si la sede seleccionada es la del usuario y tiene campus asignado, cargar por campus
+      if (campusIds.length) {
+        fetchCarrerasPorCampusIds(campusIds)
+      } else if (authStore.usuarioActual?.campus_id && selectedSedeId === userSedeId) {
         fetchCarreras(null, authStore.usuarioActual.campus_id)
       } else {
         fetchCarreras(selectedSedeId)
@@ -2282,12 +2555,7 @@ const bancoGrupoTipoStats = computed(() => {
     return statsApi
   }
 
-  const stats = { g1: 0, g2: 0, g3: 0 }
-  Object.entries(bancoPorTipo.value || {}).forEach(([tipo, total]) => {
-    const grupo = grupoTipoPregunta({ tipo })
-    if (grupo) stats[grupo] += Number(total || 0)
-  })
-  return stats
+  return contarGruposTipoDesdePorTipo(bancoPorTipo.value)
 })
 
 const tiposNoEvaluablesGrupo2P = ['EMPAREJAMIENTO', 'PROBLEMA']
@@ -2300,7 +2568,7 @@ const contarGruposTipoDesdePreguntas = (preguntas = []) => {
     const tipo = normalizeTipo(pregunta?.tipo)
     if (!tipo || tiposNoEvaluablesGrupo2P.includes(tipo)) return
 
-    porTipo[tipo] = (porTipo[tipo] || 0) + 1
+    porTipo[tipo] = toNumber(porTipo[tipo]) + 1
 
     const grupo = grupoTipoPregunta({ tipo })
     if (grupo) {
@@ -2314,14 +2582,17 @@ const contarGruposTipoDesdePreguntas = (preguntas = []) => {
 const normalizarStatsBanco2P = (data, preguntas = []) => {
   const stats = data?.stats || {}
   let porTipo = data?.por_tipo || stats.por_tipo || {}
-  let porGrupoTipo = data?.por_grupo_tipo || stats.por_grupo_tipo || {}
-  const gruposCalculados = {
-    g1: Number(stats.g1 || porGrupoTipo.g1 || 0),
-    g2: Number(stats.g2 || porGrupoTipo.g2 || 0),
-    g3: Number(stats.g3 || porGrupoTipo.g3 || 0),
-  }
+  let porGrupoTipo = elegirMayorConteoGrupoTipo(
+    data?.por_grupo_tipo,
+    stats.por_grupo_tipo,
+    contarGruposTipoDesdePorTipo(porTipo),
+  )
+  const gruposCalculados = elegirMayorConteoGrupoTipo(
+    { g1: stats.g1, g2: stats.g2, g3: stats.g3 },
+    porGrupoTipo,
+  )
 
-  const totalEvaluable = Number(stats.total || 0)
+  const totalEvaluable = toNumber(stats.total)
   const totalGruposTipo = gruposCalculados.g1 + gruposCalculados.g2 + gruposCalculados.g3
   if (preguntas.length && totalGruposTipo !== totalEvaluable) {
     const conteoPreguntas = contarGruposTipoDesdePreguntas(preguntas)
@@ -2344,6 +2615,117 @@ const normalizarStatsBanco2P = (data, preguntas = []) => {
   }
 }
 
+const limpiarParamsBanco = (params) =>
+  Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== '',
+    ),
+  )
+
+const crearParamsBancoStats = (examen) =>
+  limpiarParamsBanco({
+    asignatura_id: examen?.asignatura_id,
+    docente_id: examen?.docente_id,
+    sede_id: examen?.sede_id,
+    parcial: examen?.tipo_examen || examen?.parcial,
+    grupo: examen?.grupo,
+  })
+
+const cargarStatsBancoExamen = async (examen, incluirDetalle = false) => {
+  const params = crearParamsBancoStats(examen)
+  if (!params.asignatura_id) return null
+
+  const { data } = await api.get('/banco-preguntas/stats', { params })
+  if (!data?.success) return null
+
+  let resumenBanco = normalizarStatsBanco2P(data)
+  const totalBanco = toNumber(resumenBanco.stats.total)
+  const totalGrupos = resumenBanco.stats.g1 + resumenBanco.stats.g2 + resumenBanco.stats.g3
+  const sinDetalleTipos = !Object.keys(resumenBanco.porTipo || {}).length || totalGrupos === 0
+
+  if (incluirDetalle && totalBanco > 0 && sinDetalleTipos) {
+    const detalleParams = limpiarParamsBanco({
+      ...params,
+      grupoTeorico: examen?.grupo,
+      all_docentes: true,
+    })
+    const bancoDetalle = await api.get('/banco-preguntas', { params: detalleParams })
+    const preguntas = bancoDetalle.data?.preguntas || bancoDetalle.data || []
+    resumenBanco = normalizarStatsBanco2P(data, Array.isArray(preguntas) ? preguntas : [])
+  }
+
+  return {
+    ...resumenBanco,
+    totalAsignatura: toNumber(data.total_asignatura),
+    conCartilla: data.con_cartilla,
+  }
+}
+
+const aplicarStatsBancoFila = (examen, resumenBanco) => {
+  if (!resumenBanco?.stats) return examen
+
+  const stats = resumenBanco.stats
+  return {
+    ...examen,
+    total_banco: toNumber(stats.total),
+    banco_facil: toNumber(stats.facil),
+    banco_medio: toNumber(stats.medio),
+    banco_dificil: toNumber(stats.dificil),
+    banco_g1: toNumber(stats.g1),
+    banco_g2: toNumber(stats.g2),
+    banco_g3: toNumber(stats.g3),
+    banco_por_tipo: resumenBanco.porTipo || {},
+    banco_por_grupo_tipo: resumenBanco.porGrupoTipo || {},
+    banco_stats: {
+      ...stats,
+      por_tipo: resumenBanco.porTipo || {},
+      por_grupo_tipo: resumenBanco.porGrupoTipo || {},
+    },
+    con_cartilla: resumenBanco.conCartilla ?? examen.con_cartilla,
+  }
+}
+
+const requiereStatsBancoRemotas = (examen) => {
+  if (!examenConCartilla(examen) || !examen?.asignatura_id) return false
+
+  const stats = normalizarBancoStatsFila(examen)
+  if (stats.total <= 0) return false
+
+  const sinDificultad = stats.facil + stats.medio + stats.dificil === 0
+  if (sinDificultad) return true
+
+  if (!esSegundoParcialValor(examen?.tipo_examen || examen?.parcial)) return false
+
+  const totalGrupos = stats.g1 + stats.g2 + stats.g3
+  const tieneDetalleTipos =
+    Object.keys(stats.porTipo || {}).length > 0 || sumarConteo(stats.porGrupoTipo) > 0
+
+  return totalGrupos === 0 || !tieneDetalleTipos
+}
+
+const enriquecerStatsBancoExamenes = async (examenes) => {
+  const pendientes = examenes.filter(requiereStatsBancoRemotas)
+  if (!pendientes.length) return examenes
+
+  const resultados = await Promise.allSettled(
+    pendientes.map(async (examen) => ({
+      id: examen.id,
+      resumenBanco: await cargarStatsBancoExamen(examen, true),
+    })),
+  )
+
+  const statsPorId = new Map()
+  resultados.forEach((resultado) => {
+    if (resultado.status === 'fulfilled' && resultado.value.resumenBanco) {
+      statsPorId.set(resultado.value.id, resultado.value.resumenBanco)
+    }
+  })
+
+  return examenes.map((examen) =>
+    statsPorId.has(examen.id) ? aplicarStatsBancoFila(examen, statsPorId.get(examen.id)) : examen,
+  )
+}
+
 const esSegundoParcialGestion = computed(() =>
   esSegundoParcialValor(
     dialogGestion.value.examen?.tipo_examen || dialogGestion.value.examen?.parcial,
@@ -2357,6 +2739,34 @@ const bancoSuficiente = computed(() => {
     (tempConfig.value.medio || 0) <= (bancoStats.value.medio || 0) &&
     (tempConfig.value.dificil || 0) <= (bancoStats.value.dificil || 0)
   )
+})
+
+const bancoGrupoTipoSuficiente = computed(() => {
+  if (dialogGestion.value.examen?.estado !== 'programados') return true
+  if (!esSegundoParcialGestion.value) return true
+
+  return (
+    bancoGrupoTipoStats.value.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 &&
+    bancoGrupoTipoStats.value.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 &&
+    bancoGrupoTipoStats.value.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3
+  )
+})
+
+const bancoPuedeGenerar = computed(() => bancoSuficiente.value && bancoGrupoTipoSuficiente.value)
+
+const resumenFaltantesGrupoTipoBanco = computed(() => {
+  const faltantes = []
+  if (bancoGrupoTipoStats.value.g1 < DEFAULT_GRUPOS_TIPO_2P.g1) {
+    faltantes.push(`G1 falta ${DEFAULT_GRUPOS_TIPO_2P.g1 - bancoGrupoTipoStats.value.g1}`)
+  }
+  if (bancoGrupoTipoStats.value.g2 < DEFAULT_GRUPOS_TIPO_2P.g2) {
+    faltantes.push(`G2 falta ${DEFAULT_GRUPOS_TIPO_2P.g2 - bancoGrupoTipoStats.value.g2}`)
+  }
+  if (bancoGrupoTipoStats.value.g3 < DEFAULT_GRUPOS_TIPO_2P.g3) {
+    faltantes.push(`G3 falta ${DEFAULT_GRUPOS_TIPO_2P.g3 - bancoGrupoTipoStats.value.g3}`)
+  }
+
+  return faltantes.join(' | ')
 })
 
 const activeTab = ref('rol')
@@ -2498,6 +2908,18 @@ const manualEsSuficiente = computed(() => {
     manualDificiles.value.length >= requerida.dificil
   )
 })
+const manualGrupoTipoStats = computed(
+  () => contarGruposTipoDesdePreguntas(manualPreguntas.value).porGrupoTipo,
+)
+const manualGrupoTipoSuficiente = computed(
+  () =>
+    manualGrupoTipoStats.value.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 &&
+    manualGrupoTipoStats.value.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 &&
+    manualGrupoTipoStats.value.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3,
+)
+const manualPuedeGenerar = computed(
+  () => manualEsSuficiente.value && manualGrupoTipoSuficiente.value,
+)
 
 const manualConfig = ref({
   sede: null,
@@ -2757,7 +3179,8 @@ const limpiarFiltros = () => {
       : null,
     carrera: null,
     parcial: PARCIAL_2DO,
-    fecha: date.formatDate(Date.now(), 'YYYY-MM-DD'),
+    fechaInicio: obtenerFechaHoy(),
+    fechaFin: obtenerFechaHoy(),
     estado: [],
     busqueda: '',
   }
@@ -3130,10 +3553,12 @@ const onExcelUploaded = (file) => {
 const cargarManualGenerations = async () => {
   loadingManual.value = true
   try {
+    const { fechaInicio, fechaFin } = rangoFechasFiltro.value
     const params = {
       sede_id: filtros.value.sede?.value || null,
       carrera_id: filtros.value.carrera?.value || null,
-      fecha: filtros.value.fecha || null,
+      fecha_inicio: fechaInicio || undefined,
+      fecha_fin: fechaFin || undefined,
     }
     const response = await api.get('/generaciones-manuales', { params })
     manualGenerations.value = response.data
@@ -3258,6 +3683,15 @@ const ejecutarGeneracionManual = async () => {
       type: 'negative',
       message: `Preguntas insuficientes para 7/16/7. Disponibles -> Fácil: ${faciles.length}, Medio: ${medios.length}, Difícil: ${dificiles.length}`,
       timeout: 6000,
+    })
+    return
+  }
+
+  if (!manualGrupoTipoSuficiente.value) {
+    $q.notify({
+      type: 'negative',
+      message: `Preguntas insuficientes por grupo de tipo. G1: ${manualGrupoTipoStats.value.g1}/${DEFAULT_GRUPOS_TIPO_2P.g1}, G2: ${manualGrupoTipoStats.value.g2}/${DEFAULT_GRUPOS_TIPO_2P.g2}, G3: ${manualGrupoTipoStats.value.g3}/${DEFAULT_GRUPOS_TIPO_2P.g3}`,
+      timeout: 7000,
     })
     return
   }
@@ -3534,10 +3968,12 @@ const cargarDatos = async () => {
 
   $q.loading.show({ message: 'Cargando evaluaciones...' })
   try {
+    const { fechaInicio, fechaFin } = rangoFechasFiltro.value
     const params = {
       gestion: '2026-I',
       sede_id: filtros.value.sede.value,
-      fecha: filtros.value.fecha,
+      fecha_inicio: fechaInicio || undefined,
+      fecha_fin: fechaFin || undefined,
       estado: filtros.value.estado.length > 0 ? filtros.value.estado.join(',') : undefined,
     }
 
@@ -3548,7 +3984,7 @@ const cargarDatos = async () => {
     const response = await api.get('/rol-examenes', { params })
 
     // Transformar datos del backend al formato del componente
-    examenesList.value = response.data.data.map((e) => ({
+    const examenes = response.data.data.map((e) => ({
       ...e,
       id: e.id,
       codigo: e.materia_codigo,
@@ -3563,6 +3999,10 @@ const cargarDatos = async () => {
       hora: e.hora_inicio?.substring(0, 5) || '00:00',
       total_preguntas: e.config_generacion?.total || 0,
       distribucion: e.config_generacion || { facil: 0, medio: 0, dificil: 0, total: 0 },
+      banco_por_tipo: e.banco_por_tipo || e.por_tipo || e.banco_stats?.por_tipo || {},
+      banco_por_grupo_tipo:
+        e.banco_por_grupo_tipo || e.por_grupo_tipo || e.banco_stats?.por_grupo_tipo || {},
+      banco_stats: normalizarBancoStatsFila(e),
       estado: e.estado || 'programados',
       sede_id: e.sede_id,
       carrera_id: e.carrera_id,
@@ -3573,6 +4013,7 @@ const cargarDatos = async () => {
       timestamps: e.timestamps_proceso || { programados: e.created_at },
       color_materia: 'blue-8',
     }))
+    examenesList.value = await enriquecerStatsBancoExamenes(examenes)
   } catch (error) {
     console.error('Error al cargar datos:', error)
     $q.notify({ type: 'negative', message: 'No se pudieron cargar las evaluaciones' })
@@ -3582,9 +4023,18 @@ const cargarDatos = async () => {
 }
 
 // Observadores para recarga automática
-watch([() => filtros.value.sede, () => filtros.value.carrera, () => filtros.value.fecha], () => {
-  cargarDatos()
-})
+watch(
+  [
+    () => filtros.value.sede,
+    () => filtros.value.carrera,
+    () => filtros.value.fechaInicio,
+    () => filtros.value.fechaFin,
+  ],
+  () => {
+    cargarDatos()
+    cargarManualGenerations()
+  },
+)
 
 const columns = computed(() => {
   const base = [
@@ -3598,6 +4048,7 @@ const columns = computed(() => {
       align: 'left',
       sortable: true,
     },
+    { name: 'cartilla', label: 'CARTILLA', align: 'center', sortable: true },
     { name: 'banco', label: 'BANCO', align: 'center', sortable: true },
     { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
     { name: 'estado', label: 'ESTADO', align: 'center' },
@@ -3610,6 +4061,10 @@ const columns = computed(() => {
 
   return base
 })
+
+function examenConCartilla(examen) {
+  return Number(examen?.con_cartilla ?? 1) !== 0
+}
 
 const statsDesglose = computed(() => {
   return ESTADOS_FLOW.map((st) => {
@@ -3679,7 +4134,7 @@ const manualGenerationsFiltradas = computed(() => filtrarPorBusqueda([...manualG
 function imprimirListaDiaria() {
   if (examenesFiltrados.value.length === 0) {
     $q.notify({
-      message: 'No hay evaluaciones para imprimir en la fecha seleccionada',
+      message: 'No hay evaluaciones para imprimir en el rango seleccionado',
       color: 'orange',
     })
     return
@@ -3692,7 +4147,7 @@ function imprimirListaDiaria() {
     orientation: 'landscape',
     format: [216, 330], // Oficio 8.5x13 pulgadas
   })
-  const fecha = filtros.value.fecha || 'Sin fecha'
+  const rangoFechas = etiquetaRangoFechas.value
   const sedeObj = filtros.value.sede
   const sedeName = sedeObj
     ? typeof sedeObj === 'string'
@@ -3710,55 +4165,89 @@ function imprimirListaDiaria() {
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
   doc.text(`CAMPUS: ${sedeName.toUpperCase()}`, 14, 30)
-  doc.text(`FECHA: ${fecha}`, 120, 30)
+  doc.text(`RANGO: ${rangoFechas}`, 120, 30)
   doc.text(`PARCIAL: ${filtros.value.parcial || 'TODOS'}`, 210, 30)
 
-  const tableData = examenesFiltrados.value.map((e) => [
-    e.hora,
-    `[${e.codigo}] ${e.materia}\n(G: ${e.grupo})`,
-    e.docente,
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-  ])
+  const reportColumns = [
+    { header: 'HORA', dataKey: 'hora' },
+    { header: 'MATERIA / GRUPO', dataKey: 'materia' },
+    { header: 'DOCENTE', dataKey: 'docente' },
+    { header: 'CARTILLA', dataKey: 'cartilla' },
+    { header: 'H. RECOJO', dataKey: 'hRecojo' },
+    { header: 'CANT.', dataKey: 'cantRecojo' },
+    { header: 'FIRMA', dataKey: 'firmaRecojo' },
+    { header: 'H. DEV.', dataKey: 'hDev' },
+    { header: 'CANT.', dataKey: 'cantDev' },
+    { header: 'FIRMA', dataKey: 'firmaDev' },
+    { header: 'OBSERVACIONES', dataKey: 'observaciones' },
+  ]
+
+  const tableData = examenesFiltrados.value.map((e) => ({
+    hora: e.hora,
+    materia: `[${e.codigo}] ${e.materia}\n(G: ${e.grupo})`,
+    docente: e.docente,
+    cartilla: examenConCartilla(e) ? 'CON\nCARTILLA' : 'SIN\nCARTILLA',
+    hRecojo: '',
+    cantRecojo: '',
+    firmaRecojo: '',
+    hDev: '',
+    cantDev: '',
+    firmaDev: '',
+    observaciones: '',
+  }))
+
   autoTable(doc, {
     startY: 38,
-    head: [
-      [
-        'HORA',
-        'MATERIA / GRUPO',
-        'DOCENTE',
-        'H. RECOJO',
-        'CANT.',
-        'FIRMA',
-        'H. DEV.',
-        'CANT.',
-        'FIRMA',
-        'OBSERVACIONES',
-      ],
-    ],
+    margin: { left: 14, right: 14 },
+    tableWidth: 302,
+    columns: reportColumns,
     body: tableData,
     theme: 'grid',
-    headStyles: { fillColor: [45, 23, 102], fontSize: 8, halign: 'center', valign: 'middle' },
-    styles: { fontSize: 7, valign: 'middle' },
+    headStyles: {
+      fillColor: [45, 23, 102],
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      halign: 'center',
+      valign: 'middle',
+    },
+    styles: {
+      fontSize: 7,
+      valign: 'middle',
+      lineColor: [118, 118, 118],
+      lineWidth: 0.18,
+    },
+    bodyStyles: {
+      textColor: [25, 25, 25],
+      lineColor: [118, 118, 118],
+      lineWidth: 0.18,
+    },
+    tableLineColor: [70, 70, 70],
+    tableLineWidth: 0.3,
     columnStyles: {
-      0: { cellWidth: 13, halign: 'center' }, // HORA
-      1: { cellWidth: 70 }, // MATERIA / GRUPO
-      2: { cellWidth: 58 }, // DOCENTE
-      3: { cellWidth: 16, halign: 'center' }, // H. RECOJO
-      4: { cellWidth: 11, halign: 'center' }, // CANT.
-      5: { cellWidth: 28 }, // FIRMA
-      6: { cellWidth: 16, halign: 'center' }, // H. DEV.
-      7: { cellWidth: 11, halign: 'center' }, // CANT.
-      8: { cellWidth: 28 }, // FIRMA
-      9: { cellWidth: 51 }, // OBSERVACIONES
+      hora: { cellWidth: 13, halign: 'center' },
+      materia: { cellWidth: 63 },
+      docente: { cellWidth: 48 },
+      cartilla: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
+      hRecojo: { cellWidth: 16, halign: 'center' },
+      cantRecojo: { cellWidth: 11, halign: 'center' },
+      firmaRecojo: { cellWidth: 27 },
+      hDev: { cellWidth: 16, halign: 'center' },
+      cantDev: { cellWidth: 11, halign: 'center' },
+      firmaDev: { cellWidth: 27 },
+      observaciones: { cellWidth: 52 },
+    },
+    didParseCell: (data) => {
+      if (
+        data.section === 'body' &&
+        ['hora', 'materia', 'docente', 'cartilla'].includes(data.column.dataKey)
+      ) {
+        data.cell.styles.fontStyle = 'bold'
+        data.cell.styles.textColor = [0, 0, 0]
+      }
     },
   })
-  doc.save(`Seguimiento_Evaluaciones_${fecha}.pdf`)
+
+  doc.save(`Seguimiento_Evaluaciones_${rangoFechas.replace(/\s+/g, '_')}.pdf`)
 }
 
 const configGestion = computed(() => {
@@ -3848,43 +4337,16 @@ const gestionarEstado = async (examen) => {
 
     // Cargar estadísticas del banco de preguntas
     try {
+      bancoStats.value = { facil: 0, medio: 0, dificil: 0, total: 0, g1: 0, g2: 0, g3: 0 }
+      bancoTotalAsignatura.value = 0
       bancoPorTipo.value = {}
       bancoPorGrupoTipo.value = {}
-      const { data } = await api.get('/banco-preguntas/stats', {
-        params: {
-          asignatura_id: examen.asignatura_id,
-          docente_id: examen.docente_id,
-          sede_id: examen.sede_id,
-          parcial: examen.tipo_examen || examen.parcial,
-          grupo: examen.grupo,
-        },
-      })
-      if (data.success) {
-        let resumenBanco = normalizarStatsBanco2P(data)
-
-        if (
-          Number(resumenBanco.stats.total || 0) > 0 &&
-          resumenBanco.stats.g1 + resumenBanco.stats.g2 + resumenBanco.stats.g3 !==
-            Number(resumenBanco.stats.total || 0)
-        ) {
-          const bancoDetalle = await api.get('/banco-preguntas', {
-            params: {
-              asignatura_id: examen.asignatura_id,
-              docente_id: examen.docente_id,
-              sede_id: examen.sede_id,
-              grupoTeorico: examen.grupo,
-              parcial: examen.tipo_examen || examen.parcial,
-              all_docentes: true,
-            },
-          })
-          const preguntas = bancoDetalle.data?.preguntas || bancoDetalle.data || []
-          resumenBanco = normalizarStatsBanco2P(data, Array.isArray(preguntas) ? preguntas : [])
-        }
-
+      const resumenBanco = await cargarStatsBancoExamen(examen, true)
+      if (resumenBanco) {
         bancoStats.value = resumenBanco.stats
         bancoPorTipo.value = resumenBanco.porTipo
         bancoPorGrupoTipo.value = resumenBanco.porGrupoTipo
-        bancoTotalAsignatura.value = data.total_asignatura || 0
+        bancoTotalAsignatura.value = resumenBanco.totalAsignatura || 0
       }
     } catch (err) {
       console.error('Error cargando estadísticas del banco:', err)
@@ -4118,6 +4580,16 @@ const ejecutarAccionGestion = async () => {
       message:
         'No hay suficientes preguntas en el banco para la distribución por dificultad solicitada.',
       icon: 'warning',
+    })
+    return
+  }
+
+  if (examen.estado === 'programados' && !bancoGrupoTipoSuficiente.value) {
+    $q.notify({
+      type: 'negative',
+      message: `No hay suficientes preguntas por grupo de tipo para 2do Parcial. ${resumenFaltantesGrupoTipoBanco.value}`,
+      icon: 'warning',
+      timeout: 7000,
     })
     return
   }
@@ -5651,7 +6123,7 @@ async function fetchImageAsBase64(url) {
 <style scoped>
 .gestion-eval-page {
   padding: 40px;
-  background-color: #f8fafc;
+  background-color: #e2e8f0;
   min-height: 100vh;
 }
 .page-title {
@@ -5670,19 +6142,56 @@ async function fetchImageAsBase64(url) {
   align-items: center;
   justify-content: center;
 }
+.date-range-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.date-range-input {
+  flex: 1 1 0;
+  min-width: 0;
+}
 .table-card {
   border-radius: 16px;
   background: white;
-  border: 1px solid #edf2f7;
+  border: 1px solid #94a3b8;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.1);
+  overflow: hidden;
 }
 .main-table :deep(thead th) {
   font-weight: 700;
-  color: #64748b;
-  background: #f8fafc;
+  color: #334155;
+  background: #e2e8f0;
   padding: 16px;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  border-bottom: 1px solid #94a3b8;
+}
+.main-table :deep(tbody td) {
+  border-bottom: 1px solid #cbd5e1;
+}
+.main-table :deep(tbody tr:hover td) {
+  background: #f8fafc;
+}
+.materia-codigo-chip {
+  min-height: 20px;
+  padding: 0 7px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.banco-disponibilidad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.banco-disponibilidad :deep(.q-chip) {
+  margin: 0;
+}
+.banco-mini-chip {
+  min-width: 82px;
+  justify-content: center;
 }
 .preguntas-cell {
   width: 140px;
@@ -5745,5 +6254,15 @@ async function fetchImageAsBase64(url) {
 .difficulty-count-input :deep(input) {
   padding: 0;
   font-size: 15px;
+}
+
+@media (max-width: 1023px) {
+  .date-range-controls {
+    flex-wrap: wrap;
+  }
+
+  .date-range-input {
+    flex-basis: calc(50% - 3px);
+  }
 }
 </style>

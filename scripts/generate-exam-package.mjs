@@ -1167,9 +1167,13 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
     const renderOptions = ['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(currentType)
     const prefixedBlankTypes = ['FALSO_VERDADERO', 'PREGUNTA_CON_CLAVE', 'RESPUESTA_COMPUESTA']
     const statementX = prefixedBlankTypes.includes(currentType) ? margin + 18 : margin + 8
-    const statementMaxWidth = margin + contentWidth - statementX
-    const detailMaxWidth = margin + contentWidth - (margin + 12)
-    const optionMaxWidth = margin + contentWidth - (margin + 12)
+    const rightPadding = 6
+    const statementMaxWidth = margin + contentWidth - statementX - rightPadding
+    const detailMaxWidth = margin + contentWidth - (margin + 12) - rightPadding
+    const optionMaxWidth = margin + contentWidth - (margin + 12) - rightPadding
+
+    doc.setFontSize(baseSize)
+    doc.setFont(baseFont, 'normal')
     const statementLines = doc.splitTextToSize(statement, statementMaxWidth)
 
     doc.setFontSize(baseSize)
@@ -1191,7 +1195,7 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
     }
 
     doc.setFont(baseFont, 'normal')
-    doc.text(statementLines, statementX, currentY)
+    doc.text(statementLines, statementX, currentY, { maxWidth: statementMaxWidth })
     currentY += statementLines.length * lineHeight + 2
 
     if (currentType === 'PREGUNTA_CON_CLAVE') {

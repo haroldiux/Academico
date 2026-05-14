@@ -1436,7 +1436,7 @@ async function cargarCarrerasAsignaturaPorSede() {
     const res = await api.get('/carreras', {
       params: { sede_id: selSedeAsignatura.value },
     })
-    const carreras = Array.isArray(res.data) ? res.data : (res.data.data || [])
+    const carreras = Array.isArray(res.data) ? res.data : res.data.data || []
 
     if (carreras.length > 0) {
       const map = new Map()

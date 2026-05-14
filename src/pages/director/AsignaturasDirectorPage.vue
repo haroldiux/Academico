@@ -476,18 +476,45 @@
                             <q-tooltip>Cargando fecha 2P</q-tooltip>
                           </q-spinner-dots>
                         </div>
-                        <q-chip
-                          v-else-if="props.row.fecha_2p"
-                          size="sm"
-                          color="teal-7"
-                          text-color="white"
-                          icon="event"
-                          dense
-                        >
-                          {{ formatearFechaHora2P(props.row) }}
-                          <q-tooltip>Fecha del 2do Parcial</q-tooltip>
-                        </q-chip>
-                        <div v-else class="text-grey-4">Sin fecha</div>
+                        <div v-else class="column items-center" style="gap: 6px">
+                          <q-chip
+                            v-if="props.row.fecha_2p"
+                            size="sm"
+                            color="teal-7"
+                            text-color="white"
+                            icon="event"
+                            dense
+                          >
+                            {{ formatearFechaHora2P(props.row) }}
+                            <q-tooltip>Fecha del 2do Parcial</q-tooltip>
+                          </q-chip>
+                          <div v-else class="text-grey-4">Sin fecha</div>
+
+                          <div
+                            v-if="puedeAlternarCartilla2P(props.row)"
+                            class="column items-center"
+                            style="gap: 2px"
+                          >
+                            <q-toggle
+                              :model-value="examenConCartilla2P(props.row)"
+                              :disable="guardandoCartilla2P(props.row)"
+                              checked-icon="menu_book"
+                              unchecked-icon="block"
+                              color="deep-purple-6"
+                              dense
+                              keep-color
+                              @update:model-value="confirmarCambioCartilla2P(props.row, $event)"
+                            />
+                            <div
+                              class="text-caption text-weight-medium"
+                              :class="
+                                examenConCartilla2P(props.row) ? 'text-positive' : 'text-negative'
+                              "
+                            >
+                              {{ examenConCartilla2P(props.row) ? 'CON CARTILLA' : 'SIN CARTILLA' }}
+                            </div>
+                          </div>
+                        </div>
                       </template>
 
                       <!-- Columna Estado Examen 2P -->
@@ -882,6 +909,38 @@
                             <div class="text-caption text-grey-7 text-center">
                               <q-icon name="event" size="14px" class="q-mr-xs" />
                               {{ formatearFechaHoraDocente2P(props.row, docente) }}
+                            </div>
+                            <div
+                              v-if="puedeAlternarCartilla2P(props.row, docente)"
+                              class="column items-center q-mt-xs"
+                              style="gap: 2px"
+                            >
+                              <q-toggle
+                                :model-value="examenConCartilla2P(props.row, docente)"
+                                :disable="guardandoCartilla2P(props.row, docente)"
+                                checked-icon="menu_book"
+                                unchecked-icon="block"
+                                color="deep-purple-6"
+                                dense
+                                keep-color
+                                @update:model-value="
+                                  confirmarCambioCartilla2P(props.row, $event, docente)
+                                "
+                              />
+                              <div
+                                class="text-caption text-weight-medium"
+                                :class="
+                                  examenConCartilla2P(props.row, docente)
+                                    ? 'text-positive'
+                                    : 'text-negative'
+                                "
+                              >
+                                {{
+                                  examenConCartilla2P(props.row, docente)
+                                    ? 'CON CARTILLA'
+                                    : 'SIN CARTILLA'
+                                }}
+                              </div>
                             </div>
                             <div class="q-mt-xs text-center">
                               <q-chip
@@ -1509,6 +1568,7 @@ const filtros = ref({
 const rolExamenes2PMap = ref({})
 const bancoPreguntas2PMap = ref({})
 const cargandoCampos2P = ref(false)
+const guardandoCartilla2PMap = ref({})
 
 const opcionesPlanes = [
   { label: 'Plan Nuevo (N)', value: 'N' },
@@ -2011,6 +2071,122 @@ function obtenerBancoPreguntas2P(asignatura, docente = null) {
   )
 }
 
+function obtenerContextoCartilla2P(asignatura, docente = null) {
+  const docenteData =
+    docente || (asignatura.docentes_data?.length === 1 ? asignatura.docentes_data[0] : null)
+  const grupoTeorico =
+    docenteData?.grupo_teorico_nombre ||
+    docenteData?.grupo ||
+    docenteData?.preguntas_2p_stats?.grupo_teorico
+
+  if (!docenteData?.id || !grupoTeorico) return null
+
+  return {
+    asignaturaId: asignatura.id,
+    asignaturaNombre: asignatura.nombre,
+    docenteId: docenteData.id,
+    docenteNombre: docenteData.nombre_completo || docenteData.nombre || asignatura.docente_nombre,
+    grupoTeorico: String(grupoTeorico).trim(),
+    key: crearBancoPreguntas2PKey(
+      asignatura.id,
+      docenteData.id,
+      docenteData.sede_id || asignatura.sede_id,
+      grupoTeorico,
+    ),
+    stats: obtenerBancoPreguntas2P(asignatura, docenteData) || null,
+  }
+}
+
+function puedeAlternarCartilla2P(asignatura, docente = null) {
+  return Boolean(obtenerContextoCartilla2P(asignatura, docente))
+}
+
+function examenConCartilla2P(asignatura, docente = null) {
+  return obtenerContextoCartilla2P(asignatura, docente)?.stats?.con_cartilla !== false
+}
+
+function guardandoCartilla2P(asignatura, docente = null) {
+  const key = obtenerContextoCartilla2P(asignatura, docente)?.key
+  return key ? Boolean(guardandoCartilla2PMap.value[key]) : false
+}
+
+async function confirmarCambioCartilla2P(asignatura, nuevoValor, docente = null) {
+  const contexto = obtenerContextoCartilla2P(asignatura, docente)
+
+  if (!contexto) {
+    $q.notify({
+      type: 'warning',
+      message: 'No se encontró el grupo teórico del 2do Parcial para cambiar la cartilla.',
+    })
+    return
+  }
+
+  const estadoDestino = nuevoValor ? 'CON CARTILLA' : 'SIN CARTILLA'
+  const mensajeBase = `Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`
+  const mensaje = nuevoValor
+    ? `${mensajeBase}<br><br>¿Deseas continuar?`
+    : `${mensajeBase}<br><br>Al confirmar, se eliminarán las preguntas del banco para ese grupo y parcial. ¿Deseas continuar?`
+
+  $q.dialog({
+    title: 'Confirmar cambio de cartilla',
+    message: mensaje,
+    html: true,
+    persistent: true,
+    ok: {
+      label: 'Confirmar',
+      color: nuevoValor ? 'primary' : 'negative',
+      unelevated: true,
+      noCaps: true,
+    },
+    cancel: {
+      label: 'Cancelar',
+      flat: true,
+      noCaps: true,
+    },
+  }).onOk(() => {
+    guardarCambioCartilla2P(contexto, nuevoValor)
+  })
+}
+
+async function guardarCambioCartilla2P(contexto, nuevoValor) {
+  guardandoCartilla2PMap.value = {
+    ...guardandoCartilla2PMap.value,
+    [contexto.key]: true,
+  }
+
+  try {
+    await api.post('/banco-preguntas/save-config', {
+      asignatura_id: contexto.asignaturaId,
+      docente_id: contexto.docenteId,
+      grupo_teorico: contexto.grupoTeorico,
+      parcial: '2do Parcial',
+      con_cartilla: nuevoValor,
+    })
+
+    await cargarBancoPreguntas2P()
+
+    $q.notify({
+      type: 'positive',
+      message: nuevoValor
+        ? `Banco 2P del grupo ${contexto.grupoTeorico} restablecido a Con Cartilla.`
+        : `Banco 2P del grupo ${contexto.grupoTeorico} cambiado a Sin Cartilla.`,
+      icon: 'check_circle',
+    })
+  } catch (error) {
+    console.error('Error al cambiar estado de cartilla 2P:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo cambiar el estado de cartilla',
+      caption: error.response?.data?.message || error.response?.data?.error || error.message,
+      icon: 'error',
+    })
+  } finally {
+    const siguienteEstado = { ...guardandoCartilla2PMap.value }
+    delete siguienteEstado[contexto.key]
+    guardandoCartilla2PMap.value = siguienteEstado
+  }
+}
+
 function formatearFechaCorta(fecha) {
   if (!fecha) return 'Sin fecha'
 
@@ -2254,6 +2430,7 @@ function normalizarStatsBancoPreguntas2P(data, grupoTeorico, preguntas = []) {
     g2: Number(stats.g2 || porGrupoTipo.g2 || 0),
     g3: Number(stats.g3 || porGrupoTipo.g3 || 0),
     grupo_teorico: grupoTeorico,
+    con_cartilla: data?.con_cartilla !== false,
   }
 
   const totalGruposTipo = resumen.g1 + resumen.g2 + resumen.g3

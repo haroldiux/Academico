@@ -33,7 +33,11 @@ test.describe('Banco docente importacion Excel', () => {
     LOG('  ✓ Banco limpiado')
   })
 
-  test('sube un Excel valido y muestra feedback de carga', async ({ page, context, request }, testInfo) => {
+  test('sube un Excel valido y muestra feedback de carga', async ({
+    page,
+    context,
+    request,
+  }, testInfo) => {
     ann(testInfo, {
       scenario: 'valido',
       check: 'Archivo Excel con formato y datos correctos (valido minimo)',
@@ -47,7 +51,9 @@ test.describe('Banco docente importacion Excel', () => {
     await page.getByRole('button', { name: /subir banco excel/i }).click()
     await page.locator('input[type="file"]').setInputFiles(excelFixtures.validoMinimo)
     await expect(
-      page.getByText(/archivo v[aá]lido|distribuci[oó]n v[aá]lida|importar\s+\d+\s+pregunta/i).first(),
+      page
+        .getByText(/archivo v[aá]lido|distribuci[oó]n v[aá]lida|importar\s+\d+\s+pregunta/i)
+        .first(),
     ).toBeVisible({ timeout: 15_000 })
     await expect(page.getByRole('button', { name: /importar\s+\d+\s+pregunta/i })).toBeVisible()
     LOG('  → Archivo detectado como valido, boton importar visible')
@@ -57,21 +63,43 @@ test.describe('Banco docente importacion Excel', () => {
     if (isEnabled) {
       await importBtn.click()
       try {
-        await expect(page.getByText(/banco actualizado correctamente|correctamente/i)).toBeVisible({ timeout: 20_000 })
-        annotate(testInfo, [{ type: 'obtained', description: 'ok' }, { type: 'cause', description: 'validacion_correcta' }, { type: 'evidence', description: 'Archivo valido importado exitosamente' }])
+        await expect(page.getByText(/banco actualizado correctamente|correctamente/i)).toBeVisible({
+          timeout: 20_000,
+        })
+        annotate(testInfo, [
+          { type: 'obtained', description: 'ok' },
+          { type: 'cause', description: 'validacion_correcta' },
+          { type: 'evidence', description: 'Archivo valido importado exitosamente' },
+        ])
         LOG('  ✓ Confirmacion de importacion exitosa')
       } catch (e) {
-        annotate(testInfo, [{ type: 'obtained', description: 'error' }, { type: 'cause', description: 'error_infraestructura' }, { type: 'evidence', description: 'No se detecto mensaje de confirmacion' }])
+        annotate(testInfo, [
+          { type: 'obtained', description: 'error' },
+          { type: 'cause', description: 'error_infraestructura' },
+          { type: 'evidence', description: 'No se detecto mensaje de confirmacion' },
+        ])
         throw e
       }
     } else {
       LOG('  ⚠ Boton Importar esta DESHABILITADO - posible bug UI')
-      annotate(testInfo, [{ type: 'obtained', description: 'bloqueado' }, { type: 'cause', description: 'bug_frontend' }, { type: 'evidence', description: 'Boton Importar visible pero deshabilitado para archivo valido. Verificar condiciones de habilitacion.' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'bloqueado' },
+        { type: 'cause', description: 'bug_frontend' },
+        {
+          type: 'evidence',
+          description:
+            'Boton Importar visible pero deshabilitado para archivo valido. Verificar condiciones de habilitacion.',
+        },
+      ])
     }
     LOG('PASS: Excel valido detectado con feedback')
   })
 
-  test('sube un Excel con tipo invalido y mantiene la UI consistente', async ({ page, context, request }, testInfo) => {
+  test('sube un Excel con tipo invalido y mantiene la UI consistente', async ({
+    page,
+    context,
+    request,
+  }, testInfo) => {
     ann(testInfo, {
       scenario: 'invalido',
       check: 'Archivo Excel con tipo de pregunta inexistente (ej: "TIPO_INEXISTENTE")',
@@ -85,12 +113,22 @@ test.describe('Banco docente importacion Excel', () => {
     await page.getByRole('button', { name: /subir banco excel/i }).click()
     await page.locator('input[type="file"]').setInputFiles(excelFixtures.tipoInvalido)
     try {
-      await expect(page.getByText(/pregunta con tipo inv.?lido/i).first()).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByText(/pregunta con tipo inv.?lido/i).first()).toBeVisible({
+        timeout: 15_000,
+      })
       await expect(page.getByText(/subir banco de preguntas/i)).toBeVisible()
-      annotate(testInfo, [{ type: 'obtained', description: 'rechazado' }, { type: 'cause', description: 'validacion_correcta' }, { type: 'evidence', description: 'Mensaje "Pregunta con tipo invalido" visible en UI' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'rechazado' },
+        { type: 'cause', description: 'validacion_correcta' },
+        { type: 'evidence', description: 'Mensaje "Pregunta con tipo invalido" visible en UI' },
+      ])
       LOG('  ✓ Error "Pregunta con tipo invalido" visible')
     } catch (e) {
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }, { type: 'evidence', description: 'No se detecto mensaje de error' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+        { type: 'evidence', description: 'No se detecto mensaje de error' },
+      ])
       throw e
     }
     LOG('PASS: Excel con errores manejado correctamente, UI consistente')
@@ -99,7 +137,8 @@ test.describe('Banco docente importacion Excel', () => {
   test('sube un Excel con dificultad invalida', async ({ page, context, request }, testInfo) => {
     ann(testInfo, {
       scenario: 'invalido',
-      check: 'Archivo Excel con nivel de dificultad fuera de rango (ej: nivel 5 cuando solo hay 1-3)',
+      check:
+        'Archivo Excel con nivel de dificultad fuera de rango (ej: nivel 5 cuando solo hay 1-3)',
       expected: 'rechazar',
     })
 
@@ -111,10 +150,17 @@ test.describe('Banco docente importacion Excel', () => {
     await page.locator('input[type="file"]').setInputFiles(excelFixtures.dificultadInvalida)
     try {
       await expect(page.getByText(/dificultad|invalido/i).first()).toBeVisible({ timeout: 15_000 })
-      annotate(testInfo, [{ type: 'obtained', description: 'rechazado' }, { type: 'cause', description: 'validacion_correcta' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'rechazado' },
+        { type: 'cause', description: 'validacion_correcta' },
+      ])
       LOG('  ✓ Error de dificultad visible')
     } catch (e) {
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }, { type: 'evidence', description: 'No se detecto mensaje de error por dificultad' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+        { type: 'evidence', description: 'No se detecto mensaje de error por dificultad' },
+      ])
       throw e
     }
     LOG('PASS: Excel con dificultad invalida detectado')
@@ -136,16 +182,27 @@ test.describe('Banco docente importacion Excel', () => {
     await page.locator('input[type="file"]').setInputFiles(excelFixtures.opcionesIncompletas)
     try {
       await expect(page.getByText(/opciones|incompleto/i).first()).toBeVisible({ timeout: 15_000 })
-      annotate(testInfo, [{ type: 'obtained', description: 'rechazado' }, { type: 'cause', description: 'validacion_correcta' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'rechazado' },
+        { type: 'cause', description: 'validacion_correcta' },
+      ])
       LOG('  ✓ Error de opciones incompletas visible')
     } catch (e) {
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }, { type: 'evidence', description: 'No se detecto mensaje de error por opciones' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+        { type: 'evidence', description: 'No se detecto mensaje de error por opciones' },
+      ])
       throw e
     }
     LOG('PASS: Excel con opciones incompletas detectado')
   })
 
-  test('permite abrir el flujo Con Cartilla / Sin Cartilla', async ({ page, context, request }, testInfo) => {
+  test('permite abrir el flujo Con Cartilla / Sin Cartilla', async ({
+    page,
+    context,
+    request,
+  }, testInfo) => {
     ann(testInfo, {
       scenario: 'valido',
       check: 'Flujo de subida con opciones Con Cartilla y Sin Cartilla visibles',
@@ -160,7 +217,10 @@ test.describe('Banco docente importacion Excel', () => {
     await expect(page.getByText(/subir banco de preguntas/i)).toBeVisible()
     await expect(page.getByRole('button', { name: 'Con Cartilla', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Sin Cartilla' })).toBeVisible()
-    annotate(testInfo, [{ type: 'obtained', description: 'ok' }, { type: 'cause', description: 'validacion_correcta' }])
+    annotate(testInfo, [
+      { type: 'obtained', description: 'ok' },
+      { type: 'cause', description: 'validacion_correcta' },
+    ])
     LOG('PASS: Flujo Con/Sin Cartilla abierto')
   })
 })

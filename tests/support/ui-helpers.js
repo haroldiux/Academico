@@ -4,10 +4,18 @@ import { getSharedToken, getSharedUser, hasSharedToken } from './shared-auth.mjs
 
 const LOG = (...args) => console.log(`[TEST] [UI]`, ...args)
 
-function logStep(step) { LOG(`  → ${step}`) }
-function logOk(step) { LOG(`  ✓ ${step}`) }
-function logFail(step) { LOG(`  ✗ ${step}`) }
-function logWarn(step) { LOG(`  ⚠ ${step}`) }
+function logStep(step) {
+  LOG(`  → ${step}`)
+}
+function logOk(step) {
+  LOG(`  ✓ ${step}`)
+}
+function logFail(step) {
+  LOG(`  ✗ ${step}`)
+}
+function logWarn(step) {
+  LOG(`  ⚠ ${step}`)
+}
 
 export async function loginAsDocente(page) {
   LOG('Iniciando login como docente...')
@@ -48,8 +56,13 @@ function normalizeDocenteUser(user) {
       Number(testEnv.docenteCarreraId || 0) ||
       null,
     avatar: `${(user?.nombre || 'D')[0]}${(user?.apellido || '')[0] || ''}`,
-    docente: user?.docente || { id: Number(testEnv.docenteDocenteId || 0) || null, sede_id: Number(testEnv.docenteSedeId || 0) || null },
-    materias_asignadas: [], carreras: [], grupos: user?.docente?.grupos || [],
+    docente: user?.docente || {
+      id: Number(testEnv.docenteDocenteId || 0) || null,
+      sede_id: Number(testEnv.docenteSedeId || 0) || null,
+    },
+    materias_asignadas: [],
+    carreras: [],
+    grupos: user?.docente?.grupos || [],
   }
 }
 
@@ -78,11 +91,22 @@ export async function seedDocenteSession(page, context, request) {
     Authorization: `Bearer ${sharedToken}`,
   })
 
-  await context.addInitScript(({ token: t, authUser: u }) => {
-    localStorage.setItem('auth_token', t)
-    localStorage.setItem('auth_user', JSON.stringify(u))
-    localStorage.setItem('auth', JSON.stringify({ usuarioActual: u, isAuthenticated: true, token: t, passwordChangeRequired: false }))
-  }, { token: sharedToken, authUser })
+  await context.addInitScript(
+    ({ token: t, authUser: u }) => {
+      localStorage.setItem('auth_token', t)
+      localStorage.setItem('auth_user', JSON.stringify(u))
+      localStorage.setItem(
+        'auth',
+        JSON.stringify({
+          usuarioActual: u,
+          isAuthenticated: true,
+          token: t,
+          passwordChangeRequired: false,
+        }),
+      )
+    },
+    { token: sharedToken, authUser },
+  )
 
   await page.goto('/#/documentacion')
   logOk('Sesion sembrada en localStorage y pagina cargada')

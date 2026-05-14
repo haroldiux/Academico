@@ -1144,9 +1144,13 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
     const renderOptions = ['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(currentType)
     const prefixedBlankTypes = ['FALSO_VERDADERO', 'PREGUNTA_CON_CLAVE', 'RESPUESTA_COMPUESTA']
     const statementX = prefixedBlankTypes.includes(currentType) ? margin + 18 : margin + 8
-    const statementMaxWidth = margin + contentWidth - statementX
-    const detailMaxWidth = margin + contentWidth - (margin + 12)
-    const optionMaxWidth = margin + contentWidth - (margin + 12)
+    const rightPadding = 6
+    const statementMaxWidth = margin + contentWidth - statementX - rightPadding
+    const detailMaxWidth = margin + contentWidth - (margin + 12) - rightPadding
+    const optionMaxWidth = margin + contentWidth - (margin + 12) - rightPadding
+
+    doc.setFontSize(baseSize)
+    doc.setFont(baseFont, 'normal')
     const statementLines = doc.splitTextToSize(statement, statementMaxWidth)
     const hasStatement = statementLines.some((line) => String(line || '').trim().length > 0)
     let estimatedHeight = statementLines.length * lineHeight
@@ -1156,6 +1160,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
     if (question.imagen) estimatedHeight += 47
 
     if (currentType === 'PREGUNTA_CON_CLAVE') {
+      doc.setFontSize(baseSize - 1)
       detailLines.forEach((line, detailIndex) => {
         const claveLines = doc.splitTextToSize(
           `${detailIndex + 1}. ${stripNumericPrefix(line)}`,
@@ -1164,6 +1169,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
         estimatedHeight += claveLines.length * lineHeight + 1
       })
     } else if (currentType === 'RESPUESTA_COMPUESTA') {
+      doc.setFontSize(baseSize - 1)
       const romanLabels = ['I', 'II']
       detailLines.forEach((line, detailIndex) => {
         const label = romanLabels[detailIndex + premiseDetailStartIndex] || romanLabels.at(-1)
@@ -1174,6 +1180,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
         estimatedHeight += premiseLines.length * lineHeight + 1
       })
     } else if (renderOptions) {
+      doc.setFontSize(baseSize - 1)
       for (const option of options) {
         const optionLines = doc.splitTextToSize(
           `${option.id || ''}) ${cleanQuestionText(option.text)}`,
@@ -1182,6 +1189,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
         estimatedHeight += optionLines.length * lineHeight + 1
       }
     }
+    doc.setFontSize(baseSize)
 
     estimatedHeight += isHeader ? 0 : 5
 
@@ -1211,7 +1219,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
 
     doc.setFont(baseFont, 'normal')
     if (hasStatement) {
-      doc.text(statementLines, statementX, currentY)
+      doc.text(statementLines, statementX, currentY, { maxWidth: statementMaxWidth })
       currentY += statementLines.length * lineHeight
     }
 

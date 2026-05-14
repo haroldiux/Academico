@@ -1252,7 +1252,12 @@
               <q-input v-model="dlgDocente.celular" label="Celular" outlined dense />
             </div>
             <div class="col-12 col-md-6">
-              <q-input v-model="dlgDocente.grado_academico" label="Grado académico" outlined dense />
+              <q-input
+                v-model="dlgDocente.grado_academico"
+                label="Grado académico"
+                outlined
+                dense
+              />
             </div>
             <div class="col-12 col-md-6">
               <q-input v-model="dlgDocente.especialidad" label="Especialidad" outlined dense />
@@ -1273,7 +1278,13 @@
         </q-card-section>
         <q-card-actions align="right" class="q-pa-md">
           <q-btn flat label="Cancelar" v-close-popup />
-          <q-btn color="indigo" icon="save" label="Crear Docente" :loading="guardando" @click="guardarDocente" />
+          <q-btn
+            color="indigo"
+            icon="save"
+            label="Crear Docente"
+            :loading="guardando"
+            @click="guardarDocente"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -1886,9 +1897,7 @@ async function guardarGrupo() {
   }
   // Validar conflictos si se cambió el docente y el grupo tiene horarios
   if (f.id && f.docente_id) {
-    const grupo = asignaturas.value
-      .flatMap((a) => a.grupos || [])
-      .find((g) => g.id === f.id)
+    const grupo = asignaturas.value.flatMap((a) => a.grupos || []).find((g) => g.id === f.id)
     if (grupo?.horarios?.length && grupo.docente_id !== f.docente_id) {
       for (const h of grupo.horarios) {
         try {
@@ -1988,9 +1997,7 @@ async function guardarHorario() {
     return
   }
   // Validar conflictos de horario (docente y aula)
-  const grupo = asignaturas.value
-    .flatMap((a) => a.grupos || [])
-    .find((g) => g.id === f.grupo_id)
+  const grupo = asignaturas.value.flatMap((a) => a.grupos || []).find((g) => g.id === f.grupo_id)
   if (grupo?.docente_id || f.aula_id) {
     try {
       const v = await cargaAcademicaService.validar({
@@ -2199,7 +2206,9 @@ async function guardarDocente() {
   } catch (err) {
     const msg =
       err.response?.data?.message ||
-      Object.values(err.response?.data?.errors || {}).flat().join(' | ') ||
+      Object.values(err.response?.data?.errors || {})
+        .flat()
+        .join(' | ') ||
       err.message
     Notify.create({ type: 'negative', message: 'Error: ' + msg })
   } finally {

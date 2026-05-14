@@ -283,7 +283,6 @@ export function usePermisos() {
           icon: 'settings_backup_restore',
           to: '/admin/recuperacion-manual',
         },
-
       ]
       // Opciones adicionales solo para SUPER_ADMIN
       if (esSuperAdmin.value) {

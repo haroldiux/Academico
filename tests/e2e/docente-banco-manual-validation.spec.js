@@ -64,12 +64,17 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
     await capturar(testInfo, page, '1-dialogo-abierto.png')
 
     await test.step('Llenar enunciado', async () => {
-      await page.getByLabel('Enunciado de la pregunta').fill('El agua hierve a 100 grados Celsius al nivel del mar.')
+      await page
+        .getByLabel('Enunciado de la pregunta')
+        .fill('El agua hierve a 100 grados Celsius al nivel del mar.')
     })
 
     await test.step('Guardar', async () => {
       await saveManualQuestion(page)
-      const blocked = await page.getByText(/registrar nueva pregunta/i).isVisible().catch(() => false)
+      const blocked = await page
+        .getByText(/registrar nueva pregunta/i)
+        .isVisible()
+        .catch(() => false)
       if (blocked) {
         await capturar(testInfo, page, '2-dialogo-sigue-abierto.png')
       }
@@ -90,18 +95,29 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
       await selectQuestionType(page, 'Verdadero o Falso Simple')
     })
 
-    await test.step('Guardar sin enunciado', async () => { await saveManualQuestion(page) })
+    await test.step('Guardar sin enunciado', async () => {
+      await saveManualQuestion(page)
+    })
 
     try {
       await expect(page.getByText('Debes registrar el enunciado principal.')).toBeVisible()
       await capturar(testInfo, page, 'bloqueo-sin-enunciado.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'bloqueado' }, { type: 'cause', description: 'validacion_correcta' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'bloqueado' },
+        { type: 'cause', description: 'validacion_correcta' },
+      ])
     } catch {
       await capturar(testInfo, page, 'no-bloqueo-sin-enunciado.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+      ])
     }
 
-    analisis(testInfo, 'FALSO_VERDADERO | SIN ENUNCIADO | ESPERADO: BLOQUEAR | FRONTEND: valida correctamente')
+    analisis(
+      testInfo,
+      'FALSO_VERDADERO | SIN ENUNCIADO | ESPERADO: BLOQUEAR | FRONTEND: valida correctamente',
+    )
   })
 
   test.fixme('FALSO_VERDADERO sin respuesta correcta', async () => {})
@@ -110,7 +126,13 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
   // ══════════════ SELECCION_SIMPLE ══════════════
 
   test('SELECCION_SIMPLE valido', async ({ page, context, request }, testInfo) => {
-    ann(testInfo, 'SELECCION_SIMPLE', 'valido', 'Enunciado, 5 opciones, respuesta y dificultad', 'permitir')
+    ann(
+      testInfo,
+      'SELECCION_SIMPLE',
+      'valido',
+      'Enunciado, 5 opciones, respuesta y dificultad',
+      'permitir',
+    )
 
     await test.step('Abrir dialogo', async () => {
       await openManualDialog(page, context, request)
@@ -121,13 +143,20 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
     await test.step('Llenar datos', async () => {
       await page.getByLabel('Enunciado de la pregunta').fill('Cual es la capital de Francia?')
       const opts = page.locator('.q-dialog .q-input input')
-      for (let i = 0; i < 4; i++) await opts.nth(3 + i).fill(`Opcion ${String.fromCharCode(65 + i)}`)
+      for (let i = 0; i < 4; i++)
+        await opts.nth(3 + i).fill(`Opcion ${String.fromCharCode(65 + i)}`)
     })
 
     await test.step('Guardar', async () => {
       await saveManualQuestion(page)
-      const blocked = await page.getByText(/debes/i).isVisible().catch(() => false)
-      annotate(testInfo, [{ type: 'obtained', description: blocked ? 'bloqueado' : 'ok' }, { type: 'cause', description: blocked ? 'bug_frontend' : 'validacion_correcta' }])
+      const blocked = await page
+        .getByText(/debes/i)
+        .isVisible()
+        .catch(() => false)
+      annotate(testInfo, [
+        { type: 'obtained', description: blocked ? 'bloqueado' : 'ok' },
+        { type: 'cause', description: blocked ? 'bug_frontend' : 'validacion_correcta' },
+      ])
     })
   })
 
@@ -139,21 +168,33 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
       await selectQuestionType(page, 'Selección de la mejor respuesta')
       await page.getByLabel('Enunciado de la pregunta').fill('Pregunta con solo 4 opciones QA')
       const opts = page.locator('.q-dialog .q-input input')
-      for (let i = 0; i < 4; i++) await opts.nth(3 + i).fill(`Opcion ${String.fromCharCode(65 + i)}`)
+      for (let i = 0; i < 4; i++)
+        await opts.nth(3 + i).fill(`Opcion ${String.fromCharCode(65 + i)}`)
     })
 
-    await test.step('Guardar', async () => { await saveManualQuestion(page) })
+    await test.step('Guardar', async () => {
+      await saveManualQuestion(page)
+    })
 
     try {
       await expect(page.getByText('Debes completar las 5 opciones')).toBeVisible()
       await capturar(testInfo, page, 'bloqueo-4-opciones.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'bloqueado' }, { type: 'cause', description: 'validacion_correcta' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'bloqueado' },
+        { type: 'cause', description: 'validacion_correcta' },
+      ])
     } catch {
       await capturar(testInfo, page, 'no-bloqueo-4-opciones.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+      ])
     }
 
-    analisis(testInfo, 'SELECCION_SIMPLE | 4 DE 5 OPCIONES | ESPERADO: BLOQUEAR | FRONTEND: bloquea | BACKEND: NO valida (bug)')
+    analisis(
+      testInfo,
+      'SELECCION_SIMPLE | 4 DE 5 OPCIONES | ESPERADO: BLOQUEAR | FRONTEND: bloquea | BACKEND: NO valida (bug)',
+    )
   })
 
   test.fixme('SELECCION_SIMPLE sin respuesta correcta', async () => {})
@@ -161,7 +202,13 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
   // ══════════════ PREGUNTA_CON_CLAVE ══════════════
 
   test('PREGUNTA_CON_CLAVE valido', async ({ page, context, request }, testInfo) => {
-    ann(testInfo, 'PREGUNTA_CON_CLAVE', 'valido', 'Enunciado, 4 incisos, clave y dificultad', 'permitir')
+    ann(
+      testInfo,
+      'PREGUNTA_CON_CLAVE',
+      'valido',
+      'Enunciado, 4 incisos, clave y dificultad',
+      'permitir',
+    )
 
     await test.step('Abrir dialogo', async () => {
       await openManualDialog(page, context, request)
@@ -171,13 +218,20 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
 
     await test.step('Llenar 4 incisos', async () => {
       await page.getByLabel('Enunciado de la pregunta').fill('Analice las siguientes afirmaciones.')
-      for (let i = 1; i <= 4; i++) await page.getByLabel(`Inciso ${i}`).fill(`Inciso ${String.fromCharCode(64 + i)}`)
+      for (let i = 1; i <= 4; i++)
+        await page.getByLabel(`Inciso ${i}`).fill(`Inciso ${String.fromCharCode(64 + i)}`)
     })
 
     await test.step('Guardar', async () => {
       await saveManualQuestion(page)
-      const blocked = await page.getByText(/debes/i).isVisible().catch(() => false)
-      annotate(testInfo, [{ type: 'obtained', description: blocked ? 'bloqueado' : 'ok' }, { type: 'cause', description: blocked ? 'bug_frontend' : 'validacion_correcta' }])
+      const blocked = await page
+        .getByText(/debes/i)
+        .isVisible()
+        .catch(() => false)
+      annotate(testInfo, [
+        { type: 'obtained', description: blocked ? 'bloqueado' : 'ok' },
+        { type: 'cause', description: blocked ? 'bug_frontend' : 'validacion_correcta' },
+      ])
     })
   })
 
@@ -188,27 +242,45 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
       await openManualDialog(page, context, request)
       await selectQuestionType(page, 'Verdadero o Falso Complejas')
       await page.getByLabel('Enunciado de la pregunta').fill('Analice las afirmaciones QA')
-      for (let i = 1; i <= 3; i++) await page.getByLabel(`Inciso ${i}`).fill(`Inciso ${String.fromCharCode(64 + i)}`)
+      for (let i = 1; i <= 3; i++)
+        await page.getByLabel(`Inciso ${i}`).fill(`Inciso ${String.fromCharCode(64 + i)}`)
     })
 
-    await test.step('Guardar', async () => { await saveManualQuestion(page) })
+    await test.step('Guardar', async () => {
+      await saveManualQuestion(page)
+    })
 
     try {
       await expect(page.getByText('Debes completar los 4 incisos')).toBeVisible()
       await capturar(testInfo, page, 'bloqueo-3-incisos.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'bloqueado' }, { type: 'cause', description: 'validacion_correcta' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'bloqueado' },
+        { type: 'cause', description: 'validacion_correcta' },
+      ])
     } catch {
       await capturar(testInfo, page, 'no-bloqueo-3-incisos.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+      ])
     }
 
-    analisis(testInfo, 'PREGUNTA_CON_CLAVE | 3 DE 4 INCISOS | ESPERADO: BLOQUEAR | FRONTEND: bloquea | BACKEND: NO valida (bug)')
+    analisis(
+      testInfo,
+      'PREGUNTA_CON_CLAVE | 3 DE 4 INCISOS | ESPERADO: BLOQUEAR | FRONTEND: bloquea | BACKEND: NO valida (bug)',
+    )
   })
 
   // ══════════════ RESPUESTA_COMPUESTA ══════════════
 
   test('RESPUESTA_COMPUESTA valido', async ({ page, context, request }, testInfo) => {
-    ann(testInfo, 'RESPUESTA_COMPUESTA', 'valido', 'Dos premisas, respuesta y dificultad', 'permitir')
+    ann(
+      testInfo,
+      'RESPUESTA_COMPUESTA',
+      'valido',
+      'Dos premisas, respuesta y dificultad',
+      'permitir',
+    )
 
     await test.step('Abrir y llenar premisas', async () => {
       await openManualDialog(page, context, request)
@@ -220,8 +292,14 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
 
     await test.step('Guardar', async () => {
       await saveManualQuestion(page)
-      const blocked = await page.getByText(/debes/i).isVisible().catch(() => false)
-      annotate(testInfo, [{ type: 'obtained', description: blocked ? 'bloqueado' : 'ok' }, { type: 'cause', description: blocked ? 'bug_frontend' : 'validacion_correcta' }])
+      const blocked = await page
+        .getByText(/debes/i)
+        .isVisible()
+        .catch(() => false)
+      annotate(testInfo, [
+        { type: 'obtained', description: blocked ? 'bloqueado' : 'ok' },
+        { type: 'cause', description: blocked ? 'bug_frontend' : 'validacion_correcta' },
+      ])
     })
   })
 
@@ -234,18 +312,29 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
       await page.getByLabel('Premisa 1').fill('Solo primera premisa completa.')
     })
 
-    await test.step('Guardar', async () => { await saveManualQuestion(page) })
+    await test.step('Guardar', async () => {
+      await saveManualQuestion(page)
+    })
 
     try {
       await expect(page.getByText('Debes completar las dos premisas')).toBeVisible()
       await capturar(testInfo, page, 'bloqueo-1-premisa.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'bloqueado' }, { type: 'cause', description: 'validacion_correcta' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'bloqueado' },
+        { type: 'cause', description: 'validacion_correcta' },
+      ])
     } catch {
       await capturar(testInfo, page, 'no-bloqueo-1-premisa.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+      ])
     }
 
-    analisis(testInfo, 'RESPUESTA_COMPUESTA | FALTA PREMISA 2 | ESPERADO: BLOQUEAR | FRONTEND: bloquea correctamente')
+    analisis(
+      testInfo,
+      'RESPUESTA_COMPUESTA | FALTA PREMISA 2 | ESPERADO: BLOQUEAR | FRONTEND: bloquea correctamente',
+    )
   })
 
   test.fixme('RESPUESTA_COMPUESTA sin respuesta correcta', async () => {})
@@ -258,7 +347,9 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
     await test.step('Abrir y llenar', async () => {
       await openManualDialog(page, context, request)
       await selectQuestionType(page, 'Emparejamiento Ampliado')
-      await page.getByLabel('Enunciado general del emparejamiento ampliado').fill('Relacione conceptos.')
+      await page
+        .getByLabel('Enunciado general del emparejamiento ampliado')
+        .fill('Relacione conceptos.')
       await page.getByLabel('Opción A').fill('Concepto A')
       await page.getByLabel('Opción B').fill('Concepto B')
     })
@@ -266,8 +357,14 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
 
     await test.step('Guardar', async () => {
       await saveManualQuestion(page)
-      const blocked = await page.getByText(/debes/i).isVisible().catch(() => false)
-      annotate(testInfo, [{ type: 'obtained', description: blocked ? 'bloqueado' : 'ok' }, { type: 'cause', description: blocked ? 'validacion_correcta' : 'validacion_correcta' }])
+      const blocked = await page
+        .getByText(/debes/i)
+        .isVisible()
+        .catch(() => false)
+      annotate(testInfo, [
+        { type: 'obtained', description: blocked ? 'bloqueado' : 'ok' },
+        { type: 'cause', description: blocked ? 'validacion_correcta' : 'validacion_correcta' },
+      ])
     })
   })
 
@@ -277,20 +374,32 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
     await test.step('Abrir y llenar solo opciones base', async () => {
       await openManualDialog(page, context, request)
       await selectQuestionType(page, 'Emparejamiento Ampliado')
-      await page.getByLabel('Enunciado general del emparejamiento ampliado').fill('Relacione conceptos.')
+      await page
+        .getByLabel('Enunciado general del emparejamiento ampliado')
+        .fill('Relacione conceptos.')
       await page.getByLabel('Opción A').fill('Concepto A')
       await page.getByLabel('Opción B').fill('Concepto B')
     })
 
-    await test.step('Guardar', async () => { await saveManualQuestion(page) })
+    await test.step('Guardar', async () => {
+      await saveManualQuestion(page)
+    })
 
     try {
-      await expect(page.getByText('Debes completar cada enunciado del emparejamiento')).toBeVisible()
+      await expect(
+        page.getByText('Debes completar cada enunciado del emparejamiento'),
+      ).toBeVisible()
       await capturar(testInfo, page, 'bloqueo-emp-ligados.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'bloqueado' }, { type: 'cause', description: 'validacion_correcta' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'bloqueado' },
+        { type: 'cause', description: 'validacion_correcta' },
+      ])
     } catch {
       await capturar(testInfo, page, 'no-bloqueo-emp-ligados.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+      ])
     }
   })
 
@@ -300,18 +409,30 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
     await test.step('Abrir, solo enunciado general', async () => {
       await openManualDialog(page, context, request)
       await selectQuestionType(page, 'Emparejamiento Ampliado')
-      await page.getByLabel('Enunciado general del emparejamiento ampliado').fill('Relacione conceptos.')
+      await page
+        .getByLabel('Enunciado general del emparejamiento ampliado')
+        .fill('Relacione conceptos.')
     })
 
-    await test.step('Guardar', async () => { await saveManualQuestion(page) })
+    await test.step('Guardar', async () => {
+      await saveManualQuestion(page)
+    })
 
     try {
-      await expect(page.getByText(/Completa las opciones|Debes completar entre 2|Debes registrar entre 2/i)).toBeVisible()
+      await expect(
+        page.getByText(/Completa las opciones|Debes completar entre 2|Debes registrar entre 2/i),
+      ).toBeVisible()
       await capturar(testInfo, page, 'bloqueo-emp-sin-ops.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'bloqueado' }, { type: 'cause', description: 'validacion_correcta' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'bloqueado' },
+        { type: 'cause', description: 'validacion_correcta' },
+      ])
     } catch {
       await capturar(testInfo, page, 'no-bloqueo-emp-sin-ops.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+      ])
     }
   })
 
@@ -327,16 +448,27 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
     await capturar(testInfo, page, '1-dialogo-prob.png')
 
     await test.step('Llenar datos', async () => {
-      await page.getByLabel('Enunciado general del caso clínico o problema').fill('Caso clinico de prueba QA.')
+      await page
+        .getByLabel('Enunciado general del caso clínico o problema')
+        .fill('Caso clinico de prueba QA.')
       await page.getByLabel('Enunciado del subproblema').fill('Cual es la conducta correcta?')
-      const opts = page.locator('.q-dialog input.q-field__native:not([readonly]):not([type="file"])')
-      for (let i = 0; i < 4; i++) await opts.nth(i).fill(`Alternativa ${String.fromCharCode(65 + i)}`)
+      const opts = page.locator(
+        '.q-dialog input.q-field__native:not([readonly]):not([type="file"])',
+      )
+      for (let i = 0; i < 4; i++)
+        await opts.nth(i).fill(`Alternativa ${String.fromCharCode(65 + i)}`)
     })
 
     await test.step('Guardar', async () => {
       await saveManualQuestion(page)
-      const blocked = await page.getByText(/debes/i).isVisible().catch(() => false)
-      annotate(testInfo, [{ type: 'obtained', description: blocked ? 'bloqueado' : 'ok' }, { type: 'cause', description: blocked ? 'bug_frontend' : 'validacion_correcta' }])
+      const blocked = await page
+        .getByText(/debes/i)
+        .isVisible()
+        .catch(() => false)
+      annotate(testInfo, [
+        { type: 'obtained', description: blocked ? 'bloqueado' : 'ok' },
+        { type: 'cause', description: blocked ? 'bug_frontend' : 'validacion_correcta' },
+      ])
     })
   })
 
@@ -348,19 +480,29 @@ test.describe('Banco docente registro manual - validaciones por tipo', () => {
       await selectQuestionType(page, 'Ítems agrupados por caso clínico o problema')
       await page.getByLabel('Enunciado general del caso clínico o problema').fill('Caso QA.')
       await page.getByLabel('Enunciado del subproblema').fill('Conducta correcta?')
-      const opts = page.locator('.q-dialog input.q-field__native:not([readonly]):not([type="file"])')
+      const opts = page.locator(
+        '.q-dialog input.q-field__native:not([readonly]):not([type="file"])',
+      )
       for (let i = 0; i < 4; i++) await opts.nth(i).fill(`Alt ${String.fromCharCode(65 + i)}`)
     })
 
-    await test.step('Guardar', async () => { await saveManualQuestion(page) })
+    await test.step('Guardar', async () => {
+      await saveManualQuestion(page)
+    })
 
     try {
       await expect(page.getByText('Debes completar todos los subitems')).toBeVisible()
       await capturar(testInfo, page, 'bloqueo-prob-inc.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'bloqueado' }, { type: 'cause', description: 'validacion_correcta' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'bloqueado' },
+        { type: 'cause', description: 'validacion_correcta' },
+      ])
     } catch {
       await capturar(testInfo, page, 'no-bloqueo-prob-inc.png')
-      annotate(testInfo, [{ type: 'obtained', description: 'permitido' }, { type: 'cause', description: 'bug_frontend' }])
+      annotate(testInfo, [
+        { type: 'obtained', description: 'permitido' },
+        { type: 'cause', description: 'bug_frontend' },
+      ])
     }
   })
 

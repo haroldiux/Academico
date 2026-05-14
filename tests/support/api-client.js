@@ -43,7 +43,10 @@ async function fetchToken() {
         throw new Error(`Login fallo: status ${response.status()}`)
       }
     } catch (e) {
-      if (attempt >= 5) { await ctx.dispose(); throw e }
+      if (attempt >= 5) {
+        await ctx.dispose()
+        throw e
+      }
       await new Promise((r) => setTimeout(r, attempt * 3000))
     }
   }
@@ -75,6 +78,8 @@ export async function cleanupBancoFiltrado(apiContext, overrides = {}) {
     parcial: testEnv.docenteParcial,
     ...overrides,
   }
-  LOG(`Limpiando banco: asig=${payload.asignatura_id} grupo=${payload.grupo_teorico} parcial=${payload.parcial}`)
+  LOG(
+    `Limpiando banco: asig=${payload.asignatura_id} grupo=${payload.grupo_teorico} parcial=${payload.parcial}`,
+  )
   return apiContext.post('banco-preguntas/bulk-delete', { data: payload })
 }
