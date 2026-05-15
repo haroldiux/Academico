@@ -292,6 +292,11 @@ export function usePermisos() {
           to: '/admin/gestion-academica',
         })
         items.push({
+          label: 'Recuperación Bancos',
+          icon: 'healing',
+          to: '/admin/restauracion-bancos',
+        })
+        items.push({
           label: 'Sincronización',
           icon: 'sync',
           to: '/admin/sincronizacion',

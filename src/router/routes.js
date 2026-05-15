@@ -292,6 +292,12 @@ const routes = [
             component: () => import('pages/admin/GestionAcademicaPage.vue'),
             meta: { title: 'Gestión Académica', rol: 'SUPER_ADMIN' },
           },
+          {
+            path: 'restauracion-bancos',
+            name: 'restauracion-bancos',
+            component: () => import('pages/admin/RestauracionBancosPage.vue'),
+            meta: { title: 'Recuperación de Bancos', rol: 'SUPER_ADMIN' },
+          },
           // Rutas legacy mantenidas por compatibilidad con el menú lateral
           {
             path: 'carreras-admin',
