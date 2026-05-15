@@ -1,10 +1,10 @@
-const routes = [
+﻿const routes = [
   // Login (fuera del MainLayout)
   {
     path: '/login',
     name: 'login',
     component: () => import('pages/LoginPage.vue'),
-    meta: { title: 'Iniciar Sesión', public: true },
+    meta: { title: 'Iniciar SesiÃ³n', public: true },
   },
   {
     path: '/',
@@ -39,7 +39,7 @@ const routes = [
         path: 'direccion/dashboard',
         name: 'direccion-academica-dashboard',
         component: () => import('pages/dashboards/DireccionAcademicaDashboard.vue'),
-        meta: { title: 'Panel Dirección Académica', rol: 'DIRECCION_ACADEMICA' },
+        meta: { title: 'Panel DirecciÃ³n AcadÃ©mica', rol: 'DIRECCION_ACADEMICA' },
       },
       {
         path: 'vicerrector-sede/dashboard',
@@ -70,7 +70,7 @@ const routes = [
         name: 'explorador-academico',
         component: () => import('pages/admin/ExploradorAcademicoPage.vue'),
         meta: {
-          title: 'Explorador Académico',
+          title: 'Explorador AcadÃ©mico',
           rol: ['SUPER_ADMIN', 'VICERRECTOR_NACIONAL', 'ADMIN'],
         },
       },
@@ -141,7 +141,7 @@ const routes = [
             name: 'director-docentes',
             component: () => import('pages/director/DocentesPage.vue'),
             meta: {
-              title: 'Gestión de Docentes',
+              title: 'GestiÃ³n de Docentes',
               rol: [
                 'DIRECTOR_CARRERA',
                 'DIRECCION_ACADEMICA',
@@ -155,7 +155,7 @@ const routes = [
             name: 'rol-examenes',
             component: () => import('pages/director/RolExamenesPage.vue'),
             meta: {
-              title: 'Rol de Exámenes',
+              title: 'Rol de ExÃ¡menes',
               rol: [
                 'DIRECTOR_CARRERA',
                 'DIRECCION_ACADEMICA',
@@ -231,7 +231,7 @@ const routes = [
             name: 'director-contexto',
             component: () => import('pages/director/CarreraContextoPage.vue'),
             meta: {
-              title: 'Información de la Carrera',
+              title: 'InformaciÃ³n de la Carrera',
               rol: [
                 'DIRECTOR_CARRERA',
                 'DIRECCION_ACADEMICA',
@@ -266,105 +266,123 @@ const routes = [
             path: 'usuarios',
             name: 'usuarios',
             component: () => import('pages/admin/UsuariosPage.vue'),
-            meta: { title: 'Gestión de Usuarios' },
+            meta: { title: 'GestiÃ³n de Usuarios' },
           },
           {
             path: 'roles',
             name: 'roles',
             component: () => import('pages/admin/RolesPage.vue'),
-            meta: { title: 'Gestión de Roles' },
+            meta: { title: 'GestiÃ³n de Roles' },
           },
           {
             path: 'sedes',
             name: 'sedes',
             component: () => import('pages/admin/SedesPage.vue'),
-            meta: { title: 'Gestión de Sedes' },
+            meta: { title: 'GestiÃ³n de Sedes' },
           },
           {
             path: 'carreras',
             name: 'carreras',
             component: () => import('pages/admin/CarrerasPage.vue'),
-            meta: { title: 'Gestión de Carreras' },
+            meta: { title: 'GestiÃ³n de Carreras' },
           },
           {
             path: 'gestion-academica',
             name: 'gestion-academica',
             component: () => import('pages/admin/GestionAcademicaPage.vue'),
-            meta: { title: 'Gestión Académica', rol: 'SUPER_ADMIN' },
+            meta: { title: 'GestiÃ³n AcadÃ©mica', rol: 'SUPER_ADMIN' },
           },
-          // Rutas legacy mantenidas por compatibilidad con el menú lateral
+          // Rutas legacy mantenidas por compatibilidad con el menÃº lateral
           {
             path: 'carreras-admin',
             name: 'carreras-admin',
             component: () => import('pages/admin/crud/CarrerasCrudPage.vue'),
-            meta: { title: 'Administración de Carreras', rol: 'SUPER_ADMIN' },
+            meta: { title: 'AdministraciÃ³n de Carreras', rol: 'SUPER_ADMIN' },
           },
           {
             path: 'sedes-admin',
             name: 'sedes-admin',
             component: () => import('pages/admin/crud/SedesCrudPage.vue'),
-            meta: { title: 'Administración de Sedes', rol: 'SUPER_ADMIN' },
+            meta: { title: 'AdministraciÃ³n de Sedes', rol: 'SUPER_ADMIN' },
           },
           {
             path: 'asignaturas-admin',
             name: 'asignaturas-admin',
             component: () => import('pages/admin/crud/AsignaturasCrudPage.vue'),
-            meta: { title: 'Administración de Asignaturas', rol: 'SUPER_ADMIN' },
+            meta: { title: 'AdministraciÃ³n de Asignaturas', rol: 'SUPER_ADMIN' },
           },
           {
             path: 'grupos-admin',
             name: 'grupos-admin',
             component: () => import('pages/admin/crud/GruposCrudPage.vue'),
-            meta: { title: 'Administración de Grupos', rol: 'SUPER_ADMIN' },
+            meta: { title: 'AdministraciÃ³n de Grupos', rol: 'SUPER_ADMIN' },
           },
           {
             path: 'horarios-admin',
             name: 'horarios-admin',
             component: () => import('pages/admin/crud/HorariosCrudPage.vue'),
-            meta: { title: 'Administración de Horarios', rol: 'SUPER_ADMIN' },
+            meta: { title: 'AdministraciÃ³n de Horarios', rol: 'SUPER_ADMIN' },
           },
           {
             path: 'asignaturas',
             name: 'asignaturas',
             component: () => import('pages/admin/AsignaturasPage.vue'),
-            meta: { title: 'Gestión de Asignaturas' },
+            meta: { title: 'GestiÃ³n de Asignaturas' },
           },
           {
             path: 'grupos',
             name: 'grupos',
             component: () => import('pages/admin/GruposPage.vue'),
-            meta: { title: 'Gestión de Grupos' },
+            meta: { title: 'GestiÃ³n de Grupos' },
           },
           {
             path: 'docentes',
             name: 'docentes',
             component: () => import('pages/admin/DocentesPage.vue'),
-            meta: { title: 'Gestión de Docentes' },
+            meta: { title: 'GestiÃ³n de Docentes' },
           },
           {
             path: 'estadisticas',
             name: 'estadisticas',
             component: () => import('pages/admin/EstadisticasPage.vue'),
-            meta: { title: 'Estadísticas' },
+            meta: { title: 'EstadÃ­sticas' },
           },
           {
             path: 'configuracion',
             name: 'configuracion',
             component: () => import('pages/admin/ConfiguracionPage.vue'),
-            meta: { title: 'Configuración' },
+            meta: { title: 'ConfiguraciÃ³n' },
           },
           {
             path: 'evaluaciones',
             name: 'evaluaciones',
             component: () => import('pages/evaluaciones/GestionEvaluacionesPage.vue'),
-            meta: { title: 'Gestión de Evaluaciones' },
+            meta: { title: 'GestiÃ³n de Evaluaciones' },
+          },
+          {
+            path: 'verificador-patrones',
+            name: 'admin-verificador-patrones',
+            component: () => import('pages/evaluaciones/PatternVerifierPage.vue'),
+            meta: {
+              title: 'Verificador de Patrones',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'EVALUACIONES',
+                'RESPONSABLE_EVALUACIONES',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
+            },
           },
           {
             path: 'administracion-evaluaciones',
             name: 'administracion-evaluaciones',
             component: () => import('pages/admin/AdministracionEvaluacionPage.vue'),
             meta: {
-              title: 'Administración de Evaluaciones',
+              title: 'AdministraciÃ³n de Evaluaciones',
               rol: ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'],
             },
           },
@@ -384,7 +402,7 @@ const routes = [
             path: 'recuperacion-manual',
             name: 'recuperacion-manual',
             component: () => import('pages/admin/RecuperacionManualPage.vue'),
-            meta: { title: 'Recuperación Manual', rol: ['SUPER_ADMIN', 'ADMIN'] },
+            meta: { title: 'RecuperaciÃ³n Manual', rol: ['SUPER_ADMIN', 'ADMIN'] },
           },
           {
             path: 'mallas-curriculares',
@@ -400,7 +418,7 @@ const routes = [
             name: 'comparacion-asignatura',
             component: () => import('pages/admin/ComparacionAsignaturaPage.vue'),
             meta: {
-              title: 'Comparación de Asignatura',
+              title: 'ComparaciÃ³n de Asignatura',
               rol: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'],
             },
           },
@@ -409,13 +427,13 @@ const routes = [
             name: 'sincronizacion',
             component: () => import('pages/admin/SincronizacionPage.vue'),
             meta: {
-              title: 'Sincronización Académica',
+              title: 'SincronizaciÃ³n AcadÃ©mica',
               rol: ['SUPER_ADMIN'],
             },
           },
         ],
       },
-      // Documentación
+      // DocumentaciÃ³n
       {
         path: 'documentacion',
         children: [
@@ -423,7 +441,7 @@ const routes = [
             path: '',
             name: 'documentacion',
             component: () => import('pages/documentacion/DocumentacionPage.vue'),
-            meta: { title: 'Documentación Académica' },
+            meta: { title: 'DocumentaciÃ³n AcadÃ©mica' },
           },
           {
             path: ':id',
@@ -441,7 +459,7 @@ const routes = [
             path: ':id/planificacion',
             name: 'asignatura-planificacion',
             component: () => import('pages/documentacion/PlanificacionPage.vue'),
-            meta: { title: 'Planificación Semestral' },
+            meta: { title: 'PlanificaciÃ³n Semestral' },
           },
           {
             path: ':id/programa',
@@ -458,13 +476,13 @@ const routes = [
         component: () => import('pages/preguntas/PreguntasPage.vue'),
         meta: { title: 'Banco de Preguntas' },
       },
-      // Evaluaciones — Rol de Exámenes
+      // Evaluaciones â€” Rol de ExÃ¡menes
       {
         path: 'evaluaciones/rol-examenes',
         name: 'evaluaciones-rol-examenes',
         component: () => import('pages/evaluaciones/RolExamenesEvaluacionPage.vue'),
         meta: {
-          title: 'Rol de Exámenes',
+          title: 'Rol de ExÃ¡menes',
           rol: ['EVALUACIONES', 'ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'],
         },
       },
@@ -479,3 +497,4 @@ const routes = [
 ]
 
 export default routes
+

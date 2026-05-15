@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+﻿import { computed } from 'vue'
 import { useAuthStore, ROLES, PERMISOS_ROL } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
@@ -9,7 +9,7 @@ import { useAsignaturasStore } from 'src/stores/asignaturas'
 const esAppNativa = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.() === true
 
 /**
- * Composable para manejar permisos y filtrado de datos según el rol del usuario
+ * Composable para manejar permisos y filtrado de datos segÃºn el rol del usuario
  */
 export function usePermisos() {
   const authStore = useAuthStore()
@@ -19,19 +19,19 @@ export function usePermisos() {
 
   // === COMPUTED ===
 
-  // Información del usuario actual
+  // InformaciÃ³n del usuario actual
   const usuario = computed(() => authStore.usuarioActual)
   const rol = computed(() => authStore.rol)
   const sedeId = computed(() => authStore.sedeId)
   const carreraId = computed(() => authStore.carreraId)
   const permisos = computed(() => authStore.permisos)
 
-  // Permisos básicos
+  // Permisos bÃ¡sicos
   const puedeEditar = computed(() => authStore.puedeEditar)
   const esSoloLectura = computed(() => !authStore.puedeEditar)
   const alcance = computed(() => authStore.alcance)
 
-  // Verificaciones de rol específico
+  // Verificaciones de rol especÃ­fico
   const esSuperAdmin = computed(() => rol.value === ROLES.SUPER_ADMIN)
   const esAdmin = computed(() => rol.value === ROLES.ADMIN)
   const esVicerrectorNacional = computed(() => rol.value === ROLES.VICERRECTOR_NACIONAL)
@@ -47,13 +47,13 @@ export function usePermisos() {
   const tieneAccesoSede = computed(() => ['global', 'sede'].includes(alcance.value))
   const tieneAccesoCarrera = computed(() => ['global', 'sede', 'carrera'].includes(alcance.value))
 
-  // Información de sede del usuario
+  // InformaciÃ³n de sede del usuario
   const sedeActual = computed(() => {
     if (!sedeId.value) return null
     return sedesStore.getSedeById(sedeId.value)
   })
 
-  // Información de carrera del usuario
+  // InformaciÃ³n de carrera del usuario
   const carreraActual = computed(() => {
     if (!carreraId.value) return null
     return carrerasStore.getCarreraById(carreraId.value)
@@ -96,7 +96,7 @@ export function usePermisos() {
       return todasAsignaturas
     }
 
-    // Vicerrector Sede, Dirección Académica - ve todo de su sede
+    // Vicerrector Sede, DirecciÃ³n AcadÃ©mica - ve todo de su sede
     if (tieneAccesoSede.value && sedeId.value) {
       return todasAsignaturas.filter((a) => a.sede_id === sedeId.value)
     }
@@ -119,10 +119,10 @@ export function usePermisos() {
     return []
   })
 
-  // === MÉTODOS ===
+  // === MÃ‰TODOS ===
 
   /**
-   * Verifica si el usuario puede ver una asignatura específica
+   * Verifica si el usuario puede ver una asignatura especÃ­fica
    */
   function puedeVerAsignatura(asignatura) {
     if (!asignatura) return false
@@ -130,7 +130,7 @@ export function usePermisos() {
   }
 
   /**
-   * Verifica si el usuario puede editar una asignatura específica
+   * Verifica si el usuario puede editar una asignatura especÃ­fica
    */
   function puedeEditarAsignatura(asignatura) {
     if (!asignatura) return false
@@ -172,12 +172,12 @@ export function usePermisos() {
   }
 
   /**
-   * Obtiene los items del menú según el rol
+   * Obtiene los items del menÃº segÃºn el rol
    */
   function getMenuItems() {
     const itemsBase = [{ label: 'Dashboard', icon: 'dashboard', to: getDashboardRoute() }]
 
-    // Items según rol
+    // Items segÃºn rol
     if (esDocente.value) {
       // Docentes: solo Mis Asignaturas (web y app nativa)
       return [{ label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' }]
@@ -195,8 +195,9 @@ export function usePermisos() {
         { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
-        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
-        { label: 'Información Carrera', icon: 'business', to: '/director/contexto' },
+        { label: 'Rol de ExÃ¡menes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
+        { label: 'InformaciÃ³n Carrera', icon: 'business', to: '/director/contexto' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
       ]
     }
@@ -210,14 +211,16 @@ export function usePermisos() {
         // { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
-        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
-        { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'Rol de ExÃ¡menes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'GestiÃ³n de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
       ]
     }
 
     if (esEvaluaciones.value || esResponsableEvaluaciones.value) {
       const items = [
-        { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'GestiÃ³n de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
       ]
       if (esResponsableEvaluaciones.value) {
         items.push({
@@ -239,7 +242,8 @@ export function usePermisos() {
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
-        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Rol de ExÃ¡menes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
@@ -265,21 +269,22 @@ export function usePermisos() {
         { label: 'Grupos', icon: 'groups', to: '/admin/grupos' },
         { label: 'Docentes', icon: 'person', to: '/admin/docentes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
-        { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'GestiÃ³n de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
         },
-        { label: 'Rol Exámenes (Eval)', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
-        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
-        { label: 'Documentación', icon: 'description', to: '/documentacion' },
+        { label: 'Rol ExÃ¡menes (Eval)', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
+        { label: 'Rol de ExÃ¡menes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'DocumentaciÃ³n', icon: 'description', to: '/documentacion' },
         { label: 'Reportes', icon: 'assessment', to: '/admin/reportes' },
-        { label: 'Estadísticas', icon: 'analytics', to: '/admin/estadisticas' },
-        { label: 'Configuración', icon: 'settings', to: '/admin/configuracion' },
+        { label: 'EstadÃ­sticas', icon: 'analytics', to: '/admin/estadisticas' },
+        { label: 'ConfiguraciÃ³n', icon: 'settings', to: '/admin/configuracion' },
         { label: 'Comparador Backups', icon: 'history_edu', to: '/admin/comparador-backup' },
         {
-          label: 'Recuperación Manual',
+          label: 'RecuperaciÃ³n Manual',
           icon: 'settings_backup_restore',
           to: '/admin/recuperacion-manual',
         },
@@ -287,12 +292,12 @@ export function usePermisos() {
       // Opciones adicionales solo para SUPER_ADMIN
       if (esSuperAdmin.value) {
         items.push({
-          label: 'Gestión Académica',
+          label: 'GestiÃ³n AcadÃ©mica',
           icon: 'grid_view',
           to: '/admin/gestion-academica',
         })
         items.push({
-          label: 'Sincronización',
+          label: 'SincronizaciÃ³n',
           icon: 'sync',
           to: '/admin/sincronizacion',
         })
@@ -304,7 +309,7 @@ export function usePermisos() {
   }
 
   /**
-   * Obtiene estadísticas según el rol
+   * Obtiene estadÃ­sticas segÃºn el rol
    */
   function getEstadisticasRol() {
     const stats = {
@@ -357,7 +362,7 @@ export function usePermisos() {
     carrerasFiltradas,
     asignaturasFiltradas,
 
-    // Métodos
+    // MÃ©todos
     puedeVerAsignatura,
     puedeEditarAsignatura,
     puedeVerCarrera,
@@ -371,3 +376,4 @@ export function usePermisos() {
     PERMISOS_ROL,
   }
 }
+

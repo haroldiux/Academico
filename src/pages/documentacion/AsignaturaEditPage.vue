@@ -1679,7 +1679,12 @@
                 <div class="col-12 col-xl-4">
                   <q-card flat bordered class="bg-green-1 text-green-10 full-height">
                     <q-card-section>
-                      <div class="text-caption text-weight-bold q-mb-sm">Conteo por dificultad</div>
+                      <div class="row items-center justify-between q-mb-sm">
+                        <div class="text-caption text-weight-bold">Conteo por dificultad</div>
+                        <q-badge color="red-8" text-color="white" class="text-weight-bold q-px-sm">
+                          OBLIGATORIO
+                        </q-badge>
+                      </div>
                       <div class="q-gutter-y-sm">
                         <div
                           v-for="dificultadInfo in conteoBancoPorDificultadItems"
@@ -1716,8 +1721,15 @@
                 <div class="col-12 col-xl-4">
                   <q-card flat bordered class="bg-cyan-1 text-cyan-10 full-height">
                     <q-card-section>
-                      <div class="text-caption text-weight-bold q-mb-sm">
-                        Conteo por grupo de tipo
+                      <div class="row items-center justify-between q-mb-sm">
+                        <div class="text-caption text-weight-bold">Conteo por grupo de tipo</div>
+                        <q-badge
+                          color="blue-grey-7"
+                          text-color="white"
+                          class="text-weight-bold q-px-sm"
+                        >
+                          REFERENCIAL
+                        </q-badge>
                       </div>
                       <div class="q-gutter-y-sm">
                         <div
@@ -1746,8 +1758,8 @@
                       <div class="text-caption q-mt-sm text-weight-medium">
                         {{
                           bancoCumpleGrupoTipo
-                            ? 'Grupos de tipo completos'
-                            : faltantesGrupoTipoLabel
+                            ? 'Referencia visual completa para revisar la mezcla de tipos.'
+                            : `Referencia visual: ${faltantesGrupoTipoLabel}`
                         }}
                       </div>
                     </q-card-section>
@@ -1930,6 +1942,25 @@
                           class="text-subtitle1 text-weight-bold q-mb-sm"
                           v-html="pregunta.enunciado"
                         ></div>
+
+                        <q-banner
+                          v-if="
+                            normalizarTipoPregunta(
+                              pregunta.tipo,
+                              pregunta,
+                              gruposCabeceraBancoMap.value,
+                            ) === 'OPCION_EMPAREJAMIENTO'
+                          "
+                          dense
+                          rounded
+                          class="bg-cyan-1 text-cyan-10 q-mb-sm"
+                        >
+                          <template v-slot:avatar>
+                            <q-icon name="rule" color="cyan-9" />
+                          </template>
+                          <span class="text-weight-bold">Respuesta correcta:</span>
+                          {{ getRespuestaCorrectaBancoPregunta(pregunta) }}
+                        </q-banner>
 
                         <!-- Imagen de la pregunta -->
                         <div v-if="pregunta.imagen" class="q-mb-md">
@@ -6392,6 +6423,10 @@ function abrirPrevisualizacionPreguntaRegistrada(pregunta) {
   previsualizarRegistroPreguntaPdf(preview)
 }
 
+function getRespuestaCorrectaBancoPregunta(pregunta) {
+  return crearPreviewPreguntaRegistrada(pregunta)?.respuestaLabel || 'Sin respuesta seleccionada'
+}
+
 function normalizarTextoPreviewPdf(texto) {
   return normalizarTextoMojibake(String(texto || ''))
     .replace(/<br\s*\/?>/gi, '\n')
@@ -8183,13 +8218,9 @@ const faltantesGrupoTipoLabel = computed(() =>
     .join(' · '),
 )
 
-const faltantesGeneracionLabel = computed(() =>
-  [faltantesDificultadLabel.value, faltantesGrupoTipoLabel.value].filter(Boolean).join(' / '),
-)
+const faltantesGeneracionLabel = computed(() => faltantesDificultadLabel.value)
 
-const bancoCumpleRequisitosGeneracion = computed(
-  () => bancoCumpleDificultad.value && bancoCumpleGrupoTipo.value,
-)
+const bancoCumpleRequisitosGeneracion = computed(() => bancoCumpleDificultad.value)
 
 const preguntasConNumeracion = computed(() => {
   let count = 0

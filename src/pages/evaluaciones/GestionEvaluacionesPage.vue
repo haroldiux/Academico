@@ -352,16 +352,26 @@
                 <q-chip
                   v-if="getBancoDisponibilidad(props.row).gruposTipo"
                   :color="
-                    getBancoDisponibilidad(props.row).gruposTipo.disponible ? 'green-1' : 'grey-2'
+                    getBancoDisponibilidad(props.row).gruposTipo.referencial
+                      ? 'blue-grey-1'
+                      : getBancoDisponibilidad(props.row).gruposTipo.disponible
+                        ? 'green-1'
+                        : 'grey-2'
                   "
                   :text-color="
-                    getBancoDisponibilidad(props.row).gruposTipo.disponible ? 'green-9' : 'grey-8'
+                    getBancoDisponibilidad(props.row).gruposTipo.referencial
+                      ? 'blue-grey-8'
+                      : getBancoDisponibilidad(props.row).gruposTipo.disponible
+                        ? 'green-9'
+                        : 'grey-8'
                   "
                   size="sm"
                   :icon="
-                    getBancoDisponibilidad(props.row).gruposTipo.disponible
-                      ? 'check_circle'
-                      : 'help_outline'
+                    getBancoDisponibilidad(props.row).gruposTipo.referencial
+                      ? 'info'
+                      : getBancoDisponibilidad(props.row).gruposTipo.disponible
+                        ? 'check_circle'
+                        : 'help_outline'
                   "
                   class="text-weight-bold banco-mini-chip"
                 >
@@ -1117,7 +1127,10 @@
             <div v-if="esSegundoParcialGestion" class="row q-col-gutter-sm q-mt-md">
               <div class="col-12">
                 <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
-                  Conteo requerido por grupo de tipo para 2do Parcial
+                  Conteo referencial por grupo de tipo para 2do Parcial
+                </div>
+                <div class="text-caption text-blue-grey-7">
+                  Este conteo ya no bloquea la generación del examen; se muestra solo como apoyo.
                 </div>
               </div>
               <div class="col-12 col-md-4">
@@ -1264,13 +1277,13 @@
             </q-banner>
 
             <q-banner
-              v-if="esSegundoParcialGestion && !bancoGrupoTipoSuficiente"
-              class="bg-red-1 text-red-9 q-mt-sm rounded-borders"
+              v-if="esSegundoParcialGestion"
+              class="bg-blue-grey-1 text-blue-grey-8 q-mt-sm rounded-borders"
               dense
             >
-              <template v-slot:avatar><q-icon name="warning" color="red" /></template>
-              No existen suficientes preguntas por grupo de tipo para 2do Parcial.
-              {{ resumenFaltantesGrupoTipoBanco }}
+              <template v-slot:avatar><q-icon name="info" color="blue-grey-7" /></template>
+              Para 2do Parcial, el conteo por grupo de tipo es solo referencial. La validación de
+              generación se realiza por dificultad.
             </q-banner>
 
             <div class="q-mt-lg text-caption text-grey-6 items-center flex">
@@ -1722,15 +1735,14 @@
                   </div>
                 </div>
 
+                <div class="text-caption text-blue-grey-7 q-mb-sm">
+                  Conteo referencial por grupo de tipo para 2do Parcial.
+                </div>
                 <div class="row q-col-gutter-xs q-mb-md">
                   <div class="col-4">
                     <q-chip
-                      :color="
-                        manualGrupoTipoStats.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 ? 'green-1' : 'red-1'
-                      "
-                      :text-color="
-                        manualGrupoTipoStats.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 ? 'green-9' : 'red-9'
-                      "
+                      color="blue-grey-1"
+                      text-color="blue-grey-8"
                       class="full-width q-ma-none"
                     >
                       <div class="text-caption">
@@ -1740,12 +1752,8 @@
                   </div>
                   <div class="col-4">
                     <q-chip
-                      :color="
-                        manualGrupoTipoStats.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 ? 'green-1' : 'red-1'
-                      "
-                      :text-color="
-                        manualGrupoTipoStats.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 ? 'green-9' : 'red-9'
-                      "
+                      color="blue-grey-1"
+                      text-color="blue-grey-8"
                       class="full-width q-ma-none"
                     >
                       <div class="text-caption">
@@ -1755,12 +1763,8 @@
                   </div>
                   <div class="col-4">
                     <q-chip
-                      :color="
-                        manualGrupoTipoStats.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3 ? 'green-1' : 'red-1'
-                      "
-                      :text-color="
-                        manualGrupoTipoStats.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3 ? 'green-9' : 'red-9'
-                      "
+                      color="blue-grey-1"
+                      text-color="blue-grey-8"
                       class="full-width q-ma-none"
                     >
                       <div class="text-caption">
@@ -2016,6 +2020,62 @@ const esSegundoParcialValor = (parcial) => {
   )
 }
 
+const normalizarGrupoExamen = (value) =>
+  removeAccents(String(value || ''))
+    .toUpperCase()
+    .replace(/\b(GRUPO|GT)\b/g, '')
+    .replace(/[^A-Z0-9]/g, '')
+    .trim()
+
+const normalizarParcialExamen = (value) => {
+  const key = removeAccents(String(value || '')).toLowerCase().trim()
+  if (!key) return ''
+  if (key.includes('2do') || key.includes('segundo') || key.includes('2p')) return PARCIAL_2DO
+  if (key.includes('1er') || key.includes('primer') || key.includes('1p')) return '1er Parcial'
+  if (key.includes('final')) return 'Final'
+  if (key.includes('instancia') || key.includes('2i')) return '2da Instancia'
+  return String(value || '').trim()
+}
+
+const validarPreguntasSeleccionadasParaExamen = (preguntas = [], contexto = {}) => {
+  const asignaturaIdEsperado = Number(contexto.asignatura_id || 0)
+  const grupoEsperado = normalizarGrupoExamen(contexto.grupo)
+  const parcialEsperado = normalizarParcialExamen(contexto.parcial)
+  const inconsistencias = []
+
+  ;(preguntas || []).forEach((pregunta, index) => {
+    const asignaturaPregunta = Number(pregunta?.asignatura_id || 0)
+    const grupoPregunta = normalizarGrupoExamen(
+      pregunta?.grupoTeorico || pregunta?.grupo_teorico || pregunta?.grupo,
+    )
+    const parcialPregunta = normalizarParcialExamen(pregunta?.parcial)
+
+    const fallos = []
+    if (asignaturaIdEsperado && asignaturaPregunta && asignaturaPregunta !== asignaturaIdEsperado) {
+      fallos.push('asignatura')
+    }
+    if (grupoEsperado && grupoPregunta && grupoPregunta !== grupoEsperado) {
+      fallos.push('grupo')
+    }
+    if (parcialEsperado && parcialPregunta && parcialPregunta !== parcialEsperado) {
+      fallos.push('parcial')
+    }
+
+    if (fallos.length) {
+      inconsistencias.push({
+        index: index + 1,
+        id: pregunta?.id || null,
+        fallos,
+      })
+    }
+  })
+
+  return {
+    ok: inconsistencias.length === 0,
+    inconsistencias,
+  }
+}
+
 const obtenerDistribucionConfigurada = (configuracion, parcial) => {
   const parciales = Array.isArray(configuracion?.parciales) ? configuracion.parciales : []
   const parcialKey = removeAccents(String(parcial || '')).toLowerCase()
@@ -2148,16 +2208,12 @@ const getBancoDisponibilidad = (row) => {
   }
 
   if (esSegundoParcialValor(row?.tipo_examen || row?.parcial)) {
-    const gruposDisponible =
-      stats.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 &&
-      stats.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 &&
-      stats.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3
-
     disponibilidad.gruposTipo = {
-      disponible: gruposDisponible,
-      etiqueta: gruposDisponible ? 'DISP.' : 'VACIO',
+      disponible: true,
+      referencial: true,
+      etiqueta: 'REF.',
       resumen: `${stats.g1}/${stats.g2}/${stats.g3}`,
-      tooltip: `Tipos: ${stats.g1}/${DEFAULT_GRUPOS_TIPO_2P.g1} G1, ${stats.g2}/${DEFAULT_GRUPOS_TIPO_2P.g2} G2, ${stats.g3}/${DEFAULT_GRUPOS_TIPO_2P.g3} G3`,
+      tooltip: `Referencia por tipos: ${stats.g1}/${DEFAULT_GRUPOS_TIPO_2P.g1} G1, ${stats.g2}/${DEFAULT_GRUPOS_TIPO_2P.g2} G2, ${stats.g3}/${DEFAULT_GRUPOS_TIPO_2P.g3} G3`,
     }
   }
 
@@ -2785,33 +2841,7 @@ const bancoSuficiente = computed(() => {
   )
 })
 
-const bancoGrupoTipoSuficiente = computed(() => {
-  if (dialogGestion.value.examen?.estado !== 'programados') return true
-  if (!esSegundoParcialGestion.value) return true
-
-  return (
-    bancoGrupoTipoStats.value.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 &&
-    bancoGrupoTipoStats.value.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 &&
-    bancoGrupoTipoStats.value.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3
-  )
-})
-
-const bancoPuedeGenerar = computed(() => bancoSuficiente.value && bancoGrupoTipoSuficiente.value)
-
-const resumenFaltantesGrupoTipoBanco = computed(() => {
-  const faltantes = []
-  if (bancoGrupoTipoStats.value.g1 < DEFAULT_GRUPOS_TIPO_2P.g1) {
-    faltantes.push(`G1 falta ${DEFAULT_GRUPOS_TIPO_2P.g1 - bancoGrupoTipoStats.value.g1}`)
-  }
-  if (bancoGrupoTipoStats.value.g2 < DEFAULT_GRUPOS_TIPO_2P.g2) {
-    faltantes.push(`G2 falta ${DEFAULT_GRUPOS_TIPO_2P.g2 - bancoGrupoTipoStats.value.g2}`)
-  }
-  if (bancoGrupoTipoStats.value.g3 < DEFAULT_GRUPOS_TIPO_2P.g3) {
-    faltantes.push(`G3 falta ${DEFAULT_GRUPOS_TIPO_2P.g3 - bancoGrupoTipoStats.value.g3}`)
-  }
-
-  return faltantes.join(' | ')
-})
+const bancoPuedeGenerar = computed(() => bancoSuficiente.value)
 
 const activeTab = ref('rol')
 const examenesList = ref([])
@@ -2955,15 +2985,7 @@ const manualEsSuficiente = computed(() => {
 const manualGrupoTipoStats = computed(
   () => contarGruposTipoDesdePreguntas(manualPreguntas.value).porGrupoTipo,
 )
-const manualGrupoTipoSuficiente = computed(
-  () =>
-    manualGrupoTipoStats.value.g1 >= DEFAULT_GRUPOS_TIPO_2P.g1 &&
-    manualGrupoTipoStats.value.g2 >= DEFAULT_GRUPOS_TIPO_2P.g2 &&
-    manualGrupoTipoStats.value.g3 >= DEFAULT_GRUPOS_TIPO_2P.g3,
-)
-const manualPuedeGenerar = computed(
-  () => manualEsSuficiente.value && manualGrupoTipoSuficiente.value,
-)
+const manualPuedeGenerar = computed(() => manualEsSuficiente.value)
 
 const manualConfig = ref({
   sede: null,
@@ -3735,15 +3757,6 @@ const ejecutarGeneracionManual = async () => {
     return
   }
 
-  if (!manualGrupoTipoSuficiente.value) {
-    $q.notify({
-      type: 'negative',
-      message: `Preguntas insuficientes por grupo de tipo. G1: ${manualGrupoTipoStats.value.g1}/${DEFAULT_GRUPOS_TIPO_2P.g1}, G2: ${manualGrupoTipoStats.value.g2}/${DEFAULT_GRUPOS_TIPO_2P.g2}, G3: ${manualGrupoTipoStats.value.g3}/${DEFAULT_GRUPOS_TIPO_2P.g3}`,
-      timeout: 7000,
-    })
-    return
-  }
-
   const usarGeneracionManualEnCola = process.env.QUEUE_MANUAL_GENERATION !== 'false'
   if (usarGeneracionManualEnCola) {
     await ejecutarGeneracionManualEnCola(requerida)
@@ -3861,6 +3874,26 @@ const ejecutarGeneracionManual = async () => {
             })
           })()
 
+      const validacionSeleccion = validarPreguntasSeleccionadasParaExamen(sorted, {
+        asignatura_id: manualConfig.value.materia_obj?.value || null,
+        grupo: manualConfig.value.grupo,
+        parcial: manualConfig.value.parcial,
+      })
+
+      if (!validacionSeleccion.ok) {
+        $q.notify({
+          type: 'negative',
+          message:
+            'Se detectaron preguntas fuera de la asignatura, grupo o parcial seleccionado. No se generó el examen.',
+          caption: `Registros observados: ${validacionSeleccion.inconsistencias
+            .slice(0, 5)
+            .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
+            .join(' | ')}`,
+          timeout: 8000,
+        })
+        return
+      }
+
       if (esSegundoParcialManual) {
         assertNoOrphanMacroQuestions(sorted)
       }
@@ -3910,6 +3943,8 @@ const ejecutarGeneracionManual = async () => {
 
       resultadosVariantes.push({ letra, sorted })
     }
+
+    assertPatternConsistency(resultadosVariantes)
 
     // Configurar Nombres
     const codN = String(resolvedCodigo || 'EXAM').replace(/\s/g, '')
@@ -4632,16 +4667,6 @@ const ejecutarAccionGestion = async () => {
     return
   }
 
-  if (examen.estado === 'programados' && !bancoGrupoTipoSuficiente.value) {
-    $q.notify({
-      type: 'negative',
-      message: `No hay suficientes preguntas por grupo de tipo para 2do Parcial. ${resumenFaltantesGrupoTipoBanco.value}`,
-      icon: 'warning',
-      timeout: 7000,
-    })
-    return
-  }
-
   const currentIndex = ESTADOS_FLOW.findIndex((e) => e.key === examen.estado)
   const nextKey = ESTADOS_FLOW[currentIndex + 1].key
 
@@ -4685,6 +4710,28 @@ const ejecutarAccionGestion = async () => {
         $q.loading.hide()
         const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
         const esSegundoParcialActual = esSegundoParcialValor(examen.tipo_examen || examen.parcial)
+        const bancoContexto = Array.isArray(bancoPreguntas) ? bancoPreguntas : bancoPreguntas.preguntas || []
+
+        const validacionBancoContexto = validarPreguntasSeleccionadasParaExamen(bancoContexto, {
+          asignatura_id: examen.asignatura_id,
+          grupo: examen.grupo,
+          parcial: examen.tipo_examen || examen.parcial,
+        })
+
+        if (!validacionBancoContexto.ok) {
+          $q.notify({
+            type: 'negative',
+            message:
+              'El banco contiene preguntas fuera de la asignatura, grupo o parcial del examen. Corrige el banco antes de generar.',
+            caption: `Registros observados: ${validacionBancoContexto.inconsistencias
+              .slice(0, 5)
+              .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
+              .join(' | ')}`,
+            icon: 'warning',
+            timeout: 9000,
+          })
+          return
+        }
 
         payload.config_generacion = {
           facil: tempConfig.value.facil,
@@ -4740,9 +4787,7 @@ const ejecutarAccionGestion = async () => {
           precision: 3,
         })
 
-        const todas = Array.isArray(bancoPreguntas)
-          ? bancoPreguntas
-          : bancoPreguntas.preguntas || []
+        const todas = bancoContexto
         const resultadosVariantes = []
 
         for (let i = 0; i < variantes.length; i++) {
@@ -4813,6 +4858,28 @@ const ejecutarAccionGestion = async () => {
                 })
               })()
 
+          const validacionSeleccion = validarPreguntasSeleccionadasParaExamen(sorted, {
+            asignatura_id: examen.asignatura_id,
+            grupo: examen.grupo,
+            parcial: examen.tipo_examen || examen.parcial,
+          })
+
+          if (!validacionSeleccion.ok) {
+            $q.notify({
+              type: 'negative',
+              message:
+                'Se detectaron preguntas fuera de la asignatura, grupo o parcial del examen. Se canceló la generación.',
+              caption: `Registros observados: ${validacionSeleccion.inconsistencias
+                .slice(0, 5)
+                .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
+                .join(' | ')}`,
+              icon: 'warning',
+              timeout: 8000,
+            })
+            $q.loading.hide()
+            return
+          }
+
           if (i > 0) {
             // Garantizar que cada variante comience en página impar (anverso)
             const numPages = mergedExamenesDoc.internal.getNumberOfPages
@@ -4850,6 +4917,8 @@ const ejecutarAccionGestion = async () => {
 
           resultadosVariantes.push({ letra, sorted })
         }
+
+        assertPatternConsistency(resultadosVariantes)
 
         const varsJoined = resultadosVariantes.map((r) => r.letra).join('')
         const nCod = String(examen.codigo || 'EXAM').replace(/\s/g, '')
@@ -5318,6 +5387,58 @@ const abrirPatronGenerado = async (row, tipo) => {
   window.open(getPatronUrl(row, pattern, tipo), tipo === 'pdf' ? '_blank' : '_self')
 }
 
+const getPatronEligibleQuestions = (preguntas = []) =>
+  (preguntas || []).filter((p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeTipo(p.tipo)))
+
+const normalizePatternAnswerCell = (question) => {
+  if (!question) return ''
+
+  let rawAnswer = question.respuesta_correcta
+  const tipo = String(question.tipo || '').toUpperCase()
+
+  if (Array.isArray(rawAnswer)) {
+    if (rawAnswer.length > 1) {
+      return `(${rawAnswer.map((item) => String(item || '').toUpperCase()).join(',')})`
+    }
+    rawAnswer = rawAnswer[0]
+  }
+
+  let answer = String(rawAnswer || '')
+    .toUpperCase()
+    .replace(/["']/g, '')
+
+  if (answer.includes(',') || answer.includes(';')) {
+    answer = `(${answer.replace(/;/g, ',')})`
+  }
+
+  if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
+    if (answer === 'VERDADERO' || answer === 'V' || answer === 'TRUE' || answer === 'A') return 'A'
+    if (answer === 'FALSO' || answer === 'F' || answer === 'FALSE' || answer === 'B') return 'B'
+  }
+
+  return answer
+}
+
+const buildPatternAnswerCells = (preguntas = []) => {
+  const answers = []
+  for (let i = 0; i < 100; i++) {
+    answers.push(normalizePatternAnswerCell(preguntas[i] || null))
+  }
+  return answers
+}
+
+const assertPatternConsistency = (resultadosVariantes = []) => {
+  resultadosVariantes.forEach((res) => {
+    const preguntasReales = getPatronEligibleQuestions(res.sorted)
+    const expectedAnswers = buildPatternAnswerCells(preguntasReales)
+    const auditAnswers = buildPatternAnswerCells(preguntasReales)
+
+    if (expectedAnswers.join('|') !== auditAnswers.join('|')) {
+      throw new Error(`El patrón de la variante ${res.letra} no coincide con las respuestas esperadas.`)
+    }
+  })
+}
+
 const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = null) => {
   const doc = pdfDoc || new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
   const examen = examenInput || {
@@ -5463,37 +5584,19 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
   }
 
   // Mapping Answers - FORZAR 100 FILAS (siempre mostrar 100 burbujas)
-  const preguntasReales = preguntas.filter(
-    (p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeTipo(p.tipo)),
-  )
+  const preguntasReales = getPatronEligibleQuestions(preguntas)
+  const patronAnswers = buildPatternAnswerCells(preguntasReales)
   const totalFilas = 100
   const qPerCol = 25
 
   for (let i = 0; i < totalFilas; i++) {
-    const p = preguntasReales[i] || null
     const colIndex = Math.floor(i / qPerCol)
     const rowIndex = i % qPerCol
 
     const x = margin + colIndex * colWidth
     const y = startYGrid + rowIndex * 7
 
-    // Normalize answer
-    let ans = ''
-    if (p) {
-      let rawAns = p.respuesta_correcta
-      if (Array.isArray(rawAns)) rawAns = rawAns.join('')
-      ans = String(rawAns || '')
-        .toUpperCase()
-        .replace(/["']/g, '')
-
-      const tipo = String(p.tipo || '').toUpperCase()
-      if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
-        // En el patrón, ya vienen normalizadas por mezclarIncisos7167
-        // pero por seguridad reforzamos el mapeo lógico
-        if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE' || ans === 'A') ans = 'A'
-        else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE' || ans === 'B') ans = 'B'
-      }
-    }
+    const ans = patronAnswers[i] || ''
 
     drawOMRLine(i + 1, ans, x, y)
 
@@ -5518,37 +5621,12 @@ const generarPatronXLSXConsolidado = (resultadosVariantes, customName, codigoAsi
   const dataRows = []
 
   for (const res of resultadosVariantes) {
-    const preguntasReales = res.sorted.filter(
-      (p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeTipo(p.tipo)),
-    )
+    const preguntasReales = getPatronEligibleQuestions(res.sorted)
+    const patronAnswers = buildPatternAnswerCells(preguntasReales)
     const dataRow = [codigo, res.letra, 'Respuesta']
 
     for (let i = 0; i < 100; i++) {
-      const p = preguntasReales[i] || null
-      let ans = ''
-      if (p) {
-        let rawAns = p.respuesta_correcta
-        if (Array.isArray(rawAns)) {
-          if (rawAns.length > 1) {
-            ans = `(${rawAns.join(',')})`
-          } else if (rawAns.length === 1) {
-            ans = String(rawAns[0] || '').toUpperCase()
-          }
-        } else {
-          ans = String(rawAns || '')
-            .toUpperCase()
-            .replace(/["']/g, '')
-          if (ans.includes(',') || ans.includes(';')) {
-            ans = `(${ans.replace(/;/g, ',')})`
-          }
-        }
-        const tipo = String(p.tipo || '').toUpperCase()
-        if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
-          if (ans === 'VERDADERO' || ans === 'V' || ans === 'TRUE' || ans === 'A') ans = 'A'
-          else if (ans === 'FALSO' || ans === 'F' || ans === 'FALSE' || ans === 'B') ans = 'B'
-        }
-      }
-      dataRow.push(ans)
+      dataRow.push(patronAnswers[i] || '')
     }
     dataRows.push(dataRow)
   }
@@ -6314,3 +6392,4 @@ async function fetchImageAsBase64(url) {
   }
 }
 </style>
+
