@@ -2028,7 +2028,9 @@ const normalizarGrupoExamen = (value) =>
     .trim()
 
 const normalizarParcialExamen = (value) => {
-  const key = removeAccents(String(value || '')).toLowerCase().trim()
+  const key = removeAccents(String(value || ''))
+    .toLowerCase()
+    .trim()
   if (!key) return ''
   if (key.includes('2do') || key.includes('segundo') || key.includes('2p')) return PARCIAL_2DO
   if (key.includes('1er') || key.includes('primer') || key.includes('1p')) return '1er Parcial'
@@ -4710,7 +4712,9 @@ const ejecutarAccionGestion = async () => {
         $q.loading.hide()
         const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
         const esSegundoParcialActual = esSegundoParcialValor(examen.tipo_examen || examen.parcial)
-        const bancoContexto = Array.isArray(bancoPreguntas) ? bancoPreguntas : bancoPreguntas.preguntas || []
+        const bancoContexto = Array.isArray(bancoPreguntas)
+          ? bancoPreguntas
+          : bancoPreguntas.preguntas || []
 
         const validacionBancoContexto = validarPreguntasSeleccionadasParaExamen(bancoContexto, {
           asignatura_id: examen.asignatura_id,
@@ -5434,7 +5438,9 @@ const assertPatternConsistency = (resultadosVariantes = []) => {
     const auditAnswers = buildPatternAnswerCells(preguntasReales)
 
     if (expectedAnswers.join('|') !== auditAnswers.join('|')) {
-      throw new Error(`El patrón de la variante ${res.letra} no coincide con las respuestas esperadas.`)
+      throw new Error(
+        `El patrón de la variante ${res.letra} no coincide con las respuestas esperadas.`,
+      )
     }
   })
 }
@@ -6392,4 +6398,3 @@ async function fetchImageAsBase64(url) {
   }
 }
 </style>
-

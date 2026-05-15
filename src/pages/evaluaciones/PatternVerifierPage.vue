@@ -3,20 +3,20 @@
     <div class="page-shell">
       <section class="page-hero">
         <div>
-          <div class="hero-eyebrow">MÃ³dulo de apoyo para revisiÃ³n</div>
+          <div class="hero-eyebrow">Módulo de apoyo para revisión</div>
           <h1 class="hero-title">
             <q-icon name="fact_check" color="deep-purple" size="30px" class="q-mr-sm" />
             Verificador de Patrones
           </h1>
           <p class="hero-copy">
-            Selecciona el contexto del examen, carga el PDF consolidado generado y revisa el patrÃ³n
+            Selecciona el contexto del examen, carga el PDF consolidado generado y revisa el patrón
             completo de todas las variantes registradas.
           </p>
         </div>
         <div class="hero-status">
           <div class="status-pill">
             <q-icon name="verified" size="18px" />
-            RevisiÃ³n asistida
+            Revisión asistida
           </div>
         </div>
       </section>
@@ -109,8 +109,7 @@
 
         <q-banner v-if="selectedExam" class="bg-blue-1 text-blue-9 q-mt-md" rounded dense>
           <q-icon name="info" class="q-mr-sm" />
-          {{ selectedExam.materia }} Â· {{ selectedExam.tipo_examen }} Â·
-          {{ selectedExam.grupo }} Â·
+          {{ selectedExam.materia }} · {{ selectedExam.tipo_examen }} · {{ selectedExam.grupo }} ·
           {{ selectedExam.fecha || 'Sin fecha' }}
         </q-banner>
       </section>
@@ -120,7 +119,7 @@
           <div>
             <div class="band-title">Patrones detectados</div>
             <div class="result-subtitle">
-              {{ verificationResult.exam.codigo }} Â· {{ verificationResult.exam.materia }}
+              {{ verificationResult.exam.codigo }} · {{ verificationResult.exam.materia }}
             </div>
           </div>
           <div class="results-actions">
@@ -138,7 +137,7 @@
               outline
               color="green"
               icon="download"
-              label="PatrÃ³n PDF"
+              label="Patrón PDF"
               no-caps
               @click="downloadRegisteredFile('patron_pdf')"
             />
@@ -147,7 +146,7 @@
               outline
               color="blue"
               icon="download"
-              label="PatrÃ³n XLSX"
+              label="Patrón XLSX"
               no-caps
               @click="downloadRegisteredFile('patron_xlsx')"
             />
@@ -187,8 +186,8 @@
           dense
         >
           <q-icon name="warning" class="q-mr-sm" />
-          El nombre del PDF cargado no coincide con el archivo registrado en el sistema. Se
-          mostrarÃ¡ el patrÃ³n asociado al examen seleccionado de todos modos.
+          El nombre del PDF cargado no coincide con el archivo registrado en el sistema. Se mostrará
+          el patrón asociado al examen seleccionado de todos modos.
         </q-banner>
 
         <q-tabs
@@ -269,10 +268,10 @@
 
       <section v-else class="empty-band">
         <q-icon name="rule_folder" size="38px" color="grey-5" />
-        <div class="empty-title">AÃºn no hay verificaciÃ³n cargada</div>
+        <div class="empty-title">Aún no hay verificación cargada</div>
         <div class="empty-copy">
           Selecciona una asignatura con examen generado, elige el grupo, carga el PDF y ejecuta la
-          revisiÃ³n.
+          revisión.
         </div>
       </section>
     </div>
@@ -282,10 +281,10 @@
         <q-card-section class="question-preview-header">
           <div>
             <div class="question-preview-eyebrow">
-              Variante {{ selectedQuestionPreview?.variant }} ? Pregunta
+              Variante {{ selectedQuestionPreview?.variant }} · Pregunta
               {{ selectedQuestionPreview?.question?.number }}
               <template v-if="selectedQuestionPreview?.question?.id">
-                ? banco_preguntas #{{ selectedQuestionPreview.question.id }}
+                · banco_preguntas #{{ selectedQuestionPreview.question.id }}
               </template>
             </div>
             <div class="question-preview-title">Detalle de la pregunta</div>
@@ -451,7 +450,7 @@ const carreraOptions = computed(() => {
 
 const asignaturaOptions = computed(() =>
   asignaturasStore.asignaturas.map((item) => ({
-    label: `${item.codigo} Â· ${item.nombre}`,
+    label: `${item.codigo} · ${item.nombre}`,
     value: item.id,
   })),
 )
@@ -468,7 +467,7 @@ const filteredGeneratedExams = computed(() => {
 
 const examOptions = computed(() =>
   filteredGeneratedExams.value.map((item) => ({
-    label: `${item.tipo_examen} Â· ${item.grupo} Â· ${item.fecha || 'Sin fecha'}`,
+    label: `${item.tipo_examen} · ${item.grupo} · ${item.fecha || 'Sin fecha'}`,
     value: item.id,
   })),
 )
@@ -637,10 +636,10 @@ async function fetchGeneratedExams() {
       filtros.value.rolExamenId = generatedExams.value[0].id
     }
   } catch (error) {
-    console.error('Error al cargar exÃ¡menes generados:', error)
+    console.error('Error al cargar exámenes generados:', error)
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || 'No se pudieron cargar los exÃ¡menes generados.',
+      message: error.response?.data?.message || 'No se pudieron cargar los exámenes generados.',
     })
   } finally {
     loadingGeneratedExams.value = false
@@ -684,7 +683,7 @@ async function runVerification() {
     console.error('Error al verificar patrones:', error)
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || 'No se pudo completar la verificaciÃ³n.',
+      message: error.response?.data?.message || 'No se pudo completar la verificación.',
     })
   } finally {
     verifying.value = false
