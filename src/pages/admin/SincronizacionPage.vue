@@ -508,22 +508,6 @@
                 </template>
               </q-select>
               <q-select
-                v-model="selPlanAsignatura"
-                :options="[
-                  { label: 'Malla Nueva (N)', value: 'N' },
-                  { label: 'Malla Antigua (A)', value: 'A' },
-                ]"
-                option-label="label"
-                option-value="value"
-                emit-value
-                map-options
-                outlined
-                dense
-                label="Plan de Malla"
-                class="q-mb-md"
-                :disable="!selSedeAsignatura || !selCarreraAsignatura"
-              />
-              <q-select
                 v-model="selAsignatura"
                 :options="opcionesAsignaturas"
                 option-label="nombre"
@@ -1406,7 +1390,6 @@ const selCarreraAsignatura = ref('CARMED')
 const carrerasAsignaturaMap = ref(new Map()) // sigla → {id, sigla, nombre}
 const carrerasAsignaturaBase = ref([...CARRERAS]) // fuente de verdad para la sede actual
 const opcionesCarrerasAsignatura = ref([...CARRERAS])
-const selPlanAsignatura = ref('N')
 const selAsignatura = ref(null)
 const opcionesAsignaturas = ref([])
 const todasAsignaturas = ref([]) // Fuente de verdad (sin filtrar)
@@ -1474,12 +1457,13 @@ async function cargarAsignaturas() {
 
   loadingAsignaturas.value = true
   try {
-    // Endpoint externo: obtiene las materias del plan seleccionado
+    // Endpoint externo: obtiene las materias de TODOS los planes (la API ya
+    // devuelve el plan correcto por sede; no filtramos para mostrar todo)
     const params = {
       gestion: gestion.value,
       carrera: selCarreraAsignatura.value.toLowerCase(),
       sede: selSedeAsignatura.value,
-      plan_estudios: selPlanAsignatura.value || 'N',
+      // sin plan_estudios → devuelve N y A
     }
     console.log('[Sync] Cargando asignaturas con params:', params)
 
@@ -1562,7 +1546,7 @@ async function syncAsignatura() {
       sede_id: selSedeAsignatura.value,
       carrera: selCarreraAsignatura.value,
       codigo_asignatura: selAsignatura.value,
-      plan_estudios: selPlanAsignatura.value || 'N',
+      // plan_estudios se omite: cada item de la API ya trae su planEst real
     })
     resultadoAsignatura.value = res.data
     $q.notify({
@@ -1871,14 +1855,6 @@ watch(selSedeAsignatura, async () => {
 // Recargar asignaturas cuando cambia la carrera (en tab asignatura)
 watch(selCarreraAsignatura, async () => {
   if (tab.value === 'asignatura') {
-    selAsignatura.value = null
-    await cargarAsignaturas()
-  }
-})
-
-// Recargar asignaturas cuando cambia el plan de malla (en tab asignatura)
-watch(selPlanAsignatura, async () => {
-  if (tab.value === 'asignatura' && selCarreraAsignatura.value) {
     selAsignatura.value = null
     await cargarAsignaturas()
   }
