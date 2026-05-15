@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+﻿import { computed } from 'vue'
 import { useAuthStore, ROLES, PERMISOS_ROL } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
@@ -196,6 +196,7 @@ export function usePermisos() {
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
         { label: 'Información Carrera', icon: 'business', to: '/director/contexto' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
       ]
@@ -212,12 +213,14 @@ export function usePermisos() {
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
       ]
     }
 
     if (esEvaluaciones.value || esResponsableEvaluaciones.value) {
       const items = [
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
       ]
       if (esResponsableEvaluaciones.value) {
         items.push({
@@ -240,6 +243,7 @@ export function usePermisos() {
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
@@ -266,6 +270,7 @@ export function usePermisos() {
         { label: 'Docentes', icon: 'person', to: '/admin/docentes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',

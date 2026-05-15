@@ -1326,6 +1326,60 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
   return doc
 }
 
+const getPatronEligibleQuestions = (preguntas = []) =>
+  (preguntas || []).filter(
+    (p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeQuestionType(p.tipo)),
+  )
+
+const normalizePatternAnswerCell = (question) => {
+  if (!question) return ''
+
+  let rawAnswer = question.respuesta_correcta
+  const tipo = String(question.tipo || '').toUpperCase()
+
+  if (Array.isArray(rawAnswer)) {
+    if (rawAnswer.length > 1) {
+      return `(${rawAnswer.map((item) => String(item || '').toUpperCase()).join(',')})`
+    }
+    rawAnswer = rawAnswer[0]
+  }
+
+  let answer = String(rawAnswer || '')
+    .toUpperCase()
+    .replace(/["']/g, '')
+
+  if (answer.includes(',') || answer.includes(';')) {
+    answer = `(${answer.replace(/;/g, ',')})`
+  }
+
+  if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
+    if (['VERDADERO', 'V', 'TRUE', 'A'].includes(answer)) return 'A'
+    if (['FALSO', 'F', 'FALSE', 'B'].includes(answer)) return 'B'
+  }
+
+  return answer
+}
+
+const buildPatternAnswerCells = (preguntas = []) => {
+  const answers = []
+  for (let i = 0; i < 100; i += 1) {
+    answers.push(normalizePatternAnswerCell(preguntas[i] || null))
+  }
+  return answers
+}
+
+const assertPatternConsistency = (resultadosVariantes = []) => {
+  resultadosVariantes.forEach((result) => {
+    const preguntasReales = getPatronEligibleQuestions(result.sorted)
+    const expectedAnswers = buildPatternAnswerCells(preguntasReales)
+    const auditAnswers = buildPatternAnswerCells(preguntasReales)
+
+    if (expectedAnswers.join('|') !== auditAnswers.join('|')) {
+      throw new Error(`El patrón de la variante ${result.letra} no coincide con las respuestas esperadas.`)
+    }
+  })
+}
+
 const generatePatronPdf = async (pdfDoc, letra, preguntas = [], examenInput = null) => {
   const doc = pdfDoc || new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
   const examen = examenInput || {}
@@ -1451,9 +1505,8 @@ const generatePatronPdf = async (pdfDoc, letra, preguntas = [], examenInput = nu
     doc.setTextColor(0, 0, 0)
   }
 
-  const preguntasReales = preguntas.filter(
-    (p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeQuestionType(p.tipo)),
-  )
+  const preguntasReales = getPatronEligibleQuestions(preguntas)
+  const patronAnswers = buildPatternAnswerCells(preguntasReales)
 
   for (let i = 0; i < 100; i += 1) {
     const question = preguntasReales[i] || null
@@ -1462,19 +1515,7 @@ const generatePatronPdf = async (pdfDoc, letra, preguntas = [], examenInput = nu
     const x = margin + colIndex * colWidth
     const y = startYGrid + rowIndex * 7
 
-    let answer = ''
-    if (question) {
-      let rawAnswer = question.respuesta_correcta
-      if (Array.isArray(rawAnswer)) rawAnswer = rawAnswer.join('')
-      answer = String(rawAnswer || '')
-        .toUpperCase()
-        .replace(/["']/g, '')
-      const tipo = String(question.tipo || '').toUpperCase()
-      if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
-        if (['VERDADERO', 'V', 'TRUE', 'A'].includes(answer)) answer = 'A'
-        else if (['FALSO', 'F', 'FALSE', 'B'].includes(answer)) answer = 'B'
-      }
-    }
+    const answer = patronAnswers[i] || ''
 
     drawOmrLine(i + 1, answer, x, y)
     doc.setDrawColor(230, 230, 230)
@@ -1493,29 +1534,12 @@ const generatePatronXlsxConsolidado = (resultadosVariantes, codigoAsignatura = '
   const dataRows = []
 
   for (const result of resultadosVariantes) {
-    const preguntasReales = result.sorted.filter(
-      (p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeQuestionType(p.tipo)),
-    )
+    const preguntasReales = getPatronEligibleQuestions(result.sorted)
+    const patronAnswers = buildPatternAnswerCells(preguntasReales)
     const dataRow = [codigo, result.letra, 'Respuesta']
 
     for (let i = 0; i < 100; i += 1) {
-      const question = preguntasReales[i] || null
-      let answer = ''
-      if (question) {
-        let rawAnswer = question.respuesta_correcta
-        if (Array.isArray(rawAnswer)) {
-          if (rawAnswer.length > 1) answer = `(${rawAnswer.join(',')})`
-          else if (rawAnswer.length === 1) answer = String(rawAnswer[0] || '').toUpperCase()
-        } else {
-          answer = String(rawAnswer || '')
-            .toUpperCase()
-            .replace(/["']/g, '')
-          if (answer.includes(',') || answer.includes(';')) {
-            answer = `(${answer.replace(/;/g, ',')})`
-          }
-        }
-      }
-      dataRow.push(answer)
+      dataRow.push(patronAnswers[i] || '')
     }
 
     dataRows.push(dataRow)
@@ -1603,6 +1627,8 @@ for (let i = 0; i < variants.length; i += 1) {
   resultadosVariantes.push({ letra, sorted, appliedDistribution })
 }
 
+assertPatternConsistency(resultadosVariantes)
+
 const varsJoined = resultadosVariantes.map((result) => result.letra).join('')
 const normalizedCode = String(exam.codigo || 'EXAM').replace(/\s/g, '')
 const normalizedSede = String(exam.sede || '').replace(/\s/g, '')
@@ -1669,6 +1695,7 @@ function resultsVariantsToAuditEntries(resultados) {
   return resultados.map((result) => ({
     letra: result.letra,
     distribucion_aplicada: result.appliedDistribution,
+    patron_respuestas: buildPatternAnswerCells(getPatronEligibleQuestions(result.sorted)),
     preguntas: result.sorted.map((question, index) => ({
       idx: question.idx || question.id || index + 1,
       id: question.id,

@@ -1,4 +1,4 @@
-const routes = [
+﻿const routes = [
   // Login (fuera del MainLayout)
   {
     path: '/login',
@@ -364,6 +364,24 @@ const routes = [
             name: 'evaluaciones',
             component: () => import('pages/evaluaciones/GestionEvaluacionesPage.vue'),
             meta: { title: 'Gestión de Evaluaciones' },
+          },
+          {
+            path: 'verificador-patrones',
+            name: 'admin-verificador-patrones',
+            component: () => import('pages/evaluaciones/PatternVerifierPage.vue'),
+            meta: {
+              title: 'Verificador de Patrones',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'EVALUACIONES',
+                'RESPONSABLE_EVALUACIONES',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
+            },
           },
           {
             path: 'administracion-evaluaciones',
