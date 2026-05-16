@@ -98,6 +98,38 @@ const extractStructuredLines = (text) =>
 const stripNumericPrefix = (text) =>
   cleanQuestionText(text).replace(/^([IVX]+|\d+|[A-Z])[.):]\s+/i, '')
 
+const PREGUNTA_CLAVE_FIXED_OPTIONS = [
+  '1, 2 y 3 son verdaderas',
+  '1 y 3 son verdaderas',
+  '2 y 4 son verdaderas',
+  'Solo 4 es verdadera',
+  'Todas son verdaderas',
+]
+
+const normalizePreguntaClaveFixedOption = (text) =>
+  cleanQuestionText(text)
+    .replace(/^[A-E][).:-]?\s*/i, '')
+    .replace(/\.+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+
+const PREGUNTA_CLAVE_FIXED_OPTIONS_SET = new Set(
+  PREGUNTA_CLAVE_FIXED_OPTIONS.map((option) => normalizePreguntaClaveFixedOption(option)),
+)
+
+const isPreguntaClaveFixedOption = (text) =>
+  PREGUNTA_CLAVE_FIXED_OPTIONS_SET.has(normalizePreguntaClaveFixedOption(text))
+
+const getPreguntaClaveOptionLines = (options = []) =>
+  options
+    .map((option) => {
+      if (typeof option === 'string') return cleanQuestionText(option)
+      return cleanQuestionText(option?.text || option?.label || option?.enunciado || '')
+    })
+    .filter(Boolean)
+    .filter((line) => !isPreguntaClaveFixedOption(line))
+
 const getQuestionGroup = (question) =>
   String(question?.grupo || question?.grupoTeorico || '')
     .trim()
@@ -1129,12 +1161,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
 
     const options = Array.isArray(question.opciones) ? question.opciones : []
     if (currentType === 'PREGUNTA_CON_CLAVE' && options.length > 0) {
-      const orderedKeyOptions = options
-        .map((option) => {
-          if (typeof option === 'string') return cleanQuestionText(option)
-          return cleanQuestionText(option?.text || option?.label || option?.enunciado || '')
-        })
-        .filter(Boolean)
+      const orderedKeyOptions = getPreguntaClaveOptionLines(options)
 
       if (orderedKeyOptions.length > 0) {
         detailLines = orderedKeyOptions

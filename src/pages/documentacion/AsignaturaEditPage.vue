@@ -3332,8 +3332,37 @@
 
               <div
                 v-if="
+                  normalizarTipoPregunta(formPregunta.tipo, formPregunta) === 'PREGUNTA_CON_CLAVE'
+                "
+                class="q-gutter-y-sm"
+              >
+                <div class="text-subtitle2">Incisos base</div>
+                <q-input
+                  v-for="(inciso, index) in formPregunta.incisosClave"
+                  :key="`edit-inciso-clave-${index}`"
+                  v-model="formPregunta.incisosClave[index]"
+                  :label="`Inciso ${index + 1}`"
+                  type="textarea"
+                  outlined
+                  autogrow
+                  rows="2"
+                />
+                <q-banner class="bg-indigo-1 text-indigo-10 rounded-borders">
+                  <strong>Combinaciones fijas:</strong>
+                  A: 1, 2 y 3 verdaderas. B: 1 y 3 verdaderas. C: 2 y 4 verdaderas. D: solo 4
+                  verdadera. E: todas verdaderas.
+                </q-banner>
+                <div class="text-subtitle2 q-mb-sm">Respuesta correcta</div>
+                <q-option-group
+                  v-model="formPregunta.respuesta_correcta"
+                  :options="respuestaPreguntaClaveOptions"
+                  color="deep-purple"
+                />
+              </div>
+
+              <div
+                v-else-if="
                   [
-                    'PREGUNTA_CON_CLAVE',
                     'SELECCION_SIMPLE',
                     'RESPUESTA_COMPUESTA',
                     'SUBPROBLEMA',
@@ -5534,6 +5563,36 @@ const respuestaPreguntaClaveOptions = [
   { label: 'D. Solo 4 es verdadera', value: 'D' },
   { label: 'E. Todas son verdaderas', value: 'E' },
 ]
+const normalizarTextoClaveComparacion = (value) =>
+  String(value || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/^[A-E][).:-]?\s*/i, '')
+    .replace(/\.+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+const combinacionesRespuestaPreguntaClave = new Set(
+  respuestaPreguntaClaveOptions.map((option) => normalizarTextoClaveComparacion(option.label)),
+)
+const esCombinacionRespuestaPreguntaClave = (value) =>
+  combinacionesRespuestaPreguntaClave.has(normalizarTextoClaveComparacion(value))
+const limpiarNumeroIncisoPreguntaClave = (value) =>
+  normalizarTextoMojibake(String(value || ''))
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/^[1-4][).:-]?\s+/, '')
+    .trim()
+const lineasPreguntaClaveDesdeEnunciado = (enunciado) =>
+  normalizarTextoMojibake(String(enunciado || ''))
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .split(/\n+/)
+    .map((linea) => linea.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
 const respuestaLetrasOptions = ['A', 'B', 'C', 'D', 'E'].map((letter) => ({
   label: `${letter}.`,
   value: letter,
@@ -5757,7 +5816,7 @@ const buildOpcionesVaciasParaTipoPregunta = (tipo, pregunta = null) => {
   }
 
   if (tipoNormalizado === 'PREGUNTA_CON_CLAVE') {
-    return respuestaPreguntaClaveOptions.map((option) => option.label)
+    return ['', '', '', '']
   }
 
   if (usaOpcionesTipoPregunta(tipoNormalizado, pregunta)) {
@@ -6373,10 +6432,13 @@ function crearPreviewPreguntaRegistrada(pregunta) {
   const respuesta = normalizarRespuestaPreviewPregunta(
     preguntaSanitizada.respuesta_correcta || preguntaSanitizada.respuesta,
   )
+  const opcionesPreguntaClave = opciones.filter(
+    (opcion) => !esCombinacionRespuestaPreguntaClave(opcion.text),
+  )
   const claves = opciones.length ? opciones : extraerOpcionesDesdeLineasPreview(lineas)
   const incisos =
-    tipo === 'PREGUNTA_CON_CLAVE' && opciones.length === 4
-      ? opciones.map((opcion) => opcion.text)
+    tipo === 'PREGUNTA_CON_CLAVE' && opcionesPreguntaClave.length === 4
+      ? opcionesPreguntaClave.map((opcion) => opcion.text)
       : extraerIncisosDesdeLineasPreview(lineas)
   const preguntasLigadas = obtenerPreguntasLigadasPreview(preguntaSanitizada, tipo).map((item) => {
     const tipoLigado = normalizarTipoPregunta(item.tipo, item, gruposCabeceraBancoMap.value)
@@ -7214,10 +7276,15 @@ function abrirEditorPregunta(pregunta) {
   const opcionesOriginales = Array.isArray(preguntaSanitizada.opciones)
     ? preguntaSanitizada.opciones.map((o) => (typeof o === 'object' && o !== null ? o.text : o))
     : ['', '', '', '', '']
+  const componentesPreguntaClave =
+    tipoNormalizado === 'PREGUNTA_CON_CLAVE'
+      ? obtenerComponentesPreguntaClave(preguntaSanitizada, opcionesOriginales)
+      : null
 
   formPregunta.value = {
     ...preguntaSanitizada,
     tipo: tipoNormalizado,
+    enunciado: componentesPreguntaClave?.enunciado || preguntaSanitizada.enunciado || '',
     parcial: normalizarParcialBanco(
       preguntaSanitizada.parcial || filtroBancoParcialSeleccionado.value,
     ),
@@ -7233,6 +7300,7 @@ function abrirEditorPregunta(pregunta) {
       ['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipoNormalizado)
         ? ['', '', '', '', '']
         : opcionesOriginales,
+    incisosClave: componentesPreguntaClave?.incisos || ['', '', '', ''],
   }
   archivoImagenPregunta.value = null
   previewImagenEdit.value = null
@@ -7281,10 +7349,7 @@ function construirEnunciadoRegistroManual() {
   }
 
   if (tipo === 'PREGUNTA_CON_CLAVE') {
-    const incisos = (formPregunta.value.incisosClave || [])
-      .map((inciso, index) => `${index + 1}. ${String(inciso || '').trim()}`)
-      .join('<br>')
-    return [enunciadoBase, incisos].filter(Boolean).join('<br>')
+    return enunciadoBase
   }
 
   if (tipo === 'EMPAREJAMIENTO') {
@@ -7304,6 +7369,48 @@ function mapOpcionesRegistro(opciones = []) {
       text: normalizarTextoMojibake(String(text || '').trim()),
     }))
     .filter((option) => option.text.length > 0)
+}
+
+function mapIncisosPreguntaClaveRegistro(incisos = []) {
+  return (incisos || [])
+    .slice(0, 4)
+    .map((text, index) => ({
+      id: String.fromCharCode(65 + index),
+      text: limpiarNumeroIncisoPreguntaClave(text),
+    }))
+    .filter((option) => option.text.length > 0)
+}
+
+function obtenerComponentesPreguntaClave(pregunta, opcionesOriginales = []) {
+  const lineas = lineasPreguntaClaveDesdeEnunciado(pregunta?.enunciado || '')
+  const enunciado = []
+  const incisosEnunciado = []
+
+  lineas.forEach((linea) => {
+    if (/^[1-4][).:-]?\s+/.test(linea)) {
+      incisosEnunciado.push(limpiarNumeroIncisoPreguntaClave(linea))
+      return
+    }
+
+    enunciado.push(linea)
+  })
+
+  const incisosOpciones = (opcionesOriginales || [])
+    .map((opcion) => limpiarNumeroIncisoPreguntaClave(opcion))
+    .filter((opcion) => opcion && !esCombinacionRespuestaPreguntaClave(opcion))
+
+  const incisos = (incisosOpciones.length >= 4 ? incisosOpciones : incisosEnunciado)
+    .slice(0, 4)
+    .map((inciso) => limpiarNumeroIncisoPreguntaClave(inciso))
+
+  while (incisos.length < 4) {
+    incisos.push('')
+  }
+
+  return {
+    enunciado: enunciado.join('\n') || lineas[0] || '',
+    incisos,
+  }
 }
 
 function construirPayloadBaseRegistro() {
@@ -7431,10 +7538,19 @@ function validarEdicionPreguntaBanco() {
     {
       FALSO_VERDADERO: 2,
       RESPUESTA_COMPUESTA: 4,
-      PREGUNTA_CON_CLAVE: 4,
       SELECCION_SIMPLE: 5,
       SUBPROBLEMA: 5,
     }[tipo] || 0
+
+  if (tipo === 'PREGUNTA_CON_CLAVE') {
+    const incisosCompletos = (formPregunta.value.incisosClave || [])
+      .slice(0, 4)
+      .every((inciso) => String(inciso || '').trim())
+
+    if ((formPregunta.value.incisosClave || []).length < 4 || !incisosCompletos) {
+      return 'Debes completar los 4 incisos de verdadero o falso complejas.'
+    }
+  }
 
   if (opcionesEsperadas > 0) {
     const opcionesCompletas = opciones
@@ -7541,7 +7657,10 @@ function construirPayloadsRegistroManual() {
       enunciado: construirEnunciadoRegistroManual(),
       tipo,
       grupo: '',
-      opciones: mapOpcionesRegistro(formPregunta.value.opciones || []),
+      opciones:
+        tipo === 'PREGUNTA_CON_CLAVE'
+          ? mapIncisosPreguntaClaveRegistro(formPregunta.value.incisosClave || [])
+          : mapOpcionesRegistro(formPregunta.value.opciones || []),
       respuesta_correcta: formPregunta.value.respuesta_correcta || '',
       dificultad: formPregunta.value.dificultad || '',
     },
@@ -7659,12 +7778,15 @@ async function guardarPreguntaBanco() {
     }
 
     const tipoNormalizado = normalizarTipoPregunta(formPregunta.value.tipo, formPregunta.value)
-    const opcionesMapeadas = usaOpcionesTipoPregunta(tipoNormalizado, formPregunta.value)
-      ? mapOpcionesRegistro(formPregunta.value.opciones || [])
-      : []
+    const opcionesMapeadas =
+      tipoNormalizado === 'PREGUNTA_CON_CLAVE'
+        ? mapIncisosPreguntaClaveRegistro(formPregunta.value.incisosClave || [])
+        : usaOpcionesTipoPregunta(tipoNormalizado, formPregunta.value)
+          ? mapOpcionesRegistro(formPregunta.value.opciones || [])
+          : []
 
     const payloadActualizado = {
-      enunciado: formPregunta.value.enunciado,
+      enunciado: String(formPregunta.value.enunciado || '').trim(),
       tipo: tipoNormalizado,
       asignatura_id: formPregunta.value.asignatura_id || asignatura.value?.id || '',
       sede_id: formPregunta.value.sede_id || route.query.sede_id || '',
