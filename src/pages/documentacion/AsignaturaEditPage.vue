@@ -1397,10 +1397,10 @@
                       No hay preguntas cargadas para {{ filtroBancoDescripcion }}.
                     </div>
                     <div
-                      v-else-if="!modoBancoSoloVisualDirector && grupoBancoActualBloqueado"
+                      v-else-if="grupoBancoActualOperacionDestructivaBloqueada"
                       class="banco-action-tooltip__warning"
                     >
-                      Este grupo ya tiene un examen generado para este parcial.
+                      Este grupo ya tiene un examen generado o posterior para este parcial.
                     </div>
                     <div
                       v-else-if="modoBancoSoloVisualDirector"
@@ -4013,11 +4013,17 @@ const importacionAcumulativaSegundoParcial = computed(
 )
 
 const ESTADOS_ROL_EXAMEN_BLOQUEANTES = new Set([
+  'generado',
   'generados',
+  'impreso',
   'impresos',
+  'entregado',
   'entregados',
+  'devuelto',
   'devueltos',
+  'revisado',
   'revisados',
+  'subido',
   'subidos',
 ])
 
@@ -7021,6 +7027,14 @@ function confirmarEliminarBancoFiltrado() {
   }
 
   if (!puedeEliminarBancoFiltrado.value) {
+    if (grupoBancoActualOperacionDestructivaBloqueada.value) {
+      $q.notify({
+        type: 'warning',
+        message: 'No es posible eliminar el banco.',
+        caption: 'El grupo ya tiene un examen generado o posterior para este parcial.',
+        icon: 'lock',
+      })
+    }
     return
   }
 
@@ -7998,8 +8012,8 @@ const puedePrevisualizarExamenBanco = computed(
     totalPreguntasContables.value > 0,
 )
 
-const grupoBancoActualBloqueado = computed(() => {
-  if (!filtroBancoGrupoSeleccionado.value || importacionAcumulativaSegundoParcial.value) {
+const grupoBancoActualOperacionDestructivaBloqueada = computed(() => {
+  if (!filtroBancoGrupoSeleccionado.value) {
     return false
   }
 
@@ -8010,12 +8024,13 @@ const puedeEliminarBancoFiltrado = computed(
   () =>
     puedeVisualizarBanco.value &&
     preguntasFiltradas.value.length > 0 &&
-    !grupoBancoActualBloqueado.value,
+    !grupoBancoActualOperacionDestructivaBloqueada.value,
 )
 
 const puedeAbrirEliminarBancoFiltrado = computed(
   () =>
     puedeVisualizarBanco.value &&
+    !grupoBancoActualOperacionDestructivaBloqueada.value &&
     (modoBancoSoloVisualDirector.value || puedeEliminarBancoFiltrado.value),
 )
 
@@ -10007,6 +10022,74 @@ async function exportarBancoPreguntasActual() {
 
       return limpiarTextoExcel(opcion || '')
     }
+    const normalizarLineaExcel = (value) =>
+      limpiarTextoExcel(value)
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+    const opcionesClaveInternas = new Set(
+      respuestaPreguntaClaveOptions.map((option) => limpiarTextoExcel(option.label).toLowerCase()),
+    )
+    const esOpcionRespuestaPreguntaClave = (value) => {
+      const texto = limpiarTextoExcel(value).toLowerCase()
+      if (!texto) return false
+      if (opcionesClaveInternas.has(texto)) return true
+      return /^[a-e]\.?\s+/.test(texto) && /verdader/.test(texto) && /\b[1-4]\b/.test(texto)
+    }
+    const limpiarNumeroIncisoPreguntaClave = (value) =>
+      limpiarTextoExcel(value)
+        .replace(/^[1-4][).:-]?\s+/, '')
+        .trim()
+    const normalizarPreguntaClaveParaExportar = (pregunta) => {
+      const textoEnunciado = normalizarLineaExcel(pregunta?.enunciado || '')
+      const lineas = textoEnunciado
+        .split(/\n+/)
+        .map((linea) => linea.replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+      const enunciado = []
+      const incisos = []
+
+      lineas.forEach((linea) => {
+        const match = linea.match(/^([1-4])[).:-]?\s+(.+)$/)
+        if (match) {
+          incisos.push(match[2].trim())
+          return
+        }
+
+        if (incisos.length > 0) {
+          incisos[incisos.length - 1] = `${incisos[incisos.length - 1]} ${linea}`.trim()
+          return
+        }
+
+        enunciado.push(linea)
+      })
+
+      const opcionesRegistradas = letras
+        .map((letra) => limpiarNumeroIncisoPreguntaClave(obtenerTextoOpcion(pregunta, letra)))
+        .filter(Boolean)
+      const opcionesSonClave = opcionesRegistradas.some(esOpcionRespuestaPreguntaClave)
+      const opcionesExportar =
+        incisos.length >= 4 || opcionesSonClave
+          ? incisos.slice(0, 4)
+          : opcionesRegistradas.slice(0, 4)
+
+      while (opcionesExportar.length < 4) {
+        opcionesExportar.push('')
+      }
+
+      return {
+        enunciado: enunciado.join(' ') || textoEnunciado.replace(/\s+/g, ' ').trim(),
+        opciones: [...opcionesExportar.slice(0, 4), ''],
+        observacion:
+          opcionesExportar.filter(Boolean).length === 4
+            ? 'OK - Exportado desde el banco registrado'
+            : 'Revisar - no se detectaron los 4 incisos de V/F complejas',
+      }
+    }
     const normalizarRespuestaExport = (respuesta) => {
       const valores = Array.isArray(respuesta) ? respuesta : [respuesta]
       return valores
@@ -10092,21 +10175,29 @@ async function exportarBancoPreguntasActual() {
         gruposCabeceraBancoMap.value,
       )
       const tipoExcel = getTipoLabelBanco(pregunta.tipo, pregunta, gruposCabeceraBancoMap.value)
+      const datosExport =
+        tipoNormalizado === 'PREGUNTA_CON_CLAVE'
+          ? normalizarPreguntaClaveParaExportar(pregunta)
+          : {
+              enunciado: limpiarTextoExcel(pregunta.enunciado || ''),
+              opciones: letras.map((letra) => obtenerTextoOpcion(pregunta, letra)),
+              observacion: 'OK - Exportado desde el banco registrado',
+            }
       const row = wsBanco.addRow([
         tipoExcel,
         limpiarTextoExcel(pregunta.grupo || ''),
-        limpiarTextoExcel(pregunta.enunciado || ''),
-        obtenerTextoOpcion(pregunta, 'A'),
-        obtenerTextoOpcion(pregunta, 'B'),
-        obtenerTextoOpcion(pregunta, 'C'),
-        obtenerTextoOpcion(pregunta, 'D'),
-        obtenerTextoOpcion(pregunta, 'E'),
+        datosExport.enunciado,
+        datosExport.opciones[0] || '',
+        datosExport.opciones[1] || '',
+        datosExport.opciones[2] || '',
+        datosExport.opciones[3] || '',
+        datosExport.opciones[4] || '',
         ['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipoNormalizado)
           ? ''
           : normalizarRespuestaExport(pregunta.respuesta_correcta),
         normalizarDificultadExport(pregunta, tipoNormalizado),
         parcialActivo,
-        'OK - Exportado desde el banco registrado',
+        datosExport.observacion,
       ])
 
       row.height = 24
@@ -10278,6 +10369,19 @@ function normalizarRespuestaExcelBanco(valor) {
   return match ? match[1] : respuesta
 }
 
+function recortarFilasBancoAntesDeNotasCarga(rows) {
+  const indiceNotas = rows.findIndex((row) =>
+    row.some(
+      (cell) =>
+        normalizarTextoMojibake(String(cell || ''))
+          .trim()
+          .toUpperCase() === 'NOTAS DE CARGA',
+    ),
+  )
+
+  return indiceNotas === -1 ? rows : rows.slice(0, indiceNotas)
+}
+
 function previsualizarArchivoExcel(file) {
   if (!file) return
   importStats.value = crearImportStatsVacios()
@@ -10293,7 +10397,9 @@ function previsualizarArchivoExcel(file) {
         // Buscar la hoja "Banco" o usar la primera
         const sheetName = wb.SheetNames.includes('Banco') ? 'Banco' : wb.SheetNames[0]
         const ws = wb.Sheets[sheetName]
-        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+        const rows = recortarFilasBancoAntesDeNotasCarga(
+          XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }),
+        )
 
         // Encontrar fila de encabezado e identificar dinÒ�� �"Ò� â����Ò�â��šÒ�a�¡micamente el orden
         let headerRowIdx = -1

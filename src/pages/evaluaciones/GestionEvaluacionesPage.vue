@@ -5184,28 +5184,107 @@ const getManualEstadoIcon = (est) => {
   return 'help_outline'
 }
 
+const getFilenameFromContentDisposition = (contentDisposition, fallback) => {
+  if (!contentDisposition) return fallback
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1])
+    } catch {
+      return utf8Match[1]
+    }
+  }
+
+  const quotedMatch = contentDisposition.match(/filename="([^"]+)"/i)
+  if (quotedMatch?.[1]) return quotedMatch[1]
+
+  const plainMatch = contentDisposition.match(/filename=([^;]+)/i)
+  if (plainMatch?.[1]) return plainMatch[1].trim()
+
+  return fallback
+}
+
+const escapeHtml = (value) =>
+  String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+
+const createNamedBlob = (data, filename, type) => {
+  try {
+    return new File([data], filename, { type })
+  } catch {
+    return new Blob([data], { type })
+  }
+}
+
+const openPdfPreviewWithName = (fileBlob, filename) => {
+  const downloadUrl = window.URL.createObjectURL(fileBlob)
+  const previewWindow = window.open('', '_blank')
+
+  if (!previewWindow) {
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+    return
+  }
+
+  const safeTitle = escapeHtml(filename)
+  previewWindow.document.open()
+  previewWindow.document.write(`<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>${safeTitle}</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #2f2f2f;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <iframe src="${downloadUrl}" title="${safeTitle}"></iframe>
+</body>
+</html>`)
+  previewWindow.document.close()
+  previewWindow.addEventListener('beforeunload', () => window.URL.revokeObjectURL(downloadUrl), {
+    once: true,
+  })
+}
+
 const descargarArchivoAPI = async (url, nombreSugerido, openInNewTab = false) => {
   try {
     const response = await api.get(url, { responseType: 'blob' })
-    let filename = nombreSugerido
     const contentDisposition =
       response.headers['content-disposition'] || response.headers['Content-Disposition']
-    if (contentDisposition) {
-      const match = contentDisposition.match(/filename="?([^";]+)"?/)
-      if (match && match[1]) filename = match[1]
-    }
+    const filename = getFilenameFromContentDisposition(contentDisposition, nombreSugerido)
 
     // Forzar el MIME type correcto para que el navegador lo muestre en lugar de descargar si es PDF
     const isPdf = filename.toLowerCase().endsWith('.pdf')
     const blobType = isPdf ? 'application/pdf' : response.data.type
-    const blob = new Blob([response.data], { type: blobType })
-
-    const downloadUrl = window.URL.createObjectURL(blob)
+    const blob = createNamedBlob(response.data, filename, blobType)
 
     if (openInNewTab && isPdf) {
-      window.open(downloadUrl, '_blank')
-      setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 10000)
+      openPdfPreviewWithName(blob, filename)
     } else {
+      const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = downloadUrl
       link.setAttribute('download', filename)
@@ -5239,6 +5318,23 @@ const descargarArchivoAPI = async (url, nombreSugerido, openInNewTab = false) =>
     }
 
     $q.notify({ type: 'negative', message: msgError })
+  }
+}
+
+const abrirUrlFirmada = async (url) => {
+  try {
+    const response = await api.get(url)
+    if (!response.data?.url) {
+      throw new Error('El servidor no devolvió una URL de previsualización.')
+    }
+
+    window.open(response.data.url, '_blank')
+  } catch (error) {
+    console.error('Error al abrir archivo firmado:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'No se pudo abrir el archivo.',
+    })
   }
 }
 
@@ -5363,10 +5459,8 @@ const abrirExamenGenerado = async (row) => {
   if (!variant || typeof variant === 'string' || !variant.archivo) return
 
   if (variant.path) {
-    await descargarArchivoAPI(
-      `/rol-examenes/${row.id}/download-examen?file=${encodeURIComponent(variant.archivo)}`,
-      variant.archivo,
-      true,
+    await abrirUrlFirmada(
+      `/rol-examenes/${row.id}/download-examen-url?file=${encodeURIComponent(variant.archivo)}`,
     )
     return
   }
@@ -5380,10 +5474,17 @@ const abrirPatronGenerado = async (row, tipo) => {
 
   const managedPath = tipo === 'pdf' ? pattern.pdf_path : pattern.xlsx_path
   if (managedPath) {
+    if (tipo === 'pdf') {
+      await abrirUrlFirmada(
+        `/rol-examenes/${row.id}/download-patron-url?tipo=pdf&file=${encodeURIComponent(pattern[tipo])}`,
+      )
+      return
+    }
+
     await descargarArchivoAPI(
       `/rol-examenes/${row.id}/download-patron?tipo=${tipo}&file=${encodeURIComponent(pattern[tipo])}`,
       pattern[tipo],
-      tipo === 'pdf',
+      false,
     )
     return
   }
