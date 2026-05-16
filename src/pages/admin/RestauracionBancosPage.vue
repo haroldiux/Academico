@@ -21,51 +21,73 @@
     </div>
 
     <q-banner rounded class="bg-orange-1 text-orange-9 q-mb-md">
-      <template #avatar>
-        <q-icon name="warning" color="orange" />
-      </template>
-      <div class="text-weight-medium">Antes de ejecutar</div>
+      <template #avatar><q-icon name="warning" color="orange" /></template>
+      <div class="text-weight-medium">Filtros flexibles</div>
       <div>
-        Este módulo compara tus 5 bases de datos de backup (lunes a viernes) para determinar
-        cuál era la asignatura correcta de cada pregunta.
+        Puedes dejar cualquier filtro vacío. Si todos están vacíos se procesan todas las preguntas.
         <strong>Siempre haz clic en "Previsualizar" primero.</strong>
       </div>
     </q-banner>
 
+    <!-- FILTROS -->
     <q-card flat bordered class="q-mb-md">
       <q-card-section>
-        <div class="row items-center q-gutter-md">
-          <q-select
-            v-model="parcial"
-            :options="['1er Parcial', '2do Parcial']"
-            label="Parcial a restaurar"
-            outlined
-            dense
-            style="width: 180px"
-            emit-value
-          />
+        <div class="row q-col-gutter-sm items-end">
+          <div class="col-12 col-sm-2">
+            <q-select
+              v-model="parcial"
+              :options="['1er Parcial', '2do Parcial']"
+              label="Parcial"
+              outlined dense emit-value
+            />
+          </div>
+          <div class="col-12 col-sm-3">
+            <q-select
+              v-model="filtroSedeId"
+              :options="opcionesSedes"
+              label="Sede (opcional)"
+              outlined dense clearable emit-value map-options
+              option-value="id" option-label="nombre"
+              :loading="cargandoSedes"
+              @update:model-value="onCambioSede"
+            />
+          </div>
+          <div class="col-12 col-sm-3">
+            <q-select
+              v-model="filtroCarreraId"
+              :options="opcionesCarreras"
+              label="Carrera (opcional)"
+              outlined dense clearable emit-value map-options
+              option-value="id" option-label="label"
+              :loading="cargandoCarreras"
+              @update:model-value="onCambioCarrera"
+            />
+          </div>
+          <div class="col-12 col-sm-4">
+            <q-select
+              v-model="filtroMateria"
+              :options="opcionesMaterias"
+              label="Materia (opcional)"
+              outlined dense clearable emit-value map-options
+              option-value="value" option-label="label"
+              :loading="cargandoMaterias"
+              use-input
+              input-debounce="200"
+              @filter="filtrarMaterias"
+            />
+          </div>
+        </div>
+        <div class="row items-center q-gutter-md q-mt-sm">
           <q-space />
-          <q-btn
-            unelevated
-            color="info"
-            icon="preview"
-            label="Previsualizar"
-            :loading="loadingPreview"
-            @click="preview"
-          />
-          <q-btn
-            unelevated
-            color="deep-orange"
-            icon="healing"
-            label="Ejecutar Restauración"
-            :loading="loadingExecute"
-            :disable="!puedeEjecutar"
-            @click="confirmarEjecutar"
-          />
+          <q-btn unelevated color="info" icon="preview" label="Previsualizar"
+            :loading="loadingPreview" @click="preview" />
+          <q-btn unelevated color="deep-orange" icon="healing" label="Ejecutar Restauración"
+            :loading="loadingExecute" :disable="!puedeEjecutar" @click="confirmarEjecutar" />
         </div>
       </q-card-section>
     </q-card>
 
+    <!-- LOADING -->
     <div v-if="loadingPreview || loadingExecute" class="column items-center q-py-xl">
       <q-spinner-dots color="deep-orange" size="40px" />
       <div class="q-mt-sm text-grey-6">
@@ -73,9 +95,8 @@
       </div>
     </div>
 
-    <!-- PANEL DE RESULTADOS (compartido por preview y execute) -->
+    <!-- RESULTADOS -->
     <div v-if="mostrarResultados">
-      <!-- Stats cards -->
       <div class="row q-col-gutter-md q-mb-md">
         <div class="col-6 col-sm-3" v-for="stat in statsCards" :key="stat.label">
           <q-card flat bordered :class="'bg-' + stat.color + '-1'">
@@ -83,28 +104,29 @@
               <div class="text-h4" :class="'text-' + stat.color + '-9'">{{ stat.valor }}</div>
               <div class="text-caption" :class="'text-' + stat.color + '-8'">{{ stat.label }}</div>
             </q-card-section>
-          </q-card>
-        </div>
+    </q-card>
       </div>
+    </div>
 
-      <!-- Tabla de resultados del preview -->
+    <!-- Preview -->
       <div v-if="previewData && !resultado?.ok">
         <div class="text-subtitle2 text-weight-bold q-mb-sm">
           <q-icon name="preview" color="info" class="q-mr-xs" />
-          Resultados del análisis (mostrando {{ previewData.mostrando || previewData.detalles?.length || 0 }} de {{ previewData.total_encontradas || 0 }})
+          Resultados ({{ previewData.mostrando || previewData.detalles?.length || 0 }} de {{ previewData.total_encontradas || 0 }})
         </div>
 
         <div v-if="previewData.detalles && previewData.detalles.length > 0">
           <q-markup-table dense flat bordered class="q-mb-md">
             <thead>
               <tr>
-                <th>Pregunta ID</th>
+                <th>ID</th>
                 <th>Parcial</th>
-                <th>Asignatura Actual</th>
-                <th>Asignatura Correcta</th>
-                <th>Votos</th>
+                <th>Parcial Final</th>
+                <th>Asig. Actual</th>
+                <th>Asig. Correcta</th>
                 <th>Origen</th>
-                <th>Docente</th>
+                <th>Creado</th>
+                <th>Doc</th>
                 <th>Grupo</th>
                 <th>Sede</th>
                 <th>Acción</th>
@@ -114,15 +136,24 @@
               <tr v-for="d in previewData.detalles" :key="d.pregunta_id" :class="rowClass(d.accion)">
                 <td>{{ d.pregunta_id }}</td>
                 <td>{{ d.parcial }}</td>
+                <td>
+                  <span :class="d.auto_2do_parcial ? 'text-positive text-weight-medium' : ''">
+                    {{ d.parcial_final || d.parcial }}
+                  </span>
+                  <q-badge v-if="d.auto_2do_parcial" color="green" text-color="white" class="q-ml-xs" dense>
+                    2do ✓
+                  </q-badge>
+                </td>
                 <td :class="d.accion === 'restaurar' ? 'text-negative' : ''">{{ d.asignatura_actual || 'N/A' }}</td>
                 <td :class="d.accion === 'restaurar' ? 'text-positive text-weight-medium' : ''">{{ d.asignatura_sugerida || '—' }}</td>
-                <td>{{ d.votos_backups || '—' }}</td>
                 <td>{{ d.backup_fuente || '—' }}</td>
+                <td class="text-caption">{{ formatFecha(d.created_at) }}</td>
                 <td>{{ d.docente_id || '—' }}</td>
                 <td>{{ d.grupo_teorico || '—' }}</td>
                 <td>{{ d.sede_id || '—' }}</td>
                 <td>
-                  <q-chip dense size="sm" :color="accionColor(d.accion).bg" :text-color="accionColor(d.accion).text" :icon="accionColor(d.accion).icon">
+                  <q-chip dense size="sm" :color="accionColor(d.accion).bg"
+                    :text-color="accionColor(d.accion).text" :icon="accionColor(d.accion).icon">
                     {{ accionLabel(d.accion) }}
                   </q-chip>
                 </td>
@@ -132,55 +163,45 @@
         </div>
       </div>
 
-      <!-- Tabla de cambios ejecutados -->
+      <!-- Execute results -->
       <div v-if="resultado?.ok && resultado.cambios && resultado.cambios.length > 0">
         <div class="text-subtitle2 text-weight-bold q-mb-sm">
           <q-icon name="checklist" color="positive" class="q-mr-xs" />
           {{ resultado.cambios.length }} preguntas restauradas
         </div>
-        <q-table
-          :rows="resultado.cambios"
-          :columns="columnasCambios"
-          row-key="pregunta_id"
-          dense
-          flat
-          bordered
-          :rows-per-page-options="[20, 50, 100]"
-        />
+        <q-table :rows="resultado.cambios" :columns="columnasCambios" row-key="pregunta_id"
+          dense flat bordered :rows-per-page-options="[20, 50, 100]" />
       </div>
 
-      <!-- Sin cambios (execute) -->
-      <q-banner v-if="resultado?.ok && (!resultado.cambios || resultado.cambios.length === 0)" rounded class="bg-green-1 text-green-9">
+      <q-banner v-if="resultado?.ok && (!resultado.cambios || resultado.cambios.length === 0)"
+        rounded class="bg-green-1 text-green-9">
         <template #avatar><q-icon name="check_circle" color="green" /></template>
-        Todas las preguntas ya estaban en su asignatura correcta. No se realizaron cambios.
+        Todas las preguntas ya estaban en su asignatura correcta.
       </q-banner>
 
-      <!-- Sin consenso banner -->
       <q-banner v-if="(previewData?.sin_consenso || 0) > 0" rounded class="bg-grey-2 text-grey-8 q-mt-md">
         <template #avatar><q-icon name="help" color="grey" /></template>
-        {{ previewData.sin_consenso }} preguntas sin datos en backups — se usarán los datos de la asignatura actual para restaurarlas.
+        {{ previewData.sin_consenso }} preguntas sin datos en backups — se usarán los datos de la asignatura actual.
       </q-banner>
     </div>
 
-    <div
-      v-if="!previewData && !resultado && !loadingPreview && !loadingExecute"
-      class="column items-center q-py-xl"
-    >
+    <!-- EMPTY STATE -->
+    <div v-if="!previewData && !resultado && !loadingPreview && !loadingExecute"
+      class="column items-center q-py-xl">
       <q-icon name="healing" size="56px" color="grey-4" />
       <div class="q-mt-sm text-grey-6">Haz clic en "Previsualizar" para analizar las bases de datos</div>
     </div>
 
+    <!-- CONFIRM DIALOG -->
     <q-dialog v-model="confirmDialog" persistent>
       <q-card style="min-width: 400px">
         <q-card-section class="bg-deep-orange text-white">
           <div class="text-h6">Confirmar Restauración</div>
         </q-card-section>
         <q-card-section>
-          <p>
-            Se procesarán <strong>{{ previewData?.total_procesar || 0 }}</strong> preguntas.
-          </p>
+          <p>Se procesarán <strong>{{ previewData?.total_procesar || 0 }}</strong> preguntas.</p>
           <p v-if="previewData?.restaurables > 0" class="text-positive text-weight-medium">
-            {{ previewData.restaurables }} preguntas serán restauradas a su asignatura correcta.
+            {{ previewData.restaurables }} preguntas serán restauradas.
           </p>
           <p v-if="previewData?.sin_consenso > 0" class="text-orange text-weight-medium">
             {{ previewData.sin_consenso }} preguntas sin backup se restaurarán usando la asignatura actual.
@@ -189,12 +210,7 @@
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancelar" v-close-popup />
-          <q-btn
-            unelevated
-            color="deep-orange"
-            label="Sí, restaurar"
-            @click="ejecutar"
-          />
+          <q-btn unelevated color="deep-orange" label="Sí, restaurar" @click="ejecutar" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -202,17 +218,33 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { api } from 'boot/axios'
 import { Notify } from 'quasar'
 
+// ── Filtros ──
 const parcial = ref('2do Parcial')
+const filtroSedeId = ref(null)
+const filtroCarreraId = ref(null)
+const filtroMateria = ref(null)
+
+// ── Opciones de selectores ──
+const opcionesSedes = ref([])
+const opcionesCarreras = ref([])
+const opcionesMaterias = ref([])
+const todasMaterias = ref([])
+const cargandoSedes = ref(false)
+const cargandoCarreras = ref(false)
+const cargandoMaterias = ref(false)
+
+// ── Estado ──
 const loadingPreview = ref(false)
 const loadingExecute = ref(false)
 const previewData = ref(null)
 const resultado = ref(null)
 const confirmDialog = ref(false)
 
+// ── Computed ──
 const puedeEjecutar = computed(() => {
   if (!previewData.value) return false
   return (previewData.value.restaurables || 0) > 0 || (previewData.value.sin_consenso || 0) > 0
@@ -235,14 +267,70 @@ const statsCards = computed(() => {
 })
 
 const columnasCambios = [
-  { name: 'pregunta_id', label: 'Pregunta ID', field: 'pregunta_id', align: 'left' },
+  { name: 'pregunta_id', label: 'ID', field: 'pregunta_id', align: 'left' },
   { name: 'codigo', label: 'Código', field: 'codigo', align: 'left' },
   { name: 'old_asig', label: 'Asig. Anterior', field: 'old_asignatura_id', align: 'left' },
   { name: 'new_asig', label: 'Asig. Nueva', field: 'new_asignatura_id', align: 'left' },
-  { name: 'votos', label: 'Votos', field: 'votos_backups', align: 'center' },
   { name: 'plan', label: 'Plan', field: 'plan', align: 'center' },
 ]
 
+// ── Selectores cascada ──
+async function cargarSedes() {
+  cargandoSedes.value = true
+  try {
+    const res = await api.post('/restauracion/bancos/sedes')
+    opcionesSedes.value = res.data || []
+  } catch { opcionesSedes.value = [] }
+  finally { cargandoSedes.value = false }
+}
+
+async function cargarCarreras() {
+  cargandoCarreras.value = true
+  try {
+    const params = {}
+    if (filtroSedeId.value) params.sede_id = filtroSedeId.value
+    const res = await api.post('/restauracion/bancos/carreras', params)
+    opcionesCarreras.value = (res.data || []).map(c => ({
+      id: c.id, label: `${c.sigla || c.id} — ${c.nombre}`,
+    }))
+  } catch { opcionesCarreras.value = [] }
+  finally { cargandoCarreras.value = false }
+}
+
+async function cargarMaterias() {
+  cargandoMaterias.value = true
+  try {
+    const params = {}
+    if (filtroSedeId.value) params.sede_id = filtroSedeId.value
+    if (filtroCarreraId.value) params.carrera_id = filtroCarreraId.value
+    const res = await api.post('/restauracion/bancos/materias', params)
+    todasMaterias.value = res.data || []
+    opcionesMaterias.value = [...todasMaterias.value]
+  } catch { todasMaterias.value = []; opcionesMaterias.value = [] }
+  finally { cargandoMaterias.value = false }
+}
+
+function filtrarMaterias(val, update) {
+  update(() => {
+    const needle = (val || '').toLowerCase()
+    opcionesMaterias.value = needle
+      ? todasMaterias.value.filter(m => m.label.toLowerCase().includes(needle))
+      : [...todasMaterias.value]
+  })
+}
+
+function onCambioSede() {
+  filtroCarreraId.value = null
+  filtroMateria.value = null
+  cargarCarreras()
+}
+
+function onCambioCarrera() {
+  filtroMateria.value = null
+  cargarMaterias()
+}
+
+// ── Helpers visuales ──
 function accionColor(accion) {
   switch (accion) {
     case 'restaurar': return { bg: 'deep-orange-1', text: 'deep-orange-9', icon: 'healing' }
@@ -251,20 +339,37 @@ function accionColor(accion) {
     default: return { bg: 'grey-2', text: 'grey-7', icon: 'help' }
   }
 }
-
 function accionLabel(accion) {
   switch (accion) {
     case 'restaurar': return 'Restaurar'
-    case 'ya_correcta': return 'Ya correcta'
+    case 'ya_correcta': return 'Correcta'
     case 'sin_consenso': return 'Sin backup'
     default: return accion
   }
 }
-
 function rowClass(accion) {
   if (accion === 'restaurar') return 'bg-orange-1'
   if (accion === 'ya_correcta') return 'bg-green-1'
   return ''
+}
+
+// ── Preview / Execute ──
+function formatFecha(fecha) {
+  if (!fecha) return '—'
+  const d = new Date(fecha)
+  return d.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: '2-digit' })
+}
+
+function buildFilters() {
+  const f = {}
+  if (filtroSedeId.value) f.sede_id = filtroSedeId.value
+  if (filtroCarreraId.value) f.carrera_id = filtroCarreraId.value
+  if (filtroMateria.value) {
+    const [codigo, plan] = filtroMateria.value.split('|')
+    f.codigo = codigo
+    f.plan_estudios = plan
+  }
+  return f
 }
 
 async function preview() {
@@ -274,25 +379,19 @@ async function preview() {
   try {
     const res = await api.post('/restauracion/bancos/preview', {
       parcial: parcial.value,
+      ...buildFilters(),
     })
     previewData.value = res.data
     Notify.create({
       type: 'info',
-      message: `${res.data.total_encontradas || 0} preguntas encontradas, ${res.data.restaurables || 0} restaurables, ${res.data.sin_consenso || 0} sin backup`,
+      message: `${res.data.total_encontradas || 0} encontradas, ${res.data.restaurables || 0} restaurables`,
     })
   } catch (e) {
-    Notify.create({
-      type: 'negative',
-      message: 'Error: ' + (e.response?.data?.message || e.message),
-    })
-  } finally {
-    loadingPreview.value = false
-  }
+    Notify.create({ type: 'negative', message: 'Error: ' + (e.response?.data?.message || e.message) })
+  } finally { loadingPreview.value = false }
 }
 
-function confirmarEjecutar() {
-  confirmDialog.value = true
-}
+function confirmarEjecutar() { confirmDialog.value = true }
 
 async function ejecutar() {
   confirmDialog.value = false
@@ -301,20 +400,28 @@ async function ejecutar() {
   try {
     const res = await api.post('/restauracion/bancos/execute', {
       parcial: parcial.value,
+      ...buildFilters(),
     })
     resultado.value = res.data
     previewData.value = null
     Notify.create({
       type: 'positive',
-      message: `${res.data.restauradas || 0} preguntas restauradas exitosamente`,
+      message: `${res.data.restauradas || 0} preguntas restauradas`,
     })
   } catch (e) {
-    Notify.create({
-      type: 'negative',
-      message: 'Error: ' + (e.response?.data?.message || e.message),
-    })
-  } finally {
-    loadingExecute.value = false
-  }
+    Notify.create({ type: 'negative', message: 'Error: ' + (e.response?.data?.message || e.message) })
+  } finally { loadingExecute.value = false }
 }
+
+// ── Init: solo cargar sedes al entrar ──
+cargarSedes()
+
+watch(parcial, () => {
+  filtroSedeId.value = null
+  filtroCarreraId.value = null
+  filtroMateria.value = null
+  opcionesCarreras.value = []
+  opcionesMaterias.value = []
+  todasMaterias.value = []
+})
 </script>
