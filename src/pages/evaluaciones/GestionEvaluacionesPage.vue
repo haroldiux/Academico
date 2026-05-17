@@ -5956,6 +5956,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   doc.rect(margin, startYTable, contentWidth, tableHeight)
 
   let currentY = doc.lastAutoTable.finalY + 10
+  const pageBottomLimit = doc.internal.pageSize.getHeight() - 20
+  const fullPageContentHeight = pageBottomLimit - margin
 
   // AGRUPAR POR TIPO PARA RENDERIZAR SECCIONES
   const descripciones = {
@@ -6070,8 +6072,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       }
       estH += 5
 
-      const maxPageHeight = doc.internal.pageSize.getHeight() - 25
-      if (currentY + estH > maxPageHeight && estH < maxPageHeight - margin) {
+      const matchingFitsOnPage = estH <= fullPageContentHeight
+      if (matchingFitsOnPage && currentY + estH > pageBottomLimit) {
         doc.addPage()
         doc.setFont(baseFont)
         currentY = margin
@@ -6086,7 +6088,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       doc.setFont(baseFont, 'normal')
       doc.setFontSize(baseSize - 2)
       for (const op of ops) {
-        if (currentY > doc.internal.pageSize.getHeight() - 20) {
+        if (!matchingFitsOnPage && currentY > pageBottomLimit) {
           doc.addPage()
           currentY = margin
           doc.setFont(baseFont)
@@ -6101,8 +6103,11 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       for (let r = 0; r < matchingSubs.length; r++) {
         const sub = matchingSubs[r]
         const numReal = enumTextBase + r
+        let subText = sub.enunciado?.replace(/<[^>]*>/g, '').trim() + ' (      )'
+        const subLines = doc.splitTextToSize(subText, contentWidth - 20)
+        const subHeight = subLines.length * lineHeight + 4
 
-        if (currentY > doc.internal.pageSize.getHeight() - 25) {
+        if (!matchingFitsOnPage && currentY + subHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
           doc.setFont(baseFont)
@@ -6112,10 +6117,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         doc.text(`${numReal}. `, margin + 10, currentY)
 
         doc.setFont(baseFont, 'normal')
-        let subText = sub.enunciado?.replace(/<[^>]*>/g, '').trim() + ' (      )'
-        const subLines = doc.splitTextToSize(subText, contentWidth - 20)
         doc.text(subLines, margin + 18, currentY)
-        currentY += subLines.length * lineHeight + 4
+        currentY += subHeight
       }
 
       currentY += 5
@@ -6174,8 +6177,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     estimatedHeight += esHeader ? 0 : 5
 
     // Si la pregunta no cabe en esta página, pero SÍ cabría en una página vacía, saltamos de página antes de imprimirla
-    const maxPageHeight = doc.internal.pageSize.getHeight() - 25
-    if (currentY + estimatedHeight > maxPageHeight && estimatedHeight < maxPageHeight - margin) {
+    const questionFitsOnPage = estimatedHeight <= fullPageContentHeight
+    if (questionFitsOnPage && currentY + estimatedHeight > pageBottomLimit) {
       doc.addPage()
       currentY = margin
     }
@@ -6236,7 +6239,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
             imgH = (imgProps.height * imgW) / imgProps.width
           }
 
-          if (currentY + imgH > doc.internal.pageSize.getHeight() - 20) {
+          if (!questionFitsOnPage && currentY + imgH > pageBottomLimit) {
             doc.addPage()
             currentY = margin
           }
@@ -6265,13 +6268,14 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       for (let incisoIndex = 0; incisoIndex < incisosPreguntaClave.length; incisoIndex++) {
         const incisoText = `${incisoIndex + 1}. ${incisosPreguntaClave[incisoIndex]}`
         const incisoLines = doc.splitTextToSize(incisoText, contentWidth - 22)
-        if (currentY + incisoLines.length * lineHeight > doc.internal.pageSize.getHeight() - 20) {
+        const incisoHeight = incisoLines.length * lineHeight + 1
+        if (!questionFitsOnPage && currentY + incisoHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
           doc.setFont(baseFont)
         }
         doc.text(incisoLines, margin + 12, currentY)
-        currentY += incisoLines.length * lineHeight + 1
+        currentY += incisoHeight
       }
     } else if (opciones.length > 0) {
       doc.setFontSize(baseSize - 1)
@@ -6285,13 +6289,14 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         const opcText = `${opc.id || ''}) ${textToShow}`
         // Margen de seguridad mayor para opciones (22mm de reserva a la derecha)
         const opcLines = doc.splitTextToSize(opcText, contentWidth - 22)
-        if (currentY + opcLines.length * lineHeight > doc.internal.pageSize.getHeight() - 20) {
+        const opcHeight = opcLines.length * lineHeight + 1
+        if (!questionFitsOnPage && currentY + opcHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
           doc.setFont(baseFont)
         }
         doc.text(opcLines, margin + 12, currentY)
-        currentY += opcLines.length * lineHeight + 1
+        currentY += opcHeight
       }
     }
     currentY += esHeader ? 2 : 5 // Más espacio tras un caso clínico para separar de la 1er pregunta

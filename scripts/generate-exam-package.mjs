@@ -1070,6 +1070,8 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
   doc.rect(margin, startYTable, contentWidth, tableHeight)
 
   let currentY = doc.lastAutoTable.finalY + 10
+  const pageBottomLimit = doc.internal.pageSize.getHeight() - 20
+  const fullPageContentHeight = pageBottomLimit - margin
   let previousType = null
   let problemCount = 0
 
@@ -1153,13 +1155,32 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
         cursor += 1
       }
 
+      let estimatedHeight = statementLines.length * lineHeight + 4
+      estimatedHeight += optionLines.length * (lineHeight + 0.5) + 4
+
+      for (const linked of linkedQuestions) {
+        const subText = `${cleanQuestionText(linked.enunciado)} (      )`
+        const subLines = doc.splitTextToSize(subText, contentWidth - 20)
+        estimatedHeight += subLines.length * lineHeight + 4
+      }
+
+      estimatedHeight += 5
+
+      const matchingFitsOnPage = estimatedHeight <= fullPageContentHeight
+      if (matchingFitsOnPage && currentY + estimatedHeight > pageBottomLimit) {
+        doc.addPage()
+        currentY = margin
+        doc.setFontSize(baseSize)
+        doc.setFont(baseFont, 'bold')
+      }
+
       doc.text(statementLines, margin + 8, currentY)
       currentY += statementLines.length * lineHeight + 4
       doc.setFont(baseFont, 'normal')
       doc.setFontSize(baseSize - 2)
 
       for (const option of optionLines) {
-        if (currentY > doc.internal.pageSize.getHeight() - 20) {
+        if (!matchingFitsOnPage && currentY > pageBottomLimit) {
           doc.addPage()
           currentY = margin
         }
@@ -1176,8 +1197,9 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
         const realNumber = baseNumber + childIndex
         const subText = `${cleanQuestionText(linked.enunciado)} (      )`
         const subLines = doc.splitTextToSize(subText, contentWidth - 20)
+        const subHeight = subLines.length * lineHeight + 4
 
-        if (currentY + subLines.length * lineHeight > doc.internal.pageSize.getHeight() - 20) {
+        if (!matchingFitsOnPage && currentY + subHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
         }
@@ -1186,7 +1208,7 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
         doc.text(`${realNumber}. `, margin + 10, currentY)
         doc.setFont(baseFont, 'normal')
         doc.text(subLines, margin + 18, currentY)
-        currentY += subLines.length * lineHeight + 4
+        currentY += subHeight
       }
 
       currentY += 5
@@ -1238,6 +1260,50 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
     doc.setFontSize(baseSize)
     doc.setFont(baseFont, 'normal')
     const statementLines = doc.splitTextToSize(statement, statementMaxWidth)
+    let estimatedHeight = statementLines.length * lineHeight + (isHeader ? 6 : 0) + 2
+
+    if (currentType === 'PREGUNTA_CON_CLAVE') {
+      doc.setFontSize(baseSize - 1)
+      detailLines.forEach((line, detailIndex) => {
+        const claveLines = doc.splitTextToSize(
+          `${detailIndex + 1}. ${stripNumericPrefix(line)}`,
+          detailMaxWidth,
+        )
+        estimatedHeight += claveLines.length * lineHeight + 1
+      })
+    } else if (currentType === 'RESPUESTA_COMPUESTA') {
+      doc.setFontSize(baseSize - 1)
+      const romanLabels = ['I', 'II']
+      detailLines.forEach((line, detailIndex) => {
+        const label = romanLabels[detailIndex + premiseDetailStartIndex] || romanLabels.at(-1)
+        const premiseLines = doc.splitTextToSize(
+          `${label}. ${stripNumericPrefix(line)}`,
+          detailMaxWidth,
+        )
+        estimatedHeight += premiseLines.length * lineHeight + 1
+      })
+    } else if (renderOptions) {
+      doc.setFontSize(baseSize - 1)
+      for (const option of options) {
+        const optionLines = doc.splitTextToSize(
+          `${option.id || ''}) ${cleanQuestionText(option.text)}`,
+          optionMaxWidth,
+        )
+        estimatedHeight += optionLines.length * lineHeight + 1
+      }
+    }
+
+    if (currentType === 'SUBPROBLEMA') estimatedHeight += 4
+    estimatedHeight += 2
+    if (question.imagePath) estimatedHeight += 47
+    estimatedHeight += isHeader ? 2 : 5
+    doc.setFontSize(baseSize)
+
+    const questionFitsOnPage = estimatedHeight <= fullPageContentHeight
+    if (questionFitsOnPage && currentY + estimatedHeight > pageBottomLimit) {
+      doc.addPage()
+      currentY = margin
+    }
 
     doc.setFontSize(baseSize)
     doc.setFont(baseFont, 'bold')
@@ -1312,7 +1378,7 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
           imageHeight = (imageProps.height * imageWidth) / imageProps.width
         }
 
-        if (currentY + imageHeight > doc.internal.pageSize.getHeight() - 20) {
+        if (!questionFitsOnPage && currentY + imageHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
         }
@@ -1336,14 +1402,15 @@ const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions
           `${option.id || ''}) ${cleanQuestionText(option.text)}`,
           optionMaxWidth,
         )
+        const optionHeight = optionLines.length * lineHeight + 1
 
-        if (currentY + optionLines.length * lineHeight > doc.internal.pageSize.getHeight() - 20) {
+        if (!questionFitsOnPage && currentY + optionHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
         }
 
         doc.text(optionLines, margin + 12, currentY)
-        currentY += optionLines.length * lineHeight + 1
+        currentY += optionHeight
       }
     }
 

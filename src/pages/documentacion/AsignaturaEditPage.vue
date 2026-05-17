@@ -1349,7 +1349,7 @@
                     </div>
                   </q-tooltip>
                 </span>
-                <span v-if="mostrarAccionesExcelBanco" class="banco-action-tooltip-anchor">
+                <span v-if="mostrarAccionesGestionBanco" class="banco-action-tooltip-anchor">
                   <q-btn
                     round
                     unelevated
@@ -1391,7 +1391,7 @@
                       Borra las preguntas del parcial y grupo seleccionado.
                     </div>
                     <div
-                      v-if="!modoBancoSoloVisualDirector && preguntasFiltradas.length === 0"
+                      v-if="preguntasFiltradas.length === 0"
                       class="banco-action-tooltip__warning"
                     >
                       No hay preguntas cargadas para {{ filtroBancoDescripcion }}.
@@ -1403,14 +1403,17 @@
                       Este grupo ya tiene un examen generado o posterior para este parcial.
                     </div>
                     <div
-                      v-else-if="modoBancoSoloVisualDirector"
+                      v-else-if="modoBancoSinPermisoModificar"
                       class="banco-action-tooltip__warning"
                     >
-                      Modo demostración: disponible solo para revisión visual del director.
+                      Vista de supervisión: disponible solo para revisión visual.
                     </div>
                   </q-tooltip>
                 </span>
-                <span v-if="puedeMostrarRegistroManualBanco" class="banco-action-tooltip-anchor">
+                <span
+                  v-if="puedeMostrarRegistroManualBanco && !modoBancoSoloLecturaPreguntas"
+                  class="banco-action-tooltip-anchor"
+                >
                   <q-btn
                     rounded
                     unelevated
@@ -1630,6 +1633,18 @@
                 <strong>Modo demostración para Dirección de Carrera:</strong>
                 puedes revisar filtros, resúmenes, descarga del formato y los modales del banco sin
                 alterar las preguntas registradas por el docente.
+              </q-banner>
+
+              <q-banner
+                v-else-if="modoBancoSoloLecturaPreguntas"
+                class="bg-indigo-1 text-indigo-10 q-mb-md"
+                rounded
+                dense
+              >
+                <template v-slot:avatar><q-icon name="visibility" color="indigo-8" /></template>
+                <strong>Vista de supervisión:</strong>
+                puedes revisar las preguntas registradas y exportar el banco sin modificar el
+                trabajo del docente.
               </q-banner>
 
               <q-banner
@@ -1905,6 +1920,7 @@
                           </q-btn>
                           <template
                             v-if="
+                              !modoBancoSoloLecturaPreguntas &&
                               !gruposBloqueados.has(
                                 normalizeGroupName(obtenerGrupoTeoricoPregunta(pregunta)),
                               )
@@ -1933,15 +1949,33 @@
                               <q-tooltip>Eliminar Pregunta</q-tooltip>
                             </q-btn>
                           </template>
-                          <q-icon v-else name="lock" color="orange-7" size="sm">
-                            <q-tooltip>Grupo bloqueado: examen ya generado</q-tooltip>
+                          <q-icon
+                            v-else
+                            :name="modoBancoSoloLecturaPreguntas ? 'visibility' : 'lock'"
+                            :color="modoBancoSoloLecturaPreguntas ? 'indigo-7' : 'orange-7'"
+                            size="sm"
+                          >
+                            <q-tooltip>
+                              {{
+                                modoBancoSoloLecturaPreguntas
+                                  ? 'Vista de supervisión: edición deshabilitada'
+                                  : 'Grupo bloqueado: examen ya generado'
+                              }}
+                            </q-tooltip>
                           </q-icon>
                         </div>
 
-                        <div
-                          class="text-subtitle1 text-weight-bold q-mb-sm"
-                          v-html="pregunta.enunciado"
-                        ></div>
+                        <div class="exam-question-preview q-mb-sm">
+                          <div
+                            v-for="(linea, lineaIndex) in obtenerLineasPresentacionCuerpo(
+                              crearPreviewPreguntaRegistrada(pregunta),
+                            )"
+                            :key="`banco-linea-${pregunta.id || pregunta.numeroVisual || lineaIndex}-${lineaIndex}`"
+                            :class="linea.cssClass"
+                          >
+                            {{ linea.text }}
+                          </div>
+                        </div>
 
                         <q-banner
                           v-if="
@@ -1977,27 +2011,37 @@
                           </q-img>
                         </div>
 
-                        <div class="opciones-grid">
+                        <div
+                          v-if="
+                            obtenerLineasPresentacionOpciones(
+                              crearPreviewPreguntaRegistrada(pregunta),
+                            ).length
+                          "
+                          class="exam-question-preview q-mt-sm"
+                        >
                           <div
-                            v-for="(opc, oidx) in Array.isArray(pregunta.opciones)
-                              ? pregunta.opciones
-                              : []"
-                            :key="oidx"
-                            class="opcion-item"
-                            :class="{
-                              'opcion-correcta': esOpcionCorrecta(pregunta, opc.id),
-                            }"
+                            v-for="(linea, lineaIndex) in obtenerLineasPresentacionOpciones(
+                              crearPreviewPreguntaRegistrada(pregunta),
+                            )"
+                            :key="`banco-opcion-${pregunta.id || pregunta.numeroVisual || lineaIndex}-${lineaIndex}`"
+                            :class="linea.cssClass"
                           >
-                            <span class="opcion-letra">{{ opc.id }})</span>
-                            <span>{{ opc.text }}</span>
-                            <q-icon
-                              v-if="esOpcionCorrecta(pregunta, opc.id)"
-                              name="check_circle"
-                              color="green"
-                              size="16px"
-                              class="q-ml-xs"
-                            />
+                            {{ linea.text }}
                           </div>
+                        </div>
+                        <div
+                          v-if="
+                            !['PROBLEMA', 'EMPAREJAMIENTO'].includes(
+                              normalizarTipoPregunta(
+                                pregunta.tipo,
+                                pregunta,
+                                gruposCabeceraBancoMap.value,
+                              ),
+                            )
+                          "
+                          class="banco-answer-note"
+                        >
+                          Respuesta registrada: {{ getRespuestaCorrectaBancoPregunta(pregunta) }}
                         </div>
                       </div>
                     </div>
@@ -2182,7 +2226,7 @@
                   toggle-color="deep-purple"
                   flat
                   stretch
-                  :disable="modoBancoSoloVisualDirector"
+                  :disable="modoBancoSinPermisoModificar"
                   :options="[
                     { label: 'Con Cartilla', value: true },
                     { label: 'Sin Cartilla', value: false },
@@ -2248,7 +2292,7 @@
                 label="Seleccionar archivo Excel (.xlsx)"
                 accept=".xlsx,.xls"
                 :disable="
-                  modoBancoSoloVisualDirector ||
+                  modoBancoSinPermisoModificar ||
                   !grupoTeoricoSeleccionado ||
                   grupoImportacionBloqueado
                 "
@@ -2492,7 +2536,7 @@
             icon="save"
             label="Guardar Preferencia Sin Cartilla"
             :loading="importandoBanco"
-            :disable="modoBancoSoloVisualDirector"
+            :disable="modoBancoSinPermisoModificar"
             no-caps
             @click="confirmarConfiguracionSinCartilla"
           />
@@ -2503,7 +2547,7 @@
             icon="settings_backup_restore"
             label="Restablecer a Con Cartilla"
             :loading="importandoBanco"
-            :disable="modoBancoSoloVisualDirector"
+            :disable="modoBancoSinPermisoModificar"
             no-caps
             @click="guardarConfiguracionSinCartillaTrue"
           />
@@ -2514,7 +2558,7 @@
             icon="upload"
             :label="`Importar ${importStats.nuevas || 0} nueva(s)`"
             :disable="
-              modoBancoSoloVisualDirector ||
+              modoBancoSinPermisoModificar ||
               importStats.nuevas === 0 ||
               importErroresNormalizados.length > 0 ||
               !validacionDistribucion ||
@@ -3403,14 +3447,14 @@
             icon="picture_as_pdf"
             label="Previsualizar PDF"
             no-caps
-            :disable="!puedePrevisualizarFormularioPregunta || modoBancoSoloVisualDirector"
+            :disable="!puedePrevisualizarFormularioPregunta || modoBancoSinPermisoModificar"
             :loading="previsualizandoRegistroPregunta"
             @click="() => previsualizarRegistroPreguntaPdf()"
           >
             <q-tooltip v-if="!puedePrevisualizarFormularioPregunta">
               {{ mensajeValidacionPrevisualizacion }}
             </q-tooltip>
-            <q-tooltip v-else-if="modoBancoSoloVisualDirector">
+            <q-tooltip v-else-if="modoBancoSinPermisoModificar">
               Disponible solo para el docente responsable.
             </q-tooltip>
           </q-btn>
@@ -3420,7 +3464,7 @@
             color="deep-purple"
             icon="save"
             :loading="guardandoEditPreg"
-            :disable="modoBancoSoloVisualDirector"
+            :disable="modoBancoSinPermisoModificar"
             @click="guardarPreguntaBanco"
             no-caps
           />
@@ -3574,158 +3618,196 @@
               {{ linea }}
             </div>
 
-            <div v-if="previewPreguntaActiva.imageSrc" class="q-mt-md text-center">
-              <q-img
-                :src="previewPreguntaActiva.imageSrc"
-                fit="contain"
-                style="max-height: 220px; max-width: 100%; border-radius: 8px"
-                class="bg-grey-2"
-              />
-            </div>
-
-            <div
-              v-if="previewPreguntaActiva.tipo === 'FALSO_VERDADERO'"
-              class="preview-question-block"
-            >
-              <div class="preview-question-line">
-                1. ____ {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
-              </div>
-              <div class="preview-answer-note">
-                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
-              </div>
-            </div>
-
-            <div
-              v-else-if="['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(previewPreguntaActiva.tipo)"
-              class="preview-question-block"
-            >
-              <div class="preview-question-line">
-                1. {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
-              </div>
+            <div class="preview-question-block">
               <div
-                v-for="(opcion, index) in previewPreguntaActiva.opciones"
-                :key="`preview-op-simple-${index}`"
-                class="preview-option-line"
+                v-for="(linea, index) in obtenerLineasPresentacionCuerpo(previewPreguntaActiva)"
+                :key="`preview-body-${index}`"
+                :class="linea.cssClass"
               >
-                {{ opcion.id }}. {{ opcion.text || 'Opción pendiente...' }}
+                {{ linea.text }}
               </div>
-              <div class="preview-answer-note">
-                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
-              </div>
-            </div>
 
-            <div
-              v-else-if="previewPreguntaActiva.tipo === 'OPCION_EMPAREJAMIENTO'"
-              class="preview-question-block"
-            >
-              <div class="preview-question-line">
-                1. ____ {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
+              <div v-if="previewPreguntaActiva.imageSrc" class="q-my-md text-center">
+                <q-img
+                  :src="previewPreguntaActiva.imageSrc"
+                  fit="contain"
+                  style="max-height: 220px; max-width: 100%; border-radius: 8px"
+                  class="bg-grey-2"
+                />
               </div>
-              <div class="preview-answer-note">
-                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
-              </div>
-            </div>
 
-            <div
-              v-else-if="previewPreguntaActiva.tipo === 'PREGUNTA_CON_CLAVE'"
-              class="preview-question-block"
-            >
-              <div class="preview-question-line">
-                1. ____ {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
-              </div>
               <div
-                v-for="(inciso, index) in previewPreguntaActiva.incisos"
-                :key="`preview-inciso-${index}`"
-                class="preview-detail-line"
+                v-for="(linea, index) in obtenerLineasPresentacionOpciones(previewPreguntaActiva)"
+                :key="`preview-options-${index}`"
+                :class="linea.cssClass"
               >
-                {{ index + 1 }}. {{ inciso || 'Inciso pendiente...' }}
+                {{ linea.text }}
               </div>
-              <div class="preview-answer-note">
-                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
-              </div>
-            </div>
 
-            <div
-              v-else-if="previewPreguntaActiva.tipo === 'RESPUESTA_COMPUESTA'"
-              class="preview-question-block"
-            >
-              <div class="preview-detail-line">
-                I. {{ previewPreguntaActiva.premisas[0] || 'Premisa I pendiente...' }}
-              </div>
-              <div class="preview-detail-line">
-                II. {{ previewPreguntaActiva.premisas[1] || 'Premisa II pendiente...' }}
-              </div>
-              <div class="preview-answer-note">
-                Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
-              </div>
-            </div>
-
-            <div
-              v-else-if="previewPreguntaActiva.tipo === 'EMPAREJAMIENTO'"
-              class="preview-question-block"
-            >
-              <div class="preview-question-line">
-                {{
-                  previewPreguntaActiva.enunciado ||
-                  'De la lista de opciones, seleccione la respuesta correcta para cada enunciado'
-                }}
-              </div>
               <div
-                v-for="(clave, index) in previewPreguntaActiva.claves"
-                :key="`preview-clave-${index}`"
-                class="preview-detail-line"
+                v-if="!['PROBLEMA', 'EMPAREJAMIENTO'].includes(previewPreguntaActiva.tipo)"
+                class="preview-answer-note"
               >
-                {{ clave.id }}. {{ clave.text || 'Opción pendiente...' }}
+                Respuesta registrada: {{ previewPreguntaActiva.respuestaLabel }}
               </div>
+            </div>
+
+            <template v-if="false">
+              <div v-if="previewPreguntaActiva.imageSrc" class="q-mt-md text-center">
+                <q-img
+                  :src="previewPreguntaActiva.imageSrc"
+                  fit="contain"
+                  style="max-height: 220px; max-width: 100%; border-radius: 8px"
+                  class="bg-grey-2"
+                />
+              </div>
+
               <div
-                v-for="(ligada, index) in previewPreguntaActiva.preguntasLigadas"
-                :key="`preview-emp-${index}`"
-                class="preview-question-block q-mt-md"
+                v-if="previewPreguntaActiva.tipo === 'FALSO_VERDADERO'"
+                class="preview-question-block"
               >
                 <div class="preview-question-line">
-                  {{ index + 1 }}. ____
-                  {{ ligada.enunciado || 'Opción emparejamiento pendiente...' }}
+                  1. ____ {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
                 </div>
                 <div class="preview-answer-note">
-                  Dificultad: {{ ligada.dificultadLabel }} | Respuesta: {{ ligada.respuestaLabel }}
+                  Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
                 </div>
               </div>
-            </div>
 
-            <div
-              v-else-if="previewPreguntaActiva.tipo === 'PROBLEMA'"
-              class="preview-question-block"
-            >
-              <div class="preview-question-line">
-                CASO: {{ previewPreguntaActiva.enunciado || 'Caso pendiente...' }}
-              </div>
               <div
-                v-for="(ligada, index) in previewPreguntaActiva.preguntasLigadas"
-                :key="`preview-sub-${index}`"
-                class="preview-question-block q-mt-md"
+                v-else-if="['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(previewPreguntaActiva.tipo)"
+                class="preview-question-block"
               >
                 <div class="preview-question-line">
-                  {{ index + 1 }}. {{ ligada.enunciado || 'Subproblema pendiente...' }}
+                  1. {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
                 </div>
                 <div
-                  v-for="(opcion, opIndex) in ligada.opciones"
-                  :key="`preview-sub-op-${index}-${opIndex}`"
+                  v-for="(opcion, index) in previewPreguntaActiva.opciones"
+                  :key="`preview-op-simple-${index}`"
                   class="preview-option-line"
                 >
-                  {{ opcion.id }}.
-                  {{ opcion.text || 'Opción pendiente...' }}
+                  {{ opcion.id }}. {{ opcion.text || 'Opción pendiente...' }}
                 </div>
                 <div class="preview-answer-note">
-                  Dificultad: {{ ligada.dificultadLabel }} | Respuesta: {{ ligada.respuestaLabel }}
+                  Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
                 </div>
               </div>
-            </div>
 
-            <div v-else class="preview-question-block">
-              <div class="preview-question-line">
-                {{ previewPreguntaActiva.enunciado || 'Completa la pregunta para visualizarla.' }}
+              <div
+                v-else-if="previewPreguntaActiva.tipo === 'OPCION_EMPAREJAMIENTO'"
+                class="preview-question-block"
+              >
+                <div class="preview-question-line">
+                  1. ____ {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
+                </div>
+                <div class="preview-answer-note">
+                  Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
+                </div>
               </div>
-            </div>
+
+              <div
+                v-else-if="previewPreguntaActiva.tipo === 'PREGUNTA_CON_CLAVE'"
+                class="preview-question-block"
+              >
+                <div class="preview-question-line">
+                  1. ____ {{ previewPreguntaActiva.enunciado || 'Enunciado pendiente...' }}
+                </div>
+                <div
+                  v-for="(inciso, index) in previewPreguntaActiva.incisos"
+                  :key="`preview-inciso-${index}`"
+                  class="preview-detail-line"
+                >
+                  {{ index + 1 }}. {{ inciso || 'Inciso pendiente...' }}
+                </div>
+                <div class="preview-answer-note">
+                  Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
+                </div>
+              </div>
+
+              <div
+                v-else-if="previewPreguntaActiva.tipo === 'RESPUESTA_COMPUESTA'"
+                class="preview-question-block"
+              >
+                <div class="preview-detail-line">
+                  I. {{ previewPreguntaActiva.premisas[0] || 'Premisa I pendiente...' }}
+                </div>
+                <div class="preview-detail-line">
+                  II. {{ previewPreguntaActiva.premisas[1] || 'Premisa II pendiente...' }}
+                </div>
+                <div class="preview-answer-note">
+                  Respuesta marcada: {{ previewPreguntaActiva.respuestaLabel }}
+                </div>
+              </div>
+
+              <div
+                v-else-if="previewPreguntaActiva.tipo === 'EMPAREJAMIENTO'"
+                class="preview-question-block"
+              >
+                <div class="preview-question-line">
+                  {{
+                    previewPreguntaActiva.enunciado ||
+                    'De la lista de opciones, seleccione la respuesta correcta para cada enunciado'
+                  }}
+                </div>
+                <div
+                  v-for="(clave, index) in previewPreguntaActiva.claves"
+                  :key="`preview-clave-${index}`"
+                  class="preview-detail-line"
+                >
+                  {{ clave.id }}. {{ clave.text || 'Opción pendiente...' }}
+                </div>
+                <div
+                  v-for="(ligada, index) in previewPreguntaActiva.preguntasLigadas"
+                  :key="`preview-emp-${index}`"
+                  class="preview-question-block q-mt-md"
+                >
+                  <div class="preview-question-line">
+                    {{ index + 1 }}. ____
+                    {{ ligada.enunciado || 'Opción emparejamiento pendiente...' }}
+                  </div>
+                  <div class="preview-answer-note">
+                    Dificultad: {{ ligada.dificultadLabel }} | Respuesta:
+                    {{ ligada.respuestaLabel }}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                v-else-if="previewPreguntaActiva.tipo === 'PROBLEMA'"
+                class="preview-question-block"
+              >
+                <div class="preview-question-line">
+                  CASO: {{ previewPreguntaActiva.enunciado || 'Caso pendiente...' }}
+                </div>
+                <div
+                  v-for="(ligada, index) in previewPreguntaActiva.preguntasLigadas"
+                  :key="`preview-sub-${index}`"
+                  class="preview-question-block q-mt-md"
+                >
+                  <div class="preview-question-line">
+                    {{ index + 1 }}. {{ ligada.enunciado || 'Subproblema pendiente...' }}
+                  </div>
+                  <div
+                    v-for="(opcion, opIndex) in ligada.opciones"
+                    :key="`preview-sub-op-${index}-${opIndex}`"
+                    class="preview-option-line"
+                  >
+                    {{ opcion.id }}.
+                    {{ opcion.text || 'Opción pendiente...' }}
+                  </div>
+                  <div class="preview-answer-note">
+                    Dificultad: {{ ligada.dificultadLabel }} | Respuesta:
+                    {{ ligada.respuestaLabel }}
+                  </div>
+                </div>
+              </div>
+
+              <div v-else class="preview-question-block">
+                <div class="preview-question-line">
+                  {{ previewPreguntaActiva.enunciado || 'Completa la pregunta para visualizarla.' }}
+                </div>
+              </div>
+            </template>
           </div>
         </q-card-section>
 
@@ -4329,8 +4411,18 @@ const esDirectorOAdmin = computed(() => {
 
 const esDirectorCarrera = computed(() => authStore.rol === ROLES.DIRECTOR_CARRERA)
 const modoBancoSoloVisualDirector = computed(() => esDirectorCarrera.value)
+const rolesBancoPreguntasCompleto = [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.VICERRECTOR_NACIONAL]
+const modoBancoSoloLecturaPreguntas = computed(() =>
+  rolesBancoPreguntasCompleto.includes(authStore.rol),
+)
+const modoBancoSinPermisoModificar = computed(
+  () => modoBancoSoloVisualDirector.value || modoBancoSoloLecturaPreguntas.value,
+)
 const puedeVerTabBanco = computed(
-  () => authStore.rol === ROLES.DOCENTE || modoBancoSoloVisualDirector.value,
+  () =>
+    authStore.rol === ROLES.DOCENTE ||
+    modoBancoSoloVisualDirector.value ||
+    modoBancoSoloLecturaPreguntas.value,
 )
 
 const puedeAprobarCarpeta = computed(() => {
@@ -4872,6 +4964,9 @@ const parcialSeleccionado = ref('1P')
 const filtroBancoParcialSeleccionado = ref('2P')
 const mostrarAccionesExcelBanco = computed(
   () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
+)
+const mostrarAccionesGestionBanco = computed(
+  () => mostrarAccionesExcelBanco.value && !modoBancoSoloLecturaPreguntas.value,
 )
 const mostrarBotonValidarBanco = false
 const parcialOptions = [
@@ -6481,6 +6576,129 @@ function crearPreviewPreguntaRegistrada(pregunta) {
   }
 }
 
+function stripPrefijoPresentacionPregunta(texto) {
+  return normalizarTextoPreviewPdf(texto).replace(/^([IVX]+|\d+|[A-Z])[.):]\s+/i, '')
+}
+
+function crearLineaPresentacion(text, cssClass = 'preview-question-line', zone = 'body') {
+  return {
+    text: normalizarTextoMojibake(
+      String(text || '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    ),
+    cssClass,
+    zone,
+  }
+}
+
+function crearLineasPresentacionPreview(preview, numero = 1) {
+  if (!preview) return []
+
+  const tipo = preview.tipo
+  const enunciado = normalizarTextoPreviewPdf(preview.enunciado) || 'Enunciado pendiente...'
+  const lineas = []
+  const add = (text, cssClass = 'preview-question-line', zone = 'body') => {
+    const line = crearLineaPresentacion(text, cssClass, zone)
+    if (line.text) lineas.push(line)
+  }
+
+  if (tipo === 'FALSO_VERDADERO') {
+    add(`${numero}. ____ ${enunciado}`)
+    return lineas
+  }
+
+  if (['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(tipo)) {
+    add(`${numero}. ${enunciado}`)
+    ;(preview.opciones || []).forEach((opcion) => {
+      add(
+        `${opcion.id || ''}) ${opcion.text || 'Opción pendiente...'}`,
+        'preview-option-line',
+        'options',
+      )
+    })
+    return lineas
+  }
+
+  if (tipo === 'OPCION_EMPAREJAMIENTO') {
+    add(`${numero}. ____ ${enunciado} (      )`)
+    return lineas
+  }
+
+  if (tipo === 'PREGUNTA_CON_CLAVE') {
+    add(`${numero}. ____ ${enunciado}`)
+    ;(preview.incisos || []).forEach((inciso, index) => {
+      add(
+        `${index + 1}. ${stripPrefijoPresentacionPregunta(inciso) || 'Inciso pendiente...'}`,
+        'preview-detail-line',
+      )
+    })
+    return lineas
+  }
+
+  if (tipo === 'RESPUESTA_COMPUESTA') {
+    const premisas = preview.premisas || []
+    const primeraPremisa = stripPrefijoPresentacionPregunta(premisas[0])
+    const segundaPremisa = stripPrefijoPresentacionPregunta(premisas[1])
+    add(`${numero}. ____ I. ${primeraPremisa || enunciado || 'Premisa I pendiente...'}`)
+    add(`II. ${segundaPremisa || 'Premisa II pendiente...'}`, 'preview-detail-line')
+    return lineas
+  }
+
+  if (tipo === 'EMPAREJAMIENTO') {
+    const enunciadoEmparejamiento =
+      normalizarTextoPreviewPdf(preview.enunciado) ||
+      'De la lista de opciones, seleccione la respuesta correcta para cada enunciado'
+    add(enunciadoEmparejamiento, 'preview-question-line')
+    ;(preview.claves || []).forEach((clave) => {
+      add(
+        `${clave.id || ''}) ${clave.text || 'Opción pendiente...'}`,
+        'preview-option-line',
+        'options',
+      )
+    })
+    ;(preview.preguntasLigadas || []).forEach((ligada, index) => {
+      add(
+        `${numero + index}. ____ ${
+          normalizarTextoPreviewPdf(ligada.enunciado) || 'Opción emparejamiento pendiente...'
+        } (      )`,
+        'preview-question-line',
+      )
+    })
+    return lineas
+  }
+
+  if (tipo === 'PROBLEMA') {
+    add(`CASO N 1:`, 'preview-case-title')
+    add(enunciado, 'preview-question-line')
+    ;(preview.preguntasLigadas || []).forEach((ligada, index) => {
+      add(
+        `${numero + index}. ${normalizarTextoPreviewPdf(ligada.enunciado) || 'Subproblema pendiente...'}`,
+        'preview-question-line',
+      )
+      ;(ligada.opciones || []).forEach((opcion) => {
+        add(
+          `${opcion.id || ''}) ${opcion.text || 'Opción pendiente...'}`,
+          'preview-option-line',
+          'options',
+        )
+      })
+    })
+    return lineas
+  }
+
+  add(`${numero}. ${enunciado || 'Completa la pregunta para visualizarla.'}`)
+  return lineas
+}
+
+function obtenerLineasPresentacionCuerpo(preview) {
+  return crearLineasPresentacionPreview(preview).filter((linea) => linea.zone !== 'options')
+}
+
+function obtenerLineasPresentacionOpciones(preview) {
+  return crearLineasPresentacionPreview(preview).filter((linea) => linea.zone === 'options')
+}
+
 const previewPreguntaActiva = computed(
   () => previewPreguntaRegistrada.value || previewRegistroPregunta.value,
 )
@@ -6643,7 +6861,7 @@ async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
         ensureSpace(10)
         currentY = agregarTextoPreviewPdf(
           doc,
-          `${opcion.id}. ${opcion.text || 'Opción pendiente...'}`,
+          `${opcion.id}) ${opcion.text || 'Opción pendiente...'}`,
           margin,
           currentY,
           maxWidth,
@@ -6652,9 +6870,16 @@ async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
       })
     } else if (preview.tipo === 'OPCION_EMPAREJAMIENTO') {
       ensureSpace(14)
-      currentY = agregarTextoPreviewPdf(doc, `1. ____ ${enunciado}`, margin, currentY, maxWidth, {
-        lineGap: 5.8,
-      })
+      currentY = agregarTextoPreviewPdf(
+        doc,
+        `1. ____ ${enunciado} (      )`,
+        margin,
+        currentY,
+        maxWidth,
+        {
+          lineGap: 5.8,
+        },
+      )
     } else if (preview.tipo === 'PREGUNTA_CON_CLAVE') {
       ensureSpace(14)
       currentY = agregarTextoPreviewPdf(doc, `1. ____ ${enunciado}`, margin, currentY, maxWidth, {
@@ -6664,7 +6889,7 @@ async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
         ensureSpace(10)
         currentY = agregarTextoPreviewPdf(
           doc,
-          `${index + 1}. ${inciso || 'Inciso pendiente...'}`,
+          `${index + 1}. ${stripPrefijoPresentacionPregunta(inciso) || 'Inciso pendiente...'}`,
           margin,
           currentY,
           maxWidth,
@@ -6673,18 +6898,14 @@ async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
       })
     } else if (preview.tipo === 'RESPUESTA_COMPUESTA') {
       ensureSpace(14)
-      currentY = agregarTextoPreviewPdf(doc, '1. ____', margin, currentY, maxWidth, {
-        lineGap: 5.8,
-      })
       currentY = agregarTextoPreviewPdf(
         doc,
-        `I. ${preview.premisas[0] || 'Premisa I pendiente...'}`,
+        `1. ____ I. ${preview.premisas[0] || enunciado || 'Premisa I pendiente...'}`,
         margin,
         currentY,
         maxWidth,
         {
-          indent: 8,
-          lineGap: 5.4,
+          lineGap: 5.8,
         },
       )
       currentY = agregarTextoPreviewPdf(
@@ -6713,7 +6934,7 @@ async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
         ensureSpace(10)
         currentY = agregarTextoPreviewPdf(
           doc,
-          `${clave.id}. ${clave.text || 'Opción pendiente...'}`,
+          `${clave.id}) ${clave.text || 'Opción pendiente...'}`,
           margin,
           currentY,
           maxWidth,
@@ -6725,7 +6946,7 @@ async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
         ensureSpace(10)
         currentY = agregarTextoPreviewPdf(
           doc,
-          `${index + 1}. ____ ${ligada.enunciado || 'Opción emparejamiento pendiente...'}`,
+          `${index + 1}. ____ ${ligada.enunciado || 'Opción emparejamiento pendiente...'} (      )`,
           margin,
           currentY,
           maxWidth,
@@ -6734,7 +6955,11 @@ async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
       })
     } else if (preview.tipo === 'PROBLEMA') {
       ensureSpace(14)
-      currentY = agregarTextoPreviewPdf(doc, `CASO: ${enunciado}`, margin, currentY, maxWidth, {
+      currentY = agregarTextoPreviewPdf(doc, 'CASO N 1:', margin, currentY, maxWidth, {
+        fontStyle: 'bold',
+        lineGap: 5.8,
+      })
+      currentY = agregarTextoPreviewPdf(doc, enunciado, margin, currentY, maxWidth, {
         lineGap: 5.8,
       })
       ;(preview.preguntasLigadas || []).forEach((ligada, index) => {
@@ -6751,7 +6976,7 @@ async function previsualizarRegistroPreguntaPdf(previewOverride = null) {
           ensureSpace(10)
           currentY = agregarTextoPreviewPdf(
             doc,
-            `${opcion.id}. ${opcion.text || 'Opción pendiente...'}`,
+            `${opcion.id}) ${opcion.text || 'Opción pendiente...'}`,
             margin,
             currentY,
             maxWidth,
@@ -7030,6 +7255,14 @@ watch(
 )
 
 function abrirRegistroManualPregunta() {
+  if (modoBancoSoloLecturaPreguntas.value) {
+    $q.notify({
+      type: 'info',
+      message: 'Vista de supervisión: puedes revisar las preguntas, pero no registrar nuevas.',
+    })
+    return
+  }
+
   if (!puedeMostrarRegistroManualBanco.value && !modoBancoSoloVisualDirector.value) {
     $q.notify({
       type: 'warning',
@@ -7060,6 +7293,14 @@ function abrirRegistroManualPregunta() {
 }
 
 function abrirModalSubirBanco() {
+  if (modoBancoSoloLecturaPreguntas.value) {
+    $q.notify({
+      type: 'info',
+      message: 'Vista de supervisión: puedes revisar el banco, pero no importar cambios.',
+    })
+    return
+  }
+
   if (!puedeVisualizarBanco.value) {
     $q.notify({
       type: 'warning',
@@ -7072,11 +7313,11 @@ function abrirModalSubirBanco() {
 }
 
 function confirmarEliminarBancoFiltrado() {
-  if (modoBancoSoloVisualDirector.value) {
+  if (modoBancoSinPermisoModificar.value) {
     $q.dialog({
       title: 'Eliminar banco actual',
       message:
-        'Modo demostración para Dirección de Carrera.<br><br>Puedes revisar este flujo, pero la eliminación del banco solo está habilitada para el docente responsable.',
+        'Vista de supervisión.<br><br>Puedes revisar este flujo, pero la eliminación del banco solo está habilitada para el docente responsable.',
       html: true,
       ok: {
         label: 'Entendido',
@@ -7170,6 +7411,14 @@ function obtenerPreguntasLigadasParaEliminacion(pregunta) {
 }
 
 function confirmarEliminarPreguntaBanco(pregunta) {
+  if (modoBancoSinPermisoModificar.value) {
+    $q.notify({
+      type: 'info',
+      message: 'Vista de supervisión: puedes revisar el banco, pero no eliminar preguntas.',
+    })
+    return
+  }
+
   const preguntasAEliminar = obtenerPreguntasLigadasParaEliminacion(pregunta)
   const totalEliminar = preguntasAEliminar.length
   const tipoPregunta = getTipoLabelBanco(pregunta.tipo, pregunta, gruposCabeceraBancoMap.value)
@@ -7266,6 +7515,14 @@ async function eliminarBancoFiltrado() {
 }
 
 function abrirEditorPregunta(pregunta) {
+  if (modoBancoSoloLecturaPreguntas.value) {
+    $q.notify({
+      type: 'info',
+      message: 'Vista de supervisión: puedes revisar la pregunta, pero no editarla.',
+    })
+    return
+  }
+
   modoRegistroPregunta.value = 'edit'
   const preguntaSanitizada = sanitizarEstructuraMojibake(pregunta)
   const tipoNormalizado = normalizarTipoPregunta(
@@ -7704,11 +7961,10 @@ async function persistirPreguntaPayload(payload, imageFile = null, preguntaId = 
 }
 
 async function guardarPreguntaBanco() {
-  if (modoBancoSoloVisualDirector.value) {
+  if (modoBancoSinPermisoModificar.value) {
     $q.notify({
       type: 'info',
-      message:
-        'Modo demostración: el director puede revisar este formulario, pero no guardar cambios.',
+      message: 'Vista de supervisión: puedes revisar este formulario, pero no guardar cambios.',
     })
     return
   }
@@ -8153,7 +8409,8 @@ const puedeAbrirEliminarBancoFiltrado = computed(
   () =>
     puedeVisualizarBanco.value &&
     !grupoBancoActualOperacionDestructivaBloqueada.value &&
-    (modoBancoSoloVisualDirector.value || puedeEliminarBancoFiltrado.value),
+    (modoBancoSoloVisualDirector.value ||
+      (puedeEliminarBancoFiltrado.value && !modoBancoSoloLecturaPreguntas.value)),
 )
 
 const filtroBancoDescripcion = computed(() => {
@@ -8694,14 +8951,6 @@ async function cargarGeneracionesManuales() {
     console.error('Error al cargar generaciones manuales:', e)
     generacionesManuales.value = []
   }
-}
-
-function esOpcionCorrecta(pregunta, letra) {
-  const resp = pregunta.respuesta_correcta
-  if (Array.isArray(resp)) {
-    return resp.includes(letra)
-  }
-  return resp === letra
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -10127,7 +10376,21 @@ async function exportarBancoPreguntasActual() {
       'observaciones',
     ]
 
-    const limpiarTextoExcel = (value) => normalizarTextoMojibake(String(value ?? '')).trim()
+    const limpiarTextoExcel = (value) =>
+      normalizarTextoMojibake(String(value ?? ''))
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<p[^>]*>/gi, '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/\r\n|\r/g, '\n')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n[ \t]+/g, '\n')
+        .trim()
     const letras = ['A', 'B', 'C', 'D', 'E']
     const obtenerTextoOpcion = (pregunta, letra) => {
       const opciones = Array.isArray(pregunta?.opciones) ? pregunta.opciones : []
@@ -10146,13 +10409,9 @@ async function exportarBancoPreguntasActual() {
     }
     const normalizarLineaExcel = (value) =>
       limpiarTextoExcel(value)
-        .replace(/<br\s*\/?>/gi, '\n')
-        .replace(/&nbsp;/gi, ' ')
-        .replace(/&amp;/gi, '&')
-        .replace(/&lt;/gi, '<')
-        .replace(/&gt;/gi, '>')
-        .replace(/&quot;/gi, '"')
-        .replace(/&#39;/gi, "'")
+        .split(/\n+/)
+        .map((linea) => linea.trim())
+        .join('\n')
     const opcionesClaveInternas = new Set(
       respuestaPreguntaClaveOptions.map((option) => limpiarTextoExcel(option.label).toLowerCase()),
     )
@@ -10825,10 +11084,10 @@ function previsualizarArchivoExcel(file) {
 }
 
 async function confirmarImportacionBanco() {
-  if (modoBancoSoloVisualDirector.value) {
+  if (modoBancoSinPermisoModificar.value) {
     $q.notify({
       type: 'info',
-      message: 'Modo demostración: el director puede revisar la importación, pero no ejecutarla.',
+      message: 'Vista de supervisión: puedes revisar la importación, pero no ejecutarla.',
     })
     return
   }
@@ -10924,10 +11183,11 @@ async function confirmarImportacionBanco() {
 }
 
 async function confirmarConfiguracionSinCartilla() {
-  if (modoBancoSoloVisualDirector.value) {
+  if (modoBancoSinPermisoModificar.value) {
     $q.notify({
       type: 'info',
-      message: 'Modo demostración: esta preferencia solo puede guardarla el docente responsable.',
+      message:
+        'Vista de supervisión: esta preferencia solo puede guardarla el docente responsable.',
     })
     return
   }
@@ -10970,10 +11230,11 @@ async function confirmarConfiguracionSinCartilla() {
 }
 
 async function guardarConfiguracionSinCartillaTrue() {
-  if (modoBancoSoloVisualDirector.value) {
+  if (modoBancoSinPermisoModificar.value) {
     $q.notify({
       type: 'info',
-      message: 'Modo demostración: esta preferencia solo puede guardarla el docente responsable.',
+      message:
+        'Vista de supervisión: esta preferencia solo puede guardarla el docente responsable.',
     })
     return
   }

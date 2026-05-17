@@ -989,6 +989,8 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
   doc.rect(margin, startYTable, contentWidth, tableHeight)
 
   let currentY = doc.lastAutoTable.finalY + 10
+  const pageBottomLimit = doc.internal.pageSize.getHeight() - 20
+  const fullPageContentHeight = pageBottomLimit - margin
 
   let previousType = null
   let problemCount = 0
@@ -1084,8 +1086,8 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
 
       estimatedHeight += 5
 
-      const maxPageHeight = doc.internal.pageSize.getHeight() - 25
-      if (currentY + estimatedHeight > maxPageHeight && estimatedHeight < maxPageHeight - margin) {
+      const matchingFitsOnPage = estimatedHeight <= fullPageContentHeight
+      if (matchingFitsOnPage && currentY + estimatedHeight > pageBottomLimit) {
         doc.addPage()
         currentY = margin
         doc.setFontSize(baseSize)
@@ -1098,7 +1100,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       doc.setFontSize(baseSize - 2)
 
       for (const option of optionLines) {
-        if (currentY > doc.internal.pageSize.getHeight() - 20) {
+        if (!matchingFitsOnPage && currentY > pageBottomLimit) {
           doc.addPage()
           currentY = margin
           doc.setFont(baseFont)
@@ -1114,8 +1116,11 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       for (let childIndex = 0; childIndex < linkedQuestions.length; childIndex += 1) {
         const linked = linkedQuestions[childIndex]
         const realNumber = baseNumber + childIndex
+        const subText = `${cleanQuestionText(linked.enunciado)} (      )`
+        const subLines = doc.splitTextToSize(subText, contentWidth - 20)
+        const subHeight = subLines.length * lineHeight + 4
 
-        if (currentY > doc.internal.pageSize.getHeight() - 25) {
+        if (!matchingFitsOnPage && currentY + subHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
           doc.setFont(baseFont)
@@ -1124,11 +1129,8 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
         doc.setFont(baseFont, 'bold')
         doc.text(`${realNumber}. `, margin + 10, currentY)
         doc.setFont(baseFont, 'normal')
-
-        const subText = `${cleanQuestionText(linked.enunciado)} (      )`
-        const subLines = doc.splitTextToSize(subText, contentWidth - 20)
         doc.text(subLines, margin + 18, currentY)
-        currentY += subLines.length * lineHeight + 4
+        currentY += subHeight
       }
 
       currentY += 5
@@ -1218,10 +1220,14 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
     }
     doc.setFontSize(baseSize)
 
+    if (['PREGUNTA_CON_CLAVE', 'RESPUESTA_COMPUESTA'].includes(currentType)) {
+      estimatedHeight += 2
+    }
+
     estimatedHeight += isHeader ? 0 : 5
 
-    const maxPageHeight = doc.internal.pageSize.getHeight() - 25
-    if (currentY + estimatedHeight > maxPageHeight && estimatedHeight < maxPageHeight - margin) {
+    const questionFitsOnPage = estimatedHeight <= fullPageContentHeight
+    if (questionFitsOnPage && currentY + estimatedHeight > pageBottomLimit) {
       doc.addPage()
       currentY = margin
     }
@@ -1305,7 +1311,7 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
             imageHeight = (imageProps.height * imageWidth) / imageProps.width
           }
 
-          if (currentY + imageHeight > doc.internal.pageSize.getHeight() - 20) {
+          if (!questionFitsOnPage && currentY + imageHeight > pageBottomLimit) {
             doc.addPage()
             currentY = margin
           }
@@ -1341,15 +1347,16 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
           `${option.id || ''}) ${cleanQuestionText(option.text)}`,
           optionMaxWidth,
         )
+        const optionHeight = optionLines.length * lineHeight + 1
 
-        if (currentY + optionLines.length * lineHeight > doc.internal.pageSize.getHeight() - 20) {
+        if (!questionFitsOnPage && currentY + optionHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
           doc.setFont(baseFont)
         }
 
         doc.text(optionLines, margin + 12, currentY)
-        currentY += optionLines.length * lineHeight + 1
+        currentY += optionHeight
       }
     }
 
