@@ -170,7 +170,7 @@
           @click="filtros.estado = []"
         />
         <q-btn
-          v-for="st in ESTADOS_FLOW"
+          v-for="st in ESTADOS_FILTRO_FLOW"
           :key="st.key"
           unelevated
           rounded
@@ -455,28 +455,35 @@
         <!-- Estado -->
         <template v-slot:body-cell-estado="props">
           <q-td :props="props" align="center">
-            <q-chip
-              :color="getEstadoEstilo(props.row.estado).color"
-              :text-color="getEstadoEstilo(props.row.estado).textColor"
-              size="sm"
-              icon="circle"
-              class="text-weight-bold"
-            >
-              {{ props.row.estado.toUpperCase() }}
-            </q-chip>
-            <div class="progreso-bullets q-mt-xs justify-center">
+            <div class="estado-flow-cell">
+              <div class="estado-current-label">
+                {{ getEstadoLabel(props.row.estado) }}
+              </div>
               <div
-                v-for="(st, i) in ESTADOS_FLOW"
-                :key="i"
-                class="bullet-dot"
-                :class="{
-                  active: isEstadoActive(props.row.estado, st.key),
-                  completed: isEstadoCompleted(props.row.estado, st.key),
-                }"
+                class="estado-step-group"
+                :aria-label="`Flujo de estados de ${props.row.materia || 'evaluacion'}`"
               >
-                <q-tooltip v-if="props.row.timestamps[st.key]">
-                  {{ st.label }}: {{ formatTimestamp(props.row.timestamps[st.key]) }}
-                </q-tooltip>
+                <span
+                  v-for="st in getEstadosFlowExamen(props.row)"
+                  :key="st.key"
+                  class="estado-step-wrapper"
+                  :class="{ 'estado-step-wrapper--next': isEstadoNext(props.row, st.key) }"
+                >
+                  <q-btn
+                    dense
+                    round
+                    unelevated
+                    size="sm"
+                    :icon="getEstadoStepIcon(props.row, st)"
+                    :disable="!puedeAccionarEstado(props.row, st.key)"
+                    :class="getEstadoStepClass(props.row, st.key)"
+                    :aria-label="getEstadoStepAriaLabel(props.row, st)"
+                    @click.stop="ejecutarEstadoDesdeBoton(props.row, st.key)"
+                  />
+                  <q-tooltip>
+                    {{ getEstadoStepTooltip(props.row, st) }}
+                  </q-tooltip>
+                </span>
               </div>
             </div>
           </q-td>
@@ -503,7 +510,9 @@
                   <q-tooltip>Examen (Consolidado)</q-tooltip>
                 </q-btn>
               </template>
-              <div v-else class="text-caption text-grey-4 text-xs">Sin variantes</div>
+              <div v-else class="text-caption text-grey-4 text-xs">
+                {{ examenConCartilla(props.row) ? 'Sin variantes' : 'No aplica' }}
+              </div>
 
               <q-separator
                 vertical
@@ -579,66 +588,24 @@
                 </div>
               </template>
             </div>
-            <div v-else class="text-caption text-grey-4 text-xs">Esperando generación</div>
+            <div v-else class="text-caption text-grey-4 text-xs">
+              {{
+                examenConCartilla(props.row) ? 'Esperando generación' : 'Sin documentos del sistema'
+              }}
+            </div>
           </q-td>
         </template>
 
         <!-- Acciones -->
         <template v-slot:body-cell-acciones="props">
           <q-td :props="props" align="center">
-            <div v-if="puedeVerAcciones" class="acciones-row justify-center no-wrap">
-              <!-- Botón Dinámico Llamativo -->
-
-              <!-- Botón Dinámico Llamativo -->
-              <template v-if="tieneGestion(props.row.estado)">
-                <q-btn
-                  unelevated
-                  dense
-                  color="deep-purple"
-                  :icon="props.row.estado === 'programados' ? 'auto_awesome' : 'settings'"
-                  label="GESTIONAR"
-                  no-caps
-                  class="action-btn-main shadow-2"
-                  :disable="
-                    !puedeCambiarEstadoPorTiempo(props.row).permitido ||
-                    estaGeneracionEnProceso(props.row)
-                  "
-                  @click="gestionarEstado(props.row)"
-                >
-                  <q-tooltip>
-                    {{
-                      (estaGeneracionEnProceso(props.row)
-                        ? 'La generación consolidada sigue en proceso.'
-                        : puedeCambiarEstadoPorTiempo(props.row).mensaje) ||
-                      'Gestionar etapa de evaluación'
-                    }}
-                  </q-tooltip>
-                </q-btn>
-              </template>
-              <template v-else-if="props.row.estado !== 'subidos'">
-                <q-btn
-                  unelevated
-                  dense
-                  color="teal"
-                  icon="arrow_forward"
-                  label="PASAR ETAPA"
-                  no-caps
-                  class="action-btn-main shadow-2"
-                  :disable="!puedeCambiarEstadoPorTiempo(props.row).permitido"
-                  @click="avanzarDirecto(props.row)"
-                >
-                  <q-tooltip>
-                    {{
-                      puedeCambiarEstadoPorTiempo(props.row).mensaje ||
-                      'Avanzar a la siguiente etapa'
-                    }}
-                  </q-tooltip>
-                </q-btn>
-              </template>
-
+            <div
+              v-if="puedeVerColumnaAcciones && props.row.estado !== 'programados'"
+              class="acciones-row justify-center no-wrap"
+            >
               <!-- Botón Restaurar (Solo Admins) -->
               <q-btn
-                v-if="(esAdmin || esSuperAdmin) && props.row.estado !== 'programados'"
+                v-if="puedeVerColumnaAcciones && props.row.estado !== 'programados'"
                 flat
                 dense
                 round
@@ -650,6 +617,7 @@
                 <q-tooltip>Restaurar a Programado (Limpiar generación)</q-tooltip>
               </q-btn>
             </div>
+            <div v-else class="text-caption text-grey-5">-</div>
           </q-td>
         </template>
       </q-table>
@@ -771,43 +739,37 @@
         <!-- Estado -->
         <template v-slot:body-cell-estado="props">
           <q-td :props="props" align="center">
-            <q-btn-group
-              rounded
-              unelevated
-              class="bg-grey-2 border-grey-3 overflow-hidden shadow-1"
-            >
-              <q-btn
-                v-for="est in ['GENERADO', 'ENTREGADO', 'DEVUELTO']"
-                :key="est"
-                dense
-                size="sm"
-                :padding="props.row.estado === est ? '4px 12px' : '4px 8px'"
-                :color="props.row.estado === est ? getManualActiveColor(est) : 'transparent'"
-                :text-color="props.row.estado === est ? 'white' : 'grey-5'"
-                :icon="getManualEstadoIcon(est)"
-                :disable="estaGeneracionManualEnProceso(props.row)"
-                @click="confirmarEstadoManual(props.row, est)"
-                class="transition-all"
+            <div class="estado-flow-cell">
+              <div class="estado-current-label">
+                {{ getManualEstadoLabel(props.row.estado) }}
+              </div>
+              <div
+                class="estado-step-group"
+                :aria-label="`Flujo de estados manual de ${props.row.asignatura_nombre || 'evaluacion'}`"
               >
-                <div
-                  v-if="props.row.estado === est"
-                  class="q-ml-sm text-caption text-weight-bolder"
-                  style="font-size: 10px; letter-spacing: 0.05em"
+                <span
+                  v-for="st in MANUAL_ESTADOS_FLOW"
+                  :key="st.key"
+                  class="estado-step-wrapper"
+                  :class="{ 'estado-step-wrapper--next': isManualEstadoNext(props.row, st.key) }"
                 >
-                  {{ est }}
-                </div>
-                <q-tooltip
-                  anchor="top middle"
-                  self="bottom middle"
-                  :offset="[0, 8]"
-                  transition-show="scale"
-                  transition-hide="scale"
-                  class="bg-grey-9"
-                >
-                  Cambiar estado a: <b>{{ est }}</b>
-                </q-tooltip>
-              </q-btn>
-            </q-btn-group>
+                  <q-btn
+                    dense
+                    round
+                    unelevated
+                    size="sm"
+                    :icon="getManualEstadoStepIcon(props.row, st)"
+                    :disable="!puedeAccionarEstadoManual(props.row, st.key)"
+                    :class="getManualEstadoStepClass(props.row, st.key)"
+                    :aria-label="getManualEstadoStepAriaLabel(props.row, st)"
+                    @click.stop="ejecutarEstadoManualDesdeBoton(props.row, st.key)"
+                  />
+                  <q-tooltip>
+                    {{ getManualEstadoStepTooltip(props.row, st) }}
+                  </q-tooltip>
+                </span>
+              </div>
+            </div>
             <div class="q-mt-xs">
               <q-chip
                 v-if="getManualJobStatus(props.row)"
@@ -854,9 +816,7 @@
               <q-separator
                 vertical
                 class="q-mx-xs"
-                v-if="
-                  ['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())
-                "
+                v-if="manualEstadoPermiteDocumentos(props.row)"
               />
 
               <!-- Patrón OMR (PDF) -->
@@ -868,19 +828,17 @@
                 icon="picture_as_pdf"
                 size="sm"
                 :disable="
-                  props.row.estado.toUpperCase() !== 'DEVUELTO' ||
+                  !manualPuedeDescargarPatrones(props.row) ||
                   estaGeneracionManualEnProceso(props.row)
                 "
                 @click="descargarPatronPdfManual(props.row)"
-                v-if="
-                  ['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())
-                "
+                v-if="manualEstadoPermiteDocumentos(props.row)"
               >
                 <q-tooltip>
                   {{
-                    props.row.estado.toUpperCase() === 'DEVUELTO'
+                    manualPuedeDescargarPatrones(props.row)
                       ? 'Patrón OMR (Consolidado)'
-                      : 'Bloqueado hasta estado DEVUELTO'
+                      : 'Bloqueado hasta estado RECIBIDO'
                   }}
                 </q-tooltip>
               </q-btn>
@@ -894,19 +852,17 @@
                 icon="backup_table"
                 size="sm"
                 :disable="
-                  props.row.estado.toUpperCase() !== 'DEVUELTO' ||
+                  !manualPuedeDescargarPatrones(props.row) ||
                   estaGeneracionManualEnProceso(props.row)
                 "
                 @click="descargarPatronXlsxManual(props.row)"
-                v-if="
-                  ['GENERADO', 'ENTREGADO', 'DEVUELTO'].includes(props.row.estado.toUpperCase())
-                "
+                v-if="manualEstadoPermiteDocumentos(props.row)"
               >
                 <q-tooltip>
                   {{
-                    props.row.estado.toUpperCase() === 'DEVUELTO'
+                    manualPuedeDescargarPatrones(props.row)
                       ? 'Patrón Excel (Consolidado)'
-                      : 'Bloqueado hasta estado DEVUELTO'
+                      : 'Bloqueado hasta estado RECIBIDO'
                   }}
                 </q-tooltip>
               </q-btn>
@@ -1296,24 +1252,45 @@
             </div>
           </div>
 
-          <!-- CASO 2: DEVUELTOS (Patrones) -->
-          <div v-else-if="dialogGestion.examen?.estado === 'devueltos'" class="config-patrones">
-            <q-banner class="bg-orange-1 text-orange-9 rounded-borders q-mb-xl">
-              <template v-slot:avatar
-                ><q-icon name="warning" color="orange" size="32px"
-              /></template>
-              <div class="text-h6 text-weight-bold">¿Generar Patrones de Respuestas?</div>
-              Esta acción creará las plantillas de corrección oficial para las variantes
-              <strong>{{ dialogGestion.examen?.variantes.join(', ') }}</strong
-              >.
+          <!-- CASO 2: ENTREGADOS (Patrones) -->
+          <div v-else-if="dialogGestion.examen?.estado === 'entregados'" class="config-patrones">
+            <q-banner class="bg-purple-1 text-purple-10 rounded-borders q-mb-lg">
+              <template v-slot:avatar>
+                <q-icon name="fact_check" color="deep-purple-7" size="32px" />
+              </template>
+              <div class="text-subtitle1 text-weight-bold">Generación de patrones de respuesta</div>
+              Al continuar, se generarán los patrones oficiales para las variantes
+              <strong>{{ dialogGestion.examen?.variantes.join(', ') }}</strong>
+              y la evaluación pasará al estado <strong>DEVUELTO</strong>.
             </q-banner>
 
-            <div class="text-center q-pa-lg">
-              <q-icon name="fact_check" size="120px" color="orange-2" class="q-mb-md" />
-              <p class="text-grey-7">
-                Se requiere esta acción para que los docentes puedan proceder con la revisión de
-                exámenes.
-              </p>
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-6">
+                <q-card flat bordered class="q-pa-md pattern-format-card">
+                  <div class="row items-start no-wrap">
+                    <q-icon name="picture_as_pdf" color="red-7" size="32px" class="q-mr-sm" />
+                    <div>
+                      <div class="text-subtitle2 text-weight-bold text-red-9">Patrón PDF</div>
+                      <div class="text-body2 text-grey-8">
+                        Formato para imprimir, firmar y sellar por el docente.
+                      </div>
+                    </div>
+                  </div>
+                </q-card>
+              </div>
+              <div class="col-12 col-md-6">
+                <q-card flat bordered class="q-pa-md pattern-format-card">
+                  <div class="row items-start no-wrap">
+                    <q-icon name="grid_on" color="green-7" size="32px" class="q-mr-sm" />
+                    <div>
+                      <div class="text-subtitle2 text-weight-bold text-green-9">Patrón XLSX</div>
+                      <div class="text-body2 text-grey-8">
+                        Formato para subir notas al Remark OMR.
+                      </div>
+                    </div>
+                  </div>
+                </q-card>
+              </div>
             </div>
           </div>
 
@@ -1937,6 +1914,51 @@ const ESTADOS_FLOW = [
   },
 ]
 
+const ESTADOS_SIN_CARTILLA_FLOW = [
+  {
+    key: 'programados',
+    label: 'Programado',
+    icon: 'event_note',
+    color: 'blue-7',
+    desc: 'Examen registrado para seguimiento manual',
+  },
+  {
+    key: 'impresos',
+    label: 'Impreso',
+    icon: 'print',
+    color: 'green-7',
+    desc: 'Material impreso por el responsable externo',
+  },
+  {
+    key: 'entregados',
+    label: 'Entregado',
+    icon: 'inventory_2',
+    color: 'orange-8',
+    desc: 'Material entregado para su aplicación',
+  },
+  {
+    key: 'recibidos',
+    label: 'Recibido',
+    icon: 'assignment_returned',
+    color: 'teal-7',
+    desc: 'Material recibido después de la evaluación',
+  },
+  {
+    key: 'subidos',
+    label: 'Subido',
+    icon: 'cloud_done',
+    color: 'purple-9',
+    desc: 'Notas subidas al sistema académico',
+  },
+]
+
+const ESTADOS_FILTRO_FLOW = [
+  ...ESTADOS_FLOW,
+  ...ESTADOS_SIN_CARTILLA_FLOW.filter(
+    (estado) => !ESTADOS_FLOW.some((item) => item.key === estado.key),
+  ),
+]
+
 const shuffle = (array) => {
   let currentIndex = array.length,
     randomIndex
@@ -2273,6 +2295,13 @@ const rolRespetaVentanasTiempo = computed(
     !esSuperAdmin.value,
 )
 
+const puedeVerColumnaAcciones = computed(
+  () =>
+    puedeVerAcciones.value &&
+    (esAdmin.value || esSuperAdmin.value) &&
+    !rolRespetaVentanasTiempo.value,
+)
+
 const sedesOptions = ref([])
 const carrerasOptions = ref([])
 const parcialesOptions = ['1er Parcial', '2do Parcial', 'Final', '2da Instancia']
@@ -2473,9 +2502,9 @@ const sumarMinutos = (fechaHora, minutos) => {
 
 const formatearFechaHoraBloqueo = (fechaHora) => date.formatDate(fechaHora, 'DD/MM/YYYY HH:mm')
 
-const obtenerSiguienteEstado = (estado) => {
-  const currentIndex = ESTADOS_FLOW.findIndex((item) => item.key === estado)
-  return currentIndex >= 0 ? ESTADOS_FLOW[currentIndex + 1]?.key : null
+const obtenerSiguienteEstado = (estado, flow = ESTADOS_FLOW) => {
+  const currentIndex = flow.findIndex((item) => item.key === estado)
+  return currentIndex >= 0 ? flow[currentIndex + 1]?.key : null
 }
 
 const puedeCambiarEstadoPorTiempo = (examen, estadoDestino = null) => {
@@ -2483,7 +2512,8 @@ const puedeCambiarEstadoPorTiempo = (examen, estadoDestino = null) => {
     return { permitido: true, mensaje: '' }
   }
 
-  const siguienteEstado = estadoDestino || obtenerSiguienteEstado(examen.estado)
+  const siguienteEstado =
+    estadoDestino || obtenerSiguienteEstado(examen.estado, getEstadosFlowExamen(examen))
   const fechaHoraExamen = obtenerFechaHoraExamen(examen)
   const ahora = new Date()
 
@@ -3633,7 +3663,10 @@ const cargarManualGenerations = async () => {
       fecha_fin: fechaFin || undefined,
     }
     const response = await api.get('/generaciones-manuales', { params })
-    manualGenerations.value = response.data
+    manualGenerations.value = response.data.map((row) => ({
+      ...row,
+      estado: normalizarEstadoManual(row.estado),
+    }))
   } catch (error) {
     console.error('Error al cargar generaciones manuales:', error)
   } finally {
@@ -4088,7 +4121,7 @@ const cargarDatos = async () => {
       banco_por_grupo_tipo:
         e.banco_por_grupo_tipo || e.por_grupo_tipo || e.banco_stats?.por_grupo_tipo || {},
       banco_stats: normalizarBancoStatsFila(e),
-      estado: e.estado || 'programados',
+      estado: normalizarEstadoExamen(e.estado, e),
       sede_id: e.sede_id,
       carrera_id: e.carrera_id,
       asignatura_id: e.asignatura_id,
@@ -4141,6 +4174,9 @@ const columns = computed(() => {
 
   if (puedeVerAcciones.value) {
     base.push({ name: 'documentos', label: 'DOCUMENTOS', align: 'center' })
+  }
+
+  if (puedeVerColumnaAcciones.value) {
     base.push({ name: 'acciones', label: 'ACCIONES', align: 'center' })
   }
 
@@ -4151,8 +4187,21 @@ function examenConCartilla(examen) {
   return Number(examen?.con_cartilla ?? 1) !== 0
 }
 
+function normalizarEstadoExamen(estado, examen) {
+  const estadoActual = estado || 'programados'
+  if (Number(examen?.con_cartilla ?? 1) !== 0) return estadoActual
+
+  return (
+    {
+      generados: 'programados',
+      devueltos: 'recibidos',
+      revisados: 'recibidos',
+    }[estadoActual] || estadoActual
+  )
+}
+
 const statsDesglose = computed(() => {
-  return ESTADOS_FLOW.map((st) => {
+  return ESTADOS_FILTRO_FLOW.map((st) => {
     const estilo = getEstadoEstilo(st.key)
     return {
       key: st.key,
@@ -4669,333 +4718,316 @@ const ejecutarAccionGestion = async () => {
     return
   }
 
-  const currentIndex = ESTADOS_FLOW.findIndex((e) => e.key === examen.estado)
-  const nextKey = ESTADOS_FLOW[currentIndex + 1].key
+  const estadoFlow = getEstadosFlowExamen(examen)
+  const currentIndex = estadoFlow.findIndex((e) => e.key === examen.estado)
+  const nextKey = estadoFlow[currentIndex + 1]?.key
+  if (!nextKey) return
 
-  const msg =
-    nextKey === 'devueltos'
-      ? `¿Deseas procesar la generacion de patron(es) y pasar al estado: ${nextKey.toUpperCase()}?`
-      : `¿Deseas procesar la generacion de examen(es) y pasar al estado: ${nextKey.toUpperCase()}?`
+  try {
+    const payload = { estado: nextKey }
+    const ts = { ...examen.timestamps, [nextKey]: new Date().toISOString() }
+    payload.timestamps_proceso = ts
 
-  $q.dialog({
-    title: 'Confirmar Acción',
-    message: msg,
-    ok: { label: 'Sí, Procesar', color: 'deep-purple', unelevated: true },
-    cancel: { label: 'Cancelar', flat: true },
-    persistent: true,
-  }).onOk(async () => {
-    try {
-      const payload = { estado: nextKey }
-      const ts = { ...examen.timestamps, [nextKey]: new Date().toISOString() }
-      payload.timestamps_proceso = ts
-
-      if (examen.estado === 'programados') {
-        $q.loading.show({ message: 'Obteniendo banco de preguntas...' })
-        let bancoPreguntas = []
-        try {
-          const resp = await api.get('/banco-preguntas', {
-            params: {
-              asignatura_id: examen.asignatura_id,
-              docente_id: examen.docente_id,
-              grupoTeorico: examen.grupo,
-              parcial: examen.tipo_examen || examen.parcial,
-              all_docentes: true,
-            },
-          })
-          bancoPreguntas = resp.data.preguntas || resp.data
-        } catch (err) {
-          console.error('Error al obtener banco:', err)
-          $q.notify({ type: 'negative', message: 'No se pudo obtener el banco de preguntas' })
-          $q.loading.hide()
-          return
-        }
-        $q.loading.hide()
-        const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
-        const esSegundoParcialActual = esSegundoParcialValor(examen.tipo_examen || examen.parcial)
-        const bancoContexto = Array.isArray(bancoPreguntas)
-          ? bancoPreguntas
-          : bancoPreguntas.preguntas || []
-
-        const validacionBancoContexto = validarPreguntasSeleccionadasParaExamen(bancoContexto, {
-          asignatura_id: examen.asignatura_id,
-          grupo: examen.grupo,
-          parcial: examen.tipo_examen || examen.parcial,
+    if (examen.estado === 'programados') {
+      $q.loading.show({ message: 'Obteniendo banco de preguntas...' })
+      let bancoPreguntas = []
+      try {
+        const resp = await api.get('/banco-preguntas', {
+          params: {
+            asignatura_id: examen.asignatura_id,
+            docente_id: examen.docente_id,
+            grupoTeorico: examen.grupo,
+            parcial: examen.tipo_examen || examen.parcial,
+            all_docentes: true,
+          },
         })
+        bancoPreguntas = resp.data.preguntas || resp.data
+      } catch (err) {
+        console.error('Error al obtener banco:', err)
+        $q.notify({ type: 'negative', message: 'No se pudo obtener el banco de preguntas' })
+        $q.loading.hide()
+        return
+      }
+      $q.loading.hide()
+      const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
+      const esSegundoParcialActual = esSegundoParcialValor(examen.tipo_examen || examen.parcial)
+      const bancoContexto = Array.isArray(bancoPreguntas)
+        ? bancoPreguntas
+        : bancoPreguntas.preguntas || []
 
-        if (!validacionBancoContexto.ok) {
-          $q.notify({
-            type: 'negative',
-            message:
-              'El banco contiene preguntas fuera de la asignatura, grupo o parcial del examen. Corrige el banco antes de generar.',
-            caption: `Registros observados: ${validacionBancoContexto.inconsistencias
-              .slice(0, 5)
-              .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
-              .join(' | ')}`,
-            icon: 'warning',
-            timeout: 9000,
-          })
-          return
-        }
+      const validacionBancoContexto = validarPreguntasSeleccionadasParaExamen(bancoContexto, {
+        asignatura_id: examen.asignatura_id,
+        grupo: examen.grupo,
+        parcial: examen.tipo_examen || examen.parcial,
+      })
 
-        payload.config_generacion = {
+      if (!validacionBancoContexto.ok) {
+        $q.notify({
+          type: 'negative',
+          message:
+            'El banco contiene preguntas fuera de la asignatura, grupo o parcial del examen. Corrige el banco antes de generar.',
+          caption: `Registros observados: ${validacionBancoContexto.inconsistencias
+            .slice(0, 5)
+            .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
+            .join(' | ')}`,
+          icon: 'warning',
+          timeout: 9000,
+        })
+        return
+      }
+
+      payload.config_generacion = {
+        facil: tempConfig.value.facil,
+        medio: tempConfig.value.medio,
+        dificil: tempConfig.value.dificil,
+        total: tempConfig.value.facil + tempConfig.value.medio + tempConfig.value.dificil,
+        formatoHoja: tempConfig.value.formatoHoja,
+        fontFamily: tempConfig.value.fontFamily,
+        fontSize: tempConfig.value.fontSize,
+        lineSpacing: tempConfig.value.lineSpacing,
+        aleatorizarSecciones: tempConfig.value.aleatorizarSecciones,
+        gruposTipoReferencial: esSegundoParcialActual ? { ...bancoGrupoTipoStats.value } : null,
+      }
+
+      if (esSegundoParcialActual) {
+        $q.loading.show({ message: 'Enviando la generación consolidada al servidor...' })
+        await api.post(`/rol-examenes/${examen.id}/generate-package`, {
+          cantVariantes: tempConfig.value.cantVariantes,
           facil: tempConfig.value.facil,
           medio: tempConfig.value.medio,
           dificil: tempConfig.value.dificil,
-          total: tempConfig.value.facil + tempConfig.value.medio + tempConfig.value.dificil,
           formatoHoja: tempConfig.value.formatoHoja,
           fontFamily: tempConfig.value.fontFamily,
           fontSize: tempConfig.value.fontSize,
           lineSpacing: tempConfig.value.lineSpacing,
           aleatorizarSecciones: tempConfig.value.aleatorizarSecciones,
-          gruposTipoReferencial: esSegundoParcialActual ? { ...bancoGrupoTipoStats.value } : null,
-        }
+        })
 
-        if (esSegundoParcialActual) {
-          $q.loading.show({ message: 'Enviando la generación consolidada al servidor...' })
-          await api.post(`/rol-examenes/${examen.id}/generate-package`, {
-            cantVariantes: tempConfig.value.cantVariantes,
-            facil: tempConfig.value.facil,
-            medio: tempConfig.value.medio,
-            dificil: tempConfig.value.dificil,
-            formatoHoja: tempConfig.value.formatoHoja,
-            fontFamily: tempConfig.value.fontFamily,
-            fontSize: tempConfig.value.fontSize,
-            lineSpacing: tempConfig.value.lineSpacing,
-            aleatorizarSecciones: tempConfig.value.aleatorizarSecciones,
+        $q.loading.hide()
+        $q.notify({
+          type: 'info',
+          message: 'La generación quedó en cola. El examen se consolidará en un solo PDF.',
+          icon: 'hourglass_top',
+        })
+        dialogGestion.value.show = false
+        await cargarDatos()
+        monitorExamGeneration(examen.id)
+        return
+      }
+
+      const formatoPapel = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
+      const mergedExamenesDoc = esSegundoParcialActual
+        ? createExamPdfDocument(payload.config_generacion)
+        : new jsPDF({
+            compression: true,
+            putOnlyUsedFonts: true,
+            precision: 3,
+            format: formatoPapel,
           })
+      const mergedPatronesDoc = new jsPDF({
+        compression: true,
+        putOnlyUsedFonts: true,
+        precision: 3,
+      })
 
-          $q.loading.hide()
+      const todas = bancoContexto
+      const resultadosVariantes = []
+
+      for (let i = 0; i < variantes.length; i++) {
+        const letra = variantes[i]
+        const seleccion = esSegundoParcialActual
+          ? buildExamQuestionSelection(todas, payload.config_generacion)
+          : obtenerSeleccion7167(todas, payload.config_generacion)
+
+        if (!seleccion) {
           $q.notify({
-            type: 'info',
-            message: 'La generación quedó en cola. El examen se consolidará en un solo PDF.',
-            icon: 'hourglass_top',
+            type: 'negative',
+            message: 'No se pudo armar una variante que cumpla la distribución por dificultad.',
+            icon: 'warning',
           })
-          dialogGestion.value.show = false
-          await cargarDatos()
-          monitorExamGeneration(examen.id)
+          $q.loading.hide()
           return
         }
 
-        const formatoPapel = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-        const mergedExamenesDoc = esSegundoParcialActual
-          ? createExamPdfDocument(payload.config_generacion)
-          : new jsPDF({
-              compression: true,
-              putOnlyUsedFonts: true,
-              precision: 3,
-              format: formatoPapel,
-            })
-        const mergedPatronesDoc = new jsPDF({
-          compression: true,
-          putOnlyUsedFonts: true,
-          precision: 3,
-        })
+        const sorted = esSegundoParcialActual
+          ? sortExamQuestionsForPdf(
+              mixExamQuestionOptions(JSON.parse(JSON.stringify(seleccion))),
+              payload.config_generacion,
+            )
+          : (() => {
+              const mezcladas = mezclarIncisos7167(seleccion)
+              const ordenBase = [
+                'PROBLEMA',
+                'SUBPROBLEMA',
+                'EMPAREJAMIENTO',
+                'OPCION_EMPAREJAMIENTO',
+                'SELECCION_UNICA',
+                'PREGUNTA_CON_CLAVE',
+                'SELECCION_MULTIPLE',
+                'FALSO_VERDADERO',
+              ]
+              let finalOrder = [...ordenBase]
 
-        const todas = bancoContexto
-        const resultadosVariantes = []
-
-        for (let i = 0; i < variantes.length; i++) {
-          const letra = variantes[i]
-          const seleccion = esSegundoParcialActual
-            ? buildExamQuestionSelection(todas, payload.config_generacion)
-            : obtenerSeleccion7167(todas, payload.config_generacion)
-
-          if (!seleccion) {
-            $q.notify({
-              type: 'negative',
-              message: 'No se pudo armar una variante que cumpla la distribución por dificultad.',
-              icon: 'warning',
-            })
-            $q.loading.hide()
-            return
-          }
-
-          const sorted = esSegundoParcialActual
-            ? sortExamQuestionsForPdf(
-                mixExamQuestionOptions(JSON.parse(JSON.stringify(seleccion))),
-                payload.config_generacion,
-              )
-            : (() => {
-                const mezcladas = mezclarIncisos7167(seleccion)
-                const ordenBase = [
+              if (payload.config_generacion.aleatorizarSecciones) {
+                const principales = [
                   'PROBLEMA',
-                  'SUBPROBLEMA',
                   'EMPAREJAMIENTO',
-                  'OPCION_EMPAREJAMIENTO',
                   'SELECCION_UNICA',
                   'PREGUNTA_CON_CLAVE',
                   'SELECCION_MULTIPLE',
                   'FALSO_VERDADERO',
                 ]
-                let finalOrder = [...ordenBase]
-
-                if (payload.config_generacion.aleatorizarSecciones) {
-                  const principales = [
-                    'PROBLEMA',
-                    'EMPAREJAMIENTO',
-                    'SELECCION_UNICA',
-                    'PREGUNTA_CON_CLAVE',
-                    'SELECCION_MULTIPLE',
-                    'FALSO_VERDADERO',
-                  ]
-                  const shuffled = shuffle([...principales])
-                  finalOrder = []
-                  shuffled.forEach((t) => {
-                    finalOrder.push(t)
-                    if (t === 'PROBLEMA') finalOrder.push('SUBPROBLEMA')
-                    if (t === 'EMPAREJAMIENTO') finalOrder.push('OPCION_EMPAREJAMIENTO')
-                  })
-                }
-
-                return mezcladas.sort((a, b) => {
-                  if (a.grupo && b.grupo && a.grupo === b.grupo) return 0
-
-                  const ta = a._parentTipo || normalizeTipo(a.tipo)
-                  const tb = b._parentTipo || normalizeTipo(b.tipo)
-
-                  const orderA = finalOrder.indexOf(ta)
-                  const orderB = finalOrder.indexOf(tb)
-                  return (
-                    (orderA === -1 ? finalOrder.length : orderA) -
-                    (orderB === -1 ? finalOrder.length : orderB)
-                  )
+                const shuffled = shuffle([...principales])
+                finalOrder = []
+                shuffled.forEach((t) => {
+                  finalOrder.push(t)
+                  if (t === 'PROBLEMA') finalOrder.push('SUBPROBLEMA')
+                  if (t === 'EMPAREJAMIENTO') finalOrder.push('OPCION_EMPAREJAMIENTO')
                 })
-              })()
+              }
 
-          const validacionSeleccion = validarPreguntasSeleccionadasParaExamen(sorted, {
-            asignatura_id: examen.asignatura_id,
-            grupo: examen.grupo,
-            parcial: examen.tipo_examen || examen.parcial,
+              return mezcladas.sort((a, b) => {
+                if (a.grupo && b.grupo && a.grupo === b.grupo) return 0
+
+                const ta = a._parentTipo || normalizeTipo(a.tipo)
+                const tb = b._parentTipo || normalizeTipo(b.tipo)
+
+                const orderA = finalOrder.indexOf(ta)
+                const orderB = finalOrder.indexOf(tb)
+                return (
+                  (orderA === -1 ? finalOrder.length : orderA) -
+                  (orderB === -1 ? finalOrder.length : orderB)
+                )
+              })
+            })()
+
+        const validacionSeleccion = validarPreguntasSeleccionadasParaExamen(sorted, {
+          asignatura_id: examen.asignatura_id,
+          grupo: examen.grupo,
+          parcial: examen.tipo_examen || examen.parcial,
+        })
+
+        if (!validacionSeleccion.ok) {
+          $q.notify({
+            type: 'negative',
+            message:
+              'Se detectaron preguntas fuera de la asignatura, grupo o parcial del examen. Se canceló la generación.',
+            caption: `Registros observados: ${validacionSeleccion.inconsistencias
+              .slice(0, 5)
+              .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
+              .join(' | ')}`,
+            icon: 'warning',
+            timeout: 8000,
           })
+          $q.loading.hide()
+          return
+        }
 
-          if (!validacionSeleccion.ok) {
-            $q.notify({
-              type: 'negative',
-              message:
-                'Se detectaron preguntas fuera de la asignatura, grupo o parcial del examen. Se canceló la generación.',
-              caption: `Registros observados: ${validacionSeleccion.inconsistencias
-                .slice(0, 5)
-                .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
-                .join(' | ')}`,
-              icon: 'warning',
-              timeout: 8000,
-            })
-            $q.loading.hide()
-            return
-          }
-
-          if (i > 0) {
-            // Garantizar que cada variante comience en página impar (anverso)
-            const numPages = mergedExamenesDoc.internal.getNumberOfPages
-              ? mergedExamenesDoc.internal.getNumberOfPages()
-              : mergedExamenesDoc.internal.pages.length - 1
-            if (numPages % 2 !== 0) {
-              mergedExamenesDoc.addPage()
-              mergedExamenesDoc.setFontSize(10)
-              mergedExamenesDoc.setTextColor(150)
-              mergedExamenesDoc.text('PÁGINA EN BLANCO', 105, 150, { align: 'center' })
-            }
+        if (i > 0) {
+          // Garantizar que cada variante comience en página impar (anverso)
+          const numPages = mergedExamenesDoc.internal.getNumberOfPages
+            ? mergedExamenesDoc.internal.getNumberOfPages()
+            : mergedExamenesDoc.internal.pages.length - 1
+          if (numPages % 2 !== 0) {
             mergedExamenesDoc.addPage()
-            mergedPatronesDoc.addPage()
+            mergedExamenesDoc.setFontSize(10)
+            mergedExamenesDoc.setTextColor(150)
+            mergedExamenesDoc.text('PÁGINA EN BLANCO', 105, 150, { align: 'center' })
           }
-
-          // Generar contenido en documentos compartidos
-          if (esSegundoParcialActual) {
-            await generateExamPdf(
-              mergedExamenesDoc,
-              examen,
-              payload.config_generacion,
-              letra,
-              sorted,
-            )
-          } else {
-            await generarExamenPDF(
-              mergedExamenesDoc,
-              examen,
-              payload.config_generacion,
-              letra,
-              sorted,
-            )
-          }
-          await generarPatronPDF(mergedPatronesDoc, letra, sorted, examen)
-
-          resultadosVariantes.push({ letra, sorted })
+          mergedExamenesDoc.addPage()
+          mergedPatronesDoc.addPage()
         }
 
-        assertPatternConsistency(resultadosVariantes)
-
-        const varsJoined = resultadosVariantes.map((r) => r.letra).join('')
-        const nCod = String(examen.codigo || 'EXAM').replace(/\s/g, '')
-        const nSede = String(examen.sede || '').replace(/\s/g, '')
-        const nGru = String(examen.grupo || '1').replace(/\s/g, '')
-        const nPar = String(examen.parcial || '').replace(/\s/g, '')
-        const baseN = `${nCod}_${nSede}_G${nGru}_${nPar}_Var${varsJoined}`
-
-        const finalExName = `${baseN}_Examen.pdf`
-        const finalPatOMRName = `${baseN}_Patron.pdf`
-        const finalXLSXName = `${baseN}_Remark.xlsx`
-
-        // Generar XLSX Consolidado
-        const { blob: xBlob, filename: xName } = generarPatronXLSXConsolidado(
-          resultadosVariantes,
-          finalXLSXName,
-          examen.codigo,
-        )
-
-        // 1. Preparar Blobs consolidados
-        const finalExBlob = mergedExamenesDoc.output('blob')
-        const finalPatOMRBlob = mergedPatronesDoc.output('blob')
-
-        $q.loading.show({ message: 'Subiendo documentos consolidados...' })
-
-        for (const res of resultadosVariantes) {
-          try {
-            // Subir Examen (Consolidado) para cada variante para que el link funcione
-            const fdEx = new FormData()
-            fdEx.append('archivo', finalExBlob, finalExName)
-            fdEx.append('variante', res.letra)
-            fdEx.append('filename', finalExName)
-            await api.post(`/rol-examenes/${examen.id}/upload-examen`, fdEx, {
-              headers: { 'Content-Type': 'multipart/form-data' },
-            })
-
-            // Subir Patron OMR (Consolidado)
-            const fPatronPDF = new FormData()
-            fPatronPDF.append('archivo', finalPatOMRBlob, finalPatOMRName)
-            fPatronPDF.append('variante', res.letra)
-            fPatronPDF.append('tipo', 'pdf')
-            fPatronPDF.append('filename', finalPatOMRName)
-            await api.post(`/rol-examenes/${examen.id}/upload-patron`, fPatronPDF)
-
-            // Subir Patron XLSX (Consolidado)
-            const fPatronXLSX = new FormData()
-            fPatronXLSX.append('archivo', xBlob, xName)
-            fPatronXLSX.append('variante', res.letra)
-            fPatronXLSX.append('tipo', 'xlsx')
-            fPatronXLSX.append('filename', xName)
-            await api.post(`/rol-examenes/${examen.id}/upload-patron`, fPatronXLSX)
-          } catch (uploadErr) {
-            console.error(`Error subiendo archivos variante ${res.letra}:`, uploadErr)
-          }
+        // Generar contenido en documentos compartidos
+        if (esSegundoParcialActual) {
+          await generateExamPdf(mergedExamenesDoc, examen, payload.config_generacion, letra, sorted)
+        } else {
+          await generarExamenPDF(
+            mergedExamenesDoc,
+            examen,
+            payload.config_generacion,
+            letra,
+            sorted,
+          )
         }
+        await generarPatronPDF(mergedPatronesDoc, letra, sorted, examen)
+
+        resultadosVariantes.push({ letra, sorted })
       }
 
-      // La generación de patrones ahora ocurre en el estado 'programados'
-      // para asegurar consistencia con las preguntas seleccionadas aleatoriamente.
+      assertPatternConsistency(resultadosVariantes)
 
-      await api.put(`/rol-examenes/${examen.id}`, payload)
+      const varsJoined = resultadosVariantes.map((r) => r.letra).join('')
+      const nCod = String(examen.codigo || 'EXAM').replace(/\s/g, '')
+      const nSede = String(examen.sede || '').replace(/\s/g, '')
+      const nGru = String(examen.grupo || '1').replace(/\s/g, '')
+      const nPar = String(examen.parcial || '').replace(/\s/g, '')
+      const baseN = `${nCod}_${nSede}_G${nGru}_${nPar}_Var${varsJoined}`
 
-      $q.notify({ type: 'positive', message: 'Estado actualizado correctamente' })
-      dialogGestion.value.show = false
-      cargarDatos() // RECARGAR PARA VER CAMBIOS (PDFs/Patrones)
-    } catch (error) {
-      console.error('Error al actualizar el estado:', error)
-      $q.notify({
-        type: 'negative',
-        message: error.response?.data?.message || 'Error al actualizar el estado',
-      })
+      const finalExName = `${baseN}_Examen.pdf`
+      const finalPatOMRName = `${baseN}_Patron.pdf`
+      const finalXLSXName = `${baseN}_Remark.xlsx`
+
+      // Generar XLSX Consolidado
+      const { blob: xBlob, filename: xName } = generarPatronXLSXConsolidado(
+        resultadosVariantes,
+        finalXLSXName,
+        examen.codigo,
+      )
+
+      // 1. Preparar Blobs consolidados
+      const finalExBlob = mergedExamenesDoc.output('blob')
+      const finalPatOMRBlob = mergedPatronesDoc.output('blob')
+
+      $q.loading.show({ message: 'Subiendo documentos consolidados...' })
+
+      for (const res of resultadosVariantes) {
+        try {
+          // Subir Examen (Consolidado) para cada variante para que el link funcione
+          const fdEx = new FormData()
+          fdEx.append('archivo', finalExBlob, finalExName)
+          fdEx.append('variante', res.letra)
+          fdEx.append('filename', finalExName)
+          await api.post(`/rol-examenes/${examen.id}/upload-examen`, fdEx, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          })
+
+          // Subir Patron OMR (Consolidado)
+          const fPatronPDF = new FormData()
+          fPatronPDF.append('archivo', finalPatOMRBlob, finalPatOMRName)
+          fPatronPDF.append('variante', res.letra)
+          fPatronPDF.append('tipo', 'pdf')
+          fPatronPDF.append('filename', finalPatOMRName)
+          await api.post(`/rol-examenes/${examen.id}/upload-patron`, fPatronPDF)
+
+          // Subir Patron XLSX (Consolidado)
+          const fPatronXLSX = new FormData()
+          fPatronXLSX.append('archivo', xBlob, xName)
+          fPatronXLSX.append('variante', res.letra)
+          fPatronXLSX.append('tipo', 'xlsx')
+          fPatronXLSX.append('filename', xName)
+          await api.post(`/rol-examenes/${examen.id}/upload-patron`, fPatronXLSX)
+        } catch (uploadErr) {
+          console.error(`Error subiendo archivos variante ${res.letra}:`, uploadErr)
+        }
+      }
     }
-  })
+
+    // La generación de patrones ahora ocurre en el estado 'programados'
+    // para asegurar consistencia con las preguntas seleccionadas aleatoriamente.
+
+    await api.put(`/rol-examenes/${examen.id}`, payload)
+
+    $q.notify({ type: 'positive', message: 'Estado actualizado correctamente' })
+    dialogGestion.value.show = false
+    cargarDatos() // RECARGAR PARA VER CAMBIOS (PDFs/Patrones)
+  } catch (error) {
+    console.error('Error al actualizar el estado:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Error al actualizar el estado',
+    })
+  }
 }
 
 const avanzarDirecto = (examen) => {
@@ -5003,14 +5035,18 @@ const avanzarDirecto = (examen) => {
     return
   }
 
-  const currentIndex = ESTADOS_FLOW.findIndex((e) => e.key === examen.estado)
-  const nextKey = ESTADOS_FLOW[currentIndex + 1].key
+  const estadoFlow = getEstadosFlowExamen(examen)
+  const currentIndex = estadoFlow.findIndex((e) => e.key === examen.estado)
+  const nextKey = estadoFlow[currentIndex + 1]?.key
+  if (!nextKey) return
+  const avanceVisual = getAvanceEtapaVisual(nextKey)
 
   $q.dialog({
     title: 'Avanzar Etapa',
-    message: `¿Pasar a ${nextKey.toUpperCase()} directamente?`,
-    ok: { label: 'Avanzar', color: 'teal', unelevated: true },
-    cancel: true,
+    message: buildAvanceEtapaDialogMessage(avanceVisual),
+    html: true,
+    ok: { label: 'Avanzar', color: avanceVisual.quasarColor, unelevated: true, noCaps: true },
+    cancel: { label: 'Cancelar', flat: true, noCaps: true },
   }).onOk(async () => {
     try {
       const ts = { ...examen.timestamps, [nextKey]: new Date().toISOString() }
@@ -5083,17 +5119,226 @@ const getEstadoEstilo = (estado) => {
     impresos: { color: 'cyan-1', textColor: 'cyan-9' },
     entregados: { color: 'indigo-1', textColor: 'indigo-9' },
     devueltos: { color: 'orange-1', textColor: 'orange-9' },
+    recibidos: { color: 'teal-1', textColor: 'teal-9' },
     revisados: { color: 'green-1', textColor: 'green-9' },
     subidos: { color: 'teal-1', textColor: 'teal-9' },
   }
   return map[estado] || { color: 'grey-2', textColor: 'grey-8' }
 }
 const isEstadoActive = (curr, target) => curr === target
-const isEstadoCompleted = (curr, target) =>
-  ESTADOS_FLOW.findIndex((e) => e.key === target) < ESTADOS_FLOW.findIndex((e) => e.key === curr)
-const tieneGestion = (e) => ['programados', 'entregados'].includes(e)
+const isEstadoCompleted = (curr, target, flow = ESTADOS_FLOW) => {
+  const targetIndex = flow.findIndex((e) => e.key === target)
+  const currentIndex = flow.findIndex((e) => e.key === curr)
+  return targetIndex >= 0 && currentIndex >= 0 && targetIndex < currentIndex
+}
+const tieneGestion = (estado, examen = null) =>
+  examenConCartilla(examen) && ['programados', 'entregados'].includes(estado)
+
+const getEstadosFlowExamen = (examen) =>
+  examenConCartilla(examen) ? ESTADOS_FLOW : ESTADOS_SIN_CARTILLA_FLOW
+
+const getEstadoLabel = (estado) =>
+  ESTADOS_FILTRO_FLOW.find((item) => item.key === estado)?.label ||
+  String(estado || '').toUpperCase()
+
+const getAvanceEtapaVisual = (estado) => {
+  const etapa = ESTADOS_FILTRO_FLOW.find((item) => item.key === estado) || {}
+  const meta = {
+    generados: {
+      detail: 'Los examenes quedan generados y listos para impresion.',
+      hexColor: '#4f46e5',
+      quasarColor: 'indigo-7',
+    },
+    impresos: {
+      detail: 'Confirma que el material fue impreso y queda listo para entrega.',
+      hexColor: '#16a34a',
+      quasarColor: 'green-7',
+    },
+    entregados: {
+      detail: 'Confirma que el material fue entregado para su aplicacion.',
+      hexColor: '#ea580c',
+      quasarColor: 'orange-8',
+    },
+    devueltos: {
+      detail: 'Confirma que el docente devolvio examenes y patrones.',
+      hexColor: '#0f766e',
+      quasarColor: 'teal-7',
+    },
+    recibidos: {
+      detail: 'Confirma que el material fue recibido despues de la evaluacion.',
+      hexColor: '#0f766e',
+      quasarColor: 'teal-7',
+    },
+    revisados: {
+      detail: 'Confirma que la revision tecnica fue completada.',
+      hexColor: '#6d28d9',
+      quasarColor: 'deep-purple-7',
+    },
+    subidos: {
+      detail: 'Confirma que las notas fueron subidas al sistema academico.',
+      hexColor: '#581c87',
+      quasarColor: 'purple-9',
+    },
+  }[estado]
+
+  return {
+    key: estado,
+    label: etapa.label || getEstadoLabel(estado),
+    icon: etapa.icon || 'arrow_forward',
+    detail: meta?.detail || etapa.desc || 'Confirma el avance a la siguiente etapa.',
+    hexColor: meta?.hexColor || '#0f766e',
+    quasarColor: meta?.quasarColor || etapa.color || 'teal',
+  }
+}
+
+const buildAvanceEtapaDialogMessage = (avanceVisual) => `
+  <div style="display:flex;align-items:flex-start;gap:14px;margin-top:4px;">
+    <div style="width:56px;height:56px;border-radius:14px;background:${avanceVisual.hexColor}18;color:${avanceVisual.hexColor};display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+      <i class="material-icons" style="font-size:32px;line-height:1;">${avanceVisual.icon}</i>
+    </div>
+    <div style="min-width:0;">
+      <div style="font-weight:700;color:#1f2937;margin-bottom:6px;">Pasar a ${avanceVisual.label.toUpperCase()}</div>
+      <div style="color:#475569;line-height:1.45;">${avanceVisual.detail}</div>
+    </div>
+  </div>
+`
+
+const isEstadoNext = (examen, target) =>
+  obtenerSiguienteEstado(examen?.estado, getEstadosFlowExamen(examen)) === target
+
+const puedeAccionarEstado = (examen, target) => {
+  if (!puedeVerAcciones.value || !isEstadoNext(examen, target)) return false
+  if (estaGeneracionEnProceso(examen)) return false
+  return puedeCambiarEstadoPorTiempo(examen, target).permitido
+}
+
+const getEstadoStepIcon = (examen, estado) => {
+  const flow = getEstadosFlowExamen(examen)
+  if (isEstadoCompleted(examen?.estado, estado.key, flow)) return 'check'
+  if (isEstadoNext(examen, estado.key)) {
+    return tieneGestion(examen?.estado, examen) ? 'arrow_forward' : estado.icon
+  }
+  return estado.icon
+}
+
+const getEstadoStepClass = (examen, target) => ({
+  'estado-step-btn': true,
+  'estado-step-btn--completed': isEstadoCompleted(
+    examen?.estado,
+    target,
+    getEstadosFlowExamen(examen),
+  ),
+  'estado-step-btn--current': isEstadoActive(examen?.estado, target),
+  'estado-step-btn--next': isEstadoNext(examen, target) && puedeAccionarEstado(examen, target),
+  'estado-step-btn--blocked': isEstadoNext(examen, target) && !puedeAccionarEstado(examen, target),
+  'estado-step-btn--future':
+    !isEstadoCompleted(examen?.estado, target, getEstadosFlowExamen(examen)) &&
+    !isEstadoActive(examen?.estado, target) &&
+    !isEstadoNext(examen, target),
+})
+
+const getEstadoStepAriaLabel = (examen, estado) =>
+  isEstadoNext(examen, estado.key) ? `Cambiar estado a ${estado.label}` : `Estado ${estado.label}`
+
+const getEstadoStepTooltip = (examen, estado) => {
+  if (isEstadoActive(examen?.estado, estado.key)) return `Estado actual: ${estado.label}`
+
+  if (isEstadoCompleted(examen?.estado, estado.key, getEstadosFlowExamen(examen))) {
+    const timestamp = examen?.timestamps?.[estado.key]
+    return timestamp
+      ? `${estado.label}: ${formatTimestamp(timestamp)}`
+      : `${estado.label} completado`
+  }
+
+  if (!isEstadoNext(examen, estado.key)) return 'Disponible cuando sea la siguiente etapa'
+  if (!puedeVerAcciones.value) return 'Sin permiso para cambiar estado'
+  if (estaGeneracionEnProceso(examen)) return 'La generacion consolidada sigue en proceso.'
+
+  const permiso = puedeCambiarEstadoPorTiempo(examen, estado.key)
+  if (!permiso.permitido) return permiso.mensaje
+
+  if (tieneGestion(examen?.estado, examen)) return `Abrir gestion para pasar a ${estado.label}`
+  return `Pasar a ${estado.label}`
+}
+
+const ejecutarEstadoDesdeBoton = (examen, target) => {
+  if (!isEstadoNext(examen, target)) return
+
+  if (!puedeAccionarEstado(examen, target)) {
+    if (estaGeneracionEnProceso(examen)) {
+      $q.notify({
+        type: 'warning',
+        message: 'La generacion consolidada sigue en proceso.',
+        icon: 'hourglass_top',
+      })
+      return
+    }
+
+    notificarBloqueoPorTiempo(examen)
+    return
+  }
+
+  if (tieneGestion(examen?.estado, examen)) {
+    gestionarEstado(examen)
+    return
+  }
+
+  avanzarDirecto(examen)
+}
 
 // --- GESTIÓN DE GENERACIONES MANUALES ---
+const MANUAL_ESTADOS_FLOW = [
+  {
+    key: 'PROGRAMADO',
+    label: 'Programado',
+    icon: 'event_note',
+    color: 'blue-7',
+    desc: 'Definir variantes y cantidad de preguntas',
+  },
+  {
+    key: 'GENERADO',
+    label: 'Generado',
+    icon: 'auto_awesome',
+    color: 'indigo-7',
+    desc: 'Examenes generados listos para impresion',
+  },
+  {
+    key: 'IMPRESO',
+    label: 'Impreso',
+    icon: 'print',
+    color: 'green-7',
+    desc: 'Material impreso y listo para entrega',
+  },
+  {
+    key: 'ENTREGADO',
+    label: 'Entregado',
+    icon: 'inventory_2',
+    color: 'orange-8',
+    desc: 'Material entregado para su aplicación',
+  },
+  {
+    key: 'DEVUELTO',
+    label: 'Devuelto',
+    icon: 'assignment_returned',
+    color: 'teal-7',
+    desc: 'Material recibido después de la evaluación',
+  },
+  {
+    key: 'REVISADO',
+    label: 'Revisado',
+    icon: 'fact_check',
+    color: 'deep-purple-7',
+    desc: 'Revision tecnica completada',
+  },
+  {
+    key: 'SUBIDO',
+    label: 'Subido',
+    icon: 'cloud_done',
+    color: 'purple-9',
+    desc: 'Notas subidas al sistema académico',
+  },
+]
+
 const manualColumns = [
   {
     name: 'materia',
@@ -5133,7 +5378,10 @@ const getManualStats = (row) => {
 const actualizarEstadoManual = async (id, nuevoEstado) => {
   try {
     await api.put(`/generaciones-manuales/${id}/estado`, { estado: nuevoEstado })
-    $q.notify({ type: 'positive', message: `Estado actualizado a ${nuevoEstado}` })
+    $q.notify({
+      type: 'positive',
+      message: `Estado actualizado a ${getManualEstadoLabel(nuevoEstado)}`,
+    })
     cargarManualGenerations()
   } catch (err) {
     console.error('Error actualizando:', err)
@@ -5141,48 +5389,127 @@ const actualizarEstadoManual = async (id, nuevoEstado) => {
   }
 }
 
-const confirmarEstadoManual = (row, nuevoEstado) => {
-  if (row.estado === nuevoEstado) return
+const normalizarEstadoManual = (estado) =>
+  ({
+    RECIBIDO: 'DEVUELTO',
+  })[String(estado || '').toUpperCase()] || String(estado || 'PROGRAMADO').toUpperCase()
 
+const getManualEstadoMeta = (estado) =>
+  MANUAL_ESTADOS_FLOW.find((item) => item.key === normalizarEstadoManual(estado))
+
+const getManualEstadoLabel = (estado) =>
+  getManualEstadoMeta(estado)?.label || normalizarEstadoManual(estado)
+
+const obtenerSiguienteEstadoManual = (estado) => {
+  const currentIndex = MANUAL_ESTADOS_FLOW.findIndex(
+    (item) => item.key === normalizarEstadoManual(estado),
+  )
+  return currentIndex >= 0 ? MANUAL_ESTADOS_FLOW[currentIndex + 1]?.key : null
+}
+
+const isManualEstadoActive = (row, target) => normalizarEstadoManual(row?.estado) === target
+const isManualEstadoNext = (row, target) => obtenerSiguienteEstadoManual(row?.estado) === target
+const isManualEstadoCompleted = (row, target) => {
+  const targetIndex = MANUAL_ESTADOS_FLOW.findIndex((item) => item.key === target)
+  const currentIndex = MANUAL_ESTADOS_FLOW.findIndex(
+    (item) => item.key === normalizarEstadoManual(row?.estado),
+  )
+  return targetIndex >= 0 && currentIndex >= 0 && targetIndex < currentIndex
+}
+
+const puedeAccionarEstadoManual = (row, target) =>
+  puedeVerGeneracionManual.value &&
+  isManualEstadoNext(row, target) &&
+  !estaGeneracionManualEnProceso(row)
+
+const getManualEstadoStepIcon = (row, estado) => {
+  if (isManualEstadoCompleted(row, estado.key)) return 'check'
+  return estado.icon
+}
+
+const getManualEstadoStepClass = (row, target) => ({
+  'estado-step-btn': true,
+  'estado-step-btn--completed': isManualEstadoCompleted(row, target),
+  'estado-step-btn--current': isManualEstadoActive(row, target),
+  'estado-step-btn--next':
+    isManualEstadoNext(row, target) && puedeAccionarEstadoManual(row, target),
+  'estado-step-btn--blocked':
+    isManualEstadoNext(row, target) && !puedeAccionarEstadoManual(row, target),
+  'estado-step-btn--future':
+    !isManualEstadoCompleted(row, target) &&
+    !isManualEstadoActive(row, target) &&
+    !isManualEstadoNext(row, target),
+})
+
+const getManualEstadoStepAriaLabel = (row, estado) =>
+  isManualEstadoNext(row, estado.key)
+    ? `Cambiar estado manual a ${estado.label}`
+    : `Estado manual ${estado.label}`
+
+const getManualEstadoStepTooltip = (row, estado) => {
+  if (isManualEstadoActive(row, estado.key)) return `Estado actual: ${estado.label}`
+  if (isManualEstadoCompleted(row, estado.key)) return `${estado.label} completado`
+  if (!isManualEstadoNext(row, estado.key)) return 'Disponible cuando sea la siguiente etapa'
   if (estaGeneracionManualEnProceso(row)) {
+    return 'Espera a que termine la generación en cola antes de cambiar el estado.'
+  }
+  return `Pasar a ${estado.label}`
+}
+
+const getManualAvanceEtapaVisual = (estado) => {
+  const meta = getManualEstadoMeta(estado)
+  return {
+    key: estado,
+    label: meta?.label || getManualEstadoLabel(estado),
+    icon: meta?.icon || 'arrow_forward',
+    detail: meta?.desc || 'Confirma el avance a la siguiente etapa.',
+    hexColor:
+      {
+        'blue-7': '#1d4ed8',
+        'indigo-7': '#4f46e5',
+        'green-7': '#16a34a',
+        'orange-8': '#ea580c',
+        'teal-7': '#0f766e',
+        'deep-purple-7': '#5b21b6',
+        'purple-9': '#581c87',
+      }[meta?.color] || '#0f766e',
+    quasarColor: meta?.color || 'teal-7',
+  }
+}
+
+const ejecutarEstadoManualDesdeBoton = (row, target) => {
+  if (!isManualEstadoNext(row, target)) return
+
+  if (!puedeAccionarEstadoManual(row, target)) {
     $q.notify({
       type: 'warning',
-      message: 'Espera a que termine la generación en cola antes de cambiar el estado.',
+      message: estaGeneracionManualEnProceso(row)
+        ? 'Espera a que termine la generación en cola antes de cambiar el estado.'
+        : 'No se puede cambiar a esa etapa todavía.',
     })
     return
   }
 
-  let message = `¿Confirmar el cambio de estado de "${row.estado}" a "${nuevoEstado}"?`
-  if (nuevoEstado === 'DEVUELTO') {
-    message +=
-      '<br><br><span class="text-red text-weight-bold">Aviso: Cambiar a DEVUELTO liberará los Patrones de Respuesta para este examen.</span>'
-  }
-
+  const avanceVisual = getManualAvanceEtapaVisual(target)
   $q.dialog({
-    title: 'Confirmar Cambio de Estado',
-    message: message,
+    title: 'Avanzar Etapa',
+    message: buildAvanceEtapaDialogMessage(avanceVisual),
     html: true,
     persistent: true,
-    ok: { label: 'Confirmar', color: 'primary' },
-    cancel: { label: 'Cancelar', flat: true },
+    ok: { label: 'Avanzar', color: avanceVisual.quasarColor, unelevated: true, noCaps: true },
+    cancel: { label: 'Cancelar', flat: true, noCaps: true },
   }).onOk(() => {
-    actualizarEstadoManual(row.id, nuevoEstado)
+    actualizarEstadoManual(row.id, target)
   })
 }
 
-const getManualActiveColor = (est) => {
-  if (est === 'GENERADO') return 'blue-7'
-  if (est === 'ENTREGADO') return 'indigo-7'
-  if (est === 'DEVUELTO') return 'teal-7'
-  return 'grey-7'
-}
+const manualEstadoPermiteDocumentos = (row) =>
+  ['PROGRAMADO', 'GENERADO', 'IMPRESO', 'ENTREGADO', 'DEVUELTO', 'REVISADO', 'SUBIDO'].includes(
+    normalizarEstadoManual(row?.estado),
+  )
 
-const getManualEstadoIcon = (est) => {
-  if (est === 'GENERADO') return 'auto_awesome'
-  if (est === 'ENTREGADO') return 'inventory_2'
-  if (est === 'DEVUELTO') return 'assignment_returned'
-  return 'help_outline'
-}
+const manualPuedeDescargarPatrones = (row) =>
+  ['DEVUELTO', 'REVISADO', 'SUBIDO'].includes(normalizarEstadoManual(row?.estado))
 
 const getFilenameFromContentDisposition = (contentDisposition, fallback) => {
   if (!contentDisposition) return fallback
@@ -5380,7 +5707,7 @@ const descargarPDFManual = async (row) => {
 }
 
 const descargarPatronPdfManual = async (row) => {
-  if (row.estado !== 'DEVUELTO') {
+  if (!manualPuedeDescargarPatrones(row)) {
     return
   }
   if (row.archivo_patron_pdf) {
@@ -5408,7 +5735,7 @@ const descargarPatronPdfManual = async (row) => {
 }
 
 const descargarPatronXlsxManual = async (row) => {
-  if (row.estado !== 'DEVUELTO') {
+  if (!manualPuedeDescargarPatrones(row)) {
     return
   }
   if (row.archivos_patron_xlsx && row.archivos_patron_xlsx.length > 0) {
@@ -6396,6 +6723,11 @@ async function fetchImageAsBase64(url) {
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.1);
   overflow: hidden;
 }
+.pattern-format-card {
+  height: 100%;
+  border-color: #d8d3ea;
+  background: #fbfafc;
+}
 .main-table :deep(thead th) {
   font-weight: 700;
   color: #334155;
@@ -6472,6 +6804,66 @@ async function fetchImageAsBase64(url) {
 }
 .bullet-dot.completed {
   background: #94a3b8;
+}
+.estado-flow-cell {
+  min-width: 220px;
+}
+.estado-current-label {
+  margin-bottom: 4px;
+  color: #1e293b;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.estado-step-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.estado-step-wrapper {
+  display: inline-flex;
+}
+.estado-step-btn {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  border-radius: 6px;
+  color: #94a3b8;
+  background: #eef2f7;
+}
+.estado-step-btn.q-btn.disabled {
+  opacity: 1 !important;
+}
+.estado-step-btn--completed {
+  color: #047857;
+  background: #d1fae5;
+}
+.estado-step-btn--current {
+  color: #ffffff;
+  background: #5b35b1;
+  box-shadow: 0 2px 6px rgba(91, 53, 177, 0.25);
+}
+.estado-step-btn--next {
+  color: #ffffff;
+  background: #059669;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+.estado-step-btn--blocked {
+  color: #92400e;
+  background: #fef3c7;
+}
+.estado-step-btn--future {
+  color: #94a3b8;
+  background: #f1f5f9;
+}
+.estado-step-wrapper--next .estado-step-btn:not(.disabled):hover {
+  transform: translateY(-1px);
 }
 .action-btn-main {
   font-weight: 700;
