@@ -2865,7 +2865,7 @@
               </div>
               <div
                 class="col-12 col-sm-6 text-center"
-                v-if="formPregunta.imagen || previewImagenEdit"
+                v-if="!quitarImagenPregunta && (formPregunta.imagen || previewImagenEdit)"
               >
                 <div class="text-caption text-grey-7 q-mb-xs">Previsualización:</div>
                 <q-img
@@ -2876,6 +2876,17 @@
                   style="height: 140px; max-width: 240px; border-radius: 4px"
                   fit="contain"
                   class="bg-grey-2"
+                />
+                <q-btn
+                  v-if="modoRegistroPregunta === 'edit' && formPregunta.imagen"
+                  flat
+                  dense
+                  no-caps
+                  color="negative"
+                  icon="delete"
+                  label="Quitar imagen"
+                  class="q-mt-sm"
+                  @click="quitarImagenActualPregunta"
                 />
               </div>
             </div>
@@ -3086,7 +3097,8 @@
 
             <div
               v-else-if="
-                modoRegistroPregunta === 'create' && tipoRegistroPregunta === 'EMPAREJAMIENTO'
+                ['create', 'edit'].includes(modoRegistroPregunta) &&
+                tipoRegistroPregunta === 'EMPAREJAMIENTO'
               "
               class="q-gutter-y-md"
             >
@@ -3211,7 +3223,10 @@
             </div>
 
             <div
-              v-else-if="modoRegistroPregunta === 'create' && tipoRegistroPregunta === 'PROBLEMA'"
+              v-else-if="
+                ['create', 'edit'].includes(modoRegistroPregunta) &&
+                tipoRegistroPregunta === 'PROBLEMA'
+              "
               class="q-gutter-y-md"
             >
               <q-input
@@ -3327,7 +3342,38 @@
             </q-banner>
 
             <div v-else>
+              <q-banner
+                v-if="['OPCION_EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(tipoRegistroPregunta)"
+                class="bg-orange-1 text-orange-10 rounded-borders q-mb-md"
+              >
+                <template v-slot:avatar>
+                  <q-icon name="account_tree" color="orange-9" />
+                </template>
+                Este ítem se edita desde su grupo completo. Usa la cabecera del emparejamiento o
+                problema para modificar la estructura ligada.
+              </q-banner>
+
+              <div v-if="tipoRegistroPregunta === 'RESPUESTA_COMPUESTA'" class="q-gutter-y-sm">
+                <q-input
+                  v-model="formPregunta.premisas[0]"
+                  label="Premisa 1"
+                  type="textarea"
+                  outlined
+                  autogrow
+                  rows="2"
+                />
+                <q-input
+                  v-model="formPregunta.premisas[1]"
+                  label="Premisa 2"
+                  type="textarea"
+                  outlined
+                  autogrow
+                  rows="2"
+                />
+              </div>
+
               <q-input
+                v-else
                 v-model="formPregunta.enunciado"
                 label="Enunciado de la Pregunta"
                 type="textarea"
@@ -3374,6 +3420,15 @@
                 </div>
               </div>
 
+              <div v-if="tipoRegistroPregunta === 'RESPUESTA_COMPUESTA'" class="q-gutter-y-sm">
+                <div class="text-subtitle2 q-mb-sm">Respuesta correcta</div>
+                <q-option-group
+                  v-model="formPregunta.respuesta_correcta"
+                  :options="respuestaCompuestaOptions"
+                  color="deep-purple"
+                />
+              </div>
+
               <div
                 v-if="
                   normalizarTipoPregunta(formPregunta.tipo, formPregunta) === 'PREGUNTA_CON_CLAVE'
@@ -3406,12 +3461,9 @@
 
               <div
                 v-else-if="
-                  [
-                    'SELECCION_SIMPLE',
-                    'RESPUESTA_COMPUESTA',
-                    'SUBPROBLEMA',
-                    'FALSO_VERDADERO',
-                  ].includes(normalizarTipoPregunta(formPregunta.tipo, formPregunta))
+                  ['SELECCION_SIMPLE', 'SUBPROBLEMA', 'FALSO_VERDADERO'].includes(
+                    normalizarTipoPregunta(formPregunta.tipo, formPregunta),
+                  )
                 "
               >
                 <div class="text-subtitle2 q-mb-sm">Opciones de Respuesta</div>
@@ -4411,16 +4463,24 @@ const esDirectorOAdmin = computed(() => {
 
 const esDirectorCarrera = computed(() => authStore.rol === ROLES.DIRECTOR_CARRERA)
 const modoBancoSoloVisualDirector = computed(() => esDirectorCarrera.value)
-const rolesBancoPreguntasCompleto = [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.VICERRECTOR_NACIONAL]
+const rolesBancoPreguntasGestion = [ROLES.ADMIN, ROLES.SUPER_ADMIN]
+const rolesBancoPreguntasSupervision = [ROLES.VICERRECTOR_NACIONAL]
+const puedeGestionarBancoPreguntas = computed(() =>
+  rolesBancoPreguntasGestion.includes(authStore.rol),
+)
 const modoBancoSoloLecturaPreguntas = computed(() =>
-  rolesBancoPreguntasCompleto.includes(authStore.rol),
+  rolesBancoPreguntasSupervision.includes(authStore.rol),
 )
 const modoBancoSinPermisoModificar = computed(
   () => modoBancoSoloVisualDirector.value || modoBancoSoloLecturaPreguntas.value,
 )
+const puedeCargarExcelBanco = computed(
+  () => authStore.rol === ROLES.DOCENTE || puedeGestionarBancoPreguntas.value,
+)
 const puedeVerTabBanco = computed(
   () =>
     authStore.rol === ROLES.DOCENTE ||
+    puedeGestionarBancoPreguntas.value ||
     modoBancoSoloVisualDirector.value ||
     modoBancoSoloLecturaPreguntas.value,
 )
@@ -4491,14 +4551,102 @@ async function toggleEstadoCarpeta() {
   }
 }
 
+function getQueryValue(value) {
+  return Array.isArray(value) ? value[0] : value
+}
+
+function obtenerDocenteAsignadoId(docente) {
+  return docente?.id || docente?.docente_id || docente?.pivot?.docente_id || null
+}
+
+function buscarDocenteAsignadoPorId(docentes, docenteId) {
+  if (!docenteId) return null
+  return docentes.find((docente) => Number(obtenerDocenteAsignadoId(docente)) === Number(docenteId))
+}
+
+const sedeIdCarpetaContextual = computed(
+  () =>
+    getQueryValue(route.query.sede_id) ||
+    asignatura.value?.sede_id ||
+    asignatura.value?.carreras?.[0]?.sede_id ||
+    asignatura.value?.carrera?.sede_id ||
+    authStore.usuarioActual?.sede_id ||
+    null,
+)
+
+const docenteBancoContextual = computed(() => {
+  const docentes = asignatura.value?.docentes || []
+  if (docentes.length === 0) return null
+
+  const docenteIdParam = getQueryValue(route.query.docente_id)
+  if (docenteIdParam) {
+    return buscarDocenteAsignadoPorId(docentes, docenteIdParam) || null
+  }
+
+  if (docentes.length === 1) {
+    return docentes[0]
+  }
+
+  if (authStore.rol === ROLES.DOCENTE) {
+    const myDocenteId = authStore.usuarioActual?.docente?.id || authStore.usuarioActual?.docente_id
+    const myUserId = authStore.usuarioActual?.id
+    const docentePorId = buscarDocenteAsignadoPorId(docentes, myDocenteId)
+
+    if (docentePorId) return docentePorId
+    if (myUserId) {
+      const docentePorUsuario = docentes.find(
+        (docente) => docente.user_id == myUserId || docente.usuario_id == myUserId,
+      )
+      if (docentePorUsuario) return docentePorUsuario
+    }
+  }
+
+  if (sedeIdCarpetaContextual.value) {
+    const docenteMismaSede = docentes.find(
+      (docente) => docente.sede_id == sedeIdCarpetaContextual.value,
+    )
+    if (docenteMismaSede) return docenteMismaSede
+  }
+
+  return docentes[0]
+})
+
+const docenteIdBancoContextual = computed(() => {
+  const docenteIdParam = getQueryValue(route.query.docente_id)
+  if (docenteIdParam) return docenteIdParam
+
+  const docenteId = obtenerDocenteAsignadoId(docenteBancoContextual.value)
+  if (docenteId) return docenteId
+
+  if (authStore.rol === ROLES.DOCENTE) {
+    return authStore.usuarioActual?.docente?.id || authStore.usuarioActual?.docente_id || null
+  }
+
+  return null
+})
+
+const sedeIdBancoContextual = computed(
+  () => sedeIdCarpetaContextual.value || docenteBancoContextual.value?.sede_id || null,
+)
+
 const nombreDocenteCarpeta = computed(() => {
   if (!asignatura.value || !asignatura.value.docentes || asignatura.value.docentes.length === 0)
     return null
 
+  const docenteContextual = docenteBancoContextual.value
+  if (docenteContextual) {
+    return (
+      docenteContextual.nombre_completo ||
+      docenteContextual.nombre ||
+      docenteContextual.user?.name ||
+      null
+    )
+  }
+
   // 1. Si hay un ID en la URL (seleccionado previamente)
-  const docenteIdParam = route.query.docente_id
+  const docenteIdParam = getQueryValue(route.query.docente_id)
   if (docenteIdParam) {
-    const docente = asignatura.value.docentes.find((d) => d.id == docenteIdParam)
+    const docente = buscarDocenteAsignadoPorId(asignatura.value.docentes, docenteIdParam)
     if (docente) return docente.nombre_completo
   }
 
@@ -4966,7 +5114,7 @@ const mostrarAccionesExcelBanco = computed(
   () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
 )
 const mostrarAccionesGestionBanco = computed(
-  () => mostrarAccionesExcelBanco.value && !modoBancoSoloLecturaPreguntas.value,
+  () => mostrarAccionesExcelBanco.value && puedeCargarExcelBanco.value,
 )
 const mostrarBotonValidarBanco = false
 const parcialOptions = [
@@ -5715,6 +5863,7 @@ const formPregunta = ref({
 const archivoImagenPregunta = ref(null)
 const guardandoEditPreg = ref(false)
 const previewImagenEdit = ref(null)
+const quitarImagenPregunta = ref(false)
 const previsualizandoRegistroPregunta = ref(false)
 const previewRegistroPreguntaVisible = ref(false)
 const previewPreguntaRegistrada = ref(null)
@@ -5881,7 +6030,7 @@ const buildEmptyPreguntaForm = () => ({
   grupoTeorico: filtroBancoGrupoSeleccionado.value || '',
   logro_esperado_id: logrosBancoOptions.value[0]?.value || null,
   asignatura_id: asignatura.value?.id || null,
-  sede_id: route.query.sede_id || authStore.usuarioActual?.sede_id || null,
+  sede_id: sedeIdBancoContextual.value,
   imagen: null,
   premisas: ['', ''],
   incisosClave: ['', '', '', ''],
@@ -6349,11 +6498,12 @@ const previewRegistroPregunta = computed(() => {
     grupoTeorico: formPregunta.value.grupoTeorico || filtroBancoGrupoSeleccionado.value || '',
     grupoReferencia: formPregunta.value.grupo || '',
     enunciado: normalizarTextoMojibake(String(formPregunta.value.enunciado || '').trim()),
-    imageSrc:
-      previewImagenEdit.value ||
-      (formPregunta.value.imagen
-        ? `${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${formPregunta.value.imagen}`
-        : ''),
+    imageSrc: quitarImagenPregunta.value
+      ? ''
+      : previewImagenEdit.value ||
+        (formPregunta.value.imagen
+          ? `${api.defaults.baseURL.replace('/api', '')}/storage/preguntas/${formPregunta.value.imagen}`
+          : ''),
     opciones: mapOpcionesRegistro(formPregunta.value.opciones || []),
     incisos: (formPregunta.value.incisosClave || []).map((item) =>
       normalizarTextoMojibake(String(item || '').trim()),
@@ -6671,19 +6821,6 @@ function crearLineasPresentacionPreview(preview, numero = 1) {
   if (tipo === 'PROBLEMA') {
     add(`CASO N 1:`, 'preview-case-title')
     add(enunciado, 'preview-question-line')
-    ;(preview.preguntasLigadas || []).forEach((ligada, index) => {
-      add(
-        `${numero + index}. ${normalizarTextoPreviewPdf(ligada.enunciado) || 'Subproblema pendiente...'}`,
-        'preview-question-line',
-      )
-      ;(ligada.opciones || []).forEach((opcion) => {
-        add(
-          `${opcion.id || ''}) ${opcion.text || 'Opción pendiente...'}`,
-          'preview-option-line',
-          'options',
-        )
-      })
-    })
     return lineas
   }
 
@@ -7028,6 +7165,7 @@ const logrosBancoOptions = computed(() => {
 
 watch(archivoImagenPregunta, (file) => {
   if (file) {
+    quitarImagenPregunta.value = false
     const reader = new FileReader()
     reader.onload = (e) => (previewImagenEdit.value = e.target.result)
     reader.readAsDataURL(file)
@@ -7035,6 +7173,12 @@ watch(archivoImagenPregunta, (file) => {
     previewImagenEdit.value = null
   }
 })
+
+function quitarImagenActualPregunta() {
+  archivoImagenPregunta.value = null
+  previewImagenEdit.value = null
+  quitarImagenPregunta.value = true
+}
 
 function onArchivoImagenPreguntaRejected() {
   $q.notify({
@@ -7287,13 +7431,14 @@ function abrirRegistroManualPregunta() {
   )
   archivoImagenPregunta.value = null
   previewImagenEdit.value = null
+  quitarImagenPregunta.value = false
   previewRegistroPreguntaVisible.value = false
   previewPreguntaRegistrada.value = null
   dialogEditarPregunta.value = true
 }
 
 function abrirModalSubirBanco() {
-  if (modoBancoSoloLecturaPreguntas.value) {
+  if (!puedeCargarExcelBanco.value) {
     $q.notify({
       type: 'info',
       message: 'Vista de supervisión: puedes revisar el banco, pero no importar cambios.',
@@ -7485,11 +7630,16 @@ async function eliminarPreguntaBanco(preguntasAEliminar) {
 
 async function eliminarBancoFiltrado() {
   try {
-    const response = await api.post('/banco-preguntas/bulk-delete', {
+    const payload = {
       asignatura_id: route.params.id,
       grupo_teorico: filtroBancoGrupoSeleccionado.value,
       parcial: filtroBancoParcialSeleccionado.value,
-    })
+    }
+    if (docenteIdBancoContextual.value) {
+      payload.docente_id = docenteIdBancoContextual.value
+    }
+
+    const response = await api.post('/banco-preguntas/bulk-delete', payload)
 
     const deleted = Number(response.data?.deleted || 0)
 
@@ -7514,6 +7664,43 @@ async function eliminarBancoFiltrado() {
   }
 }
 
+function obtenerCabeceraGrupoParaEdicion(pregunta, tipoNormalizado) {
+  const grupo = normalizeGroupName(pregunta?.grupo || '')
+  if (!grupo || !['OPCION_EMPAREJAMIENTO', 'SUBPROBLEMA'].includes(tipoNormalizado)) {
+    return null
+  }
+
+  const tipoCabecera = tipoNormalizado === 'OPCION_EMPAREJAMIENTO' ? 'EMPAREJAMIENTO' : 'PROBLEMA'
+
+  return preguntasFiltradas.value.find(
+    (item) =>
+      normalizeGroupName(item.grupo || '') === grupo &&
+      normalizarTipoPregunta(item.tipo, item, gruposCabeceraBancoMap.value) === tipoCabecera,
+  )
+}
+
+function obtenerPreguntasLigadasFormulario(pregunta, tipoNormalizado) {
+  return obtenerPreguntasLigadasPreview(pregunta, tipoNormalizado).map((item) => {
+    const tipoLigado = normalizarTipoPregunta(item.tipo, item, gruposCabeceraBancoMap.value)
+    const opciones = Array.isArray(item.opciones)
+      ? item.opciones.map((opcion) =>
+          typeof opcion === 'object' && opcion !== null ? opcion.text : opcion,
+        )
+      : []
+
+    return {
+      id: item.id || null,
+      tipo: tipoLigado,
+      enunciado: normalizarTextoMojibake(String(item.enunciado || '').trim()),
+      opciones: tipoLigado === 'SUBPROBLEMA' ? [...opciones, '', '', '', '', ''].slice(0, 5) : [],
+      respuesta_correcta: normalizarRespuestaPreviewPregunta(
+        item.respuesta_correcta || item.respuesta,
+      ),
+      dificultad: item.dificultad || '1',
+    }
+  })
+}
+
 function abrirEditorPregunta(pregunta) {
   if (modoBancoSoloLecturaPreguntas.value) {
     $q.notify({
@@ -7530,18 +7717,47 @@ function abrirEditorPregunta(pregunta) {
     preguntaSanitizada,
     gruposCabeceraBancoMap.value,
   )
+
+  const cabeceraGrupo = obtenerCabeceraGrupoParaEdicion(preguntaSanitizada, tipoNormalizado)
+  if (cabeceraGrupo) {
+    abrirEditorPregunta(cabeceraGrupo)
+    $q.notify({
+      type: 'info',
+      message: 'Se abrió la estructura completa para editar el grupo ligado.',
+    })
+    return
+  }
+
   const opcionesOriginales = Array.isArray(preguntaSanitizada.opciones)
     ? preguntaSanitizada.opciones.map((o) => (typeof o === 'object' && o !== null ? o.text : o))
     : ['', '', '', '', '']
+  const lineasEnunciado = obtenerLineasEnunciadoPreview(preguntaSanitizada.enunciado || '')
   const componentesPreguntaClave =
     tipoNormalizado === 'PREGUNTA_CON_CLAVE'
       ? obtenerComponentesPreguntaClave(preguntaSanitizada, opcionesOriginales)
       : null
+  const premisasRespuestaCompuesta =
+    tipoNormalizado === 'RESPUESTA_COMPUESTA'
+      ? extraerPremisasDesdeLineasPreview(lineasEnunciado)
+      : ['', '']
+  const clavesEmparejamiento =
+    tipoNormalizado === 'EMPAREJAMIENTO'
+      ? opcionesOriginales.length
+        ? opcionesOriginales
+        : extraerOpcionesDesdeLineasPreview(lineasEnunciado).map((opcion) => opcion.text)
+      : []
+  const preguntasLigadasFormulario = ['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipoNormalizado)
+    ? obtenerPreguntasLigadasFormulario(preguntaSanitizada, tipoNormalizado)
+    : []
 
   formPregunta.value = {
     ...preguntaSanitizada,
     tipo: tipoNormalizado,
-    enunciado: componentesPreguntaClave?.enunciado || preguntaSanitizada.enunciado || '',
+    enunciado:
+      tipoNormalizado === 'EMPAREJAMIENTO'
+        ? limpiarEnunciadoPreviewPorTipo(lineasEnunciado, tipoNormalizado) ||
+          DEFAULT_EMPAREJAMIENTO_ENUNCIADO
+        : componentesPreguntaClave?.enunciado || preguntaSanitizada.enunciado || '',
     parcial: normalizarParcialBanco(
       preguntaSanitizada.parcial || filtroBancoParcialSeleccionado.value,
     ),
@@ -7550,17 +7766,22 @@ function abrirEditorPregunta(pregunta) {
       obtenerGrupoTeoricoPregunta(preguntaSanitizada) || filtroBancoGrupoSeleccionado.value || '',
     logro_esperado_id: preguntaSanitizada.logro_esperado_id || null,
     asignatura_id: preguntaSanitizada.asignatura_id || asignatura.value?.id || null,
-    sede_id:
-      preguntaSanitizada.sede_id || route.query.sede_id || authStore.usuarioActual?.sede_id || null,
+    sede_id: preguntaSanitizada.sede_id || sedeIdBancoContextual.value,
     opciones:
       tipoNormalizado === 'OPCION_EMPAREJAMIENTO' ||
       ['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipoNormalizado)
         ? ['', '', '', '', '']
         : opcionesOriginales,
+    premisas: premisasRespuestaCompuesta,
     incisosClave: componentesPreguntaClave?.incisos || ['', '', '', ''],
+    cantidadClavesEmparejamiento: Math.min(5, Math.max(2, clavesEmparejamiento.length || 2)),
+    terminosEmparejamiento: [...clavesEmparejamiento, '', '', '', '', ''].slice(0, 5),
+    preguntasLigadas: preguntasLigadasFormulario,
+    preguntasLigadasOriginalIds: preguntasLigadasFormulario.map((item) => item.id).filter(Boolean),
   }
   archivoImagenPregunta.value = null
   previewImagenEdit.value = null
+  quitarImagenPregunta.value = false
   previewRegistroPreguntaVisible.value = false
   previewPreguntaRegistrada.value = null
   dialogEditarPregunta.value = true
@@ -7673,7 +7894,7 @@ function obtenerComponentesPreguntaClave(pregunta, opcionesOriginales = []) {
 function construirPayloadBaseRegistro() {
   return {
     asignatura_id: formPregunta.value.asignatura_id || asignatura.value?.id || '',
-    sede_id: formPregunta.value.sede_id || route.query.sede_id || '',
+    sede_id: formPregunta.value.sede_id || sedeIdBancoContextual.value || '',
     grupoTeorico: formPregunta.value.grupoTeorico || filtroBancoGrupoSeleccionado.value || '',
     parcial: formPregunta.value.parcial || '',
     logro_esperado_id: formPregunta.value.logro_esperado_id || '',
@@ -7779,7 +8000,15 @@ function validarRegistroManualPregunta() {
 function validarEdicionPreguntaBanco() {
   const tipo = normalizarTipoPregunta(formPregunta.value.tipo, formPregunta.value)
 
-  if (!String(formPregunta.value.enunciado || '').trim()) {
+  if (['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipo)) {
+    return validarRegistroManualPregunta()
+  }
+
+  if (tipo === 'RESPUESTA_COMPUESTA') {
+    if ((formPregunta.value.premisas || []).some((premisa) => !String(premisa || '').trim())) {
+      return 'Debes completar las dos premisas de la respuesta A/B/Ambas/Ninguna.'
+    }
+  } else if (!String(formPregunta.value.enunciado || '').trim()) {
     return 'Debes registrar el enunciado de la pregunta.'
   }
 
@@ -7924,12 +8153,20 @@ function construirPayloadsRegistroManual() {
   ]
 }
 
-async function persistirPreguntaPayload(payload, imageFile = null, preguntaId = null) {
+async function persistirPreguntaPayload(
+  payload,
+  imageFile = null,
+  preguntaId = null,
+  removeImage = false,
+) {
   const fd = new FormData()
   fd.append('enunciado', payload.enunciado || '')
   fd.append('tipo', payload.tipo || '')
   fd.append('asignatura_id', payload.asignatura_id || '')
-  fd.append('sede_id', payload.sede_id || '')
+  fd.append('sede_id', payload.sede_id || sedeIdBancoContextual.value || '')
+  if (docenteIdBancoContextual.value) {
+    fd.append('docente_id', docenteIdBancoContextual.value)
+  }
   fd.append('grupoTeorico', payload.grupoTeorico || '')
   fd.append('parcial', payload.parcial || '')
   fd.append('grupo', payload.grupo || '')
@@ -7946,6 +8183,8 @@ async function persistirPreguntaPayload(payload, imageFile = null, preguntaId = 
   if (imageFile) {
     const optimizedImageFile = await comprimirImagenPreguntaParaServidor(imageFile)
     fd.append('image_file', optimizedImageFile)
+  } else if (removeImage) {
+    fd.append('remove_image', '1')
   }
 
   if (preguntaId) {
@@ -8025,7 +8264,66 @@ async function guardarPreguntaBanco() {
       return
     }
 
-    if (!String(formPregunta.value.enunciado || '').trim()) {
+    const tipoNormalizado = normalizarTipoPregunta(formPregunta.value.tipo, formPregunta.value)
+
+    if (['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipoNormalizado)) {
+      const mensajeValidacion = validarRegistroManualPregunta()
+
+      if (mensajeValidacion) {
+        $q.notify({
+          type: 'warning',
+          message: mensajeValidacion,
+        })
+        return
+      }
+
+      const payloads = construirPayloadsRegistroManual()
+      const idsActivos = new Set(
+        (formPregunta.value.preguntasLigadas || []).map((item) => item.id).filter(Boolean),
+      )
+
+      await persistirPreguntaPayload(
+        payloads[0],
+        archivoImagenPregunta.value,
+        formPregunta.value.id,
+        quitarImagenPregunta.value,
+      )
+
+      for (let index = 1; index < payloads.length; index += 1) {
+        const preguntaLigada = formPregunta.value.preguntasLigadas[index - 1] || {}
+        await persistirPreguntaPayload(payloads[index], null, preguntaLigada.id || null)
+      }
+
+      for (const preguntaId of formPregunta.value.preguntasLigadasOriginalIds || []) {
+        if (!idsActivos.has(preguntaId)) {
+          await api.delete(`/banco-preguntas/${preguntaId}`)
+        }
+      }
+
+      $q.notify({
+        type: 'positive',
+        message: 'Estructura de preguntas actualizada',
+      })
+      dialogEditarPregunta.value = false
+      await cargarBancoPreguntas()
+      return
+    }
+
+    if (tipoNormalizado === 'RESPUESTA_COMPUESTA') {
+      const mensajePremisas = (formPregunta.value.premisas || []).some(
+        (premisa) => !String(premisa || '').trim(),
+      )
+        ? 'Debes completar las dos premisas de la respuesta A/B/Ambas/Ninguna.'
+        : null
+
+      if (mensajePremisas) {
+        $q.notify({
+          type: 'warning',
+          message: mensajePremisas,
+        })
+        return
+      }
+    } else if (!String(formPregunta.value.enunciado || '').trim()) {
       $q.notify({
         type: 'warning',
         message: 'Debes registrar el enunciado de la pregunta.',
@@ -8033,7 +8331,6 @@ async function guardarPreguntaBanco() {
       return
     }
 
-    const tipoNormalizado = normalizarTipoPregunta(formPregunta.value.tipo, formPregunta.value)
     const opcionesMapeadas =
       tipoNormalizado === 'PREGUNTA_CON_CLAVE'
         ? mapIncisosPreguntaClaveRegistro(formPregunta.value.incisosClave || [])
@@ -8042,10 +8339,13 @@ async function guardarPreguntaBanco() {
           : []
 
     const payloadActualizado = {
-      enunciado: String(formPregunta.value.enunciado || '').trim(),
+      enunciado:
+        tipoNormalizado === 'RESPUESTA_COMPUESTA'
+          ? construirEnunciadoRegistroManual()
+          : String(formPregunta.value.enunciado || '').trim(),
       tipo: tipoNormalizado,
       asignatura_id: formPregunta.value.asignatura_id || asignatura.value?.id || '',
-      sede_id: formPregunta.value.sede_id || route.query.sede_id || '',
+      sede_id: formPregunta.value.sede_id || sedeIdBancoContextual.value || '',
       grupoTeorico: formPregunta.value.grupoTeorico || filtroBancoGrupoSeleccionado.value || '',
       parcial: formPregunta.value.parcial || '',
       grupo: formPregunta.value.grupo || '',
@@ -8073,6 +8373,7 @@ async function guardarPreguntaBanco() {
       payloadActualizado,
       archivoImagenPregunta.value,
       formPregunta.value.id,
+      quitarImagenPregunta.value,
     )
 
     $q.notify({
@@ -8134,10 +8435,7 @@ async function cargarExamenes() {
     if (sedeId) queryParams.push(`sede_id=${sedeId}`)
 
     // 3. Docente ID (Opcional, para filtrar por el dueÒ�� �"Ò� â����Ò�â��šÒ�a�±o de la carpeta)
-    const docenteId =
-      route.query.docente_id ||
-      authStore.usuarioActual?.docente?.id ||
-      authStore.usuarioActual?.docente_id
+    const docenteId = docenteIdBancoContextual.value
     if (docenteId) queryParams.push(`docente_id=${docenteId}`)
 
     if (queryParams.length > 0) {
@@ -8633,10 +8931,7 @@ async function cargarBancoPreguntas() {
   if (!asignatura.value?.id) return
 
   // Inyectar docente_id de la carpeta o del usuario logueado
-  const dId =
-    route.query.docente_id ||
-    authStore.usuarioActual?.docente?.id ||
-    authStore.usuarioActual?.docente_id
+  const dId = docenteIdBancoContextual.value
 
   try {
     let url = `/banco-preguntas?asignatura_id=${asignatura.value.id}`
@@ -8939,10 +9234,7 @@ async function previsualizarExamenBanco() {
 async function cargarGeneracionesManuales() {
   if (!asignatura.value?.id) return
   try {
-    const dId =
-      route.query.docente_id ||
-      authStore.usuarioActual?.docente?.id ||
-      authStore.usuarioActual?.docente_id
+    const dId = docenteIdBancoContextual.value
     let url = `/generaciones-manuales?asignatura_id=${asignatura.value.id}`
     if (dId) url += `&docente_id=${dId}`
     const { data } = await api.get(url)
@@ -10689,9 +10981,7 @@ const gruposTeoricosOptions = computed(() => {
   )
 
   // Filtrar por docente si el rol es DOCENTE o si somos directivos viendo una carpeta especÒ�� �"Ò� â����Ò�â��šÒ�a�­fica
-  const dIdRequest = route.query.docente_id
-  const myDocenteId = authStore.usuarioActual?.docente?.id || authStore.usuarioActual?.docente_id
-  const targetDocenteId = dIdRequest || (authStore.rol === 'DOCENTE' ? myDocenteId : null)
+  const targetDocenteId = docenteIdBancoContextual.value
 
   if (targetDocenteId) {
     grupos = grupos.filter((g) => Number(g.docente_id) === Number(targetDocenteId))
@@ -11115,14 +11405,11 @@ async function confirmarImportacionBanco() {
     formData.append('asignatura_id', route.params.id)
 
     // Inyectar docente_id de la carpeta o del usuario logueado
-    const dId =
-      route.query.docente_id ||
-      authStore.usuarioActual?.docente?.id ||
-      authStore.usuarioActual?.docente_id
+    const dId = docenteIdBancoContextual.value
     if (dId) {
       formData.append('docente_id', dId)
     }
-    formData.append('sede_id', authStore.usuarioActual?.sede_id || '')
+    formData.append('sede_id', sedeIdBancoContextual.value || '')
     formData.append('grupoTeorico', grupoTeoricoSeleccionado.value || '')
     formData.append('con_cartilla', conCartilla.value ? '1' : '0')
     const parcialImportacion = normalizarParcialBanco(
@@ -11258,6 +11545,9 @@ async function ejecutarGuardarConfiguracion(valorConCartilla) {
       grupo_teorico: grupoTeoricoSeleccionado.value,
       parcial: parcialSeleccionado.value || '1P',
       con_cartilla: valorConCartilla,
+    }
+    if (docenteIdBancoContextual.value) {
+      payload.docente_id = docenteIdBancoContextual.value
     }
 
     const response = await api.post('/banco-preguntas/save-config', payload)

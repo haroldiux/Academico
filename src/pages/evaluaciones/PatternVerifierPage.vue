@@ -243,21 +243,27 @@
                 >
                   <span class="answer-number">P{{ entry.number }}</span>
                   <div class="answer-actions">
-                    <span class="answer-value" :class="answerStatusClass(entry)">
-                      {{ entry.answer || '—' }}
-                    </span>
                     <q-btn
                       v-if="entry.question"
-                      flat
-                      round
                       dense
-                      size="sm"
-                      icon="visibility"
-                      color="deep-purple"
+                      rounded
+                      unelevated
+                      no-caps
+                      :label="entry.answer || '—'"
+                      class="answer-value answer-value--button"
+                      :class="answerStatusClass(entry)"
                       @click="openQuestionPreview(variant, entry)"
                     >
-                      <q-tooltip>Ver pregunta</q-tooltip>
+                      <q-tooltip>
+                        Ver pregunta
+                        <template v-if="entry.question.id">
+                          · banco_preguntas #{{ entry.question.id }}
+                        </template>
+                      </q-tooltip>
                     </q-btn>
+                    <span v-else class="answer-value" :class="answerStatusClass(entry)">
+                      {{ entry.answer || '—' }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -691,23 +697,40 @@ async function runVerification() {
 }
 
 function buildAnswerColumns(answers = [], questions = []) {
-  const normalized = Array.from({ length: 100 }, (_, index) => ({
-    number: index + 1,
-    answer: String(questions[index]?.answer ?? answers[index] ?? '').trim(),
-    status: questions[index]?.status || '',
-    expected_answer: questions[index]?.expected_answer || '',
-    match_score: questions[index]?.match_score || null,
-    question: questions[index]?.question
-      ? {
-          ...questions[index].question,
-          number: index + 1,
-          status: questions[index].status,
-          pattern_answer: questions[index].answer,
-          expected_answer: questions[index].expected_answer,
-          match_score: questions[index].match_score,
-        }
-      : null,
-  }))
+  const questionsByNumber = new Map(
+    questions
+      .filter((question) => question && Number(question.number))
+      .map((question) => [Number(question.number), question]),
+  )
+
+  const normalized = Array.from({ length: 100 }, (_, index) => {
+    const number = index + 1
+    const check = questionsByNumber.get(number) || questions[index] || {}
+    const hasDirectQuestion = check.id || check.enunciado || check.opciones?.length
+    const rawQuestion = check.question || (hasDirectQuestion ? check : null)
+    const answer = String(check.answer ?? rawQuestion?.answer ?? answers[index] ?? '').trim()
+    const status = check.status || rawQuestion?.status || ''
+    const expectedAnswer = check.expected_answer ?? rawQuestion?.expected_answer ?? ''
+    const matchScore = check.match_score ?? rawQuestion?.match_score ?? null
+
+    return {
+      number,
+      answer,
+      status,
+      expected_answer: expectedAnswer,
+      match_score: matchScore,
+      question: rawQuestion
+        ? {
+            ...rawQuestion,
+            number,
+            status,
+            pattern_answer: check.answer ?? rawQuestion.pattern_answer ?? answer,
+            expected_answer: expectedAnswer,
+            match_score: matchScore,
+          }
+        : null,
+    }
+  })
 
   return [0, 25, 50, 75].map((start) => normalized.slice(start, start + 25))
 }
@@ -1032,6 +1055,9 @@ onMounted(async () => {
 }
 
 .answer-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 36px;
   text-align: center;
   padding: 2px 8px;
@@ -1040,6 +1066,12 @@ onMounted(async () => {
   color: #5b21b6;
   font-weight: 700;
   font-size: 0.88rem;
+}
+
+.answer-value--button {
+  min-height: 24px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .answer-ok {

@@ -38,7 +38,9 @@
               v-model="parcial"
               :options="['1er Parcial', '2do Parcial']"
               label="Parcial"
-              outlined dense emit-value
+              outlined
+              dense
+              emit-value
             />
           </div>
           <div class="col-12 col-sm-3">
@@ -46,8 +48,13 @@
               v-model="filtroSedeId"
               :options="opcionesSedes"
               label="Sede (opcional)"
-              outlined dense clearable emit-value map-options
-              option-value="id" option-label="nombre"
+              outlined
+              dense
+              clearable
+              emit-value
+              map-options
+              option-value="id"
+              option-label="nombre"
               :loading="cargandoSedes"
               @update:model-value="onCambioSede"
             />
@@ -57,8 +64,13 @@
               v-model="filtroCarreraId"
               :options="opcionesCarreras"
               label="Carrera (opcional)"
-              outlined dense clearable emit-value map-options
-              option-value="id" option-label="label"
+              outlined
+              dense
+              clearable
+              emit-value
+              map-options
+              option-value="id"
+              option-label="label"
               :loading="cargandoCarreras"
               @update:model-value="onCambioCarrera"
             />
@@ -68,8 +80,13 @@
               v-model="filtroMateria"
               :options="opcionesMaterias"
               label="Materia (opcional)"
-              outlined dense clearable emit-value map-options
-              option-value="value" option-label="label"
+              outlined
+              dense
+              clearable
+              emit-value
+              map-options
+              option-value="value"
+              option-label="label"
               :loading="cargandoMaterias"
               use-input
               input-debounce="200"
@@ -79,10 +96,23 @@
         </div>
         <div class="row items-center q-gutter-md q-mt-sm">
           <q-space />
-          <q-btn unelevated color="info" icon="preview" label="Previsualizar"
-            :loading="loadingPreview" @click="preview" />
-          <q-btn unelevated color="deep-orange" icon="healing" label="Ejecutar Restauración"
-            :loading="loadingExecute" :disable="!puedeEjecutar" @click="confirmarEjecutar" />
+          <q-btn
+            unelevated
+            color="info"
+            icon="preview"
+            label="Previsualizar"
+            :loading="loadingPreview"
+            @click="preview"
+          />
+          <q-btn
+            unelevated
+            color="deep-orange"
+            icon="healing"
+            label="Ejecutar Restauración"
+            :loading="loadingExecute"
+            :disable="!puedeEjecutar"
+            @click="confirmarEjecutar"
+          />
         </div>
       </q-card-section>
     </q-card>
@@ -104,15 +134,16 @@
               <div class="text-h4" :class="'text-' + stat.color + '-9'">{{ stat.valor }}</div>
               <div class="text-caption" :class="'text-' + stat.color + '-8'">{{ stat.label }}</div>
             </q-card-section>
-    </q-card>
+          </q-card>
+        </div>
       </div>
-    </div>
 
-    <!-- Preview -->
+      <!-- Preview -->
       <div v-if="previewData && !resultado?.ok">
         <div class="text-subtitle2 text-weight-bold q-mb-sm">
           <q-icon name="preview" color="info" class="q-mr-xs" />
-          Resultados ({{ previewData.mostrando || previewData.detalles?.length || 0 }} de {{ previewData.total_encontradas || 0 }})
+          Resultados ({{ previewData.mostrando || previewData.detalles?.length || 0 }} de
+          {{ previewData.total_encontradas || 0 }})
         </div>
 
         <div v-if="previewData.detalles && previewData.detalles.length > 0">
@@ -133,27 +164,46 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="d in previewData.detalles" :key="d.pregunta_id" :class="rowClass(d.accion)">
+              <tr
+                v-for="d in previewData.detalles"
+                :key="d.pregunta_id"
+                :class="rowClass(d.accion)"
+              >
                 <td>{{ d.pregunta_id }}</td>
                 <td>{{ d.parcial }}</td>
                 <td>
                   <span :class="d.auto_2do_parcial ? 'text-positive text-weight-medium' : ''">
                     {{ d.parcial_final || d.parcial }}
                   </span>
-                  <q-badge v-if="d.auto_2do_parcial" color="green" text-color="white" class="q-ml-xs" dense>
+                  <q-badge
+                    v-if="d.auto_2do_parcial"
+                    color="green"
+                    text-color="white"
+                    class="q-ml-xs"
+                    dense
+                  >
                     2do ✓
                   </q-badge>
                 </td>
-                <td :class="d.accion === 'restaurar' ? 'text-negative' : ''">{{ d.asignatura_actual || 'N/A' }}</td>
-                <td :class="d.accion === 'restaurar' ? 'text-positive text-weight-medium' : ''">{{ d.asignatura_sugerida || '—' }}</td>
+                <td :class="d.accion === 'restaurar' ? 'text-negative' : ''">
+                  {{ d.asignatura_actual || 'N/A' }}
+                </td>
+                <td :class="d.accion === 'restaurar' ? 'text-positive text-weight-medium' : ''">
+                  {{ d.asignatura_sugerida || '—' }}
+                </td>
                 <td>{{ d.backup_fuente || '—' }}</td>
                 <td class="text-caption">{{ formatFecha(d.created_at) }}</td>
                 <td>{{ d.docente_id || '—' }}</td>
                 <td>{{ d.grupo_teorico || '—' }}</td>
                 <td>{{ d.sede_id || '—' }}</td>
                 <td>
-                  <q-chip dense size="sm" :color="accionColor(d.accion).bg"
-                    :text-color="accionColor(d.accion).text" :icon="accionColor(d.accion).icon">
+                  <q-chip
+                    dense
+                    size="sm"
+                    :color="accionColor(d.accion).bg"
+                    :text-color="accionColor(d.accion).text"
+                    :icon="accionColor(d.accion).icon"
+                  >
                     {{ accionLabel(d.accion) }}
                   </q-chip>
                 </td>
@@ -169,27 +219,46 @@
           <q-icon name="checklist" color="positive" class="q-mr-xs" />
           {{ resultado.cambios.length }} preguntas restauradas
         </div>
-        <q-table :rows="resultado.cambios" :columns="columnasCambios" row-key="pregunta_id"
-          dense flat bordered :rows-per-page-options="[20, 50, 100]" />
+        <q-table
+          :rows="resultado.cambios"
+          :columns="columnasCambios"
+          row-key="pregunta_id"
+          dense
+          flat
+          bordered
+          :rows-per-page-options="[20, 50, 100]"
+        />
       </div>
 
-      <q-banner v-if="resultado?.ok && (!resultado.cambios || resultado.cambios.length === 0)"
-        rounded class="bg-green-1 text-green-9">
+      <q-banner
+        v-if="resultado?.ok && (!resultado.cambios || resultado.cambios.length === 0)"
+        rounded
+        class="bg-green-1 text-green-9"
+      >
         <template #avatar><q-icon name="check_circle" color="green" /></template>
         Todas las preguntas ya estaban en su asignatura correcta.
       </q-banner>
 
-      <q-banner v-if="(previewData?.sin_consenso || 0) > 0" rounded class="bg-grey-2 text-grey-8 q-mt-md">
+      <q-banner
+        v-if="(previewData?.sin_consenso || 0) > 0"
+        rounded
+        class="bg-grey-2 text-grey-8 q-mt-md"
+      >
         <template #avatar><q-icon name="help" color="grey" /></template>
-        {{ previewData.sin_consenso }} preguntas sin datos en backups — se usarán los datos de la asignatura actual.
+        {{ previewData.sin_consenso }} preguntas sin datos en backups — se usarán los datos de la
+        asignatura actual.
       </q-banner>
     </div>
 
     <!-- EMPTY STATE -->
-    <div v-if="!previewData && !resultado && !loadingPreview && !loadingExecute"
-      class="column items-center q-py-xl">
+    <div
+      v-if="!previewData && !resultado && !loadingPreview && !loadingExecute"
+      class="column items-center q-py-xl"
+    >
       <q-icon name="healing" size="56px" color="grey-4" />
-      <div class="q-mt-sm text-grey-6">Haz clic en "Previsualizar" para analizar las bases de datos</div>
+      <div class="q-mt-sm text-grey-6">
+        Haz clic en "Previsualizar" para analizar las bases de datos
+      </div>
     </div>
 
     <!-- CONFIRM DIALOG -->
@@ -199,12 +268,15 @@
           <div class="text-h6">Confirmar Restauración</div>
         </q-card-section>
         <q-card-section>
-          <p>Se procesarán <strong>{{ previewData?.total_procesar || 0 }}</strong> preguntas.</p>
+          <p>
+            Se procesarán <strong>{{ previewData?.total_procesar || 0 }}</strong> preguntas.
+          </p>
           <p v-if="previewData?.restaurables > 0" class="text-positive text-weight-medium">
             {{ previewData.restaurables }} preguntas serán restauradas.
           </p>
           <p v-if="previewData?.sin_consenso > 0" class="text-orange text-weight-medium">
-            {{ previewData.sin_consenso }} preguntas sin backup se restaurarán usando la asignatura actual.
+            {{ previewData.sin_consenso }} preguntas sin backup se restaurarán usando la asignatura
+            actual.
           </p>
           <p class="text-negative text-weight-medium">Esta acción modifica la base de datos.</p>
         </q-card-section>
@@ -280,8 +352,11 @@ async function cargarSedes() {
   try {
     const res = await api.post('/restauracion/bancos/sedes')
     opcionesSedes.value = res.data || []
-  } catch { opcionesSedes.value = [] }
-  finally { cargandoSedes.value = false }
+  } catch {
+    opcionesSedes.value = []
+  } finally {
+    cargandoSedes.value = false
+  }
 }
 
 async function cargarCarreras() {
@@ -290,11 +365,15 @@ async function cargarCarreras() {
     const params = {}
     if (filtroSedeId.value) params.sede_id = filtroSedeId.value
     const res = await api.post('/restauracion/bancos/carreras', params)
-    opcionesCarreras.value = (res.data || []).map(c => ({
-      id: c.id, label: `${c.sigla || c.id} — ${c.nombre}`,
+    opcionesCarreras.value = (res.data || []).map((c) => ({
+      id: c.id,
+      label: `${c.sigla || c.id} — ${c.nombre}`,
     }))
-  } catch { opcionesCarreras.value = [] }
-  finally { cargandoCarreras.value = false }
+  } catch {
+    opcionesCarreras.value = []
+  } finally {
+    cargandoCarreras.value = false
+  }
 }
 
 async function cargarMaterias() {
@@ -306,15 +385,19 @@ async function cargarMaterias() {
     const res = await api.post('/restauracion/bancos/materias', params)
     todasMaterias.value = res.data || []
     opcionesMaterias.value = [...todasMaterias.value]
-  } catch { todasMaterias.value = []; opcionesMaterias.value = [] }
-  finally { cargandoMaterias.value = false }
+  } catch {
+    todasMaterias.value = []
+    opcionesMaterias.value = []
+  } finally {
+    cargandoMaterias.value = false
+  }
 }
 
 function filtrarMaterias(val, update) {
   update(() => {
     const needle = (val || '').toLowerCase()
     opcionesMaterias.value = needle
-      ? todasMaterias.value.filter(m => m.label.toLowerCase().includes(needle))
+      ? todasMaterias.value.filter((m) => m.label.toLowerCase().includes(needle))
       : [...todasMaterias.value]
   })
 }
@@ -333,18 +416,26 @@ function onCambioCarrera() {
 // ── Helpers visuales ──
 function accionColor(accion) {
   switch (accion) {
-    case 'restaurar': return { bg: 'deep-orange-1', text: 'deep-orange-9', icon: 'healing' }
-    case 'ya_correcta': return { bg: 'green-1', text: 'green-9', icon: 'check_circle' }
-    case 'sin_consenso': return { bg: 'amber-1', text: 'amber-9', icon: 'warning' }
-    default: return { bg: 'grey-2', text: 'grey-7', icon: 'help' }
+    case 'restaurar':
+      return { bg: 'deep-orange-1', text: 'deep-orange-9', icon: 'healing' }
+    case 'ya_correcta':
+      return { bg: 'green-1', text: 'green-9', icon: 'check_circle' }
+    case 'sin_consenso':
+      return { bg: 'amber-1', text: 'amber-9', icon: 'warning' }
+    default:
+      return { bg: 'grey-2', text: 'grey-7', icon: 'help' }
   }
 }
 function accionLabel(accion) {
   switch (accion) {
-    case 'restaurar': return 'Restaurar'
-    case 'ya_correcta': return 'Correcta'
-    case 'sin_consenso': return 'Sin backup'
-    default: return accion
+    case 'restaurar':
+      return 'Restaurar'
+    case 'ya_correcta':
+      return 'Correcta'
+    case 'sin_consenso':
+      return 'Sin backup'
+    default:
+      return accion
   }
 }
 function rowClass(accion) {
@@ -387,11 +478,18 @@ async function preview() {
       message: `${res.data.total_encontradas || 0} encontradas, ${res.data.restaurables || 0} restaurables`,
     })
   } catch (e) {
-    Notify.create({ type: 'negative', message: 'Error: ' + (e.response?.data?.message || e.message) })
-  } finally { loadingPreview.value = false }
+    Notify.create({
+      type: 'negative',
+      message: 'Error: ' + (e.response?.data?.message || e.message),
+    })
+  } finally {
+    loadingPreview.value = false
+  }
 }
 
-function confirmarEjecutar() { confirmDialog.value = true }
+function confirmarEjecutar() {
+  confirmDialog.value = true
+}
 
 async function ejecutar() {
   confirmDialog.value = false
@@ -409,8 +507,13 @@ async function ejecutar() {
       message: `${res.data.restauradas || 0} preguntas restauradas`,
     })
   } catch (e) {
-    Notify.create({ type: 'negative', message: 'Error: ' + (e.response?.data?.message || e.message) })
-  } finally { loadingExecute.value = false }
+    Notify.create({
+      type: 'negative',
+      message: 'Error: ' + (e.response?.data?.message || e.message),
+    })
+  } finally {
+    loadingExecute.value = false
+  }
 }
 
 // ── Init: solo cargar sedes al entrar ──
