@@ -6179,7 +6179,19 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
           content: 'UNIVERSIDAD TECNICA PRIVADA COSMOS\nGESTION I-2026',
           styles: { halign: 'center', fontSize: 13, fontStyle: 'bold' },
         },
-        { content: '', rowSpan: 2, styles: { cellWidth: 35 } },
+        {
+          content: `TIPO / VARIANTE\n${letra}`,
+          rowSpan: 2,
+          styles: {
+            cellWidth: 35,
+            halign: 'center',
+            valign: 'middle',
+            fontStyle: 'bold',
+            fontSize: 12,
+            textColor: [170, 45, 20],
+            fillColor: [255, 244, 230],
+          },
+        },
       ],
       [
         {
@@ -6248,7 +6260,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       [
         { content: `DOCENTE: ${String(examen.docente || '')}`, styles: { fontStyle: 'bold' } },
         {
-          content: `TIPO DE EXAMEN: ${String(examen.parcial || '')} - VAR ${letra}`,
+          content: `TIPO DE EXAMEN: ${String(examen.parcial || '')}`,
           styles: { fontStyle: 'bold' },
         },
       ],
