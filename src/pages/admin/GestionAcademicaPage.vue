@@ -48,6 +48,16 @@
           size="sm"
           @click="abrirDialogo('asignatura', null)"
         />
+        <q-btn
+          flat
+          dense
+          icon="playlist_add"
+          label="Asignar materias"
+          color="secondary"
+          size="sm"
+          :disable="!filtCarrera"
+          @click="abrirDlgAsignarMaterias"
+        />
       </div>
     </div>
 
@@ -1308,6 +1318,130 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- ── Diálogo: Asignar Materias Faltantes ── -->
+    <q-dialog v-model="dlg.asignarMaterias" persistent>
+      <q-card style="min-width: 800px; max-width: 90vw">
+        <q-card-section class="bg-secondary text-white row items-center q-py-sm">
+          <q-icon name="playlist_add" class="q-mr-sm" />
+          <span class="text-subtitle1 text-weight-bold">Asignar Materias a Carrera</span>
+          <q-space />
+          <q-btn flat round dense icon="close" v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="q-pa-md">
+          <div class="row q-col-gutter-sm q-mb-md">
+            <div class="col-12 col-sm-6">
+              <q-select
+                v-model="dlgAsignar.sede_id"
+                :options="opcionesSedes"
+                label="Sede destino *"
+                outlined
+                dense
+                clearable
+                emit-value
+                map-options
+                :rules="[(v) => !!v || 'Obligatorio']"
+              >
+                <template #prepend><q-icon name="location_city" size="18px" /></template>
+              </q-select>
+            </div>
+            <div class="col-12 col-sm-6">
+              <q-select
+                v-model="dlgAsignar.semestre"
+                :options="semestresOptions"
+                label="Semestre *"
+                outlined
+                dense
+                emit-value
+                map-options
+                :rules="[(v) => !!v || 'Obligatorio']"
+              >
+                <template #prepend><q-icon name="filter_1" size="18px" /></template>
+              </q-select>
+            </div>
+          </div>
+
+          <q-tabs
+            v-model="dlgAsignar.tabMalla"
+            class="text-primary"
+            active-color="primary"
+            indicator-color="primary"
+            align="justify"
+          >
+            <q-tab name="N" label="Malla Nueva" />
+            <q-tab name="A" label="Malla Antigua" />
+          </q-tabs>
+
+          <q-separator />
+
+          <div v-if="cargandoMaster" class="column items-center q-py-lg">
+            <q-spinner-dots color="primary" size="40px" />
+            <div class="q-mt-sm text-grey-6">Cargando materias...</div>
+          </div>
+
+          <div v-else-if="materiasParaAsignar.length === 0" class="text-grey-5 text-center q-py-lg">
+            No hay materias disponibles para esta malla en esta carrera.
+          </div>
+
+          <div v-else class="q-mt-sm" style="max-height: 400px; overflow-y: auto">
+            <div v-for="sem in semestresAgrupados" :key="sem" class="q-mb-md">
+              <div class="text-caption text-weight-bold text-grey-7 q-mb-xs q-pl-sm">
+                SEMESTRE {{ sem }}
+              </div>
+              <q-list dense bordered separator class="rounded-borders">
+                <q-item v-for="materia in getMateriasPorSemestre(sem)" :key="materia.asignatura_id">
+                  <q-item-section avatar>
+                    <q-checkbox
+                      v-model="dlgAsignar.seleccionados"
+                      :val="materia.asignatura_id"
+                      :disable="materia.ya_asignada_en_sede_actual"
+                      color="primary"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>
+                      <code class="text-grey-7 q-mr-sm">{{ materia.codigo }}</code>
+                      {{ materia.nombre }}
+                    </q-item-label>
+                    <q-item-label caption>
+                      {{ materia.creditos || 0 }} créditos
+                      <span v-if="materia.asignada_en_sedes && materia.asignada_en_sedes.length > 0">
+                        — Ya en:
+                        <span
+                          v-for="(s, idx) in materia.asignada_en_sedes"
+                          :key="s.sede_id"
+                          class="text-primary"
+                        >
+                          {{ s.sede_nombre }}{{ idx < materia.asignada_en_sedes.length - 1 ? ', ' : '' }}
+                        </span>
+                      </span>
+                      <span v-if="materia.ya_asignada_en_sede_actual" class="text-positive q-ml-sm">
+                        ✓ Ya asignada aquí
+                      </span>
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancelar" v-close-popup />
+          <q-btn
+            color="secondary"
+            icon="check"
+            :label="`Asignar Seleccionadas (${dlgAsignar.seleccionados.length})`"
+            :loading="guardando"
+            :disable="dlgAsignar.seleccionados.length === 0 || !dlgAsignar.sede_id || !dlgAsignar.semestre"
+            @click="asignarMateriasSeleccionadas"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -1545,8 +1679,39 @@ async function cargarDatos() {
         asigMap[g.asignatura_id].grupos.push(g)
       })
 
-    // 6. También agregar asignaturas que no tienen grupos (desde asignaturasStore si está cargado)
-    // Nota: por simplicidad, mostramos solo las que tienen grupos o las del store
+    // 6. También cargar asignaturas asignadas a la carrera/sede que NO tengan grupos
+    const aParams = { per_page: 500 }
+    if (filtSede.value) aParams.sede_id = filtSede.value
+    if (filtCarrera.value) aParams.carrera_id = filtCarrera.value
+    try {
+      const rAsignaturas = await api.get('/asignaturas', { params: aParams })
+      const asignaturasSinGrupos = rAsignaturas.data || []
+      asignaturasSinGrupos.forEach((a) => {
+        if (!asigMap[a.id]) {
+          // Solo agregar si no está ya (porque ya tiene grupos)
+          asigMap[a.id] = {
+            id: a.id,
+            nombre: a.nombre,
+            codigo: a.codigo,
+            plan_estudios: a.plan_estudios || null,
+            grupos: [],
+            // Traer datos extra del backend para consistencia
+            creditos: a.creditos,
+            semestre: a.semestre,
+            horas_teoricas: a.horas_teoricas,
+            horas_practicas: a.horas_practicas,
+            carrera_id: a.carrera_id,
+            carrera_nombre: a.carrera_nombre,
+            sede_id: a.sede_id,
+            sede_nombre: a.sede_nombre,
+          }
+        }
+      })
+    } catch (e) {
+      // Si falla, seguir con solo las que tienen grupos
+      console.warn('[GestionAcademica] No se pudieron cargar asignaturas sin grupos:', e.message)
+    }
+
     asignaturas.value = Object.values(asigMap)
       .filter((a) => a.nombre) // Descartar entradas con nombre nulo (grupos huérfanos residuales)
       .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
@@ -1671,6 +1836,7 @@ const dlg = ref({
   aula: false,
   docente: false,
   eliminar: false,
+  asignarMaterias: false
 })
 
 // Formularios de cada diálogo
@@ -1680,6 +1846,17 @@ const dlgHorario = ref({})
 const dlgBloque = ref({})
 const dlgAula = ref({})
 const dlgDocente = ref({})
+
+// Asignar materias faltantes
+const dlgAsignar = ref({
+  sede_id: null,
+  semestre: null,
+  tabMalla: 'N',
+  seleccionados: [],
+  masterData: null
+})
+const cargandoMaster = ref(false)
+const materiasMaster = ref([])
 
 // Para eliminación
 const eliminarTipo = ref('')
@@ -2264,6 +2441,88 @@ async function ejecutarEliminar() {
       type: 'negative',
       message: 'Error: ' + (err.response?.data?.message || err.message),
     })
+  } finally {
+    guardando.value = false
+  }
+}
+
+// ══════════════════════════════════════════════
+// ASIGNAR MATERIAS FALTANTES
+// ══════════════════════════════════════════════
+async function abrirDlgAsignarMaterias() {
+  if (!filtCarrera.value) {
+    Notify.create({ type: 'warning', message: 'Selecciona una carrera primero' })
+    return
+  }
+  dlgAsignar.value = {
+    sede_id: filtSede.value,
+    semestre: null,
+    tabMalla: 'N',
+    seleccionados: [],
+    masterData: null
+  }
+  materiasMaster.value = []
+  dlg.value.asignarMaterias = true
+  await cargarMasterMaterias()
+}
+
+async function cargarMasterMaterias() {
+  if (!filtCarrera.value) return
+  cargandoMaster.value = true
+  try {
+    const resp = await api.get(`/asignaturas/master/${filtCarrera.value}`, {
+      params: { sede_id: dlgAsignar.value.sede_id }
+    })
+    dlgAsignar.value.masterData = resp.data
+    materiasMaster.value = resp.data.mallas || { N: [], A: [] }
+  } catch (err) {
+    Notify.create({ type: 'negative', message: 'Error cargando materias: ' + err.message })
+  } finally {
+    cargandoMaster.value = false
+  }
+}
+
+const materiasParaAsignar = computed(() => {
+  const tab = dlgAsignar.value.tabMalla
+  return materiasMaster.value[tab] || []
+})
+
+const semestresAgrupados = computed(() => {
+  const sems = [...new Set(materiasParaAsignar.value.map((m) => m.semestre).filter(Boolean))]
+  return sems.sort((a, b) => a - b)
+})
+
+function getMateriasPorSemestre(sem) {
+  return materiasParaAsignar.value.filter((m) => m.semestre === sem)
+}
+
+const semestresOptions = computed(() => {
+  const sems = [...new Set(materiasParaAsignar.value.map((m) => m.semestre).filter(Boolean))]
+  return sems.sort((a, b) => a - b).map((s) => ({ label: `Semestre ${s}`, value: s }))
+})
+
+async function asignarMateriasSeleccionadas() {
+  const seleccionados = dlgAsignar.value.seleccionados
+  if (!seleccionados.length || !dlgAsignar.value.sede_id || !dlgAsignar.value.semestre) {
+    Notify.create({ type: 'warning', message: 'Completa sede y semestre' })
+    return
+  }
+  guardando.value = true
+  try {
+    const resp = await api.post('/asignaturas/asignar', {
+      asignatura_ids: seleccionados,
+      carrera_id: filtCarrera.value,
+      sede_id: dlgAsignar.value.sede_id,
+      semestre: dlgAsignar.value.semestre
+    })
+    Notify.create({
+      type: 'positive',
+      message: `${resp.data.asignadas} materia(s) asignada(s), ${resp.data.ya_existian} ya existían`
+    })
+    dlg.value.asignarMaterias = false
+    await cargarDatos()
+  } catch (err) {
+    Notify.create({ type: 'negative', message: 'Error: ' + (err.response?.data?.message || err.message) })
   } finally {
     guardando.value = false
   }
