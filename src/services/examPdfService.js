@@ -1150,6 +1150,14 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       statement = statement.substring(9).trim()
     }
 
+    if (
+      detailLines.length > 0 &&
+      !['PREGUNTA_CON_CLAVE', 'RESPUESTA_COMPUESTA'].includes(currentType)
+    ) {
+      statement = [statement, ...detailLines].filter(Boolean).join('\n')
+      detailLines = []
+    }
+
     let premiseDetailStartIndex = 0
     if (currentType === 'RESPUESTA_COMPUESTA') {
       const premiseLines =

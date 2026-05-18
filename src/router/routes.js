@@ -411,6 +411,12 @@
             meta: { title: 'Recuperación Manual', rol: ['SUPER_ADMIN', 'ADMIN'] },
           },
           {
+            path: 'auditoria-banco-plan',
+            name: 'auditoria-banco-plan',
+            component: () => import('pages/admin/AuditoriaBancoPlanPage.vue'),
+            meta: { title: 'Banco por Plan de Estudios', rol: ['SUPER_ADMIN', 'ADMIN'] },
+          },
+          {
             path: 'mallas-curriculares',
             name: 'admin-mallas-curriculares',
             component: () => import('pages/admin/MallasCurricularesPage.vue'),

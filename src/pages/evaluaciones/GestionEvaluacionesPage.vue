@@ -2063,20 +2063,28 @@ const normalizarParcialExamen = (value) => {
 
 const validarPreguntasSeleccionadasParaExamen = (preguntas = [], contexto = {}) => {
   const asignaturaIdEsperado = Number(contexto.asignatura_id || 0)
+  const sedeIdEsperada = Number(contexto.sede_id || 0)
+  const docenteIdEsperado = Number(contexto.docente_id || 0)
   const grupoEsperado = normalizarGrupoExamen(contexto.grupo)
   const parcialEsperado = normalizarParcialExamen(contexto.parcial)
   const inconsistencias = []
 
   ;(preguntas || []).forEach((pregunta, index) => {
     const asignaturaPregunta = Number(pregunta?.asignatura_id || 0)
-    const grupoPregunta = normalizarGrupoExamen(
-      pregunta?.grupoTeorico || pregunta?.grupo_teorico || pregunta?.grupo,
-    )
+    const sedePregunta = Number(pregunta?.sede_id || 0)
+    const docentePregunta = Number(pregunta?.docente_id || 0)
+    const grupoPregunta = normalizarGrupoExamen(pregunta?.grupoTeorico || pregunta?.grupo_teorico)
     const parcialPregunta = normalizarParcialExamen(pregunta?.parcial)
 
     const fallos = []
     if (asignaturaIdEsperado && asignaturaPregunta && asignaturaPregunta !== asignaturaIdEsperado) {
       fallos.push('asignatura')
+    }
+    if (sedeIdEsperada && sedePregunta && sedePregunta !== sedeIdEsperada) {
+      fallos.push('sede')
+    }
+    if (docenteIdEsperado && docentePregunta && docentePregunta !== docenteIdEsperado) {
+      fallos.push('docente')
     }
     if (grupoEsperado && grupoPregunta && grupoPregunta !== grupoEsperado) {
       fallos.push('grupo')
@@ -3678,9 +3686,13 @@ const buildManualQuestionsPayloadForQueue = () =>
   manualPreguntas.value.map((pregunta) => ({
     idx: pregunta.idx,
     id: pregunta.id,
+    asignatura_id: pregunta.asignatura_id,
+    sede_id: pregunta.sede_id,
+    docente_id: pregunta.docente_id,
     enunciado: pregunta.enunciado,
     tipo: pregunta.tipo,
     grupo: pregunta.grupo,
+    grupoTeorico: pregunta.grupoTeorico || pregunta.grupo_teorico,
     dificultad: pregunta.dificultad,
     parcial: pregunta.parcial,
     opciones: Array.isArray(pregunta.opciones) ? pregunta.opciones : [],
@@ -3911,6 +3923,8 @@ const ejecutarGeneracionManual = async () => {
 
       const validacionSeleccion = validarPreguntasSeleccionadasParaExamen(sorted, {
         asignatura_id: manualConfig.value.materia_obj?.value || null,
+        sede_id: manualConfig.value.sede?.value || null,
+        docente_id: manualConfig.value.docente_obj?.value || null,
         grupo: manualConfig.value.grupo,
         parcial: manualConfig.value.parcial,
       })
@@ -3919,7 +3933,7 @@ const ejecutarGeneracionManual = async () => {
         $q.notify({
           type: 'negative',
           message:
-            'Se detectaron preguntas fuera de la asignatura, grupo o parcial seleccionado. No se generó el examen.',
+            'Se detectaron preguntas fuera de la asignatura, sede, docente, grupo o parcial seleccionado. No se generó el examen.',
           caption: `Registros observados: ${validacionSeleccion.inconsistencias
             .slice(0, 5)
             .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
@@ -4736,6 +4750,7 @@ const ejecutarAccionGestion = async () => {
           params: {
             asignatura_id: examen.asignatura_id,
             docente_id: examen.docente_id,
+            sede_id: examen.sede_id,
             grupoTeorico: examen.grupo,
             parcial: examen.tipo_examen || examen.parcial,
             all_docentes: true,
@@ -4757,6 +4772,8 @@ const ejecutarAccionGestion = async () => {
 
       const validacionBancoContexto = validarPreguntasSeleccionadasParaExamen(bancoContexto, {
         asignatura_id: examen.asignatura_id,
+        sede_id: examen.sede_id,
+        docente_id: examen.docente_id,
         grupo: examen.grupo,
         parcial: examen.tipo_examen || examen.parcial,
       })
@@ -4765,7 +4782,7 @@ const ejecutarAccionGestion = async () => {
         $q.notify({
           type: 'negative',
           message:
-            'El banco contiene preguntas fuera de la asignatura, grupo o parcial del examen. Corrige el banco antes de generar.',
+            'El banco contiene preguntas fuera de la asignatura, sede, docente, grupo o parcial del examen. Corrige el banco antes de generar.',
           caption: `Registros observados: ${validacionBancoContexto.inconsistencias
             .slice(0, 5)
             .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
@@ -4903,6 +4920,8 @@ const ejecutarAccionGestion = async () => {
 
         const validacionSeleccion = validarPreguntasSeleccionadasParaExamen(sorted, {
           asignatura_id: examen.asignatura_id,
+          sede_id: examen.sede_id,
+          docente_id: examen.docente_id,
           grupo: examen.grupo,
           parcial: examen.tipo_examen || examen.parcial,
         })
@@ -4911,7 +4930,7 @@ const ejecutarAccionGestion = async () => {
           $q.notify({
             type: 'negative',
             message:
-              'Se detectaron preguntas fuera de la asignatura, grupo o parcial del examen. Se canceló la generación.',
+              'Se detectaron preguntas fuera de la asignatura, sede, docente, grupo o parcial del examen. Se canceló la generación.',
             caption: `Registros observados: ${validacionSeleccion.inconsistencias
               .slice(0, 5)
               .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)

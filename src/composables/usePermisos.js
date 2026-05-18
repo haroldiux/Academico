@@ -288,6 +288,11 @@ export function usePermisos() {
           icon: 'settings_backup_restore',
           to: '/admin/recuperacion-manual',
         },
+        {
+          label: 'Banco por Plan',
+          icon: 'rule_folder',
+          to: '/admin/auditoria-banco-plan',
+        },
       ]
       // Opciones adicionales solo para SUPER_ADMIN
       if (esSuperAdmin.value) {
