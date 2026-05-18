@@ -3889,9 +3889,11 @@ const ejecutarGeneracionManual = async () => {
             const mezcladas = mezclarIncisos7167(seleccion)
             const ordenBase = [
               'PROBLEMA',
-              'EMPAREJAMIENTO',
               'SUBPROBLEMA',
+              'EMPAREJAMIENTO',
+              'OPCION_EMPAREJAMIENTO',
               'SELECCION_UNICA',
+              'SELECCION_SIMPLE',
               'SELECCION_MULTIPLE',
               'FALSO_VERDADERO',
             ]
@@ -3909,7 +3911,8 @@ const ejecutarGeneracionManual = async () => {
               localOrder = []
               shuffled.forEach((t) => {
                 localOrder.push(t)
-                if (t === 'PROBLEMA' || t === 'EMPAREJAMIENTO') localOrder.push('SUBPROBLEMA')
+                if (t === 'PROBLEMA') localOrder.push('SUBPROBLEMA')
+                if (t === 'EMPAREJAMIENTO') localOrder.push('OPCION_EMPAREJAMIENTO')
               })
             }
 
@@ -4659,8 +4662,39 @@ const obtenerSeleccion7167 = (todas, config) => {
 }
 
 const mezclarIncisos7167 = (preguntas) => {
+  const remapsEmparejamiento = new Map()
+
+  preguntas.forEach((p) => {
+    const tipoNormalizado = normalizeTipo(p.tipo)
+    if (tipoNormalizado !== 'EMPAREJAMIENTO' || !Array.isArray(p.opciones)) return
+
+    const grupo = p.grupo || p.grupoTeorico || p.grupo_teorico
+    if (!grupo || p.opciones.length === 0) return
+
+    const nuevasOpciones = shuffle([...p.opciones])
+    const abcd = 'ABCDEFGHIJ'.split('')
+    const remap = new Map()
+
+    p.opciones = nuevasOpciones.map((o, idx) => {
+      const oldId = String(o.id || '').toUpperCase()
+      const newId = abcd[idx] || (idx + 1).toString()
+
+      if (oldId) {
+        remap.set(oldId, newId)
+      }
+
+      return { ...o, id: newId }
+    })
+
+    remapsEmparejamiento.set(String(grupo), remap)
+  })
+
   return preguntas.map((p) => {
-    const tipoNormalizado = String(p.tipo ?? '').toUpperCase()
+    const tipoNormalizado = normalizeTipo(p.tipo)
+
+    if (tipoNormalizado === 'EMPAREJAMIENTO') {
+      return p
+    }
     if (['FALSO_VERDADERO', 'FV'].includes(tipoNormalizado)) {
       // Normalización forzada: A=Verdadero, B=Falso
       const rawAns = Array.isArray(p.respuesta_correcta)
@@ -4682,6 +4716,20 @@ const mezclarIncisos7167 = (preguntas) => {
       p.respuesta_correcta = Array.isArray(p.respuesta_correcta)
         ? String(p.respuesta_correcta[0] || '').toUpperCase()
         : String(p.respuesta_correcta || '').toUpperCase()
+      return p
+    }
+
+    if (tipoNormalizado === 'OPCION_EMPAREJAMIENTO') {
+      const grupo = p.grupo || p.grupoTeorico || p.grupo_teorico
+      const remap = remapsEmparejamiento.get(String(grupo))
+      const normalizarRespuesta = (respuesta) => {
+        const respuestaKey = String(respuesta || '').toUpperCase()
+        return remap?.get(respuestaKey) || respuestaKey
+      }
+
+      p.respuesta_correcta = Array.isArray(p.respuesta_correcta)
+        ? p.respuesta_correcta.map(normalizarRespuesta).filter(Boolean)
+        : normalizarRespuesta(p.respuesta_correcta)
       return p
     }
 
@@ -5878,8 +5926,48 @@ const buildPatternAnswerCells = (preguntas = []) => {
   return answers
 }
 
+const validateMatchingPatternAnswers = (preguntas = [], variante = '') => {
+  const opcionesPorGrupo = new Map()
+
+  preguntas.forEach((pregunta) => {
+    if (normalizeTipo(pregunta?.tipo) !== 'EMPAREJAMIENTO') return
+
+    const grupo = pregunta?.grupo || pregunta?.grupoTeorico || pregunta?.grupo_teorico
+    if (!grupo || !Array.isArray(pregunta.opciones)) return
+
+    opcionesPorGrupo.set(
+      String(grupo),
+      new Set(pregunta.opciones.map((opcion) => String(opcion.id || '').toUpperCase())),
+    )
+  })
+
+  preguntas.forEach((pregunta) => {
+    if (normalizeTipo(pregunta?.tipo) !== 'OPCION_EMPAREJAMIENTO') return
+
+    const grupo = pregunta?.grupo || pregunta?.grupoTeorico || pregunta?.grupo_teorico
+    const opciones = opcionesPorGrupo.get(String(grupo))
+    if (!opciones || opciones.size === 0) return
+
+    const answerCell = normalizePatternAnswerCell(pregunta)
+    const respuestas = answerCell
+      .replace(/[()]/g, '')
+      .split(/[,;]/)
+      .map((respuesta) => respuesta.trim().toUpperCase())
+      .filter(Boolean)
+
+    const invalidas = respuestas.filter((respuesta) => !opciones.has(respuesta))
+    if (invalidas.length > 0) {
+      throw new Error(
+        `El patrón de la variante ${variante} tiene una respuesta de emparejamiento sin opción vigente: pregunta ${pregunta.id || pregunta.idx || '?'} grupo ${grupo}, respuesta ${invalidas.join(',')}.`,
+      )
+    }
+  })
+}
+
 const assertPatternConsistency = (resultadosVariantes = []) => {
   resultadosVariantes.forEach((res) => {
+    validateMatchingPatternAnswers(res.sorted, res.letra)
+
     const preguntasReales = getPatronEligibleQuestions(res.sorted)
     const expectedAnswers = buildPatternAnswerCells(preguntasReales)
     const auditAnswers = buildPatternAnswerCells(preguntasReales)

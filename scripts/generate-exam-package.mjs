@@ -211,7 +211,7 @@ const getPreguntaClaveOptionLines = (options = []) =>
     .filter((line) => !isPreguntaClaveFixedOption(line))
 
 const getQuestionGroup = (question) =>
-  String(question?.grupo || question?.grupoTeorico || '')
+  String(question?.grupo || question?.grupoTeorico || question?.grupo_teorico || '')
     .trim()
     .toUpperCase()
 
@@ -532,9 +532,40 @@ const buildExamQuestionSelection = (questions, config = {}) => {
     .flatMap((block) => block.items)
 }
 
-const mixExamQuestionOptions = (questions = []) =>
-  questions.map((question) => {
+const mixExamQuestionOptions = (questions = []) => {
+  const matchingAnswerRemaps = new Map()
+
+  questions.forEach((question) => {
     const tipoNormalizado = normalizeQuestionType(question.tipo)
+    if (tipoNormalizado !== 'EMPAREJAMIENTO' || !Array.isArray(question.opciones)) return
+
+    const group = getQuestionGroup(question)
+    if (!group || question.opciones.length === 0) return
+
+    const shuffledOptions = shuffle([...question.opciones])
+    const labels = 'ABCDEFGHIJ'.split('')
+    const answerRemap = new Map()
+
+    question.opciones = shuffledOptions.map((option, index) => {
+      const oldId = String(option.id || '').toUpperCase()
+      const newId = labels[index] || String(index + 1)
+
+      if (oldId) {
+        answerRemap.set(oldId, newId)
+      }
+
+      return { ...option, id: newId }
+    })
+
+    matchingAnswerRemaps.set(group, answerRemap)
+  })
+
+  return questions.map((question) => {
+    const tipoNormalizado = normalizeQuestionType(question.tipo)
+
+    if (tipoNormalizado === 'EMPAREJAMIENTO') {
+      return question
+    }
 
     if (tipoNormalizado === 'FALSO_VERDADERO') {
       const rawAnswer = Array.isArray(question.respuesta_correcta)
@@ -559,9 +590,16 @@ const mixExamQuestionOptions = (questions = []) =>
     }
 
     if (tipoNormalizado === 'OPCION_EMPAREJAMIENTO') {
+      const group = getQuestionGroup(question)
+      const answerRemap = matchingAnswerRemaps.get(group)
+      const normalizeAnswer = (answer) => {
+        const answerKey = String(answer || '').toUpperCase()
+        return answerRemap?.get(answerKey) || answerKey
+      }
+
       question.respuesta_correcta = Array.isArray(question.respuesta_correcta)
-        ? String(question.respuesta_correcta[0] || '').toUpperCase()
-        : String(question.respuesta_correcta || '').toUpperCase()
+        ? question.respuesta_correcta.map(normalizeAnswer).filter(Boolean)
+        : normalizeAnswer(question.respuesta_correcta)
       return question
     }
 
@@ -596,6 +634,7 @@ const mixExamQuestionOptions = (questions = []) =>
 
     return question
   })
+}
 
 const sortExamQuestionsForPdf = (questions = [], config = {}) => {
   const baseOrder = [
@@ -1474,8 +1513,48 @@ const buildPatternAnswerCells = (preguntas = []) => {
   return answers
 }
 
+const validateMatchingPatternAnswers = (questions = [], variantLabel = '') => {
+  const matchingOptionsByGroup = new Map()
+
+  questions.forEach((question) => {
+    if (normalizeQuestionType(question?.tipo) !== 'EMPAREJAMIENTO') return
+
+    const group = getQuestionGroup(question)
+    if (!group || !Array.isArray(question.opciones)) return
+
+    matchingOptionsByGroup.set(
+      group,
+      new Set(question.opciones.map((option) => String(option.id || '').toUpperCase())),
+    )
+  })
+
+  questions.forEach((question) => {
+    if (normalizeQuestionType(question?.tipo) !== 'OPCION_EMPAREJAMIENTO') return
+
+    const group = getQuestionGroup(question)
+    const optionIds = matchingOptionsByGroup.get(group)
+    if (!optionIds || optionIds.size === 0) return
+
+    const answerCell = normalizePatternAnswerCell(question)
+    const answers = answerCell
+      .replace(/[()]/g, '')
+      .split(/[,;]/)
+      .map((answer) => answer.trim().toUpperCase())
+      .filter(Boolean)
+
+    const invalid = answers.filter((answer) => !optionIds.has(answer))
+    if (invalid.length > 0) {
+      throw new Error(
+        `El patron de la variante ${variantLabel} tiene respuesta de emparejamiento sin opcion vigente: pregunta ${question.id || question.idx || '?'} grupo ${group}, respuesta ${invalid.join(',')}.`,
+      )
+    }
+  })
+}
+
 const assertPatternConsistency = (resultadosVariantes = []) => {
   resultadosVariantes.forEach((result) => {
+    validateMatchingPatternAnswers(result.sorted, result.letra)
+
     const preguntasReales = getPatronEligibleQuestions(result.sorted)
     const expectedAnswers = buildPatternAnswerCells(preguntasReales)
     const auditAnswers = buildPatternAnswerCells(preguntasReales)

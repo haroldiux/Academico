@@ -131,7 +131,7 @@ const getPreguntaClaveOptionLines = (options = []) =>
     .filter((line) => !isPreguntaClaveFixedOption(line))
 
 const getQuestionGroup = (question) =>
-  String(question?.grupo || question?.grupoTeorico || '')
+  String(question?.grupo || question?.grupoTeorico || question?.grupo_teorico || '')
     .trim()
     .toUpperCase()
 
@@ -378,9 +378,40 @@ export const buildExamQuestionSelection = (questions, config = {}) => {
     .flatMap((block) => block.items)
 }
 
-export const mixExamQuestionOptions = (questions = []) =>
-  questions.map((question) => {
+export const mixExamQuestionOptions = (questions = []) => {
+  const matchingAnswerRemaps = new Map()
+
+  questions.forEach((question) => {
     const tipoNormalizado = normalizeExamQuestionType(question.tipo)
+    if (tipoNormalizado !== 'EMPAREJAMIENTO' || !Array.isArray(question.opciones)) return
+
+    const group = getQuestionGroup(question)
+    if (!group || question.opciones.length === 0) return
+
+    const shuffledOptions = shuffle([...question.opciones])
+    const labels = 'ABCDEFGHIJ'.split('')
+    const answerRemap = new Map()
+
+    question.opciones = shuffledOptions.map((option, index) => {
+      const oldId = String(option.id || '').toUpperCase()
+      const newId = labels[index] || String(index + 1)
+
+      if (oldId) {
+        answerRemap.set(oldId, newId)
+      }
+
+      return { ...option, id: newId }
+    })
+
+    matchingAnswerRemaps.set(group, answerRemap)
+  })
+
+  return questions.map((question) => {
+    const tipoNormalizado = normalizeExamQuestionType(question.tipo)
+
+    if (tipoNormalizado === 'EMPAREJAMIENTO') {
+      return question
+    }
 
     if (tipoNormalizado === 'FALSO_VERDADERO') {
       const rawAnswer = Array.isArray(question.respuesta_correcta)
@@ -405,9 +436,16 @@ export const mixExamQuestionOptions = (questions = []) =>
     }
 
     if (tipoNormalizado === 'OPCION_EMPAREJAMIENTO') {
+      const group = getQuestionGroup(question)
+      const answerRemap = matchingAnswerRemaps.get(group)
+      const normalizeAnswer = (answer) => {
+        const answerKey = String(answer || '').toUpperCase()
+        return answerRemap?.get(answerKey) || answerKey
+      }
+
       question.respuesta_correcta = Array.isArray(question.respuesta_correcta)
-        ? String(question.respuesta_correcta[0] || '').toUpperCase()
-        : String(question.respuesta_correcta || '').toUpperCase()
+        ? question.respuesta_correcta.map(normalizeAnswer).filter(Boolean)
+        : normalizeAnswer(question.respuesta_correcta)
       return question
     }
 
@@ -442,6 +480,7 @@ export const mixExamQuestionOptions = (questions = []) =>
 
     return question
   })
+}
 
 export const sortExamQuestionsForPdf = (questions = [], config = {}) => {
   const baseOrder = [
