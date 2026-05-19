@@ -135,6 +135,19 @@ const getQuestionGroup = (question) =>
     .trim()
     .toUpperCase()
 
+const gcd = (a, b) => {
+  let x = Math.abs(Number(a) || 0)
+  let y = Math.abs(Number(b) || 0)
+  while (y) {
+    const rest = x % y
+    x = y
+    y = rest
+  }
+  return x
+}
+
+const gcdList = (values) => values.filter(Boolean).reduce((acc, value) => gcd(acc, value), 0)
+
 export const buildExamQuestionSelection = (questions, config = {}) => {
   const metaFacil = parseInt(config.facil, 10) || 7
   const metaMedio = parseInt(config.medio, 10) || 16
@@ -261,15 +274,88 @@ export const buildExamQuestionSelection = (questions, config = {}) => {
     { facil: 0, medio: 0, dificil: 0 },
   )
 
-  if (
-    available.facil < required.facil ||
-    available.medio < required.medio ||
-    available.dificil < required.dificil
-  ) {
-    return null
+  const totalRequired = required.facil + required.medio + required.dificil
+  const totalAvailable = available.facil + available.medio + available.dificil
+  const maxCandidateTotal = Math.min(100, totalAvailable)
+  const difficultyDivisors = ['facil', 'medio', 'dificil'].reduce((acc, difficulty) => {
+    const sizes = units.map((unit) => unit.counts[difficulty]).filter((value) => Number(value) > 0)
+    acc[difficulty] = gcdList(sizes) || 1
+    return acc
+  }, {})
+  const blockMismatchCount = (candidate) =>
+    ['facil', 'medio', 'dificil'].reduce((acc, difficulty) => {
+      const divisor = difficultyDivisors[difficulty]
+      return acc + (divisor > 1 && candidate[difficulty] % divisor !== 0 ? 1 : 0)
+    }, 0)
+  const candidateMap = new Map()
+  const addRequirementCandidate = (candidate) => {
+    const total = candidate.facil + candidate.medio + candidate.dificil
+    if (
+      candidate.facil < 0 ||
+      candidate.medio < 0 ||
+      candidate.dificil < 0 ||
+      candidate.facil > available.facil ||
+      candidate.medio > available.medio ||
+      candidate.dificil > available.dificil ||
+      total < totalRequired ||
+      total > maxCandidateTotal
+    ) {
+      return
+    }
+
+    const key = `${candidate.facil}|${candidate.medio}|${candidate.dificil}`
+    if (!candidateMap.has(key)) {
+      candidateMap.set(key, {
+        facil: candidate.facil,
+        medio: candidate.medio,
+        dificil: candidate.dificil,
+      })
+    }
   }
 
-  const trySelection = () => {
+  addRequirementCandidate(required)
+
+  for (let total = totalRequired; total <= maxCandidateTotal; total += 1) {
+    const maxFacil = Math.min(available.facil, total)
+    for (let facil = 0; facil <= maxFacil; facil += 1) {
+      const maxMedio = Math.min(available.medio, total - facil)
+      for (let medio = 0; medio <= maxMedio; medio += 1) {
+        const dificil = total - facil - medio
+        addRequirementCandidate({ facil, medio, dificil })
+      }
+    }
+  }
+
+  const requirementCandidates = [...candidateMap.values()].sort((a, b) => {
+    const totalA = a.facil + a.medio + a.dificil
+    const totalB = b.facil + b.medio + b.dificil
+    const shortfallA =
+      Math.max(0, required.facil - a.facil) +
+      Math.max(0, required.medio - a.medio) +
+      Math.max(0, required.dificil - a.dificil)
+    const shortfallB =
+      Math.max(0, required.facil - b.facil) +
+      Math.max(0, required.medio - b.medio) +
+      Math.max(0, required.dificil - b.dificil)
+    const deltaA =
+      Math.abs(required.facil - a.facil) +
+      Math.abs(required.medio - a.medio) +
+      Math.abs(required.dificil - a.dificil)
+    const deltaB =
+      Math.abs(required.facil - b.facil) +
+      Math.abs(required.medio - b.medio) +
+      Math.abs(required.dificil - b.dificil)
+
+    return (
+      shortfallA - shortfallB ||
+      blockMismatchCount(a) - blockMismatchCount(b) ||
+      totalA - totalB ||
+      deltaA - deltaB ||
+      Math.max(0, required.dificil - a.dificil) - Math.max(0, required.dificil - b.dificil)
+    )
+  })
+
+  const trySelection = (targetRequired) => {
     const orderedUnits = shuffle([...units]).sort((a, b) => {
       if (b.total !== a.total) return b.total - a.total
       const rangeA =
@@ -334,12 +420,16 @@ export const buildExamQuestionSelection = (questions, config = {}) => {
       return null
     }
 
-    return backtrack(0, required)
+    return backtrack(0, targetRequired)
   }
 
   let selectedUnits = null
-  for (let attempt = 0; attempt < 250 && !selectedUnits; attempt += 1) {
-    selectedUnits = trySelection()
+  for (const candidate of requirementCandidates) {
+    for (let attempt = 0; attempt < 250 && !selectedUnits; attempt += 1) {
+      selectedUnits = trySelection(candidate)
+    }
+
+    if (selectedUnits) break
   }
 
   if (!selectedUnits) {

@@ -384,23 +384,89 @@ const buildExamQuestionSelection = (questions, config = {}) => {
   )
 
   const totalRequired = required.facil + required.medio + required.dificil
-  const requirementCandidates = [
-    { ...required, adjusted: false },
-    ...Array.from({ length: required.dificil }, (_, index) => {
-      const dificil = required.dificil - index - 1
-      return {
-        facil: required.facil,
-        medio: totalRequired - required.facil - dificil,
-        dificil,
-        adjusted: true,
+  const totalAvailable = available.facil + available.medio + available.dificil
+  const maxCandidateTotal = Math.min(100, totalAvailable)
+  const difficultyDivisors = ['facil', 'medio', 'dificil'].reduce((acc, difficulty) => {
+    const sizes = units.map((unit) => unit.counts[difficulty]).filter((value) => Number(value) > 0)
+    acc[difficulty] = gcdList(sizes) || 1
+    return acc
+  }, {})
+  const blockMismatchCount = (candidate) =>
+    ['facil', 'medio', 'dificil'].reduce((acc, difficulty) => {
+      const divisor = difficultyDivisors[difficulty]
+      return acc + (divisor > 1 && candidate[difficulty] % divisor !== 0 ? 1 : 0)
+    }, 0)
+  const candidateMap = new Map()
+  const addRequirementCandidate = (candidate) => {
+    const total = candidate.facil + candidate.medio + candidate.dificil
+    if (
+      candidate.facil < 0 ||
+      candidate.medio < 0 ||
+      candidate.dificil < 0 ||
+      candidate.facil > available.facil ||
+      candidate.medio > available.medio ||
+      candidate.dificil > available.dificil ||
+      total < totalRequired ||
+      total > maxCandidateTotal
+    ) {
+      return
+    }
+
+    const key = `${candidate.facil}|${candidate.medio}|${candidate.dificil}`
+    if (!candidateMap.has(key)) {
+      candidateMap.set(key, {
+        facil: candidate.facil,
+        medio: candidate.medio,
+        dificil: candidate.dificil,
+        adjusted:
+          candidate.facil !== required.facil ||
+          candidate.medio !== required.medio ||
+          candidate.dificil !== required.dificil,
+      })
+    }
+  }
+
+  addRequirementCandidate(required)
+
+  for (let total = totalRequired; total <= maxCandidateTotal; total += 1) {
+    const maxFacil = Math.min(available.facil, total)
+    for (let facil = 0; facil <= maxFacil; facil += 1) {
+      const maxMedio = Math.min(available.medio, total - facil)
+      for (let medio = 0; medio <= maxMedio; medio += 1) {
+        const dificil = total - facil - medio
+        addRequirementCandidate({ facil, medio, dificil })
       }
-    }),
-  ].filter(
-    (candidate) =>
-      available.facil >= candidate.facil &&
-      available.medio >= candidate.medio &&
-      available.dificil >= candidate.dificil,
-  )
+    }
+  }
+
+  const requirementCandidates = [...candidateMap.values()].sort((a, b) => {
+    const totalA = a.facil + a.medio + a.dificil
+    const totalB = b.facil + b.medio + b.dificil
+    const shortfallA =
+      Math.max(0, required.facil - a.facil) +
+      Math.max(0, required.medio - a.medio) +
+      Math.max(0, required.dificil - a.dificil)
+    const shortfallB =
+      Math.max(0, required.facil - b.facil) +
+      Math.max(0, required.medio - b.medio) +
+      Math.max(0, required.dificil - b.dificil)
+    const deltaA =
+      Math.abs(required.facil - a.facil) +
+      Math.abs(required.medio - a.medio) +
+      Math.abs(required.dificil - a.dificil)
+    const deltaB =
+      Math.abs(required.facil - b.facil) +
+      Math.abs(required.medio - b.medio) +
+      Math.abs(required.dificil - b.dificil)
+
+    return (
+      shortfallA - shortfallB ||
+      blockMismatchCount(a) - blockMismatchCount(b) ||
+      totalA - totalB ||
+      deltaA - deltaB ||
+      Math.max(0, required.dificil - a.dificil) - Math.max(0, required.dificil - b.dificil)
+    )
+  })
 
   if (requirementCandidates.length === 0) {
     buildExamQuestionSelection.lastError = buildSelectionDiagnostic(required, available, units)
