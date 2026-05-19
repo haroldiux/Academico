@@ -2081,24 +2081,28 @@ function obtenerContextoCartilla2P(asignatura, docente = null) {
 
   if (!docenteData?.id || !grupoTeorico) return null
 
+  const sedeId = docenteData.sede_id || asignatura.sede_id
+  const rolExamen2P = obtenerRolExamen2P(asignatura, docenteData)
+
   return {
     asignaturaId: asignatura.id,
     asignaturaNombre: asignatura.nombre,
+    sedeId,
     docenteId: docenteData.id,
     docenteNombre: docenteData.nombre_completo || docenteData.nombre || asignatura.docente_nombre,
     grupoTeorico: String(grupoTeorico).trim(),
-    key: crearBancoPreguntas2PKey(
-      asignatura.id,
-      docenteData.id,
-      docenteData.sede_id || asignatura.sede_id,
-      grupoTeorico,
-    ),
+    estadoExamen:
+      rolExamen2P?.estado || docenteData.estado_examen_2p || docenteData.estado_rol_examen_2p,
+    key: crearBancoPreguntas2PKey(asignatura.id, docenteData.id, sedeId, grupoTeorico),
     stats: obtenerBancoPreguntas2P(asignatura, docenteData) || null,
   }
 }
 
 function puedeAlternarCartilla2P(asignatura, docente = null) {
-  return Boolean(obtenerContextoCartilla2P(asignatura, docente))
+  const contexto = obtenerContextoCartilla2P(asignatura, docente)
+  if (!contexto?.sedeId) return false
+
+  return ['programado', 'programados'].includes(normalizarEstadoExamen2P(contexto.estadoExamen))
 }
 
 function examenConCartilla2P(asignatura, docente = null) {
@@ -2117,6 +2121,16 @@ async function confirmarCambioCartilla2P(asignatura, nuevoValor, docente = null)
     $q.notify({
       type: 'warning',
       message: 'No se encontró el grupo teórico del 2do Parcial para cambiar la cartilla.',
+    })
+    return
+  }
+
+  if (!puedeAlternarCartilla2P(asignatura, docente)) {
+    $q.notify({
+      type: 'warning',
+      message: 'La cartilla solo puede cambiarse mientras el examen estÃ¡ en estado Programado.',
+      caption: `Estado actual: ${formatearEstadoExamen2P(contexto.estadoExamen)}`,
+      icon: 'lock',
     })
     return
   }
@@ -2157,6 +2171,7 @@ async function guardarCambioCartilla2P(contexto, nuevoValor) {
   try {
     await api.post('/banco-preguntas/save-config', {
       asignatura_id: contexto.asignaturaId,
+      sede_id: contexto.sedeId,
       docente_id: contexto.docenteId,
       grupo_teorico: contexto.grupoTeorico,
       parcial: '2do Parcial',

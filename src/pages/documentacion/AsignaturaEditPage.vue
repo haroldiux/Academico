@@ -2221,17 +2221,17 @@
                 <div class="text-caption text-grey-7">Generar hoja óptica automática</div>
               </div>
               <div class="col-auto">
-                <q-btn-toggle
-                  v-model="conCartilla"
-                  toggle-color="deep-purple"
-                  flat
-                  stretch
-                  :disable="modoBancoSinPermisoModificar"
-                  :options="[
-                    { label: 'Con Cartilla', value: true },
-                    { label: 'Sin Cartilla', value: false },
-                  ]"
-                />
+                <q-chip
+                  :color="conCartilla ? 'deep-purple-1' : 'deep-orange-1'"
+                  :text-color="conCartilla ? 'deep-purple-9' : 'deep-orange-10'"
+                  :icon="conCartilla ? 'menu_book' : 'block'"
+                  class="text-weight-bold"
+                >
+                  {{ conCartilla ? 'Con Cartilla' : 'Sin Cartilla' }}
+                  <q-tooltip>
+                    La preferencia de cartilla se gestiona desde Plan de Estudios.
+                  </q-tooltip>
+                </q-chip>
               </div>
             </div>
 
@@ -2530,7 +2530,7 @@
         <q-card-actions align="right" class="q-pa-md">
           <q-btn flat label="Cancelar" @click="cerrarDialogImportBanco" no-caps />
           <q-btn
-            v-if="!conCartilla && !archivoPreviewBanco"
+            v-if="cambioCartillaDesdeBancoHabilitado && !conCartilla && !archivoPreviewBanco"
             unelevated
             color="deep-orange"
             icon="save"
@@ -2541,7 +2541,7 @@
             @click="confirmarConfiguracionSinCartilla"
           />
           <q-btn
-            v-if="conCartilla && !archivoPreviewBanco"
+            v-if="cambioCartillaDesdeBancoHabilitado && conCartilla && !archivoPreviewBanco"
             flat
             color="primary"
             icon="settings_backup_restore"
@@ -5108,6 +5108,7 @@ const importErroresNormalizados = computed(() =>
 const importandoBanco = ref(false)
 const modoImportacion = ref('reemplazar')
 const conCartilla = ref(true)
+const cambioCartillaDesdeBancoHabilitado = false
 const parcialSeleccionado = ref('1P')
 const filtroBancoParcialSeleccionado = ref('2P')
 const mostrarAccionesExcelBanco = computed(
@@ -11470,6 +11471,15 @@ async function confirmarImportacionBanco() {
 }
 
 async function confirmarConfiguracionSinCartilla() {
+  if (!cambioCartillaDesdeBancoHabilitado) {
+    $q.notify({
+      type: 'info',
+      message: 'La preferencia de cartilla se gestiona desde Plan de Estudios.',
+      icon: 'info',
+    })
+    return
+  }
+
   if (modoBancoSinPermisoModificar.value) {
     $q.notify({
       type: 'info',
@@ -11517,6 +11527,15 @@ async function confirmarConfiguracionSinCartilla() {
 }
 
 async function guardarConfiguracionSinCartillaTrue() {
+  if (!cambioCartillaDesdeBancoHabilitado) {
+    $q.notify({
+      type: 'info',
+      message: 'La preferencia de cartilla se gestiona desde Plan de Estudios.',
+      icon: 'info',
+    })
+    return
+  }
+
   if (modoBancoSinPermisoModificar.value) {
     $q.notify({
       type: 'info',
@@ -11542,6 +11561,7 @@ async function ejecutarGuardarConfiguracion(valorConCartilla) {
   try {
     const payload = {
       asignatura_id: route.params.id,
+      sede_id: sedeIdBancoContextual.value,
       grupo_teorico: grupoTeoricoSeleccionado.value,
       parcial: parcialSeleccionado.value || '1P',
       con_cartilla: valorConCartilla,

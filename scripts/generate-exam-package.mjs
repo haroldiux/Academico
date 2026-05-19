@@ -442,6 +442,8 @@ const buildExamQuestionSelection = (questions, config = {}) => {
   const requirementCandidates = [...candidateMap.values()].sort((a, b) => {
     const totalA = a.facil + a.medio + a.dificil
     const totalB = b.facil + b.medio + b.dificil
+    const totalDeltaA = Math.abs(totalRequired - totalA)
+    const totalDeltaB = Math.abs(totalRequired - totalB)
     const shortfallA =
       Math.max(0, required.facil - a.facil) +
       Math.max(0, required.medio - a.medio) +
@@ -460,6 +462,7 @@ const buildExamQuestionSelection = (questions, config = {}) => {
       Math.abs(required.dificil - b.dificil)
 
     return (
+      totalDeltaA - totalDeltaB ||
       shortfallA - shortfallB ||
       blockMismatchCount(a) - blockMismatchCount(b) ||
       totalA - totalB ||
