@@ -20,6 +20,8 @@ graph TD
     A --> F(05. Planificación Semestral)
     A --> G(06. Control de Clase y Seguimiento)
     A --> H(07. Banco de Preguntas y Exámenes)
+    A --> I(08. Gestión de Evaluaciones y Exámenes)
+    A --> J(09. Sincronización y Motores)
 ```
 
 ### 📖 Módulos Detallados:
@@ -31,6 +33,8 @@ graph TD
 5.  **[📅 Planificación Semestral](docs/05_planificacion_semestral.md):** Cuadrícula interactiva de 20 semanas para la programación didáctica del docente y su versión offline.
 6.  **[📝 Control de Clase y Seguimiento](docs/06_control_clase_seguimiento.md):** **Flujo crítico Offline-First** con marcas de asistencia, firmas digitales y carga de evidencias en disco local con Capacitor Filesystem.
 7.  **[🎯 Banco de Preguntas y Evaluaciones](docs/07_banco_preguntas_evaluaciones.md):** Generación aleatoria y balanceada de exámenes basados en patrones de dificultad.
+8.  **[⚙️ Gestión de Evaluaciones y Rol de Exámenes](docs/08_gestion_evaluaciones_y_examenes.md):** Directivas de exámenes y calendario del Rol de Exámenes con validaciones de colisión en tiempo real.
+9.  **[🔄 Sincronización y Motores de Comparación](docs/09_sincronizacion_y_patrones.md):** Sincronización centralizada, comparadores analíticos pre/post sync, verificador lexical PDF y restaurador granular de backups.
 
 ---
 
