@@ -7633,6 +7633,7 @@ async function eliminarBancoFiltrado() {
   try {
     const payload = {
       asignatura_id: route.params.id,
+      sede_id: sedeIdBancoContextual.value,
       grupo_teorico: filtroBancoGrupoSeleccionado.value,
       parcial: filtroBancoParcialSeleccionado.value,
     }

@@ -159,9 +159,15 @@ export const buildExamQuestionSelection = (questions, config = {}) => {
   }
 
   const difficultyKey = (question) => {
-    const dificultad = String(question.nivel_dificultad || question.dificultad || '1').toUpperCase()
+    const dificultad = String(question.nivel_dificultad || question.dificultad || '1')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace('FµCIL', 'FACIL')
+      .replace('DIFÖCIL', 'DIFICIL')
+      .replace('DIFOCIL', 'DIFICIL')
     if (['1', 'FACIL'].includes(dificultad)) return 'facil'
-    if (['2', 'MEDIO', 'MEDIA'].includes(dificultad)) return 'medio'
+    if (['2', 'MEDIO', 'MEDIA', 'INTERMEDIO', 'INTERMEDIA'].includes(dificultad)) return 'medio'
     if (['3', 'DIFICIL'].includes(dificultad)) return 'dificil'
     return null
   }
