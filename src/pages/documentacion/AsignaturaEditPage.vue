@@ -4118,6 +4118,12 @@ function normalizeGroupName(name) {
     .replace(/^(GRUPO|G-?)\s*/i, '')
 }
 
+function getGrupoOptionLabel(nombre) {
+  const grupo = String(nombre || '').trim()
+  if (!grupo) return 'Grupo'
+  return /^grupo\s+/i.test(grupo) ? grupo : `Grupo ${grupo}`
+}
+
 function countLogros(tema) {
   const logros = tema.logros_esperados || tema.logros || []
   return logros.length
@@ -8934,14 +8940,22 @@ async function cargarBancoPreguntas() {
 
   // Inyectar docente_id de la carpeta o del usuario logueado
   const dId = docenteIdBancoContextual.value
+  const sedeId = sedeIdBancoContextual.value
 
   try {
-    let url = `/banco-preguntas?asignatura_id=${asignatura.value.id}`
-    if (dId) {
-      url += `&docente_id=${dId}`
+    const params = {
+      asignatura_id: asignatura.value.id,
     }
 
-    const { data } = await api.get(url)
+    if (dId) {
+      params.docente_id = dId
+    }
+
+    if (sedeId) {
+      params.sede_id = sedeId
+    }
+
+    const { data } = await api.get('/banco-preguntas', { params })
     bancoPreguntasLocal.value = sanitizarEstructuraMojibake(data.preguntas || data)
   } catch (error) {
     console.error('Error al cargar banco de preguntas:', error)
@@ -10983,17 +10997,59 @@ const gruposTeoricosOptions = computed(() => {
   )
 
   // Filtrar por docente si el rol es DOCENTE o si somos directivos viendo una carpeta especÒ�� �"Ò� â����Ò�â��šÒ�a�­fica
+  const targetSedeId = sedeIdBancoContextual.value
+  if (targetSedeId) {
+    const gruposMismaSede = grupos.filter((g) => Number(g.sede_id) === Number(targetSedeId))
+    if (gruposMismaSede.length > 0) {
+      grupos = gruposMismaSede
+    }
+  }
+
   const targetDocenteId = docenteIdBancoContextual.value
 
   if (targetDocenteId) {
     grupos = grupos.filter((g) => Number(g.docente_id) === Number(targetDocenteId))
   }
 
-  return grupos.map((g) => ({
-    label: `Grupo ${g.nombre}`,
-    value: g.nombre, // Usamos el nombre del grupo
-  }))
+  const gruposUnicos = new Map()
+
+  grupos.forEach((g) => {
+    const nombre = String(g.nombre || '').trim()
+    const key = normalizeGroupName(nombre)
+    if (nombre && key && !gruposUnicos.has(key)) {
+      gruposUnicos.set(key, nombre)
+    }
+  })
+
+  return [...gruposUnicos.values()]
+    .sort((a, b) =>
+      normalizeGroupName(a).localeCompare(normalizeGroupName(b), 'es', { numeric: true }),
+    )
+    .map((nombre) => ({
+      label: getGrupoOptionLabel(nombre),
+      value: nombre, // Usamos el nombre del grupo
+    }))
 })
+
+watch(
+  gruposTeoricosOptions,
+  (options) => {
+    const seleccionado = filtroBancoGrupoSeleccionado.value
+    if (!options.length) {
+      filtroBancoGrupoSeleccionado.value = null
+      return
+    }
+
+    const existeSeleccion = options.some(
+      (option) => normalizeGroupName(option.value) === normalizeGroupName(seleccionado),
+    )
+
+    if (!seleccionado || !existeSeleccion) {
+      filtroBancoGrupoSeleccionado.value = options[0].value
+    }
+  },
+  { immediate: true },
+)
 
 // Mapping de columnas del Excel (orden igual que el formato descargado)
 const COLS = {

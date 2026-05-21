@@ -185,10 +185,17 @@
             </q-item-section>
             <q-item-section>
               <q-item-label class="text-h6">{{ semestre.nombre }}</q-item-label>
-              <q-item-label caption
-                >{{ semestre.asignaturas.length }} asignaturas -
-                {{ semestre.horasTotales }} horas</q-item-label
-              >
+              <q-item-label caption>
+                {{ contarAsignaturasUnicas(semestre.asignaturas) }} asignaturas
+                <template
+                  v-if="
+                    semestre.asignaturas.length !== contarAsignaturasUnicas(semestre.asignaturas)
+                  "
+                >
+                  - {{ semestre.asignaturas.length }} grupos
+                </template>
+                - {{ semestre.horasTotales }} horas
+              </q-item-label>
             </q-item-section>
           </template>
 
@@ -265,11 +272,25 @@
                             <div class="text-weight-medium text-body2">
                               {{ props.row.docente_nombre_mostrar }}
                             </div>
+                            <div
+                              v-if="props.row.grupo_teorico_mostrar"
+                              class="text-caption text-primary text-weight-medium"
+                            >
+                              <q-icon name="class" size="13px" class="q-mr-xs" />
+                              Grupo {{ props.row.grupo_teorico_mostrar }}
+                            </div>
                           </div>
                         </div>
                         <div v-else class="text-grey-5 text-italic">
                           <q-icon name="warning" color="warning" class="q-mr-xs" />
                           Sin asignar
+                          <div
+                            v-if="props.row.grupo_teorico_mostrar"
+                            class="text-caption text-primary text-weight-medium q-mt-xs"
+                          >
+                            <q-icon name="class" size="13px" class="q-mr-xs" />
+                            Grupo {{ props.row.grupo_teorico_mostrar }}
+                          </div>
                         </div>
                       </template>
 
@@ -1714,9 +1735,13 @@ async function cargarBancoPreguntas2P() {
   const solicitudes = []
 
   asignaturasStore.asignaturas.forEach((asignatura) => {
-    if (!asignatura.docentes_data?.length) return
+    const gruposBanco = asignatura.grupos_teoricos_data?.length
+      ? asignatura.grupos_teoricos_data
+      : asignatura.docentes_data || []
 
-    asignatura.docentes_data.forEach((docente) => {
+    if (!gruposBanco.length) return
+
+    gruposBanco.forEach((docente) => {
       const grupoTeorico = docente.grupo_teorico_nombre || docente.preguntas_2p_stats?.grupo_teorico
       if (!docente.id || !grupoTeorico) return
 
@@ -1853,7 +1878,7 @@ const columnasAsignaturas = [
     format: (val, row) => (row.horas_teoricas || 0) * 20 + (row.horas_practicas || 0) * 20,
     style: 'width: 80px',
   }, // Suma x20
-  { name: 'docente', label: 'Docente Principal', field: 'docente_nombre', align: 'left' },
+  { name: 'docente', label: 'Docente / Grupo', field: 'docente_nombre', align: 'left' },
   {
     name: 'progreso',
     label: 'Progreso Doc.',
@@ -1900,19 +1925,121 @@ const asignadasCount = computed(
 )
 const vacantesCount = computed(() => totalAsignaturas.value - asignadasCount.value)
 
+function crearFilaAsignaturaPorGrupo(asig, docenteGrupo = null) {
+  const docentesData = docenteGrupo
+    ? docenteGrupo.id
+      ? [docenteGrupo]
+      : []
+    : asig.docentes_data || []
+  const docenteUnico =
+    docenteGrupo && docenteGrupo.id
+      ? docenteGrupo
+      : docentesData.length === 1
+        ? docentesData[0]
+        : null
+
+  let progresoMostrar = asig.progreso_documentacion
+  let indicadoresMostrar = asig.indicadores_documentacion
+  let docenteNombreMostrar =
+    docentesData.length > 1 ? 'Varios Docentes (' + docentesData.length + ')' : asig.docente_nombre
+
+  let preguntas2pMostrar = obtenerBancoPreguntas2P(asig) || asig.preguntas_2p_stats
+  const rolExamen2P = obtenerRolExamen2P(asig)
+  let fecha2pMostrar = rolExamen2P?.fecha || asig.fecha_2p
+  let horaInicio2pMostrar = rolExamen2P?.hora_inicio || asig.hora_inicio_2p
+  let horaFin2pMostrar = rolExamen2P?.hora_fin || asig.hora_fin_2p
+  let estadoExamen2pMostrar =
+    rolExamen2P?.estado || asig.estado_examen_2p || asig.estado_rol_examen_2p
+
+  if (docenteUnico) {
+    const rolExamenDocente2P = obtenerRolExamen2P(asig, docenteUnico) || rolExamen2P
+    progresoMostrar = docenteUnico.progreso_documentacion
+    indicadoresMostrar = docenteUnico.indicadores_documentacion
+    docenteNombreMostrar = docenteUnico.nombre || asig.docente_nombre
+    preguntas2pMostrar =
+      obtenerBancoPreguntas2P(asig, docenteUnico) || docenteUnico.preguntas_2p_stats
+    fecha2pMostrar = rolExamenDocente2P?.fecha || docenteUnico.fecha_2p
+    horaInicio2pMostrar = rolExamenDocente2P?.hora_inicio || docenteUnico.hora_inicio_2p
+    horaFin2pMostrar = rolExamenDocente2P?.hora_fin || docenteUnico.hora_fin_2p
+    estadoExamen2pMostrar =
+      rolExamenDocente2P?.estado ||
+      docenteUnico.estado_examen_2p ||
+      docenteUnico.estado_rol_examen_2p
+  }
+
+  const grupoTeoricoMostrar =
+    docenteGrupo?.grupo_teorico_nombre ||
+    docenteGrupo?.grupo_nombre ||
+    docenteUnico?.grupo_teorico_nombre ||
+    docenteUnico?.preguntas_2p_stats?.grupo_teorico ||
+    null
+
+  return {
+    ...asig,
+    carrera_id: docenteGrupo?.carrera_id || asig.carrera_id,
+    sede_id: docenteGrupo?.sede_id || asig.sede_id,
+    docentes_data: docentesData,
+    docentes: docenteGrupo?.nombre ? [docenteGrupo.nombre] : asig.docentes,
+    docente_nombre: docenteGrupo?.nombre || asig.docente_nombre,
+    row_key: docenteGrupo
+      ? String(asig.id) +
+        '-grupo-' +
+        (docenteGrupo.grupo_id || grupoTeoricoMostrar || docenteGrupo.id)
+      : asig.id,
+    fila_por_grupo: Boolean(docenteGrupo),
+    grupo_contexto: docenteGrupo,
+    grupo_teorico_mostrar: grupoTeoricoMostrar,
+    progreso_mostrar: progresoMostrar,
+    indicadores_mostrar: indicadoresMostrar,
+    preguntas_2p_stats: preguntas2pMostrar,
+    fecha_2p: fecha2pMostrar,
+    hora_inicio_2p: horaInicio2pMostrar,
+    hora_fin_2p: horaFin2pMostrar,
+    estado_examen_2p: estadoExamen2pMostrar,
+    docente_nombre_mostrar: docenteNombreMostrar,
+  }
+}
+
+function ordenarFilasAsignatura(a, b) {
+  const docenteA = String(a.docente_nombre_mostrar || a.docente_nombre || '').toLocaleLowerCase()
+  const docenteB = String(b.docente_nombre_mostrar || b.docente_nombre || '').toLocaleLowerCase()
+  const porDocente = docenteA.localeCompare(docenteB, 'es')
+  if (porDocente !== 0) return porDocente
+
+  const porAsignatura = String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es')
+  if (porAsignatura !== 0) return porAsignatura
+
+  return String(a.grupo_teorico_mostrar || '').localeCompare(
+    String(b.grupo_teorico_mostrar || ''),
+    'es',
+    { numeric: true },
+  )
+}
+
+function contarAsignaturasUnicas(asignaturas) {
+  return new Set(asignaturas.map((asig) => asig.id)).size
+}
+
 // ComputedPrincipal: Semestres Agrupados
 const semestresFiltrados = computed(() => {
   const busqueda = filtros.value.buscar.toLowerCase()
   let lista = asignaturasStore.asignaturas
 
-  // 1. Filtrado por búsqueda
+  // 1. Filtrado por busqueda
   if (busqueda) {
-    lista = lista.filter(
-      (a) =>
+    lista = lista.filter((a) => {
+      const gruposTexto = (a.grupos_teoricos_data || [])
+        .map((grupo) => String(grupo.nombre || '') + ' ' + String(grupo.grupo_teorico_nombre || ''))
+        .join(' ')
+        .toLowerCase()
+
+      return (
         a.nombre.toLowerCase().includes(busqueda) ||
         a.codigo.toLowerCase().includes(busqueda) ||
-        (a.docente_nombre && a.docente_nombre.toLowerCase().includes(busqueda)),
-    )
+        (a.docente_nombre && a.docente_nombre.toLowerCase().includes(busqueda)) ||
+        gruposTexto.includes(busqueda)
+      )
+    })
   }
 
   // 2. Filtro por Plan Curricular (N / A)
@@ -1920,20 +2047,17 @@ const semestresFiltrados = computed(() => {
     lista = lista.filter((a) => (a.plan_estudios || 'N') === filtros.value.planEstudios)
   }
 
-  // 3. Filtro: ocultar sin docente asignado o con nombre inválido (ej. 'A A A')
+  // 3. Filtro: ocultar sin docente asignado o con nombre invalido (ej. 'A A A')
   if (!canToggleOcultarSinAsignar.value || filtros.value.ocultarSinAsignar) {
     lista = lista.filter((a) => {
       const tieneDocente = a.docentes_data && a.docentes_data.length > 0
       if (!tieneDocente) return false
-      // Excluir nombres que son solo letras sueltas: 'A A A', 'B B', etc.
       const nombre = (a.docente_nombre || '').trim()
       const esPlaceholder = nombre.length > 0 && nombre.split(' ').every((w) => w.length <= 1)
       return !esPlaceholder
     })
   }
 
-  // 2. Agrupación por Semestre
-  // Estructura deseada: [{ id: 1, nombre: 'Primer Semestre', asignaturas: [...] }, ...]
   const grupos = {}
 
   lista.forEach((asig) => {
@@ -1948,56 +2072,27 @@ const semestresFiltrados = computed(() => {
       }
     }
 
-    // Sumar horas
     grupos[sem].horasTotales += (asig.horas_teoricas || 0) * 20 + (asig.horas_practicas || 0) * 20
 
-    let progresoMostrar = asig.progreso_documentacion
-    let indicadoresMostrar = asig.indicadores_documentacion
-    let docenteNombreMostrar =
-      asig.docentes_data?.length > 1
-        ? `Varios Docentes (${asig.docentes_data.length})`
-        : asig.docente_nombre
+    const gruposTeoricos = asig.grupos_teoricos_data || []
+    const filas = gruposTeoricos.length
+      ? gruposTeoricos.map((grupoDocente) => crearFilaAsignaturaPorGrupo(asig, grupoDocente))
+      : [crearFilaAsignaturaPorGrupo(asig)]
+    const filasVisibles =
+      !canToggleOcultarSinAsignar.value || filtros.value.ocultarSinAsignar
+        ? filas.filter((fila) => fila.docente_nombre)
+        : filas
 
-    let preguntas2pMostrar = obtenerBancoPreguntas2P(asig) || asig.preguntas_2p_stats
-    const rolExamen2P = obtenerRolExamen2P(asig)
-    let fecha2pMostrar = rolExamen2P?.fecha || asig.fecha_2p
-    let horaInicio2pMostrar = rolExamen2P?.hora_inicio || asig.hora_inicio_2p
-    let horaFin2pMostrar = rolExamen2P?.hora_fin || asig.hora_fin_2p
-    let estadoExamen2pMostrar =
-      rolExamen2P?.estado || asig.estado_examen_2p || asig.estado_rol_examen_2p
-
-    if (asig.docentes_data && asig.docentes_data.length === 1) {
-      const docenteUnico = asig.docentes_data[0]
-      const rolExamenDocente2P = obtenerRolExamen2P(asig, docenteUnico) || rolExamen2P
-      progresoMostrar = docenteUnico.progreso_documentacion
-      indicadoresMostrar = docenteUnico.indicadores_documentacion
-      preguntas2pMostrar =
-        obtenerBancoPreguntas2P(asig, docenteUnico) || docenteUnico.preguntas_2p_stats
-      fecha2pMostrar = rolExamenDocente2P?.fecha || docenteUnico.fecha_2p
-      horaInicio2pMostrar = rolExamenDocente2P?.hora_inicio || docenteUnico.hora_inicio_2p
-      horaFin2pMostrar = rolExamenDocente2P?.hora_fin || docenteUnico.hora_fin_2p
-      estadoExamen2pMostrar =
-        rolExamenDocente2P?.estado ||
-        docenteUnico.estado_examen_2p ||
-        docenteUnico.estado_rol_examen_2p
-    }
-
-    grupos[sem].asignaturas.push({
-      ...asig,
-      row_key: asig.id, // Llave única para la tabla
-      progreso_mostrar: progresoMostrar,
-      indicadores_mostrar: indicadoresMostrar,
-      preguntas_2p_stats: preguntas2pMostrar,
-      fecha_2p: fecha2pMostrar,
-      hora_inicio_2p: horaInicio2pMostrar,
-      hora_fin_2p: horaFin2pMostrar,
-      estado_examen_2p: estadoExamen2pMostrar,
-      docente_nombre_mostrar: docenteNombreMostrar,
-    })
+    grupos[sem].asignaturas.push(...filasVisibles)
   })
 
-  // Convertir objeto a array y ordenar
-  return Object.values(grupos).sort((a, b) => a.numero - b.numero)
+  return Object.values(grupos)
+    .filter((semestre) => semestre.asignaturas.length > 0)
+    .map((semestre) => ({
+      ...semestre,
+      asignaturas: semestre.asignaturas.sort(ordenarFilasAsignatura),
+    }))
+    .sort((a, b) => a.numero - b.numero)
 })
 
 // Helper para nombres de semestre
