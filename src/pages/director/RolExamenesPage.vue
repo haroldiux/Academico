@@ -1114,9 +1114,10 @@ async function guardarExamen() {
     })
     showEditDialog.value = false
   } catch (error) {
+    const message = error.response?.data?.message || error.message
     $q.notify({
       type: 'negative',
-      message: 'Error al actualizar: ' + error.message,
+      message: 'Error al actualizar: ' + message,
       icon: 'error',
     })
   }
