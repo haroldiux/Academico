@@ -327,6 +327,29 @@
                       map-options
                     />
                   </div>
+                  <div class="col-12 col-md-4">
+                    <q-select
+                      v-model="form.carrera_id"
+                      :options="carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id }))"
+                      label="Carrera *"
+                      outlined
+                      dense
+                      emit-value
+                      map-options
+                      clearable
+                      :rules="[(v) => !!v || 'Obligatorio']"
+                    />
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <q-select
+                      v-model.number="form.semestre"
+                      :options="[1,2,3,4,5,6,7,8,9,10,11,12]"
+                      label="Semestre *"
+                      outlined
+                      dense
+                      :rules="[(v) => !!v || 'Obligatorio']"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -546,6 +569,8 @@ const form = ref({
   sesiones_semanales: 0,
   sesiones_semanales_teoricas: 0,
   sesiones_semanales_practicas: 0,
+  carrera_id: null,
+  semestre: null,
   area_desempenio: '',
   tipo_curso: '',
   requisitos: '',
@@ -629,6 +654,8 @@ function openDialog(asig) {
       sesiones_semanales: asig.sesiones_semanales ?? 0,
       sesiones_semanales_teoricas: asig.sesiones_semanales_teoricas ?? 0,
       sesiones_semanales_practicas: asig.sesiones_semanales_practicas ?? 0,
+      carrera_id: asig.carrera_id || null,
+      semestre: asig.semestre || null,
       area_desempenio: asig.area_desempenio || '',
       tipo_curso: asig.tipo_curso || '',
       requisitos: asig.requisitos || '',
@@ -652,6 +679,8 @@ function openDialog(asig) {
       sesiones_semanales: 0,
       sesiones_semanales_teoricas: 0,
       sesiones_semanales_practicas: 0,
+      carrera_id: null,
+      semestre: null,
       area_desempenio: '',
       tipo_curso: '',
       requisitos: '',
@@ -669,6 +698,10 @@ async function saveAsignatura() {
   }
   if (!form.value.nombre?.trim()) {
     Notify.create({ type: 'warning', message: 'Ingresa el nombre' })
+    return
+  }
+  if (!form.value.carrera_id || !form.value.semestre) {
+    Notify.create({ type: 'warning', message: 'Carrera y semestre son obligatorios' })
     return
   }
 
@@ -689,6 +722,8 @@ async function saveAsignatura() {
       sesiones_semanales: form.value.sesiones_semanales ?? 0,
       sesiones_semanales_teoricas: form.value.sesiones_semanales_teoricas ?? 0,
       sesiones_semanales_practicas: form.value.sesiones_semanales_practicas ?? 0,
+      carrera_id: form.value.carrera_id,
+      semestre: form.value.semestre,
       area_desempenio: form.value.area_desempenio?.trim() || null,
       tipo_curso: form.value.tipo_curso?.trim() || null,
       requisitos: form.value.requisitos?.trim() || null,

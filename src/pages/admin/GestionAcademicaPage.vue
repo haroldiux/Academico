@@ -631,6 +631,29 @@
                 map-options
               />
             </div>
+            <div class="col-12 col-md-4">
+              <q-select
+                v-model="dlgAsig.carrera_id"
+                :options="opcionesCarreras"
+                label="Carrera *"
+                outlined
+                dense
+                emit-value
+                map-options
+                clearable
+                :rules="[(v) => !!v || 'Obligatorio']"
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <q-select
+                v-model.number="dlgAsig.semestre"
+                :options="[1,2,3,4,5,6,7,8,9,10,11,12]"
+                label="Semestre *"
+                outlined
+                dense
+                :rules="[(v) => !!v || 'Obligatorio']"
+              />
+            </div>
             <div class="col-4 col-md-2">
               <q-input
                 v-model.number="dlgAsig.creditos"
@@ -1896,6 +1919,8 @@ async function abrirDialogo(tipo, item, ctx = {}) {
           horas_laboratorio: item.horas_laboratorio ?? 0,
           sesiones_semanales: item.sesiones_semanales ?? 0,
           carga_horaria_total: item.carga_horaria_total ?? 0,
+          carrera_id: item.carrera_id || filtCarrera.value || null,
+          semestre: item.semestre || null,
         }
       : {
           codigo: '',
@@ -1910,6 +1935,8 @@ async function abrirDialogo(tipo, item, ctx = {}) {
           horas_laboratorio: 0,
           sesiones_semanales: 0,
           carga_horaria_total: 0,
+          carrera_id: filtCarrera.value || null,
+          semestre: null,
         }
     dlg.value.asignatura = true
   } else if (tipo === 'grupo') {
@@ -2006,6 +2033,10 @@ async function guardarAsignatura() {
     Notify.create({ type: 'warning', message: 'Código y nombre son obligatorios' })
     return
   }
+  if (!f.carrera_id || !f.semestre) {
+    Notify.create({ type: 'warning', message: 'Carrera y semestre son obligatorios' })
+    return
+  }
   guardando.value = true
   try {
     const payload = {
@@ -2021,6 +2052,8 @@ async function guardarAsignatura() {
       horas_laboratorio: f.horas_laboratorio ?? 0,
       sesiones_semanales: f.sesiones_semanales ?? 0,
       carga_horaria_total: f.carga_horaria_total ?? 0,
+      carrera_id: f.carrera_id,
+      semestre: f.semestre,
       modificado_localmente: true,
     }
     if (f.id) {

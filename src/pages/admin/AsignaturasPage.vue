@@ -752,6 +752,10 @@ function closeDialog() {
 
 async function guardarAsignatura() {
   try {
+    if (!editMode.value && (!form.value.carrera_id || !form.value.semestre)) {
+      $q.notify({ type: 'negative', message: 'Carrera y semestre son obligatorios para crear una asignatura' })
+      return
+    }
     if (editMode.value) {
       await asignaturasStore.updateAsignatura(form.value.id, form.value)
       $q.notify({ type: 'positive', message: 'Asignatura actualizada correctamente' })
