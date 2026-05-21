@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <q-page class="gestion-eval-page">
     <!-- Header Section -->
     <div class="page-header q-mb-lg">
@@ -590,7 +590,9 @@
             </div>
             <div v-else class="text-caption text-grey-4 text-xs">
               {{
-                examenConCartilla(props.row) ? 'Esperando generación' : 'Sin documentos del sistema'
+                examenConCartilla(props.row)
+                  ? 'Esperando generación'
+                  : 'Sin documentos del sistema'
               }}
             </div>
           </q-td>
@@ -600,12 +602,12 @@
         <template v-slot:body-cell-acciones="props">
           <q-td :props="props" align="center">
             <div
-              v-if="puedeVerColumnaAcciones && props.row.estado !== 'programados'"
+              v-if="puedeMostrarAccionesExamen(props.row)"
               class="acciones-row justify-center no-wrap"
             >
               <!-- Botón Restaurar (Solo Admins) -->
               <q-btn
-                v-if="puedeVerColumnaAcciones && props.row.estado !== 'programados'"
+                v-if="props.row.estado !== 'programados'"
                 flat
                 dense
                 round
@@ -615,6 +617,18 @@
                 @click="resetearExamen(props.row)"
               >
                 <q-tooltip>Restaurar a Programado (Limpiar generación)</q-tooltip>
+              </q-btn>
+              <q-btn
+                v-if="puedeRestaurarGeneracion(props.row)"
+                flat
+                dense
+                round
+                color="green-7"
+                icon="restore"
+                class="q-ml-sm"
+                @click="restablecerGeneracion(props.row)"
+              >
+                <q-tooltip>Restablecer generacion anterior</q-tooltip>
               </q-btn>
             </div>
             <div v-else class="text-caption text-grey-5">-</div>
@@ -1258,7 +1272,9 @@
               <template v-slot:avatar>
                 <q-icon name="fact_check" color="deep-purple-7" size="32px" />
               </template>
-              <div class="text-subtitle1 text-weight-bold">Generación de patrones de respuesta</div>
+              <div class="text-subtitle1 text-weight-bold">
+                Generación de patrones de respuesta
+              </div>
               Al continuar, se generarán los patrones oficiales para las variantes
               <strong>{{ dialogGestion.examen?.variantes.join(', ') }}</strong>
               y la evaluación pasará al estado <strong>DEVUELTO</strong>.
@@ -1840,6 +1856,8 @@ const puedeVerAcciones = computed(() => {
   return puedeEditar.value || esEvaluaciones.value || esResponsableEvaluaciones.value
 })
 
+const puedeAdministrarRestauracionExamenes = computed(() => esAdmin.value || esSuperAdmin.value)
+
 const puedeVerGeneracionManual = computed(() => {
   if (esDireccionAcademica.value || esVicerrectorSede.value) {
     return false
@@ -2304,10 +2322,7 @@ const rolRespetaVentanasTiempo = computed(
 )
 
 const puedeVerColumnaAcciones = computed(
-  () =>
-    puedeVerAcciones.value &&
-    (esAdmin.value || esSuperAdmin.value) &&
-    !rolRespetaVentanasTiempo.value,
+  () => puedeAdministrarRestauracionExamenes.value && !rolRespetaVentanasTiempo.value,
 )
 
 const sedesOptions = ref([])
@@ -2989,7 +3004,8 @@ const monitorManualGeneration = (generationId) => {
         $q.notify({
           type: 'negative',
           message:
-            generation?.configuracion_json?.job_error || 'La generación manual en servidor falló.',
+            generation?.configuracion_json?.job_error ||
+            'La generación manual en servidor falló.',
           icon: 'error',
           timeout: 7000,
         })
@@ -3972,7 +3988,7 @@ const ejecutarGeneracionManual = async () => {
           examenesPDF.addPage()
           examenesPDF.setFontSize(10)
           examenesPDF.setTextColor(150)
-          examenesPDF.text('PÁGINA EN BLANCO', 105, 150, { align: 'center' })
+          examenesPDF.text('PAGINA EN BLANCO', 105, 150, { align: 'center' })
         }
         examenesPDF.addPage()
 
@@ -4014,7 +4030,7 @@ const ejecutarGeneracionManual = async () => {
     )
     xBlobs.push({ blob: xBlob, name: xName })
 
-    // --- REGISTRO DE AUDITORÍA (BLOQUEANTE) ---
+    // --- REGISTRO DE AUDITORIA (BLOQUEANTE) ---
     try {
       const payloadAuditoria = {
         sede_id: manualConfig.value.sede?.value || null,
@@ -4043,7 +4059,7 @@ const ejecutarGeneracionManual = async () => {
       const resAudit = await api.post('/generaciones-manuales', payloadAuditoria)
       const auditId = resAudit.data.id
 
-      // --- SUBIDA DE ARCHIVOS FÍSICOS AL STORAGE ---
+      // --- SUBIDA DE ARCHIVOS FISICOS AL STORAGE ---
       $q.loading.show({ message: 'Subiendo archivos generados al servidor...' })
       const fd = new FormData()
 
@@ -4145,6 +4161,7 @@ const cargarDatos = async () => {
       docente_id: e.docente_id,
       variantes: e.variantes || [],
       patrones: e.patrones || [],
+      puede_restaurar_generacion: Boolean(e.puede_restaurar_generacion),
       timestamps: e.timestamps_proceso || { programados: e.created_at },
       color_materia: 'blue-8',
     }))
@@ -4999,7 +5016,7 @@ const ejecutarAccionGestion = async () => {
             mergedExamenesDoc.addPage()
             mergedExamenesDoc.setFontSize(10)
             mergedExamenesDoc.setTextColor(150)
-            mergedExamenesDoc.text('PÁGINA EN BLANCO', 105, 150, { align: 'center' })
+            mergedExamenesDoc.text('PAGINA EN BLANCO', 105, 150, { align: 'center' })
           }
           mergedExamenesDoc.addPage()
           mergedPatronesDoc.addPage()
@@ -5130,14 +5147,23 @@ const avanzarDirecto = (examen) => {
   })
 }
 
+const puedeRestaurarGeneracion = (examen) =>
+  puedeAdministrarRestauracionExamenes.value &&
+  examen?.estado === 'programados' &&
+  Boolean(examen?.puede_restaurar_generacion)
+
+const puedeMostrarAccionesExamen = (examen) =>
+  puedeVerColumnaAcciones.value &&
+  (examen?.estado !== 'programados' || puedeRestaurarGeneracion(examen))
+
 /**
  * Resetea un examen a estado 'programados' (SOLO PARA ADMINS)
  */
 const resetearExamen = (examen) => {
   $q.dialog({
     title: '<span class="text-red-9 text-weight-bold">ADVERTENCIA DE SEGURIDAD</span>',
-    message: `¿Deseas restaurar el examen <strong>[${examen.codigo}] ${examen.materia}</strong> al estado PROGRAMADO? <br><br> <div class="q-pa-sm bg-red-1 text-red-9 rounded-borders"><b>IMPORTANTE:</b> Esto eliminará permanentemente las variantes y patrones generados.</div>`,
     html: true,
+    message: `Deseas retornar el examen <strong>[${examen.codigo}] ${examen.materia}</strong> al estado PROGRAMADO? <br><br> <div class="q-pa-sm bg-red-1 text-red-9 rounded-borders"><b>IMPORTANTE:</b> Los documentos se ocultaran del flujo, pero quedaran guardados para restablecerlos si fue un reset accidental.</div>`,
     ok: { label: 'Restaurar a Programado', color: 'red-9', unelevated: true, noCaps: true },
     cancel: { label: 'Cancelar', flat: true, noCaps: true },
     persistent: true,
@@ -5157,6 +5183,33 @@ const resetearExamen = (examen) => {
     } catch (error) {
       console.error('Error al restaurar examen:', error)
       const msg = error.response?.data?.message || 'No se pudo restaurar el examen'
+      $q.notify({ type: 'negative', message: msg })
+    } finally {
+      $q.loading.hide()
+    }
+  })
+}
+
+const restablecerGeneracion = (examen) => {
+  $q.dialog({
+    title: 'Restablecer generacion',
+    message: `Se recuperaran los documentos generados previamente para <strong>[${examen.codigo}] ${examen.materia}</strong> y el examen volvera a su estado anterior.`,
+    html: true,
+    ok: { label: 'Restablecer', color: 'green-7', unelevated: true, noCaps: true },
+    cancel: { label: 'Cancelar', flat: true, noCaps: true },
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      $q.loading.show({ message: 'Restableciendo generacion...' })
+      await api.post(`/rol-examenes/${examen.id}/restore-generated-package`)
+      $q.notify({
+        type: 'positive',
+        message: 'Generacion restablecida correctamente',
+      })
+      cargarDatos()
+    } catch (error) {
+      console.error('Error al restablecer generacion:', error)
+      const msg = error.response?.data?.message || 'No se pudo restablecer la generacion'
       $q.notify({ type: 'negative', message: msg })
     } finally {
       $q.loading.hide()
@@ -5420,7 +5473,7 @@ const manualColumns = [
   { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
   { name: 'estado', label: 'ESTADO', align: 'center', field: 'estado', sortable: true },
   { name: 'documentos', label: 'DOCUMENTOS', align: 'center' },
-  { name: 'datos_auditoria', label: 'AUDITORÍA', align: 'left' },
+  { name: 'datos_auditoria', label: 'AUDITORIA', align: 'left' },
 ]
 
 const getManualStats = (row) => {
@@ -6019,7 +6072,7 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
   doc.text(`Carrera: ${examen.carrera || ''}`, pageWidth / 2, margin + 14, { align: 'center' })
   doc.setFont('helvetica', 'italic')
   doc.setFontSize(8)
-  doc.text('"TÚ ESTÁS AQUÍ PORQUE FORMAS PARTE DE NUESTRA HISTORIA"', pageWidth / 2, margin + 19, {
+  doc.text('"TU ESTAS AQUI PORQUE FORMAS PARTE DE NUESTRA HISTORIA"', pageWidth / 2, margin + 19, {
     align: 'center',
   })
 
@@ -6237,8 +6290,8 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         .replace(/&ndash;/g, '-')
         .replace(/&mdash;/g, '-')
         // Reemplazo específico para caracteres que rompen jsPDF (estándar Helvetica)
-        .replace(/ƒ/g, 'f')
-        .replace(/…/g, '...')
+        .replace(/Æ’/g, 'f')
+        .replace(/â€¦/g, '...')
         // Limpiar cualquier carácter fuera del rango Latin-1 (que suelen romper el layout de jsPDF)
         .replace(/[^\x20-\x7E\xA0-\xFF\s]/g, ' ')
         .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ')
@@ -6412,7 +6465,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     PREGUNTA_CON_CLAVE:
       'VERDADERO O FALSO COMPLEJAS: Seleccione la respuesta correcta de acuerdo a la clave indicada.',
     SELECCION_MULTIPLE:
-      'SELECCIÓN MÚLTIPLE: Analice el enunciado y marque todas las opciones que den una respuesta válida. Tenga en cuenta que puede haber más de una respuesta correcta.',
+      'SELECCIÓN MULTIPLE: Analice el enunciado y marque todas las opciones que den una respuesta válida. Tenga en cuenta que puede haber más de una respuesta correcta.',
     FALSO_VERDADERO:
       'VERDADERO O FALSO: Para cada afirmación, indique si el contenido es Verdadero marcando la opción (A) o Falso marcando la opción (B).',
     PROBLEMA:
@@ -6622,7 +6675,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     }
     estimatedHeight += esHeader ? 0 : 5
 
-    // Si la pregunta no cabe en esta página, pero SÍ cabría en una página vacía, saltamos de página antes de imprimirla
+    // Si la pregunta no cabe en esta página, pero SI cabría en una página vacía, saltamos de página antes de imprimirla
     const questionFitsOnPage = estimatedHeight <= fullPageContentHeight
     if (questionFitsOnPage && currentY + estimatedHeight > pageBottomLimit) {
       doc.addPage()
