@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <q-page class="gestion-eval-page">
     <!-- Header Section -->
     <div class="page-header q-mb-lg">
@@ -6,10 +6,10 @@
         <div>
           <h1 class="page-title text-h4 text-weight-bold row items-center">
             <q-icon name="assignment" color="deep-purple" class="q-mr-md" />
-            Gestión de Evaluaciones
+            GestiÃ³n de Evaluaciones
           </h1>
           <p class="page-subtitle text-grey-7 q-mt-xs">
-            Crea y administra exámenes desde el banco de preguntas
+            Crea y administra exÃ¡menes desde el banco de preguntas
           </p>
         </div>
         <div class="header-actions row q-gutter-x-sm">
@@ -22,7 +22,7 @@
             rounded
             color="deep-purple-7"
             icon="upload_file"
-            label="Generación Manual (Excel)"
+            label="GeneraciÃ³n Manual (Excel)"
             no-caps
             @click="abrirGeneracionManual"
           />
@@ -188,7 +188,7 @@
     <!-- Summary Cards (HIDDEN AS PER REQUEST, ACCESSIBLE VIA MODAL) -->
     <!-- <div class="row q-col-gutter-md q-mb-xl">...</div> -->
 
-    <!-- Modal: Estadísticas del Día -->
+    <!-- Modal: EstadÃ­sticas del DÃ­a -->
     <q-dialog v-model="dialogStats" backdrop-filter="blur(4px)">
       <q-card style="width: 500px; max-width: 90vw; border-radius: 16px">
         <q-card-section class="bg-blue-8 text-white row items-center no-wrap">
@@ -426,7 +426,7 @@
                       (props.row.distribucion.facil / (props.row.total_preguntas || 1)) * 100 + '%',
                   }"
                 >
-                  <q-tooltip>Fáciles: {{ props.row.distribucion.facil }}</q-tooltip>
+                  <q-tooltip>FÃ¡ciles: {{ props.row.distribucion.facil }}</q-tooltip>
                 </div>
                 <div
                   class="bar-segment medio"
@@ -445,7 +445,7 @@
                       '%',
                   }"
                 >
-                  <q-tooltip>Difíciles: {{ props.row.distribucion.dificil }}</q-tooltip>
+                  <q-tooltip>DifÃ­ciles: {{ props.row.distribucion.dificil }}</q-tooltip>
                 </div>
               </div>
             </div>
@@ -580,7 +580,7 @@
                     <q-tooltip>
                       {{
                         ['devueltos', 'revisados', 'subidos'].includes(props.row.estado)
-                          ? 'Patrón Excel (Consolidado)'
+                          ? 'PatrÃ³n Excel (Consolidado)'
                           : 'Bloqueado hasta estado DEVUELTO'
                       }}
                     </q-tooltip>
@@ -590,7 +590,9 @@
             </div>
             <div v-else class="text-caption text-grey-4 text-xs">
               {{
-                examenConCartilla(props.row) ? 'Esperando generación' : 'Sin documentos del sistema'
+                examenConCartilla(props.row)
+                  ? 'Esperando generaciÃ³n'
+                  : 'Sin documentos del sistema'
               }}
             </div>
           </q-td>
@@ -600,12 +602,12 @@
         <template v-slot:body-cell-acciones="props">
           <q-td :props="props" align="center">
             <div
-              v-if="puedeVerColumnaAcciones && props.row.estado !== 'programados'"
+              v-if="puedeMostrarAccionesExamen(props.row)"
               class="acciones-row justify-center no-wrap"
             >
-              <!-- Botón Restaurar (Solo Admins) -->
+              <!-- BotÃ³n Restaurar (Solo Admins) -->
               <q-btn
-                v-if="puedeVerColumnaAcciones && props.row.estado !== 'programados'"
+                v-if="props.row.estado !== 'programados'"
                 flat
                 dense
                 round
@@ -614,7 +616,19 @@
                 class="q-ml-sm"
                 @click="resetearExamen(props.row)"
               >
-                <q-tooltip>Restaurar a Programado (Limpiar generación)</q-tooltip>
+                <q-tooltip>Restaurar a Programado (Limpiar generaciÃ³n)</q-tooltip>
+              </q-btn>
+              <q-btn
+                v-if="puedeRestaurarGeneracion(props.row)"
+                flat
+                dense
+                round
+                color="green-7"
+                icon="restore"
+                class="q-ml-sm"
+                @click="restablecerGeneracion(props.row)"
+              >
+                <q-tooltip>Restablecer generacion anterior</q-tooltip>
               </q-btn>
             </div>
             <div v-else class="text-caption text-grey-5">-</div>
@@ -707,7 +721,7 @@
                       '%',
                   }"
                 >
-                  <q-tooltip>Fáciles</q-tooltip>
+                  <q-tooltip>FÃ¡ciles</q-tooltip>
                 </div>
                 <div
                   class="bar-segment medio"
@@ -729,7 +743,7 @@
                       '%',
                   }"
                 >
-                  <q-tooltip>Difíciles</q-tooltip>
+                  <q-tooltip>DifÃ­ciles</q-tooltip>
                 </div>
               </div>
             </div>
@@ -807,7 +821,7 @@
                 <q-tooltip>
                   {{
                     estaGeneracionManualEnProceso(props.row)
-                      ? 'La generación manual sigue ejecutándose en el servidor'
+                      ? 'La generaciÃ³n manual sigue ejecutÃ¡ndose en el servidor'
                       : 'Examen (Consolidado)'
                   }}
                 </q-tooltip>
@@ -819,7 +833,7 @@
                 v-if="manualEstadoPermiteDocumentos(props.row)"
               />
 
-              <!-- Patrón OMR (PDF) -->
+              <!-- PatrÃ³n OMR (PDF) -->
               <q-btn
                 flat
                 round
@@ -837,13 +851,13 @@
                 <q-tooltip>
                   {{
                     manualPuedeDescargarPatrones(props.row)
-                      ? 'Patrón OMR (Consolidado)'
+                      ? 'PatrÃ³n OMR (Consolidado)'
                       : 'Bloqueado hasta estado RECIBIDO'
                   }}
                 </q-tooltip>
               </q-btn>
 
-              <!-- Patrón Excel (XLSX) -->
+              <!-- PatrÃ³n Excel (XLSX) -->
               <q-btn
                 flat
                 round
@@ -861,7 +875,7 @@
                 <q-tooltip>
                   {{
                     manualPuedeDescargarPatrones(props.row)
-                      ? 'Patrón Excel (Consolidado)'
+                      ? 'PatrÃ³n Excel (Consolidado)'
                       : 'Bloqueado hasta estado RECIBIDO'
                   }}
                 </q-tooltip>
@@ -870,7 +884,7 @@
           </q-td>
         </template>
 
-        <!-- Auditoría -->
+        <!-- AuditorÃ­a -->
         <template v-slot:body-cell-datos_auditoria="props">
           <q-td :props="props">
             <div class="row flex-center no-wrap gap-2">
@@ -896,7 +910,7 @@
       </q-table>
     </q-card>
 
-    <!-- UI Modal: Gestión Especializada -->
+    <!-- UI Modal: GestiÃ³n Especializada -->
     <q-dialog v-model="dialogGestion.show" backdrop-filter="blur(4px)">
       <q-card style="width: 700px; max-width: 90vw; border-radius: 20px">
         <q-card-section class="bg-deep-purple text-white q-pa-lg">
@@ -915,7 +929,7 @@
         </q-card-section>
 
         <q-card-section class="q-pa-lg">
-          <!-- CASO 1: PROGRAMADOS (Generación) -->
+          <!-- CASO 1: PROGRAMADOS (GeneraciÃ³n) -->
           <div v-if="dialogGestion.examen?.estado === 'programados'" class="config-generacion">
             <div
               v-if="bancoStats.total > 0"
@@ -924,7 +938,7 @@
               <div class="flex items-center text-indigo-9">
                 <q-icon name="help_center" size="24px" class="q-mr-md" />
                 <div class="column">
-                  <span class="text-weight-bold">Banco Disponible para esta Evaluación</span>
+                  <span class="text-weight-bold">Banco Disponible para esta EvaluaciÃ³n</span>
                   <span class="text-caption"
                     >Se encontraron preguntas que coinciden con el Parcial y Grupo.</span
                   >
@@ -951,7 +965,7 @@
             </q-banner>
             <div class="text-subtitle1 text-weight-bold q-mb-md flex items-center">
               <q-icon name="tune" color="primary" class="q-mr-xs" />
-              Parámetros de Generación
+              ParÃ¡metros de GeneraciÃ³n
             </div>
 
             <div class="row q-col-gutter-sm q-mb-md">
@@ -963,7 +977,7 @@
                   type="number"
                   min="1"
                   max="5"
-                  hint="Se generarán archivos PDF por cada variante"
+                  hint="Se generarÃ¡n archivos PDF por cada variante"
                   bg-color="grey-1"
                 >
                   <template v-slot:prepend><q-icon name="filter_none" /></template>
@@ -974,7 +988,7 @@
                   v-model="tempConfig.formatoHoja"
                   :options="optionsHoja"
                   outlined
-                  label="Tamaño Hoja"
+                  label="TamaÃ±o Hoja"
                   bg-color="blue-50"
                   input-class="text-weight-bold"
                 >
@@ -986,12 +1000,12 @@
             <div class="row q-col-gutter-sm q-mt-sm">
               <div class="col-12">
                 <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
-                  Conteo requerido por dificultad desde configuración
+                  Conteo requerido por dificultad desde configuraciÃ³n
                 </div>
               </div>
               <div class="col-12 col-md-4">
                 <q-card flat bordered class="q-pa-sm bg-green-1">
-                  <div class="text-caption text-weight-bold text-green-9">Fáciles</div>
+                  <div class="text-caption text-weight-bold text-green-9">FÃ¡ciles</div>
                   <q-linear-progress
                     rounded
                     size="8px"
@@ -1049,7 +1063,7 @@
               </div>
               <div class="col-12 col-md-4">
                 <q-card flat bordered class="q-pa-sm bg-red-1">
-                  <div class="text-caption text-weight-bold text-red-9">Difíciles</div>
+                  <div class="text-caption text-weight-bold text-red-9">DifÃ­ciles</div>
                   <q-linear-progress
                     rounded
                     size="8px"
@@ -1086,7 +1100,7 @@
                   Conteo referencial por grupo de tipo para 2do Parcial
                 </div>
                 <div class="text-caption text-blue-grey-7">
-                  Este conteo ya no bloquea la generación del examen; se muestra solo como apoyo.
+                  Este conteo ya no bloquea la generaciÃ³n del examen; se muestra solo como apoyo.
                 </div>
               </div>
               <div class="col-12 col-md-4">
@@ -1145,7 +1159,7 @@
             <div class="row q-mb-sm">
               <div class="text-subtitle2 text-grey-8 flex items-center">
                 <q-icon name="print" color="grey-6" class="q-mr-xs" />
-                Configuración de Impresión
+                ConfiguraciÃ³n de ImpresiÃ³n
               </div>
             </div>
 
@@ -1169,7 +1183,7 @@
                   :options="optionsTamanio"
                   outlined
                   dense
-                  label="Tamaño"
+                  label="TamaÃ±o"
                 >
                   <template v-slot:prepend><q-icon name="format_size" size="xs" /></template>
                 </q-select>
@@ -1228,7 +1242,7 @@
               dense
             >
               <template v-slot:avatar><q-icon name="warning" color="red" /></template>
-              No existen suficientes preguntas en el banco para cumplir con la distribución
+              No existen suficientes preguntas en el banco para cumplir con la distribuciÃ³n
               solicitada por dificultad.
             </q-banner>
 
@@ -1238,8 +1252,8 @@
               dense
             >
               <template v-slot:avatar><q-icon name="info" color="blue-grey-7" /></template>
-              Para 2do Parcial, el conteo por grupo de tipo es solo referencial. La validación de
-              generación se realiza por dificultad.
+              Para 2do Parcial, el conteo por grupo de tipo es solo referencial. La validaciÃ³n de
+              generaciÃ³n se realiza por dificultad.
             </q-banner>
 
             <div class="q-mt-lg text-caption text-grey-6 items-center flex">
@@ -1247,7 +1261,7 @@
                 authStore.usuarioActual?.nombre?.charAt(0) || 'A'
               }}</q-avatar>
               El usuario
-              <strong>{{ authStore.usuarioActual?.nombre || 'Administrador' }}</strong> será
+              <strong>{{ authStore.usuarioActual?.nombre || 'Administrador' }}</strong> serÃ¡
               registrado como el generador.
             </div>
           </div>
@@ -1258,10 +1272,12 @@
               <template v-slot:avatar>
                 <q-icon name="fact_check" color="deep-purple-7" size="32px" />
               </template>
-              <div class="text-subtitle1 text-weight-bold">Generación de patrones de respuesta</div>
-              Al continuar, se generarán los patrones oficiales para las variantes
+              <div class="text-subtitle1 text-weight-bold">
+                GeneraciÃ³n de patrones de respuesta
+              </div>
+              Al continuar, se generarÃ¡n los patrones oficiales para las variantes
               <strong>{{ dialogGestion.examen?.variantes.join(', ') }}</strong>
-              y la evaluación pasará al estado <strong>DEVUELTO</strong>.
+              y la evaluaciÃ³n pasarÃ¡ al estado <strong>DEVUELTO</strong>.
             </q-banner>
 
             <div class="row q-col-gutter-md">
@@ -1270,7 +1286,7 @@
                   <div class="row items-start no-wrap">
                     <q-icon name="picture_as_pdf" color="red-7" size="32px" class="q-mr-sm" />
                     <div>
-                      <div class="text-subtitle2 text-weight-bold text-red-9">Patrón PDF</div>
+                      <div class="text-subtitle2 text-weight-bold text-red-9">PatrÃ³n PDF</div>
                       <div class="text-body2 text-grey-8">
                         Formato para imprimir, firmar y sellar por el docente.
                       </div>
@@ -1283,7 +1299,7 @@
                   <div class="row items-start no-wrap">
                     <q-icon name="grid_on" color="green-7" size="32px" class="q-mr-sm" />
                     <div>
-                      <div class="text-subtitle2 text-weight-bold text-green-9">Patrón XLSX</div>
+                      <div class="text-subtitle2 text-weight-bold text-green-9">PatrÃ³n XLSX</div>
                       <div class="text-body2 text-grey-8">
                         Formato para subir notas al Remark OMR.
                       </div>
@@ -1325,7 +1341,7 @@
             >
               {{
                 estaGeneracionEnProceso(dialogGestion.examen)
-                  ? 'La generación consolidada sigue ejecutándose en el servidor.'
+                  ? 'La generaciÃ³n consolidada sigue ejecutÃ¡ndose en el servidor.'
                   : permisoTiempoDialog.mensaje
               }}
             </q-tooltip>
@@ -1334,7 +1350,7 @@
       </q-card>
     </q-dialog>
 
-    <!-- Modal: Generación Manual desde Excel -->
+    <!-- Modal: GeneraciÃ³n Manual desde Excel -->
     <q-dialog v-model="dialogManual.show" backdrop-filter="blur(4px)" persistent>
       <q-card style="width: 850px; max-width: 95vw; border-radius: 20px" class="shadow-24">
         <q-card-section class="bg-deep-purple-8 text-white q-pa-lg">
@@ -1342,7 +1358,7 @@
             <div class="col">
               <div class="text-h6 text-weight-bold flex items-center">
                 <q-icon name="auto_awesome" class="q-mr-sm" size="24px" />
-                Generación Manual (Excel)
+                GeneraciÃ³n Manual (Excel)
               </div>
               <div class="text-caption opacity-80">
                 Configure la cabecera del examen y suba su banco de preguntas
@@ -1556,7 +1572,7 @@
                   <div class="row q-mb-xs">
                     <div class="text-caption text-weight-bold text-grey-7 flex items-center">
                       <q-icon name="palette" class="q-mr-xs" />
-                      Configuración de Impresión:
+                      ConfiguraciÃ³n de ImpresiÃ³n:
                     </div>
                   </div>
                 </div>
@@ -1567,7 +1583,7 @@
                     :options="optionsHoja"
                     outlined
                     dense
-                    label="Tamaño Hoja"
+                    label="TamaÃ±o Hoja"
                     bg-color="blue-50"
                   />
                 </div>
@@ -1588,7 +1604,7 @@
                     :options="optionsTamanio"
                     outlined
                     dense
-                    label="Tamaño"
+                    label="TamaÃ±o"
                   />
                 </div>
                 <div class="col-6">
@@ -1608,12 +1624,12 @@
                     type="textarea"
                     outlined
                     dense
-                    label="Motivo de la generación (Obligatorio)"
-                    placeholder="Ej: Examen de rezagado, pérdida de paquete original, etc."
+                    label="Motivo de la generaciÃ³n (Obligatorio)"
+                    placeholder="Ej: Examen de rezagado, pÃ©rdida de paquete original, etc."
                     bg-color="red-50"
                     rows="2"
                     :rules="[
-                      (val) => !!val || 'El motivo es obligatorio para auditar la generación',
+                      (val) => !!val || 'El motivo es obligatorio para auditar la generaciÃ³n',
                     ]"
                     class="q-mt-sm"
                   >
@@ -1664,7 +1680,7 @@
                       class="full-width q-ma-none"
                     >
                       <div class="text-caption">
-                        Fácil: {{ manualFaciles.length }}/{{ manualDistribucionRequerida.facil }}
+                        FÃ¡cil: {{ manualFaciles.length }}/{{ manualDistribucionRequerida.facil }}
                       </div>
                     </q-chip>
                   </div>
@@ -1704,7 +1720,7 @@
                       class="full-width q-ma-none"
                     >
                       <div class="text-caption">
-                        Difícil: {{ manualDificiles.length }}/{{
+                        DifÃ­cil: {{ manualDificiles.length }}/{{
                           manualDistribucionRequerida.dificil
                         }}
                       </div>
@@ -1840,6 +1856,8 @@ const puedeVerAcciones = computed(() => {
   return puedeEditar.value || esEvaluaciones.value || esResponsableEvaluaciones.value
 })
 
+const puedeAdministrarRestauracionExamenes = computed(() => esAdmin.value || esSuperAdmin.value)
+
 const puedeVerGeneracionManual = computed(() => {
   if (esDireccionAcademica.value || esVicerrectorSede.value) {
     return false
@@ -1865,7 +1883,7 @@ const ESTADOS_FLOW = [
     color: 'indigo-7',
     action: 'IMPRIMIR',
     hasGestion: false,
-    desc: 'Exámenes generados listos para impresión',
+    desc: 'ExÃ¡menes generados listos para impresiÃ³n',
   },
   {
     key: 'impresos',
@@ -1883,7 +1901,7 @@ const ESTADOS_FLOW = [
     color: 'orange-8',
     action: 'GESTIONAR',
     hasGestion: true,
-    desc: 'En aula (generar patrones para devolución)',
+    desc: 'En aula (generar patrones para devoluciÃ³n)',
   },
   {
     key: 'devueltos',
@@ -1892,7 +1910,7 @@ const ESTADOS_FLOW = [
     color: 'teal-7',
     action: 'REVISAR',
     hasGestion: false,
-    desc: 'Exámenes y patrones devueltos por el docente',
+    desc: 'ExÃ¡menes y patrones devueltos por el docente',
   },
   {
     key: 'revisados',
@@ -1901,7 +1919,7 @@ const ESTADOS_FLOW = [
     color: 'deep-purple-7',
     action: 'SUBIR NOTAS',
     hasGestion: false,
-    desc: 'Revisión técnica completada',
+    desc: 'RevisiÃ³n tÃ©cnica completada',
   },
   {
     key: 'subidos',
@@ -1910,7 +1928,7 @@ const ESTADOS_FLOW = [
     color: 'purple-9',
     action: 'FINALIZADO',
     hasGestion: false,
-    desc: 'Notas subidas al sistema académico',
+    desc: 'Notas subidas al sistema acadÃ©mico',
   },
 ]
 
@@ -1934,21 +1952,21 @@ const ESTADOS_SIN_CARTILLA_FLOW = [
     label: 'Entregado',
     icon: 'inventory_2',
     color: 'orange-8',
-    desc: 'Material entregado para su aplicación',
+    desc: 'Material entregado para su aplicaciÃ³n',
   },
   {
     key: 'recibidos',
     label: 'Recibido',
     icon: 'assignment_returned',
     color: 'teal-7',
-    desc: 'Material recibido después de la evaluación',
+    desc: 'Material recibido despuÃ©s de la evaluaciÃ³n',
   },
   {
     key: 'subidos',
     label: 'Subido',
     icon: 'cloud_done',
     color: 'purple-9',
-    desc: 'Notas subidas al sistema académico',
+    desc: 'Notas subidas al sistema acadÃ©mico',
   },
 ]
 
@@ -2304,10 +2322,7 @@ const rolRespetaVentanasTiempo = computed(
 )
 
 const puedeVerColumnaAcciones = computed(
-  () =>
-    puedeVerAcciones.value &&
-    (esAdmin.value || esSuperAdmin.value) &&
-    !rolRespetaVentanasTiempo.value,
+  () => puedeAdministrarRestauracionExamenes.value && !rolRespetaVentanasTiempo.value,
 )
 
 const sedesOptions = ref([])
@@ -2381,7 +2396,7 @@ const fetchSedes = async () => {
     const allSedes = rawSedes.map((s) => ({ label: s.nombre, value: s.id }))
     const sedesAsignadasIds = sedeIdsAsignadasUsuario.value
 
-    // Si es Vicerrector Sede o Director Académico, mostrar SOLO su sede
+    // Si es Vicerrector Sede o Director AcadÃ©mico, mostrar SOLO su sede
     if (debeLimitarSedes.value && sedesAsignadasIds.length) {
       sedesOptions.value = allSedes.filter((s) => sedesAsignadasIds.includes(Number(s.value)))
     } else if (
@@ -2537,7 +2552,7 @@ const puedeCambiarEstadoPorTiempo = (examen, estadoDestino = null) => {
     if (ahora < inicio) {
       return {
         permitido: false,
-        mensaje: `Generación habilitada desde ${formatearFechaHoraBloqueo(inicio)}.`,
+        mensaje: `GeneraciÃ³n habilitada desde ${formatearFechaHoraBloqueo(inicio)}.`,
       }
     }
   }
@@ -2564,7 +2579,7 @@ const puedeCambiarEstadoPorTiempo = (examen, estadoDestino = null) => {
     if (ahora < inicio) {
       return {
         permitido: false,
-        mensaje: `Patrón habilitado desde ${formatearFechaHoraBloqueo(inicio)}.`,
+        mensaje: `PatrÃ³n habilitado desde ${formatearFechaHoraBloqueo(inicio)}.`,
       }
     }
   }
@@ -2615,7 +2630,7 @@ watch(
 )
 
 onMounted(async () => {
-  // Asegurar que tenemos los últimos datos del usuario (con relaciones campus/sede)
+  // Asegurar que tenemos los Ãºltimos datos del usuario (con relaciones campus/sede)
   if (authStore.isAuthenticated) {
     await authStore.fetchUser()
   }
@@ -2623,7 +2638,7 @@ onMounted(async () => {
   await cargarTiemposEvaluacion()
   await cargarManualGenerations()
 
-  // Pre-cargar carreras de la sede del usuario para el diálogo manual (Warm Cache)
+  // Pre-cargar carreras de la sede del usuario para el diÃ¡logo manual (Warm Cache)
   const userSedeId = authStore.usuarioActual?.sede_id
   if (userSedeId) {
     fetchCarrerasParaManual(userSedeId)
@@ -2913,7 +2928,7 @@ const monitorExamGeneration = (examId) => {
       if (jobStatus === 'completed') {
         $q.notify({
           type: 'positive',
-          message: 'El PDF consolidado ya está listo para descarga.',
+          message: 'El PDF consolidado ya estÃ¡ listo para descarga.',
           icon: 'task_alt',
         })
         return
@@ -2922,12 +2937,12 @@ const monitorExamGeneration = (examId) => {
       if (jobStatus === 'failed') {
         $q.notify({
           type: 'negative',
-          message: exam?.distribucion?.job_error || 'La generación en servidor falló.',
+          message: exam?.distribucion?.job_error || 'La generaciÃ³n en servidor fallÃ³.',
           icon: 'error',
         })
       }
     } catch (error) {
-      console.error('Error monitoreando generación de examen:', error)
+      console.error('Error monitoreando generaciÃ³n de examen:', error)
     }
   }
 
@@ -2951,7 +2966,7 @@ const getManualJobLabel = (row) =>
     queued: 'En cola',
     processing: 'Generando',
     completed: 'Listo',
-    failed: 'Falló',
+    failed: 'FallÃ³',
   })[getManualJobStatus(row)] || ''
 
 const getManualJobColor = (row) =>
@@ -2979,7 +2994,7 @@ const monitorManualGeneration = (generationId) => {
       if (jobStatus === 'completed') {
         $q.notify({
           type: 'positive',
-          message: 'La generación manual ya está lista para descarga.',
+          message: 'La generaciÃ³n manual ya estÃ¡ lista para descarga.',
           icon: 'task_alt',
         })
         return
@@ -2989,13 +3004,14 @@ const monitorManualGeneration = (generationId) => {
         $q.notify({
           type: 'negative',
           message:
-            generation?.configuracion_json?.job_error || 'La generación manual en servidor falló.',
+            generation?.configuracion_json?.job_error ||
+            'La generaciÃ³n manual en servidor fallÃ³.',
           icon: 'error',
           timeout: 7000,
         })
       }
     } catch (error) {
-      console.error('Error monitoreando generación manual:', error)
+      console.error('Error monitoreando generaciÃ³n manual:', error)
     }
   }
 
@@ -3051,7 +3067,7 @@ const manualConfig = ref({
   motivo: '',
 })
 const carrerasOptionsManual = ref([])
-const carrerasCache = new Map() // Caché para acelerar selección
+const carrerasCache = new Map() // CachÃ© para acelerar selecciÃ³n
 const asignaturasOptionsManual = ref([])
 const asignaturasOptionsManualFiltered = ref([])
 const docentesOptionsManual = ref([])
@@ -3103,7 +3119,7 @@ watch(
       if (newVal.semestre) {
         manualConfig.value.semestre = newVal.semestre
       }
-      // Cargar docentes específicos de esta materia
+      // Cargar docentes especÃ­ficos de esta materia
       fetchDocentesManual('')
     }
   },
@@ -3189,7 +3205,7 @@ const fetchAsignaturasManual = async (carreraId) => {
     })
     const rawData = response.data || []
 
-    // Unificar agresivamente por código y nombre (normalizado sin acentos)
+    // Unificar agresivamente por cÃ³digo y nombre (normalizado sin acentos)
     const uniqueMap = new Map()
     rawData.forEach((a) => {
       const cleanCodigo = (a.codigo || '').trim().toUpperCase()
@@ -3301,7 +3317,7 @@ const abrirGeneracionManual = () => {
   manualPreguntas.value = []
   manualDistribucionConfigurada.value = null
 
-  // Pre-selección inteligente basada en el perfil del usuario
+  // Pre-selecciÃ³n inteligente basada en el perfil del usuario
   const userSedeId = authStore.usuarioActual?.sede_id
   const initialSede =
     filtros.value.sede ||
@@ -3460,7 +3476,7 @@ const onExcelUploaded = (file) => {
       const data = new Uint8Array(e.target.result)
       const workbook = XLSX.read(data, { type: 'array' })
 
-      // Buscar hoja 'Banco' o 'Preguntas'. Si no está, usar la primera que no sea 'Instrucciones'
+      // Buscar hoja 'Banco' o 'Preguntas'. Si no estÃ¡, usar la primera que no sea 'Instrucciones'
       let wsName = workbook.SheetNames.find((n) =>
         ['BANCO', 'PREGUNTAS', 'DATA'].includes(n.toUpperCase().trim()),
       )
@@ -3530,7 +3546,7 @@ const onExcelUploaded = (file) => {
         })
         .filter((p) => p.enunciado)
 
-      // --- VALIDACIÓN DE FORMATO ---
+      // --- VALIDACIÃ“N DE FORMATO ---
       const errors = []
       const invalidGroups = new Set()
       const headersPorGrupo = mapped.reduce((acc, p) => {
@@ -3580,7 +3596,7 @@ const onExcelUploaded = (file) => {
         } else {
           if (!['1', '2', '3'].includes(p.dificultad)) {
             isInvalid = true
-            reason = 'Falta dificultad (1, 2 o 3) o es inválida'
+            reason = 'Falta dificultad (1, 2 o 3) o es invÃ¡lida'
           } else if (p.respuesta_correcta.length === 0) {
             isInvalid = true
             reason = 'Falta respuesta correcta'
@@ -3611,7 +3627,7 @@ const onExcelUploaded = (file) => {
         }
       })
 
-      // Filtrado: Excluir inválidas y sus grupos
+      // Filtrado: Excluir invÃ¡lidas y sus grupos
       const filtered = mapped.filter((p) => {
         const selfInvalid = errors.some((e) => e.fila === p.idx)
         if (selfInvalid) return false
@@ -3628,7 +3644,7 @@ const onExcelUploaded = (file) => {
           .join('')
         $q.dialog({
           title: '<span class="text-red-7 text-weight-bold">Preguntas Ignoradas</span>',
-          message: `Se detectaron <b>${errors.length}</b> errores de formato. Estas preguntas y sus grupos no serán tomados en cuenta para el examen:<br><br><ul class="q-pl-md" style="max-height: 200px; overflow-y: auto">${errorMsg}</ul>`,
+          message: `Se detectaron <b>${errors.length}</b> errores de formato. Estas preguntas y sus grupos no serÃ¡n tomados en cuenta para el examen:<br><br><ul class="q-pl-md" style="max-height: 200px; overflow-y: auto">${errorMsg}</ul>`,
           html: true,
           ok: { label: 'Entendido', color: 'red-7', unelevated: true, rounded: true },
         })
@@ -3637,7 +3653,7 @@ const onExcelUploaded = (file) => {
       if (filtered.length === 0) {
         $q.notify({
           type: 'warning',
-          message: `No quedaron preguntas válidas después del filtrado en la hoja "${wsName}".`,
+          message: `No quedaron preguntas vÃ¡lidas despuÃ©s del filtrado en la hoja "${wsName}".`,
           icon: 'warning',
           timeout: 5000,
         })
@@ -3700,7 +3716,7 @@ const buildManualQuestionsPayloadForQueue = () =>
   }))
 
 const ejecutarGeneracionManualEnCola = async (requerida) => {
-  $q.loading.show({ message: 'Enviando generación manual a la cola del servidor...' })
+  $q.loading.show({ message: 'Enviando generaciÃ³n manual a la cola del servidor...' })
 
   try {
     const resolvedSede = manualConfig.value.sede?.label || manualConfig.value.sede || '-'
@@ -3759,8 +3775,8 @@ const ejecutarGeneracionManualEnCola = async (requerida) => {
 
     $q.notify({
       type: 'positive',
-      message: 'La generación manual fue enviada a la cola del servidor.',
-      caption: 'Puedes cerrar esta ventana; los documentos aparecerán cuando el worker termine.',
+      message: 'La generaciÃ³n manual fue enviada a la cola del servidor.',
+      caption: 'Puedes cerrar esta ventana; los documentos aparecerÃ¡n cuando el worker termine.',
       icon: 'hourglass_top',
       timeout: 7000,
     })
@@ -3768,10 +3784,10 @@ const ejecutarGeneracionManualEnCola = async (requerida) => {
     dialogManual.value.show = false
     manualConfig.value.motivo = ''
   } catch (error) {
-    console.error('Error al enviar generación manual a cola:', error)
+    console.error('Error al enviar generaciÃ³n manual a cola:', error)
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || 'No se pudo enviar la generación manual a cola.',
+      message: error.response?.data?.message || 'No se pudo enviar la generaciÃ³n manual a cola.',
       caption: error.response?.data?.error || error.message,
       timeout: 8000,
     })
@@ -3798,7 +3814,7 @@ const ejecutarGeneracionManual = async () => {
   ) {
     $q.notify({
       type: 'negative',
-      message: `Preguntas insuficientes para 7/16/7. Disponibles -> Fácil: ${faciles.length}, Medio: ${medios.length}, Difícil: ${dificiles.length}`,
+      message: `Preguntas insuficientes para 7/16/7. Disponibles -> FÃ¡cil: ${faciles.length}, Medio: ${medios.length}, DifÃ­cil: ${dificiles.length}`,
       timeout: 6000,
     })
     return
@@ -3810,7 +3826,7 @@ const ejecutarGeneracionManual = async () => {
     return
   }
 
-  $q.loading.show({ message: 'Generando variantes y registrando auditoría...' })
+  $q.loading.show({ message: 'Generando variantes y registrando auditorÃ­a...' })
 
   try {
     const resolvedSede = manualConfig.value.sede?.label || manualConfig.value.sede || '-'
@@ -3859,7 +3875,7 @@ const ejecutarGeneracionManual = async () => {
         })
     const patronesPDF = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
     const variantesAudit = []
-    const xBlobs = [] // Para guardar los Excel y descargarlos solo si la auditoría es exitosa
+    const xBlobs = [] // Para guardar los Excel y descargarlos solo si la auditorÃ­a es exitosa
     const resultadosVariantes = []
 
     for (let i = 0; i < variantesLetters.length; i++) {
@@ -3936,7 +3952,7 @@ const ejecutarGeneracionManual = async () => {
         $q.notify({
           type: 'negative',
           message:
-            'Se detectaron preguntas fuera de la asignatura, sede, docente, grupo o parcial seleccionado. No se generó el examen.',
+            'Se detectaron preguntas fuera de la asignatura, sede, docente, grupo o parcial seleccionado. No se generÃ³ el examen.',
           caption: `Registros observados: ${validacionSeleccion.inconsistencias
             .slice(0, 5)
             .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
@@ -3964,7 +3980,7 @@ const ejecutarGeneracionManual = async () => {
       })
 
       if (i > 0) {
-        // Garantizar que cada variante comience en página impar (anverso)
+        // Garantizar que cada variante comience en pÃ¡gina impar (anverso)
         const numPages = examenesPDF.internal.getNumberOfPages
           ? examenesPDF.internal.getNumberOfPages()
           : examenesPDF.internal.pages.length - 1
@@ -3972,7 +3988,7 @@ const ejecutarGeneracionManual = async () => {
           examenesPDF.addPage()
           examenesPDF.setFontSize(10)
           examenesPDF.setTextColor(150)
-          examenesPDF.text('PÁGINA EN BLANCO', 105, 150, { align: 'center' })
+          examenesPDF.text('PAGINA EN BLANCO', 105, 150, { align: 'center' })
         }
         examenesPDF.addPage()
 
@@ -3980,8 +3996,8 @@ const ejecutarGeneracionManual = async () => {
           ? patronesPDF.internal.getNumberOfPages()
           : patronesPDF.internal.pages.length - 1
         if (patPages % 2 !== 0) {
-          // Si el frente es impar, el próximo patrón debería empezar en impar tmb idealmente o dejar el patron uno en cada hoja normal
-          // Opcional: ajustar patrones también si se necesita, pero lo dejamos simple añadiendo 1 hoja.
+          // Si el frente es impar, el prÃ³ximo patrÃ³n deberÃ­a empezar en impar tmb idealmente o dejar el patron uno en cada hoja normal
+          // Opcional: ajustar patrones tambiÃ©n si se necesita, pero lo dejamos simple aÃ±adiendo 1 hoja.
         }
         patronesPDF.addPage()
       }
@@ -4014,7 +4030,7 @@ const ejecutarGeneracionManual = async () => {
     )
     xBlobs.push({ blob: xBlob, name: xName })
 
-    // --- REGISTRO DE AUDITORÍA (BLOQUEANTE) ---
+    // --- REGISTRO DE AUDITORIA (BLOQUEANTE) ---
     try {
       const payloadAuditoria = {
         sede_id: manualConfig.value.sede?.value || null,
@@ -4043,7 +4059,7 @@ const ejecutarGeneracionManual = async () => {
       const resAudit = await api.post('/generaciones-manuales', payloadAuditoria)
       const auditId = resAudit.data.id
 
-      // --- SUBIDA DE ARCHIVOS FÍSICOS AL STORAGE ---
+      // --- SUBIDA DE ARCHIVOS FISICOS AL STORAGE ---
       $q.loading.show({ message: 'Subiendo archivos generados al servidor...' })
       const fd = new FormData()
 
@@ -4063,7 +4079,7 @@ const ejecutarGeneracionManual = async () => {
       cargarManualGenerations()
     } catch (auditErr) {
       console.error(
-        'Error al registrar auditoría o subir archivos:',
+        'Error al registrar auditorÃ­a o subir archivos:',
         auditErr,
         auditErr.response?.data,
       )
@@ -4089,10 +4105,10 @@ const ejecutarGeneracionManual = async () => {
     })
 
     dialogManual.value.show = false
-    manualConfig.value.motivo = '' // Limpiar motivo para la próxima
+    manualConfig.value.motivo = '' // Limpiar motivo para la prÃ³xima
   } catch (error) {
-    console.error('Error en generación manual:', error)
-    $q.notify({ type: 'negative', message: 'Error crítico al procesar archivos' })
+    console.error('Error en generaciÃ³n manual:', error)
+    $q.notify({ type: 'negative', message: 'Error crÃ­tico al procesar archivos' })
   } finally {
     $q.loading.hide()
   }
@@ -4145,6 +4161,7 @@ const cargarDatos = async () => {
       docente_id: e.docente_id,
       variantes: e.variantes || [],
       patrones: e.patrones || [],
+      puede_restaurar_generacion: Boolean(e.puede_restaurar_generacion),
       timestamps: e.timestamps_proceso || { programados: e.created_at },
       color_materia: 'blue-8',
     }))
@@ -4157,7 +4174,7 @@ const cargarDatos = async () => {
   }
 }
 
-// Observadores para recarga automática
+// Observadores para recarga automÃ¡tica
 watch(
   [
     () => filtros.value.sede,
@@ -4281,7 +4298,7 @@ const examenesFiltrados = computed(() => {
 
 const manualGenerationsFiltradas = computed(() => filtrarPorBusqueda([...manualGenerations.value]))
 
-// Función para imprimir PDF consolidada
+// FunciÃ³n para imprimir PDF consolidada
 function imprimirListaDiaria() {
   if (examenesFiltrados.value.length === 0) {
     $q.notify({
@@ -4290,7 +4307,7 @@ function imprimirListaDiaria() {
     })
     return
   }
-  // ... (mismo código jsPDF pero usando examenesFiltrados del backend)
+  // ... (mismo cÃ³digo jsPDF pero usando examenesFiltrados del backend)
   const doc = new jsPDF({
     compression: true,
     putOnlyUsedFonts: true,
@@ -4310,7 +4327,7 @@ function imprimirListaDiaria() {
   doc.rect(0, 0, 330, 20, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(14)
-  doc.text('REPORTE DIARIO DE SEGUIMIENTO DE EVALUACIONES (CONTROL DE RECEPCIÓN)', 14, 13)
+  doc.text('REPORTE DIARIO DE SEGUIMIENTO DE EVALUACIONES (CONTROL DE RECEPCIÃ“N)', 14, 13)
 
   doc.setTextColor(0, 0, 0)
   doc.setFontSize(10)
@@ -4406,17 +4423,17 @@ const configGestion = computed(() => {
   const jobStatus = dialogGestion.value.examen?.distribucion?.job_status
   if (estado === 'programados')
     return {
-      titulo: 'Parametrización de Generación',
+      titulo: 'ParametrizaciÃ³n de GeneraciÃ³n',
       icon: 'settings_suggest',
       actionLabel:
         jobStatus === 'queued' || jobStatus === 'processing'
-          ? 'Generación en Proceso'
+          ? 'GeneraciÃ³n en Proceso'
           : 'Generar Variantes Ahora',
       actionIcon: 'auto_awesome',
     }
   if (estado === 'entregados')
     return {
-      titulo: 'Recepción y Generación de Patrones',
+      titulo: 'RecepciÃ³n y GeneraciÃ³n de Patrones',
       icon: 'fact_check',
       actionLabel: 'Generar Patrones y Devolver',
       actionIcon: 'done_all',
@@ -4426,7 +4443,7 @@ const configGestion = computed(() => {
     icon: 'arrow_forward',
     actionLabel: 'Confirmar Avance',
     actionIcon: 'check',
-    descripcion: '¿Deseas pasar este examen a la siguiente etapa del proceso?',
+    descripcion: 'Â¿Deseas pasar este examen a la siguiente etapa del proceso?',
   }
 })
 
@@ -4452,7 +4469,7 @@ const gestionarEstado = async (examen) => {
       aleatorizarSecciones: true,
     }
 
-    // Intentar cargar configuración efectiva del backend
+    // Intentar cargar configuraciÃ³n efectiva del backend
     try {
       const { data } = await api.get('/evaluaciones/config', {
         params: {
@@ -4486,7 +4503,7 @@ const gestionarEstado = async (examen) => {
       tempConfig.value.dificil = 7
     }
 
-    // Cargar estadísticas del banco de preguntas
+    // Cargar estadÃ­sticas del banco de preguntas
     try {
       bancoStats.value = { facil: 0, medio: 0, dificil: 0, total: 0, g1: 0, g2: 0, g3: 0 }
       bancoTotalAsignatura.value = 0
@@ -4500,14 +4517,14 @@ const gestionarEstado = async (examen) => {
         bancoTotalAsignatura.value = resumenBanco.totalAsignatura || 0
       }
     } catch (err) {
-      console.error('Error cargando estadísticas del banco:', err)
+      console.error('Error cargando estadÃ­sticas del banco:', err)
     }
   }
   dialogGestion.value.show = true
 }
 
 // ==========================================
-// CORE: MOTOR DE SELECCIÓN Y GENERACIÓN UNIFICADO
+// CORE: MOTOR DE SELECCIÃ“N Y GENERACIÃ“N UNIFICADO
 // ==========================================
 
 const obtenerSeleccion7167 = (todas, config) => {
@@ -4653,7 +4670,7 @@ const obtenerSeleccion7167 = (todas, config) => {
   const faltantesTotales = metaTotal - contadosGlobal
 
   if (faltantesTotales > 0) {
-    // Relleno global en caso de incompatibilidad matemática de subpreguntas
+    // Relleno global en caso de incompatibilidad matemÃ¡tica de subpreguntas
     const selExtra = seleccionarDePool(todas, faltantesTotales)
     seleccionGlobal.push(...selExtra)
   }
@@ -4696,7 +4713,7 @@ const mezclarIncisos7167 = (preguntas) => {
       return p
     }
     if (['FALSO_VERDADERO', 'FV'].includes(tipoNormalizado)) {
-      // Normalización forzada: A=Verdadero, B=Falso
+      // NormalizaciÃ³n forzada: A=Verdadero, B=Falso
       const rawAns = Array.isArray(p.respuesta_correcta)
         ? p.respuesta_correcta[0]
         : p.respuesta_correcta
@@ -4769,12 +4786,12 @@ const ejecutarAccionGestion = async () => {
   if (!examen) return
   if (notificarBloqueoPorTiempo(examen)) return
 
-  // Validación de disponibilidad en el banco (solo para generación de variantes)
+  // ValidaciÃ³n de disponibilidad en el banco (solo para generaciÃ³n de variantes)
   if (examen.estado === 'programados' && !bancoSuficiente.value) {
     $q.notify({
       type: 'negative',
       message:
-        'No hay suficientes preguntas en el banco para la distribución por dificultad solicitada.',
+        'No hay suficientes preguntas en el banco para la distribuciÃ³n por dificultad solicitada.',
       icon: 'warning',
     })
     return
@@ -4855,7 +4872,7 @@ const ejecutarAccionGestion = async () => {
       }
 
       if (esSegundoParcialActual) {
-        $q.loading.show({ message: 'Enviando la generación consolidada al servidor...' })
+        $q.loading.show({ message: 'Enviando la generaciÃ³n consolidada al servidor...' })
         await api.post(`/rol-examenes/${examen.id}/generate-package`, {
           cantVariantes: tempConfig.value.cantVariantes,
           facil: tempConfig.value.facil,
@@ -4871,7 +4888,7 @@ const ejecutarAccionGestion = async () => {
         $q.loading.hide()
         $q.notify({
           type: 'info',
-          message: 'La generación quedó en cola. El examen se consolidará en un solo PDF.',
+          message: 'La generaciÃ³n quedÃ³ en cola. El examen se consolidarÃ¡ en un solo PDF.',
           icon: 'hourglass_top',
         })
         dialogGestion.value.show = false
@@ -4907,7 +4924,7 @@ const ejecutarAccionGestion = async () => {
         if (!seleccion) {
           $q.notify({
             type: 'negative',
-            message: 'No se pudo armar una variante que cumpla la distribución por dificultad.',
+            message: 'No se pudo armar una variante que cumpla la distribuciÃ³n por dificultad.',
             icon: 'warning',
           })
           $q.loading.hide()
@@ -4978,7 +4995,7 @@ const ejecutarAccionGestion = async () => {
           $q.notify({
             type: 'negative',
             message:
-              'Se detectaron preguntas fuera de la asignatura, sede, docente, grupo o parcial del examen. Se canceló la generación.',
+              'Se detectaron preguntas fuera de la asignatura, sede, docente, grupo o parcial del examen. Se cancelÃ³ la generaciÃ³n.',
             caption: `Registros observados: ${validacionSeleccion.inconsistencias
               .slice(0, 5)
               .map((item) => `#${item.id || item.index} (${item.fallos.join(', ')})`)
@@ -4991,7 +5008,7 @@ const ejecutarAccionGestion = async () => {
         }
 
         if (i > 0) {
-          // Garantizar que cada variante comience en página impar (anverso)
+          // Garantizar que cada variante comience en pÃ¡gina impar (anverso)
           const numPages = mergedExamenesDoc.internal.getNumberOfPages
             ? mergedExamenesDoc.internal.getNumberOfPages()
             : mergedExamenesDoc.internal.pages.length - 1
@@ -4999,7 +5016,7 @@ const ejecutarAccionGestion = async () => {
             mergedExamenesDoc.addPage()
             mergedExamenesDoc.setFontSize(10)
             mergedExamenesDoc.setTextColor(150)
-            mergedExamenesDoc.text('PÁGINA EN BLANCO', 105, 150, { align: 'center' })
+            mergedExamenesDoc.text('PAGINA EN BLANCO', 105, 150, { align: 'center' })
           }
           mergedExamenesDoc.addPage()
           mergedPatronesDoc.addPage()
@@ -5080,7 +5097,7 @@ const ejecutarAccionGestion = async () => {
       }
     }
 
-    // La generación de patrones ahora ocurre en el estado 'programados'
+    // La generaciÃ³n de patrones ahora ocurre en el estado 'programados'
     // para asegurar consistencia con las preguntas seleccionadas aleatoriamente.
 
     await api.put(`/rol-examenes/${examen.id}`, payload)
@@ -5121,14 +5138,23 @@ const avanzarDirecto = (examen) => {
       $q.notify({ message: 'Etapa actualizada', color: 'positive' })
       cargarDatos()
     } catch (e) {
-      console.error('Error de conexión al avanzar etapa:', e)
+      console.error('Error de conexiÃ³n al avanzar etapa:', e)
       $q.notify({
-        message: e.response?.data?.message || 'Error de conexión',
+        message: e.response?.data?.message || 'Error de conexiÃ³n',
         color: 'negative',
       })
     }
   })
 }
+
+const puedeRestaurarGeneracion = (examen) =>
+  puedeAdministrarRestauracionExamenes.value &&
+  examen?.estado === 'programados' &&
+  Boolean(examen?.puede_restaurar_generacion)
+
+const puedeMostrarAccionesExamen = (examen) =>
+  puedeVerColumnaAcciones.value &&
+  (examen?.estado !== 'programados' || puedeRestaurarGeneracion(examen))
 
 /**
  * Resetea un examen a estado 'programados' (SOLO PARA ADMINS)
@@ -5136,14 +5162,14 @@ const avanzarDirecto = (examen) => {
 const resetearExamen = (examen) => {
   $q.dialog({
     title: '<span class="text-red-9 text-weight-bold">ADVERTENCIA DE SEGURIDAD</span>',
-    message: `¿Deseas restaurar el examen <strong>[${examen.codigo}] ${examen.materia}</strong> al estado PROGRAMADO? <br><br> <div class="q-pa-sm bg-red-1 text-red-9 rounded-borders"><b>IMPORTANTE:</b> Esto eliminará permanentemente las variantes y patrones generados.</div>`,
     html: true,
+    message: `Deseas retornar el examen <strong>[${examen.codigo}] ${examen.materia}</strong> al estado PROGRAMADO? <br><br> <div class="q-pa-sm bg-red-1 text-red-9 rounded-borders"><b>IMPORTANTE:</b> Los documentos se ocultaran del flujo, pero quedaran guardados para restablecerlos si fue un reset accidental.</div>`,
     ok: { label: 'Restaurar a Programado', color: 'red-9', unelevated: true, noCaps: true },
     cancel: { label: 'Cancelar', flat: true, noCaps: true },
     persistent: true,
   }).onOk(async () => {
     try {
-      $q.loading.show({ message: 'Restaurando evaluación...' })
+      $q.loading.show({ message: 'Restaurando evaluaciÃ³n...' })
       const { data } = await api.put(`/rol-examenes/${examen.id}`, {
         estado: 'programados',
       })
@@ -5164,6 +5190,33 @@ const resetearExamen = (examen) => {
   })
 }
 
+const restablecerGeneracion = (examen) => {
+  $q.dialog({
+    title: 'Restablecer generacion',
+    message: `Se recuperaran los documentos generados previamente para <strong>[${examen.codigo}] ${examen.materia}</strong> y el examen volvera a su estado anterior.`,
+    html: true,
+    ok: { label: 'Restablecer', color: 'green-7', unelevated: true, noCaps: true },
+    cancel: { label: 'Cancelar', flat: true, noCaps: true },
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      $q.loading.show({ message: 'Restableciendo generacion...' })
+      await api.post(`/rol-examenes/${examen.id}/restore-generated-package`)
+      $q.notify({
+        type: 'positive',
+        message: 'Generacion restablecida correctamente',
+      })
+      cargarDatos()
+    } catch (error) {
+      console.error('Error al restablecer generacion:', error)
+      const msg = error.response?.data?.message || 'No se pudo restablecer la generacion'
+      $q.notify({ type: 'negative', message: msg })
+    } finally {
+      $q.loading.hide()
+    }
+  })
+}
+
 // Helpers
 const formatFriendlyDate = (f) => {
   if (!f) return ''
@@ -5175,8 +5228,8 @@ const formatFriendlyDate = (f) => {
 }
 const getParcialColor = (parcial) => {
   if (!parcial) return 'grey-7'
-  if (parcial.includes('1er') || parcial.includes('1°')) return 'blue-7'
-  if (parcial.includes('2do') || parcial.includes('2°')) return 'orange-8'
+  if (parcial.includes('1er') || parcial.includes('1Â°')) return 'blue-7'
+  if (parcial.includes('2do') || parcial.includes('2Â°')) return 'orange-8'
   return 'purple-7'
 }
 const getEstadoEstilo = (estado) => {
@@ -5353,7 +5406,7 @@ const ejecutarEstadoDesdeBoton = (examen, target) => {
   avanzarDirecto(examen)
 }
 
-// --- GESTIÓN DE GENERACIONES MANUALES ---
+// --- GESTIÃ“N DE GENERACIONES MANUALES ---
 const MANUAL_ESTADOS_FLOW = [
   {
     key: 'PROGRAMADO',
@@ -5381,14 +5434,14 @@ const MANUAL_ESTADOS_FLOW = [
     label: 'Entregado',
     icon: 'inventory_2',
     color: 'orange-8',
-    desc: 'Material entregado para su aplicación',
+    desc: 'Material entregado para su aplicaciÃ³n',
   },
   {
     key: 'DEVUELTO',
     label: 'Devuelto',
     icon: 'assignment_returned',
     color: 'teal-7',
-    desc: 'Material recibido después de la evaluación',
+    desc: 'Material recibido despuÃ©s de la evaluaciÃ³n',
   },
   {
     key: 'REVISADO',
@@ -5402,7 +5455,7 @@ const MANUAL_ESTADOS_FLOW = [
     label: 'Subido',
     icon: 'cloud_done',
     color: 'purple-9',
-    desc: 'Notas subidas al sistema académico',
+    desc: 'Notas subidas al sistema acadÃ©mico',
   },
 ]
 
@@ -5420,7 +5473,7 @@ const manualColumns = [
   { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
   { name: 'estado', label: 'ESTADO', align: 'center', field: 'estado', sortable: true },
   { name: 'documentos', label: 'DOCUMENTOS', align: 'center' },
-  { name: 'datos_auditoria', label: 'AUDITORÍA', align: 'left' },
+  { name: 'datos_auditoria', label: 'AUDITORIA', align: 'left' },
 ]
 
 const getManualStats = (row) => {
@@ -5518,7 +5571,7 @@ const getManualEstadoStepTooltip = (row, estado) => {
   if (isManualEstadoCompleted(row, estado.key)) return `${estado.label} completado`
   if (!isManualEstadoNext(row, estado.key)) return 'Disponible cuando sea la siguiente etapa'
   if (estaGeneracionManualEnProceso(row)) {
-    return 'Espera a que termine la generación en cola antes de cambiar el estado.'
+    return 'Espera a que termine la generaciÃ³n en cola antes de cambiar el estado.'
   }
   return `Pasar a ${estado.label}`
 }
@@ -5551,8 +5604,8 @@ const ejecutarEstadoManualDesdeBoton = (row, target) => {
     $q.notify({
       type: 'warning',
       message: estaGeneracionManualEnProceso(row)
-        ? 'Espera a que termine la generación en cola antes de cambiar el estado.'
-        : 'No se puede cambiar a esa etapa todavía.',
+        ? 'Espera a que termine la generaciÃ³n en cola antes de cambiar el estado.'
+        : 'No se puede cambiar a esa etapa todavÃ­a.',
     })
     return
   }
@@ -5693,7 +5746,7 @@ const descargarArchivoAPI = async (url, nombreSugerido, openInNewTab = false) =>
     if (error.response) {
       console.error('Status:', error.response.status)
       if (error.response.status === 404) {
-        msgError = 'El archivo físico no se encontró en el servidor.'
+        msgError = 'El archivo fÃ­sico no se encontrÃ³ en el servidor.'
       }
 
       // Intentar leer el mensaje de error del backend si existe (aunque es blob)
@@ -5719,7 +5772,7 @@ const abrirUrlFirmada = async (url) => {
   try {
     const response = await api.get(url)
     if (!response.data?.url) {
-      throw new Error('El servidor no devolvió una URL de previsualización.')
+      throw new Error('El servidor no devolviÃ³ una URL de previsualizaciÃ³n.')
     }
 
     window.open(response.data.url, '_blank')
@@ -5744,7 +5797,7 @@ const descargarPDFManual = async (row) => {
     return
   }
 
-  // Fallback si es antiguo y no tenía el PDF subido
+  // Fallback si es antiguo y no tenÃ­a el PDF subido
   $q.notify({ message: 'Reconstruyendo PDF antiguo...', color: 'info' })
   const examenDoc = {
     materia: row.asignatura_nombre,
@@ -5778,7 +5831,7 @@ const descargarPatronPdfManual = async (row) => {
     return
   }
   if (row.archivo_patron_pdf) {
-    $q.loading.show({ message: 'Abriendo Patrón PDF...' })
+    $q.loading.show({ message: 'Abriendo PatrÃ³n PDF...' })
     await descargarArchivoAPI(
       `/generaciones-manuales/${row.id}/download-patron-pdf`,
       row.archivo_patron_pdf,
@@ -5806,7 +5859,7 @@ const descargarPatronXlsxManual = async (row) => {
     return
   }
   if (row.archivos_patron_xlsx && row.archivos_patron_xlsx.length > 0) {
-    $q.loading.show({ message: 'Descargando Patrón Excel...' })
+    $q.loading.show({ message: 'Descargando PatrÃ³n Excel...' })
     const nombreXlsx =
       typeof row.archivos_patron_xlsx[0] === 'string' ? row.archivos_patron_xlsx[0] : 'Patron.xlsx'
     await descargarArchivoAPI(
@@ -5958,7 +6011,7 @@ const validateMatchingPatternAnswers = (preguntas = [], variante = '') => {
     const invalidas = respuestas.filter((respuesta) => !opciones.has(respuesta))
     if (invalidas.length > 0) {
       throw new Error(
-        `El patrón de la variante ${variante} tiene una respuesta de emparejamiento sin opción vigente: pregunta ${pregunta.id || pregunta.idx || '?'} grupo ${grupo}, respuesta ${invalidas.join(',')}.`,
+        `El patrÃ³n de la variante ${variante} tiene una respuesta de emparejamiento sin opciÃ³n vigente: pregunta ${pregunta.id || pregunta.idx || '?'} grupo ${grupo}, respuesta ${invalidas.join(',')}.`,
       )
     }
   })
@@ -5974,7 +6027,7 @@ const assertPatternConsistency = (resultadosVariantes = []) => {
 
     if (expectedAnswers.join('|') !== auditAnswers.join('|')) {
       throw new Error(
-        `El patrón de la variante ${res.letra} no coincide con las respuestas esperadas.`,
+        `El patrÃ³n de la variante ${res.letra} no coincide con las respuestas esperadas.`,
       )
     }
   })
@@ -6001,7 +6054,7 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
   try {
     logoBase64 = await fetchImageAsBase64(logoUrl)
   } catch (e) {
-    console.warn('No se pudo cargar el logo oficial para el patrón:', e)
+    console.warn('No se pudo cargar el logo oficial para el patrÃ³n:', e)
   }
 
   // Header Design
@@ -6012,14 +6065,14 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
   doc.setTextColor(PURPLE[0], PURPLE[1], PURPLE[2])
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
-  doc.text('UNIVERSIDAD TÉCNICA PRIVADA COSMOS', pageWidth / 2, margin + 8, { align: 'center' })
+  doc.text('UNIVERSIDAD TÃ‰CNICA PRIVADA COSMOS', pageWidth / 2, margin + 8, { align: 'center' })
 
   doc.setTextColor(0, 0, 0)
   doc.setFontSize(10)
   doc.text(`Carrera: ${examen.carrera || ''}`, pageWidth / 2, margin + 14, { align: 'center' })
   doc.setFont('helvetica', 'italic')
   doc.setFontSize(8)
-  doc.text('"TÚ ESTÁS AQUÍ PORQUE FORMAS PARTE DE NUESTRA HISTORIA"', pageWidth / 2, margin + 19, {
+  doc.text('"TU ESTAS AQUI PORQUE FORMAS PARTE DE NUESTRA HISTORIA"', pageWidth / 2, margin + 19, {
     align: 'center',
   })
 
@@ -6031,7 +6084,7 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
   let currentY = margin + 30
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(22)
-  doc.text('PATRÓN', margin + 35, currentY + 5)
+  doc.text('PATRÃ“N', margin + 35, currentY + 5)
 
   // Exam Variant Bubbles (Top Right)
   const drawVariantBubbles = (x, y, activeLetra) => {
@@ -6202,12 +6255,12 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       format: paperFormat,
     })
 
-  // CONFIGURACIÓN DE IMPRESIÓN PERSONALIZADA
+  // CONFIGURACIÃ“N DE IMPRESIÃ“N PERSONALIZADA
   const baseFont = config.fontFamily || 'helvetica'
   const baseSize = config.fontSize || 11
-  const spacingMult = config.lineSpacing || 1.1 // Ligeramente más compacto
+  const spacingMult = config.lineSpacing || 1.1 // Ligeramente mÃ¡s compacto
   const lineHeight = baseSize * 0.42 * spacingMult // Factor corregido para escala mm
-  // Sincronizar interlineado de jsPDF con nuestro cálculo manual (Factor 1.1905 = 0.42mm/pt)
+  // Sincronizar interlineado de jsPDF con nuestro cÃ¡lculo manual (Factor 1.1905 = 0.42mm/pt)
   doc.setLineHeightFactor(1.1905 * spacingMult)
   const sectionFontSize = Math.max(9, baseSize - 1)
   const metaFontSize = Math.max(8, baseSize - 2)
@@ -6236,13 +6289,13 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         .replace(/&ldquo;/g, '"')
         .replace(/&ndash;/g, '-')
         .replace(/&mdash;/g, '-')
-        // Reemplazo específico para caracteres que rompen jsPDF (estándar Helvetica)
-        .replace(/ƒ/g, 'f')
-        .replace(/…/g, '...')
-        // Limpiar cualquier carácter fuera del rango Latin-1 (que suelen romper el layout de jsPDF)
+        // Reemplazo especÃ­fico para caracteres que rompen jsPDF (estÃ¡ndar Helvetica)
+        .replace(/Æ’/g, 'f')
+        .replace(/â€¦/g, '...')
+        // Limpiar cualquier carÃ¡cter fuera del rango Latin-1 (que suelen romper el layout de jsPDF)
         .replace(/[^\x20-\x7E\xA0-\xFF\s]/g, ' ')
         .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ')
-        .replace(/\s+/g, ' ') // Colapsar múltiples espacios
+        .replace(/\s+/g, ' ') // Colapsar mÃºltiples espacios
         .trim()
     )
   }
@@ -6302,7 +6355,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       ],
       [
         {
-          content: `EVALUACION TEÓRICA ${examen.parcial.toUpperCase()}`,
+          content: `EVALUACION TEÃ“RICA ${examen.parcial.toUpperCase()}`,
           styles: { halign: 'center', fontStyle: 'bold' },
         },
       ],
@@ -6396,7 +6449,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     ],
   })
 
-  // Efecto de margen doble minimalista (borde exterior más grueso)
+  // Efecto de margen doble minimalista (borde exterior mÃ¡s grueso)
   const tableHeight = doc.lastAutoTable.finalY - startYTable
   doc.setLineWidth(0.4)
   doc.rect(margin, startYTable, contentWidth, tableHeight)
@@ -6408,17 +6461,17 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   // AGRUPAR POR TIPO PARA RENDERIZAR SECCIONES
   const descripciones = {
     SELECCION_UNICA:
-      'SELECCIÓN DE LA MEJOR RESPUESTA: Lea cuidadosamente cada enunciado y elija una sola respuesta entre las opciones disponibles.',
+      'SELECCIÃ“N DE LA MEJOR RESPUESTA: Lea cuidadosamente cada enunciado y elija una sola respuesta entre las opciones disponibles.',
     PREGUNTA_CON_CLAVE:
       'VERDADERO O FALSO COMPLEJAS: Seleccione la respuesta correcta de acuerdo a la clave indicada.',
     SELECCION_MULTIPLE:
-      'SELECCIÓN MÚLTIPLE: Analice el enunciado y marque todas las opciones que den una respuesta válida. Tenga en cuenta que puede haber más de una respuesta correcta.',
+      'SELECCIÃ“N MULTIPLE: Analice el enunciado y marque todas las opciones que den una respuesta vÃ¡lida. Tenga en cuenta que puede haber mÃ¡s de una respuesta correcta.',
     FALSO_VERDADERO:
-      'VERDADERO O FALSO: Para cada afirmación, indique si el contenido es Verdadero marcando la opción (A) o Falso marcando la opción (B).',
+      'VERDADERO O FALSO: Para cada afirmaciÃ³n, indique si el contenido es Verdadero marcando la opciÃ³n (A) o Falso marcando la opciÃ³n (B).',
     PROBLEMA:
-      'PROBLEMAS Y CASOS: Lea detenidamente el caso planteado y resuelva cada una de las preguntas que se presentan a continuación.',
+      'PROBLEMAS Y CASOS: Lea detenidamente el caso planteado y resuelva cada una de las preguntas que se presentan a continuaciÃ³n.',
     EMPAREJAMIENTO:
-      'EMPAREJAMIENTO: Relacione cada término con su concepto o definición correcta, seleccionando la letra que corresponda en cada espacio.',
+      'EMPAREJAMIENTO: Relacione cada tÃ©rmino con su concepto o definiciÃ³n correcta, seleccionando la letra que corresponda en cada espacio.',
   }
 
   let ultimoTipo = null
@@ -6428,7 +6481,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
   for (let i = 0; i < preguntas.length; i++) {
     const p = preguntas[i]
     let tipoActual = normalizeTipo(p.tipo)
-    // Encabezado de sección (Solo para tipos principales)
+    // Encabezado de secciÃ³n (Solo para tipos principales)
     const tiposPrincipales = [
       'SELECCION_UNICA',
       'PREGUNTA_CON_CLAVE',
@@ -6438,7 +6491,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       'EMPAREJAMIENTO',
     ]
     if (tipoActual !== ultimoTipo && tiposPrincipales.includes(tipoActual)) {
-      const descText = descripciones[tipoActual] || `SECCIÓN: ${tipoActual.replace('_', ' ')}`
+      const descText = descripciones[tipoActual] || `SECCIÃ“N: ${tipoActual.replace('_', ' ')}`
       const descLines = doc.splitTextToSize(descText, contentWidth - 4)
       const rectH = descLines.length * 4.5 + 4
 
@@ -6447,10 +6500,10 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         currentY = margin
       }
 
-      // Diseño Minimalista Moderno (Doble Línea)
+      // DiseÃ±o Minimalista Moderno (Doble LÃ­nea)
       doc.setDrawColor(40, 40, 40)
 
-      // Línea superior gruesa
+      // LÃ­nea superior gruesa
       doc.setLineWidth(0.8)
       doc.line(margin, currentY, margin + contentWidth, currentY)
 
@@ -6459,11 +6512,11 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       doc.setTextColor(0, 0, 0)
       doc.text(descLines, margin, currentY + 5)
 
-      // Línea inferior fina
+      // LÃ­nea inferior fina
       doc.setLineWidth(0.2)
       doc.line(margin, currentY + rectH, margin + contentWidth, currentY + rectH)
 
-      currentY += rectH + (tipoActual === 'PROBLEMA' ? 8 : 10) // Mayor separación para evitar solapamiento
+      currentY += rectH + (tipoActual === 'PROBLEMA' ? 8 : 10) // Mayor separaciÃ³n para evitar solapamiento
       ultimoTipo = tipoActual
     }
 
@@ -6507,7 +6560,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         j++
       }
 
-      // PREESTIMACIÓN DE EMPAREJAMIENTO COMPLETO
+      // PREESTIMACIÃ“N DE EMPAREJAMIENTO COMPLETO
       let estH = enunciadoLines.length * lineHeight + 4
       const ops = p.opciones || []
       estH += ops.length * (lineHeight + 0.5) + 4
@@ -6544,7 +6597,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       }
       currentY += 4
 
-      // Render Sub-preguntas (Como preguntas normales con paréntesis al final)
+      // Render Sub-preguntas (Como preguntas normales con parÃ©ntesis al final)
       doc.setFontSize(baseSize)
       for (let r = 0; r < matchingSubs.length; r++) {
         const sub = matchingSubs[r]
@@ -6600,7 +6653,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
 
     if (tipoActual === 'SUBPROBLEMA') estimatedHeight += 4
     estimatedHeight += esHeader ? 0.5 : 2
-    if (p.imagen) estimatedHeight += 47 // Altura típica max de imagen + padding
+    if (p.imagen) estimatedHeight += 47 // Altura tÃ­pica max de imagen + padding
 
     if (incisosPreguntaClave.length > 0) {
       incisosPreguntaClave.forEach((inciso, index) => {
@@ -6622,7 +6675,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     }
     estimatedHeight += esHeader ? 0 : 5
 
-    // Si la pregunta no cabe en esta página, pero SÍ cabría en una página vacía, saltamos de página antes de imprimirla
+    // Si la pregunta no cabe en esta pÃ¡gina, pero SI cabrÃ­a en una pÃ¡gina vacÃ­a, saltamos de pÃ¡gina antes de imprimirla
     const questionFitsOnPage = estimatedHeight <= fullPageContentHeight
     if (questionFitsOnPage && currentY + estimatedHeight > pageBottomLimit) {
       doc.addPage()
@@ -6641,11 +6694,11 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       const realNum = i + 1 - headersAntes
       doc.text(`${realNum}. `, margin, currentY)
     } else {
-      // Título distintivo para el caso clínico
+      // TÃ­tulo distintivo para el caso clÃ­nico
       problemCount++
       doc.setFontSize(baseSize + 1)
       doc.setFont(baseFont, 'bold')
-      doc.text(`CASO Nº ${problemCount}:`, margin, currentY)
+      doc.text(`CASO NÂº ${problemCount}:`, margin, currentY)
       currentY += 6
       doc.setFontSize(baseSize)
     }
@@ -6655,7 +6708,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     doc.text(enunciadoLines, margin + 8, currentY)
     currentY += enunciadoLines.length * lineHeight
 
-    // Instrucción para Subpreguntas (PR)
+    // InstrucciÃ³n para Subpreguntas (PR)
     if (tipoActual === 'SUBPROBLEMA') {
       doc.setFontSize(metaFontSize)
       doc.setFont(baseFont, 'italic')
@@ -6665,7 +6718,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     }
 
     // Espacios adicionales de seguridad
-    currentY += esHeader ? 2 : 2 // 2mm tras un caso clínico/problema
+    currentY += esHeader ? 2 : 2 // 2mm tras un caso clÃ­nico/problema
 
     // Imagen (si existe)
     if (p.imagen) {
@@ -6693,7 +6746,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
           doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, currentY, imgW, imgH)
           currentY += imgH + 2
         } else {
-          // DIAGNÓSTICO: Si falla la carga, dibujar un cuadro rojo
+          // DIAGNÃ“STICO: Si falla la carga, dibujar un cuadro rojo
           doc.setDrawColor(255, 0, 0)
           doc.rect((pageWidth - 20) / 2, currentY, 20, 10)
           doc.text('ERR_IMG', (pageWidth - 20) / 2 + 2, currentY + 7)
@@ -6745,7 +6798,7 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         currentY += opcHeight
       }
     }
-    currentY += esHeader ? 2 : 5 // Más espacio tras un caso clínico para separar de la 1er pregunta
+    currentY += esHeader ? 2 : 5 // MÃ¡s espacio tras un caso clÃ­nico para separar de la 1er pregunta
   }
 
   const cleanSede = String(examen.sede || '').replace(/\s/g, '')
@@ -6786,7 +6839,7 @@ async function fetchImageAsBase64(url) {
     const response = await api.get(url, { responseType: 'blob' })
     let blob = response.data
 
-    // Comprimir solo imágenes (JPEG/PNG)
+    // Comprimir solo imÃ¡genes (JPEG/PNG)
     if (blob.type.startsWith('image/')) {
       blob = await compressImage(blob)
     }
