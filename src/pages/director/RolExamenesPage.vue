@@ -189,6 +189,14 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-estado="props">
+            <q-td :props="props" class="text-center">
+              <q-chip :color="getEstadoColor(props.row.estado)" text-color="white" size="sm" dense>
+                {{ getEstadoLabel(props.row.estado) }}
+              </q-chip>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-fecha_dia="props">
             <q-td
               :props="props"
@@ -264,10 +272,17 @@
                   dense
                   icon="edit"
                   size="sm"
-                  color="primary"
+                  :color="examenEditable(props.row) ? 'primary' : 'grey-5'"
+                  :disable="!examenEditable(props.row)"
                   @click="editarExamen(props.row)"
                 >
-                  <q-tooltip>Editar</q-tooltip>
+                  <q-tooltip>
+                    {{
+                      examenEditable(props.row)
+                        ? 'Editar'
+                        : 'Solo se puede editar en estado Programado'
+                    }}
+                  </q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -819,6 +834,7 @@ const columns = [
   { name: 'semestre', label: 'Sem.', field: 'semestre', align: 'center', sortable: true },
   { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center', sortable: true },
   { name: 'tipo_examen', label: 'Tipo', field: 'tipo_examen', align: 'center', sortable: true },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
   { name: 'semana', label: 'Semana', field: 'semana', align: 'center', sortable: true },
   { name: 'fecha_dia', label: 'Día', field: 'fecha_dia', align: 'center', sortable: true },
   { name: 'fecha', label: 'Fecha', field: 'fecha', align: 'center', sortable: true },
@@ -875,6 +891,58 @@ function getExamenColor(tipo) {
     default:
       return 'grey'
   }
+}
+
+function normalizarEstadoExamen(estado) {
+  return String(estado || 'programados')
+    .trim()
+    .toLowerCase()
+}
+
+function examenEditable(examen) {
+  return ['programado', 'programados'].includes(normalizarEstadoExamen(examen?.estado))
+}
+
+function getEstadoLabel(estado) {
+  const map = {
+    programado: 'Programado',
+    programados: 'Programado',
+    generado: 'Generado',
+    generados: 'Generado',
+    impreso: 'Impreso',
+    impresos: 'Impreso',
+    entregado: 'Entregado',
+    entregados: 'Entregado',
+    devuelto: 'Devuelto',
+    devueltos: 'Devuelto',
+    revisado: 'Revisado',
+    revisados: 'Revisado',
+    subido: 'Subido',
+    subidos: 'Subido',
+  }
+
+  return map[normalizarEstadoExamen(estado)] || String(estado || 'Programado')
+}
+
+function getEstadoColor(estado) {
+  const map = {
+    programado: 'blue',
+    programados: 'blue',
+    generado: 'purple',
+    generados: 'purple',
+    impreso: 'teal',
+    impresos: 'teal',
+    entregado: 'green',
+    entregados: 'green',
+    devuelto: 'orange',
+    devueltos: 'orange',
+    revisado: 'indigo',
+    revisados: 'indigo',
+    subido: 'positive',
+    subidos: 'positive',
+  }
+
+  return map[normalizarEstadoExamen(estado)] || 'grey'
 }
 
 function formatDate(date) {
@@ -1095,6 +1163,15 @@ async function guardarNuevoExamen() {
 }
 
 function editarExamen(examen) {
+  if (!examenEditable(examen)) {
+    $q.notify({
+      type: 'warning',
+      message: 'Solo se pueden editar examenes en estado Programado',
+      icon: 'lock',
+    })
+    return
+  }
+
   let fechaFormat = examen.fecha || ''
   if (fechaFormat.includes('T')) {
     fechaFormat = fechaFormat.split('T')[0]

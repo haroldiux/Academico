@@ -8770,8 +8770,31 @@ const puedeExportarBancoPreguntas = computed(
   () => puedeVisualizarBanco.value && preguntasFiltradas.value.length > 0,
 )
 
+const LIMITE_ADVERTENCIA_IMPORTACION_BANCO = 80
+
 const totalPreguntasContables = computed(() => {
   return preguntasFiltradas.value.filter((p) => obtenerTipoContableBanco(p)).length
+})
+
+const resumenAdvertenciaImportacionBanco = computed(() => {
+  const existentes = Number(totalPreguntasContables.value || 0)
+  const nuevas = Number(importStats.value?.nuevas || 0)
+
+  return {
+    existentes,
+    nuevas,
+    totalEstimado: existentes + nuevas,
+  }
+})
+
+const requiereConfirmacionImportacionBanco = computed(() => {
+  const resumen = resumenAdvertenciaImportacionBanco.value
+
+  return (
+    resumen.existentes > 0 &&
+    resumen.nuevas > 0 &&
+    resumen.totalEstimado > LIMITE_ADVERTENCIA_IMPORTACION_BANCO
+  )
 })
 
 const conteoBancoPorDificultad = computed(() => {
@@ -11431,6 +11454,42 @@ function previsualizarArchivoExcel(file) {
   reader.readAsArrayBuffer(file)
 }
 
+function solicitarConfirmacionImportacionBanco() {
+  if (!requiereConfirmacionImportacionBanco.value) {
+    return Promise.resolve(true)
+  }
+
+  const { existentes, nuevas, totalEstimado } = resumenAdvertenciaImportacionBanco.value
+
+  return new Promise((resolve) => {
+    $q.dialog({
+      title: 'Confirmar carga adicional',
+      message: `
+        Este grupo ya tiene <strong>${existentes}</strong> pregunta(s) evaluable(s)
+        registradas y el Excel agregaria <strong>${nuevas}</strong> pregunta(s)
+        nueva(s). El banco quedaria con <strong>${totalEstimado}</strong> pregunta(s).
+        <br><br>
+        Revisa que el archivo corresponda a la misma asignatura, sede, grupo y parcial antes
+        de continuar.
+      `,
+      html: true,
+      persistent: true,
+      ok: {
+        label: 'Si, importar',
+        color: 'warning',
+        unelevated: true,
+      },
+      cancel: {
+        label: 'Revisar antes',
+        color: 'primary',
+        flat: true,
+      },
+    })
+      .onOk(() => resolve(true))
+      .onCancel(() => resolve(false))
+  })
+}
+
 async function confirmarImportacionBanco() {
   if (modoBancoSinPermisoModificar.value) {
     $q.notify({
@@ -11451,6 +11510,16 @@ async function confirmarImportacionBanco() {
     $q.notify({
       type: 'warning',
       message: 'Corrige los errores detectados antes de importar el banco.',
+    })
+    return
+  }
+
+  const importacionConfirmada = await solicitarConfirmacionImportacionBanco()
+  if (!importacionConfirmada) {
+    $q.notify({
+      type: 'info',
+      message: 'Importación pausada. Revisa el archivo antes de continuar.',
+      icon: 'info',
     })
     return
   }
