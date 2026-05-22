@@ -363,7 +363,18 @@
             path: 'evaluaciones',
             name: 'evaluaciones',
             component: () => import('pages/evaluaciones/GestionEvaluacionesPage.vue'),
-            meta: { title: 'Gestión de Evaluaciones' },
+            meta: {
+              title: 'Gestión de Evaluaciones',
+              rol: [
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'EVALUACIONES',
+                'RESPONSABLE_EVALUACIONES',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
+            },
           },
           {
             path: 'verificador-patrones',
@@ -390,6 +401,21 @@
             meta: {
               title: 'Administración de Evaluaciones',
               rol: ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'],
+            },
+          },
+          {
+            path: 'reporte-evaluaciones',
+            name: 'reporte-evaluaciones',
+            component: () => import('pages/admin/ReporteEvaluacionesPage.vue'),
+            meta: {
+              title: 'Reporte Evaluaciones',
+              rol: [
+                'EVALUACIONES',
+                'RESPONSABLE_EVALUACIONES',
+                'VICERRECTOR_NACIONAL',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
             },
           },
           {

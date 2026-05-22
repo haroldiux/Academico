@@ -228,6 +228,11 @@ export function usePermisos() {
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
         })
+        items.push({
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
+        })
       }
       return items
     }
@@ -243,11 +248,17 @@ export function usePermisos() {
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
         { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
+        },
+        {
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
         },
       ]
     }
@@ -275,6 +286,11 @@ export function usePermisos() {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
+        },
+        {
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
         },
         { label: 'Rol Exámenes (Eval)', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },

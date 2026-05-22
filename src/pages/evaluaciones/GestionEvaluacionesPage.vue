@@ -493,7 +493,7 @@
         <template v-slot:body-cell-documentos="props">
           <q-td :props="props" align="center">
             <div
-              v-if="puedeVerAcciones && props.row.estado !== 'programados'"
+              v-if="puedeVerDocumentos && props.row.estado !== 'programados'"
               class="flex items-center justify-center gap-1"
             >
               <!-- Variantes generadas -->
@@ -590,9 +590,7 @@
             </div>
             <div v-else class="text-caption text-grey-4 text-xs">
               {{
-                examenConCartilla(props.row)
-                  ? 'Esperando generación'
-                  : 'Sin documentos del sistema'
+                examenConCartilla(props.row) ? 'Esperando generación' : 'Sin documentos del sistema'
               }}
             </div>
           </q-td>
@@ -1272,9 +1270,7 @@
               <template v-slot:avatar>
                 <q-icon name="fact_check" color="deep-purple-7" size="32px" />
               </template>
-              <div class="text-subtitle1 text-weight-bold">
-                Generación de patrones de respuesta
-              </div>
+              <div class="text-subtitle1 text-weight-bold">Generación de patrones de respuesta</div>
               Al continuar, se generarán los patrones oficiales para las variantes
               <strong>{{ dialogGestion.examen?.variantes.join(', ') }}</strong>
               y la evaluación pasará al estado <strong>DEVUELTO</strong>.
@@ -1847,22 +1843,33 @@ const {
   esEvaluaciones,
   esResponsableEvaluaciones,
   esDireccionAcademica,
+  esVicerrectorNacional,
   esVicerrectorSede,
   esAdmin,
   esSuperAdmin,
 } = usePermisos()
 
-const puedeVerAcciones = computed(() => {
+const puedeGestionarEvaluaciones = computed(() => {
+  if (esVicerrectorNacional.value) {
+    return false
+  }
+
   return puedeEditar.value || esEvaluaciones.value || esResponsableEvaluaciones.value
 })
+
+const puedeVerAcciones = computed(() => puedeGestionarEvaluaciones.value)
+const puedeVerDocumentos = computed(
+  () => puedeGestionarEvaluaciones.value || esVicerrectorNacional.value,
+)
 
 const puedeAdministrarRestauracionExamenes = computed(() => esAdmin.value || esSuperAdmin.value)
 
 const puedeVerGeneracionManual = computed(() => {
-  if (esDireccionAcademica.value || esVicerrectorSede.value) {
+  if (esDireccionAcademica.value || esVicerrectorSede.value || esVicerrectorNacional.value) {
     return false
   }
-  return puedeEditar.value || esEvaluaciones.value || esResponsableEvaluaciones.value
+
+  return puedeGestionarEvaluaciones.value
 })
 
 // ESTADOS DEL PROCESO
@@ -2047,6 +2054,7 @@ const normalizeTipo = (t) => {
 }
 
 const PARCIAL_2DO = '2do Parcial'
+const DEFAULT_GESTION = '2026-I'
 const DEFAULT_DISTRIBUCION_2P = { facil: 7, medio: 16, dificil: 7 }
 const DEFAULT_GRUPOS_TIPO_2P = { g1: 15, g2: 30, g3: 15 }
 
@@ -3004,8 +3012,7 @@ const monitorManualGeneration = (generationId) => {
         $q.notify({
           type: 'negative',
           message:
-            generation?.configuracion_json?.job_error ||
-            'La generación manual en servidor falló.',
+            generation?.configuracion_json?.job_error || 'La generación manual en servidor falló.',
           icon: 'error',
           timeout: 7000,
         })
@@ -3753,6 +3760,7 @@ const ejecutarGeneracionManualEnCola = async (requerida) => {
       asignatura_nombre: resolvedMateria,
       docente_nombre: resolvedDocente,
       parcial: manualConfig.value.parcial,
+      gestion: DEFAULT_GESTION,
       grupo: manualConfig.value.grupo,
       hora: resolvedHora,
       cant_variantes: manualConfig.value.cantVariantes,
@@ -4042,6 +4050,7 @@ const ejecutarGeneracionManual = async () => {
         asignatura_nombre: resolvedMateria,
         docente_nombre: resolvedDocente,
         parcial: manualConfig.value.parcial,
+        gestion: DEFAULT_GESTION,
         grupo: manualConfig.value.grupo,
         hora: resolvedHora,
         cant_variantes: manualConfig.value.cantVariantes,
@@ -4206,7 +4215,7 @@ const columns = computed(() => {
     { name: 'estado', label: 'ESTADO', align: 'center' },
   ]
 
-  if (puedeVerAcciones.value) {
+  if (puedeVerDocumentos.value) {
     base.push({ name: 'documentos', label: 'DOCUMENTOS', align: 'center' })
   }
 
@@ -6560,10 +6569,19 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
         j++
       }
 
+      const ops = p.opciones || []
+      const optionMaxWidth = contentWidth - 21
+      const optionBlocks = ops.map((op, opIndex) => {
+        const optionId = op.id || String.fromCharCode(65 + opIndex)
+        const optionText = `${optionId}) ${String(op.text || '')
+          .replace(/<[^>]*>/g, '')
+          .trim()}`
+        return doc.splitTextToSize(optionText, optionMaxWidth)
+      })
+
       // PREESTIMACIÓN DE EMPAREJAMIENTO COMPLETO
       let estH = enunciadoLines.length * lineHeight + 4
-      const ops = p.opciones || []
-      estH += ops.length * (lineHeight + 0.5) + 4
+      estH += optionBlocks.reduce((total, lines) => total + lines.length * lineHeight + 1, 0) + 4
       for (const sub of matchingSubs) {
         let subText = sub.enunciado?.replace(/<[^>]*>/g, '').trim() + ' (      )'
         const subLines = doc.splitTextToSize(subText, contentWidth - 20)
@@ -6586,14 +6604,17 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
       // Opciones (A, B, C...)
       doc.setFont(baseFont, 'normal')
       doc.setFontSize(baseSize - 2)
-      for (const op of ops) {
-        if (!matchingFitsOnPage && currentY > pageBottomLimit) {
+      for (const optionBlock of optionBlocks) {
+        const optionHeight = optionBlock.length * lineHeight + 1
+
+        if (!matchingFitsOnPage && currentY + optionHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
           doc.setFont(baseFont)
         }
-        doc.text(`${op.id}) ${op.text}`, margin + 15, currentY)
-        currentY += lineHeight + 0.5
+
+        doc.text(optionBlock, margin + 15, currentY)
+        currentY += optionHeight
       }
       currentY += 4
 

@@ -330,7 +330,9 @@
                   <div class="col-12 col-md-4">
                     <q-select
                       v-model="form.carrera_id"
-                      :options="carrerasStore.carreras.map(c => ({ label: c.nombre, value: c.id }))"
+                      :options="
+                        carrerasStore.carreras.map((c) => ({ label: c.nombre, value: c.id }))
+                      "
                       label="Carrera *"
                       outlined
                       dense
@@ -343,7 +345,7 @@
                   <div class="col-12 col-md-4">
                     <q-select
                       v-model.number="form.semestre"
-                      :options="[1,2,3,4,5,6,7,8,9,10,11,12]"
+                      :options="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]"
                       label="Semestre *"
                       outlined
                       dense
