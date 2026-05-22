@@ -2623,8 +2623,10 @@ watch(
             .map((campus) => campus.id)
         : []
 
-      // Si la sede seleccionada es la del usuario y tiene campus asignado, cargar por campus
-      if (campusIds.length) {
+      // El endpoint de campus/carreras es administrativo; Evaluaciones debe cargar por sede.
+      if (authStore.rol === ROLES.EVALUACIONES) {
+        fetchCarreras(selectedSedeId)
+      } else if (campusIds.length) {
         fetchCarrerasPorCampusIds(campusIds)
       } else if (authStore.usuarioActual?.campus_id && selectedSedeId === userSedeId) {
         fetchCarreras(null, authStore.usuarioActual.campus_id)

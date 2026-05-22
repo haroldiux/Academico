@@ -25,11 +25,11 @@
         <q-btn
           unelevated
           color="teal"
-          icon="download"
-          label="Exportar CSV"
+          icon="picture_as_pdf"
+          label="Exportar PDF"
           no-caps
           :disable="detalleRows.length === 0"
-          @click="exportarCsv"
+          @click="exportarPdf"
         />
       </div>
     </div>
@@ -317,7 +317,7 @@
           dense
           outlined
           clearable
-          placeholder="Buscar materia, carrera, sede o estado"
+          placeholder="Buscar materia, docente, carrera, sede o estado"
           style="width: min(420px, 100%)"
         >
           <template #prepend>
@@ -360,7 +360,9 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { date, exportFile, useQuasar } from 'quasar'
+import { date, useQuasar } from 'quasar'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 import { api } from 'boot/axios'
 import { useCarrerasStore } from 'src/stores/carreras'
@@ -653,50 +655,114 @@ async function cargarReporte() {
   }
 }
 
-function csvCell(value) {
-  const text = String(value ?? '').replace(/"/g, '""')
-  return `"${text}"`
+function pdfValue(value) {
+  return String(value ?? '').trim() || '-'
 }
 
-function exportarCsv() {
-  const headers = [
-    'Fuente',
-    'Sede',
-    'Carrera',
-    'Codigo',
-    'Materia',
-    'Docente',
-    'Parcial',
-    'Grupo',
-    'Fecha',
-    'Hora',
-    'Estado',
-  ]
-
-  const lines = detalleFiltrado.value.map((row) =>
-    [
-      row.origen === 'manual' ? 'Operativo' : 'Rol',
-      row.sede,
-      row.carrera,
-      row.materia_codigo,
-      row.materia_nombre,
-      row.docente,
-      row.parcial,
-      row.grupo,
-      row.fecha,
-      row.hora,
-      row.estado_label,
-    ]
-      .map(csvCell)
-      .join(','),
-  )
-
-  const content = [headers.map(csvCell).join(','), ...lines].join('\n')
-  const status = exportFile('reporte_evaluaciones.csv', content, 'text/csv;charset=utf-8')
-
-  if (status !== true) {
-    $q.notify({ type: 'negative', message: 'No se pudo exportar el reporte.' })
+function exportarPdf() {
+  if (!detalleFiltrado.value.length) {
+    $q.notify({ type: 'warning', message: 'No hay datos para exportar.' })
+    return
   }
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const generatedAt = date.formatDate(new Date(), 'DD/MM/YYYY HH:mm')
+  const sede =
+    filtros.alcance === 'nacional' ? 'Nacional' : alcanceLabel.value.split(' / ')[0] || '-'
+  const carrera =
+    filtros.alcance === 'carrera' ? alcanceLabel.value.split(' / ')[1] || '-' : 'Todas'
+  const rango = rangoLabel.value || 'Sin rango de fechas'
+  const parcial = filtros.parcial || 'Todos'
+  const fuente = origenOptions.find((item) => item.value === filtros.origen)?.label || 'Todo'
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.text('REPORTE DE EVALUACIONES', 14, 14)
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Generado: ${generatedAt}`, pageWidth - 14, 14, { align: 'right' })
+
+  autoTable(doc, {
+    startY: 20,
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 1.5 },
+    body: [
+      ['Alcance', alcanceLabel.value, 'Gestion', filtros.gestion || '-'],
+      ['Sede', sede, 'Carrera', carrera],
+      ['Rango de fechas', rango, 'Parcial', parcial],
+      ['Fuente', fuente, 'Registros exportados', detalleFiltrado.value.length],
+    ],
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 28 },
+      1: { cellWidth: 115 },
+      2: { fontStyle: 'bold', cellWidth: 32 },
+      3: { cellWidth: 70 },
+    },
+  })
+
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 4,
+    head: [['Programados', 'Operativos', 'Generados', 'Subidos', 'Cobertura', 'Avance']],
+    body: [
+      [
+        resumen.value.programados_rol || 0,
+        resumen.value.registros_operativos || 0,
+        resumen.value.generados || 0,
+        resumen.value.finalizados || 0,
+        `${resumen.value.cobertura_generacion || 0}%`,
+        `${resumen.value.avance_finalizacion || 0}%`,
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [21, 101, 192], textColor: 255, fontSize: 8 },
+    styles: { fontSize: 8, halign: 'center' },
+  })
+
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 5,
+    head: [
+      ['Fuente', 'Sede', 'Carrera', 'Materia', 'Docente', 'Parcial', 'Grupo', 'Fecha', 'Estado'],
+    ],
+    body: detalleFiltrado.value.map((row) => [
+      row.origen === 'manual' ? 'Manual' : 'Rol',
+      pdfValue(row.sede),
+      pdfValue(row.carrera),
+      pdfValue([row.materia_codigo, row.materia_nombre].filter(Boolean).join(' - ')),
+      pdfValue(row.docente),
+      pdfValue(row.parcial),
+      pdfValue(row.grupo),
+      pdfValue(row.fecha),
+      pdfValue(row.estado_label || row.estado),
+    ]),
+    theme: 'striped',
+    headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 7 },
+    styles: { fontSize: 6.6, cellPadding: 1.4, overflow: 'linebreak', valign: 'middle' },
+    columnStyles: {
+      0: { cellWidth: 14, halign: 'center' },
+      1: { cellWidth: 24 },
+      2: { cellWidth: 42 },
+      3: { cellWidth: 56 },
+      4: { cellWidth: 44 },
+      5: { cellWidth: 20, halign: 'center' },
+      6: { cellWidth: 13, halign: 'center' },
+      7: { cellWidth: 20, halign: 'center' },
+      8: { cellWidth: 20, halign: 'center' },
+    },
+    didDrawPage: () => {
+      doc.setFontSize(7)
+      doc.setTextColor(100)
+      doc.text(
+        `Pagina ${doc.internal.getNumberOfPages()}`,
+        pageWidth - 14,
+        doc.internal.pageSize.getHeight() - 7,
+        { align: 'right' },
+      )
+    },
+  })
+
+  const fileDate = date.formatDate(new Date(), 'YYYYMMDD_HHmm')
+  doc.save(`reporte_evaluaciones_${fileDate}.pdf`)
 }
 
 onMounted(async () => {
