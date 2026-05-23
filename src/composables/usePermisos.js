@@ -196,7 +196,12 @@ export function usePermisos() {
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
-        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
+        { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        {
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
+        },
         { label: 'Información Carrera', icon: 'business', to: '/director/contexto' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
       ]
@@ -213,14 +218,17 @@ export function usePermisos() {
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
-        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
+        {
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
+        },
       ]
     }
 
     if (esEvaluaciones.value || esResponsableEvaluaciones.value) {
       const items = [
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
-        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
       ]
       if (esResponsableEvaluaciones.value) {
         items.push({
@@ -249,7 +257,6 @@ export function usePermisos() {
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
-        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',

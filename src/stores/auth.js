@@ -71,7 +71,12 @@ function normalizeSedeAssignments(user, campusAsignados = []) {
   })
 
   const sedeDirectaId = Number(
-    user.docente?.sede_id || user.docente?.sede?.id || user.sede_id || user.sede?.id,
+    user.director?.sede_id ||
+      user.director?.sede?.id ||
+      user.docente?.sede_id ||
+      user.docente?.sede?.id ||
+      user.sede_id ||
+      user.sede?.id,
   )
   if (sedeDirectaId && !unique.has(sedeDirectaId)) {
     unique.set(sedeDirectaId, {
@@ -196,6 +201,8 @@ export const useAuthStore = defineStore(
         const sedesAsignadas = normalizeSedeAssignments(user, campusAsignados)
         const sedeIds = sedesAsignadas.map((sede) => sede.id).filter(Boolean)
         const sedePrincipalId =
+          user.director?.sede_id ||
+          user.director?.sede?.id ||
           user.docente?.sede_id ||
           user.docente?.sede?.id ||
           user.sede_id ||
@@ -309,6 +316,7 @@ export const useAuthStore = defineStore(
           director: user.director
             ? {
                 ...user.director,
+                sede: user.director.sede,
                 carrera: user.director.carrera,
                 carreras: user.director.carreras, // If multiple
               }
@@ -424,6 +432,8 @@ export const useAuthStore = defineStore(
         const sedesAsignadas = normalizeSedeAssignments(user, campusAsignados)
         const sedeIds = sedesAsignadas.map((sede) => sede.id).filter(Boolean)
         const sedePrincipalId =
+          user.director?.sede_id ||
+          user.director?.sede?.id ||
           user.docente?.sede_id ||
           user.docente?.sede?.id ||
           user.sede_id ||
@@ -536,6 +546,7 @@ export const useAuthStore = defineStore(
           director: user.director
             ? {
                 ...user.director,
+                sede: user.director.sede,
                 carrera: user.director.carrera,
                 carreras: user.director.carreras,
               }

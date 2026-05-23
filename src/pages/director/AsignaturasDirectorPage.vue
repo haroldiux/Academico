@@ -18,7 +18,7 @@
             size="sm"
             icon="apartment"
           >
-            Sede: Cochabamba
+            Sede: {{ sedeAutoridadLabel }}
           </q-chip>
         </div>
       </div>
@@ -1090,6 +1090,7 @@ import { useSedesStore } from 'src/stores/sedes'
 const authStore = useAuthStore()
 const asignaturasStore = useAsignaturasStore()
 const carrerasStore = useCarrerasStore()
+const sedesStore = useSedesStore()
 const $q = useQuasar()
 const router = useRouter()
 
@@ -1110,6 +1111,33 @@ const canToggleOcultarSinAsignar = computed(() =>
     ROLES.SUPER_ADMIN,
   ].includes(authStore.rol),
 )
+
+const sedeAutoridadId = computed(() => {
+  const usuario = authStore.usuarioActual || {}
+
+  return Number(
+    usuario.director?.sede_id ||
+      usuario.director?.sede?.id ||
+      usuario.docente?.sede_id ||
+      usuario.docente?.sede?.id ||
+      usuario.sede_id ||
+      authStore.sedeId ||
+      0,
+  )
+})
+
+const sedeAutoridadLabel = computed(() => {
+  const usuario = authStore.usuarioActual || {}
+  const sedeId = sedeAutoridadId.value
+
+  return (
+    usuario.director?.sede?.nombre ||
+    usuario.docente?.sede?.nombre ||
+    usuario.sedes_asignadas?.find((sede) => Number(sede.id || sede.value) === sedeId)?.nombre ||
+    sedesStore.sedes.find((sede) => Number(sede.id) === sedeId)?.nombre ||
+    'Sin sede asignada'
+  )
+})
 
 const DEFAULT_LOCAL_STATUS = {
   estado: 'pendiente',
@@ -1579,7 +1607,7 @@ const handleJsonImport = async (event) => {
 const filtros = ref({
   sedeId: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'].includes(authStore.rol)
     ? null
-    : authStore.usuarioActual?.director?.sede_id || authStore.sedeId,
+    : sedeAutoridadId.value || null,
   carreraId: null,
   buscar: '',
   ocultarSinAsignar: canToggleOcultarSinAsignar.value,
@@ -1596,8 +1624,6 @@ const opcionesPlanes = [
   { label: 'Plan Antiguo (A)', value: 'A' },
 ]
 
-// Opciones de Sedes (solo para roles que necesitan selector de sede)
-const sedesStore = useSedesStore()
 const opcionesSedes = computed(() => {
   return sedesStore.sedes.map((s) => ({
     label: s.nombre,
@@ -1618,8 +1644,7 @@ const carrerasOptions = computed(() => {
 
   // Para Vicerrector Sede o Direccion Academica: Mostrar todas las carreras de su sede
   if (authStore.rol === ROLES.VICERRECTOR_SEDE || authStore.rol === ROLES.DIRECCION_ACADEMICA) {
-    // Obtener sede del usuario
-    const sedeId = authStore.sedeId || authStore.usuarioActual?.sede_id
+    const sedeId = sedeAutoridadId.value
 
     if (!sedeId) {
       // Si no hay sede asignada, mostrar todas las carreras
@@ -1805,9 +1830,20 @@ async function cargarBancoPreguntas2P() {
 }
 
 onMounted(async () => {
-  // Cargar sedes si es nacional, admin o super admin
+  if (authStore.isAuthenticated) {
+    await authStore.fetchUser()
+  }
+
+  // Cargar sedes para resolver nombres y selectores por alcance
   if (
-    ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) &&
+    [
+      ROLES.VICERRECTOR_NACIONAL,
+      ROLES.VICERRECTOR_SEDE,
+      ROLES.DIRECCION_ACADEMICA,
+      ROLES.DIRECTOR_CARRERA,
+      ROLES.ADMIN,
+      ROLES.SUPER_ADMIN,
+    ].includes(authStore.rol) &&
     sedesStore.sedes.length === 0
   ) {
     await sedesStore.fetchSedes()
@@ -1816,6 +1852,14 @@ onMounted(async () => {
   // Cargar carreras primero
   if (carrerasStore.carreras.length === 0) {
     await carrerasStore.fetchCarreras()
+  }
+
+  if (
+    [ROLES.VICERRECTOR_SEDE, ROLES.DIRECCION_ACADEMICA, ROLES.DIRECTOR_CARRERA].includes(
+      authStore.rol,
+    )
+  ) {
+    filtros.value.sedeId = sedeAutoridadId.value || null
   }
 
   // Si es nacional/admin, pre-seleccionar la primera sede

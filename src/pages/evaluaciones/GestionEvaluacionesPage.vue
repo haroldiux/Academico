@@ -1843,14 +1843,23 @@ const {
   esEvaluaciones,
   esResponsableEvaluaciones,
   esDireccionAcademica,
+  esDirectorCarrera,
   esVicerrectorNacional,
   esVicerrectorSede,
   esAdmin,
   esSuperAdmin,
 } = usePermisos()
 
+const esAutoridadSoloLecturaEvaluaciones = computed(
+  () =>
+    esVicerrectorNacional.value ||
+    esVicerrectorSede.value ||
+    esDireccionAcademica.value ||
+    esDirectorCarrera.value,
+)
+
 const puedeGestionarEvaluaciones = computed(() => {
-  if (esVicerrectorNacional.value) {
+  if (esAutoridadSoloLecturaEvaluaciones.value) {
     return false
   }
 
@@ -1859,13 +1868,13 @@ const puedeGestionarEvaluaciones = computed(() => {
 
 const puedeVerAcciones = computed(() => puedeGestionarEvaluaciones.value)
 const puedeVerDocumentos = computed(
-  () => puedeGestionarEvaluaciones.value || esVicerrectorNacional.value,
+  () => puedeGestionarEvaluaciones.value || esAutoridadSoloLecturaEvaluaciones.value,
 )
 
 const puedeAdministrarRestauracionExamenes = computed(() => esAdmin.value || esSuperAdmin.value)
 
 const puedeVerGeneracionManual = computed(() => {
-  if (esDireccionAcademica.value || esVicerrectorSede.value || esVicerrectorNacional.value) {
+  if (esAutoridadSoloLecturaEvaluaciones.value) {
     return false
   }
 
@@ -2389,7 +2398,11 @@ const sedeIdsAsignadasUsuario = computed(() =>
 )
 
 const debeLimitarSedes = computed(() => {
-  return authStore.rol === ROLES.EVALUACIONES || authStore.alcance === 'sede'
+  return (
+    authStore.rol === ROLES.EVALUACIONES ||
+    authStore.alcance === 'sede' ||
+    authStore.alcance === 'carrera'
+  )
 })
 
 const esSedeRestringida = computed(() => {
@@ -2441,7 +2454,10 @@ const fetchCarreras = async (sedeId, campusId = null) => {
   try {
     const url = campusId ? `/campus/${campusId}/carreras` : `/sedes/${sedeId}/carreras`
     const response = await api.get(url)
-    carrerasOptions.value = response.data.map((c) => ({ label: c.nombre, value: c.id }))
+    carrerasOptions.value = filtrarCarrerasPorAlcance(response.data || []).map((c) => ({
+      label: c.nombre,
+      value: c.id,
+    }))
   } catch (error) {
     console.error('Error carreras:', error)
   } finally {
@@ -2463,12 +2479,38 @@ const fetchCarrerasPorCampusIds = async (campusIds) => {
     )
     const carreras = responses.flatMap((response) => response.data || [])
     const uniqueById = new Map(carreras.map((carrera) => [carrera.id, carrera]))
-    carrerasOptions.value = [...uniqueById.values()].map((c) => ({ label: c.nombre, value: c.id }))
+    carrerasOptions.value = filtrarCarrerasPorAlcance([...uniqueById.values()]).map((c) => ({
+      label: c.nombre,
+      value: c.id,
+    }))
   } catch (error) {
     console.error('Error carreras por campus:', error)
   } finally {
     loadingOptions.value.carreras = false
   }
+}
+
+function carreraIdsPermitidasUsuario() {
+  if (!esDirectorCarrera.value) return []
+
+  const director = authStore.usuarioActual?.director || {}
+  const ids = [
+    authStore.usuarioActual?.carrera_id,
+    director.carrera_id,
+    ...(Array.isArray(director.carreras) ? director.carreras.map((carrera) => carrera.id) : []),
+  ]
+
+  return [...new Set(ids.map((id) => Number(id)).filter(Boolean))]
+}
+
+function filtrarCarrerasPorAlcance(carreras) {
+  const idsPermitidos = carreraIdsPermitidasUsuario()
+
+  if (!idsPermitidos.length) {
+    return carreras
+  }
+
+  return carreras.filter((carrera) => idsPermitidos.includes(Number(carrera.id)))
 }
 
 const normalizarGestionTiempos = (gestion = '2026-I') => {
@@ -2623,8 +2665,15 @@ watch(
             .map((campus) => campus.id)
         : []
 
-      // El endpoint de campus/carreras es administrativo; Evaluaciones debe cargar por sede.
-      if (authStore.rol === ROLES.EVALUACIONES) {
+      // El endpoint de campus/carreras es administrativo; los roles operativos/de lectura cargan por sede.
+      if (
+        [
+          ROLES.EVALUACIONES,
+          ROLES.DIRECTOR_CARRERA,
+          ROLES.DIRECCION_ACADEMICA,
+          ROLES.VICERRECTOR_SEDE,
+        ].includes(authStore.rol)
+      ) {
         fetchCarreras(selectedSedeId)
       } else if (campusIds.length) {
         fetchCarrerasPorCampusIds(campusIds)

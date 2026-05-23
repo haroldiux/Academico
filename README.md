@@ -1,4 +1,5 @@
 # 🚀 SISA - Sistema Integrado de Seguimiento Académico
+
 ### 💻 Portal de Documentación del Frontend (Quasar App)
 
 Bienvenido al repositorio oficial del **Frontend** de **SISA** (Sistema Integrado de Seguimiento Académico), una plataforma web de alto rendimiento y mobile-ready para la gestión, seguimiento y planificación académica a nivel universitario.
@@ -41,11 +42,13 @@ graph TD
 ## 🛠️ Guía de Desarrollo Rápido
 
 ### Requisitos Previos
-*   **Node.js** >= 18.x
-*   **Yarn** o **NPM**
-*   **Quasar CLI** instalado globalmente (`npm i -g @quasar/cli`)
+
+- **Node.js** >= 18.x
+- **Yarn** o **NPM**
+- **Quasar CLI** instalado globalmente (`npm i -g @quasar/cli`)
 
 ### 1. Instalación de Dependencias
+
 ```bash
 npm install
 # o con yarn:
@@ -53,7 +56,9 @@ yarn install
 ```
 
 ### 2. Ejecución en Modo de Desarrollo
+
 Arranca el servidor local con recarga rápida (HMR):
+
 ```bash
 npm run dev
 # o con quasar cli:
@@ -61,6 +66,7 @@ quasar dev
 ```
 
 ### 3. Formateo y Calidad de Código
+
 ```bash
 # Ejecutar Linter
 npm run lint
@@ -70,7 +76,9 @@ npm run format
 ```
 
 ### 4. Construcción para Producción
+
 Compila y optimiza la aplicación para el despliegue final:
+
 ```bash
 npm run build
 # o con quasar cli:
@@ -81,12 +89,13 @@ quasar build
 
 ## ⚙️ Tecnologías Utilizadas
 
-*   **Core:** Vue 3 (`<script setup>` con Composition API)
-*   **Framework UI:** Quasar Framework v2
-*   **Gestión de Estado:** Pinia con almacenamiento persistente local
-*   **Empaquetador:** Vite (ultra-rápido)
-*   **Cliente HTTP:** Axios (con interceptores automatizados de reintento y cola offline)
-*   **Móvil / Híbrido:** Capacitor JS (Network, Filesystem)
+- **Core:** Vue 3 (`<script setup>` con Composition API)
+- **Framework UI:** Quasar Framework v2
+- **Gestión de Estado:** Pinia con almacenamiento persistente local
+- **Empaquetador:** Vite (ultra-rápido)
+- **Cliente HTTP:** Axios (con interceptores automatizados de reintento y cola offline)
+- **Móvil / Híbrido:** Capacitor JS (Network, Filesystem)
 
 ---
+
 Desarrollado con ❤️ para el control y excelencia académica universitaria.

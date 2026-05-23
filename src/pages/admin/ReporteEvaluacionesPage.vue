@@ -45,6 +45,7 @@
             dense
             emit-value
             map-options
+            :disable="alcanceOptions.length <= 1"
             @update:model-value="onCambiarAlcance"
           >
             <template #prepend>
@@ -69,7 +70,7 @@
             emit-value
             map-options
             clearable
-            :disable="filtros.alcance === 'nacional'"
+            :disable="filtros.alcance === 'nacional' || sedeBloqueada"
             @update:model-value="onCambiarSede"
           >
             <template #prepend>
@@ -87,7 +88,9 @@
             emit-value
             map-options
             clearable
-            :disable="filtros.alcance !== 'carrera'"
+            :disable="
+              !(filtros.alcance === 'carrera' || puedeFiltrarCarreraDeSede) || carreraBloqueada
+            "
           >
             <template #prepend>
               <q-icon name="school" />
@@ -365,10 +368,12 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 import { api } from 'boot/axios'
+import { ROLES, useAuthStore } from 'src/stores/auth'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useSedesStore } from 'src/stores/sedes'
 
 const $q = useQuasar()
+const authStore = useAuthStore()
 const sedesStore = useSedesStore()
 const carrerasStore = useCarrerasStore()
 
@@ -389,7 +394,7 @@ const reporte = ref(null)
 const loadingReporte = ref(false)
 const busqueda = ref('')
 
-const alcanceOptions = [
+const alcanceOptionsBase = [
   { label: 'Nacional', value: 'nacional' },
   { label: 'Sede', value: 'sede' },
   { label: 'Carrera', value: 'carrera' },
@@ -428,11 +433,87 @@ const estadoMeta = {
   SUBIDO: { icon: 'cloud_done', color: 'purple-9' },
 }
 
+const rolActual = computed(() => authStore.rol)
+const esAlcanceGlobal = computed(() =>
+  [
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN,
+    ROLES.VICERRECTOR_NACIONAL,
+    ROLES.RESPONSABLE_EVALUACIONES,
+  ].includes(rolActual.value),
+)
+const esAlcanceCarrera = computed(() => rolActual.value === ROLES.DIRECTOR_CARRERA)
+const esAlcanceSede = computed(() =>
+  [ROLES.EVALUACIONES, ROLES.VICERRECTOR_SEDE, ROLES.DIRECCION_ACADEMICA].includes(rolActual.value),
+)
+const puedeFiltrarCarreraDeSede = computed(() =>
+  [ROLES.VICERRECTOR_SEDE, ROLES.DIRECCION_ACADEMICA].includes(rolActual.value),
+)
+
+const sedeIdsPermitidas = computed(() => {
+  if (esAlcanceGlobal.value) return []
+
+  const usuario = authStore.usuarioActual || {}
+  const ids = [
+    usuario.sede_id,
+    usuario.director?.sede_id,
+    usuario.director?.sede?.id,
+    ...(Array.isArray(usuario.sede_ids) ? usuario.sede_ids : []),
+    ...(Array.isArray(usuario.sedes_asignadas)
+      ? usuario.sedes_asignadas.map((sede) => sede.id || sede.value)
+      : []),
+    ...(Array.isArray(usuario.campus_asignados)
+      ? usuario.campus_asignados.map((campus) => campus.sede_id)
+      : []),
+  ]
+
+  return [...new Set(ids.map((id) => Number(id)).filter(Boolean))]
+})
+
+const carreraIdsPermitidas = computed(() => {
+  if (!esAlcanceCarrera.value) return []
+
+  const usuario = authStore.usuarioActual || {}
+  const director = usuario.director || {}
+  const ids = [
+    usuario.carrera_id,
+    director.carrera_id,
+    ...(Array.isArray(director.carreras) ? director.carreras.map((carrera) => carrera.id) : []),
+  ]
+
+  return [...new Set(ids.map((id) => Number(id)).filter(Boolean))]
+})
+
+const alcanceOptions = computed(() => {
+  if (esAlcanceCarrera.value) {
+    return alcanceOptionsBase.filter((item) => item.value === 'carrera')
+  }
+
+  if (esAlcanceSede.value) {
+    return alcanceOptionsBase.filter(
+      (item) =>
+        item.value === 'sede' || (puedeFiltrarCarreraDeSede.value && item.value === 'carrera'),
+    )
+  }
+
+  return alcanceOptionsBase
+})
+
+const sedeBloqueada = computed(() => !esAlcanceGlobal.value && sedeIdsPermitidas.value.length <= 1)
+const carreraBloqueada = computed(
+  () => esAlcanceCarrera.value && carreraIdsPermitidas.value.length <= 1,
+)
+
 const sedesOptions = computed(() =>
-  (sedesStore.sedes || []).map((sede) => ({
-    label: sede.nombre,
-    value: sede.id,
-  })),
+  (sedesStore.sedes || [])
+    .filter(
+      (sede) =>
+        esAlcanceGlobal.value || sedeIdsPermitidas.value.includes(Number(sede.id || sede.value)),
+    )
+    .map((sede) => ({
+      label: sede.nombre,
+      value: sede.id,
+    })),
 )
 
 const carrerasOptions = computed(() => {
@@ -440,10 +521,16 @@ const carrerasOptions = computed(() => {
     ? carrerasStore.getCarrerasBySede(filtros.sede_id)
     : carrerasStore.carreras
 
-  return (lista || []).map((carrera) => ({
-    label: carrera.nombre,
-    value: carrera.id,
-  }))
+  return (lista || [])
+    .filter(
+      (carrera) =>
+        !carreraIdsPermitidas.value.length ||
+        carreraIdsPermitidas.value.includes(Number(carrera.id)),
+    )
+    .map((carrera) => ({
+      label: carrera.nombre,
+      value: carrera.id,
+    }))
 })
 
 const resumen = computed(() => reporte.value?.resumen || {})
@@ -461,8 +548,10 @@ const detalleRows = computed(() =>
 const alcanceLabel = computed(() => {
   if (filtros.alcance === 'nacional') return 'nivel nacional'
   const sede = sedesOptions.value.find((item) => item.value === filtros.sede_id)?.label
-  if (filtros.alcance === 'sede') return sede || 'sede seleccionada'
   const carrera = carrerasOptions.value.find((item) => item.value === filtros.carrera_id)?.label
+  if (filtros.alcance === 'sede') {
+    return [sede, carrera].filter(Boolean).join(' / ') || sede || 'sede seleccionada'
+  }
   return [sede, carrera].filter(Boolean).join(' / ') || 'carrera seleccionada'
 })
 
@@ -584,7 +673,7 @@ function onCambiarAlcance(value) {
     filtros.sede_id = null
     filtros.carrera_id = null
   }
-  if (value === 'sede') {
+  if (value === 'sede' && !puedeFiltrarCarreraDeSede.value) {
     filtros.carrera_id = null
   }
 }
@@ -619,12 +708,31 @@ function buildParams() {
   return {
     gestion: filtros.gestion || undefined,
     sede_id: filtros.alcance !== 'nacional' ? filtros.sede_id || undefined : undefined,
-    carrera_id: filtros.alcance === 'carrera' ? filtros.carrera_id || undefined : undefined,
+    carrera_id:
+      filtros.alcance === 'carrera' || puedeFiltrarCarreraDeSede.value
+        ? filtros.carrera_id || undefined
+        : undefined,
     parcial: filtros.parcial || undefined,
     fecha_inicio: filtros.fecha_inicio || undefined,
     fecha_fin: filtros.fecha_fin || undefined,
     estado: filtros.estados?.length ? filtros.estados.join(',') : undefined,
     origen: filtros.origen || 'todos',
+  }
+}
+
+function aplicarAlcanceUsuario() {
+  if (esAlcanceCarrera.value) {
+    filtros.alcance = 'carrera'
+    filtros.sede_id = sedeIdsPermitidas.value[0] || authStore.usuarioActual?.sede_id || null
+    filtros.carrera_id =
+      carreraIdsPermitidas.value[0] || authStore.usuarioActual?.carrera_id || null
+    return
+  }
+
+  if (esAlcanceSede.value) {
+    filtros.alcance = 'sede'
+    filtros.sede_id = sedeIdsPermitidas.value[0] || authStore.usuarioActual?.sede_id || null
+    filtros.carrera_id = null
   }
 }
 
@@ -671,7 +779,9 @@ function exportarPdf() {
   const sede =
     filtros.alcance === 'nacional' ? 'Nacional' : alcanceLabel.value.split(' / ')[0] || '-'
   const carrera =
-    filtros.alcance === 'carrera' ? alcanceLabel.value.split(' / ')[1] || '-' : 'Todas'
+    filtros.carrera_id && alcanceLabel.value.includes(' / ')
+      ? alcanceLabel.value.split(' / ')[1] || '-'
+      : 'Todas'
   const rango = rangoLabel.value || 'Sin rango de fechas'
   const parcial = filtros.parcial || 'Todos'
   const fuente = origenOptions.find((item) => item.value === filtros.origen)?.label || 'Todo'
@@ -766,7 +876,11 @@ function exportarPdf() {
 }
 
 onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    await authStore.fetchUser()
+  }
   await Promise.all([sedesStore.fetchSedes(), carrerasStore.fetchCarreras()])
+  aplicarAlcanceUsuario()
   cargarReporte()
 })
 </script>

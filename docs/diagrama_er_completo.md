@@ -1,8 +1,9 @@
 # Diagrama Entidad-Relación (ERD) - SISA 2.0 (Completo)
 
 **Simbología:**
-*   Las tablas en **<span style="color:orange">NARANJA</span>** (`:::university`) representan datos que provienen o se sincronizan desde el **Sistema Universitario**.
-*   Las tablas en **AZUL** son propias de **SISA** (Datos locales enriquecidos).
+
+- Las tablas en **<span style="color:orange">NARANJA</span>** (`:::university`) representan datos que provienen o se sincronizan desde el **Sistema Universitario**.
+- Las tablas en **AZUL** son propias de **SISA** (Datos locales enriquecidos).
 
 ```mermaid
 erDiagram
@@ -34,7 +35,7 @@ erDiagram
         string celular
     }
     class DOCENTES university
-    
+
     ESTUDIANTES {
         bigint id PK
         string codigo "ID Externo"
@@ -198,11 +199,11 @@ erDiagram
     DIRECTORS ||--|{ CARRERAS : dirige
     USERS ||--|| DIRECTORS : es
     USERS ||--|| DOCENTES : es
-    
+
     DOCENTES ||--|{ ASIGNATURAS : dicta
-    
+
     ESTUDIANTES ||--|{ MATRICULAS : cursa
-    
+
     ASIGNATURAS ||--|{ MATRICULAS : tiene_inscritos
     ASIGNATURAS ||--|{ UNIDADES : estructura
     ASIGNATURAS ||--|{ HORARIOS : se_dicta

@@ -367,6 +367,7 @@
               title: 'Gestión de Evaluaciones',
               rol: [
                 'DIRECCION_ACADEMICA',
+                'DIRECTOR_CARRERA',
                 'VICERRECTOR_SEDE',
                 'VICERRECTOR_NACIONAL',
                 'EVALUACIONES',
@@ -382,16 +383,7 @@
             component: () => import('pages/evaluaciones/PatternVerifierPage.vue'),
             meta: {
               title: 'Verificador de Patrones',
-              rol: [
-                'DIRECTOR_CARRERA',
-                'DIRECCION_ACADEMICA',
-                'VICERRECTOR_SEDE',
-                'VICERRECTOR_NACIONAL',
-                'EVALUACIONES',
-                'RESPONSABLE_EVALUACIONES',
-                'ADMIN',
-                'SUPER_ADMIN',
-              ],
+              rol: ['ADMIN', 'SUPER_ADMIN'],
             },
           },
           {
@@ -412,6 +404,9 @@
               rol: [
                 'EVALUACIONES',
                 'RESPONSABLE_EVALUACIONES',
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
                 'VICERRECTOR_NACIONAL',
                 'ADMIN',
                 'SUPER_ADMIN',
