@@ -28,7 +28,7 @@
           icon="picture_as_pdf"
           label="Exportar PDF"
           no-caps
-          :disable="detalleRows.length === 0"
+          :disable="!hayReporteExportable || loadingReporte"
           @click="exportarPdf"
         />
       </div>
@@ -544,6 +544,21 @@ const detalleRows = computed(() =>
     row_key: `${row.origen}-${row.id}-${index}`,
   })),
 )
+const hayReporteExportable = computed(() => {
+  if (!reporte.value) return false
+
+  return [
+    resumen.value.programados_rol,
+    resumen.value.registros_operativos,
+    resumen.value.generados,
+    resumen.value.finalizados,
+    estadosRows.value.length,
+    fechaRows.value.length,
+    sedeRows.value.length,
+    carreraRows.value.length,
+    detalleRows.value.length,
+  ].some((value) => Number(value || 0) > 0)
+})
 
 const alcanceLabel = computed(() => {
   if (filtros.alcance === 'nacional') return 'nivel nacional'
@@ -767,14 +782,19 @@ function pdfValue(value) {
   return String(value ?? '').trim() || '-'
 }
 
+function pdfPercent(value) {
+  return `${Number(value || 0)}%`
+}
+
 function exportarPdf() {
-  if (!detalleFiltrado.value.length) {
-    $q.notify({ type: 'warning', message: 'No hay datos para exportar.' })
+  if (!hayReporteExportable.value) {
+    $q.notify({ type: 'warning', message: 'Genera un reporte con datos antes de exportar.' })
     return
   }
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' })
   const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
   const generatedAt = date.formatDate(new Date(), 'DD/MM/YYYY HH:mm')
   const sede =
     filtros.alcance === 'nacional' ? 'Nacional' : alcanceLabel.value.split(' / ')[0] || '-'
@@ -785,6 +805,33 @@ function exportarPdf() {
   const rango = rangoLabel.value || 'Sin rango de fechas'
   const parcial = filtros.parcial || 'Todos'
   const fuente = origenOptions.find((item) => item.value === filtros.origen)?.label || 'Todo'
+  const estados = filtros.estados?.length
+    ? filtros.estados
+        .map((estado) => estadoOptions.find((item) => item.value === estado)?.label || estado)
+        .join(', ')
+    : 'Todos'
+  const detalleExportable = detalleFiltrado.value
+
+  const drawFooter = () => {
+    doc.setFontSize(7)
+    doc.setTextColor(100)
+    doc.text(`Pagina ${doc.internal.getNumberOfPages()}`, pageWidth - 14, pageHeight - 7, {
+      align: 'right',
+    })
+  }
+
+  const addSectionTitle = (title, spacing = 7) => {
+    let y = (doc.lastAutoTable?.finalY || 20) + spacing
+    if (y > pageHeight - 20) {
+      doc.addPage()
+      y = 16
+    }
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(15, 23, 42)
+    doc.text(title, 14, y)
+    return y + 3
+  }
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
@@ -801,7 +848,8 @@ function exportarPdf() {
       ['Alcance', alcanceLabel.value, 'Gestion', filtros.gestion || '-'],
       ['Sede', sede, 'Carrera', carrera],
       ['Rango de fechas', rango, 'Parcial', parcial],
-      ['Fuente', fuente, 'Registros exportados', detalleFiltrado.value.length],
+      ['Fuente', fuente, 'Estados', estados],
+      ['Registros de detalle', detalleExportable.length, 'Generado por', authStore.nombreCompleto],
     ],
     columnStyles: {
       0: { fontStyle: 'bold', cellWidth: 28 },
@@ -811,65 +859,168 @@ function exportarPdf() {
     },
   })
 
+  const resumenStartY = addSectionTitle('Resumen general', 5)
   autoTable(doc, {
-    startY: doc.lastAutoTable.finalY + 4,
-    head: [['Programados', 'Operativos', 'Generados', 'Subidos', 'Cobertura', 'Avance']],
+    startY: resumenStartY,
+    head: [
+      [
+        'Programados en rol',
+        'Registros operativos',
+        'Generados',
+        'Finalizados',
+        'Cobertura',
+        'Avance',
+      ],
+    ],
     body: [
       [
         resumen.value.programados_rol || 0,
         resumen.value.registros_operativos || 0,
         resumen.value.generados || 0,
         resumen.value.finalizados || 0,
-        `${resumen.value.cobertura_generacion || 0}%`,
-        `${resumen.value.avance_finalizacion || 0}%`,
+        pdfPercent(resumen.value.cobertura_generacion),
+        pdfPercent(resumen.value.avance_finalizacion),
       ],
     ],
     theme: 'grid',
     headStyles: { fillColor: [21, 101, 192], textColor: 255, fontSize: 8 },
     styles: { fontSize: 8, halign: 'center' },
+    didDrawPage: drawFooter,
   })
 
+  const estadosStartY = addSectionTitle('Distribucion por estado')
   autoTable(doc, {
-    startY: doc.lastAutoTable.finalY + 5,
-    head: [
-      ['Fuente', 'Sede', 'Carrera', 'Materia', 'Docente', 'Parcial', 'Grupo', 'Fecha', 'Estado'],
-    ],
-    body: detalleFiltrado.value.map((row) => [
-      row.origen === 'manual' ? 'Manual' : 'Rol',
-      pdfValue(row.sede),
-      pdfValue(row.carrera),
-      pdfValue([row.materia_codigo, row.materia_nombre].filter(Boolean).join(' - ')),
-      pdfValue(row.docente),
-      pdfValue(row.parcial),
-      pdfValue(row.grupo),
-      pdfValue(row.fecha),
-      pdfValue(row.estado_label || row.estado),
+    startY: estadosStartY,
+    head: [['Estado', 'Rol', 'Manual', 'Total']],
+    body: estadosRows.value.map((row) => [
+      pdfValue(row.label || row.estado),
+      row.programados || 0,
+      row.operativos || 0,
+      row.total || 0,
     ]),
     theme: 'striped',
-    headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 7 },
-    styles: { fontSize: 6.6, cellPadding: 1.4, overflow: 'linebreak', valign: 'middle' },
+    headStyles: { fillColor: [30, 64, 175], textColor: 255, fontSize: 8 },
+    styles: { fontSize: 7.4, cellPadding: 1.5 },
     columnStyles: {
-      0: { cellWidth: 14, halign: 'center' },
-      1: { cellWidth: 24 },
-      2: { cellWidth: 42 },
-      3: { cellWidth: 56 },
-      4: { cellWidth: 44 },
-      5: { cellWidth: 20, halign: 'center' },
-      6: { cellWidth: 13, halign: 'center' },
-      7: { cellWidth: 20, halign: 'center' },
-      8: { cellWidth: 20, halign: 'center' },
+      0: { cellWidth: 70 },
+      1: { cellWidth: 30, halign: 'center' },
+      2: { cellWidth: 30, halign: 'center' },
+      3: { cellWidth: 30, halign: 'center' },
     },
-    didDrawPage: () => {
-      doc.setFontSize(7)
-      doc.setTextColor(100)
-      doc.text(
-        `Pagina ${doc.internal.getNumberOfPages()}`,
-        pageWidth - 14,
-        doc.internal.pageSize.getHeight() - 7,
-        { align: 'right' },
-      )
-    },
+    didDrawPage: drawFooter,
   })
+
+  const tendenciaStartY = addSectionTitle('Tendencia por fecha')
+  autoTable(doc, {
+    startY: tendenciaStartY,
+    head: [['Fecha', 'Rol', 'Operativos', 'Generados', 'Subidos']],
+    body: fechaRows.value.map((row) => [
+      pdfValue(row.fecha),
+      row.programados || 0,
+      row.operativos || 0,
+      row.generados || 0,
+      row.finalizados || 0,
+    ]),
+    theme: 'striped',
+    headStyles: { fillColor: [15, 118, 110], textColor: 255, fontSize: 8 },
+    styles: { fontSize: 7.2, cellPadding: 1.4 },
+    columnStyles: {
+      0: { cellWidth: 32 },
+      1: { cellWidth: 24, halign: 'center' },
+      2: { cellWidth: 28, halign: 'center' },
+      3: { cellWidth: 28, halign: 'center' },
+      4: { cellWidth: 28, halign: 'center' },
+    },
+    didDrawPage: drawFooter,
+  })
+
+  const sedeStartY = addSectionTitle('Resumen por sede')
+  autoTable(doc, {
+    startY: sedeStartY,
+    head: [['Sede', 'Rol', 'Operativos', 'Generados', 'Subidos', 'Avance']],
+    body: sedeRows.value.map((row) => [
+      pdfValue(row.nombre),
+      row.programados || 0,
+      row.operativos || 0,
+      row.generados || 0,
+      row.finalizados || 0,
+      getAvanceAgrupacionLabel(row),
+    ]),
+    theme: 'striped',
+    headStyles: { fillColor: [5, 150, 105], textColor: 255, fontSize: 8 },
+    styles: { fontSize: 7.2, cellPadding: 1.4 },
+    columnStyles: {
+      0: { cellWidth: 70 },
+      1: { cellWidth: 24, halign: 'center' },
+      2: { cellWidth: 28, halign: 'center' },
+      3: { cellWidth: 28, halign: 'center' },
+      4: { cellWidth: 28, halign: 'center' },
+      5: { cellWidth: 24, halign: 'center' },
+    },
+    didDrawPage: drawFooter,
+  })
+
+  const carreraStartY = addSectionTitle('Resumen por carrera')
+  autoTable(doc, {
+    startY: carreraStartY,
+    head: [['Carrera', 'Rol', 'Operativos', 'Generados', 'Subidos', 'Avance']],
+    body: carreraRows.value.map((row) => [
+      pdfValue(row.nombre),
+      row.programados || 0,
+      row.operativos || 0,
+      row.generados || 0,
+      row.finalizados || 0,
+      getAvanceAgrupacionLabel(row),
+    ]),
+    theme: 'striped',
+    headStyles: { fillColor: [124, 58, 237], textColor: 255, fontSize: 8 },
+    styles: { fontSize: 7, cellPadding: 1.3, overflow: 'linebreak' },
+    columnStyles: {
+      0: { cellWidth: 95 },
+      1: { cellWidth: 24, halign: 'center' },
+      2: { cellWidth: 28, halign: 'center' },
+      3: { cellWidth: 28, halign: 'center' },
+      4: { cellWidth: 28, halign: 'center' },
+      5: { cellWidth: 24, halign: 'center' },
+    },
+    didDrawPage: drawFooter,
+  })
+
+  if (detalleExportable.length) {
+    const detalleStartY = addSectionTitle('Detalle del reporte')
+    autoTable(doc, {
+      startY: detalleStartY,
+      head: [
+        ['Fuente', 'Sede', 'Carrera', 'Materia', 'Docente', 'Parcial', 'Grupo', 'Fecha', 'Estado'],
+      ],
+      body: detalleExportable.map((row) => [
+        row.origen === 'manual' ? 'Manual' : 'Rol',
+        pdfValue(row.sede),
+        pdfValue(row.carrera),
+        pdfValue([row.materia_codigo, row.materia_nombre].filter(Boolean).join(' - ')),
+        pdfValue(row.docente),
+        pdfValue(row.parcial),
+        pdfValue(row.grupo),
+        pdfValue(row.fecha),
+        pdfValue(row.estado_label || row.estado),
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 7 },
+      styles: { fontSize: 6.6, cellPadding: 1.4, overflow: 'linebreak', valign: 'middle' },
+      columnStyles: {
+        0: { cellWidth: 14, halign: 'center' },
+        1: { cellWidth: 24 },
+        2: { cellWidth: 42 },
+        3: { cellWidth: 56 },
+        4: { cellWidth: 44 },
+        5: { cellWidth: 20, halign: 'center' },
+        6: { cellWidth: 13, halign: 'center' },
+        7: { cellWidth: 20, halign: 'center' },
+        8: { cellWidth: 20, halign: 'center' },
+      },
+      didDrawPage: drawFooter,
+    })
+  }
 
   const fileDate = date.formatDate(new Date(), 'YYYYMMDD_HHmm')
   doc.save(`reporte_evaluaciones_${fileDate}.pdf`)

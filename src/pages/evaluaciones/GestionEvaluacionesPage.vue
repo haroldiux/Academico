@@ -1095,7 +1095,7 @@
             <div v-if="esSegundoParcialGestion" class="row q-col-gutter-sm q-mt-md">
               <div class="col-12">
                 <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
-                  Conteo referencial por grupo de tipo para 2do Parcial
+                  Conteo referencial por grupo de tipo para {{ parcialGestionLabel }}
                 </div>
                 <div class="text-caption text-blue-grey-7">
                   Este conteo ya no bloquea la generación del examen; se muestra solo como apoyo.
@@ -1240,8 +1240,7 @@
               dense
             >
               <template v-slot:avatar><q-icon name="warning" color="red" /></template>
-              No existen suficientes preguntas en el banco para cumplir con la distribución
-              solicitada por dificultad.
+              {{ bancoInsuficienteMensaje }}
             </q-banner>
 
             <q-banner
@@ -1250,8 +1249,8 @@
               dense
             >
               <template v-slot:avatar><q-icon name="info" color="blue-grey-7" /></template>
-              Para 2do Parcial, el conteo por grupo de tipo es solo referencial. La validación de
-              generación se realiza por dificultad.
+              Para {{ parcialGestionLabel }}, el conteo por grupo de tipo es solo referencial. La
+              validación de generación se realiza por dificultad.
             </q-banner>
 
             <div class="q-mt-lg text-caption text-grey-6 items-center flex">
@@ -1725,7 +1724,8 @@
                 </div>
 
                 <div class="text-caption text-blue-grey-7 q-mb-sm">
-                  Conteo referencial por grupo de tipo para 2do Parcial.
+                  Conteo referencial por grupo de tipo para
+                  {{ normalizarParcialExamen(manualConfig.parcial) }}.
                 </div>
                 <div class="row q-col-gutter-xs q-mb-md">
                   <div class="col-4">
@@ -2062,9 +2062,13 @@ const normalizeTipo = (t) => {
   return s
 }
 
+const PARCIAL_1ER = '1er Parcial'
 const PARCIAL_2DO = '2do Parcial'
+const PARCIAL_FINAL = 'Final'
 const DEFAULT_GESTION = '2026-I'
 const DEFAULT_DISTRIBUCION_2P = { facil: 7, medio: 16, dificil: 7 }
+const MINIMO_BANCO_FINAL = 120
+const MINIMO_BANCO_FINAL_DIFICULTAD = { facil: 30, medio: 60, dificil: 30 }
 const DEFAULT_GRUPOS_TIPO_2P = { g1: 15, g2: 30, g3: 15 }
 
 const esSegundoParcialValor = (parcial) => {
@@ -2076,6 +2080,22 @@ const esSegundoParcialValor = (parcial) => {
     value.includes('2 parcial')
   )
 }
+
+const esPrimerParcialValor = (parcial) => {
+  const value = removeAccents(String(parcial || '')).toLowerCase()
+  return value.includes('1er') || value.includes('primer') || value.includes('1p')
+}
+
+const esFinalValor = (parcial) => {
+  const value = removeAccents(String(parcial || '')).toLowerCase()
+  return value.includes('final') || value === 'ef'
+}
+
+const usaGeneradorCodificadoValor = (parcial) =>
+  esPrimerParcialValor(parcial) || esSegundoParcialValor(parcial) || esFinalValor(parcial)
+
+const usaGeneracionConsolidadaValor = (parcial) =>
+  esSegundoParcialValor(parcial) || esFinalValor(parcial)
 
 const normalizarGrupoExamen = (value) =>
   removeAccents(String(value || ''))
@@ -2090,8 +2110,8 @@ const normalizarParcialExamen = (value) => {
     .trim()
   if (!key) return ''
   if (key.includes('2do') || key.includes('segundo') || key.includes('2p')) return PARCIAL_2DO
-  if (key.includes('1er') || key.includes('primer') || key.includes('1p')) return '1er Parcial'
-  if (key.includes('final')) return 'Final'
+  if (key.includes('1er') || key.includes('primer') || key.includes('1p')) return PARCIAL_1ER
+  if (key.includes('final')) return PARCIAL_FINAL
   if (key.includes('instancia') || key.includes('2i')) return '2da Instancia'
   return String(value || '').trim()
 }
@@ -2274,7 +2294,7 @@ const getBancoDisponibilidad = (row) => {
     gruposTipo: null,
   }
 
-  if (esSegundoParcialValor(row?.tipo_examen || row?.parcial)) {
+  if (usaGeneracionConsolidadaValor(row?.tipo_examen || row?.parcial)) {
     disponibilidad.gruposTipo = {
       disponible: true,
       referencial: true,
@@ -2908,7 +2928,7 @@ const requiereStatsBancoRemotas = (examen) => {
   const sinDificultad = stats.facil + stats.medio + stats.dificil === 0
   if (sinDificultad) return true
 
-  if (!esSegundoParcialValor(examen?.tipo_examen || examen?.parcial)) return false
+  if (!usaGeneracionConsolidadaValor(examen?.tipo_examen || examen?.parcial)) return false
 
   const totalGrupos = stats.g1 + stats.g2 + stats.g3
   const tieneDetalleTipos =
@@ -2941,18 +2961,56 @@ const enriquecerStatsBancoExamenes = async (examenes) => {
 }
 
 const esSegundoParcialGestion = computed(() =>
-  esSegundoParcialValor(
+  usaGeneracionConsolidadaValor(
     dialogGestion.value.examen?.tipo_examen || dialogGestion.value.examen?.parcial,
   ),
 )
 
+const parcialGestionLabel = computed(
+  () =>
+    normalizarParcialExamen(
+      dialogGestion.value.examen?.tipo_examen || dialogGestion.value.examen?.parcial,
+    ) || PARCIAL_2DO,
+)
+
 const bancoSuficiente = computed(() => {
   if (dialogGestion.value.examen?.estado !== 'programados') return true
+  const parcial = dialogGestion.value.examen?.tipo_examen || dialogGestion.value.examen?.parcial
+  if (esFinalValor(parcial) && toNumber(bancoStats.value.total) < MINIMO_BANCO_FINAL) {
+    return false
+  }
+  if (
+    esFinalValor(parcial) &&
+    (toNumber(bancoStats.value.facil) < MINIMO_BANCO_FINAL_DIFICULTAD.facil ||
+      toNumber(bancoStats.value.medio) < MINIMO_BANCO_FINAL_DIFICULTAD.medio ||
+      toNumber(bancoStats.value.dificil) < MINIMO_BANCO_FINAL_DIFICULTAD.dificil)
+  ) {
+    return false
+  }
   return (
     (tempConfig.value.facil || 0) <= (bancoStats.value.facil || 0) &&
     (tempConfig.value.medio || 0) <= (bancoStats.value.medio || 0) &&
     (tempConfig.value.dificil || 0) <= (bancoStats.value.dificil || 0)
   )
+})
+
+const bancoInsuficienteMensaje = computed(() => {
+  const parcial = dialogGestion.value.examen?.tipo_examen || dialogGestion.value.examen?.parcial
+
+  if (esFinalValor(parcial) && toNumber(bancoStats.value.total) < MINIMO_BANCO_FINAL) {
+    return `El Examen Final requiere minimo ${MINIMO_BANCO_FINAL} preguntas en el banco antes de generar.`
+  }
+
+  if (
+    esFinalValor(parcial) &&
+    (toNumber(bancoStats.value.facil) < MINIMO_BANCO_FINAL_DIFICULTAD.facil ||
+      toNumber(bancoStats.value.medio) < MINIMO_BANCO_FINAL_DIFICULTAD.medio ||
+      toNumber(bancoStats.value.dificil) < MINIMO_BANCO_FINAL_DIFICULTAD.dificil)
+  ) {
+    return `El banco base de Examen Final requiere ${MINIMO_BANCO_FINAL_DIFICULTAD.facil} faciles, ${MINIMO_BANCO_FINAL_DIFICULTAD.medio} medias y ${MINIMO_BANCO_FINAL_DIFICULTAD.dificil} dificiles.`
+  }
+
+  return 'No existen suficientes preguntas en el banco para cumplir con la distribucion solicitada por dificultad.'
 })
 
 const bancoPuedeGenerar = computed(() => bancoSuficiente.value)
@@ -3923,8 +3981,8 @@ const ejecutarGeneracionManual = async () => {
     }
 
     const variantesLetters = ['A', 'B', 'C', 'D', 'E'].slice(0, manualConfig.value.cantVariantes)
-    const esSegundoParcialManual = esSegundoParcialValor(manualConfig.value.parcial)
-    const examenesPDF = esSegundoParcialManual
+    const usaGeneradorCodificadoManual = usaGeneradorCodificadoValor(manualConfig.value.parcial)
+    const examenesPDF = usaGeneradorCodificadoManual
       ? createExamPdfDocument(config)
       : new jsPDF({
           compression: true,
@@ -3939,7 +3997,7 @@ const ejecutarGeneracionManual = async () => {
 
     for (let i = 0; i < variantesLetters.length; i++) {
       const letra = variantesLetters[i]
-      const seleccion = esSegundoParcialManual
+      const seleccion = usaGeneradorCodificadoManual
         ? buildExamQuestionSelection(manualPreguntas.value, config)
         : obtenerSeleccion7167(manualPreguntas.value, config)
 
@@ -3952,10 +4010,10 @@ const ejecutarGeneracionManual = async () => {
         return
       }
 
-      const seleccionConCabeceras = esSegundoParcialManual
+      const seleccionConCabeceras = usaGeneradorCodificadoManual
         ? completeMacroHeaders(seleccion, manualPreguntas.value)
         : seleccion
-      const sorted = esSegundoParcialManual
+      const sorted = usaGeneradorCodificadoManual
         ? sortExamQuestionsForPdf(
             mixExamQuestionOptions(JSON.parse(JSON.stringify(seleccionConCabeceras))),
             config,
@@ -4021,7 +4079,7 @@ const ejecutarGeneracionManual = async () => {
         return
       }
 
-      if (esSegundoParcialManual) {
+      if (usaGeneradorCodificadoManual) {
         assertNoOrphanMacroQuestions(sorted)
       }
 
@@ -4061,7 +4119,7 @@ const ejecutarGeneracionManual = async () => {
         patronesPDF.addPage()
       }
 
-      if (esSegundoParcialManual) {
+      if (usaGeneradorCodificadoManual) {
         await generateExamPdf(examenesPDF, fakeExamen, config, letra, sorted)
       } else {
         await generarExamenPDF(examenesPDF, fakeExamen, config, letra, sorted)
@@ -4514,14 +4572,15 @@ const gestionarEstado = async (examen) => {
 
   dialogGestion.value.examen = examen
   if (examen.estado === 'programados') {
-    const esSegundoParcial = esSegundoParcialValor(examen.tipo_examen || examen.parcial)
+    const usaBancoConsolidado = usaGeneracionConsolidadaValor(examen.tipo_examen || examen.parcial)
     // Valores por defecto iniciales (fallback hard)
     tempConfig.value = {
       cantVariantes: examen.variantes.length || 1,
-      facil: examen.distribucion.facil || (esSegundoParcial ? DEFAULT_DISTRIBUCION_2P.facil : 7),
-      medio: examen.distribucion.medio || (esSegundoParcial ? DEFAULT_DISTRIBUCION_2P.medio : 16),
+      facil: examen.distribucion.facil || (usaBancoConsolidado ? DEFAULT_DISTRIBUCION_2P.facil : 7),
+      medio:
+        examen.distribucion.medio || (usaBancoConsolidado ? DEFAULT_DISTRIBUCION_2P.medio : 16),
       dificil:
-        examen.distribucion.dificil || (esSegundoParcial ? DEFAULT_DISTRIBUCION_2P.dificil : 7),
+        examen.distribucion.dificil || (usaBancoConsolidado ? DEFAULT_DISTRIBUCION_2P.dificil : 7),
       formatoHoja: examen.distribucion.formatoHoja || 'Oficio (8.5" x 13")',
       fontFamily: examen.distribucion.fontFamily || 'helvetica',
       fontSize: examen.distribucion.fontSize || 11,
@@ -4850,8 +4909,7 @@ const ejecutarAccionGestion = async () => {
   if (examen.estado === 'programados' && !bancoSuficiente.value) {
     $q.notify({
       type: 'negative',
-      message:
-        'No hay suficientes preguntas en el banco para la distribución por dificultad solicitada.',
+      message: bancoInsuficienteMensaje.value,
       icon: 'warning',
     })
     return
@@ -4890,7 +4948,9 @@ const ejecutarAccionGestion = async () => {
       }
       $q.loading.hide()
       const variantes = ['A', 'B', 'C', 'D', 'E'].slice(0, tempConfig.value.cantVariantes)
-      const esSegundoParcialActual = esSegundoParcialValor(examen.tipo_examen || examen.parcial)
+      const parcialActual = examen.tipo_examen || examen.parcial
+      const esGeneracionConsolidadaActual = usaGeneracionConsolidadaValor(parcialActual)
+      const usaGeneradorCodificadoActual = usaGeneradorCodificadoValor(parcialActual)
       const bancoContexto = Array.isArray(bancoPreguntas)
         ? bancoPreguntas
         : bancoPreguntas.preguntas || []
@@ -4928,10 +4988,12 @@ const ejecutarAccionGestion = async () => {
         fontSize: tempConfig.value.fontSize,
         lineSpacing: tempConfig.value.lineSpacing,
         aleatorizarSecciones: tempConfig.value.aleatorizarSecciones,
-        gruposTipoReferencial: esSegundoParcialActual ? { ...bancoGrupoTipoStats.value } : null,
+        gruposTipoReferencial: usaGeneradorCodificadoActual
+          ? { ...bancoGrupoTipoStats.value }
+          : null,
       }
 
-      if (esSegundoParcialActual) {
+      if (esGeneracionConsolidadaActual) {
         $q.loading.show({ message: 'Enviando la generación consolidada al servidor...' })
         await api.post(`/rol-examenes/${examen.id}/generate-package`, {
           cantVariantes: tempConfig.value.cantVariantes,
@@ -4958,7 +5020,7 @@ const ejecutarAccionGestion = async () => {
       }
 
       const formatoPapel = tempConfig.value.formatoHoja === 'Carta' ? 'letter' : [216, 330]
-      const mergedExamenesDoc = esSegundoParcialActual
+      const mergedExamenesDoc = usaGeneradorCodificadoActual
         ? createExamPdfDocument(payload.config_generacion)
         : new jsPDF({
             compression: true,
@@ -4977,7 +5039,7 @@ const ejecutarAccionGestion = async () => {
 
       for (let i = 0; i < variantes.length; i++) {
         const letra = variantes[i]
-        const seleccion = esSegundoParcialActual
+        const seleccion = usaGeneradorCodificadoActual
           ? buildExamQuestionSelection(todas, payload.config_generacion)
           : obtenerSeleccion7167(todas, payload.config_generacion)
 
@@ -4991,7 +5053,7 @@ const ejecutarAccionGestion = async () => {
           return
         }
 
-        const sorted = esSegundoParcialActual
+        const sorted = usaGeneradorCodificadoActual
           ? sortExamQuestionsForPdf(
               mixExamQuestionOptions(JSON.parse(JSON.stringify(seleccion))),
               payload.config_generacion,
@@ -5083,7 +5145,7 @@ const ejecutarAccionGestion = async () => {
         }
 
         // Generar contenido en documentos compartidos
-        if (esSegundoParcialActual) {
+        if (usaGeneradorCodificadoActual) {
           await generateExamPdf(mergedExamenesDoc, examen, payload.config_generacion, letra, sorted)
         } else {
           await generarExamenPDF(
