@@ -33,5 +33,46 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   })
 
+  // Guard de autenticación
+  // Guard de autenticación y roles
+  Router.beforeEach((to, from, next) => {
+    const isPublic = to.meta?.public === true
+    const token = localStorage.getItem('auth_token')
+    const userStr = localStorage.getItem('auth_user')
+    const user = userStr ? JSON.parse(userStr) : null
+
+    // 1. Verificación de Login
+    if (!isPublic && !token) {
+      return next({ name: 'login' })
+    }
+
+    // 2. Redirección si ya está logueado
+    if (to.name === 'login' && token) {
+      // Docentes van a Mis Asignaturas, el resto al dashboard
+      if (user?.rol === 'DOCENTE') {
+        return next({ path: '/documentacion' })
+      }
+      return next({ name: 'dashboard' })
+    }
+
+    // 3. Verificación de Roles (Autorización)
+    if (to.meta?.rol && user) {
+      const requiredRol = to.meta.rol
+
+      // Normalizar requiredRol a un array
+      const rolesPermitidos = Array.isArray(requiredRol) ? requiredRol : [requiredRol]
+
+      // Si el rol no coincide (y no es Super Admin)
+      if (!rolesPermitidos.includes(user.rol) && user.rol !== 'SUPER_ADMIN') {
+        console.warn(
+          `Acceso denegado: Se requiere ${rolesPermitidos.join(' o ')} pero usuario es ${user.rol}`,
+        )
+        return next({ name: 'dashboard' })
+      }
+    }
+
+    next()
+  })
+
   return Router
 })

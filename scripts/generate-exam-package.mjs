@@ -1,0 +1,2010 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import * as XLSX from 'xlsx'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const [payloadPath] = process.argv.slice(2)
+
+if (!payloadPath) {
+  throw new Error('Missing payload path')
+}
+
+const payload = JSON.parse(await fs.readFile(payloadPath, 'utf8'))
+
+const EXAM_PDF_DEFAULT_CONFIG = {
+  formatoHoja: 'Oficio (8.5" x 13")',
+  fontFamily: 'helvetica',
+  fontSize: 11,
+  lineSpacing: 0.85,
+  aleatorizarSecciones: true,
+}
+
+const padDatePart = (value) => String(value).padStart(2, '0')
+
+const getExamCivilDateParts = (fecha) => {
+  if (!fecha) return null
+
+  if (fecha instanceof Date && !Number.isNaN(fecha.getTime())) {
+    return {
+      year: fecha.getFullYear(),
+      month: padDatePart(fecha.getMonth() + 1),
+      day: padDatePart(fecha.getDate()),
+    }
+  }
+
+  const value = String(fecha).trim()
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) {
+    return {
+      year: isoMatch[1],
+      month: isoMatch[2],
+      day: isoMatch[3],
+    }
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+
+  return {
+    year: parsed.getFullYear(),
+    month: padDatePart(parsed.getMonth() + 1),
+    day: padDatePart(parsed.getDate()),
+  }
+}
+
+const formatExamCivilDate = (fecha) => {
+  const parts = getExamCivilDateParts(fecha)
+  return parts ? `${parts.day}/${parts.month}/${parts.year}` : '-'
+}
+
+const formatExamCivilDateIso = (fecha) => {
+  const parts = getExamCivilDateParts(fecha)
+  return parts ? `${parts.year}-${parts.month}-${parts.day}` : '-'
+}
+
+const shuffle = (array) => {
+  let currentIndex = array.length
+
+  while (currentIndex !== 0) {
+    const randomIndex = Math.floor(Math.random() * currentIndex)
+    currentIndex -= 1
+    ;[array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]
+  }
+
+  return array
+}
+
+const removeAccents = (text) =>
+  String(text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+const normalizeQuestionType = (tipo) => {
+  const value = removeAccents(tipo).toUpperCase().replace(/\s+/g, ' ').trim()
+
+  if (
+    ['PR', 'PROBLEMA', 'PROBLEMA O CASO', 'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA'].includes(
+      value,
+    )
+  )
+    return 'PROBLEMA'
+  if (['EM', 'EMPAREJAMIENTO', 'EMPAREJAMIENTO AMPLIADO'].includes(value)) return 'EMPAREJAMIENTO'
+  if (
+    ['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA', 'SUBITEM DE CASO O PROBLEMA'].includes(
+      value,
+    )
+  )
+    return 'SUBPROBLEMA'
+  if (
+    [
+      'OPCION_EMPAREJAMIENTO',
+      'OPCION EMPAREJAMIENTO',
+      'OPCION DE EMPAREJAMIENTO',
+      'OPCION EMPAREJAMIENTO AMPLIADO',
+      'OPCION DE EMPAREJAMIENTO AMPLIADO',
+    ].includes(value)
+  )
+    return 'OPCION_EMPAREJAMIENTO'
+  if (
+    ['SU', 'SS', 'SELECCION_UNICA', 'SELECCION_SIMPLE', 'SELECCION DE LA MEJOR RESPUESTA'].includes(
+      value,
+    )
+  )
+    return 'SELECCION_SIMPLE'
+  if (['PREGUNTA_CON_CLAVE', 'PREGUNTA CON CLAVE', 'VERDADERO O FALSO COMPLEJAS'].includes(value))
+    return 'PREGUNTA_CON_CLAVE'
+  if (
+    ['SM', 'SELECCION_MULTIPLE', 'RESPUESTA_COMPUESTA', 'RESPUESTA A/B/AMBAS/NINGUNA'].includes(
+      value,
+    )
+  )
+    return 'RESPUESTA_COMPUESTA'
+  if (
+    [
+      'FV',
+      'FALSO_VERDADERO',
+      'FALSO O VERDADERO',
+      'VERDADERO O FALSO',
+      'VERDADERO O FALSO SIMPLE',
+    ].includes(value)
+  )
+    return 'FALSO_VERDADERO'
+
+  return value
+}
+
+const cleanQuestionText = (text) =>
+  String(text || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, '"')
+    .replace(/&ldquo;/g, '"')
+    .replace(/&ndash;/g, '-')
+    .replace(/&mdash;/g, '-')
+    .replace(/[^\x20-\x7E\xA0-\xFF\s]/g, ' ')
+    .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const decodeHtmlEntities = (text) =>
+  String(text || '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&quot;/gi, '"')
+    .replace(/&rsquo;/gi, "'")
+    .replace(/&lsquo;/gi, "'")
+    .replace(/&rdquo;/gi, '"')
+    .replace(/&ldquo;/gi, '"')
+    .replace(/&ndash;/gi, '-')
+    .replace(/&mdash;/gi, '-')
+
+const extractStructuredLines = (text) =>
+  decodeHtmlEntities(text)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<li>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .split('\n')
+    .map((line) => cleanQuestionText(line))
+    .filter(Boolean)
+
+const stripNumericPrefix = (text) =>
+  cleanQuestionText(text).replace(/^([IVX]+|\d+|[A-Z])[.):]\s+/i, '')
+
+const PREGUNTA_CLAVE_FIXED_OPTIONS = [
+  '1, 2 y 3 son verdaderas',
+  '1 y 3 son verdaderas',
+  '2 y 4 son verdaderas',
+  'Solo 4 es verdadera',
+  'Todas son verdaderas',
+]
+
+const normalizePreguntaClaveFixedOption = (text) =>
+  cleanQuestionText(text)
+    .replace(/^[A-E][).:-]?\s*/i, '')
+    .replace(/\.+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+
+const PREGUNTA_CLAVE_FIXED_OPTIONS_SET = new Set(
+  PREGUNTA_CLAVE_FIXED_OPTIONS.map((option) => normalizePreguntaClaveFixedOption(option)),
+)
+
+const isPreguntaClaveFixedOption = (text) =>
+  PREGUNTA_CLAVE_FIXED_OPTIONS_SET.has(normalizePreguntaClaveFixedOption(text))
+
+const getPreguntaClaveOptionLines = (options = []) =>
+  options
+    .map((option) => {
+      if (typeof option === 'string') return cleanQuestionText(option)
+      return cleanQuestionText(option?.text || option?.label || option?.enunciado || '')
+    })
+    .filter(Boolean)
+    .filter((line) => !isPreguntaClaveFixedOption(line))
+
+const getQuestionGroup = (question) =>
+  String(question?.grupo || question?.grupoTeorico || question?.grupo_teorico || '')
+    .trim()
+    .toUpperCase()
+
+const gcd = (a, b) => {
+  let x = Math.abs(a)
+  let y = Math.abs(b)
+  while (y) {
+    const next = x % y
+    x = y
+    y = next
+  }
+  return x
+}
+
+const gcdList = (values) => values.filter(Boolean).reduce((acc, value) => gcd(acc, value), 0)
+
+const buildSelectionDiagnostic = (required, available, units) => {
+  const parts = [
+    `Requerido F:${required.facil}, M:${required.medio}, D:${required.dificil}.`,
+    `Disponible evaluable F:${available.facil}, M:${available.medio}, D:${available.dificil}.`,
+  ]
+
+  const labels = {
+    facil: 'faciles',
+    medio: 'medias',
+    dificil: 'dificiles',
+  }
+
+  ;['facil', 'medio', 'dificil'].forEach((difficulty) => {
+    const sizes = units.map((unit) => unit.counts[difficulty]).filter((value) => Number(value) > 0)
+    const divisor = gcdList(sizes)
+
+    if (divisor > 1 && required[difficulty] % divisor !== 0) {
+      const distinctSizes = [...new Set(sizes)].sort((a, b) => a - b).join(', ')
+      parts.push(
+        `Las preguntas ${labels[difficulty]} disponibles estan en bloques indivisibles de ${distinctSizes}; no se puede formar exactamente ${required[difficulty]}.`,
+      )
+    }
+  })
+
+  return parts.join(' ')
+}
+
+const buildExamQuestionSelection = (questions, config = {}) => {
+  buildExamQuestionSelection.lastError = null
+  buildExamQuestionSelection.appliedDistribution = null
+  const metaFacil = parseInt(config.facil, 10) || 7
+  const metaMedio = parseInt(config.medio, 10) || 16
+  const metaDificil = parseInt(config.dificil, 10) || 7
+  const required = {
+    facil: metaFacil,
+    medio: metaMedio,
+    dificil: metaDificil,
+  }
+
+  const difficultyKey = (question) => {
+    const dificultad = String(question.nivel_dificultad || question.dificultad || '1')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace('FµCIL', 'FACIL')
+      .replace('DIFÖCIL', 'DIFICIL')
+      .replace('DIFOCIL', 'DIFICIL')
+    if (['1', 'FACIL'].includes(dificultad)) return 'facil'
+    if (['2', 'MEDIO', 'MEDIA', 'INTERMEDIO', 'INTERMEDIA'].includes(dificultad)) return 'medio'
+    if (['3', 'DIFICIL'].includes(dificultad)) return 'dificil'
+    return null
+  }
+
+  const groupMeta = new Map()
+  const evaluableQuestions = questions
+    .map((question, index) => ({
+      question,
+      index,
+      difficulty: difficultyKey(question),
+      type: normalizeQuestionType(question.tipo),
+    }))
+    .filter((item) => item.difficulty && !['PROBLEMA', 'EMPAREJAMIENTO'].includes(item.type))
+
+  questions.forEach((question, index) => {
+    const type = normalizeQuestionType(question.tipo)
+    const group = getQuestionGroup(question)
+    if (!group) return
+
+    if (['PROBLEMA', 'EMPAREJAMIENTO'].includes(type)) {
+      const key = `${type}:${group}`
+      const current = groupMeta.get(key) || { parentType: type, group, header: null, children: [] }
+      current.header = question
+      current.headerIndex = index
+      groupMeta.set(key, current)
+      return
+    }
+
+    if (!['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(type)) return
+
+    const parentType = type === 'OPCION_EMPAREJAMIENTO' ? 'EMPAREJAMIENTO' : 'PROBLEMA'
+    const key = `${parentType}:${group}`
+    const current = groupMeta.get(key) || { parentType, group, header: null, children: [] }
+    current.children.push({
+      question,
+      index,
+      difficulty: difficultyKey(question),
+    })
+    groupMeta.set(key, current)
+  })
+
+  const coveredChildKeys = new Set()
+  const orphanChildKeys = new Set()
+  const units = []
+
+  groupMeta.forEach((meta, key) => {
+    if (!meta.header || meta.children.length === 0) {
+      if (!meta.header) {
+        meta.children.forEach((child) => {
+          orphanChildKeys.add(
+            child.question.id ??
+              `${child.index}-${child.question.tipo}-${getQuestionGroup(child.question)}`,
+          )
+        })
+      }
+      return
+    }
+
+    const counts = { facil: 0, medio: 0, dificil: 0 }
+    meta.children.forEach((child) => {
+      if (child.difficulty) counts[child.difficulty] += 1
+      coveredChildKeys.add(
+        child.question.id ??
+          `${child.index}-${child.question.tipo}-${getQuestionGroup(child.question)}`,
+      )
+    })
+
+    const total = counts.facil + counts.medio + counts.dificil
+    if (total === 0) return
+
+    units.push({
+      key,
+      kind: 'group',
+      parentType: meta.parentType,
+      index: meta.headerIndex,
+      header: meta.header,
+      children: meta.children,
+      counts,
+      total,
+    })
+  })
+
+  evaluableQuestions.forEach((item) => {
+    const itemKey =
+      item.question.id ?? `${item.index}-${item.question.tipo}-${getQuestionGroup(item.question)}`
+    if (coveredChildKeys.has(itemKey) || orphanChildKeys.has(itemKey)) return
+
+    units.push({
+      key: itemKey,
+      kind: 'single',
+      parentType: item.type,
+      index: item.index,
+      question: item.question,
+      counts: {
+        facil: item.difficulty === 'facil' ? 1 : 0,
+        medio: item.difficulty === 'medio' ? 1 : 0,
+        dificil: item.difficulty === 'dificil' ? 1 : 0,
+      },
+      total: 1,
+    })
+  })
+
+  const available = units.reduce(
+    (acc, unit) => {
+      acc.facil += unit.counts.facil
+      acc.medio += unit.counts.medio
+      acc.dificil += unit.counts.dificil
+      return acc
+    },
+    { facil: 0, medio: 0, dificil: 0 },
+  )
+
+  const totalRequired = required.facil + required.medio + required.dificil
+  const totalAvailable = available.facil + available.medio + available.dificil
+  const maxCandidateTotal = Math.min(Math.max(100, totalRequired), totalAvailable)
+  const difficultyDivisors = ['facil', 'medio', 'dificil'].reduce((acc, difficulty) => {
+    const sizes = units.map((unit) => unit.counts[difficulty]).filter((value) => Number(value) > 0)
+    acc[difficulty] = gcdList(sizes) || 1
+    return acc
+  }, {})
+  const blockMismatchCount = (candidate) =>
+    ['facil', 'medio', 'dificil'].reduce((acc, difficulty) => {
+      const divisor = difficultyDivisors[difficulty]
+      return acc + (divisor > 1 && candidate[difficulty] % divisor !== 0 ? 1 : 0)
+    }, 0)
+  const candidateMap = new Map()
+  const addRequirementCandidate = (candidate) => {
+    const total = candidate.facil + candidate.medio + candidate.dificil
+    if (
+      candidate.facil < 0 ||
+      candidate.medio < 0 ||
+      candidate.dificil < 0 ||
+      candidate.facil > available.facil ||
+      candidate.medio > available.medio ||
+      candidate.dificil > available.dificil ||
+      total < totalRequired ||
+      total > maxCandidateTotal
+    ) {
+      return
+    }
+
+    const key = `${candidate.facil}|${candidate.medio}|${candidate.dificil}`
+    if (!candidateMap.has(key)) {
+      candidateMap.set(key, {
+        facil: candidate.facil,
+        medio: candidate.medio,
+        dificil: candidate.dificil,
+        adjusted:
+          candidate.facil !== required.facil ||
+          candidate.medio !== required.medio ||
+          candidate.dificil !== required.dificil,
+      })
+    }
+  }
+
+  addRequirementCandidate(required)
+
+  for (let total = totalRequired; total <= maxCandidateTotal; total += 1) {
+    const maxFacil = Math.min(available.facil, total)
+    for (let facil = 0; facil <= maxFacil; facil += 1) {
+      const maxMedio = Math.min(available.medio, total - facil)
+      for (let medio = 0; medio <= maxMedio; medio += 1) {
+        const dificil = total - facil - medio
+        addRequirementCandidate({ facil, medio, dificil })
+      }
+    }
+  }
+
+  const requirementCandidates = [...candidateMap.values()].sort((a, b) => {
+    const totalA = a.facil + a.medio + a.dificil
+    const totalB = b.facil + b.medio + b.dificil
+    const totalDeltaA = Math.abs(totalRequired - totalA)
+    const totalDeltaB = Math.abs(totalRequired - totalB)
+    const shortfallA =
+      Math.max(0, required.facil - a.facil) +
+      Math.max(0, required.medio - a.medio) +
+      Math.max(0, required.dificil - a.dificil)
+    const shortfallB =
+      Math.max(0, required.facil - b.facil) +
+      Math.max(0, required.medio - b.medio) +
+      Math.max(0, required.dificil - b.dificil)
+    const deltaA =
+      Math.abs(required.facil - a.facil) +
+      Math.abs(required.medio - a.medio) +
+      Math.abs(required.dificil - a.dificil)
+    const deltaB =
+      Math.abs(required.facil - b.facil) +
+      Math.abs(required.medio - b.medio) +
+      Math.abs(required.dificil - b.dificil)
+
+    return (
+      totalDeltaA - totalDeltaB ||
+      shortfallA - shortfallB ||
+      blockMismatchCount(a) - blockMismatchCount(b) ||
+      totalA - totalB ||
+      deltaA - deltaB ||
+      Math.max(0, required.dificil - a.dificil) - Math.max(0, required.dificil - b.dificil)
+    )
+  })
+
+  if (requirementCandidates.length === 0) {
+    buildExamQuestionSelection.lastError = buildSelectionDiagnostic(required, available, units)
+    return null
+  }
+
+  const trySelection = (targetRequired) => {
+    const orderedUnits = shuffle([...units]).sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total
+      const rangeA =
+        Number(a.counts.facil > 0) + Number(a.counts.medio > 0) + Number(a.counts.dificil > 0)
+      const rangeB =
+        Number(b.counts.facil > 0) + Number(b.counts.medio > 0) + Number(b.counts.dificil > 0)
+      return rangeB - rangeA
+    })
+
+    const suffixAvailability = new Array(orderedUnits.length + 1)
+    suffixAvailability[orderedUnits.length] = { facil: 0, medio: 0, dificil: 0 }
+    for (let index = orderedUnits.length - 1; index >= 0; index -= 1) {
+      const next = suffixAvailability[index + 1]
+      suffixAvailability[index] = {
+        facil: next.facil + orderedUnits[index].counts.facil,
+        medio: next.medio + orderedUnits[index].counts.medio,
+        dificil: next.dificil + orderedUnits[index].counts.dificil,
+      }
+    }
+
+    const memo = new Set()
+    const backtrack = (index, remaining) => {
+      if (remaining.facil === 0 && remaining.medio === 0 && remaining.dificil === 0) return []
+      if (index >= orderedUnits.length) return null
+
+      const memoKey = `${index}|${remaining.facil}|${remaining.medio}|${remaining.dificil}`
+      if (memo.has(memoKey)) return null
+
+      const possible = suffixAvailability[index]
+      if (
+        possible.facil < remaining.facil ||
+        possible.medio < remaining.medio ||
+        possible.dificil < remaining.dificil
+      ) {
+        memo.add(memoKey)
+        return null
+      }
+
+      const unit = orderedUnits[index]
+      const canTake =
+        unit.counts.facil <= remaining.facil &&
+        unit.counts.medio <= remaining.medio &&
+        unit.counts.dificil <= remaining.dificil
+
+      const branches = canTake ? ['take', 'skip'] : ['skip']
+      for (const branch of shuffle([...branches])) {
+        if (branch === 'take') {
+          const result = backtrack(index + 1, {
+            facil: remaining.facil - unit.counts.facil,
+            medio: remaining.medio - unit.counts.medio,
+            dificil: remaining.dificil - unit.counts.dificil,
+          })
+          if (result) return [unit, ...result]
+          continue
+        }
+
+        const result = backtrack(index + 1, remaining)
+        if (result) return result
+      }
+
+      memo.add(memoKey)
+      return null
+    }
+
+    return backtrack(0, targetRequired)
+  }
+
+  let selectedUnits = null
+  let selectedRequirement = null
+  for (const candidate of requirementCandidates) {
+    for (let attempt = 0; attempt < 250 && !selectedUnits; attempt += 1) {
+      selectedUnits = trySelection(candidate)
+    }
+
+    if (selectedUnits) {
+      selectedRequirement = candidate
+      break
+    }
+  }
+
+  if (!selectedUnits) {
+    buildExamQuestionSelection.lastError = buildSelectionDiagnostic(required, available, units)
+    return null
+  }
+
+  buildExamQuestionSelection.appliedDistribution = {
+    facil: selectedRequirement.facil,
+    medio: selectedRequirement.medio,
+    dificil: selectedRequirement.dificil,
+    adjusted: selectedRequirement.adjusted,
+  }
+
+  return selectedUnits
+    .map((unit) => {
+      if (unit.kind === 'single') {
+        return { index: unit.index, items: [unit.question] }
+      }
+
+      const orderedChildren =
+        unit.parentType === 'EMPAREJAMIENTO'
+          ? shuffle(
+              unit.children.map((child, childIndex) => ({
+                ...child.question,
+                _parentTipo: unit.parentType,
+                _originalIndex: childIndex,
+              })),
+            )
+          : unit.children
+              .map((child, childIndex) => ({
+                ...child.question,
+                _parentTipo: unit.parentType,
+                _originalIndex: childIndex,
+              }))
+              .sort((a, b) => a._originalIndex - b._originalIndex)
+
+      return {
+        index: unit.index,
+        items: [unit.header, ...orderedChildren].filter(Boolean),
+      }
+    })
+    .sort((a, b) => a.index - b.index)
+    .flatMap((block) => block.items)
+}
+
+const mixExamQuestionOptions = (questions = []) => {
+  const matchingAnswerRemaps = new Map()
+
+  questions.forEach((question) => {
+    const tipoNormalizado = normalizeQuestionType(question.tipo)
+    if (tipoNormalizado !== 'EMPAREJAMIENTO' || !Array.isArray(question.opciones)) return
+
+    const group = getQuestionGroup(question)
+    if (!group || question.opciones.length === 0) return
+
+    const shuffledOptions = shuffle([...question.opciones])
+    const labels = 'ABCDEFGHIJ'.split('')
+    const answerRemap = new Map()
+
+    question.opciones = shuffledOptions.map((option, index) => {
+      const oldId = String(option.id || '').toUpperCase()
+      const newId = labels[index] || String(index + 1)
+
+      if (oldId) {
+        answerRemap.set(oldId, newId)
+      }
+
+      return { ...option, id: newId }
+    })
+
+    matchingAnswerRemaps.set(group, answerRemap)
+  })
+
+  return questions.map((question) => {
+    const tipoNormalizado = normalizeQuestionType(question.tipo)
+
+    if (tipoNormalizado === 'EMPAREJAMIENTO') {
+      return question
+    }
+
+    if (tipoNormalizado === 'FALSO_VERDADERO') {
+      const rawAnswer = Array.isArray(question.respuesta_correcta)
+        ? question.respuesta_correcta[0]
+        : question.respuesta_correcta
+      const answer = String(rawAnswer || '').toUpperCase()
+      const isTrue = answer === 'VERDADERO' || answer === 'V' || answer === 'TRUE' || answer === 'A'
+
+      question.opciones = [
+        { id: 'A', text: 'Verdadero' },
+        { id: 'B', text: 'Falso' },
+      ]
+      question.respuesta_correcta = isTrue ? 'A' : 'B'
+      return question
+    }
+
+    if (['RESPUESTA_COMPUESTA', 'PREGUNTA_CON_CLAVE'].includes(tipoNormalizado)) {
+      question.respuesta_correcta = Array.isArray(question.respuesta_correcta)
+        ? String(question.respuesta_correcta[0] || '').toUpperCase()
+        : String(question.respuesta_correcta || '').toUpperCase()
+      return question
+    }
+
+    if (tipoNormalizado === 'OPCION_EMPAREJAMIENTO') {
+      const group = getQuestionGroup(question)
+      const answerRemap = matchingAnswerRemaps.get(group)
+      const normalizeAnswer = (answer) => {
+        const answerKey = String(answer || '').toUpperCase()
+        return answerRemap?.get(answerKey) || answerKey
+      }
+
+      question.respuesta_correcta = Array.isArray(question.respuesta_correcta)
+        ? question.respuesta_correcta.map(normalizeAnswer).filter(Boolean)
+        : normalizeAnswer(question.respuesta_correcta)
+      return question
+    }
+
+    if (!question.opciones || question.opciones.length === 0) {
+      return question
+    }
+
+    const originalCorrectAnswers = Array.isArray(question.respuesta_correcta)
+      ? question.respuesta_correcta
+      : [question.respuesta_correcta]
+    const correctTexts = question.opciones
+      .filter((option) => originalCorrectAnswers.includes(option.id))
+      .map((option) => option.text)
+
+    const shuffledOptions = shuffle([...question.opciones])
+    const labels = 'ABCDEFGHIJ'.split('')
+    const newCorrectAnswers = []
+
+    question.opciones = shuffledOptions.map((option, index) => {
+      const newId = labels[index] || String(index + 1)
+
+      if (correctTexts.includes(option.text)) {
+        newCorrectAnswers.push(newId)
+      }
+
+      return { ...option, id: newId }
+    })
+
+    question.respuesta_correcta = Array.isArray(question.respuesta_correcta)
+      ? newCorrectAnswers
+      : newCorrectAnswers[0] || question.respuesta_correcta
+
+    return question
+  })
+}
+
+const sortExamQuestionsForPdf = (questions = [], config = {}) => {
+  const baseOrder = [
+    'SELECCION_SIMPLE',
+    'PREGUNTA_CON_CLAVE',
+    'RESPUESTA_COMPUESTA',
+    'FALSO_VERDADERO',
+    'PROBLEMA',
+    'SUBPROBLEMA',
+    'EMPAREJAMIENTO',
+    'OPCION_EMPAREJAMIENTO',
+  ]
+
+  let localOrder = [...baseOrder]
+
+  if (config.aleatorizarSecciones) {
+    const mainSections = [
+      'PROBLEMA',
+      'EMPAREJAMIENTO',
+      'SELECCION_SIMPLE',
+      'PREGUNTA_CON_CLAVE',
+      'RESPUESTA_COMPUESTA',
+      'FALSO_VERDADERO',
+    ]
+    const shuffledSections = shuffle([...mainSections])
+    localOrder = []
+
+    shuffledSections.forEach((section) => {
+      localOrder.push(section)
+      if (section === 'PROBLEMA' || section === 'EMPAREJAMIENTO') {
+        localOrder.push(section === 'EMPAREJAMIENTO' ? 'OPCION_EMPAREJAMIENTO' : 'SUBPROBLEMA')
+      }
+    })
+  }
+
+  const buildQuestionBlocks = (items) => {
+    const used = new Set()
+    const childTypesByParent = {
+      PROBLEMA: ['SUBPROBLEMA'],
+      EMPAREJAMIENTO: ['OPCION_EMPAREJAMIENTO'],
+    }
+
+    return items.reduce((blocks, question, index) => {
+      const uniqueKey = question.id ?? `${index}-${question.tipo}-${question.grupo || ''}`
+      if (used.has(uniqueKey)) return blocks
+
+      const type = normalizeQuestionType(question.tipo)
+      const childTypes = childTypesByParent[type]
+      const group = getQuestionGroup(question)
+
+      if (childTypes && group) {
+        const children = items.filter((candidate, candidateIndex) => {
+          const candidateKey =
+            candidate.id ?? `${candidateIndex}-${candidate.tipo}-${candidate.grupo || ''}`
+          return (
+            candidateKey !== uniqueKey &&
+            !used.has(candidateKey) &&
+            getQuestionGroup(candidate) === group &&
+            childTypes.includes(normalizeQuestionType(candidate.tipo))
+          )
+        })
+
+        used.add(uniqueKey)
+        children.forEach((child) =>
+          used.add(child.id ?? `${items.indexOf(child)}-${child.tipo}-${child.grupo || ''}`),
+        )
+
+        blocks.push({
+          type,
+          index,
+          items: [question, ...children],
+        })
+        return blocks
+      }
+
+      const parentType = question._parentTipo || type
+
+      if (['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(type) && group) {
+        const expectedParent = type === 'SUBPROBLEMA' ? 'PROBLEMA' : 'EMPAREJAMIENTO'
+        const headerIndex = items.findIndex(
+          (candidate) =>
+            getQuestionGroup(candidate) === group &&
+            normalizeQuestionType(candidate.tipo) === expectedParent,
+        )
+
+        if (headerIndex !== -1 && headerIndex > index) {
+          const header = items[headerIndex]
+          const relatedChildren = items.filter(
+            (candidate) =>
+              getQuestionGroup(candidate) === group &&
+              normalizeQuestionType(candidate.tipo) === type,
+          )
+
+          used.add(header.id ?? `${headerIndex}-${header.tipo}-${header.grupo || ''}`)
+          relatedChildren.forEach((child) =>
+            used.add(child.id ?? `${items.indexOf(child)}-${child.tipo}-${child.grupo || ''}`),
+          )
+
+          blocks.push({
+            type: expectedParent,
+            index,
+            items: [header, ...relatedChildren],
+          })
+          return blocks
+        }
+      }
+
+      used.add(uniqueKey)
+      blocks.push({
+        type: parentType,
+        index,
+        items: [question],
+      })
+      return blocks
+    }, [])
+  }
+
+  return buildQuestionBlocks(questions)
+    .sort((a, b) => {
+      const orderA = localOrder.indexOf(a.type)
+      const orderB = localOrder.indexOf(b.type)
+      const safeOrderA = orderA === -1 ? localOrder.length : orderA
+      const safeOrderB = orderB === -1 ? localOrder.length : orderB
+
+      if (safeOrderA !== safeOrderB) return safeOrderA - safeOrderB
+      return a.index - b.index
+    })
+    .flatMap((block) => block.items)
+}
+
+const getQuestionUniqueKey = (question, index = 0) =>
+  question?.id ?? `${index}-${question?.tipo || ''}-${getQuestionGroup(question)}`
+
+const completeMacroHeaders = (selection = [], sourceQuestions = []) => {
+  const headerTypes = ['PROBLEMA', 'EMPAREJAMIENTO']
+  const childTypes = ['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO']
+  const sourceHeaders = new Map()
+  const selectedHeaders = new Set()
+
+  ;[...sourceQuestions, ...selection].forEach((question) => {
+    const type = normalizeQuestionType(question?.tipo)
+    const group = getQuestionGroup(question)
+    if (!group || !headerTypes.includes(type)) return
+    sourceHeaders.set(`${type}:${group}`, question)
+  })
+
+  selection.forEach((question) => {
+    const type = normalizeQuestionType(question?.tipo)
+    const group = getQuestionGroup(question)
+    if (!group || !headerTypes.includes(type)) return
+    selectedHeaders.add(`${type}:${group}`)
+  })
+
+  const emittedKeys = new Set()
+  const emittedHeaders = new Set()
+  const result = []
+
+  const pushOnce = (question, index = 0) => {
+    if (!question) return
+    const key = getQuestionUniqueKey(question, index)
+    if (emittedKeys.has(key)) return
+    emittedKeys.add(key)
+    result.push(question)
+  }
+
+  selection.forEach((question, index) => {
+    const type = normalizeQuestionType(question?.tipo)
+    const group = getQuestionGroup(question)
+
+    if (group && headerTypes.includes(type)) {
+      emittedHeaders.add(`${type}:${group}`)
+      pushOnce(question, index)
+      return
+    }
+
+    if (group && childTypes.includes(type)) {
+      const parentType = type === 'OPCION_EMPAREJAMIENTO' ? 'EMPAREJAMIENTO' : 'PROBLEMA'
+      const parentKey = `${parentType}:${group}`
+      const header = sourceHeaders.get(parentKey)
+
+      if (header && !emittedHeaders.has(parentKey)) {
+        emittedHeaders.add(parentKey)
+        pushOnce(header, -1)
+      }
+
+      if (!selectedHeaders.has(parentKey) && header) {
+        selectedHeaders.add(parentKey)
+      }
+    }
+
+    pushOnce(question, index)
+  })
+
+  return result
+}
+
+const assertNoOrphanMacroQuestions = (questions = []) => {
+  const headers = new Set()
+
+  questions.forEach((question) => {
+    const type = normalizeQuestionType(question.tipo)
+    if (!['PROBLEMA', 'EMPAREJAMIENTO'].includes(type)) return
+    const group = getQuestionGroup(question)
+    if (group) headers.add(`${type}:${group}`)
+  })
+
+  const orphan = questions.find((question) => {
+    const type = normalizeQuestionType(question.tipo)
+    if (!['SUBPROBLEMA', 'OPCION_EMPAREJAMIENTO'].includes(type)) return false
+    const group = getQuestionGroup(question)
+    if (!group) return false
+    const parentType = type === 'OPCION_EMPAREJAMIENTO' ? 'EMPAREJAMIENTO' : 'PROBLEMA'
+    return !headers.has(`${parentType}:${group}`)
+  })
+
+  if (!orphan) return
+
+  const parentLabel =
+    normalizeQuestionType(orphan.tipo) === 'OPCION_EMPAREJAMIENTO'
+      ? 'EMPAREJAMIENTO AMPLIADO'
+      : 'ITEMS AGRUPADOS POR CASO O PROBLEMA'
+
+  throw new Error(
+    `El grupo ${getQuestionGroup(orphan)} tiene subpreguntas de ${parentLabel}, pero no se encontro su encabezado padre en la seleccion.`,
+  )
+}
+
+const createExamPdfDocument = (config = {}) => {
+  const formatMap = {
+    Carta: 'letter',
+    Oficio: 'legal',
+    'Oficio (8.5" x 13")': [215.9, 330.2],
+  }
+  const paperFormat =
+    formatMap[config.formatoHoja] || formatMap[EXAM_PDF_DEFAULT_CONFIG.formatoHoja]
+
+  return new jsPDF({
+    compression: true,
+    putOnlyUsedFonts: true,
+    precision: 3,
+    orientation: 'p',
+    unit: 'mm',
+    format: paperFormat,
+  })
+}
+
+const buildDisplayLines = (doc, text, maxWidth) =>
+  doc.splitTextToSize(cleanQuestionText(text), maxWidth)
+
+const wrapMultipleLines = (doc, lines, maxWidth) =>
+  lines.flatMap((line) => doc.splitTextToSize(cleanQuestionText(line), maxWidth))
+
+const getRealQuestionNumber = (questions, index) =>
+  index +
+  1 -
+  questions
+    .slice(0, index)
+    .filter((item) => ['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeQuestionType(item.tipo)))
+    .length
+
+const EXAM_SECTION_COPY = {
+  FALSO_VERDADERO: {
+    title: 'VERDADERO O FALSO SIMPLE',
+    lines: ['Instrucciones: Marque A si el enunciado es verdadero o B si el enunciado es falso.'],
+  },
+  SELECCION_SIMPLE: {
+    title: 'SELECCION DE LA MEJOR RESPUESTA',
+    lines: [
+      'Instrucciones: Lea cuidadosamente cada enunciado y elija una sola respuesta entre las opciones disponibles.',
+    ],
+  },
+  PREGUNTA_CON_CLAVE: {
+    title: 'VERDADERO O FALSO COMPLEJAS',
+    lines: [
+      'Instrucciones: Seleccione la opcion correcta de acuerdo con la siguiente clave:',
+      'A: 1, 2 y 3 son verdaderas.',
+      'B: 1 y 3 son verdaderas.',
+      'C: 2 y 4 son verdaderas.',
+      'D: Solo 4 es verdadera.',
+      'E: Todas son verdaderas.',
+    ],
+  },
+  RESPUESTA_COMPUESTA: {
+    title: 'RESPUESTA A/B/AMBAS/NINGUNA',
+    lines: [
+      'Instrucciones: Las siguientes preguntas estan compuestas por dos premisas. Responda con:',
+      'A: si solo la primera premisa es verdadera.',
+      'B: si solo la segunda premisa es verdadera.',
+      'C: si ambas premisas son verdaderas.',
+      'D: si ninguna premisa es verdadera.',
+    ],
+  },
+  PROBLEMA: {
+    title: 'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA',
+    lines: [
+      'Instrucciones: El siguiente caso clinico o problema tendra varias preguntas. Seleccione la respuesta correcta en cada una.',
+    ],
+  },
+  EMPAREJAMIENTO: {
+    title: 'EMPAREJAMIENTO AMPLIADO',
+    lines: [
+      'Instrucciones: De la lista de opciones, seleccione la respuesta correcta para cada enunciado.',
+    ],
+  },
+}
+
+const fileToDataUrl = async (filePath) => {
+  try {
+    const buffer = await fs.readFile(filePath)
+    const extension = path.extname(filePath).toLowerCase()
+    const mimeType = extension === '.png' ? 'image/png' : 'image/jpeg'
+    return `data:${mimeType};base64,${buffer.toString('base64')}`
+  } catch {
+    return null
+  }
+}
+
+const imageFormatFromPath = (filePath) =>
+  path.extname(filePath).toLowerCase() === '.png' ? 'PNG' : 'JPEG'
+
+const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', questions = []) => {
+  const mergedConfig = {
+    ...EXAM_PDF_DEFAULT_CONFIG,
+    ...config,
+  }
+  const doc = pdfDoc || createExamPdfDocument(mergedConfig)
+  const baseFont = mergedConfig.fontFamily || EXAM_PDF_DEFAULT_CONFIG.fontFamily
+  const baseSize = mergedConfig.fontSize || EXAM_PDF_DEFAULT_CONFIG.fontSize
+  const spacingMult = mergedConfig.lineSpacing || EXAM_PDF_DEFAULT_CONFIG.lineSpacing
+  const lineHeight = baseSize * 0.42 * spacingMult
+  const sectionFontSize = Math.max(9, baseSize - 1)
+  const metaFontSize = Math.max(8, baseSize - 2)
+  const margin = 20
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const contentWidth = pageWidth - margin * 2
+
+  doc.setFont(baseFont)
+  doc.setLineHeightFactor(1.1905 * spacingMult)
+
+  const logoBase64 = await fileToDataUrl(payload.logoPath)
+
+  autoTable(doc, {
+    startY: margin,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: {
+      fontSize: 11,
+      font: baseFont,
+      textColor: [0, 0, 0],
+      lineWidth: 0.1,
+      lineColor: [0, 0, 0],
+    },
+    body: [
+      [
+        {
+          content: logoBase64 ? '' : 'LOGO\nUNITEPC',
+          rowSpan: 2,
+          styles: {
+            halign: 'center',
+            valign: 'middle',
+            fontSize: 8,
+            cellWidth: 35,
+            minCellHeight: 20,
+          },
+        },
+        {
+          content: `UNIVERSIDAD TECNICA PRIVADA COSMOS\nGESTION ${String(exam.gestion || '').toUpperCase()}`,
+          styles: { halign: 'center', fontSize: 13, fontStyle: 'bold' },
+        },
+        {
+          content: `TIPO / VARIANTE\n${letra}`,
+          rowSpan: 2,
+          styles: {
+            cellWidth: 35,
+            halign: 'center',
+            valign: 'middle',
+            fontStyle: 'bold',
+            fontSize: 12,
+            textColor: [170, 45, 20],
+            fillColor: [255, 244, 230],
+          },
+        },
+      ],
+      [
+        {
+          content: `EVALUACION TEORICA ${String(exam.parcial || '').toUpperCase()}`,
+          styles: { halign: 'center', fontStyle: 'bold' },
+        },
+      ],
+    ],
+    didDrawCell: (data) => {
+      if (
+        data.section === 'body' &&
+        data.column.index === 0 &&
+        data.row.index === 0 &&
+        logoBase64
+      ) {
+        const padding = 2
+        doc.addImage(
+          logoBase64,
+          'PNG',
+          data.cell.x + padding,
+          data.cell.y + padding,
+          data.cell.width - padding * 2,
+          data.cell.height - padding * 2,
+        )
+      }
+    },
+  })
+
+  doc.setLineWidth(0.4)
+  doc.setDrawColor(0, 0, 0)
+  doc.rect(margin, margin, contentWidth, doc.lastAutoTable.finalY - margin)
+
+  const startYTable = doc.lastAutoTable.finalY + 2
+  autoTable(doc, {
+    startY: startYTable,
+    margin: { left: margin, right: margin },
+    tableWidth: pageWidth - margin * 2,
+    theme: 'grid',
+    styles: {
+      fontSize: metaFontSize,
+      cellPadding: 2.5,
+      lineWidth: 0.15,
+      lineColor: [0, 0, 0],
+      font: baseFont,
+    },
+    body: [
+      [
+        {
+          content: 'NOMBRE:',
+          styles: {
+            fontStyle: 'bold',
+            minCellHeight: 10,
+            cellWidth: (pageWidth - margin * 2) * 0.65,
+          },
+        },
+        {
+          content: 'CODIGO:',
+          styles: { fontStyle: 'bold', cellWidth: (pageWidth - margin * 2) * 0.35 },
+        },
+      ],
+      [
+        { content: `CARRERA: ${String(exam.carrera || '')}`, styles: { fontStyle: 'bold' } },
+        { content: `GRUPO: ${String(exam.grupo || '')}`, styles: { fontStyle: 'bold' } },
+      ],
+      [
+        { content: `DOCENTE: ${String(exam.docente || '')}`, styles: { fontStyle: 'bold' } },
+        {
+          content: `TIPO DE EXAMEN: ${String(exam.parcial || '')}`,
+          styles: { fontStyle: 'bold' },
+        },
+      ],
+      [
+        { content: `MATERIA: ${String(exam.materia || '')}`, styles: { fontStyle: 'bold' } },
+        {
+          content: `FECHA: ${formatExamCivilDate(exam.fecha_examen)}`,
+          styles: { fontStyle: 'bold' },
+        },
+      ],
+      [
+        { content: `SEMESTRE: ${String(exam.semestre || '')}`, styles: { fontStyle: 'bold' } },
+        { content: `HORA: ${String(exam.hora || '')}`, styles: { fontStyle: 'bold' } },
+      ],
+      [
+        {
+          content:
+            'IMPORTANTE: Completar obligatoriamente NOMBRE, CODIGO y marcar el TIPO/VARIANTE en la cartilla.',
+          colSpan: 2,
+          styles: {
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: Math.max(7, metaFontSize - 1),
+            textColor: [180, 40, 40],
+            fillColor: [255, 245, 245],
+          },
+        },
+      ],
+    ],
+  })
+
+  const tableHeight = doc.lastAutoTable.finalY - startYTable
+  doc.setLineWidth(0.4)
+  doc.rect(margin, startYTable, contentWidth, tableHeight)
+
+  let currentY = doc.lastAutoTable.finalY + 10
+  const pageBottomLimit = doc.internal.pageSize.getHeight() - 20
+  const fullPageContentHeight = pageBottomLimit - margin
+  let previousType = null
+  let problemCount = 0
+
+  for (let index = 0; index < questions.length; index += 1) {
+    const question = questions[index]
+    const currentType = normalizeQuestionType(question.tipo)
+    const mainTypes = [
+      'SELECCION_SIMPLE',
+      'PREGUNTA_CON_CLAVE',
+      'RESPUESTA_COMPUESTA',
+      'FALSO_VERDADERO',
+      'PROBLEMA',
+      'EMPAREJAMIENTO',
+    ]
+
+    if (currentType !== previousType && mainTypes.includes(currentType)) {
+      const sectionCopy = EXAM_SECTION_COPY[currentType] || {
+        title: currentType.replaceAll('_', ' '),
+        lines: [],
+      }
+      const titleLines = buildDisplayLines(doc, sectionCopy.title, contentWidth - 4)
+      const instructionLines = wrapMultipleLines(doc, sectionCopy.lines || [], contentWidth - 4)
+      const rectHeight = titleLines.length * 4.5 + instructionLines.length * 4.5 + 8
+
+      if (currentY + rectHeight > doc.internal.pageSize.getHeight() - 40) {
+        doc.addPage()
+        currentY = margin
+      }
+
+      doc.setDrawColor(40, 40, 40)
+      doc.setLineWidth(0.8)
+      doc.line(margin, currentY, margin + contentWidth, currentY)
+      doc.setFontSize(sectionFontSize)
+      doc.setFont(baseFont, 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text(titleLines, margin, currentY + 5)
+      if (instructionLines.length > 0) {
+        doc.setFont(baseFont, 'normal')
+        doc.setFontSize(baseSize - 1)
+        doc.text(instructionLines, margin, currentY + 5 + titleLines.length * 4.5 + 2)
+      }
+      doc.setLineWidth(0.2)
+      doc.line(margin, currentY + rectHeight, margin + contentWidth, currentY + rectHeight)
+      currentY += rectHeight + (currentType === 'PROBLEMA' ? 8 : 10)
+      previousType = currentType
+    }
+
+    if (currentY > doc.internal.pageSize.getHeight() - 30) {
+      doc.addPage()
+      doc.setFont(baseFont)
+      currentY = margin
+    }
+
+    const baseNumber = getRealQuestionNumber(questions, index)
+
+    if (currentType === 'EMPAREJAMIENTO') {
+      doc.setFontSize(baseSize)
+      doc.setFont(baseFont, 'bold')
+      const rawLines = extractStructuredLines(question.enunciado)
+      const statementBase = rawLines[0]?.toUpperCase().startsWith('EMPAREJAMIENTO:')
+        ? rawLines[0].substring(16).trim()
+        : rawLines[0] || ''
+      const statementLines = buildDisplayLines(doc, statementBase, contentWidth - 10)
+      const keyLines = rawLines.slice(1)
+      const matchingOptions = Array.isArray(question.opciones) ? question.opciones : []
+      const optionLines = matchingOptions.length
+        ? matchingOptions.map((option, optionIndex) => {
+            const optionId = option.id || String.fromCharCode(65 + optionIndex)
+            return `${optionId}) ${cleanQuestionText(option.text)}`
+          })
+        : keyLines
+      const linkedQuestions = []
+      let cursor = index + 1
+
+      while (
+        cursor < questions.length &&
+        normalizeQuestionType(questions[cursor].tipo) === 'OPCION_EMPAREJAMIENTO' &&
+        getQuestionGroup(questions[cursor]) === getQuestionGroup(question)
+      ) {
+        linkedQuestions.push(questions[cursor])
+        cursor += 1
+      }
+
+      let estimatedHeight = statementLines.length * lineHeight + 4
+      estimatedHeight += optionLines.length * (lineHeight + 0.5) + 4
+
+      for (const linked of linkedQuestions) {
+        const subText = `${cleanQuestionText(linked.enunciado)} (      )`
+        const subLines = doc.splitTextToSize(subText, contentWidth - 20)
+        estimatedHeight += subLines.length * lineHeight + 4
+      }
+
+      estimatedHeight += 5
+
+      const matchingFitsOnPage = estimatedHeight <= fullPageContentHeight
+      if (matchingFitsOnPage && currentY + estimatedHeight > pageBottomLimit) {
+        doc.addPage()
+        currentY = margin
+        doc.setFontSize(baseSize)
+        doc.setFont(baseFont, 'bold')
+      }
+
+      doc.text(statementLines, margin + 8, currentY)
+      currentY += statementLines.length * lineHeight + 4
+      doc.setFont(baseFont, 'normal')
+      doc.setFontSize(baseSize - 2)
+
+      for (const option of optionLines) {
+        if (!matchingFitsOnPage && currentY > pageBottomLimit) {
+          doc.addPage()
+          currentY = margin
+        }
+
+        doc.text(option, margin + 15, currentY)
+        currentY += lineHeight + 0.5
+      }
+
+      currentY += 4
+      doc.setFontSize(baseSize)
+
+      for (let childIndex = 0; childIndex < linkedQuestions.length; childIndex += 1) {
+        const linked = linkedQuestions[childIndex]
+        const realNumber = baseNumber + childIndex
+        const subText = `${cleanQuestionText(linked.enunciado)} (      )`
+        const subLines = doc.splitTextToSize(subText, contentWidth - 20)
+        const subHeight = subLines.length * lineHeight + 4
+
+        if (!matchingFitsOnPage && currentY + subHeight > pageBottomLimit) {
+          doc.addPage()
+          currentY = margin
+        }
+
+        doc.setFont(baseFont, 'bold')
+        doc.text(`${realNumber}. `, margin + 10, currentY)
+        doc.setFont(baseFont, 'normal')
+        doc.text(subLines, margin + 18, currentY)
+        currentY += subHeight
+      }
+
+      currentY += 5
+      index = cursor - 1
+      continue
+    }
+
+    const structuredLines = extractStructuredLines(question.enunciado)
+    let statement = structuredLines[0] || cleanQuestionText(question.enunciado)
+    let detailLines = structuredLines.slice(1)
+
+    if (statement.toUpperCase().startsWith('EMPAREJAMIENTO:')) {
+      statement = statement.substring(16).trim()
+    }
+
+    if (statement.toUpperCase().startsWith('PROBLEMA:')) {
+      statement = statement.substring(9).trim()
+    }
+
+    if (
+      detailLines.length > 0 &&
+      !['PREGUNTA_CON_CLAVE', 'RESPUESTA_COMPUESTA'].includes(currentType)
+    ) {
+      statement = [statement, ...detailLines].filter(Boolean).join('\n')
+      detailLines = []
+    }
+
+    let premiseDetailStartIndex = 0
+    if (currentType === 'RESPUESTA_COMPUESTA') {
+      const premiseLines =
+        structuredLines.length > 0 ? structuredLines : [statement].filter(Boolean)
+      if (premiseLines.length > 1 || /^[IVX]+[.):]\s*/i.test(premiseLines[0] || '')) {
+        statement = `I. ${stripNumericPrefix(premiseLines[0])}`
+        detailLines = premiseLines.slice(1)
+        premiseDetailStartIndex = 1
+      }
+    }
+
+    const options = Array.isArray(question.opciones) ? question.opciones : []
+    if (currentType === 'PREGUNTA_CON_CLAVE' && options.length > 0) {
+      const orderedKeyOptions = getPreguntaClaveOptionLines(options)
+
+      if (orderedKeyOptions.length > 0) {
+        detailLines = orderedKeyOptions
+      }
+    }
+
+    const isHeader = currentType === 'PROBLEMA'
+    const renderOptions = ['SELECCION_SIMPLE', 'SUBPROBLEMA'].includes(currentType)
+    const prefixedBlankTypes = ['FALSO_VERDADERO', 'PREGUNTA_CON_CLAVE', 'RESPUESTA_COMPUESTA']
+    const statementX = prefixedBlankTypes.includes(currentType) ? margin + 18 : margin + 8
+    const rightPadding = 6
+    const statementMaxWidth = margin + contentWidth - statementX - rightPadding
+    const detailMaxWidth = margin + contentWidth - (margin + 12) - rightPadding
+    const optionMaxWidth = margin + contentWidth - (margin + 12) - rightPadding
+
+    doc.setFontSize(baseSize)
+    doc.setFont(baseFont, 'normal')
+    const statementLines = doc.splitTextToSize(statement, statementMaxWidth)
+    let estimatedHeight = statementLines.length * lineHeight + (isHeader ? 6 : 0) + 2
+
+    if (currentType === 'PREGUNTA_CON_CLAVE') {
+      doc.setFontSize(baseSize - 1)
+      detailLines.forEach((line, detailIndex) => {
+        const claveLines = doc.splitTextToSize(
+          `${detailIndex + 1}. ${stripNumericPrefix(line)}`,
+          detailMaxWidth,
+        )
+        estimatedHeight += claveLines.length * lineHeight + 1
+      })
+    } else if (currentType === 'RESPUESTA_COMPUESTA') {
+      doc.setFontSize(baseSize - 1)
+      const romanLabels = ['I', 'II']
+      detailLines.forEach((line, detailIndex) => {
+        const label = romanLabels[detailIndex + premiseDetailStartIndex] || romanLabels.at(-1)
+        const premiseLines = doc.splitTextToSize(
+          `${label}. ${stripNumericPrefix(line)}`,
+          detailMaxWidth,
+        )
+        estimatedHeight += premiseLines.length * lineHeight + 1
+      })
+    } else if (renderOptions) {
+      doc.setFontSize(baseSize - 1)
+      for (const option of options) {
+        const optionLines = doc.splitTextToSize(
+          `${option.id || ''}) ${cleanQuestionText(option.text)}`,
+          optionMaxWidth,
+        )
+        estimatedHeight += optionLines.length * lineHeight + 1
+      }
+    }
+
+    if (currentType === 'SUBPROBLEMA') estimatedHeight += 4
+    estimatedHeight += 2
+    if (question.imagePath) estimatedHeight += 47
+    estimatedHeight += isHeader ? 2 : 5
+    doc.setFontSize(baseSize)
+
+    const questionFitsOnPage = estimatedHeight <= fullPageContentHeight
+    if (questionFitsOnPage && currentY + estimatedHeight > pageBottomLimit) {
+      doc.addPage()
+      currentY = margin
+    }
+
+    doc.setFontSize(baseSize)
+    doc.setFont(baseFont, 'bold')
+
+    if (!isHeader) {
+      const realNumber = getRealQuestionNumber(questions, index)
+      const prefix = prefixedBlankTypes.includes(currentType)
+        ? `${realNumber}. ____ `
+        : `${realNumber}. `
+      doc.text(prefix, margin, currentY)
+    } else {
+      problemCount += 1
+      doc.setFontSize(baseSize + 1)
+      doc.setFont(baseFont, 'bold')
+      doc.text(`CASO N ${problemCount}:`, margin, currentY)
+      currentY += 6
+      doc.setFontSize(baseSize)
+    }
+
+    doc.setFont(baseFont, 'normal')
+    doc.text(statementLines, statementX, currentY, { maxWidth: statementMaxWidth })
+    currentY += statementLines.length * lineHeight + 2
+
+    if (currentType === 'PREGUNTA_CON_CLAVE') {
+      doc.setFontSize(baseSize - 1)
+      detailLines.forEach((line, detailIndex) => {
+        const claveLines = doc.splitTextToSize(
+          `${detailIndex + 1}. ${stripNumericPrefix(line)}`,
+          detailMaxWidth,
+        )
+        doc.text(claveLines, margin + 12, currentY)
+        currentY += claveLines.length * lineHeight + 1
+      })
+      doc.setFontSize(baseSize)
+    }
+
+    if (currentType === 'RESPUESTA_COMPUESTA') {
+      doc.setFontSize(baseSize - 1)
+      const romanLabels = ['I', 'II']
+      detailLines.forEach((line, detailIndex) => {
+        const label = romanLabels[detailIndex + premiseDetailStartIndex] || romanLabels.at(-1)
+        const premiseLines = doc.splitTextToSize(
+          `${label}. ${stripNumericPrefix(line)}`,
+          detailMaxWidth,
+        )
+        doc.text(premiseLines, margin + 12, currentY)
+        currentY += premiseLines.length * lineHeight + 1
+      })
+      doc.setFontSize(baseSize)
+    }
+
+    if (currentType === 'SUBPROBLEMA') {
+      doc.setFontSize(metaFontSize)
+      doc.setFont(baseFont, 'italic')
+      doc.text('(Seleccione un solo inciso)', margin + 8, currentY + 2.5)
+      currentY += 4
+      doc.setFont(baseFont, 'normal')
+    }
+
+    currentY += 2
+
+    if (question.imagePath) {
+      const imageData = await fileToDataUrl(question.imagePath)
+      if (imageData) {
+        const imageFormat = imageFormatFromPath(question.imagePath)
+        const imageProps = doc.getImageProperties(imageData)
+        let imageHeight = 45
+        let imageWidth = (imageProps.width * imageHeight) / imageProps.height
+
+        if (imageWidth > contentWidth - 10) {
+          imageWidth = contentWidth - 10
+          imageHeight = (imageProps.height * imageWidth) / imageProps.width
+        }
+
+        if (!questionFitsOnPage && currentY + imageHeight > pageBottomLimit) {
+          doc.addPage()
+          currentY = margin
+        }
+
+        doc.addImage(
+          imageData,
+          imageFormat,
+          (pageWidth - imageWidth) / 2,
+          currentY,
+          imageWidth,
+          imageHeight,
+        )
+        currentY += imageHeight + 2
+      }
+    }
+
+    if (renderOptions && options.length > 0) {
+      doc.setFontSize(baseSize - 1)
+      for (const option of options) {
+        const optionLines = doc.splitTextToSize(
+          `${option.id || ''}) ${cleanQuestionText(option.text)}`,
+          optionMaxWidth,
+        )
+        const optionHeight = optionLines.length * lineHeight + 1
+
+        if (!questionFitsOnPage && currentY + optionHeight > pageBottomLimit) {
+          doc.addPage()
+          currentY = margin
+        }
+
+        doc.text(optionLines, margin + 12, currentY)
+        currentY += optionHeight
+      }
+    }
+
+    currentY += isHeader ? 2 : 5
+  }
+
+  return doc
+}
+
+const getPatronEligibleQuestions = (preguntas = []) =>
+  (preguntas || []).filter(
+    (p) => !['PROBLEMA', 'EMPAREJAMIENTO'].includes(normalizeQuestionType(p.tipo)),
+  )
+
+const normalizePatternAnswerCell = (question) => {
+  if (!question) return ''
+
+  let rawAnswer = question.respuesta_correcta
+  const tipo = String(question.tipo || '').toUpperCase()
+
+  if (Array.isArray(rawAnswer)) {
+    if (rawAnswer.length > 1) {
+      return `(${rawAnswer.map((item) => String(item || '').toUpperCase()).join(',')})`
+    }
+    rawAnswer = rawAnswer[0]
+  }
+
+  let answer = String(rawAnswer || '')
+    .toUpperCase()
+    .replace(/["']/g, '')
+
+  if (answer.includes(',') || answer.includes(';')) {
+    answer = `(${answer.replace(/;/g, ',')})`
+  }
+
+  if (['FALSO_VERDADERO', 'FALSO O VERDADERO', 'FV'].includes(tipo)) {
+    if (['VERDADERO', 'V', 'TRUE', 'A'].includes(answer)) return 'A'
+    if (['FALSO', 'F', 'FALSE', 'B'].includes(answer)) return 'B'
+  }
+
+  return answer
+}
+
+const MIN_PATTERN_QUESTION_COUNT = 100
+const PATTERN_COLUMN_COUNT = 4
+
+const getPatternQuestionCount = (preguntas = []) =>
+  Math.max(MIN_PATTERN_QUESTION_COUNT, preguntas.length)
+
+const getPatternQuestionCountFromResults = (resultados = []) =>
+  Math.max(
+    MIN_PATTERN_QUESTION_COUNT,
+    ...resultados.map((result) => getPatronEligibleQuestions(result.sorted).length),
+  )
+
+const buildPatternAnswerCells = (
+  preguntas = [],
+  questionCount = getPatternQuestionCount(preguntas),
+) => {
+  const answers = []
+  for (let i = 0; i < questionCount; i += 1) {
+    answers.push(normalizePatternAnswerCell(preguntas[i] || null))
+  }
+  return answers
+}
+
+const validateMatchingPatternAnswers = (questions = [], variantLabel = '') => {
+  const matchingOptionsByGroup = new Map()
+
+  questions.forEach((question) => {
+    if (normalizeQuestionType(question?.tipo) !== 'EMPAREJAMIENTO') return
+
+    const group = getQuestionGroup(question)
+    if (!group || !Array.isArray(question.opciones)) return
+
+    matchingOptionsByGroup.set(
+      group,
+      new Set(question.opciones.map((option) => String(option.id || '').toUpperCase())),
+    )
+  })
+
+  questions.forEach((question) => {
+    if (normalizeQuestionType(question?.tipo) !== 'OPCION_EMPAREJAMIENTO') return
+
+    const group = getQuestionGroup(question)
+    const optionIds = matchingOptionsByGroup.get(group)
+    if (!optionIds || optionIds.size === 0) return
+
+    const answerCell = normalizePatternAnswerCell(question)
+    const answers = answerCell
+      .replace(/[()]/g, '')
+      .split(/[,;]/)
+      .map((answer) => answer.trim().toUpperCase())
+      .filter(Boolean)
+
+    const invalid = answers.filter((answer) => !optionIds.has(answer))
+    if (invalid.length > 0) {
+      throw new Error(
+        `El patron de la variante ${variantLabel} tiene respuesta de emparejamiento sin opcion vigente: pregunta ${question.id || question.idx || '?'} grupo ${group}, respuesta ${invalid.join(',')}.`,
+      )
+    }
+  })
+}
+
+const assertPatternConsistency = (resultadosVariantes = []) => {
+  resultadosVariantes.forEach((result) => {
+    validateMatchingPatternAnswers(result.sorted, result.letra)
+
+    const preguntasReales = getPatronEligibleQuestions(result.sorted)
+    const questionCount = getPatternQuestionCount(preguntasReales)
+    const expectedAnswers = buildPatternAnswerCells(preguntasReales, questionCount)
+    const auditAnswers = buildPatternAnswerCells(preguntasReales, questionCount)
+
+    if (expectedAnswers.join('|') !== auditAnswers.join('|')) {
+      throw new Error(
+        `El patrón de la variante ${result.letra} no coincide con las respuestas esperadas.`,
+      )
+    }
+  })
+}
+
+const generatePatronPdf = async (pdfDoc, letra, preguntas = [], examenInput = null) => {
+  const doc = pdfDoc || new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
+  const examen = examenInput || {}
+  const margin = 15
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const purple = [121, 40, 169]
+
+  const logoBase64 = await fileToDataUrl(payload.logoPath)
+
+  if (logoBase64) {
+    doc.addImage(logoBase64, 'PNG', margin, margin, 25, 20)
+  }
+
+  doc.setTextColor(...purple)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.text('UNIVERSIDAD TECNICA PRIVADA COSMOS', pageWidth / 2, margin + 8, { align: 'center' })
+
+  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(10)
+  doc.text(`Carrera: ${examen.carrera || ''}`, pageWidth / 2, margin + 14, { align: 'center' })
+  doc.setFont('helvetica', 'italic')
+  doc.setFontSize(8)
+  doc.text('"TU ESTAS AQUI PORQUE FORMAS PARTE DE NUESTRA HISTORIA"', pageWidth / 2, margin + 19, {
+    align: 'center',
+  })
+
+  doc.setDrawColor(...purple)
+  doc.setLineWidth(0.8)
+  doc.line(margin, margin + 22, pageWidth - margin, margin + 22)
+
+  let currentY = margin + 30
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(22)
+  doc.text('PATRON', margin + 35, currentY + 5)
+
+  const drawVariantBubbles = (x, y, activeLetra) => {
+    const letters = ['A', 'B', 'C', 'D', 'E']
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('TIPO DE EXAMEN', x + 15, y - 5, { align: 'center' })
+
+    letters.forEach((l, idx) => {
+      const bx = x + idx * 7
+      const isSelected = l === activeLetra
+      doc.setLineWidth(0.2)
+      doc.setDrawColor(0, 0, 0)
+
+      if (isSelected) {
+        doc.setFillColor(0, 0, 0)
+        doc.circle(bx, y, 2.5, 'FD')
+        doc.setTextColor(255, 255, 255)
+      } else {
+        doc.circle(bx, y, 2.5, 'S')
+        doc.setTextColor(0, 0, 0)
+      }
+
+      doc.text(l, bx, y + 0.8, { align: 'center', baseline: 'middle' })
+    })
+
+    doc.setTextColor(0, 0, 0)
+  }
+
+  drawVariantBubbles(pageWidth - margin - 35, currentY + 5, letra)
+
+  doc.setLineWidth(0.2)
+  doc.setDrawColor(180, 180, 180)
+  doc.rect(pageWidth - margin - 50, currentY + 15, 50, 20)
+  doc.setFontSize(7)
+  doc.text('FIRMA DOCENTE Y SELLO', pageWidth - margin - 25, currentY + 32, { align: 'center' })
+
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  const fields = [
+    { k: 'Materia:', v: examen.materia },
+    { k: 'Docente:', v: examen.docente },
+    { k: 'Examen:', v: examen.parcial },
+    { k: 'Grupo:', v: `Grupo ${examen.grupo || ''}` },
+  ]
+
+  fields.forEach((field, idx) => {
+    const fy = currentY + 15 + idx * 6
+    doc.text(String(field.k || ''), margin, fy)
+    doc.setFont('helvetica', 'normal')
+    doc.text(String(field.v ?? ''), margin + 20, fy)
+    doc.setFont('helvetica', 'bold')
+  })
+
+  doc.text('FECHA:', pageWidth - margin - 45, currentY + 21)
+  doc.setFont('helvetica', 'normal')
+  const fechaStr = formatExamCivilDateIso(examen.fecha_examen)
+  doc.text(String(fechaStr), pageWidth - margin - 30, currentY + 21)
+
+  doc.setLineWidth(0.2)
+  doc.setDrawColor(200, 200, 200)
+  doc.line(margin, currentY + 42, pageWidth - margin, currentY + 42)
+
+  currentY += 55
+  const colWidth = (pageWidth - 2 * margin) / 4
+  const startYGrid = currentY
+
+  const drawOmrLine = (qNum, answer, x, y) => {
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`${qNum}`, x, y + 1, { baseline: 'middle' })
+    ;['A', 'B', 'C', 'D', 'E'].forEach((opt, idx) => {
+      const bx = x + 8 + idx * 7
+      const isCorrect = answer && answer.toUpperCase().includes(opt)
+
+      doc.setLineWidth(0.1)
+      doc.setDrawColor(100, 100, 100)
+      if (isCorrect) {
+        doc.setFillColor(50, 50, 50)
+        doc.circle(bx, y, 2.2, 'FD')
+        doc.setTextColor(255, 255, 255)
+      } else {
+        doc.circle(bx, y, 2.2, 'S')
+        doc.setTextColor(100, 100, 100)
+      }
+      doc.setFontSize(6)
+      doc.text(opt, bx, y + 0.8, { align: 'center', baseline: 'middle' })
+    })
+    doc.setTextColor(0, 0, 0)
+  }
+
+  const preguntasReales = getPatronEligibleQuestions(preguntas)
+  const questionCount = getPatternQuestionCount(preguntasReales)
+  const patronAnswers = buildPatternAnswerCells(preguntasReales, questionCount)
+  const rowsPerColumn = Math.ceil(questionCount / PATTERN_COLUMN_COUNT)
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const maxRowStep = 7
+  const rowStep = Math.min(
+    maxRowStep,
+    (pageHeight - startYGrid - margin) / Math.max(rowsPerColumn - 1, 1),
+  )
+
+  for (let i = 0; i < questionCount; i += 1) {
+    const question = preguntasReales[i] || null
+    const colIndex = Math.floor(i / rowsPerColumn)
+    const rowIndex = i % rowsPerColumn
+    const x = margin + colIndex * colWidth
+    const y = startYGrid + rowIndex * rowStep
+
+    const answer = patronAnswers[i] || ''
+
+    drawOmrLine(i + 1, answer, x, y)
+    doc.setDrawColor(230, 230, 230)
+    doc.setLineWidth(0.1)
+    doc.line(x, y + 3.5, x + colWidth - 5, y + 3.5)
+  }
+
+  return doc
+}
+
+const generatePatronXlsxConsolidado = (resultadosVariantes, codigoAsignatura = '') => {
+  const codigo = String(codigoAsignatura || 'EXAM').trim()
+  const questionCount = getPatternQuestionCountFromResults(resultadosVariantes)
+  const headerRow = ['Codigo', 'Variante', 'ID_Pregunta']
+  for (let i = 1; i <= questionCount; i += 1) headerRow.push(`P${i}`)
+
+  const dataRows = []
+
+  for (const result of resultadosVariantes) {
+    const preguntasReales = getPatronEligibleQuestions(result.sorted)
+    const patronAnswers = buildPatternAnswerCells(preguntasReales, questionCount)
+    const dataRow = [codigo, result.letra, 'Respuesta']
+
+    for (let i = 0; i < questionCount; i += 1) {
+      dataRow.push(patronAnswers[i] || '')
+    }
+
+    dataRows.push(dataRow)
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows])
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Patrones')
+  return XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })
+}
+
+const buildUniqueSuffix = () => {
+  const now = new Date()
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+}
+
+const buildAlternativePath = (targetPath) => {
+  const parsed = path.parse(targetPath)
+  return path.join(parsed.dir, `${parsed.name}_${buildUniqueSuffix()}${parsed.ext}`)
+}
+
+const writeBuffer = async (targetPath, buffer) => {
+  await fs.mkdir(path.dirname(targetPath), { recursive: true })
+
+  try {
+    await fs.writeFile(targetPath, buffer)
+    return targetPath
+  } catch (error) {
+    if (!['EPERM', 'EBUSY', 'EACCES'].includes(error?.code)) {
+      throw error
+    }
+
+    const alternativePath = buildAlternativePath(targetPath)
+    await fs.writeFile(alternativePath, buffer)
+    return alternativePath
+  }
+}
+
+const writePdf = async (doc, targetPath) => {
+  const arrayBuffer = doc.output('arraybuffer')
+  return writeBuffer(targetPath, Buffer.from(arrayBuffer))
+}
+
+const exam = payload.exam
+const config = payload.config
+const variants = ['A', 'B', 'C', 'D', 'E'].slice(0, Number(config.cantVariantes || 1))
+const mergedExamenesDoc = createExamPdfDocument(config)
+const mergedPatronesDoc = new jsPDF({ compression: true, putOnlyUsedFonts: true, precision: 3 })
+const resultadosVariantes = []
+
+for (let i = 0; i < variants.length; i += 1) {
+  const letra = variants[i]
+  const selection = buildExamQuestionSelection(payload.questions, config)
+  const appliedDistribution = buildExamQuestionSelection.appliedDistribution
+
+  if (!selection) {
+    throw new Error(
+      buildExamQuestionSelection.lastError ||
+        'No se pudo armar una variante que cumpla la distribucion por dificultad.',
+    )
+  }
+
+  const selectionWithHeaders = completeMacroHeaders(selection, payload.questions)
+  const sorted = sortExamQuestionsForPdf(
+    mixExamQuestionOptions(JSON.parse(JSON.stringify(selectionWithHeaders))),
+    config,
+  )
+  assertNoOrphanMacroQuestions(sorted)
+
+  if (i > 0) {
+    const numPages = mergedExamenesDoc.internal.getNumberOfPages()
+    if (numPages % 2 !== 0) {
+      mergedExamenesDoc.addPage()
+      mergedExamenesDoc.setFontSize(10)
+      mergedExamenesDoc.setTextColor(150)
+      mergedExamenesDoc.text('PAGINA EN BLANCO', 105, 150, { align: 'center' })
+    }
+    mergedExamenesDoc.addPage()
+    mergedPatronesDoc.addPage()
+  }
+
+  await generateExamPdf(mergedExamenesDoc, exam, config, letra, sorted)
+  await generatePatronPdf(mergedPatronesDoc, letra, sorted, exam)
+  resultadosVariantes.push({ letra, sorted, appliedDistribution })
+}
+
+assertPatternConsistency(resultadosVariantes)
+
+const varsJoined = resultadosVariantes.map((result) => result.letra).join('')
+const normalizedCode = String(exam.codigo || 'EXAM').replace(/\s/g, '')
+const normalizedSede = String(exam.sede || '').replace(/\s/g, '')
+const normalizedGroup = String(exam.grupo || '1').replace(/\s/g, '')
+const normalizedParcial = String(exam.parcial || '').replace(/\s/g, '')
+const baseName = `${normalizedCode}_${normalizedSede}_G${normalizedGroup}_${normalizedParcial}_Var${varsJoined}`
+
+const examFilename = `${baseName}_Examen.pdf`
+const patronPdfFilename = `${baseName}_Patron.pdf`
+const patronXlsxFilename = `${baseName}_Remark.xlsx`
+
+const examOutputPath = await writePdf(
+  mergedExamenesDoc,
+  path.join(payload.output.examenesDir, examFilename),
+)
+const patronPdfOutputPath = await writePdf(
+  mergedPatronesDoc,
+  path.join(payload.output.patronesDir, patronPdfFilename),
+)
+const patronXlsxOutputPath = await writeBuffer(
+  path.join(payload.output.patronesDir, patronXlsxFilename),
+  generatePatronXlsxConsolidado(resultadosVariantes, exam.codigo),
+)
+
+const finalExamFilename = path.basename(examOutputPath)
+const finalPatronPdfFilename = path.basename(patronPdfOutputPath)
+const finalPatronXlsxFilename = path.basename(patronXlsxOutputPath)
+
+const variantEntries = resultsVariantsToEntries(resultadosVariantes, finalExamFilename)
+const patronEntries = resultsVariantsToPatternEntries(
+  resultadosVariantes,
+  finalPatronPdfFilename,
+  finalPatronXlsxFilename,
+)
+
+process.stdout.write(
+  JSON.stringify({
+    examFilename: finalExamFilename,
+    patronPdfFilename: finalPatronPdfFilename,
+    patronXlsxFilename: finalPatronXlsxFilename,
+    variantes: variantEntries,
+    patrones: patronEntries,
+    audit: resultsVariantsToAuditEntries(resultadosVariantes),
+  }),
+)
+
+function resultsVariantsToEntries(resultados, filename) {
+  return resultados.map((result) => ({
+    letra: result.letra,
+    archivo: filename,
+    distribucion_aplicada: result.appliedDistribution,
+  }))
+}
+
+function resultsVariantsToPatternEntries(resultados, pdfFilename, xlsxFilename) {
+  return resultados.map((result) => ({
+    letra: result.letra,
+    pdf: pdfFilename,
+    xlsx: xlsxFilename,
+  }))
+}
+
+function resultsVariantsToAuditEntries(resultados) {
+  const questionCount = getPatternQuestionCountFromResults(resultados)
+
+  return resultados.map((result) => ({
+    letra: result.letra,
+    distribucion_aplicada: result.appliedDistribution,
+    patron_respuestas: buildPatternAnswerCells(
+      getPatronEligibleQuestions(result.sorted),
+      questionCount,
+    ),
+    preguntas: result.sorted.map((question, index) => ({
+      idx: question.idx || question.id || index + 1,
+      id: question.id,
+      enunciado: question.enunciado,
+      tipo: question.tipo,
+      respuesta_correcta: question.respuesta_correcta,
+      opciones: question.opciones,
+      dificultad: question.dificultad,
+      grupo: question.grupo,
+    })),
+  }))
+}
