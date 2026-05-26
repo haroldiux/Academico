@@ -6,12 +6,12 @@ Este módulo gestiona el registro y la verificación en tiempo real del cumplimi
 
 ## 1. Ficha Técnica
 
-*   **Backend:** Laravel v12.x + PHP v8.2+ + Eloquent ORM + Carbon (Manejo de Tiempos).
-*   **Frontend UI:** Quasar Framework v2.x + Vue 3 (Composition API con `<script setup>`).
-*   **Gestión de Estado y Cola Local:** Pinia Stores (`sync.js` y `syncQueue.js`) con persistencia local habilitada por `pinia-plugin-persistedstate`.
-*   **Capacidades Nativas Mobile:** `@capacitor/network` (sensado de red), `@capacitor/filesystem` (almacenamiento binario local) y `@capacitor/camera` (evidencias fotográficas directas).
-*   **Controladores Backend:** `App\Http\Controllers\PlanificacionSemestralController`, `App\Http\Controllers\SeguimientoSemanalController`.
-*   **Propagación en Comunes:** `PlanificacionSemestralController::propagarSeguimientoAComunes()` con resolución basada en antigüedad de marcas de tiempo.
+- **Backend:** Laravel v12.x + PHP v8.2+ + Eloquent ORM + Carbon (Manejo de Tiempos).
+- **Frontend UI:** Quasar Framework v2.x + Vue 3 (Composition API con `<script setup>`).
+- **Gestión de Estado y Cola Local:** Pinia Stores (`sync.js` y `syncQueue.js`) con persistencia local habilitada por `pinia-plugin-persistedstate`.
+- **Capacidades Nativas Mobile:** `@capacitor/network` (sensado de red), `@capacitor/filesystem` (almacenamiento binario local) y `@capacitor/camera` (evidencias fotográficas directas).
+- **Controladores Backend:** `App\Http\Controllers\PlanificacionSemestralController`, `App\Http\Controllers\SeguimientoSemanalController`.
+- **Propagación en Comunes:** `PlanificacionSemestralController::propagarSeguimientoAComunes()` con resolución basada en antigüedad de marcas de tiempo.
 
 ---
 
@@ -65,18 +65,19 @@ erDiagram
 ```
 
 ### Reglas de Negocio del Esquema:
+
 1.  **Enlace 1:1 Semántico:** Un `Seguimiento` pertenece a una única sesión del `Cronograma`. Si se realiza el seguimiento, el campo `cronograma.cumplido` se sincroniza con el estado de cumplimiento (`cumplido`).
-2.  **Estructura JSON Flexible:** 
-    *   `georeferencia`: Guarda `{ "latitude": double, "longitude": double, "accuracy": double, "en_rango": boolean }` para control de geocercas en sedes.
-    *   `pedagogico`: Estructura modular del avance de clase:
-        ```json
-        {
-          "aprendizaje_activo": { "desarrollado": true, "comentario": "..." },
-          "evaluacion_formativa": { "aplicado": true, "instrumento": "..." },
-          "secuencia_didactica": { "inicio": true, "desarrollo": true, "cierre": true }
-        }
-        ```
-    *   `evidencias`: Mapeo de almacenamiento en el storage de Laravel para imágenes asociadas a cada evidencia pedagógica o transversal.
+2.  **Estructura JSON Flexible:**
+    - `georeferencia`: Guarda `{ "latitude": double, "longitude": double, "accuracy": double, "en_rango": boolean }` para control de geocercas en sedes.
+    - `pedagogico`: Estructura modular del avance de clase:
+      ```json
+      {
+        "aprendizaje_activo": { "desarrollado": true, "comentario": "..." },
+        "evaluacion_formativa": { "aplicado": true, "instrumento": "..." },
+        "secuencia_didactica": { "inicio": true, "desarrollo": true, "cierre": true }
+      }
+      ```
+    - `evidencias`: Mapeo de almacenamiento en el storage de Laravel para imágenes asociadas a cada evidencia pedagógica o transversal.
 
 ---
 
@@ -85,52 +86,55 @@ erDiagram
 El backend de Laravel expone endpoints REST robustos para el registro de clases de seguimiento y generación de reportes administrativos.
 
 ### 3.1 Crear o Actualizar Seguimiento (Save)
+
 Permite enviar tanto objetos JSON tradicionales como archivos en formato `multipart/form-data` para las evidencias físicas en el mismo request.
-*   **Método:** `POST`
-*   **Ruta:** `/api/planificacion-semestral/seguimiento`
-*   **Headers:** `Content-Type: multipart/form-data`, `Authorization: Bearer <token>`
-*   **Parámetros del FormData:**
-    *   `cronograma_id`: (int) ID de la sesión planificada.
-    *   `grupo_id`: (int) ID del grupo.
-    *   `asignatura_id`: (int) ID de la asignatura base.
-    *   `fecha`: (date) "2026-05-19"
-    *   `estado_cumplimiento`: (string) `"TOTAL" | "PARCIAL" | "NO"`
-    *   `tema_cumplido`: (string) `"true" | "false"`
-    *   `observaciones`: (string) Comentarios adicionales de clase.
-    *   `pedagogico`: (json string) Metadatos pedagógicos.
-    *   `integracion_transversal`: (json string) Coordinaciones transversales.
-    *   `georeferencia`: (json string) Ubicación actual.
-    *   `evidencia_aprendizaje`: (file) Archivo binario de imagen (opcional).
-    *   `evidencia_evaluacion`: (file) Archivo binario de imagen (opcional).
-    *   `evidencia_secuencia`: (file) Archivo binario de imagen (opcional).
-*   **Response de Éxito (`200 OK`):**
-    ```json
-    {
-      "success": true,
-      "message": "Seguimiento guardado correctamente",
-      "data": {
-        "id": 482,
-        "cronograma_id": 901,
-        "estado_cumplimiento": "TOTAL",
-        "evidencias": {
-          "aprendizaje_activo": "/storage/evidencias/901_aprendizaje.jpg",
-          "evaluacion_formativa": "/storage/evidencias/901_evaluacion.jpg",
-          "secuencia_didactica": null
-        }
+
+- **Método:** `POST`
+- **Ruta:** `/api/planificacion-semestral/seguimiento`
+- **Headers:** `Content-Type: multipart/form-data`, `Authorization: Bearer <token>`
+- **Parámetros del FormData:**
+  - `cronograma_id`: (int) ID de la sesión planificada.
+  - `grupo_id`: (int) ID del grupo.
+  - `asignatura_id`: (int) ID de la asignatura base.
+  - `fecha`: (date) "2026-05-19"
+  - `estado_cumplimiento`: (string) `"TOTAL" | "PARCIAL" | "NO"`
+  - `tema_cumplido`: (string) `"true" | "false"`
+  - `observaciones`: (string) Comentarios adicionales de clase.
+  - `pedagogico`: (json string) Metadatos pedagógicos.
+  - `integracion_transversal`: (json string) Coordinaciones transversales.
+  - `georeferencia`: (json string) Ubicación actual.
+  - `evidencia_aprendizaje`: (file) Archivo binario de imagen (opcional).
+  - `evidencia_evaluacion`: (file) Archivo binario de imagen (opcional).
+  - `evidencia_secuencia`: (file) Archivo binario de imagen (opcional).
+- **Response de Éxito (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Seguimiento guardado correctamente",
+    "data": {
+      "id": 482,
+      "cronograma_id": 901,
+      "estado_cumplimiento": "TOTAL",
+      "evidencias": {
+        "aprendizaje_activo": "/storage/evidencias/901_aprendizaje.jpg",
+        "evaluacion_formativa": "/storage/evidencias/901_evaluacion.jpg",
+        "secuencia_didactica": null
       }
     }
-    ```
+  }
+  ```
 
 ### 3.2 Eliminar Registro de Seguimiento
-*   **Método:** `DELETE`
-*   **Ruta:** `/api/planificacion-semestral/seguimiento/{id}`
-*   **Response de Éxito (`200 OK`):**
-    ```json
-    {
-      "success": true,
-      "message": "Seguimiento eliminado y cronograma restablecido"
-    }
-    ```
+
+- **Método:** `DELETE`
+- **Ruta:** `/api/planificacion-semestral/seguimiento/{id}`
+- **Response de Éxito (`200 OK`):**
+  ```json
+  {
+    "success": true,
+    "message": "Seguimiento eliminado y cronograma restablecido"
+  }
+  ```
 
 ---
 
@@ -145,12 +149,12 @@ flowchart TD
     A[Docente registra seguimiento en ClasePage] --> B{¿Hay conexión a Internet?\nCapacitor Network}
     B -- Sí -- > C[Enviar FormData directo a API]
     C --> D[Guardado exitoso en el Servidor]
-    
+
     B -- No --> E[Guardar imagen en Disco Local\nCapacitor Filesystem]
     E --> F[Crear Objeto Seguimiento local]
     F --> G[Encolar en Pinia Store\npendingFollowups]
     G --> H[Notificar al docente:\n'Guardado localmente']
-    
+
     I[Se detecta reconexión de Red] --> J[Disparar syncAll en useSyncStore]
     J --> K{¿Hay elementos en cola?}
     K -- Sí --> L[Procesar registro secuencialmente]
@@ -212,8 +216,9 @@ export const useSyncStore = defineStore('sync', {
       for (const item of toSync) {
         try {
           const formData = new FormData()
-          const isCumplido = item.data.estado_cumplimiento === 'TOTAL' || item.data.estado_cumplimiento === 'PARCIAL'
-          
+          const isCumplido =
+            item.data.estado_cumplimiento === 'TOTAL' || item.data.estado_cumplimiento === 'PARCIAL'
+
           formData.append('tema_cumplido', isCumplido ? 'true' : 'false')
           formData.append('observaciones', item.data.observaciones || '')
           formData.append('cronograma_id', item.data.cronograma_id || '')
@@ -223,7 +228,10 @@ export const useSyncStore = defineStore('sync', {
           formData.append('fecha', item.data.fecha || '')
           formData.append('estado_cumplimiento', item.data.estado_cumplimiento || 'NO')
           formData.append('pedagogico', JSON.stringify(item.data.pedagogico || {}))
-          formData.append('integracion_transversal', JSON.stringify(item.data.integracion_transversal || {}))
+          formData.append(
+            'integracion_transversal',
+            JSON.stringify(item.data.integracion_transversal || {}),
+          )
           formData.append('evidencias', JSON.stringify({}))
 
           // Helper crítico: Convierte una ruta nativa de archivo en un Blob para subida multipart
@@ -249,15 +257,27 @@ export const useSyncStore = defineStore('sync', {
           if (item.data.evidencias_offline) {
             const evtApr = await getFileBlob(item.data.evidencias_offline.aprendizaje_activo)
             if (evtApr) {
-              formData.append('evidencia_aprendizaje', evtApr, item.data.evidencias_offline.aprendizaje_activo.name)
+              formData.append(
+                'evidencia_aprendizaje',
+                evtApr,
+                item.data.evidencias_offline.aprendizaje_activo.name,
+              )
             }
             const evtEval = await getFileBlob(item.data.evidencias_offline.evaluacion_formativa)
             if (evtEval) {
-              formData.append('evidencia_evaluacion', evtEval, item.data.evidencias_offline.evaluacion_formativa.name)
+              formData.append(
+                'evidencia_evaluacion',
+                evtEval,
+                item.data.evidencias_offline.evaluacion_formativa.name,
+              )
             }
             const evtSec = await getFileBlob(item.data.evidencias_offline.secuencia_didactica)
             if (evtSec) {
-              formData.append('evidencia_secuencia', evtSec, item.data.evidencias_offline.secuencia_didactica.name)
+              formData.append(
+                'evidencia_secuencia',
+                evtSec,
+                item.data.evidencias_offline.secuencia_didactica.name,
+              )
             }
           }
 
@@ -274,7 +294,7 @@ export const useSyncStore = defineStore('sync', {
               }
             }
           }
-          
+
           if (item.data.evidencias_offline) {
             await deleteFile(item.data.evidencias_offline.aprendizaje_activo)
             await deleteFile(item.data.evidencias_offline.evaluacion_formativa)
@@ -312,6 +332,7 @@ export const useSyncStore = defineStore('sync', {
 La interfaz del docente se ubica en `src/pages/docente/ClasePage.vue`. Incorpora un diseño premium responsivo y dinámicas inteligentes para simplificar el flujo diario de clase:
 
 ### 5.1 Dropdown de Asignaturas Comunes Unificadas
+
 Si una asignatura es común (`comun_token` no nulo) y se dicta bajo el mismo paralelo/fusión, la lista de asignaturas del docente no muestra los registros duplicados, sino que **los unifica en una sola opción interactiva** con un elegante badge descriptor.
 
 ```javascript
@@ -320,19 +341,19 @@ const materiasDisponibles = computed(() => {
   const result = []
   const tokensSeen = new Set()
 
-  materias.forEach(m => {
+  materias.forEach((m) => {
     if (m.comun_token) {
       if (tokensSeen.has(m.comun_token)) return // Evitar duplicar la fila
       tokensSeen.add(m.comun_token)
-      
-      const vinculadas = materias.filter(x => x.comun_token === m.comun_token)
+
+      const vinculadas = materias.filter((x) => x.comun_token === m.comun_token)
       if (vinculadas.length > 1) {
         // Enlazar los metadatos de las materias del grupo de fusión
-        result.push({ 
-          ...m, 
-          _vinculadas: vinculadas, 
+        result.push({
+          ...m,
+          _vinculadas: vinculadas,
           _esComun: true,
-          label_display: `[Común] ${vinculadas.map(v => v.codigo).join(' · ')}`
+          label_display: `[Común] ${vinculadas.map((v) => v.codigo).join(' · ')}`,
         })
         return
       }
@@ -344,8 +365,9 @@ const materiasDisponibles = computed(() => {
 ```
 
 ### 5.2 Sensor Georeferencial y Control de Asistencia
-*   **Geolocalización Activa:** El componente captura la posición GPS antes de registrar el seguimiento. Si el docente está fuera del radio preconfigurado de la sede en la tabla `sedes.georeferencia` (geocerca), la API recibe el flag `en_rango = false`, alertando al panel de auditoría pero permitiendo guardar (para prevenir bloqueos injustificados del sistema nativo).
-*   **Registro de Asistencia Integrado:** Incorpora una tabla rápida de estudiantes matriculados para marcar faltas, licencias y observaciones individuales en la misma sesión, evitando transiciones complejas entre pantallas.
+
+- **Geolocalización Activa:** El componente captura la posición GPS antes de registrar el seguimiento. Si el docente está fuera del radio preconfigurado de la sede en la tabla `sedes.georeferencia` (geocerca), la API recibe el flag `en_rango = false`, alertando al panel de auditoría pero permitiendo guardar (para prevenir bloqueos injustificados del sistema nativo).
+- **Registro de Asistencia Integrado:** Incorpora una tabla rápida de estudiantes matriculados para marcar faltas, licencias y observaciones individuales en la misma sesión, evitando transiciones complejas entre pantallas.
 
 ---
 
@@ -427,8 +449,8 @@ private function propagarSeguimientoAComunes(int $cronogramaId, int $grupoId, Se
 
 El control de clase culmina con las herramientas integradas para los directores y vicerrectores:
 
-*   **Matriz de Control Institucional (`MatrizControlInstitucional.vue`):** Mapea visualmente el avance real en porcentaje vs el avance programado sugerido para el semestre. El color del porcentaje cambia de acuerdo a alertas críticas:
-    *   <span style="color:#21BA45">**Verde (Progreso Normal):**</span> Desviación de avance < 10%.
-    *   <span style="color:#F2C037">**Amarillo (Desviación Moderada):**</span> Desviación entre 10% y 20%.
-    *   <span style="color:#C10015">**Rojo (Alerta Crítica / Retraso Grave):**</span> Desviación > 20%.
-*   **Informes Semanales del Director (`WeeklyReportForm.vue`):** El Director de Carrera revisa el compilado de seguimientos offline y online de la semana, valida ausencias y justifica atrasos enviando el informe digital a Vicerrectorado.
+- **Matriz de Control Institucional (`MatrizControlInstitucional.vue`):** Mapea visualmente el avance real en porcentaje vs el avance programado sugerido para el semestre. El color del porcentaje cambia de acuerdo a alertas críticas:
+  - <span style="color:#21BA45">**Verde (Progreso Normal):**</span> Desviación de avance < 10%.
+  - <span style="color:#F2C037">**Amarillo (Desviación Moderada):**</span> Desviación entre 10% y 20%.
+  - <span style="color:#C10015">**Rojo (Alerta Crítica / Retraso Grave):**</span> Desviación > 20%.
+- **Informes Semanales del Director (`WeeklyReportForm.vue`):** El Director de Carrera revisa el compilado de seguimientos offline y online de la semana, valida ausencias y justifica atrasos enviando el informe digital a Vicerrectorado.

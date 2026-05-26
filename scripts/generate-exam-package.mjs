@@ -391,7 +391,7 @@ const buildExamQuestionSelection = (questions, config = {}) => {
 
   const totalRequired = required.facil + required.medio + required.dificil
   const totalAvailable = available.facil + available.medio + available.dificil
-  const maxCandidateTotal = Math.min(100, totalAvailable)
+  const maxCandidateTotal = Math.min(Math.max(100, totalRequired), totalAvailable)
   const difficultyDivisors = ['facil', 'medio', 'dificil'].reduce((acc, difficulty) => {
     const sizes = units.map((unit) => unit.counts[difficulty]).filter((value) => Number(value) > 0)
     acc[difficulty] = gcdList(sizes) || 1
@@ -1588,9 +1588,24 @@ const normalizePatternAnswerCell = (question) => {
   return answer
 }
 
-const buildPatternAnswerCells = (preguntas = []) => {
+const MIN_PATTERN_QUESTION_COUNT = 100
+const PATTERN_COLUMN_COUNT = 4
+
+const getPatternQuestionCount = (preguntas = []) =>
+  Math.max(MIN_PATTERN_QUESTION_COUNT, preguntas.length)
+
+const getPatternQuestionCountFromResults = (resultados = []) =>
+  Math.max(
+    MIN_PATTERN_QUESTION_COUNT,
+    ...resultados.map((result) => getPatronEligibleQuestions(result.sorted).length),
+  )
+
+const buildPatternAnswerCells = (
+  preguntas = [],
+  questionCount = getPatternQuestionCount(preguntas),
+) => {
   const answers = []
-  for (let i = 0; i < 100; i += 1) {
+  for (let i = 0; i < questionCount; i += 1) {
     answers.push(normalizePatternAnswerCell(preguntas[i] || null))
   }
   return answers
@@ -1639,8 +1654,9 @@ const assertPatternConsistency = (resultadosVariantes = []) => {
     validateMatchingPatternAnswers(result.sorted, result.letra)
 
     const preguntasReales = getPatronEligibleQuestions(result.sorted)
-    const expectedAnswers = buildPatternAnswerCells(preguntasReales)
-    const auditAnswers = buildPatternAnswerCells(preguntasReales)
+    const questionCount = getPatternQuestionCount(preguntasReales)
+    const expectedAnswers = buildPatternAnswerCells(preguntasReales, questionCount)
+    const auditAnswers = buildPatternAnswerCells(preguntasReales, questionCount)
 
     if (expectedAnswers.join('|') !== auditAnswers.join('|')) {
       throw new Error(
@@ -1776,14 +1792,22 @@ const generatePatronPdf = async (pdfDoc, letra, preguntas = [], examenInput = nu
   }
 
   const preguntasReales = getPatronEligibleQuestions(preguntas)
-  const patronAnswers = buildPatternAnswerCells(preguntasReales)
+  const questionCount = getPatternQuestionCount(preguntasReales)
+  const patronAnswers = buildPatternAnswerCells(preguntasReales, questionCount)
+  const rowsPerColumn = Math.ceil(questionCount / PATTERN_COLUMN_COUNT)
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const maxRowStep = 7
+  const rowStep = Math.min(
+    maxRowStep,
+    (pageHeight - startYGrid - margin) / Math.max(rowsPerColumn - 1, 1),
+  )
 
-  for (let i = 0; i < 100; i += 1) {
+  for (let i = 0; i < questionCount; i += 1) {
     const question = preguntasReales[i] || null
-    const colIndex = Math.floor(i / 25)
-    const rowIndex = i % 25
+    const colIndex = Math.floor(i / rowsPerColumn)
+    const rowIndex = i % rowsPerColumn
     const x = margin + colIndex * colWidth
-    const y = startYGrid + rowIndex * 7
+    const y = startYGrid + rowIndex * rowStep
 
     const answer = patronAnswers[i] || ''
 
@@ -1798,17 +1822,18 @@ const generatePatronPdf = async (pdfDoc, letra, preguntas = [], examenInput = nu
 
 const generatePatronXlsxConsolidado = (resultadosVariantes, codigoAsignatura = '') => {
   const codigo = String(codigoAsignatura || 'EXAM').trim()
+  const questionCount = getPatternQuestionCountFromResults(resultadosVariantes)
   const headerRow = ['Codigo', 'Variante', 'ID_Pregunta']
-  for (let i = 1; i <= 100; i += 1) headerRow.push(`P${i}`)
+  for (let i = 1; i <= questionCount; i += 1) headerRow.push(`P${i}`)
 
   const dataRows = []
 
   for (const result of resultadosVariantes) {
     const preguntasReales = getPatronEligibleQuestions(result.sorted)
-    const patronAnswers = buildPatternAnswerCells(preguntasReales)
+    const patronAnswers = buildPatternAnswerCells(preguntasReales, questionCount)
     const dataRow = [codigo, result.letra, 'Respuesta']
 
-    for (let i = 0; i < 100; i += 1) {
+    for (let i = 0; i < questionCount; i += 1) {
       dataRow.push(patronAnswers[i] || '')
     }
 
@@ -1962,10 +1987,15 @@ function resultsVariantsToPatternEntries(resultados, pdfFilename, xlsxFilename) 
 }
 
 function resultsVariantsToAuditEntries(resultados) {
+  const questionCount = getPatternQuestionCountFromResults(resultados)
+
   return resultados.map((result) => ({
     letra: result.letra,
     distribucion_aplicada: result.appliedDistribution,
-    patron_respuestas: buildPatternAnswerCells(getPatronEligibleQuestions(result.sorted)),
+    patron_respuestas: buildPatternAnswerCells(
+      getPatronEligibleQuestions(result.sorted),
+      questionCount,
+    ),
     preguntas: result.sorted.map((question, index) => ({
       idx: question.idx || question.id || index + 1,
       id: question.id,

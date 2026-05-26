@@ -647,7 +647,7 @@
             <div class="col-12 col-md-4">
               <q-select
                 v-model.number="dlgAsig.semestre"
-                :options="[1,2,3,4,5,6,7,8,9,10,11,12]"
+                :options="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]"
                 label="Semestre *"
                 outlined
                 dense
@@ -1429,14 +1429,17 @@
                     </q-item-label>
                     <q-item-label caption>
                       {{ materia.creditos || 0 }} créditos
-                      <span v-if="materia.asignada_en_sedes && materia.asignada_en_sedes.length > 0">
+                      <span
+                        v-if="materia.asignada_en_sedes && materia.asignada_en_sedes.length > 0"
+                      >
                         — Ya en:
                         <span
                           v-for="(s, idx) in materia.asignada_en_sedes"
                           :key="s.sede_id"
                           class="text-primary"
                         >
-                          {{ s.sede_nombre }}{{ idx < materia.asignada_en_sedes.length - 1 ? ', ' : '' }}
+                          {{ s.sede_nombre
+                          }}{{ idx < materia.asignada_en_sedes.length - 1 ? ', ' : '' }}
                         </span>
                       </span>
                       <span v-if="materia.ya_asignada_en_sede_actual" class="text-positive q-ml-sm">
@@ -1459,7 +1462,9 @@
             icon="check"
             :label="`Asignar Seleccionadas (${dlgAsignar.seleccionados.length})`"
             :loading="guardando"
-            :disable="dlgAsignar.seleccionados.length === 0 || !dlgAsignar.sede_id || !dlgAsignar.semestre"
+            :disable="
+              dlgAsignar.seleccionados.length === 0 || !dlgAsignar.sede_id || !dlgAsignar.semestre
+            "
             @click="asignarMateriasSeleccionadas"
           />
         </q-card-actions>
@@ -1859,7 +1864,7 @@ const dlg = ref({
   aula: false,
   docente: false,
   eliminar: false,
-  asignarMaterias: false
+  asignarMaterias: false,
 })
 
 // Formularios de cada diálogo
@@ -1876,7 +1881,7 @@ const dlgAsignar = ref({
   semestre: null,
   tabMalla: 'N',
   seleccionados: [],
-  masterData: null
+  masterData: null,
 })
 const cargandoMaster = ref(false)
 const materiasMaster = ref([])
@@ -2492,7 +2497,7 @@ async function abrirDlgAsignarMaterias() {
     semestre: null,
     tabMalla: 'N',
     seleccionados: [],
-    masterData: null
+    masterData: null,
   }
   materiasMaster.value = []
   dlg.value.asignarMaterias = true
@@ -2504,7 +2509,7 @@ async function cargarMasterMaterias() {
   cargandoMaster.value = true
   try {
     const resp = await api.get(`/asignaturas/master/${filtCarrera.value}`, {
-      params: { sede_id: dlgAsignar.value.sede_id }
+      params: { sede_id: dlgAsignar.value.sede_id },
     })
     dlgAsignar.value.masterData = resp.data
     materiasMaster.value = resp.data.mallas || { N: [], A: [] }
@@ -2546,16 +2551,19 @@ async function asignarMateriasSeleccionadas() {
       asignatura_ids: seleccionados,
       carrera_id: filtCarrera.value,
       sede_id: dlgAsignar.value.sede_id,
-      semestre: dlgAsignar.value.semestre
+      semestre: dlgAsignar.value.semestre,
     })
     Notify.create({
       type: 'positive',
-      message: `${resp.data.asignadas} materia(s) asignada(s), ${resp.data.ya_existian} ya existían`
+      message: `${resp.data.asignadas} materia(s) asignada(s), ${resp.data.ya_existian} ya existían`,
     })
     dlg.value.asignarMaterias = false
     await cargarDatos()
   } catch (err) {
-    Notify.create({ type: 'negative', message: 'Error: ' + (err.response?.data?.message || err.message) })
+    Notify.create({
+      type: 'negative',
+      message: 'Error: ' + (err.response?.data?.message || err.message),
+    })
   } finally {
     guardando.value = false
   }

@@ -1219,9 +1219,9 @@
                     map-options
                     label="Seleccionar Grupo Teórico"
                     :hint="
-                      filtroBancoParcialSeleccionado === '2P'
-                        ? 'En 2do Parcial el registro se gestionará de forma individual por grupo'
-                        : 'Debes elegir el grupo y el parcial antes de ver o gestionar las preguntas'
+                      parcialBancoGestionable
+                        ? `En ${getParcialLabelBanco(filtroBancoParcialSeleccionado)} el registro se gestiona por grupo`
+                        : '1er Parcial solo esta habilitado para descargar/exportar banco'
                     "
                   >
                     <template v-slot:prepend><q-icon name="groups" /></template>
@@ -1488,7 +1488,9 @@
                 dense
               >
                 <template v-slot:avatar><q-icon name="info" color="teal-9" /></template>
-                <strong>2do Parcial acumulativo:</strong>
+                <strong
+                  >{{ getParcialLabelBanco(filtroBancoParcialSeleccionado) }} acumulativo:</strong
+                >
                 Los grupos
                 <strong>{{ [...gruposBloqueados].map((g) => 'Grupo ' + g).join(', ') }}</strong>
                 ya tienen un examen generado para este parcial, pero la carga del banco sigue
@@ -1682,10 +1684,11 @@
                         {{ totalPreguntasContables }} preguntas evaluables registradas
                       </div>
                       <div
-                        v-if="filtroBancoParcialSeleccionado === '2P'"
+                        v-if="parcialBancoGestionable"
                         class="text-caption text-orange-9 text-weight-medium q-mt-sm"
                       >
-                        En 2do Parcial el registro y la revisión se gestionan por grupo.
+                        En {{ getParcialLabelBanco(filtroBancoParcialSeleccionado) }} el registro y
+                        la revisión se gestionan por grupo.
                       </div>
                     </q-card-section>
                   </q-card>
@@ -1921,6 +1924,7 @@
                           <template
                             v-if="
                               !modoBancoSoloLecturaPreguntas &&
+                              !parcialBancoSoloExportacion &&
                               !gruposBloqueados.has(
                                 normalizeGroupName(obtenerGrupoTeoricoPregunta(pregunta)),
                               )
@@ -2356,6 +2360,20 @@
               </q-badge>
             </div>
             <q-banner
+              v-if="importAdvertenciasBanco.length"
+              class="bg-amber-1 text-amber-10 q-mb-md"
+              rounded
+              dense
+            >
+              <template v-slot:avatar><q-icon name="warning_amber" color="amber-10" /></template>
+              <div class="text-weight-bold text-caption">Advertencias de importacion</div>
+              <ul class="q-my-xs q-pl-md">
+                <li v-for="(advertencia, idx) in importAdvertenciasBanco" :key="idx">
+                  {{ advertencia }}
+                </li>
+              </ul>
+            </q-banner>
+            <q-banner
               v-if="importStats.total > 0 && importStats.nuevas === 0"
               class="bg-grey-2 text-grey-9 q-mb-md"
               rounded
@@ -2376,8 +2394,8 @@
             >
               <template v-slot:avatar><q-icon name="warning" /></template>
               <div v-if="importacionAcumulativaSegundoParcial" class="text-caption">
-                En 2do Parcial puedes cargar bancos parciales, pero este archivo no contiene
-                preguntas válidas para agregar.
+                En {{ getParcialLabelBanco(filtroBancoParcialSeleccionado) }} puedes cargar bancos
+                parciales, pero este archivo no contiene preguntas válidas para agregar.
               </div>
               <template v-else>
                 <div class="text-weight-bold text-caption">No se cumple el mínimo requerido:</div>
@@ -2399,7 +2417,8 @@
                 v-if="importacionAcumulativaSegundoParcial"
                 class="text-weight-bold text-caption"
               >
-                Archivo valido para agregar al banco acumulativo de 2do Parcial.
+                Archivo valido para agregar al banco acumulativo de
+                {{ getParcialLabelBanco(filtroBancoParcialSeleccionado) }}.
               </div>
               <div v-else class="text-weight-bold text-caption">
                 Distribución válida para importar.
@@ -2485,8 +2504,9 @@
               <template v-slot:avatar><q-icon name="library_add" /></template>
               <div class="text-weight-bold">Importación acumulativa</div>
               <div class="text-caption">
-                En 2do Parcial este archivo se <b>agregará</b> al banco actual del grupo y parcial.
-                Las preguntas duplicadas por enunciado no se volverán a registrar.
+                En {{ getParcialLabelBanco(filtroBancoParcialSeleccionado) }} este archivo se
+                <b>agregará</b> al banco actual del grupo y parcial. Las preguntas duplicadas por
+                enunciado no se volverán a registrar.
               </div>
             </q-banner>
             <q-banner v-else class="bg-red-1 text-red-10" rounded dense>
@@ -3415,7 +3435,7 @@
                     label="Grupo / Referencia"
                     outlined
                     dense
-                    :readonly="filtroBancoParcialSeleccionado === '2P'"
+                    :readonly="parcialBancoGestionable"
                   />
                 </div>
               </div>
@@ -4177,9 +4197,11 @@ const parcialBancoActualNormalizado = computed(() =>
   normalizarParcialBanco(filtroBancoParcialSeleccionado.value || parcialSeleccionado.value || ''),
 )
 
-const importacionAcumulativaSegundoParcial = computed(
-  () => parcialBancoActualNormalizado.value === '2P',
+const parcialBancoGestionable = computed(() =>
+  ['2P', 'EF'].includes(parcialBancoActualNormalizado.value),
 )
+const parcialBancoSoloExportacion = computed(() => parcialBancoActualNormalizado.value === '1P')
+const importacionAcumulativaSegundoParcial = computed(() => parcialBancoGestionable.value)
 
 const ESTADOS_ROL_EXAMEN_BLOQUEANTES = new Set([
   'generado',
@@ -5090,6 +5112,7 @@ const grupoTeoricoSeleccionado = ref(null)
 const filtroBancoGrupoSeleccionado = ref(null)
 const preguntasImportadas = ref([])
 const importErrores = ref([])
+const importAdvertenciasBanco = ref([])
 const importErroresNormalizados = computed(() =>
   importErrores.value.map((error) => {
     if (typeof error === 'string') {
@@ -5121,13 +5144,14 @@ const mostrarAccionesExcelBanco = computed(
   () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
 )
 const mostrarAccionesGestionBanco = computed(
-  () => mostrarAccionesExcelBanco.value && puedeCargarExcelBanco.value,
+  () =>
+    mostrarAccionesExcelBanco.value && puedeCargarExcelBanco.value && parcialBancoGestionable.value,
 )
 const mostrarBotonValidarBanco = false
 const parcialOptions = [
-  { label: '1er Parcial', value: '1P', disable: true },
+  { label: '1er Parcial', value: '1P' },
   { label: '2do Parcial', value: '2P' },
-  { label: 'Examen Final', value: 'EF', disable: true },
+  { label: 'Examen Final', value: 'EF' },
   { label: '2da Instancia', value: '2I', disable: true },
 ]
 
@@ -5320,6 +5344,7 @@ watch(conCartilla, (val) => {
     archivoPreviewBanco.value = null
     preguntasImportadas.value = []
     importErrores.value = []
+    importAdvertenciasBanco.value = []
   }
 })
 
@@ -6079,9 +6104,7 @@ const buildOpcionesVaciasParaTipoPregunta = (tipo, pregunta = null) => {
 
 const puedeMostrarRegistroManualBanco = computed(
   () =>
-    filtroBancoParcialSeleccionado.value === '2P' &&
-    !!filtroBancoGrupoSeleccionado.value &&
-    !!asignatura.value?.id,
+    parcialBancoGestionable.value && !!filtroBancoGrupoSeleccionado.value && !!asignatura.value?.id,
 )
 
 const registroManualBancoBloqueado = computed(() => !filtroBancoGrupoSeleccionado.value)
@@ -7417,7 +7440,8 @@ function abrirRegistroManualPregunta() {
   if (!puedeMostrarRegistroManualBanco.value && !modoBancoSoloVisualDirector.value) {
     $q.notify({
       type: 'warning',
-      message: 'Selecciona 2do Parcial y un grupo teórico antes de registrar preguntas.',
+      message:
+        'Selecciona 2do Parcial o Examen Final y un grupo teorico antes de registrar preguntas.',
     })
     return
   }
@@ -7445,6 +7469,14 @@ function abrirRegistroManualPregunta() {
 }
 
 function abrirModalSubirBanco() {
+  if (parcialBancoSoloExportacion.value) {
+    $q.notify({
+      type: 'info',
+      message: '1er Parcial solo esta habilitado para descargar formato o exportar banco.',
+    })
+    return
+  }
+
   if (!puedeCargarExcelBanco.value) {
     $q.notify({
       type: 'info',
@@ -7563,6 +7595,14 @@ function obtenerPreguntasLigadasParaEliminacion(pregunta) {
 }
 
 function confirmarEliminarPreguntaBanco(pregunta) {
+  if (parcialBancoSoloExportacion.value) {
+    $q.notify({
+      type: 'info',
+      message: '1er Parcial solo esta habilitado para exportacion.',
+    })
+    return
+  }
+
   if (modoBancoSinPermisoModificar.value) {
     $q.notify({
       type: 'info',
@@ -7710,6 +7750,14 @@ function obtenerPreguntasLigadasFormulario(pregunta, tipoNormalizado) {
 }
 
 function abrirEditorPregunta(pregunta) {
+  if (parcialBancoSoloExportacion.value) {
+    $q.notify({
+      type: 'info',
+      message: '1er Parcial solo esta habilitado para exportacion.',
+    })
+    return
+  }
+
   if (modoBancoSoloLecturaPreguntas.value) {
     $q.notify({
       type: 'info',
@@ -8236,7 +8284,7 @@ async function guardarPreguntaBanco() {
         $q.notify({
           type: 'warning',
           message:
-            'Se detectÒ�� �"Ò� â����Ò�â��šÒ�a�³ una pregunta duplicada dentro del mismo registro para 2do Parcial. Revisa el enunciado.',
+            'Se detecto una pregunta duplicada dentro del mismo registro. Revisa el enunciado.',
         })
         return
       }
@@ -8246,8 +8294,7 @@ async function guardarPreguntaBanco() {
       if (duplicadoExistente) {
         $q.notify({
           type: 'warning',
-          message:
-            'Ya existe una pregunta con el mismo enunciado en este grupo y parcial de 2do Parcial.',
+          message: 'Ya existe una pregunta con el mismo enunciado en este grupo y parcial.',
         })
         return
       }
@@ -8371,8 +8418,7 @@ async function guardarPreguntaBanco() {
     if (duplicadoExistente) {
       $q.notify({
         type: 'warning',
-        message:
-          'Ya existe otra pregunta con el mismo enunciado en este grupo y parcial de 2do Parcial.',
+        message: 'Ya existe otra pregunta con el mismo enunciado en este grupo y parcial.',
       })
       return
     }
@@ -8714,6 +8760,7 @@ const puedeEliminarBancoFiltrado = computed(
 const puedeAbrirEliminarBancoFiltrado = computed(
   () =>
     puedeVisualizarBanco.value &&
+    !parcialBancoSoloExportacion.value &&
     !grupoBancoActualOperacionDestructivaBloqueada.value &&
     (modoBancoSoloVisualDirector.value ||
       (puedeEliminarBancoFiltrado.value && !modoBancoSoloLecturaPreguntas.value)),
@@ -8770,8 +8817,31 @@ const puedeExportarBancoPreguntas = computed(
   () => puedeVisualizarBanco.value && preguntasFiltradas.value.length > 0,
 )
 
+const LIMITE_ADVERTENCIA_IMPORTACION_BANCO = 80
+
 const totalPreguntasContables = computed(() => {
   return preguntasFiltradas.value.filter((p) => obtenerTipoContableBanco(p)).length
+})
+
+const resumenAdvertenciaImportacionBanco = computed(() => {
+  const existentes = Number(totalPreguntasContables.value || 0)
+  const nuevas = Number(importStats.value?.nuevas || 0)
+
+  return {
+    existentes,
+    nuevas,
+    totalEstimado: existentes + nuevas,
+  }
+})
+
+const requiereConfirmacionImportacionBanco = computed(() => {
+  const resumen = resumenAdvertenciaImportacionBanco.value
+
+  return (
+    resumen.existentes > 0 &&
+    resumen.nuevas > 0 &&
+    resumen.totalEstimado > LIMITE_ADVERTENCIA_IMPORTACION_BANCO
+  )
 })
 
 const conteoBancoPorDificultad = computed(() => {
@@ -8794,32 +8864,41 @@ const conteoBancoPorDificultad = computed(() => {
   )
 })
 
-const REQUISITOS_BANCO_DIFICULTAD = {
+const REQUISITOS_BANCO_DIFICULTAD_BASE = {
   faciles: 15,
   medios: 30,
   dificiles: 15,
 }
 
-const REQUISITOS_BANCO_DIFICULTAD_ITEMS = [
+const REQUISITOS_BANCO_DIFICULTAD_FINAL = {
+  faciles: 30,
+  medios: 60,
+  dificiles: 30,
+}
+
+const requisitosBancoDificultad = computed(() =>
+  parcialBancoActualNormalizado.value === 'EF'
+    ? REQUISITOS_BANCO_DIFICULTAD_FINAL
+    : REQUISITOS_BANCO_DIFICULTAD_BASE,
+)
+
+const REQUISITOS_BANCO_DIFICULTAD_ITEMS_BASE = [
   {
     key: 'faciles',
     label: 'Fáciles',
     faltanteLabel: 'Fácil',
-    requerido: REQUISITOS_BANCO_DIFICULTAD.faciles,
     color: 'green-7',
   },
   {
     key: 'medios',
     label: 'Medias',
     faltanteLabel: 'Medio',
-    requerido: REQUISITOS_BANCO_DIFICULTAD.medios,
     color: 'orange-8',
   },
   {
     key: 'dificiles',
     label: 'Difíciles',
     faltanteLabel: 'Difícil',
-    requerido: REQUISITOS_BANCO_DIFICULTAD.dificiles,
     color: 'red-8',
   },
 ]
@@ -8848,6 +8927,15 @@ const REQUISITOS_BANCO_GRUPO_TIPO = [
   },
 ]
 
+const requisitosBancoGrupoTipo = computed(() => {
+  const multiplicador = parcialBancoActualNormalizado.value === 'EF' ? 2 : 1
+
+  return REQUISITOS_BANCO_GRUPO_TIPO.map((grupo) => ({
+    ...grupo,
+    requerido: grupo.requerido * multiplicador,
+  }))
+})
+
 function obtenerTipoContableBanco(pregunta, gruposCabeceraMap = gruposCabeceraBancoMap.value) {
   const tipoNormalizado = normalizarTipoPregunta(pregunta?.tipo, pregunta, gruposCabeceraMap)
 
@@ -8855,14 +8943,16 @@ function obtenerTipoContableBanco(pregunta, gruposCabeceraMap = gruposCabeceraBa
 }
 
 const conteoBancoPorDificultadItems = computed(() =>
-  REQUISITOS_BANCO_DIFICULTAD_ITEMS.map((item) => {
+  REQUISITOS_BANCO_DIFICULTAD_ITEMS_BASE.map((item) => {
     const total = conteoBancoPorDificultad.value[item.key] || 0
+    const requerido = requisitosBancoDificultad.value[item.key] || 0
 
     return {
       ...item,
+      requerido,
       total,
-      progreso: Math.min(total / item.requerido, 1),
-      cumple: total >= item.requerido,
+      progreso: Math.min(total / requerido, 1),
+      cumple: total >= requerido,
     }
   }),
 )
@@ -8882,21 +8972,23 @@ const faltantesDificultadLabel = computed(() => {
 })
 
 const conteoBancoPorGrupoTipo = computed(() => {
-  const conteos = REQUISITOS_BANCO_GRUPO_TIPO.reduce((acc, grupo) => {
+  const conteos = requisitosBancoGrupoTipo.value.reduce((acc, grupo) => {
     acc[grupo.key] = 0
     return acc
   }, {})
 
   preguntasFiltradas.value.forEach((pregunta) => {
     const tipoNormalizado = obtenerTipoContableBanco(pregunta)
-    const grupo = REQUISITOS_BANCO_GRUPO_TIPO.find((item) => item.tipos.includes(tipoNormalizado))
+    const grupo = requisitosBancoGrupoTipo.value.find((item) =>
+      item.tipos.includes(tipoNormalizado),
+    )
 
     if (grupo) {
       conteos[grupo.key]++
     }
   })
 
-  return REQUISITOS_BANCO_GRUPO_TIPO.map((grupo) => ({
+  return requisitosBancoGrupoTipo.value.map((grupo) => ({
     ...grupo,
     total: conteos[grupo.key] || 0,
     progreso: Math.min((conteos[grupo.key] || 0) / grupo.requerido, 1),
@@ -9349,10 +9441,10 @@ async function descargarFormatoBancoLegacy() {
   rowDif.getCell(1).font = redFont
   rowDif.getCell(2).font = redFont
   wsInst.addRow(['Parcial activo', `${parcialActivo} (${parcialActivoLabel})`])
-  if (parcialActivo === '2P') {
+  if (['2P', 'EF'].includes(parcialActivo)) {
     wsInst.addRow([
       'Registro por grupo',
-      'En 2do Parcial el banco se organiza y se valida individualmente por grupo teórico.',
+      `En ${parcialActivoLabel} el banco se organiza y se valida individualmente por grupo teórico.`,
     ])
   }
   wsInst.addRow([])
@@ -9419,17 +9511,29 @@ async function descargarFormatoBancoLegacy() {
   }
 
   // Generar 15 FÒ�� �"Ò� â����Ò�â��šÒ�a�¡ciles (Verde)
-  for (let i = 0; i < 15; i++) {
+  const distribucionBaseExcel =
+    parcialActivo === 'EF'
+      ? { faciles: 30, medios: 60, dificiles: 30 }
+      : { faciles: 15, medios: 30, dificiles: 15 }
+  const filasBancoDesde = 2
+  const filasBancoHasta =
+    filasBancoDesde +
+    distribucionBaseExcel.faciles +
+    distribucionBaseExcel.medios +
+    distribucionBaseExcel.dificiles -
+    1
+
+  for (let i = 0; i < distribucionBaseExcel.faciles; i += 1) {
     addPreguntaRow('1', parcialActivo, 'FFC6EFCE')
   }
 
   // Generar 30 Medias (Amarillo)
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < distribucionBaseExcel.medios; i += 1) {
     addPreguntaRow('2', parcialActivo, 'FFFFEB9C')
   }
 
   // Generar 15 DifÒ�� �"Ò� â����Ò�â��šÒ�a�­ciles (Rojo)
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < distribucionBaseExcel.dificiles; i += 1) {
     addPreguntaRow('3', parcialActivo, 'FFFFC7CE')
   }
 
@@ -9448,7 +9552,7 @@ async function descargarFormatoBancoLegacy() {
   ]
 
   // Add Data Validation and Totals
-  for (let i = 2; i <= 61; i++) {
+  for (let i = filasBancoDesde; i <= filasBancoHasta; i += 1) {
     wsBanco.getCell(`A${i}`).dataValidation = {
       type: 'list',
       allowBlank: true,
@@ -9466,20 +9570,23 @@ async function descargarFormatoBancoLegacy() {
     }
   }
 
-  const rowF = wsBanco.getRow(63)
+  const resumenFilaBase = filasBancoHasta + 2
+  const rangoDificultadBanco = `J${filasBancoDesde}:J${filasBancoHasta}`
+
+  const rowF = wsBanco.getRow(resumenFilaBase)
   rowF.getCell(9).value = 'Total Faciles:'
   rowF.getCell(9).font = { bold: true }
-  rowF.getCell(10).value = { formula: 'COUNTIF(J2:J61, 1)' }
+  rowF.getCell(10).value = { formula: `COUNTIF(${rangoDificultadBanco}, 1)` }
 
-  const rowM = wsBanco.getRow(64)
+  const rowM = wsBanco.getRow(resumenFilaBase + 1)
   rowM.getCell(9).value = 'Total Medias:'
   rowM.getCell(9).font = { bold: true }
-  rowM.getCell(10).value = { formula: 'COUNTIF(J2:J61, 2)' }
+  rowM.getCell(10).value = { formula: `COUNTIF(${rangoDificultadBanco}, 2)` }
 
-  const rowD = wsBanco.getRow(65)
+  const rowD = wsBanco.getRow(resumenFilaBase + 2)
   rowD.getCell(9).value = 'Total DifÒ�� �"Ò� â����Ò�â��šÒ�a�­ciles:'
   rowD.getCell(9).font = { bold: true }
-  rowD.getCell(10).value = { formula: 'COUNTIF(J2:J61, 3)' }
+  rowD.getCell(10).value = { formula: `COUNTIF(${rangoDificultadBanco}, 3)` }
 
   // ---- HOJA 3: EJEMPLO (PRECARGADA) ----
   const wsEj = workbook.addWorksheet('Ejemplo')
@@ -9635,6 +9742,14 @@ async function descargarFormatoBancoLegacy() {
   link.click()
 
   $q.notify({ type: 'positive', message: 'Excel generado exitosamente', icon: 'check_circle' })
+  if (parcialActivo === '1P') {
+    $q.notify({
+      type: 'warning',
+      message:
+        '1er Parcial queda habilitado solo para exportacion. Si se intenta importar, las preguntas de seleccion multiple / A-B-Ambas-Ninguna seran omitidas.',
+      timeout: 7000,
+    })
+  }
 }
 
 // ============================================================
@@ -9674,8 +9789,17 @@ async function descargarFormatoBanco() {
     'D: Solo 4 es verdadera',
     'E: Todas son verdaderas',
   ]
+  const distribucionBaseExcel =
+    parcialActivo === 'EF'
+      ? { faciles: 30, medios: 60, dificiles: 30 }
+      : { faciles: 15, medios: 30, dificiles: 15 }
   const filasBancoDesde = 2
-  const filasBancoHasta = 61
+  const filasBancoHasta =
+    filasBancoDesde +
+    distribucionBaseExcel.faciles +
+    distribucionBaseExcel.medios +
+    distribucionBaseExcel.dificiles -
+    1
   const tiposRequierenGrupo = [
     excelTipos.PROBLEMA,
     excelTipos.SUBPROBLEMA,
@@ -10057,10 +10181,10 @@ async function descargarFormatoBanco() {
   rowDif.getCell(1).font = redFont
   rowDif.getCell(2).font = redFont
   wsInst.addRow(['Parcial activo', `${parcialActivo} (${parcialActivoLabel})`])
-  if (parcialActivo === '2P') {
+  if (['2P', 'EF'].includes(parcialActivo)) {
     wsInst.addRow([
       'Registro por grupo',
-      'En 2do Parcial el banco se organiza y se valida individualmente por grupo teorico.',
+      `En ${parcialActivoLabel} el banco se organiza y se valida individualmente por grupo teorico.`,
     ])
   }
   wsInst.addRow([
@@ -10142,9 +10266,15 @@ async function descargarFormatoBanco() {
     row.height = 24
   }
 
-  for (let i = 0; i < 15; i++) addPreguntaRow('1', parcialActivo, 'FFC6EFCE')
-  for (let i = 0; i < 30; i++) addPreguntaRow('2', parcialActivo, 'FFFFEB9C')
-  for (let i = 0; i < 15; i++) addPreguntaRow('3', parcialActivo, 'FFFFC7CE')
+  for (let i = 0; i < distribucionBaseExcel.faciles; i += 1) {
+    addPreguntaRow('1', parcialActivo, 'FFC6EFCE')
+  }
+  for (let i = 0; i < distribucionBaseExcel.medios; i += 1) {
+    addPreguntaRow('2', parcialActivo, 'FFFFEB9C')
+  }
+  for (let i = 0; i < distribucionBaseExcel.dificiles; i += 1) {
+    addPreguntaRow('3', parcialActivo, 'FFFFC7CE')
+  }
 
   wsBanco.columns = [
     { width: 24 },
@@ -10296,22 +10426,26 @@ async function descargarFormatoBanco() {
     observacionesCell.font = { bold: true }
   }
 
-  const rowF = wsBanco.getRow(63)
+  const resumenFilaBase = filasBancoHasta + 2
+  const rangoDificultadBanco = `J${filasBancoDesde}:J${filasBancoHasta}`
+  const notasFilaBase = resumenFilaBase + 8
+
+  const rowF = wsBanco.getRow(resumenFilaBase)
   rowF.getCell(9).value = 'Total Faciles:'
   rowF.getCell(9).font = { bold: true }
-  rowF.getCell(10).value = { formula: 'COUNTIF(J2:J61, 1)' }
+  rowF.getCell(10).value = { formula: `COUNTIF(${rangoDificultadBanco}, 1)` }
 
-  const rowM = wsBanco.getRow(64)
+  const rowM = wsBanco.getRow(resumenFilaBase + 1)
   rowM.getCell(9).value = 'Total Medias:'
   rowM.getCell(9).font = { bold: true }
-  rowM.getCell(10).value = { formula: 'COUNTIF(J2:J61, 2)' }
+  rowM.getCell(10).value = { formula: `COUNTIF(${rangoDificultadBanco}, 2)` }
 
-  const rowD = wsBanco.getRow(65)
+  const rowD = wsBanco.getRow(resumenFilaBase + 2)
   rowD.getCell(9).value = 'Total Dificiles:'
   rowD.getCell(9).font = { bold: true }
-  rowD.getCell(10).value = { formula: 'COUNTIF(J2:J61, 3)' }
+  rowD.getCell(10).value = { formula: `COUNTIF(${rangoDificultadBanco}, 3)` }
 
-  const rowGrupo1 = wsBanco.getRow(67)
+  const rowGrupo1 = wsBanco.getRow(resumenFilaBase + 4)
   rowGrupo1.getCell(9).value = 'Grupo 1 (VF simple + complejas + A/B):'
   rowGrupo1.getCell(9).font = { bold: true }
   rowGrupo1.getCell(10).value = {
@@ -10322,37 +10456,37 @@ async function descargarFormatoBanco() {
     ]),
   }
 
-  const rowGrupo2 = wsBanco.getRow(68)
+  const rowGrupo2 = wsBanco.getRow(resumenFilaBase + 5)
   rowGrupo2.getCell(9).value = 'Grupo 2 (Mejor respuesta):'
   rowGrupo2.getCell(9).font = { bold: true }
   rowGrupo2.getCell(10).value = { formula: countByTiposFormula([excelTipos.SELECCION_SIMPLE]) }
 
-  const rowGrupo3 = wsBanco.getRow(69)
+  const rowGrupo3 = wsBanco.getRow(resumenFilaBase + 6)
   rowGrupo3.getCell(9).value = 'Grupo 3 (Casos/problemas y emp.):'
   rowGrupo3.getCell(9).font = { bold: true }
   rowGrupo3.getCell(10).value = {
     formula: countByTiposFormula([excelTipos.SUBPROBLEMA, excelTipos.OPCION_EMPAREJAMIENTO]),
   }
 
-  wsBanco.getCell('A71').value = 'NOTAS DE CARGA'
-  wsBanco.getCell('A71').font = { bold: true }
-  wsBanco.getCell('A72').value =
+  wsBanco.getCell(`A${notasFilaBase}`).value = 'NOTAS DE CARGA'
+  wsBanco.getCell(`A${notasFilaBase}`).font = { bold: true }
+  wsBanco.getCell(`A${notasFilaBase + 1}`).value =
     '1. La columna L te dira si la fila esta OK o que campos faltan/revisar.'
-  wsBanco.getCell('A73').value =
+  wsBanco.getCell(`A${notasFilaBase + 2}`).value =
     '2. Casos/problemas y Emparejamiento Ampliado usan grupo y enunciado, pero no respuesta_correcta ni dificultad.'
-  wsBanco.getCell('A74').value =
+  wsBanco.getCell(`A${notasFilaBase + 3}`).value =
     '3. Emparejamiento Ampliado puede usar de 2 a 5 claves en opcion_a a opcion_e.'
-  wsBanco.getCell('A75').value =
+  wsBanco.getCell(`A${notasFilaBase + 4}`).value =
     '4. En Verdadero o Falso Simple, opcion_a, opcion_b y respuesta_correcta se preparan automaticamente.'
-  wsBanco.getCell('A76').value =
+  wsBanco.getCell(`A${notasFilaBase + 5}`).value =
     `5. En Respuesta A/B/Ambas/Ninguna, escriba solo I. y II. en el enunciado; opcion_a a opcion_d se preparan con: ${opcionesRespuestaCompuestaExcel.join(' | ')}.`
-  wsBanco.getCell('A77').value =
+  wsBanco.getCell(`A${notasFilaBase + 6}`).value =
     '6. En Verdadero o Falso Complejas, escriba 1. a 4. en opcion_a a opcion_d; opcion_e queda deshabilitada.'
-  wsBanco.getCell('A78').value =
+  wsBanco.getCell(`A${notasFilaBase + 7}`).value =
     `7. En Emparejamiento Ampliado, el enunciado se prepara con: ${enunciadoEmparejamientoExcel}`
-  wsBanco.getCell('A79').value =
+  wsBanco.getCell(`A${notasFilaBase + 8}`).value =
     `8. Este formato esta preparado para ${parcialActivo} (${parcialActivoLabel}).`
-  wsBanco.getCell('A80').value =
+  wsBanco.getCell(`A${notasFilaBase + 9}`).value =
     '9. Los grupos de conteo por tipo no consideran casos/problemas ni emparejamientos porque funcionan como cabeceras.'
 
   const disabledCellStyle = {
@@ -10648,6 +10782,14 @@ async function descargarFormatoBanco() {
   URL.revokeObjectURL(url)
 
   $q.notify({ type: 'positive', message: 'Excel generado exitosamente', icon: 'check_circle' })
+  if (parcialActivo === '1P') {
+    $q.notify({
+      type: 'warning',
+      message:
+        '1er Parcial queda habilitado solo para exportacion. Si se intenta importar, las preguntas de seleccion multiple / A-B-Ambas-Ninguna seran omitidas.',
+      timeout: 7000,
+    })
+  }
 }
 
 async function exportarBancoPreguntasActual() {
@@ -11114,6 +11256,7 @@ function recortarFilasBancoAntesDeNotasCarga(rows) {
 function previsualizarArchivoExcel(file) {
   if (!file) return
   importStats.value = crearImportStatsVacios()
+  importAdvertenciasBanco.value = []
   const reader = new FileReader()
   reader.onload = (e) => {
     import('xlsx').then(async (XLSX) => {
@@ -11183,6 +11326,8 @@ function previsualizarArchivoExcel(file) {
 
         const dataRows = rows.slice(headerRowIdx + 1)
         const erroresListado = [] // Cambiado de array de strings a array de objetos
+        const advertenciasListado = []
+        let omitidasSeleccionMultiplePrimerParcial = 0
         const preguntas = []
 
         dataRows.forEach((row, idx) => {
@@ -11266,6 +11411,11 @@ function previsualizarArchivoExcel(file) {
               parcial || parcialSeleccionado.value || filtroBancoParcialSeleccionado.value || '2P',
             ),
             filaExcel: lineNum,
+          }
+
+          if (normalizarParcialBanco(pObj.parcial) === '1P' && tipo === 'RESPUESTA_COMPUESTA') {
+            omitidasSeleccionMultiplePrimerParcial++
+            return
           }
 
           preguntas.push(pObj)
@@ -11389,6 +11539,12 @@ function previsualizarArchivoExcel(file) {
 
         preguntasImportadas.value = preguntas
         importErrores.value = erroresListado
+        if (omitidasSeleccionMultiplePrimerParcial > 0) {
+          advertenciasListado.push(
+            `Se omitieron ${omitidasSeleccionMultiplePrimerParcial} pregunta(s) de seleccion multiple / Respuesta A-B-Ambas-Ninguna porque 1er Parcial solo permite exportarlas, no importarlas.`,
+          )
+        }
+        importAdvertenciasBanco.value = advertenciasListado
         importStats.value = stats
         archivoPreviewBanco.value = file.name
 
@@ -11431,6 +11587,42 @@ function previsualizarArchivoExcel(file) {
   reader.readAsArrayBuffer(file)
 }
 
+function solicitarConfirmacionImportacionBanco() {
+  if (!requiereConfirmacionImportacionBanco.value) {
+    return Promise.resolve(true)
+  }
+
+  const { existentes, nuevas, totalEstimado } = resumenAdvertenciaImportacionBanco.value
+
+  return new Promise((resolve) => {
+    $q.dialog({
+      title: 'Confirmar carga adicional',
+      message: `
+        Este grupo ya tiene <strong>${existentes}</strong> pregunta(s) evaluable(s)
+        registradas y el Excel agregaria <strong>${nuevas}</strong> pregunta(s)
+        nueva(s). El banco quedaria con <strong>${totalEstimado}</strong> pregunta(s).
+        <br><br>
+        Revisa que el archivo corresponda a la misma asignatura, sede, grupo y parcial antes
+        de continuar.
+      `,
+      html: true,
+      persistent: true,
+      ok: {
+        label: 'Si, importar',
+        color: 'warning',
+        unelevated: true,
+      },
+      cancel: {
+        label: 'Revisar antes',
+        color: 'primary',
+        flat: true,
+      },
+    })
+      .onOk(() => resolve(true))
+      .onCancel(() => resolve(false))
+  })
+}
+
 async function confirmarImportacionBanco() {
   if (modoBancoSinPermisoModificar.value) {
     $q.notify({
@@ -11451,6 +11643,16 @@ async function confirmarImportacionBanco() {
     $q.notify({
       type: 'warning',
       message: 'Corrige los errores detectados antes de importar el banco.',
+    })
+    return
+  }
+
+  const importacionConfirmada = await solicitarConfirmacionImportacionBanco()
+  if (!importacionConfirmada) {
+    $q.notify({
+      type: 'info',
+      message: 'Importación pausada. Revisa el archivo antes de continuar.',
+      icon: 'info',
     })
     return
   }
@@ -11489,6 +11691,9 @@ async function confirmarImportacionBanco() {
       const totalEvaluableImportado = Number(response.data?.evaluables || response.data?.total || 0)
       const totalEstructurasAuxiliares = Number(response.data?.auxiliares || 0)
       const totalOmitidas = Number(response.data?.omitidas || 0)
+      const advertencias = Array.isArray(response.data?.advertencias)
+        ? response.data.advertencias
+        : []
       $q.notify({
         type: 'positive',
         message: `Se han importado ${totalEvaluableImportado} pregunta(s) nueva(s) correctamente.`,
@@ -11497,6 +11702,7 @@ async function confirmarImportacionBanco() {
             ? `${totalEstructurasAuxiliares} estructura(s) auxiliar(es) registradas.`
             : null,
           totalOmitidas ? `${totalOmitidas} duplicada(s) omitida(s) sin afectar el banco.` : null,
+          ...advertencias,
         ]
           .filter(Boolean)
           .join(' '),
@@ -11659,6 +11865,7 @@ function cerrarDialogImportBanco() {
   archivoPreviewBanco.value = null
   preguntasImportadas.value = []
   importErrores.value = []
+  importAdvertenciasBanco.value = []
   importStats.value = crearImportStatsVacios()
   parcialSeleccionado.value = filtroBancoParcialSeleccionado.value || '2P'
   grupoTeoricoSeleccionado.value = filtroBancoGrupoSeleccionado.value || null

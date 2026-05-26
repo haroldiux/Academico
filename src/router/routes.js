@@ -363,17 +363,11 @@
             path: 'evaluaciones',
             name: 'evaluaciones',
             component: () => import('pages/evaluaciones/GestionEvaluacionesPage.vue'),
-            meta: { title: 'Gestión de Evaluaciones' },
-          },
-          {
-            path: 'verificador-patrones',
-            name: 'admin-verificador-patrones',
-            component: () => import('pages/evaluaciones/PatternVerifierPage.vue'),
             meta: {
-              title: 'Verificador de Patrones',
+              title: 'Gestión de Evaluaciones',
               rol: [
-                'DIRECTOR_CARRERA',
                 'DIRECCION_ACADEMICA',
+                'DIRECTOR_CARRERA',
                 'VICERRECTOR_SEDE',
                 'VICERRECTOR_NACIONAL',
                 'EVALUACIONES',
@@ -384,12 +378,39 @@
             },
           },
           {
+            path: 'verificador-patrones',
+            name: 'admin-verificador-patrones',
+            component: () => import('pages/evaluaciones/PatternVerifierPage.vue'),
+            meta: {
+              title: 'Verificador de Patrones',
+              rol: ['ADMIN', 'SUPER_ADMIN'],
+            },
+          },
+          {
             path: 'administracion-evaluaciones',
             name: 'administracion-evaluaciones',
             component: () => import('pages/admin/AdministracionEvaluacionPage.vue'),
             meta: {
               title: 'Administración de Evaluaciones',
               rol: ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'],
+            },
+          },
+          {
+            path: 'reporte-evaluaciones',
+            name: 'reporte-evaluaciones',
+            component: () => import('pages/admin/ReporteEvaluacionesPage.vue'),
+            meta: {
+              title: 'Reporte Evaluaciones',
+              rol: [
+                'EVALUACIONES',
+                'RESPONSABLE_EVALUACIONES',
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
             },
           },
           {

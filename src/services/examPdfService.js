@@ -1195,12 +1195,16 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       const statementLines = buildDisplayLines(doc, statementBase, contentWidth - 10)
       const keyLines = rawLines.slice(1)
       const matchingOptions = Array.isArray(question.opciones) ? question.opciones : []
-      const optionLines = matchingOptions.length
+      const optionTextLines = matchingOptions.length
         ? matchingOptions.map((option, optionIndex) => {
             const optionId = option.id || String.fromCharCode(65 + optionIndex)
             return `${optionId}) ${cleanQuestionText(option.text)}`
           })
         : keyLines
+      const optionMaxWidth = contentWidth - 21
+      const optionBlocks = optionTextLines.map((optionText) =>
+        doc.splitTextToSize(cleanQuestionText(optionText), optionMaxWidth),
+      )
       const linkedQuestions = []
       let cursor = index + 1
 
@@ -1214,7 +1218,8 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       }
 
       let estimatedHeight = statementLines.length * lineHeight + 4
-      estimatedHeight += optionLines.length * (lineHeight + 0.5) + 4
+      estimatedHeight +=
+        optionBlocks.reduce((total, lines) => total + lines.length * lineHeight + 1, 0) + 4
 
       for (const linked of linkedQuestions) {
         const subText = `${cleanQuestionText(linked.enunciado)} (      )`
@@ -1237,15 +1242,17 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
       doc.setFont(baseFont, 'normal')
       doc.setFontSize(baseSize - 2)
 
-      for (const option of optionLines) {
-        if (!matchingFitsOnPage && currentY > pageBottomLimit) {
+      for (const optionBlock of optionBlocks) {
+        const optionHeight = optionBlock.length * lineHeight + 1
+
+        if (!matchingFitsOnPage && currentY + optionHeight > pageBottomLimit) {
           doc.addPage()
           currentY = margin
           doc.setFont(baseFont)
         }
 
-        doc.text(option, margin + 15, currentY)
-        currentY += lineHeight + 0.5
+        doc.text(optionBlock, margin + 15, currentY)
+        currentY += optionHeight
       }
 
       currentY += 4

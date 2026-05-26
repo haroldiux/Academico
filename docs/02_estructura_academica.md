@@ -6,10 +6,10 @@ Este módulo gestiona la infraestructura académica física (Sedes, Campus, Bloq
 
 ## 1. Ficha Técnica
 
-*   **Backend:** Laravel v12.x (API REST) + PHP v8.2+.
-*   **Frontend:** Quasar Framework v2.16.x + Vue 3.5.20 (Composition API con `<script setup>`).
-*   **Caché:** Pinia Stores (`carreras.js`, `sedes.js`, `aulas.js`, `bloques.js`) persistidos localmente.
-*   **Mecanismo de Filtros:** Filtros reactivos en cascada: `Sede` -> `Carrera` -> `Plan de Malla`.
+- **Backend:** Laravel v12.x (API REST) + PHP v8.2+.
+- **Frontend:** Quasar Framework v2.16.x + Vue 3.5.20 (Composition API con `<script setup>`).
+- **Caché:** Pinia Stores (`carreras.js`, `sedes.js`, `aulas.js`, `bloques.js`) persistidos localmente.
+- **Mecanismo de Filtros:** Filtros reactivos en cascada: `Sede` -> `Carrera` -> `Plan de Malla`.
 
 ---
 
@@ -87,82 +87,88 @@ erDiagram
 ## 3. Especificación de la API (Endpoints)
 
 ### 3.1 Listar Sedes
-*   **Método:** `GET`
-*   **Ruta:** `/api/sedes`
-*   **Response de Éxito (`200 OK`):**
-    ```json
-    [
-      {
-        "id": 1,
-        "nombre": "Cochabamba - Central",
-        "ciudad": "Cochabamba",
-        "id_api": "CBA",
-        "georeferencia": { "lat": -17.3912, "lng": -66.1523, "radio_metros": 150 }
-      }
-    ]
-    ```
+
+- **Método:** `GET`
+- **Ruta:** `/api/sedes`
+- **Response de Éxito (`200 OK`):**
+  ```json
+  [
+    {
+      "id": 1,
+      "nombre": "Cochabamba - Central",
+      "ciudad": "Cochabamba",
+      "id_api": "CBA",
+      "georeferencia": { "lat": -17.3912, "lng": -66.1523, "radio_metros": 150 }
+    }
+  ]
+  ```
 
 ### 3.2 Listar Carreras por Sede (Filtro en Cascada)
-*   **Método:** `GET`
-*   **Ruta:** `/api/carreras`
-*   **Query Parameters:** `?sede_id=1`
-*   **Response de Éxito (`200 OK`):**
-    ```json
-    [
-      {
-        "id": 5,
-        "nombre": "Ingeniería de Sistemas",
-        "codigo": "SIS",
-        "sede_id": 1,
-        "activo": true,
-        "asignaturas_count": 45,
-        "docentes_count": 12
-      }
-    ]
-    ```
+
+- **Método:** `GET`
+- **Ruta:** `/api/carreras`
+- **Query Parameters:** `?sede_id=1`
+- **Response de Éxito (`200 OK`):**
+  ```json
+  [
+    {
+      "id": 5,
+      "nombre": "Ingeniería de Sistemas",
+      "codigo": "SIS",
+      "sede_id": 1,
+      "activo": true,
+      "asignaturas_count": 45,
+      "docentes_count": 12
+    }
+  ]
+  ```
 
 ### 3.3 Listar Asignaturas por Carrera y Semestre
-*   **Método:** `GET`
-*   **Ruta:** `/api/carreras/{carrera_id}/asignaturas`
-*   **Query Parameters:** `?sede_id=1&semestre=1er%20Semestre`
-*   **Response de Éxito (`200 OK`):**
-    ```json
-    [
-      {
-        "id": 12,
-        "codigo": "SIS-111",
-        "nombre": "Cálculo I",
-        "semestre": "1er Semestre",
-        "plan_estudios": "N",
-        "creditos": 5
-      }
-    ]
-    ```
+
+- **Método:** `GET`
+- **Ruta:** `/api/carreras/{carrera_id}/asignaturas`
+- **Query Parameters:** `?sede_id=1&semestre=1er%20Semestre`
+- **Response de Éxito (`200 OK`):**
+  ```json
+  [
+    {
+      "id": 12,
+      "codigo": "SIS-111",
+      "nombre": "Cálculo I",
+      "semestre": "1er Semestre",
+      "plan_estudios": "N",
+      "creditos": 5
+    }
+  ]
+  ```
 
 ### 3.4 CRUD Aulas (Gestión de Infraestructura)
-*   **Método:** `GET` / `POST` / `PUT` / `DELETE`
-*   **Ruta:** `/api/aulas` y `/api/aulas/{id}`
-*   **Request Crear Aula (JSON):**
-    ```json
-    {
-      "bloque_id": 3,
-      "nombre": "Aula 402 - Virtual",
-      "capacidad": 45,
-      "tipo": "Teorica"
-    }
-    ```
-*   **Response de Éxito (`201 Created`):** Retorna el objeto `Aula` con el bloque asociado.
+
+- **Método:** `GET` / `POST` / `PUT` / `DELETE`
+- **Ruta:** `/api/aulas` y `/api/aulas/{id}`
+- **Request Crear Aula (JSON):**
+  ```json
+  {
+    "bloque_id": 3,
+    "nombre": "Aula 402 - Virtual",
+    "capacidad": 45,
+    "tipo": "Teorica"
+  }
+  ```
+- **Response de Éxito (`201 Created`):** Retorna el objeto `Aula` con el bloque asociado.
 
 ---
 
 ## 4. Componentes y Capa de Frontend (Quasar)
 
 ### 4.1 Stores de Pinia para Infraestructura
-*   `src/stores/sedes.js`: Cachea las sedes autorizadas para el usuario y maneja la sede activa seleccionada en los paneles.
-*   `src/stores/carreras.js`: Almacena la lista de carreras a nivel nacional/regional, permitiendo el filtrado rápido mediante `getCarrerasBySede(sedeId)`.
-*   `src/stores/aulas.js` y `src/stores/bloques.js`: Dan soporte al CRUD reactivo para la administración física del sistema.
+
+- `src/stores/sedes.js`: Cachea las sedes autorizadas para el usuario y maneja la sede activa seleccionada en los paneles.
+- `src/stores/carreras.js`: Almacena la lista de carreras a nivel nacional/regional, permitiendo el filtrado rápido mediante `getCarrerasBySede(sedeId)`.
+- `src/stores/aulas.js` y `src/stores/bloques.js`: Dan soporte al CRUD reactivo para la administración física del sistema.
 
 ### 4.2 Selectores y Filtros Reactivos en Cascada
+
 En las vistas administrativas y de directores (como `GestionAcademicaPage.vue` o `SincronizacionPage.vue`), se utiliza una reactividad encadenada en Vue 3 para filtrar asignaturas y grupos:
 
 ```javascript
@@ -187,8 +193,9 @@ watch(selCarrera, async () => {
 ```
 
 ### 4.3 Vistas Involucradas
-*   `src/pages/admin/SedesPage.vue`: Interfaz de administración para configurar coordenadas de geocercas por sede (para el control de asistencia).
-*   `src/pages/admin/GestionAcademicaPage.vue`: Panel unificado de control de carreras, bloques, aulas y asignaturas asociadas.
+
+- `src/pages/admin/SedesPage.vue`: Interfaz de administración para configurar coordenadas de geocercas por sede (para el control de asistencia).
+- `src/pages/admin/GestionAcademicaPage.vue`: Panel unificado de control de carreras, bloques, aulas y asignaturas asociadas.
 
 ---
 
