@@ -1566,10 +1566,7 @@
                         </div>
 
                         <!-- Documentos de Examen Devuelto -->
-                        <div
-                          v-if="['devuelto', 'devueltos'].includes(examen.estado?.toLowerCase())"
-                          class="q-mt-sm"
-                        >
+                        <div v-if="puedeMostrarDocumentosExamenDevuelto(examen)" class="q-mt-sm">
                           <q-separator class="q-mb-xs" />
                           <div
                             class="text-deep-orange-9 text-weight-bold q-mb-xs"
@@ -1586,7 +1583,7 @@
                               color="primary"
                               icon="description"
                               size="sm"
-                              @click="abrirDocumento(getPrimerExamen(examen), 'examenes')"
+                              @click="abrirDocumentoDevuelto(examen, 'examen')"
                             >
                               <q-tooltip>Descargar Examen</q-tooltip>
                             </q-btn>
@@ -1599,7 +1596,7 @@
                               color="teal"
                               icon="fact_check"
                               size="sm"
-                              @click="abrirDocumento(getPrimerPatron(examen), 'patrones')"
+                              @click="abrirDocumentoDevuelto(examen, 'patron')"
                             >
                               <q-tooltip>Descargar Patrón</q-tooltip>
                             </q-btn>
@@ -8521,12 +8518,83 @@ function abrirDocumento(filename, folder = 'examenes') {
   window.open(`${baseUrl}/storage/${folder}/${filename}`, '_blank')
 }
 
-function getPrimerExamen(examen) {
-  // 1. Soporte para campos directos o anidados
-  if (examen.archivo_examen) return examen.archivo_examen
-  if (examen.generacion_manual?.archivo_examen) return examen.generacion_manual.archivo_examen
+const ESTADOS_DOCUMENTOS_DEVUELTOS_BANCO = new Set([
+  'devuelto',
+  'devueltos',
+  'revisado',
+  'revisados',
+  'subido',
+  'subidos',
+  'recibido',
+  'recibidos',
+])
 
-  // 2. Buscar en el ref de generacionesManuales (fallback frontend)
+function normalizarEstadoRolBanco(estado) {
+  return String(estado || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+function puedeMostrarDocumentosExamenDevuelto(examen) {
+  const estado = normalizarEstadoRolBanco(examen?.estado)
+  return (
+    ESTADOS_DOCUMENTOS_DEVUELTOS_BANCO.has(estado) &&
+    (Boolean(getPrimerExamen(examen)) || Boolean(getPrimerPatron(examen)))
+  )
+}
+
+async function abrirDocumentoDevuelto(examen, tipo = 'examen') {
+  try {
+    if (tipo === 'examen') {
+      const entry = getPrimerExamenEntry(examen)
+      const filename = entry?.archivo
+      if (!filename) return
+
+      if (entry?.path && examen?.id) {
+        const { data } = await api.get(
+          `/rol-examenes/${examen.id}/download-examen-url?file=${encodeURIComponent(filename)}`,
+        )
+        window.open(data.url, '_blank')
+        return
+      }
+
+      abrirDocumento(filename, 'examenes')
+      return
+    }
+
+    const entry = getPrimerPatronEntry(examen)
+    const filename = entry?.pdf || entry?.archivo
+    if (!filename) return
+
+    if (entry?.pdf_path && examen?.id) {
+      const { data } = await api.get(
+        `/rol-examenes/${examen.id}/download-patron-url?tipo=pdf&file=${encodeURIComponent(filename)}`,
+      )
+      window.open(data.url, '_blank')
+      return
+    }
+
+    abrirDocumento(filename, 'patrones')
+  } catch (error) {
+    console.error('Error al abrir documento devuelto:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo abrir el documento devuelto.',
+      caption: error.response?.data?.message || error.message,
+    })
+  }
+}
+
+function getPrimerExamenEntry(examen) {
+  if (!examen) return null
+
+  if (examen.archivo_examen) return { archivo: examen.archivo_examen }
+  if (examen.generacion_manual?.archivo_examen) {
+    return { archivo: examen.generacion_manual.archivo_examen }
+  }
+
   if (generacionesManuales.value?.length > 0) {
     const examenParcial = String(examen.tipo_examen || '')
       .trim()
@@ -8536,35 +8604,43 @@ function getPrimerExamen(examen) {
       const mParcial = String(m.parcial || '')
         .trim()
         .toUpperCase()
-      // Coincidencia exacta o mapeo 1P/1er Parcial
       const pMatch =
         mParcial === examenParcial ||
         (mParcial === '1ER PARCIAL' && examenParcial === '1P') ||
         (mParcial === '1P' && examenParcial === '1ER PARCIAL')
       return gMatch && pMatch
     })
-    if (manual?.archivo_examen) return manual.archivo_examen
+    if (manual?.archivo_examen) return { archivo: manual.archivo_examen }
   }
 
   const v = examen.variantes || examen.documento_examen_json
   if (!v) return null
 
   if (Array.isArray(v) && v.length > 0) {
-    return typeof v[0] === 'string' ? v[0] : v[0].archivo || null
+    const item = v[0]
+    return typeof item === 'string' ? { archivo: item } : item?.archivo ? item : null
   }
 
   if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-    return typeof v === 'string' ? v : v.archivo || null
+    return typeof v === 'string' ? { archivo: v } : v.archivo ? v : null
   }
+
   return null
 }
 
-function getPrimerPatron(examen) {
-  // 1. Soporte para campos directos o anidados (solo PDF solicitado)
-  let foundFile = examen.archivo_patron_pdf || examen.generacion_manual?.archivo_patron_pdf
+function getPrimerExamen(examen) {
+  return getPrimerExamenEntry(examen)?.archivo || null
+}
 
-  // 2. Buscar en el ref de generacionesManuales (fallback frontend)
-  if (!foundFile && generacionesManuales.value?.length > 0) {
+function getPrimerPatronEntry(examen) {
+  if (!examen) return null
+
+  if (examen.archivo_patron_pdf) return { pdf: examen.archivo_patron_pdf }
+  if (examen.generacion_manual?.archivo_patron_pdf) {
+    return { pdf: examen.generacion_manual.archivo_patron_pdf }
+  }
+
+  if (generacionesManuales.value?.length > 0) {
     const examenParcial = String(examen.tipo_examen || '')
       .trim()
       .toUpperCase()
@@ -8579,10 +8655,8 @@ function getPrimerPatron(examen) {
         (mParcial === '1P' && examenParcial === '1ER PARCIAL')
       return gMatch && pMatch
     })
-    if (manual?.archivo_patron_pdf) foundFile = manual.archivo_patron_pdf
+    if (manual?.archivo_patron_pdf) return { pdf: manual.archivo_patron_pdf }
   }
-
-  if (foundFile) return foundFile
 
   const json = examen.patrones || examen.patron_respuestas_json
   if (!json) return null
@@ -8590,9 +8664,9 @@ function getPrimerPatron(examen) {
   if (Array.isArray(json) && json.length > 0) {
     const item = json[0]
     if (typeof item === 'string') {
-      return item.toLowerCase().endsWith('.pdf') ? item : null
+      return item.toLowerCase().endsWith('.pdf') ? { pdf: item } : null
     }
-    return item.pdf || null // Preferir PDF
+    return item?.pdf ? item : null
   }
 
   if (typeof json === 'object' && json !== null && !Array.isArray(json)) {
@@ -8600,12 +8674,18 @@ function getPrimerPatron(examen) {
     if (keys.length > 0) {
       const p = json[keys[0]]
       if (typeof p === 'string') {
-        return p.toLowerCase().endsWith('.pdf') ? p : null
+        return p.toLowerCase().endsWith('.pdf') ? { pdf: p } : null
       }
-      return p?.pdf || null
+      return p?.pdf ? p : null
     }
   }
+
   return null
+}
+
+function getPrimerPatron(examen) {
+  const entry = getPrimerPatronEntry(examen)
+  return entry?.pdf || entry?.archivo || null
 }
 
 function getTipoLabelBanco(tipo, pregunta = null, gruposCabeceraMap = null) {

@@ -1868,7 +1868,8 @@ const puedeGestionarEvaluaciones = computed(() => {
 
 const puedeVerAcciones = computed(() => puedeGestionarEvaluaciones.value)
 const puedeVerDocumentos = computed(
-  () => puedeGestionarEvaluaciones.value || esAutoridadSoloLecturaEvaluaciones.value,
+  () =>
+    esSuperAdmin.value || esAdmin.value || esEvaluaciones.value || esResponsableEvaluaciones.value,
 )
 
 const puedeAdministrarRestauracionExamenes = computed(() => esAdmin.value || esSuperAdmin.value)
@@ -5581,22 +5582,29 @@ const MANUAL_ESTADOS_FLOW = [
   },
 ]
 
-const manualColumns = [
-  {
-    name: 'materia',
-    label: 'MATERIA / GRUPO',
-    align: 'left',
-    field: 'asignatura_nombre',
-    sortable: true,
-  },
-  { name: 'docente', label: 'DOCENTE', align: 'left', field: 'docente_nombre', sortable: true },
-  { name: 'parcial', label: 'PARCIAL', align: 'center', field: 'parcial', sortable: true },
-  { name: 'fecha', label: 'FECHA / HORA', align: 'left', sortable: true },
-  { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
-  { name: 'estado', label: 'ESTADO', align: 'center', field: 'estado', sortable: true },
-  { name: 'documentos', label: 'DOCUMENTOS', align: 'center' },
-  { name: 'datos_auditoria', label: 'AUDITORIA', align: 'left' },
-]
+const manualColumns = computed(() => {
+  const base = [
+    {
+      name: 'materia',
+      label: 'MATERIA / GRUPO',
+      align: 'left',
+      field: 'asignatura_nombre',
+      sortable: true,
+    },
+    { name: 'docente', label: 'DOCENTE', align: 'left', field: 'docente_nombre', sortable: true },
+    { name: 'parcial', label: 'PARCIAL', align: 'center', field: 'parcial', sortable: true },
+    { name: 'fecha', label: 'FECHA / HORA', align: 'left', sortable: true },
+    { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
+    { name: 'estado', label: 'ESTADO', align: 'center', field: 'estado', sortable: true },
+  ]
+
+  if (puedeVerDocumentos.value) {
+    base.push({ name: 'documentos', label: 'DOCUMENTOS', align: 'center' })
+  }
+
+  base.push({ name: 'datos_auditoria', label: 'AUDITORIA', align: 'left' })
+  return base
+})
 
 const getManualStats = (row) => {
   if (!row.patron_respuestas_json || row.patron_respuestas_json.length === 0) {
