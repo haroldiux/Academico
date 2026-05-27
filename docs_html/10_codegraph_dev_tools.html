@@ -1,66 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-
-// 1. Target Directories
-const docsDir = path.join(__dirname, 'docs');
-const outputDir = path.join(__dirname, 'docs_html');
-
-// Create output dir if it doesn't exist
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir, { recursive: true });
-}
-
-// 2. Navigation items
-const navItems = [
-  { file: 'README.html', label: 'Portal Principal', source: 'README.md' },
-  { file: '01_autenticacion_seguridad.html', label: '01. Autenticacion y Seguridad', source: 'docs/01_autenticacion_seguridad.md' },
-  { file: '02_estructura_academica.html', label: '02. Estructura Academica', source: 'docs/02_estructura_academica.md' },
-  { file: '03_pac_y_bibliografia.html', label: '03. PAC y Bibliografia', source: 'docs/03_pac_y_bibliografia.md' },
-  { file: '04_materias_comunes.html', label: '04. Materias Comunes', source: 'docs/04_materias_comunes.md' },
-  { file: '05_planificacion_semestral.html', label: '05. Planificacion Semestral', source: 'docs/05_planificacion_semestral.md' },
-  { file: '06_control_clase_seguimiento.html', label: '06. Control y Seguimiento', source: 'docs/06_control_clase_seguimiento.md' },
-  { file: '07_banco_preguntas_evaluaciones.html', label: '07. Banco y Evaluaciones', source: 'docs/07_banco_preguntas_evaluaciones.md' },
-  { file: '08_gestion_evaluaciones_y_examenes.html', label: '08. Gestion de Evaluaciones', source: 'docs/08_gestion_evaluaciones_y_examenes.md' },
-  { file: '09_sincronizacion_y_patrones.html', label: '09. Sincronizacion y Motores', source: 'docs/09_sincronizacion_y_patrones.md' },
-  { file: '10_codegraph_dev_tools.html', label: '10. CodeGraph - Herramientas Dev', source: 'docs/10_codegraph_dev_tools.md' },
-  { file: 'diagrama_er_completo.html', label: 'Diagrama ER Completo', source: 'docs/diagrama_er_completo.md' },
-  { file: 'endpoints.html', label: 'Endpoints de la API', source: 'docs/endpoints.md' }
-];
-
-console.log('Iniciando compilación de documentación HTML local...');
-
-// Let's generate each HTML file
-navItems.forEach(item => {
-  const sourcePath = item.source === 'README.md' 
-    ? path.join(__dirname, 'README.md') 
-    : path.join(__dirname, item.source);
-    
-  if (!fs.existsSync(sourcePath)) {
-    console.warn(`[WARN] Archivo origen no encontrado: ${sourcePath}`);
-    return;
-  }
-  
-  const markdown = fs.readFileSync(sourcePath, 'utf8');
-  
-  // Build sidebar HTML
-  const sidebarHtml = navItems.map(nav => {
-    const isActive = nav.file === item.file;
-    const activeClass = isActive 
-      ? 'bg-indigo-950/70 text-indigo-300 border-l-4 border-indigo-500 pl-3 font-semibold shadow-inner' 
-      : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4';
-      
-    return `<a href="${nav.file}" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm ${activeClass}">
-      ${nav.label}
-    </a>`;
-  }).join('\n');
-  
-  // HTML Template
-  const htmlTemplate = `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SISA - ${item.label.substring(3)}</title>
+  <title>SISA -  CodeGraph - Herramientas Dev</title>
   <!-- Tailwind CSS Play CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Marked.js for markdown rendering -->
@@ -129,7 +72,45 @@ navItems.forEach(item => {
     
     <!-- Sidebar Navigation -->
     <nav class="flex-1 overflow-y-auto p-4 space-y-1">
-      ${sidebarHtml}
+      <a href="README.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      Portal Principal
+    </a>
+<a href="01_autenticacion_seguridad.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      01. Autenticacion y Seguridad
+    </a>
+<a href="02_estructura_academica.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      02. Estructura Academica
+    </a>
+<a href="03_pac_y_bibliografia.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      03. PAC y Bibliografia
+    </a>
+<a href="04_materias_comunes.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      04. Materias Comunes
+    </a>
+<a href="05_planificacion_semestral.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      05. Planificacion Semestral
+    </a>
+<a href="06_control_clase_seguimiento.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      06. Control y Seguimiento
+    </a>
+<a href="07_banco_preguntas_evaluaciones.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      07. Banco y Evaluaciones
+    </a>
+<a href="08_gestion_evaluaciones_y_examenes.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      08. Gestion de Evaluaciones
+    </a>
+<a href="09_sincronizacion_y_patrones.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      09. Sincronizacion y Motores
+    </a>
+<a href="10_codegraph_dev_tools.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm bg-indigo-950/70 text-indigo-300 border-l-4 border-indigo-500 pl-3 font-semibold shadow-inner">
+      10. CodeGraph - Herramientas Dev
+    </a>
+<a href="diagrama_er_completo.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      Diagrama ER Completo
+    </a>
+<a href="endpoints.html" class="flex items-center py-2.5 px-3 rounded-md transition duration-200 text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 pl-4">
+      Endpoints de la API
+    </a>
     </nav>
     
     <div class="p-4 border-t border-slate-800 text-center text-xs text-slate-500 bg-slate-950/40">
@@ -147,7 +128,127 @@ navItems.forEach(item => {
   </main>
 
   <!-- Raw Markdown Content Injected Safely -->
-  <script type="text/markdown" id="markdown-content">${markdown.replace(/<\/script>/g, '<\\/script>')}</script>
+  <script type="text/markdown" id="markdown-content"># 10. CodeGraph — Herramientas de Desarrollo Inteligentes
+
+> Última actualización: 2026-05-26
+
+---
+
+## 10.1 ¿Qué es CodeGraph?
+
+**CodeGraph** es un grafo de conocimiento del código fuente generado mediante **tree-sitter**, que indexa cada símbolo, arista y archivo del proyecto. Proporciona consultas sub-milisegundo sobre la estructura del código — algo que `grep` no puede hacer.
+
+El proyecto SISA tiene CodeGraph completamente inicializado (`.codegraph/`) y configurado como servidor MCP en `opencode.jsonc`, permitiendo a los asistentes de IA (como OpenCode) navegar y entender el código con precisión estructural.
+
+## 10.2 Stack de Herramientas Dev
+
+| Herramienta | Propósito | Ubicación |
+|---|---|---|
+| **CodeGraph** | Grafo de conocimiento AST del código | `.codegraph/` (raíz del proyecto) |
+| **OpenCode** | Asistente de IA para desarrollo | Configurado en `opencode.jsonc` |
+| **ESLint** | Linting de código frontend | `Academico/eslint.config.js` |
+| **Prettier** | Formateo de código | `Academico/.prettierrc` |
+| **Vitest** | Pruebas unitarias frontend | `Academico/tests/unit/` |
+| **Playwright** | Pruebas E2E y API | `Academico/tests/e2e/`, `Academico/tests/api/` |
+| **PHPUnit** | Pruebas backend | `back-2file/tests/` |
+
+## 10.3 Herramientas de CodeGraph Disponibles
+
+CodeGraph expone las siguientes herramientas MCP que pueden ser invocadas por asistentes de IA:
+
+| Herramienta | Propósito | Ejemplo de uso |
+|---|---|---|
+| `codegraph_search` | Buscar símbolos por nombre | "¿Dónde está definido `MateriasComunesSyncService`?" |
+| `codegraph_callers` | Ver quién llama a una función | "¿Qué llama a `syncUnidad()`?" |
+| `codegraph_callees` | Ver qué llama una función | "¿Qué métodos invoca `mergeAndSyncOnLink`?" |
+| `codegraph_trace` | Trazar ruta entre dos símbolos | "¿Cómo llega `guardarSeguimiento` a `propagarSeguimientoAComunes`?" |
+| `codegraph_impact` | Analizar impacto de un cambio | "¿Qué rompería si modifico `comun_token`?" |
+| `codegraph_node` | Ver detalle de un símbolo | Firma, docstring, ubicación de una función |
+| `codegraph_context` | Contexto completo para una tarea | "¿Cómo funciona el módulo de materias comunes?" |
+| `codegraph_explore` | Ver fuente de varios símbolos | Código agrupado por archivo de múltiples símbolos |
+| `codegraph_files` | Explorar estructura de archivos | "¿Qué archivos hay en `src/pages/admin/`?" |
+| `codegraph_status` | Estado del índice | Archivos pendientes de sincronizar |
+
+## 10.4 Reglas de Uso para Desarrollo con IA
+
+### Cuándo usar CodeGraph vs búsqueda tradicional
+
+| Tipo de pregunta | Usar |
+|---|---|
+| "¿Dónde se define X?" / "Buscar símbolo X" | `codegraph_search` |
+| "¿Qué función llama a Y?" | `codegraph_callers` |
+| "¿Qué llama Y?" | `codegraph_callees` |
+| "¿Cómo llega X a Y?" / "Trazar flujo de X a Y" | `codegraph_trace` (una sola llamada = ruta completa) |
+| "¿Qué rompería si cambio Z?" | `codegraph_impact` |
+| "Muéstrame firma/fuente de Y" | `codegraph_node` |
+| "Dame contexto para tarea/área" | `codegraph_context` |
+| "Ver fuente de varios símbolos" | `codegraph_explore` |
+| "¿Qué archivos hay en ruta/?" | `codegraph_files` |
+| Búsqueda literal de texto (strings, comentarios, logs) | `grep` / búsqueda nativa |
+
+### Mejores prácticas
+
+1. **Responder directo — no delegar exploración.** Para preguntas de arquitectura, usar `codegraph_context` primero, luego UN solo `codegraph_explore`. Para flujos específicos, iniciar con `codegraph_trace` desde→hasta.
+
+2. **Confiar en resultados de CodeGraph.** Provienen de un parseo AST completo. NO re-verificar con grep — es más lento, menos preciso y consume más contexto.
+
+3. **No hacer grep primero** al buscar símbolos por nombre. `codegraph_search` es más rápido.
+
+4. **No encadenar `codegraph_search` + `codegraph_node`** cuando solo necesitas contexto — `codegraph_context` lo hace en una llamada.
+
+5. **No iterar `codegraph_node` sobre muchos símbolos** — un solo `codegraph_explore` devuelve la fuente de varios símbolos agrupada.
+
+6. **Verificar el banner de staleness.** Si la respuesta de codegraph comienza con "[!WARNING] Some files referenced below were edited since the last index sync...", esos archivos estan pendientes de re-indexacion. Leer esos archivos especificos. `codegraph_status` tambien lista archivos pendientes.
+
+## 10.5 Inicialización y Mantenimiento
+
+El índice de CodeGraph se encuentra en `.codegraph/` en la raíz del proyecto. Si alguna vez necesitas reconstruirlo:
+
+```bash
+codegraph init -i
+```
+
+Esto re-indexa todos los archivos del proyecto usando tree-sitter, creando el grafo de conocimiento completo.
+
+### Estado actual del índice
+
+El proyecto SISA cuenta con **568 archivos indexados** en CodeGraph, cubriendo tanto el frontend (Vue/Quasar) como el backend (Laravel/PHP), incluyendo todos los controladores, modelos, servicios, stores, páginas y componentes.
+
+---
+
+## 10.6 Scripts de Documentación
+
+El proyecto incluye scripts de generación de documentación HTML:
+
+```bash
+# Desde Academico/
+node generate_local_docs.cjs
+
+# Desde back-2file/
+node generate_local_docs.cjs
+```
+
+Estos scripts convierten todos los archivos `.md` de la carpeta `docs/` en páginas HTML interactivas con:
+- Sidebar de navegación
+- Renderizado Markdown con Marked.js
+- Diagramas Mermaid
+- Estilos Tailwind CSS dark theme
+- Diseño responsive con menú móvil
+
+---
+
+## 10.7 Convenciones del Proyecto
+
+| Convención | Descripción |
+|---|---|
+| `comun_token` | UUID para agrupar materias comunes |
+| Anti-recursión | `static bool $isSyncing` en `MateriasComunesSyncService` |
+| Matching de temas | Siempre por `unidad.numero + tema.orden` |
+| Composición API | Vue 3 `<script setup>` en todo el frontend |
+| Stores | Pinia con `pinia-plugin-persistedstate` |
+| Rutas API | Prefijo `/api`, protegidas con `auth:sanctum` |
+| Offline-First | Capacitor Filesystem + Network para modo sin conexión |
+</script>
 
   <script>
     // 1. Mobile Menu Toggle Logic
@@ -172,14 +273,14 @@ navItems.forEach(item => {
     
     // Rewrite Markdown links (.md -> .html)
     // Links in docs folder are like 'docs/01_...' or '../docs/01_...' or '01_...'
-    parsedHtml = parsedHtml.replace(/href="([^"]+)\\.md(#.*)?"/g, (match, path, hash) => {
+    parsedHtml = parsedHtml.replace(/href="([^"]+)\.md(#.*)?"/g, (match, path, hash) => {
       const basename = path.split('/').pop();
       const newPath = basename + '.html' + (hash || '');
-      return \`href="\${newPath}"\`;
+      return `href="${newPath}"`;
     });
     
     // Also rewrite README.md links to README.html
-    parsedHtml = parsedHtml.replace(/href="README\\.md"/g, 'href="README.html"');
+    parsedHtml = parsedHtml.replace(/href="README\.md"/g, 'href="README.html"');
     
     const contentEl = document.getElementById('content');
     contentEl.innerHTML = parsedHtml;
@@ -231,18 +332,18 @@ navItems.forEach(item => {
       };
       
       for (const [key, val] of Object.entries(alerts)) {
-        const pattern = new RegExp(\`\\\\[!\\\${key}\\\\]\`, 'g');
+        const pattern = new RegExp(`\\[!\${key}\\]`, 'g');
         if (pattern.test(html)) {
-          let cleaned = html.replace(pattern, '').replace(/^\\s*<br\\s*\\/?>\\s*/i, '');
+          let cleaned = html.replace(pattern, '').replace(/^\s*<br\s*\/?>\s*/i, '');
           const container = document.createElement('div');
-          container.className = \`my-6 p-4 rounded-r-lg border-l-4 \${val.bg}\`;
-          container.innerHTML = \`
-            <div class="flex items-center gap-2 font-bold mb-2 \${val.titleColor}">
-              \${val.icon}
-              <span>\${val.title}</span>
+          container.className = `my-6 p-4 rounded-r-lg border-l-4 ${val.bg}`;
+          container.innerHTML = `
+            <div class="flex items-center gap-2 font-bold mb-2 ${val.titleColor}">
+              ${val.icon}
+              <span>${val.title}</span>
             </div>
-            <div class="alert-content text-slate-300 font-normal">\${cleaned}</div>
-          \`;
+            <div class="alert-content text-slate-300 font-normal">${cleaned}</div>
+          `;
           bq.replaceWith(container);
           break;
         }
@@ -263,11 +364,4 @@ navItems.forEach(item => {
     });
   </script>
 </body>
-</html>`;
-
-  const outputPath = path.join(outputDir, item.file);
-  fs.writeFileSync(outputPath, htmlTemplate, 'utf8');
-  console.log(`Compilado con éxito: ${item.file}`);
-});
-
-console.log('Compilación completada exitosamente.');
+</html>

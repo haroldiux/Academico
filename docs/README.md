@@ -12,11 +12,20 @@ Esta documentación ha sido elaborada bajo estándares rigurosos de arquitectura
 
 El ecosistema de SISA 2.0 está construido sobre las siguientes versiones de frameworks y entornos de ejecución validadas en producción:
 
+<<<<<<< HEAD
+*   **Backend API:** **Laravel v12.x** corriendo bajo **PHP v8.2+** (tipado estricto y optimización de memoria).
+*   **Base de Datos:** **MySQL v8.0** con almacenamiento estructurado y columnas dinámicas JSON.
+*   **Frontend SPA / Mobile:** **Quasar Framework v2.x** powered by **Vue 3** (`<script setup>` + Composition API) y empaquetador ultrarrápido **Vite**.
+*   **Gestor de Estado:** **Pinia Stores** con persistencia local en disco físico.
+*   **Capa Híbrida Nativa:** **Capacitor v6.x** para acceso a hardware nativo (cámara, sistema de archivos nativo, sensores de georreferenciación y conectividad).
+*   **Herramientas Dev:** **CodeGraph** (grafo de conocimiento AST), **OpenCode** (asistente IA), **ESLint + Prettier**, **Vitest + Playwright** (testing), **PHPUnit** (backend).
+=======
 - **Backend API:** **Laravel v12.x** corriendo bajo **PHP v8.2+** (tipado estricto y optimización de memoria).
 - **Base de Datos:** **MySQL v8.0** con almacenamiento estructurado y columnas dinámicas JSON.
 - **Frontend SPA / Mobile:** **Quasar Framework v2.x** powered by **Vue 3** (`<script setup>` + Composition API) y empaquetador ultrarrápido **Vite**.
 - **Gestor de Estado:** **Pinia Stores** con persistencia local en disco físico.
 - **Capa Híbrida Nativa:** **Capacitor v6.x** para acceso a hardware nativo (cámara, sistema de archivos nativo, sensores de georreferenciación y conectividad).
+>>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
 
 ---
 
@@ -59,6 +68,20 @@ flowchart TB
 
 La documentación se ha estructurado en archivos Markdown independientes por módulo funcional para facilitar su lectura y mantenimiento evolutivo. Puede hacer clic en cada módulo para acceder a su ficha técnica, especificaciones de endpoints, diagramas ERD Mermaid y flujos de trabajo detallados:
 
+<<<<<<< HEAD
+| Archivo de Documentación | Módulo Funcional | Enfoque Tecnológico Clave |
+|---|---|---|
+| **[01. Autenticacion, Seguridad y Perfil](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/01_autenticacion_seguridad.md)** | Control de acceso, perfiles multi-rol y auditoria. | Laravel Sanctum, Router Guards, interceptores Axios, token cache offline. |
+| **[02. Estructura Academica](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/02_estructura_academica.md)** | Sedes, carreras, campus y mallas curriculares. | Selectores dinamicos en cascada, control jerarquico de sedes y aulas. |
+| **[03. PAC y Bibliografia](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/03_pac_y_bibliografia.md)** | Programa Analitico Curricular, Unidades, Temas y Libros. | Importacion estructurada Word/Excel, validacion de contenidos minimos. |
+| **[04. Materias Comunes](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/04_materias_comunes.md)** | Merge Inteligente de Carpetas Equivalentes. | Algoritmo de scoring, replicacion no destructiva, flags anti-recursion. |
+| **[05. Planificacion Semestral](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/05_planificacion_semestral.md)** | Cronogramas, sesiones y dosificacion de contenidos. | Grid semanal interactivo, auto-salvado debounced, copia de cronogramas. |
+| **[06. Control de Clase y Seguimiento](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/06_control_clase_seguimiento.md)** | Registro de avance offline, firmas y evidencias. | Capacitor Network, Capacitor Filesystem, Blobs/FormData, geocercas. |
+| **[07. Banco de Preguntas y Evaluaciones](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/07_banco_preguntas_evaluaciones.md)** | Gestion de reactivos y generador aleatorio de examenes. | Balanceador de dificultades, de-duplicacion SHA, bloqueo de 3h contra filtraciones. |
+| **[08. Gestion de Evaluaciones y Rol de Examenes](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/08_gestion_evaluaciones_y_examenes.md)** | Directivas de examenes y calendario del Rol de Examenes con validaciones. | Formulario jerarquico, validacion balanceada de dificultades, colision de semestres. |
+| **[09. Sincronizacion y Motores de Comparacion](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/09_sincronizacion_y_patrones.md)** | Sincronizacion centralizada, comparadores y bancos sin logros. | Snapshots pre/post sync, resolver conflictos local vs API, verificador lexical PDF, restauracion granular. |
+| **[10. CodeGraph - Herramientas de Desarrollo](10_codegraph_dev_tools.md)** | Grafo de conocimiento AST para navegacion inteligente del codigo. | Busqueda estructural sub-milisegundo, trazado de flujos, analisis de impacto, indexacion tree-sitter. |
+=======
 | Archivo de Documentación                                                                                                                                             | Módulo Funcional                                                          | Enfoque Tecnológico Clave                                                                                  |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | **[01. Autenticación, Seguridad y Perfil](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/01_autenticacion_seguridad.md)**                 | Control de acceso, perfiles multi-rol y auditoría.                        | Laravel Sanctum, Router Guards, interceptores Axios, token caché offline.                                  |
@@ -70,6 +93,7 @@ La documentación se ha estructurado en archivos Markdown independientes por mó
 | **[07. Banco de Preguntas y Evaluaciones](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/07_banco_preguntas_evaluaciones.md)**            | Gestión de reactivos y generador aleatorio de exámenes.                   | Balanceador de dificultades, de-duplicación SHA, bloqueo de 3h contra filtraciones.                        |
 | **[08. Gestión de Evaluaciones y Rol de Exámenes](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/08_gestion_evaluaciones_y_examenes.md)** | Directivas de exámenes y calendario del Rol de Exámenes con validaciones. | Formulario jerárquico, validación balanceada de dificultades, colisión de semestres.                       |
 | **[09. Sincronización y Motores de Comparación](file:///c:/PROYECTOS/SISTEMA%20ACADEMICO/back-2file/documentacion_tecnica/09_sincronizacion_y_patrones.md)**         | Sincronización centralizada, comparadores y bancos sin logros.            | Snapshots pre/post sync, resolver conflictos local vs API, verificador lexical PDF, restauración granular. |
+>>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
 
 ### Anexos Técnicos de Referencia:
 
