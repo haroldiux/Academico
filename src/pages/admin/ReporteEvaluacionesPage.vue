@@ -358,6 +358,160 @@
         </template>
       </q-table>
     </q-card>
+
+    <q-card flat bordered class="q-mt-md">
+      <q-card-section class="row items-center justify-between">
+        <div>
+          <div class="section-title">Banco por asignatura y grupo</div>
+          <div class="section-subtitle">
+            Preguntas por parcial, fechas de examenes y docentes por sede/carrera.
+          </div>
+        </div>
+        <div class="row q-gutter-sm">
+          <q-input
+            v-model="busquedaCoberturaBanco"
+            dense
+            outlined
+            clearable
+            placeholder="Buscar sede, carrera, materia, grupo o docente"
+            style="width: min(420px, 100%)"
+          >
+            <template #prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+          <q-btn
+            flat
+            round
+            dense
+            color="grey-7"
+            icon="refresh"
+            :loading="loadingCoberturaBanco"
+            @click="cargarCoberturaBanco"
+          >
+            <q-tooltip>Actualizar cobertura de banco</q-tooltip>
+          </q-btn>
+          <q-btn
+            unelevated
+            color="teal"
+            icon="print"
+            label="Imprimir cobertura"
+            no-caps
+            :disable="!hayCoberturaExportable || loadingCoberturaBanco"
+            @click="exportarCoberturaBancoPdf"
+          />
+        </div>
+      </q-card-section>
+
+      <q-separator />
+
+      <q-card-section class="row q-col-gutter-md">
+        <div class="col-12 col-md-4">
+          <div class="coverage-total-card">
+            <div>
+              <div class="metric-label">Materias</div>
+              <div class="metric-value">{{ coberturaResumen.total_materias || 0 }}</div>
+            </div>
+            <q-icon name="menu_book" color="primary" size="28px" />
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="coverage-total-card">
+            <div>
+              <div class="metric-label">Materia-grupos</div>
+              <div class="metric-value">{{ coberturaResumen.total_grupos || 0 }}</div>
+            </div>
+            <q-icon name="groups" color="teal" size="28px" />
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="coverage-total-card">
+            <div>
+              <div class="metric-label">Preguntas registradas</div>
+              <div class="metric-value">{{ coberturaResumen.total_preguntas || 0 }}</div>
+            </div>
+            <q-icon name="quiz" color="deep-purple" size="28px" />
+          </div>
+        </div>
+      </q-card-section>
+
+      <q-table
+        flat
+        dense
+        :rows="coberturaBancoFiltrado"
+        :columns="coberturaBancoColumns"
+        row-key="row_key"
+        :loading="loadingCoberturaBanco"
+        :rows-per-page-options="[10, 25, 50, 100]"
+        no-data-label="No hay asignaturas con grupos para los filtros seleccionados."
+      >
+        <template #body-cell-materia="props">
+          <q-td :props="props">
+            <div class="text-weight-bold">{{ props.row.codigo }} - {{ props.row.asignatura }}</div>
+            <div class="text-caption text-grey-7">
+              {{ props.row.sede }} / {{ props.row.carrera }}
+              <span v-if="props.row.semestre"> / Sem. {{ props.row.semestre }}</span>
+            </div>
+          </q-td>
+        </template>
+
+        <template #body-cell-docente="props">
+          <q-td :props="props">
+            <div class="text-weight-medium">{{ props.row.docente }}</div>
+            <div class="text-caption text-grey-7">Grupo {{ props.row.grupo }}</div>
+          </q-td>
+        </template>
+
+        <template
+          v-for="parcial in coberturaParcialKeys"
+          :key="parcial"
+          #[`body-cell-${parcial}`]="props"
+        >
+          <q-td :props="props">
+            <div class="coverage-partial-cell">
+              <q-chip
+                dense
+                size="sm"
+                :color="
+                  getCoberturaParcial(props.row, parcial).preguntas > 0 ? 'green-1' : 'grey-2'
+                "
+                :text-color="
+                  getCoberturaParcial(props.row, parcial).preguntas > 0 ? 'green-9' : 'grey-8'
+                "
+                class="text-weight-bold"
+              >
+                {{ getCoberturaParcial(props.row, parcial).preguntas || 0 }} preg.
+              </q-chip>
+              <div class="text-caption text-grey-7 q-mt-xs">
+                {{ getCoberturaParcial(props.row, parcial).fecha || 'Sin fecha' }}
+              </div>
+              <div
+                v-if="getCoberturaParcial(props.row, parcial).estado_label"
+                class="text-caption text-blue-grey-7"
+              >
+                {{ getCoberturaParcial(props.row, parcial).estado_label }}
+              </div>
+            </div>
+          </q-td>
+        </template>
+      </q-table>
+
+      <q-separator />
+
+      <q-card-section>
+        <div class="section-title q-mb-sm">Resumen por parcial</div>
+        <q-table
+          flat
+          dense
+          :rows="coberturaResumenParciales"
+          :columns="coberturaResumenColumns"
+          row-key="key"
+          :rows-per-page-options="[4]"
+          hide-pagination
+          no-data-label="Sin resumen de cobertura."
+        />
+      </q-card-section>
+    </q-card>
   </q-page>
 </template>
 
@@ -391,8 +545,11 @@ const filtros = reactive({
 })
 
 const reporte = ref(null)
+const coberturaBanco = ref(null)
 const loadingReporte = ref(false)
+const loadingCoberturaBanco = ref(false)
 const busqueda = ref('')
+const busquedaCoberturaBanco = ref('')
 
 const alcanceOptionsBase = [
   { label: 'Nacional', value: 'nacional' },
@@ -544,6 +701,38 @@ const detalleRows = computed(() =>
     row_key: `${row.origen}-${row.id}-${index}`,
   })),
 )
+const coberturaResumen = computed(() => coberturaBanco.value?.resumen || {})
+const coberturaResumenParciales = computed(() => coberturaResumen.value?.parciales || [])
+const coberturaParcialKeys = ['primer', 'segundo', 'final', 'instancia']
+const coberturaBancoRows = computed(() =>
+  (coberturaBanco.value?.detalle || []).map((row, index) => ({
+    ...row,
+    row_key: `${row.sede_id}-${row.carrera_id}-${row.asignatura_id}-${row.grupo_id}-${index}`,
+  })),
+)
+const coberturaBancoFiltrado = computed(() => {
+  const term = normalizarBusqueda(busquedaCoberturaBanco.value)
+  if (!term) return coberturaBancoRows.value
+
+  return coberturaBancoRows.value.filter((row) =>
+    [
+      row.sede,
+      row.carrera,
+      row.codigo,
+      row.asignatura,
+      row.semestre,
+      row.grupo,
+      row.docente,
+      row.total_preguntas,
+    ]
+      .join(' ')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .includes(term),
+  )
+})
+const hayCoberturaExportable = computed(() => coberturaBancoRows.value.length > 0)
 const hayReporteExportable = computed(() => {
   if (!reporte.value) return false
 
@@ -618,14 +807,7 @@ const maxEstadoTotal = computed(() =>
 )
 
 const detalleFiltrado = computed(() => {
-  const term = busqueda.value
-    ? busqueda.value
-        .toString()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .trim()
-    : ''
+  const term = normalizarBusqueda(busqueda.value)
 
   if (!term) return detalleRows.value
 
@@ -683,6 +865,55 @@ const detalleColumns = [
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
 ]
 
+const coberturaBancoColumns = [
+  {
+    name: 'materia',
+    label: 'Asignatura / Grupo',
+    field: (row) => [row.codigo, row.asignatura, row.grupo].filter(Boolean).join(' '),
+    align: 'left',
+    sortable: true,
+  },
+  { name: 'docente', label: 'Docente', field: 'docente', align: 'left', sortable: true },
+  { name: 'primer', label: '1er Parcial', align: 'center' },
+  { name: 'segundo', label: '2do Parcial', align: 'center' },
+  { name: 'final', label: 'Final', align: 'center' },
+  { name: 'instancia', label: 'Instancia', align: 'center' },
+]
+
+const coberturaResumenColumns = [
+  { name: 'label', label: 'Parcial', field: 'label', align: 'left', sortable: true },
+  { name: 'materias', label: 'Materias', field: 'materias', align: 'center', sortable: true },
+  {
+    name: 'materias_porcentaje',
+    label: '% materias',
+    field: 'materias_porcentaje',
+    align: 'center',
+    format: (value) => `${Number(value || 0)}%`,
+    sortable: true,
+  },
+  { name: 'grupos', label: 'Grupos', field: 'grupos', align: 'center', sortable: true },
+  {
+    name: 'grupos_porcentaje',
+    label: '% grupos',
+    field: 'grupos_porcentaje',
+    align: 'center',
+    format: (value) => `${Number(value || 0)}%`,
+    sortable: true,
+  },
+  { name: 'preguntas', label: 'Preguntas', field: 'preguntas', align: 'center', sortable: true },
+]
+
+function normalizarBusqueda(value) {
+  return value
+    ? value
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+    : ''
+}
+
 function onCambiarAlcance(value) {
   if (value === 'nacional') {
     filtros.sede_id = null
@@ -735,6 +966,19 @@ function buildParams() {
   }
 }
 
+function buildCoberturaBancoParams() {
+  return {
+    gestion: filtros.gestion || undefined,
+    sede_id: filtros.alcance !== 'nacional' ? filtros.sede_id || undefined : undefined,
+    carrera_id:
+      filtros.alcance === 'carrera' || puedeFiltrarCarreraDeSede.value
+        ? filtros.carrera_id || undefined
+        : undefined,
+    fecha_inicio: filtros.fecha_inicio || undefined,
+    fecha_fin: filtros.fecha_fin || undefined,
+  }
+}
+
 function aplicarAlcanceUsuario() {
   if (esAlcanceCarrera.value) {
     filtros.alcance = 'carrera'
@@ -766,6 +1010,7 @@ async function cargarReporte() {
   try {
     const { data } = await api.get('/reportes/evaluaciones', { params: buildParams() })
     reporte.value = data
+    await cargarCoberturaBanco()
   } catch (error) {
     console.error('Error cargando reporte de evaluaciones:', error)
     $q.notify({
@@ -776,6 +1021,58 @@ async function cargarReporte() {
   } finally {
     loadingReporte.value = false
   }
+}
+
+async function cargarCoberturaBanco() {
+  if (filtros.alcance === 'sede' && !filtros.sede_id) {
+    $q.notify({ type: 'warning', message: 'Selecciona una sede para generar la cobertura.' })
+    return
+  }
+
+  if (filtros.alcance === 'carrera' && (!filtros.sede_id || !filtros.carrera_id)) {
+    $q.notify({
+      type: 'warning',
+      message: 'Selecciona sede y carrera para generar la cobertura.',
+    })
+    return
+  }
+
+  loadingCoberturaBanco.value = true
+  try {
+    const { data } = await api.get('/reportes/evaluaciones/cobertura-banco', {
+      params: buildCoberturaBancoParams(),
+    })
+    coberturaBanco.value = data
+  } catch (error) {
+    console.error('Error cargando cobertura de banco:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo generar la cobertura de banco.',
+      caption: error.response?.data?.message || error.message,
+    })
+  } finally {
+    loadingCoberturaBanco.value = false
+  }
+}
+
+function getCoberturaParcial(row, parcial) {
+  return (
+    row?.parciales?.[parcial] || {
+      label: parcial,
+      preguntas: 0,
+      fecha: null,
+      hora: null,
+      estado_label: null,
+    }
+  )
+}
+
+function formatCoberturaParcialPdf(row, parcial) {
+  const item = getCoberturaParcial(row, parcial)
+  const fecha = item.fecha || 'Sin fecha'
+  const hora = item.hora ? ` ${item.hora}` : ''
+  const estado = item.estado_label ? `\n${item.estado_label}` : ''
+  return `${Number(item.preguntas || 0)} preg.\n${fecha}${hora}${estado}`
 }
 
 function pdfValue(value) {
@@ -1026,6 +1323,142 @@ function exportarPdf() {
   doc.save(`reporte_evaluaciones_${fileDate}.pdf`)
 }
 
+function exportarCoberturaBancoPdf() {
+  if (!hayCoberturaExportable.value) {
+    $q.notify({ type: 'warning', message: 'Genera la cobertura con datos antes de imprimir.' })
+    return
+  }
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [215.9, 330.2] })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const generatedAt = date.formatDate(new Date(), 'DD/MM/YYYY HH:mm')
+  const sede =
+    filtros.alcance === 'nacional' ? 'Todas las sedes' : alcanceLabel.value.split(' / ')[0] || '-'
+  const carrera =
+    filtros.carrera_id && alcanceLabel.value.includes(' / ')
+      ? alcanceLabel.value.split(' / ')[1] || '-'
+      : 'Todas las carreras'
+  const rows = coberturaBancoRows.value
+
+  const drawFooter = () => {
+    doc.setFontSize(7)
+    doc.setTextColor(100)
+    doc.text(`Pagina ${doc.internal.getNumberOfPages()}`, pageWidth - 14, pageHeight - 7, {
+      align: 'right',
+    })
+    doc.text(`Fecha de impresion: ${generatedAt}`, 14, pageHeight - 7)
+  }
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(13)
+  doc.text('COBERTURA DE BANCO POR ASIGNATURA Y GRUPO', 14, 14)
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Fecha de impresion: ${generatedAt}`, pageWidth - 14, 14, { align: 'right' })
+
+  autoTable(doc, {
+    startY: 20,
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 1.5 },
+    body: [
+      ['Gestion', filtros.gestion || '-', 'Alcance', alcanceLabel.value],
+      ['Sede', sede, 'Carrera', carrera],
+      ['Rango de fechas', rangoLabel.value || 'Sin rango de fechas', 'Registros', rows.length],
+      [
+        'Totales',
+        `${coberturaResumen.value.total_materias || 0} materias / ${
+          coberturaResumen.value.total_grupos || 0
+        } grupos`,
+        'Preguntas',
+        coberturaResumen.value.total_preguntas || 0,
+      ],
+    ],
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 28 },
+      1: { cellWidth: 115 },
+      2: { fontStyle: 'bold', cellWidth: 32 },
+      3: { cellWidth: 70 },
+    },
+  })
+
+  autoTable(doc, {
+    startY: (doc.lastAutoTable?.finalY || 24) + 5,
+    head: [['Sede', 'Carrera', 'Asignatura', 'Grupo', 'Docente', '1er', '2do', 'Final', 'Inst.']],
+    body: rows.map((row) => [
+      pdfValue(row.sede),
+      pdfValue(row.carrera),
+      pdfValue([row.codigo, row.asignatura].filter(Boolean).join(' - ')),
+      pdfValue(row.grupo),
+      pdfValue(row.docente),
+      formatCoberturaParcialPdf(row, 'primer'),
+      formatCoberturaParcialPdf(row, 'segundo'),
+      formatCoberturaParcialPdf(row, 'final'),
+      formatCoberturaParcialPdf(row, 'instancia'),
+    ]),
+    theme: 'striped',
+    headStyles: { fillColor: [15, 118, 110], textColor: 255, fontSize: 6.8 },
+    styles: { fontSize: 6.2, cellPadding: 1.2, overflow: 'linebreak', valign: 'top' },
+    columnStyles: {
+      0: { cellWidth: 23 },
+      1: { cellWidth: 38 },
+      2: { cellWidth: 54 },
+      3: { cellWidth: 12, halign: 'center' },
+      4: { cellWidth: 42 },
+      5: { cellWidth: 26, halign: 'center' },
+      6: { cellWidth: 26, halign: 'center' },
+      7: { cellWidth: 26, halign: 'center' },
+      8: { cellWidth: 26, halign: 'center' },
+    },
+    didDrawPage: drawFooter,
+  })
+
+  let resumenStartY = (doc.lastAutoTable?.finalY || 20) + 8
+  if (resumenStartY > pageHeight - 45) {
+    doc.addPage()
+    resumenStartY = 16
+  }
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.setTextColor(15, 23, 42)
+  doc.text('Resumen final de cobertura', 14, resumenStartY)
+
+  autoTable(doc, {
+    startY: resumenStartY + 4,
+    head: [['Parcial', 'Materias', '% materias', 'Grupos', '% grupos', 'Preguntas']],
+    body: coberturaResumenParciales.value.map((row) => [
+      pdfValue(row.label),
+      row.materias || 0,
+      pdfPercent(row.materias_porcentaje),
+      row.grupos || 0,
+      pdfPercent(row.grupos_porcentaje),
+      row.preguntas || 0,
+    ]),
+    foot: [
+      [
+        'Total',
+        coberturaResumen.value.total_materias || 0,
+        '100%',
+        coberturaResumen.value.total_grupos || 0,
+        '100%',
+        coberturaResumen.value.total_preguntas || 0,
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 64, 175], textColor: 255, fontSize: 8 },
+    footStyles: { fillColor: [226, 232, 240], textColor: [15, 23, 42], fontStyle: 'bold' },
+    styles: { fontSize: 8, cellPadding: 1.5, halign: 'center' },
+    columnStyles: {
+      0: { halign: 'left' },
+    },
+    didDrawPage: drawFooter,
+  })
+
+  const fileDate = date.formatDate(new Date(), 'YYYYMMDD_HHmm')
+  doc.save(`cobertura_banco_${fileDate}.pdf`)
+}
+
 onMounted(async () => {
   if (authStore.isAuthenticated) {
     await authStore.fetchUser()
@@ -1117,5 +1550,21 @@ onMounted(async () => {
   min-width: 130px;
   color: #334155;
   font-size: 12px;
+}
+
+.coverage-total-card {
+  display: flex;
+  min-height: 86px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 14px 16px;
+}
+
+.coverage-partial-cell {
+  min-width: 112px;
+  line-height: 1.25;
 }
 </style>
