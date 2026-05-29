@@ -139,7 +139,7 @@
         active-color="deep-purple-7"
         indicator-color="deep-purple-7"
         align="justify"
-        style="width: 100%; max-width: 600px"
+        style="width: 100%; max-width: 860px"
       >
         <q-tab name="rol" icon="assignment" label="Evaluaciones del Rol" />
         <q-tab
@@ -147,6 +147,12 @@
           name="manual"
           icon="history_edu"
           label="Generaciones Manuales"
+        />
+        <q-tab
+          v-if="puedeVerExamenesVirtuales"
+          name="virtual"
+          icon="computer"
+          label="Exámenes Virtuales"
         />
       </q-tabs>
     </div>
@@ -315,7 +321,7 @@
         <!-- Banco de Preguntas (Indicator) -->
         <template v-slot:body-cell-banco="props">
           <q-td :props="props" align="center">
-            <template v-if="!examenConCartilla(props.row)">
+            <template v-if="!examenUsaBanco(props.row)">
               <q-chip
                 color="grey-2"
                 text-color="grey-8"
@@ -389,18 +395,44 @@
         <template v-slot:body-cell-cartilla="props">
           <q-td :props="props" align="center">
             <q-chip
-              :color="examenConCartilla(props.row) ? 'indigo-1' : 'orange-1'"
-              :text-color="examenConCartilla(props.row) ? 'indigo-9' : 'orange-10'"
+              :color="
+                examenVirtual(props.row)
+                  ? 'teal-1'
+                  : examenConCartilla(props.row)
+                    ? 'indigo-1'
+                    : 'orange-1'
+              "
+              :text-color="
+                examenVirtual(props.row)
+                  ? 'teal-10'
+                  : examenConCartilla(props.row)
+                    ? 'indigo-9'
+                    : 'orange-10'
+              "
               size="sm"
-              :icon="examenConCartilla(props.row) ? 'fact_check' : 'mail_outline'"
+              :icon="
+                examenVirtual(props.row)
+                  ? 'computer'
+                  : examenConCartilla(props.row)
+                    ? 'fact_check'
+                    : 'mail_outline'
+              "
               class="text-weight-bold"
             >
-              {{ examenConCartilla(props.row) ? 'CON CARTILLA' : 'SIN CARTILLA' }}
+              {{
+                examenVirtual(props.row)
+                  ? 'VIRTUAL'
+                  : examenConCartilla(props.row)
+                    ? 'CON CARTILLA'
+                    : 'SIN CARTILLA'
+              }}
               <q-tooltip>
                 {{
-                  examenConCartilla(props.row)
-                    ? 'Se genera con cartilla de respuestas'
-                    : 'Se debe enviar el examen por correo'
+                  examenVirtual(props.row)
+                    ? 'Se genera como examen virtual para portal público'
+                    : examenConCartilla(props.row)
+                      ? 'Se genera con cartilla de respuestas'
+                      : 'Se debe enviar el examen por correo'
                 }}
               </q-tooltip>
             </q-chip>
@@ -511,7 +543,7 @@
                 </q-btn>
               </template>
               <div v-else class="text-caption text-grey-4 text-xs">
-                {{ examenConCartilla(props.row) ? 'Sin variantes' : 'No aplica' }}
+                {{ examenUsaBanco(props.row) ? 'Sin variantes' : 'No aplica' }}
               </div>
 
               <q-separator
@@ -590,7 +622,7 @@
             </div>
             <div v-else class="text-caption text-grey-4 text-xs">
               {{
-                examenConCartilla(props.row) ? 'Esperando generación' : 'Sin documentos del sistema'
+                examenUsaBanco(props.row) ? 'Esperando generación' : 'Sin documentos del sistema'
               }}
             </div>
           </q-td>
@@ -908,6 +940,15 @@
       </q-table>
     </q-card>
 
+    <q-card
+      v-if="puedeVerExamenesVirtuales && activeTab === 'virtual'"
+      class="table-card q-pa-md"
+      flat
+      bordered
+    >
+      <VirtualExamsPage embedded />
+    </q-card>
+
     <!-- UI Modal: Gestión Especializada -->
     <q-dialog v-model="dialogGestion.show" backdrop-filter="blur(4px)">
       <q-card style="width: 700px; max-width: 90vw; border-radius: 20px">
@@ -964,6 +1005,23 @@
             <div class="text-subtitle1 text-weight-bold q-mb-md flex items-center">
               <q-icon name="tune" color="primary" class="q-mr-xs" />
               Parámetros de Generación
+            </div>
+
+            <div class="q-mb-md">
+              <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
+                Modalidad de evaluación
+              </div>
+              <q-btn-toggle
+                v-model="tempConfig.modalidad"
+                spread
+                unelevated
+                rounded
+                no-caps
+                toggle-color="deep-purple-7"
+                color="grey-2"
+                text-color="grey-8"
+                :options="modalidadOptions"
+              />
             </div>
 
             <div class="row q-col-gutter-sm q-mb-md">
@@ -1835,6 +1893,7 @@ import {
   mixExamQuestionOptions,
   sortExamQuestionsForPdf,
 } from 'src/services/examPdfService'
+import VirtualExamsPage from './VirtualExamsPage.vue'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
@@ -1881,6 +1940,8 @@ const puedeVerGeneracionManual = computed(() => {
 
   return puedeGestionarEvaluaciones.value
 })
+
+const puedeVerExamenesVirtuales = computed(() => false)
 
 // ESTADOS DEL PROCESO
 const ESTADOS_FLOW = [
@@ -1992,6 +2053,23 @@ const ESTADOS_FILTRO_FLOW = [
   ...ESTADOS_SIN_CARTILLA_FLOW.filter(
     (estado) => !ESTADOS_FLOW.some((item) => item.key === estado.key),
   ),
+]
+
+const MODALIDAD_PRESENCIAL_CON_CARTILLA = 'PRESENCIAL_CON_CARTILLA'
+const MODALIDAD_PRESENCIAL_SIN_CARTILLA = 'PRESENCIAL_SIN_CARTILLA'
+const MODALIDAD_VIRTUAL = 'VIRTUAL'
+
+const modalidadOptions = [
+  {
+    label: 'Con cartilla',
+    value: MODALIDAD_PRESENCIAL_CON_CARTILLA,
+    icon: 'fact_check',
+  },
+  {
+    label: 'Sin cartilla',
+    value: MODALIDAD_PRESENCIAL_SIN_CARTILLA,
+    icon: 'mail_outline',
+  },
 ]
 
 const shuffle = (array) => {
@@ -2740,6 +2818,7 @@ const dialogStats = ref(false)
 
 const tempConfig = ref({
   cantVariantes: 1,
+  modalidad: MODALIDAD_PRESENCIAL_CON_CARTILLA,
   facil: 10,
   medio: 10,
   dificil: 5,
@@ -2976,6 +3055,7 @@ const parcialGestionLabel = computed(
 
 const bancoSuficiente = computed(() => {
   if (dialogGestion.value.examen?.estado !== 'programados') return true
+  if (tempConfig.value.modalidad === MODALIDAD_PRESENCIAL_SIN_CARTILLA) return true
   const parcial = dialogGestion.value.examen?.tipo_examen || dialogGestion.value.examen?.parcial
   if (esFinalValor(parcial) && toNumber(bancoStats.value.total) < MINIMO_BANCO_FINAL) {
     return false
@@ -4273,6 +4353,7 @@ const cargarDatos = async () => {
       banco_por_grupo_tipo:
         e.banco_por_grupo_tipo || e.por_grupo_tipo || e.banco_stats?.por_grupo_tipo || {},
       banco_stats: normalizarBancoStatsFila(e),
+      modalidad: normalizarModalidadExamen(e),
       estado: normalizarEstadoExamen(e.estado, e),
       sede_id: e.sede_id,
       carrera_id: e.carrera_id,
@@ -4319,7 +4400,7 @@ const columns = computed(() => {
       align: 'left',
       sortable: true,
     },
-    { name: 'cartilla', label: 'CARTILLA', align: 'center', sortable: true },
+    { name: 'cartilla', label: 'MODALIDAD', align: 'center', sortable: true },
     { name: 'banco', label: 'BANCO', align: 'center', sortable: true },
     { name: 'preguntas', label: 'PREGUNTAS', align: 'left' },
     { name: 'estado', label: 'ESTADO', align: 'center' },
@@ -4336,13 +4417,37 @@ const columns = computed(() => {
   return base
 })
 
+function normalizarModalidadExamen(examen) {
+  const modalidad = String(examen?.modalidad || '').toUpperCase()
+  if (
+    [
+      MODALIDAD_PRESENCIAL_CON_CARTILLA,
+      MODALIDAD_PRESENCIAL_SIN_CARTILLA,
+      MODALIDAD_VIRTUAL,
+    ].includes(modalidad)
+  ) {
+    return modalidad
+  }
+  return Number(examen?.con_cartilla ?? 1) === 0
+    ? MODALIDAD_PRESENCIAL_SIN_CARTILLA
+    : MODALIDAD_PRESENCIAL_CON_CARTILLA
+}
+
+function examenVirtual(examen) {
+  return normalizarModalidadExamen(examen) === MODALIDAD_VIRTUAL
+}
+
 function examenConCartilla(examen) {
-  return Number(examen?.con_cartilla ?? 1) !== 0
+  return normalizarModalidadExamen(examen) === MODALIDAD_PRESENCIAL_CON_CARTILLA
+}
+
+function examenUsaBanco(examen) {
+  return examenConCartilla(examen) || examenVirtual(examen)
 }
 
 function normalizarEstadoExamen(estado, examen) {
   const estadoActual = estado || 'programados'
-  if (Number(examen?.con_cartilla ?? 1) !== 0) return estadoActual
+  if (examenUsaBanco(examen)) return estadoActual
 
   return (
     {
@@ -4547,7 +4652,9 @@ const configGestion = computed(() => {
       actionLabel:
         jobStatus === 'queued' || jobStatus === 'processing'
           ? 'Generación en Proceso'
-          : 'Generar Variantes Ahora',
+          : tempConfig.value.modalidad === MODALIDAD_VIRTUAL
+            ? 'Generar Virtual Ahora'
+            : 'Generar Variantes Ahora',
       actionIcon: 'auto_awesome',
     }
   if (estado === 'entregados')
@@ -4577,6 +4684,7 @@ const gestionarEstado = async (examen) => {
     // Valores por defecto iniciales (fallback hard)
     tempConfig.value = {
       cantVariantes: examen.variantes.length || 1,
+      modalidad: normalizarModalidadExamen(examen),
       facil: examen.distribucion.facil || (usaBancoConsolidado ? DEFAULT_DISTRIBUCION_2P.facil : 7),
       medio:
         examen.distribucion.medio || (usaBancoConsolidado ? DEFAULT_DISTRIBUCION_2P.medio : 16),
@@ -4916,7 +5024,11 @@ const ejecutarAccionGestion = async () => {
     return
   }
 
-  const estadoFlow = getEstadosFlowExamen(examen)
+  const estadoFlow =
+    examen.estado === 'programados' &&
+    tempConfig.value.modalidad === MODALIDAD_PRESENCIAL_SIN_CARTILLA
+      ? ESTADOS_SIN_CARTILLA_FLOW
+      : getEstadosFlowExamen(examen)
   const currentIndex = estadoFlow.findIndex((e) => e.key === examen.estado)
   const nextKey = estadoFlow[currentIndex + 1]?.key
   if (!nextKey) return
@@ -4927,6 +5039,47 @@ const ejecutarAccionGestion = async () => {
     payload.timestamps_proceso = ts
 
     if (examen.estado === 'programados') {
+      if (tempConfig.value.modalidad === MODALIDAD_PRESENCIAL_SIN_CARTILLA) {
+        await api.put(`/rol-examenes/${examen.id}`, {
+          estado: nextKey,
+          modalidad: MODALIDAD_PRESENCIAL_SIN_CARTILLA,
+          timestamps_proceso: ts,
+          config_generacion: {
+            ...(examen.distribucion || {}),
+            modalidad: MODALIDAD_PRESENCIAL_SIN_CARTILLA,
+          },
+        })
+        $q.notify({
+          type: 'positive',
+          message: 'Examen marcado como presencial sin cartilla.',
+          icon: 'mail_outline',
+        })
+        dialogGestion.value.show = false
+        await cargarDatos()
+        return
+      }
+
+      if (tempConfig.value.modalidad === MODALIDAD_VIRTUAL) {
+        $q.loading.show({ message: 'Generando examen virtual...' })
+        await api.post(`/virtual-exams/rol-examenes/${examen.id}/generate`, {
+          cantidad_variantes: tempConfig.value.cantVariantes,
+          duracion_minutos: 45,
+          facil: tempConfig.value.facil,
+          medio: tempConfig.value.medio,
+          dificil: tempConfig.value.dificil,
+        })
+        $q.loading.hide()
+        $q.notify({
+          type: 'positive',
+          message: 'Examen virtual generado. Revisa la pestaña Exámenes Virtuales.',
+          icon: 'computer',
+        })
+        dialogGestion.value.show = false
+        activeTab.value = 'virtual'
+        await cargarDatos()
+        return
+      }
+
       $q.loading.show({ message: 'Obteniendo banco de preguntas...' })
       let bancoPreguntas = []
       try {
@@ -4989,10 +5142,12 @@ const ejecutarAccionGestion = async () => {
         fontSize: tempConfig.value.fontSize,
         lineSpacing: tempConfig.value.lineSpacing,
         aleatorizarSecciones: tempConfig.value.aleatorizarSecciones,
+        modalidad: tempConfig.value.modalidad,
         gruposTipoReferencial: usaGeneradorCodificadoActual
           ? { ...bancoGrupoTipoStats.value }
           : null,
       }
+      payload.modalidad = tempConfig.value.modalidad
 
       if (esGeneracionConsolidadaActual) {
         $q.loading.show({ message: 'Enviando la generación consolidada al servidor...' })
@@ -5006,6 +5161,7 @@ const ejecutarAccionGestion = async () => {
           fontSize: tempConfig.value.fontSize,
           lineSpacing: tempConfig.value.lineSpacing,
           aleatorizarSecciones: tempConfig.value.aleatorizarSecciones,
+          modalidad: tempConfig.value.modalidad,
         })
 
         $q.loading.hide()
@@ -5230,6 +5386,7 @@ const ejecutarAccionGestion = async () => {
     cargarDatos() // RECARGAR PARA VER CAMBIOS (PDFs/Patrones)
   } catch (error) {
     console.error('Error al actualizar el estado:', error)
+    $q.loading.hide()
     $q.notify({
       type: 'negative',
       message: error.response?.data?.message || 'Error al actualizar el estado',
@@ -5375,10 +5532,10 @@ const isEstadoCompleted = (curr, target, flow = ESTADOS_FLOW) => {
   return targetIndex >= 0 && currentIndex >= 0 && targetIndex < currentIndex
 }
 const tieneGestion = (estado, examen = null) =>
-  examenConCartilla(examen) && ['programados', 'entregados'].includes(estado)
+  examenUsaBanco(examen) && ['programados', 'entregados'].includes(estado)
 
 const getEstadosFlowExamen = (examen) =>
-  examenConCartilla(examen) ? ESTADOS_FLOW : ESTADOS_SIN_CARTILLA_FLOW
+  examenVirtual(examen) || examenConCartilla(examen) ? ESTADOS_FLOW : ESTADOS_SIN_CARTILLA_FLOW
 
 const getEstadoLabel = (estado) =>
   ESTADOS_FILTRO_FLOW.find((item) => item.key === estado)?.label ||

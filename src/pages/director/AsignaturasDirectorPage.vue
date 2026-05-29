@@ -44,10 +44,7 @@
 
     <!-- Filters -->
     <div class="row q-col-gutter-md q-mb-lg" v-if="!sinCarreraAsignada">
-      <div
-        class="col-12 col-md-3"
-        v-if="['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)"
-      >
+      <div class="col-12 col-md-3" v-if="rolesConSelectorSede.includes(authStore.rol)">
         <q-select
           v-model="filtros.sedeId"
           :options="opcionesSedes"
@@ -65,9 +62,7 @@
       </div>
       <div
         :class="
-          ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)
-            ? 'col-12 col-md-3'
-            : 'col-12 col-md-4'
+          rolesConSelectorSede.includes(authStore.rol) ? 'col-12 col-md-3' : 'col-12 col-md-4'
         "
       >
         <q-select
@@ -214,7 +209,7 @@
               >
                 <template v-slot:header="props">
                   <q-tr :props="props">
-                    <q-th auto-width />
+                    <q-th v-if="!esPlataforma" auto-width />
                     <q-th v-for="col in props.cols" :key="col.name" :props="props">{{
                       col.label
                     }}</q-th>
@@ -223,7 +218,7 @@
 
                 <template v-slot:body="props">
                   <q-tr :props="props">
-                    <q-td auto-width>
+                    <q-td v-if="!esPlataforma" auto-width>
                       <q-btn
                         v-if="props.row.docentes_data && props.row.docentes_data.length > 1"
                         size="sm"
@@ -516,24 +511,27 @@
                             class="column items-center"
                             style="gap: 2px"
                           >
-                            <q-toggle
-                              :model-value="examenConCartilla2P(props.row)"
+                            <q-btn-toggle
+                              v-if="!esPlataforma"
+                              :model-value="modalidadExamen2P(props.row)"
+                              :options="opcionesModalidadExamen"
                               :disable="guardandoCartilla2P(props.row)"
-                              checked-icon="menu_book"
-                              unchecked-icon="block"
-                              color="deep-purple-6"
+                              toggle-color="deep-purple-6"
+                              color="grey-2"
+                              text-color="grey-8"
+                              size="sm"
                               dense
-                              keep-color
-                              @update:model-value="confirmarCambioCartilla2P(props.row, $event)"
+                              unelevated
+                              no-caps
+                              @update:model-value="confirmarCambioModalidad2P(props.row, $event)"
                             />
                             <div
                               class="text-caption text-weight-medium"
-                              :class="
-                                examenConCartilla2P(props.row) ? 'text-positive' : 'text-negative'
-                              "
+                              :class="modalidadExamen2PClass(props.row)"
                             >
-                              {{ examenConCartilla2P(props.row) ? 'CON CARTILLA' : 'SIN CARTILLA' }}
+                              {{ modalidadExamen2PLabel(props.row) }}
                             </div>
+                            <q-tooltip> Con cartilla | Sin cartilla </q-tooltip>
                           </div>
                         </div>
                       </template>
@@ -573,50 +571,64 @@
                       <!-- Columna Acciones -->
                       <template v-else-if="col.name === 'acciones'">
                         <q-btn
+                          v-if="esPlataforma"
                           flat
                           round
                           dense
-                          icon="visibility"
-                          color="primary"
+                          icon="ios_share"
+                          color="teal"
                           size="sm"
-                          @click="irADocumentacion(props.row)"
+                          @click="exportarBancoPreguntas2P(props.row)"
                         >
-                          <q-tooltip
-                            >Ver Documentación
-                            <template v-if="props.row.docentes_data?.length > 1"
-                              >Agrupada</template
-                            ></q-tooltip
+                          <q-tooltip>Exportar Banco de Preguntas</q-tooltip>
+                        </q-btn>
+                        <template v-else>
+                          <q-btn
+                            flat
+                            round
+                            dense
+                            icon="visibility"
+                            color="primary"
+                            size="sm"
+                            @click="irADocumentacion(props.row)"
                           >
-                        </q-btn>
-                        <q-btn
-                          v-if="props.row.docentes_data?.length <= 1"
-                          flat
-                          round
-                          dense
-                          icon="picture_as_pdf"
-                          color="secondary"
-                          size="sm"
-                          @click="generarCarpeta(props.row)"
-                        >
-                          <q-tooltip>Generar Carpeta Docente</q-tooltip>
-                        </q-btn>
-                        <q-btn
-                          flat
-                          round
-                          dense
-                          icon="upload_file"
-                          color="deep-orange"
-                          size="sm"
-                          @click="abrirImportacionJson(props.row)"
-                        >
-                          <q-tooltip>Restaurar desde JSON</q-tooltip>
-                        </q-btn>
+                            <q-tooltip
+                              >Ver Documentación
+                              <template v-if="props.row.docentes_data?.length > 1"
+                                >Agrupada</template
+                              ></q-tooltip
+                            >
+                          </q-btn>
+                          <q-btn
+                            v-if="props.row.docentes_data?.length <= 1"
+                            flat
+                            round
+                            dense
+                            icon="picture_as_pdf"
+                            color="secondary"
+                            size="sm"
+                            @click="generarCarpeta(props.row)"
+                          >
+                            <q-tooltip>Generar Carpeta Docente</q-tooltip>
+                          </q-btn>
+                          <q-btn
+                            flat
+                            round
+                            dense
+                            icon="upload_file"
+                            color="deep-orange"
+                            size="sm"
+                            @click="abrirImportacionJson(props.row)"
+                          >
+                            <q-tooltip>Restaurar desde JSON</q-tooltip>
+                          </q-btn>
+                        </template>
                       </template>
                     </q-td>
                   </q-tr>
 
                   <!-- Fila Expandible para Docentes -->
-                  <q-tr v-show="props.expand" :props="props">
+                  <q-tr v-show="props.expand && !esPlataforma" :props="props">
                     <q-td colspan="100%" class="bg-grey-2 q-pa-md">
                       <div class="text-weight-bold q-mb-sm text-primary">
                         Progreso Individual por Docente:
@@ -936,32 +948,29 @@
                               class="column items-center q-mt-xs"
                               style="gap: 2px"
                             >
-                              <q-toggle
-                                :model-value="examenConCartilla2P(props.row, docente)"
+                              <q-btn-toggle
+                                v-if="!esPlataforma"
+                                :model-value="modalidadExamen2P(props.row, docente)"
+                                :options="opcionesModalidadExamen"
                                 :disable="guardandoCartilla2P(props.row, docente)"
-                                checked-icon="menu_book"
-                                unchecked-icon="block"
-                                color="deep-purple-6"
+                                toggle-color="deep-purple-6"
+                                color="grey-2"
+                                text-color="grey-8"
+                                size="sm"
                                 dense
-                                keep-color
+                                unelevated
+                                no-caps
                                 @update:model-value="
-                                  confirmarCambioCartilla2P(props.row, $event, docente)
+                                  confirmarCambioModalidad2P(props.row, $event, docente)
                                 "
                               />
                               <div
                                 class="text-caption text-weight-medium"
-                                :class="
-                                  examenConCartilla2P(props.row, docente)
-                                    ? 'text-positive'
-                                    : 'text-negative'
-                                "
+                                :class="modalidadExamen2PClass(props.row, docente)"
                               >
-                                {{
-                                  examenConCartilla2P(props.row, docente)
-                                    ? 'CON CARTILLA'
-                                    : 'SIN CARTILLA'
-                                }}
+                                {{ modalidadExamen2PLabel(props.row, docente) }}
                               </div>
+                              <q-tooltip> Con cartilla | Sin cartilla </q-tooltip>
                             </div>
                             <div class="q-mt-xs text-center">
                               <q-chip
@@ -1093,6 +1102,13 @@ const carrerasStore = useCarrerasStore()
 const sedesStore = useSedesStore()
 const $q = useQuasar()
 const router = useRouter()
+const esPlataforma = computed(() => authStore.rol === ROLES.PLATAFORMA)
+const rolesConSelectorSede = [
+  ROLES.VICERRECTOR_NACIONAL,
+  ROLES.ADMIN,
+  ROLES.SUPER_ADMIN,
+  ROLES.PLATAFORMA,
+]
 
 // State for interaction
 const showDocenteDialog = ref(false)
@@ -1308,6 +1324,453 @@ async function processGenerarPDF(rowSummary, docenteId) {
   } finally {
     $q.loading.hide()
   }
+}
+
+async function exportarBancoPreguntas2P(row) {
+  try {
+    const docente = row.docentes_data?.[0] || row.grupo_contexto || null
+    const grupoTeorico =
+      row.grupo_teorico_mostrar ||
+      docente?.grupo_teorico_nombre ||
+      docente?.grupo_nombre ||
+      docente?.preguntas_2p_stats?.grupo_teorico
+
+    if (!row?.id || !row?.sede_id || !grupoTeorico) {
+      $q.notify({
+        type: 'warning',
+        message: 'No se encontro el grupo teorico para exportar el banco.',
+      })
+      return
+    }
+
+    $q.loading.show({ message: 'Exportando banco de preguntas...' })
+
+    const response = await api.get('/banco-preguntas', {
+      params: {
+        asignatura_id: row.id,
+        docente_id: docente?.id || docente?.docente_id || undefined,
+        sede_id: row.sede_id,
+        grupoTeorico,
+        parcial: '2do Parcial',
+        all_docentes: true,
+      },
+    })
+    const preguntas = response.data?.preguntas || response.data || []
+
+    if (!preguntas.length) {
+      $q.notify({
+        type: 'warning',
+        message: 'No hay preguntas registradas para exportar en este grupo.',
+      })
+      return
+    }
+
+    await generarExcelBancoPreguntasPlataforma(row, preguntas, grupoTeorico)
+
+    $q.notify({
+      type: 'positive',
+      message: 'Banco de preguntas exportado correctamente.',
+      caption: `${preguntas.length} registros incluidos en el Excel.`,
+      icon: 'check_circle',
+    })
+  } catch (error) {
+    console.error('Error exportando banco de preguntas 2P:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo exportar el banco de preguntas.',
+      caption: error.response?.data?.message || error.message,
+    })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
+async function generarExcelBancoPreguntasPlataforma(row, preguntas, grupoTeorico) {
+  const ExcelJS = await import('exceljs')
+  const workbook = new ExcelJS.default.Workbook()
+  const parcial = '2P'
+  const parcialLabel = '2do Parcial'
+  const headers = [
+    'tipo',
+    'grupo',
+    'enunciado',
+    'opcion_a',
+    'opcion_b',
+    'opcion_c',
+    'opcion_d',
+    'opcion_e',
+    'respuesta_correcta',
+    'dificultad',
+    'parcial',
+    'observaciones',
+  ]
+  const letras = ['A', 'B', 'C', 'D', 'E']
+  const tipoLabels = {
+    FALSO_VERDADERO: 'Verdadero o Falso Simple',
+    PREGUNTA_CON_CLAVE: 'Verdadero o Falso Complejas',
+    RESPUESTA_COMPUESTA: 'Respuesta A/B/Ambas/Ninguna',
+    SELECCION_SIMPLE: 'Selección de la mejor respuesta',
+    EMPAREJAMIENTO: 'Emparejamiento Ampliado',
+    OPCION_EMPAREJAMIENTO: 'Opción de Emparejamiento Ampliado',
+    PROBLEMA: 'Ítems agrupados por caso clínico o problema',
+    SUBPROBLEMA: 'Subítem de caso o problema',
+  }
+  const limpiarTextoExcel = (value) =>
+    String(value ?? '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/\r\n|\r/g, '\n')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n[ \t]+/g, '\n')
+      .trim()
+  const normalizarAlias = (value) =>
+    limpiarTextoExcel(value)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase()
+  const normalizarTipo = (tipo, pregunta = null, gruposCabeceraMap = null) => {
+    const valor = normalizarAlias(tipo)
+
+    if (['FV', 'FALSO_VERDADERO', 'FALSO O VERDADERO', 'VERDADERO O FALSO'].includes(valor)) {
+      return 'FALSO_VERDADERO'
+    }
+    if (
+      [
+        'PREGUNTA_CON_CLAVE',
+        'PREGUNTA CON CLAVE',
+        'VERDADERO O FALSO COMPLEJAS',
+        normalizarAlias(tipoLabels.PREGUNTA_CON_CLAVE),
+      ].includes(valor)
+    ) {
+      return 'PREGUNTA_CON_CLAVE'
+    }
+    if (
+      [
+        'SM',
+        'SELECCION_MULTIPLE',
+        'RESPUESTA_COMPUESTA',
+        'RESPUESTA COMPUESTA',
+        normalizarAlias(tipoLabels.RESPUESTA_COMPUESTA),
+      ].includes(valor)
+    ) {
+      return 'RESPUESTA_COMPUESTA'
+    }
+    if (
+      [
+        'SS',
+        'SU',
+        'SELECCION_UNICA',
+        'SELECCION SIMPLE',
+        'SELECCION_SIMPLE',
+        normalizarAlias(tipoLabels.SELECCION_SIMPLE),
+      ].includes(valor)
+    ) {
+      return 'SELECCION_SIMPLE'
+    }
+    if (['EM', 'EMPAREJAMIENTO', normalizarAlias(tipoLabels.EMPAREJAMIENTO)].includes(valor)) {
+      return 'EMPAREJAMIENTO'
+    }
+    if (
+      [
+        'OPCION_EMPAREJAMIENTO',
+        'OPCION EMPAREJAMIENTO',
+        'OPCION DE EMPAREJAMIENTO AMPLIADO',
+        normalizarAlias(tipoLabels.OPCION_EMPAREJAMIENTO),
+      ].includes(valor)
+    ) {
+      return 'OPCION_EMPAREJAMIENTO'
+    }
+    if (
+      [
+        'PR',
+        'PROBLEMA',
+        'PROBLEMA O CASO',
+        'ITEMS AGRUPADOS POR CASO CLINICO O PROBLEMA',
+        normalizarAlias(tipoLabels.PROBLEMA),
+      ].includes(valor)
+    ) {
+      return 'PROBLEMA'
+    }
+    if (['SP', 'SUBPREGUNTA', 'SUBPROBLEMA', 'SUB PROBLEMA'].includes(valor)) {
+      const tipoCabecera = gruposCabeceraMap?.get(normalizarAlias(pregunta?.grupo || ''))
+      return tipoCabecera === 'EMPAREJAMIENTO' ? 'OPCION_EMPAREJAMIENTO' : 'SUBPROBLEMA'
+    }
+
+    return valor
+  }
+  const obtenerTextoOpcion = (pregunta, letra) => {
+    const opciones = Array.isArray(pregunta?.opciones) ? pregunta.opciones : []
+    const indexLetra = letras.indexOf(letra)
+    const opcion =
+      opciones.find((item, index) => {
+        const id = typeof item === 'object' && item !== null ? item.id || item.letra : null
+        return String(id || letras[index] || '').toUpperCase() === letra
+      }) || opciones[indexLetra]
+
+    if (typeof opcion === 'object' && opcion !== null) {
+      return limpiarTextoExcel(opcion.text ?? opcion.texto ?? opcion.label ?? opcion.valor ?? '')
+    }
+
+    return limpiarTextoExcel(opcion || '')
+  }
+  const normalizarRespuestaExcel = (valor) => {
+    const respuesta = limpiarTextoExcel(valor).toUpperCase()
+    const match = respuesta.match(/^([A-E])(?:\s*[:.)-]|\b)/)
+    return match ? match[1] : respuesta
+  }
+  const normalizarRespuestaExport = (respuesta) => {
+    const valores = Array.isArray(respuesta) ? respuesta : [respuesta]
+    return valores
+      .map((valor) => {
+        if (typeof valor === 'object' && valor !== null) {
+          return normalizarRespuestaExcel(valor.id ?? valor.value ?? valor.text ?? '')
+        }
+        return normalizarRespuestaExcel(valor)
+      })
+      .filter(Boolean)
+      .join(',')
+  }
+  const normalizarPreguntaClaveParaExportar = (pregunta) => {
+    const textoEnunciado = limpiarTextoExcel(pregunta?.enunciado || '')
+    const lineas = textoEnunciado
+      .split(/\n+/)
+      .map((linea) => linea.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+    const enunciado = []
+    const incisos = []
+
+    lineas.forEach((linea) => {
+      const match = linea.match(/^([1-4])[).:-]?\s+(.+)$/)
+      if (match) {
+        incisos.push(match[2].trim())
+        return
+      }
+
+      if (incisos.length > 0) {
+        incisos[incisos.length - 1] = `${incisos[incisos.length - 1]} ${linea}`.trim()
+        return
+      }
+
+      enunciado.push(linea)
+    })
+
+    const opcionesRegistradas = letras
+      .map((letra) =>
+        limpiarTextoExcel(obtenerTextoOpcion(pregunta, letra))
+          .replace(/^[1-4][).:-]?\s+/, '')
+          .trim(),
+      )
+      .filter(Boolean)
+    const opcionesSonClave = opcionesRegistradas.some((value) => {
+      const texto = value.toLowerCase()
+      return /^[a-e]\.?\s+/.test(texto) && /verdader/.test(texto) && /\b[1-4]\b/.test(texto)
+    })
+    const opcionesExportar =
+      incisos.length >= 4 || opcionesSonClave
+        ? incisos.slice(0, 4)
+        : opcionesRegistradas.slice(0, 4)
+
+    while (opcionesExportar.length < 4) {
+      opcionesExportar.push('')
+    }
+
+    return {
+      enunciado: enunciado.join(' ') || textoEnunciado.replace(/\s+/g, ' ').trim(),
+      opciones: [...opcionesExportar.slice(0, 4), ''],
+      observacion:
+        opcionesExportar.filter(Boolean).length === 4
+          ? 'OK - Exportado desde el banco registrado'
+          : 'Revisar - no se detectaron los 4 incisos de V/F complejas',
+    }
+  }
+  const normalizarDificultadExport = (pregunta, tipo) => {
+    if (['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipo)) return ''
+
+    const dificultad = normalizarAlias(pregunta?.dificultad || '')
+    if (['1', 'FACIL'].includes(dificultad)) return '1'
+    if (['2', 'MEDIO', 'MEDIA'].includes(dificultad)) return '2'
+    if (['3', 'DIFICIL'].includes(dificultad)) return '3'
+    return limpiarTextoExcel(pregunta?.dificultad || '')
+  }
+  const gruposCabeceraMap = new Map()
+  preguntas.forEach((pregunta) => {
+    const tipo = normalizarTipo(pregunta?.tipo, pregunta)
+    const grupo = normalizarAlias(pregunta?.grupo || '')
+    if (grupo && ['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipo)) gruposCabeceraMap.set(grupo, tipo)
+  })
+  const obtenerGrupoExport = (pregunta, tipo) =>
+    ['EMPAREJAMIENTO', 'OPCION_EMPAREJAMIENTO', 'PROBLEMA', 'SUBPROBLEMA'].includes(tipo)
+      ? limpiarTextoExcel(pregunta.grupo || '')
+      : ''
+  const filenameSafe = (value) =>
+    String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9_-]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+
+  workbook.creator = 'UNITEPC'
+  workbook.lastModifiedBy = 'UNITEPC'
+  workbook.created = new Date()
+  workbook.modified = new Date()
+
+  const wsInst = workbook.addWorksheet('Instrucciones')
+  wsInst.columns = [{ width: 34 }, { width: 92 }]
+  const titleRow = wsInst.addRow(['EXPORTACION DE BANCO DE PREGUNTAS'])
+  titleRow.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }
+  titleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4527A0' } }
+  wsInst.addRow([])
+  wsInst.addRow(['Asignatura', `${row.codigo || ''} - ${row.nombre || ''}`])
+  wsInst.addRow(['Banco exportado', `${parcialLabel} - Grupo ${grupoTeorico}`])
+  wsInst.addRow(['Registros exportados', preguntas.length])
+  wsInst.addRow([
+    'Preguntas evaluables',
+    preguntas.filter((pregunta) => {
+      const tipo = normalizarTipo(pregunta?.tipo, pregunta, gruposCabeceraMap)
+      return !['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipo)
+    }).length,
+  ])
+  wsInst.addRow([])
+  wsInst.addRow([
+    'Uso recomendado',
+    'Este archivo conserva la estructura de la hoja Banco para que el docente pueda respaldar sus preguntas o importarlas en otro grupo/materia compatible.',
+  ])
+  wsInst.addRow([
+    'Imagenes',
+    'Las imagenes adjuntas a preguntas no se incluyen dentro del Excel exportado.',
+  ])
+  wsInst.addRow([
+    'Migracion',
+    'Antes de importar en otra materia, revise parcial, grupo interno de casos/emparejamientos y el contenido de cada fila.',
+  ])
+  wsInst.eachRow((worksheetRow) => {
+    worksheetRow.eachCell((cell) => {
+      cell.alignment = { wrapText: true, vertical: 'top' }
+    })
+  })
+
+  const wsBanco = workbook.addWorksheet('Banco')
+  wsBanco.views = [{ state: 'frozen', ySplit: 1 }]
+  wsBanco.autoFilter = 'A1:L1'
+
+  const headerRow = wsBanco.addRow(headers)
+  headerRow.eachCell((cell) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4527A0' } }
+    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true }
+    cell.alignment = { vertical: 'middle', horizontal: 'center' }
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' },
+    }
+  })
+
+  preguntas.forEach((pregunta) => {
+    const tipo = normalizarTipo(pregunta.tipo, pregunta, gruposCabeceraMap)
+    const datos =
+      tipo === 'PREGUNTA_CON_CLAVE'
+        ? normalizarPreguntaClaveParaExportar(pregunta)
+        : {
+            enunciado: limpiarTextoExcel(pregunta.enunciado || ''),
+            opciones: letras.map((letra) => obtenerTextoOpcion(pregunta, letra)),
+            observacion: 'OK - Exportado desde el banco registrado',
+          }
+    const rowExcel = wsBanco.addRow([
+      tipoLabels[tipo] || tipo.replaceAll('_', ' '),
+      obtenerGrupoExport(pregunta, tipo),
+      datos.enunciado,
+      datos.opciones[0] || '',
+      datos.opciones[1] || '',
+      datos.opciones[2] || '',
+      datos.opciones[3] || '',
+      datos.opciones[4] || '',
+      ['EMPAREJAMIENTO', 'PROBLEMA'].includes(tipo)
+        ? ''
+        : normalizarRespuestaExport(pregunta.respuesta_correcta),
+      normalizarDificultadExport(pregunta, tipo),
+      parcial,
+      datos.observacion,
+    ])
+
+    rowExcel.height = 24
+    rowExcel.eachCell((cell) => {
+      cell.alignment = { wrapText: true, vertical: 'top' }
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
+      }
+    })
+
+    const dificultad = rowExcel.getCell(10).value
+    const color =
+      dificultad === '1'
+        ? 'FFC6EFCE'
+        : dificultad === '2'
+          ? 'FFFFEB9C'
+          : dificultad === '3'
+            ? 'FFFFC7CE'
+            : 'FFEDE7F6'
+    rowExcel.eachCell((cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } }
+    })
+  })
+
+  wsBanco.columns = [
+    { width: 28 },
+    { width: 18 },
+    { width: 70, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 28, style: { alignment: { wrapText: true, vertical: 'top' } } },
+    { width: 20 },
+    { width: 12 },
+    { width: 12 },
+    { width: 48, style: { alignment: { wrapText: true, vertical: 'top' } } },
+  ]
+
+  const filasBancoDesde = 2
+  const filasBancoHasta = Math.max(filasBancoDesde, preguntas.length + 1)
+  const resumenInicio = filasBancoHasta + 2
+  wsBanco.getRow(resumenInicio).getCell(9).value = 'Total Faciles:'
+  wsBanco.getRow(resumenInicio).getCell(9).font = { bold: true }
+  wsBanco.getRow(resumenInicio).getCell(10).value = {
+    formula: `COUNTIF(J${filasBancoDesde}:J${filasBancoHasta},1)`,
+  }
+  wsBanco.getRow(resumenInicio + 1).getCell(9).value = 'Total Medias:'
+  wsBanco.getRow(resumenInicio + 1).getCell(9).font = { bold: true }
+  wsBanco.getRow(resumenInicio + 1).getCell(10).value = {
+    formula: `COUNTIF(J${filasBancoDesde}:J${filasBancoHasta},2)`,
+  }
+  wsBanco.getRow(resumenInicio + 2).getCell(9).value = 'Total Dificiles:'
+  wsBanco.getRow(resumenInicio + 2).getCell(9).font = { bold: true }
+  wsBanco.getRow(resumenInicio + 2).getCell(10).value = {
+    formula: `COUNTIF(J${filasBancoDesde}:J${filasBancoHasta},3)`,
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.href = url
+  link.download = `banco_preguntas_${filenameSafe(row.codigo || 'asignatura')}_G${filenameSafe(grupoTeorico || 'grupo')}_2P.xlsx`
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 const abrirImportacionJson = (asignatura) => {
@@ -1605,9 +2068,7 @@ const handleJsonImport = async (event) => {
 
 // Filtros
 const filtros = ref({
-  sedeId: ['ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'].includes(authStore.rol)
-    ? null
-    : sedeAutoridadId.value || null,
+  sedeId: rolesConSelectorSede.includes(authStore.rol) ? null : sedeAutoridadId.value || null,
   carreraId: null,
   buscar: '',
   ocultarSinAsignar: canToggleOcultarSinAsignar.value,
@@ -1619,13 +2080,28 @@ const bancoPreguntas2PMap = ref({})
 const cargandoCampos2P = ref(false)
 const guardandoCartilla2PMap = ref({})
 
+const MODALIDAD_CON_CARTILLA = 'PRESENCIAL_CON_CARTILLA'
+const MODALIDAD_SIN_CARTILLA = 'PRESENCIAL_SIN_CARTILLA'
+const MODALIDAD_VIRTUAL = 'VIRTUAL'
+
+const opcionesModalidadExamen = [
+  { label: 'Con', value: MODALIDAD_CON_CARTILLA, icon: 'menu_book' },
+  { label: 'Sin', value: MODALIDAD_SIN_CARTILLA, icon: 'block' },
+]
+
 const opcionesPlanes = [
   { label: 'Plan Nuevo (N)', value: 'N' },
   { label: 'Plan Antiguo (A)', value: 'A' },
 ]
 
 const opcionesSedes = computed(() => {
-  return sedesStore.sedes.map((s) => ({
+  let sedes = sedesStore.sedes
+  if (esPlataforma.value) {
+    const sedeIds = authStore.usuarioActual?.sede_ids || []
+    sedes = sedes.filter((sede) => sedeIds.includes(Number(sede.id)))
+  }
+
+  return sedes.map((s) => ({
     label: s.nombre,
     value: s.id,
   }))
@@ -1634,7 +2110,7 @@ const opcionesSedes = computed(() => {
 // Opciones de Carreras (Dinámicas)
 const carrerasOptions = computed(() => {
   // Para Vicerrectorado Nacional, Admin, Super Admin: Mostrar carreras de la sede seleccionada
-  if (['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol)) {
+  if (rolesConSelectorSede.includes(authStore.rol)) {
     if (!filtros.value.sedeId) return []
     return carrerasStore.getCarrerasBySede(filtros.value.sedeId).map((c) => ({
       label: c.nombre,
@@ -1841,6 +2317,7 @@ onMounted(async () => {
       ROLES.VICERRECTOR_SEDE,
       ROLES.DIRECCION_ACADEMICA,
       ROLES.DIRECTOR_CARRERA,
+      ROLES.PLATAFORMA,
       ROLES.ADMIN,
       ROLES.SUPER_ADMIN,
     ].includes(authStore.rol) &&
@@ -1864,7 +2341,7 @@ onMounted(async () => {
 
   // Si es nacional/admin, pre-seleccionar la primera sede
   if (
-    ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'].includes(authStore.rol) &&
+    rolesConSelectorSede.includes(authStore.rol) &&
     opcionesSedes.value.length > 0 &&
     !filtros.value.sedeId
   ) {
@@ -1904,7 +2381,7 @@ watch(
 // Mantenemos búsqueda Frontend sobre los datos cargados.
 
 // Columnas
-const columnasAsignaturas = [
+const columnasAsignaturasBase = [
   {
     name: 'codigo',
     label: 'Código',
@@ -1943,7 +2420,7 @@ const columnasAsignaturas = [
     label: 'Fecha 2P',
     field: 'fecha_2p',
     align: 'center',
-    style: 'width: 120px',
+    style: 'width: 235px',
   },
   {
     name: 'estado_examen_2p',
@@ -1961,6 +2438,13 @@ const columnasAsignaturas = [
     style: 'width: 140px',
   },
 ]
+
+const columnasAsignaturas = computed(() => {
+  if (!esPlataforma.value) return columnasAsignaturasBase
+
+  const columnasOcultas = new Set(['horas', 'progreso', 'estado_examen_2p', 'estado'])
+  return columnasAsignaturasBase.filter((columna) => !columnasOcultas.has(columna.name))
+})
 
 // Computed: Estadísticas
 const totalAsignaturas = computed(() => asignaturasStore.asignaturas.length)
@@ -2222,18 +2706,22 @@ function obtenerContextoCartilla2P(asignatura, docente = null) {
 
   const sedeId = docenteData.sede_id || asignatura.sede_id
   const rolExamen2P = obtenerRolExamen2P(asignatura, docenteData)
+  const stats = obtenerBancoPreguntas2P(asignatura, docenteData) || null
 
   return {
     asignaturaId: asignatura.id,
     asignaturaNombre: asignatura.nombre,
     sedeId,
+    rolExamenId: rolExamen2P?.id || null,
     docenteId: docenteData.id,
     docenteNombre: docenteData.nombre_completo || docenteData.nombre || asignatura.docente_nombre,
     grupoTeorico: String(grupoTeorico).trim(),
     estadoExamen:
       rolExamen2P?.estado || docenteData.estado_examen_2p || docenteData.estado_rol_examen_2p,
+    modalidad: normalizarModalidadExamen2P(rolExamen2P, stats),
+    configGeneracion: rolExamen2P?.config_generacion || null,
     key: crearBancoPreguntas2PKey(asignatura.id, docenteData.id, sedeId, grupoTeorico),
-    stats: obtenerBancoPreguntas2P(asignatura, docenteData) || null,
+    stats,
   }
 }
 
@@ -2244,8 +2732,34 @@ function puedeAlternarCartilla2P(asignatura, docente = null) {
   return ['programado', 'programados'].includes(normalizarEstadoExamen2P(contexto.estadoExamen))
 }
 
-function examenConCartilla2P(asignatura, docente = null) {
-  return obtenerContextoCartilla2P(asignatura, docente)?.stats?.con_cartilla !== false
+function normalizarModalidadExamen2P(rolExamen = null, stats = null) {
+  const modalidad = String(rolExamen?.modalidad || '').toUpperCase()
+
+  if ([MODALIDAD_CON_CARTILLA, MODALIDAD_SIN_CARTILLA, MODALIDAD_VIRTUAL].includes(modalidad)) {
+    return modalidad
+  }
+
+  return stats?.con_cartilla === false ? MODALIDAD_SIN_CARTILLA : MODALIDAD_CON_CARTILLA
+}
+
+function modalidadExamen2P(asignatura, docente = null) {
+  return obtenerContextoCartilla2P(asignatura, docente)?.modalidad || MODALIDAD_CON_CARTILLA
+}
+
+function modalidadExamen2PLabel(asignatura, docente = null) {
+  const modalidad = modalidadExamen2P(asignatura, docente)
+
+  if (modalidad === MODALIDAD_VIRTUAL) return 'VIRTUAL'
+  if (modalidad === MODALIDAD_SIN_CARTILLA) return 'SIN CARTILLA'
+  return 'CON CARTILLA'
+}
+
+function modalidadExamen2PClass(asignatura, docente = null) {
+  const modalidad = modalidadExamen2P(asignatura, docente)
+
+  if (modalidad === MODALIDAD_VIRTUAL) return 'text-indigo-8'
+  if (modalidad === MODALIDAD_SIN_CARTILLA) return 'text-negative'
+  return 'text-positive'
 }
 
 function guardandoCartilla2P(asignatura, docente = null) {
@@ -2253,7 +2767,7 @@ function guardandoCartilla2P(asignatura, docente = null) {
   return key ? Boolean(guardandoCartilla2PMap.value[key]) : false
 }
 
-async function confirmarCambioCartilla2P(asignatura, nuevoValor, docente = null) {
+async function confirmarCambioModalidad2P(asignatura, modalidadDestino, docente = null) {
   const contexto = obtenerContextoCartilla2P(asignatura, docente)
 
   if (!contexto) {
@@ -2263,6 +2777,8 @@ async function confirmarCambioCartilla2P(asignatura, nuevoValor, docente = null)
     })
     return
   }
+
+  if (contexto.modalidad === modalidadDestino) return
 
   if (!puedeAlternarCartilla2P(asignatura, docente)) {
     $q.notify({
@@ -2274,20 +2790,21 @@ async function confirmarCambioCartilla2P(asignatura, nuevoValor, docente = null)
     return
   }
 
-  const estadoDestino = nuevoValor ? 'CON CARTILLA' : 'SIN CARTILLA'
+  const estadoDestino = estadoDestinoModalidad2P(modalidadDestino).toUpperCase()
+  const nuevoValor = modalidadDestino !== MODALIDAD_SIN_CARTILLA
   const mensajeBase = `Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`
   const mensaje = nuevoValor
     ? `${mensajeBase}<br><br>¿Deseas continuar?`
     : `${mensajeBase}<br><br>Al confirmar, se eliminarán las preguntas del banco para ese grupo y parcial. ¿Deseas continuar?`
 
   $q.dialog({
-    title: 'Confirmar cambio de cartilla',
+    title: 'Confirmar modalidad',
     message: mensaje,
     html: true,
     persistent: true,
     ok: {
       label: 'Confirmar',
-      color: nuevoValor ? 'primary' : 'negative',
+      color: modalidadDestino === MODALIDAD_SIN_CARTILLA ? 'negative' : 'primary',
       unelevated: true,
       noCaps: true,
     },
@@ -2297,17 +2814,19 @@ async function confirmarCambioCartilla2P(asignatura, nuevoValor, docente = null)
       noCaps: true,
     },
   }).onOk(() => {
-    guardarCambioCartilla2P(contexto, nuevoValor)
+    guardarCambioModalidad2P(contexto, modalidadDestino)
   })
 }
 
-async function guardarCambioCartilla2P(contexto, nuevoValor) {
+async function guardarCambioModalidad2P(contexto, modalidadDestino) {
   guardandoCartilla2PMap.value = {
     ...guardandoCartilla2PMap.value,
     [contexto.key]: true,
   }
 
   try {
+    const nuevoValor = modalidadDestino !== MODALIDAD_SIN_CARTILLA
+
     await api.post('/banco-preguntas/save-config', {
       asignatura_id: contexto.asignaturaId,
       sede_id: contexto.sedeId,
@@ -2317,13 +2836,25 @@ async function guardarCambioCartilla2P(contexto, nuevoValor) {
       con_cartilla: nuevoValor,
     })
 
-    await cargarBancoPreguntas2P()
+    if (contexto.rolExamenId) {
+      await api.put(`/rol-examenes/${contexto.rolExamenId}`, {
+        modalidad: modalidadDestino,
+        config_generacion: {
+          ...(contexto.configGeneracion || {}),
+          modalidad: modalidadDestino,
+          con_cartilla: nuevoValor,
+        },
+      })
+    }
+
+    await Promise.all([
+      cargarBancoPreguntas2P(),
+      cargarRolExamenes2P(filtros.value.sedeId, filtros.value.carreraId),
+    ])
 
     $q.notify({
       type: 'positive',
-      message: nuevoValor
-        ? `Banco 2P del grupo ${contexto.grupoTeorico} restablecido a Con Cartilla.`
-        : `Banco 2P del grupo ${contexto.grupoTeorico} cambiado a Sin Cartilla.`,
+      message: `Modalidad 2P del grupo ${contexto.grupoTeorico} cambiada a ${estadoDestinoModalidad2P(modalidadDestino)}.`,
       icon: 'check_circle',
     })
   } catch (error) {
@@ -2339,6 +2870,12 @@ async function guardarCambioCartilla2P(contexto, nuevoValor) {
     delete siguienteEstado[contexto.key]
     guardandoCartilla2PMap.value = siguienteEstado
   }
+}
+
+function estadoDestinoModalidad2P(modalidad) {
+  if (modalidad === MODALIDAD_VIRTUAL) return 'Virtual'
+  if (modalidad === MODALIDAD_SIN_CARTILLA) return 'Sin Cartilla'
+  return 'Con Cartilla'
 }
 
 function formatearFechaCorta(fecha) {

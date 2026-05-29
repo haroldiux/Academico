@@ -7,6 +7,12 @@
     meta: { title: 'Iniciar Sesión', public: true },
   },
   {
+    path: '/examen-virtual',
+    name: 'examen-virtual-publico',
+    component: () => import('pages/PublicVirtualExamPage.vue'),
+    meta: { title: 'Examen Virtual', public: true },
+  },
+  {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
@@ -193,6 +199,7 @@
                 'VICERRECTOR_NACIONAL',
                 'ADMIN',
                 'SUPER_ADMIN',
+                'PLATAFORMA',
               ],
             },
           },
@@ -517,6 +524,15 @@
         meta: {
           title: 'Rol de Exámenes',
           rol: ['EVALUACIONES', 'ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'],
+        },
+      },
+      {
+        path: 'evaluaciones/examenes-virtuales',
+        name: 'evaluaciones-examenes-virtuales',
+        component: () => import('pages/evaluaciones/VirtualExamsPage.vue'),
+        meta: {
+          title: 'Exámenes Virtuales',
+          rol: ['DOCENTE', 'EVALUACIONES', 'RESPONSABLE_EVALUACIONES', 'ADMIN', 'SUPER_ADMIN'],
         },
       },
     ],

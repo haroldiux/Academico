@@ -13,6 +13,7 @@ export const ROLES = {
   DOCENTE: 'DOCENTE',
   EVALUACIONES: 'EVALUACIONES',
   RESPONSABLE_EVALUACIONES: 'RESPONSABLE_EVALUACIONES',
+  PLATAFORMA: 'PLATAFORMA',
 }
 
 // Mapeo de nombres de rol de BD a constantes del frontend
@@ -28,6 +29,7 @@ const ROLE_NAME_MAP = {
   DOCENTE: ROLES.DOCENTE,
   EVALUACIONES: ROLES.EVALUACIONES,
   RESPONSABLE_EVALUACIONES: ROLES.RESPONSABLE_EVALUACIONES,
+  PLATAFORMA: ROLES.PLATAFORMA,
   'RESPONSABLE DE EVALUACIONES': ROLES.RESPONSABLE_EVALUACIONES,
   'RESPONSABLE EVALUACIONES': ROLES.RESPONSABLE_EVALUACIONES,
   // Variaciones de texto
@@ -152,6 +154,13 @@ export const PERMISOS_ROL = {
     alcance: 'global',
     dashboard: 'EvaluacionesDashboard',
     descripcion: 'Gestión nacional de evaluaciones y administración',
+  },
+  [ROLES.PLATAFORMA]: {
+    nivel: 35,
+    puedeEditar: false,
+    alcance: 'sede',
+    dashboard: 'PlanEstudiosDashboard',
+    descripcion: 'Acceso operativo al plan de estudios',
   },
 }
 
@@ -582,7 +591,9 @@ export const useAuthStore = defineStore(
 
       if (alcanceActual === 'global') return true
       if (alcanceActual === 'sede' || alcanceActual === 'carrera' || alcanceActual === 'asignado') {
-        return usuarioActual.value.sede_id === sedeIdObjetivo
+        return (usuarioActual.value.sede_ids || [usuarioActual.value.sede_id]).includes(
+          Number(sedeIdObjetivo),
+        )
       }
       return false
     }
@@ -594,7 +605,9 @@ export const useAuthStore = defineStore(
 
       if (alcanceActual === 'global') return true
       if (alcanceActual === 'sede') {
-        return usuarioActual.value.sede_id === sedeIdObjetivo
+        return (usuarioActual.value.sede_ids || [usuarioActual.value.sede_id]).includes(
+          Number(sedeIdObjetivo),
+        )
       }
       if (alcanceActual === 'carrera') {
         return (
@@ -612,7 +625,9 @@ export const useAuthStore = defineStore(
 
       if (alcanceActual === 'global') return true
       if (alcanceActual === 'sede') {
-        return usuarioActual.value.sede_id === sedeIdMateria
+        return (usuarioActual.value.sede_ids || [usuarioActual.value.sede_id]).includes(
+          Number(sedeIdMateria),
+        )
       }
       if (alcanceActual === 'carrera') {
         return (

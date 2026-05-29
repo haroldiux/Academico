@@ -486,7 +486,7 @@
                 <!-- Sede Selector (Condicional o siempre visible) -->
                 <div class="col-12 col-md-6 animate-fade" v-if="requiereSede">
                   <q-select
-                    v-model="formUsuario.sedeId"
+                    :model-value="requiereMultiplesSedes ? formUsuario.sedeIds : formUsuario.sedeId"
                     label="Sede Académica"
                     outlined
                     dense
@@ -494,8 +494,16 @@
                     emit-value
                     map-options
                     clearable
-                    :rules="[(val) => !requiereSede || !!val || 'La Sede es requerida']"
+                    :multiple="requiereMultiplesSedes"
+                    :use-chips="requiereMultiplesSedes"
+                    :rules="[
+                      (val) =>
+                        !requiereSede ||
+                        (requiereMultiplesSedes ? val && val.length > 0 : !!val) ||
+                        'La Sede es requerida',
+                    ]"
                     class="input-rounded bg-white"
+                    @update:model-value="actualizarSedesForm"
                   >
                     <template v-slot:prepend>
                       <q-icon name="apartment" color="indigo" />
@@ -801,6 +809,7 @@ const formUsuarioInicial = {
   estado: 'activo',
   carrera: [],
   sedeId: null,
+  sedeIds: [],
 }
 
 const formUsuario = ref({ ...formUsuarioInicial })
@@ -905,15 +914,17 @@ const opcionesRolesForm = computed(() => {
   }))
 })
 
+const rolSeleccionado = computed(() => rolesStore.getRolById(formUsuario.value.rolId))
+const requiereMultiplesSedes = computed(() => rolSeleccionado.value?.codigo === 'PLATAFORMA')
+
 const requiereCarrera = computed(() => {
   const rolesConCarrera = ['DIRECTOR_CARRERA', 'DOCENTE']
-  const rol = rolesStore.getRolById(formUsuario.value.rolId)
-  return rol && rolesConCarrera.includes(rol.codigo)
+  return rolSeleccionado.value && rolesConCarrera.includes(rolSeleccionado.value.codigo)
 })
 
 // Verificar si requiere sede (casi todos menos Admin Global tal vez, pero asumiremos todos para director)
 const requiereSede = computed(() => {
-  const rol = rolesStore.getRolById(formUsuario.value.rolId)
+  const rol = rolSeleccionado.value
   // Vicerrectorado Nacional y Responsable de Evaluaciones tienen acceso global, no requieren sede específica
   return (
     rol && rol.codigo !== 'VICERRECTORADO_NACIONAL' && rol.codigo !== 'RESPONSABLE_EVALUACIONES'
@@ -1037,6 +1048,18 @@ async function actualizarSedeUsuario(usuario, sedeId) {
   })
 }
 
+function actualizarSedesForm(value) {
+  if (requiereMultiplesSedes.value) {
+    const sedeIds = Array.isArray(value) ? value : value ? [value] : []
+    formUsuario.value.sedeIds = sedeIds
+    formUsuario.value.sedeId = sedeIds[0] || null
+    return
+  }
+
+  formUsuario.value.sedeId = value || null
+  formUsuario.value.sedeIds = value ? [value] : []
+}
+
 function abrirDialogNuevo() {
   editando.value = false
   formUsuario.value = { ...formUsuarioInicial }
@@ -1063,6 +1086,7 @@ function editarUsuario(usuario) {
     estado: usuario.estado,
     carrera: carrerasVal,
     sedeId: usuario.sedeId || sedesUsuario[0]?.id || null,
+    sedeIds: sedesUsuario.map((sede) => sede.id),
   }
   showDialogUsuario.value = true
   actualizarOpcionesCarreras()
@@ -1089,6 +1113,12 @@ function onRolChange(rolId) {
   const rol = rolesStore.getRolById(rolId)
   if (rol) {
     formUsuario.value.rolNombre = rol.nombre
+  }
+  if (rol?.codigo === 'PLATAFORMA') {
+    formUsuario.value.sedeIds = formUsuario.value.sedeId ? [formUsuario.value.sedeId] : []
+  } else {
+    formUsuario.value.sedeId = formUsuario.value.sedeIds?.[0] || formUsuario.value.sedeId || null
+    formUsuario.value.sedeIds = formUsuario.value.sedeId ? [formUsuario.value.sedeId] : []
   }
 }
 
@@ -1120,13 +1150,24 @@ function guardarUsuario() {
     return
   }
 
-  if (requiereSede.value && !formUsuario.value.sedeId) {
+  if (
+    requiereSede.value &&
+    (requiereMultiplesSedes.value ? !formUsuario.value.sedeIds?.length : !formUsuario.value.sedeId)
+  ) {
     $q.notify({ type: 'warning', message: 'Seleccione la Sede', icon: 'warning' })
     return
   }
 
   const payload = { ...formUsuario.value }
-  if (!requiereSede.value) payload.sedeId = null
+  if (requiereMultiplesSedes.value) {
+    payload.sedeId = payload.sedeIds?.[0] || null
+  } else {
+    payload.sedeIds = payload.sedeId ? [payload.sedeId] : []
+  }
+  if (!requiereSede.value) {
+    payload.sedeId = null
+    payload.sedeIds = []
+  }
   if (!requiereCarrera.value) payload.carrera = []
 
   if (editando.value && usuarioSeleccionado.value) {

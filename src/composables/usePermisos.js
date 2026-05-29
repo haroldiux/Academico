@@ -41,6 +41,7 @@ export function usePermisos() {
   const esDocente = computed(() => rol.value === ROLES.DOCENTE)
   const esEvaluaciones = computed(() => rol.value === ROLES.EVALUACIONES)
   const esResponsableEvaluaciones = computed(() => rol.value === ROLES.RESPONSABLE_EVALUACIONES)
+  const esPlataforma = computed(() => rol.value === ROLES.PLATAFORMA)
 
   // Niveles de acceso
   const tieneAccesoGlobal = computed(() => alcance.value === 'global')
@@ -167,6 +168,7 @@ export function usePermisos() {
       [ROLES.DOCENTE]: '/docente/dashboard',
       [ROLES.EVALUACIONES]: '/evaluaciones/dashboard',
       [ROLES.RESPONSABLE_EVALUACIONES]: '/evaluaciones/dashboard',
+      [ROLES.PLATAFORMA]: '/director/asignaturas',
     }
     return dashboards[rol.value] || '/'
   }
@@ -178,8 +180,11 @@ export function usePermisos() {
     const itemsBase = [{ label: 'Dashboard', icon: 'dashboard', to: getDashboardRoute() }]
 
     // Items según rol
+    if (esPlataforma.value) {
+      return [{ label: 'Plan de Estudios', icon: 'layers', to: '/director/asignaturas' }]
+    }
+
     if (esDocente.value) {
-      // Docentes: solo Mis Asignaturas (web y app nativa)
       return [{ label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' }]
     }
 
@@ -384,6 +389,7 @@ export function usePermisos() {
     esDocente,
     esEvaluaciones,
     esResponsableEvaluaciones,
+    esPlataforma,
 
     // Niveles de acceso
     tieneAccesoGlobal,

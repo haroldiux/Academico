@@ -124,6 +124,10 @@ export const useUsuariosStore = defineStore('usuarios', () => {
         payload.sede_id = payload.sedeId
         delete payload.sedeId
       }
+      if (payload.sedeIds !== undefined) {
+        payload.sede_ids = payload.sedeIds
+        delete payload.sedeIds
+      }
 
       // Convertir carrera array a string separado por comas
       if (payload.carrera !== undefined) {
@@ -167,6 +171,10 @@ export const useUsuariosStore = defineStore('usuarios', () => {
       if (payload.sedeId !== undefined) {
         payload.sede_id = payload.sedeId
         delete payload.sedeId
+      }
+      if (payload.sedeIds !== undefined) {
+        payload.sede_ids = payload.sedeIds
+        delete payload.sedeIds
       }
 
       // Convertir carrera array a string separado por comas

@@ -5,13 +5,16 @@ Este documento servira como referencia viva y verificada de los endpoints del si
 ---
 
 <<<<<<< HEAD
+
 ## Modulo 1: Asignaturas y Planificacion
+
 **Estado de Verificacion:** [COMPLETADO] COMPLETADO PARCIAL (Detalles + Temas)
 **Archivo Frontend Referencia:** `Academico/src/pages/documentacion/AsignaturaEditPage.vue`
 
 ### 1.1 Detalles de Asignatura (Informacion General)
-Permite editar la informacion base, incluyendo campos extendidos que no vienen de la API.
-=======
+
+# Permite editar la informacion base, incluyendo campos extendidos que no vienen de la API.
+
 ## Módulo 1: Asignaturas y Planificación
 
 **Estado de Verificación:** ✅ COMPLETADO PARCIAL (Detalles + Temas)
@@ -20,19 +23,22 @@ Permite editar la informacion base, incluyendo campos extendidos que no vienen d
 ### 1.1 Detalles de Asignatura (Información General)
 
 Permite editar la información base, incluyendo campos extendidos que no vienen de la API.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 - **Metodo:** `PUT`
 - **URL:** `/api/asignaturas/{ID}`
 - **Controlador:** `AsignaturaController@update`
 
 #### Payload (JSON Request)
+
 <<<<<<< HEAD
 El frontend envia estos campos. El backend los mapea internamente a las columnas correctas.
 =======
 
 El frontend envía estos campos. El backend los mapea internamente a las columnas correctas.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 ```json
 {
@@ -59,24 +65,28 @@ El frontend envía estos campos. El backend los mapea internamente a las columna
 ```
 
 ### 1.2 Editar Tema Completo (Unificado)
+
 <<<<<<< HEAD
 Este endpoint permite guardar todos los datos del formulario de un tema: contenidos, estrategias, evaluaciones y bibliografia.
 =======
 
 Este endpoint permite guardar todos los datos del formulario de un tema: contenidos, estrategias, evaluaciones y bibliografía.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 - **Metodo:** `PUT`
 - **URL:** `/api/planificacion/temas/{ID}/contenido`
 - **Controlador:** `PlanificacionController@updateTema`
 
 #### Payload (JSON Request)
+
 <<<<<<< HEAD
 Estructura exacta que envia el Frontend (`formTema`):
 =======
 
 Estructura exacta que envía el Frontend (`formTema`):
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 ```json
 {
@@ -148,12 +158,15 @@ Recupera el objeto completo para poblar la vista.
 ---
 
 <<<<<<< HEAD
+
 ### 1.3 Secuencia Didactica
+
 =======
+
 ### 1.3 Secuencia Didáctica
 
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
-Endpoints para gestionar los "momentos" de la clase (Inicio, Desarrollo, Cierre).
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+> > > > > > > Endpoints para gestionar los "momentos" de la clase (Inicio, Desarrollo, Cierre).
 
 - **Crear Momento:** `POST /api/planificacion/temas/{ID}/secuencias`
   - Payload: `{ "momento": "INICIO", "actividad": "...", "duracion_minutos": 15 }`
@@ -174,34 +187,39 @@ Endpoints para gestionar preguntas asociadas a Logros Esperados.
 ---
 
 <<<<<<< HEAD
+
 ## Modulo 2: Gestion de Carreras (Dashboard)
-**Estado de Verificacion:** [COMPLETADO] COMPLETADO
-=======
+
+# **Estado de Verificacion:** [COMPLETADO] COMPLETADO
+
 ## Módulo 2: Gestión de Carreras (Dashboard)
 
 **Estado de Verificación:** ✅ COMPLETADO
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
-**Archivo Frontend Referencia:** `Academico/src/pages/admin/CarrerasPage.vue`
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+> > > > > > > **Archivo Frontend Referencia:** `Academico/src/pages/admin/CarrerasPage.vue`
 
 Este modulo funciona en modo **Sincronizacion Hibrida**. Al consultar la lista, el backend recupera datos frescos de la API University, actualiza la base de datos local y devuelve los registros locales enriquecidos con contadores y estados.
 
 <<<<<<< HEAD
+
 ### 2.1 Listar Carreras (Con Filtros y Estadisticas)
+
 =======
+
 ### 2.1 Listar Carreras (Con Filtros y Estadísticas)
 
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
-Retorna la lista de carreras activas, incluyendo contadores de asignaturas y docentes.
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+> > > > > > > Retorna la lista de carreras activas, incluyendo contadores de asignaturas y docentes.
 
 - **Metodo:** `GET`
 - **URL:** `/api/carreras`
-<<<<<<< HEAD
-- **Parametros (Query):**
-    - `sede_id` (Opcional): ID de la sede para filtrar (Ej: `1` para Cochabamba).
-=======
+  <<<<<<< HEAD
+- **Parametros (Query):** - `sede_id` (Opcional): ID de la sede para filtrar (Ej: `1` para Cochabamba).
+  =======
 - **Parámetros (Query):**
   - `sede_id` (Opcional): ID de la sede para filtrar (Ej: `1` para Cochabamba).
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+    > > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 - **Controlador:** `CarreraController@index`
 
 #### Respuesta (JSON)
@@ -231,24 +249,29 @@ Formato exacto esperado por el Store `carreras.js`.
 ---
 
 <<<<<<< HEAD
+
 ## Modulo 3: Planificacion Semestral (Nuevo)
-**Estado de Verificacion:** [EN_PROGRESO] EN PROGRESO (Backend Listo)
-=======
+
+# **Estado de Verificacion:** [EN_PROGRESO] EN PROGRESO (Backend Listo)
+
 ## Módulo 3: Planificación Semestral (Nuevo)
 
 **Estado de Verificación:** 🔄 EN PROGRESO (Backend Listo)
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
-**Archivo Frontend Referencia:** `Academico/src/pages/documentacion/PlanificacionPage.vue`
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+> > > > > > > **Archivo Frontend Referencia:** `Academico/src/pages/documentacion/PlanificacionPage.vue`
 
 Este modulo maneja la distribucion de temas en el tiempo (Generador Automatico).
 
 ### 3.1 Obtener Estado Completo
+
 <<<<<<< HEAD
 Recupera la configuracion de calendario, los horarios semanales y la lista de sesiones generadas (si existen).
 =======
 
 Recupera la configuración de calendario, los horarios semanales y la lista de sesiones generadas (si existen).
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 - **Metodo:** `GET`
 - **URL:** `/api/planificacion-semestral/{asignaturaId}`
@@ -268,12 +291,15 @@ Recupera la configuración de calendario, los horarios semanales y la lista de s
   ```
 
 <<<<<<< HEAD
+
 ### 3.2 Guardar Configuracion y Horarios
+
 =======
+
 ### 3.2 Guardar Configuración y Horarios
 
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
-Guarda las fechas del semestre y los horarios de clase (Lunes, Martes...).
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+> > > > > > > Guarda las fechas del semestre y los horarios de clase (Lunes, Martes...).
 
 - **Metodo:** `POST`
 - **URL:** `/api/planificacion-semestral/{asignaturaId}/config`
@@ -288,12 +314,15 @@ Guarda las fechas del semestre y los horarios de clase (Lunes, Martes...).
   ```
 
 <<<<<<< HEAD
+
 ### 3.3 Guardar Planificacion (Sesiones)
+
 =======
+
 ### 3.3 Guardar Planificación (Sesiones)
 
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
-Guarda (sobrescribe) el listado de sesiones generado o editado en el grid.
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+> > > > > > > Guarda (sobrescribe) el listado de sesiones generado o editado en el grid.
 
 - **Metodo:** `POST`
 - **URL:** `/api/planificacion-semestral/{asignaturaId}/sesiones`
@@ -314,18 +343,21 @@ Guarda (sobrescribe) el listado de sesiones generado o editado en el grid.
   ```
 
 <<<<<<< HEAD
+
 ### 3.4 Generar Planificacion Automatica
+
 Genera 20 semanas de sesiones basado en el calendario y horario de la asignatura.
 **Logica de Negocio:**
-- Detecta automaticamente las semanas de examen: **Sem 7-8 (1er Parcial)**, **Sem 14-15 (2do Parcial)**, **Sem 18-19 (Final)**, **Sem 20 (2da Instancia)**.
-=======
+
+- # Detecta automaticamente las semanas de examen: **Sem 7-8 (1er Parcial)**, **Sem 14-15 (2do Parcial)**, **Sem 18-19 (Final)**, **Sem 20 (2da Instancia)**.
+
 ### 3.4 Generar Planificación Automática
 
 Genera 20 semanas de sesiones basado en el calendario y horario de la asignatura.
 **Lógica de Negocio:**
 
 - Detecta automáticamente las semanas de examen: **Sem 7-8 (1er Parcial)**, **Sem 14-15 (2do Parcial)**, **Sem 18-19 (Final)**, **Sem 20 (2da Instancia)**.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+  > > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 - En semanas de examen, no se crea contenido, solo se marca el periodo.
 
 - **Metodo:** `POST`
@@ -333,13 +365,16 @@ Genera 20 semanas de sesiones basado en el calendario y horario de la asignatura
 - **Respuesta:** `{ "message": "Planificacion generada", "total": 45 }`
 
 <<<<<<< HEAD
+
 ### 3.5 Copiar Planificacion (Unificacion)
-Permite importar el **contenido** (temas, metodologias, evaluaciones) de otra asignatura (ej: Grupo 1 -> Grupo 2), manteniendo las fechas del grupo destino.
-=======
+
+# Permite importar el **contenido** (temas, metodologias, evaluaciones) de otra asignatura (ej: Grupo 1 -> Grupo 2), manteniendo las fechas del grupo destino.
+
 ### 3.5 Copiar Planificación (Unificación)
 
 Permite importar el **contenido** (temas, metodologías, evaluaciones) de otra asignatura (ej: Grupo 1 -> Grupo 2), manteniendo las fechas del grupo destino.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 - **Metodo:** `POST`
 - **URL:** `/api/planificacion-semestral/{asignaturaId}/copiar`
@@ -353,17 +388,19 @@ Permite importar el **contenido** (temas, metodologías, evaluaciones) de otra a
 <<<<<<< HEAD
 
 ### 3.4 Generar Planificacion Automatica
+
 Genera 20 semanas de sesiones basado en el calendario y horario de la asignatura.
 **Logica de Negocio:**
-- Detecta automaticamente las semanas de examen: **Sem 7-8 (1er Parcial)**, **Sem 14-15 (2do Parcial)**, **Sem 18-19 (Final)**, **Sem 20 (2da Instancia)**.
-=======
+
+- # Detecta automaticamente las semanas de examen: **Sem 7-8 (1er Parcial)**, **Sem 14-15 (2do Parcial)**, **Sem 18-19 (Final)**, **Sem 20 (2da Instancia)**.
+
 ### 3.4 Generar Planificación Automática
 
 Genera 20 semanas de sesiones basado en el calendario y horario de la asignatura.
 **Lógica de Negocio:**
 
 - Detecta automáticamente las semanas de examen: **Sem 7-8 (1er Parcial)**, **Sem 14-15 (2do Parcial)**, **Sem 18-19 (Final)**, **Sem 20 (2da Instancia)**.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+  > > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 - En semanas de examen, no se crea contenido, solo se marca el periodo.
 
 - **Metodo:** `POST`
@@ -371,13 +408,16 @@ Genera 20 semanas de sesiones basado en el calendario y horario de la asignatura
 - **Respuesta:** `{ "message": "Planificacion generada", "total": 45 }`
 
 <<<<<<< HEAD
+
 ### 3.5 Copiar Planificacion (Unificacion)
-Permite importar el **contenido** (temas, metodologias, evaluaciones) de otra asignatura (ej: Grupo 1 -> Grupo 2), manteniendo las fechas del grupo destino.
-=======
+
+# Permite importar el **contenido** (temas, metodologias, evaluaciones) de otra asignatura (ej: Grupo 1 -> Grupo 2), manteniendo las fechas del grupo destino.
+
 ### 3.5 Copiar Planificación (Unificación)
 
 Permite importar el **contenido** (temas, metodologías, evaluaciones) de otra asignatura (ej: Grupo 1 -> Grupo 2), manteniendo las fechas del grupo destino.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 - **Metodo:** `POST`
 - **URL:** `/api/planificacion-semestral/{asignaturaId}/copiar`
@@ -391,36 +431,46 @@ Permite importar el **contenido** (temas, metodologías, evaluaciones) de otra a
 ---
 
 <<<<<<< HEAD
+
 ## Modulo 4: Gestion de Bibliografia
+
 **Estado de Verificacion:** [EN_PROGRESO] COMPLETADO
 **Archivo Frontend Referencia:** `Academico/src/pages/documentacion/AsignaturaEditPage.vue` (Seccion Bibliografia)
 =======
+
 ## Módulo 4: Gestión de Bibliografía
 
 **Estado de Verificación:** 🔄 COMPLETADO
 **Archivo Frontend Referencia:** `Academico/src/pages/documentacion/AsignaturaEditPage.vue` (Sección Bibliografía)
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 Gestion maestra de libros y recursos de la asignatura.
 
 <<<<<<< HEAD
+
 ### 4.1 CRUD Bibliografia
+
 =======
+
 ### 4.1 CRUD Bibliografía
 
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+
 - **Listar:** `GET /api/bibliografias?asignatura_id={ID}`
 - **Crear:** `POST /api/bibliografias`
 - **Actualizar:** `PUT /api/bibliografias/{ID}`
 - **Eliminar:** `DELETE /api/bibliografias/{ID}`
 
 #### Payload (JSON)
+
 <<<<<<< HEAD
 Campos soportados segun la vista "Nueva Bibliografia":
 =======
 
 Campos soportados según la vista "Nueva Bibliografía":
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 ```json
 {
@@ -441,38 +491,48 @@ Campos soportados según la vista "Nueva Bibliografía":
 ---
 
 <<<<<<< HEAD
+
 ## Modulo 5: Unidades y Logros de Aprendizaje
+
 **Estado de Verificacion:** [EN_PROGRESO] COMPLETADO
 **Archivo Frontend Referencia:** `Academico/src/pages/documentacion/AsignaturaEditPage.vue` (Seccion Unidades)
 =======
+
 ## Módulo 5: Unidades y Logros de Aprendizaje
 
 **Estado de Verificación:** 🔄 COMPLETADO
 **Archivo Frontend Referencia:** `Academico/src/pages/documentacion/AsignaturaEditPage.vue` (Sección Unidades)
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 Gestion de la estructura curricular, logros esperados e indicadores.
 
 <<<<<<< HEAD
+
 ### 5.0 Gestion Detalles de Unidad
-Editar el "Elemento de Competencia" o descripcion de la unidad.
-=======
+
+# Editar el "Elemento de Competencia" o descripcion de la unidad.
+
 ### 5.0 Gestión Detalles de Unidad
 
 Editar el "Elemento de Competencia" o descripción de la unidad.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 - **URL:** `PUT /api/planificacion/unidades/{ID}`
 - **Payload:** `{ "objetivo": "Analiza e interpreta los fundamentos..." }`
 
 <<<<<<< HEAD
+
 ### 5.1 Gestion de Logros Esperados
-Cada tema tiene multiples logros. Ahora incluye el "Periodo" o parcial.
-=======
+
+# Cada tema tiene multiples logros. Ahora incluye el "Periodo" o parcial.
+
 ### 5.1 Gestión de Logros Esperados
 
 Cada tema tiene múltiples logros. Ahora incluye el "Periodo" o parcial.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 - **Crear Logro:** `POST /api/planificacion/temas/{ID}/logros`
 - **Eliminar:** `DELETE /api/planificacion/logros/{ID}`
@@ -489,13 +549,15 @@ Cada tema tiene múltiples logros. Ahora incluye el "Periodo" o parcial.
 ```
 
 ### 5.2 Gestion de Indicadores
-Cada logro tiene multiples indicadores de evidencia.
-=======
-  "descripcion": "Define correctamente el concepto de ingeniería...",
-  "tipo_logro": "Saber", // Saber | Hacer | Ser
-  "periodo": "1er Parcial" // Nuevo Campo: Periodo de evaluación al que pertenece
+
+# Cada logro tiene multiples indicadores de evidencia.
+
+"descripcion": "Define correctamente el concepto de ingeniería...",
+"tipo_logro": "Saber", // Saber | Hacer | Ser
+"periodo": "1er Parcial" // Nuevo Campo: Periodo de evaluación al que pertenece
 }
-```
+
+````
 
 ### 5.2 Gestión de Indicadores
 
@@ -556,7 +618,7 @@ Coincide con el formulario "Nueva Pregunta".
   // "created_by": 1           // (Automático) Se guarda el ID del usuario autenticado.
 >>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
 }
-```
+````
 
 ### 6.2 Importar desde Excel
 
@@ -565,93 +627,101 @@ Coincide con el formulario "Nueva Pregunta".
 ---
 
 <<<<<<< HEAD
+
 ## Modulo 7: Evaluaciones y Patron
-**Estado de Verificacion:** [EN_PROGRESO] EN PROCESO
-=======
+
+# **Estado de Verificacion:** [EN_PROGRESO] EN PROCESO
+
 ## Módulo 7: Evaluaciones y Patrón
 
 **Estado de Verificación:** 🔄 EN PROCESO
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
-**Archivo Frontend Referencia:** `Academico/src/pages/documentacion/EvaluacionesPage.vue`
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+> > > > > > > **Archivo Frontend Referencia:** `Academico/src/pages/documentacion/EvaluacionesPage.vue`
 
 Gestion de examenes parciales, configuracion, y generacion de patrones de respuestas.
 
 <<<<<<< HEAD
+
 ### 7.1 Crear Evaluacion (y Generar Patron Automaticamente)
-Crea la configuracion del examen y genera aleatoriamente una version "Tipo A" seleccionando preguntas de los Logros del Parcial indicado.
-=======
+
+# Crea la configuracion del examen y genera aleatoriamente una version "Tipo A" seleccionando preguntas de los Logros del Parcial indicado.
+
 ### 7.1 Crear Evaluación (y Generar Patrón Automaticamente)
 
 Crea la configuración del examen y genera aleatoriamente una versión "Tipo A" seleccionando preguntas de los Logros del Parcial indicado.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 - **Metodo:** `POST`
 - **URL:** `/api/evaluaciones`
 - **Payload (JSON):**
-<<<<<<< HEAD
-    ```json
-    {
-      "asignatura_id": 5,
-      "nombre": "Examen 1er Parcial - Anatomia I",
-      "parcial": "1er Parcial",      // Sirve para filtrar preguntas por Logro.
-      "fecha_examen": "2026-03-15",
-      "hora_inicio": "08:00",
-      "duracion_minutos": 45,
-      "mezclar_preguntas": true,
-      "mezclar_opciones": true, // Para el render en linea, no afecta patron impreso salvo el orden.
-      
-      // Distribucion de Dificultad (Suma DEBE ser <= total preguntas disponibles)
-      "distribucion_facil": 5,
-      "distribucion_medio": 10,
-      "distribucion_dificil": 5
-    }
-    ```
+  <<<<<<< HEAD
+  ```json
+  {
+  "asignatura_id": 5,
+  "nombre": "Examen 1er Parcial - Anatomia I",
+  "parcial": "1er Parcial", // Sirve para filtrar preguntas por Logro.
+  "fecha_examen": "2026-03-15",
+  "hora_inicio": "08:00",
+  "duracion_minutos": 45,
+  "mezclar_preguntas": true,
+  "mezclar_opciones": true, // Para el render en linea, no afecta patron impreso salvo el orden.
+        // Distribucion de Dificultad (Suma DEBE ser <= total preguntas disponibles)
+        "distribucion_facil": 5,
+        "distribucion_medio": 10,
+        "distribucion_dificil": 5
+      }
+      ```
 - **Respuesta:** Objeto `Evaluacion` con array `examenes_generados`.
 
 ### 7.2 Obtener Datos del Patron (PDF)
-Devuelve la estructura JSON lista para renderizar la vista "Patron de Respuestas" (Circulos A-E).
-=======
-  ```json
-  {
-    "asignatura_id": 5,
-    "nombre": "Examen 1er Parcial - Anatomía I",
-    "parcial": "1er Parcial", // Sirve para filtrar preguntas por Logro.
-    "fecha_examen": "2026-03-15",
-    "hora_inicio": "08:00",
-    "duracion_minutos": 45,
-    "mezclar_preguntas": true,
-    "mezclar_opciones": true, // Para el render en linea, no afecta patrón impreso salvo el orden.
 
-    // Distribución de Dificultad (Suma DEBE ser <= total preguntas disponibles)
-    "distribucion_facil": 5,
-    "distribucion_medio": 10,
-    "distribucion_dificil": 5
-  }
-  ```
+# Devuelve la estructura JSON lista para renderizar la vista "Patron de Respuestas" (Circulos A-E).
+
+```json
+{
+  "asignatura_id": 5,
+  "nombre": "Examen 1er Parcial - Anatomía I",
+  "parcial": "1er Parcial", // Sirve para filtrar preguntas por Logro.
+  "fecha_examen": "2026-03-15",
+  "hora_inicio": "08:00",
+  "duracion_minutos": 45,
+  "mezclar_preguntas": true,
+  "mezclar_opciones": true, // Para el render en linea, no afecta patrón impreso salvo el orden.
+
+  // Distribución de Dificultad (Suma DEBE ser <= total preguntas disponibles)
+  "distribucion_facil": 5,
+  "distribucion_medio": 10,
+  "distribucion_dificil": 5
+}
+```
+
 - **Respuesta:** Objeto `Evaluacion` con array `examenes_generados`.
 
 ### 7.2 Obtener Datos del Patrón (PDF)
 
 Devuelve la estructura JSON lista para renderizar la vista "Patrón de Respuestas" (Círculos A-E).
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 - **Metodo:** `GET`
 - **URL:** `/api/examenes-generados/{id}/patron`
 - **Respuesta (Ejemplo):**
   `json
-    {
-      "institucion": "UNIVERSIDAD TECNICA PRIVADA COSMOS",
-      "asignatura": "Anatomia I",
-      "examen_titulo": "1er Parcial",
-      "tipo_examen": "TIPO A",
-      "fecha": "2026-03-15",
-      "preguntas": [
-        { "numero": 1, "respuesta_correcta": "B" },
-        { "numero": 2, "respuesta_correcta": "A" },
-        // ... hasta la 20
-      ]
-    }
-    `
+  {
+    "institucion": "UNIVERSIDAD TECNICA PRIVADA COSMOS",
+    "asignatura": "Anatomia I",
+    "examen_titulo": "1er Parcial",
+    "tipo_examen": "TIPO A",
+    "fecha": "2026-03-15",
+    "preguntas": [
+      { "numero": 1, "respuesta_correcta": "B" },
+      { "numero": 2, "respuesta_correcta": "A" },
+      // ... hasta la 20
+    ]
+  }
+  `
   Carga masiva de preguntas para un logro.
 
 - **Metodo:** `POST`
@@ -661,13 +731,15 @@ Devuelve la estructura JSON lista para renderizar la vista "Patrón de Respuesta
   - `logro_esperado_id`: ID del logro destino.
 
 #### Mapeo de Sedes (Backend)
+
 <<<<<<< HEAD
 El sistema sincroniza automaticamente los codigos de la API con los IDs del Frontend:
 =======
 
 El sistema sincroniza automáticamente los códigos de la API con los IDs del Frontend:
 
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+
 - `CBA`, `CBB` -> **1** (Cochabamba)
 - `LPZ` -> **2** (La Paz)
 - `SCZ` -> **3** (Santa Cruz)

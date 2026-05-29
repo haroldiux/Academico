@@ -229,6 +229,7 @@ El **Engine 1** es un motor de análisis léxico diseñado para auditar exámene
     - Suprime espacios en blanco múltiples, retornos de carro, tabulaciones y caracteres especiales no alfanuméricos.
 3.  **Comparación por `similar_text()`:**
     El sistema recupera los reactivos vigentes asignados al docente, la materia y el parcial. Luego, ejecuta una comparación iterativa cruzada:
+
     ```php
     similar_text($pdfComparable, $statementComparable, $percent);
     ```

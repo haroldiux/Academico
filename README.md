@@ -1,11 +1,16 @@
 <<<<<<< HEAD
+
 # SISA - Sistema Integrado de Seguimiento Academico
+
 ### Portal de Documentacion del Frontend (Quasar App)
+
 =======
+
 # 🚀 SISA - Sistema Integrado de Seguimiento Académico
 
 ### 💻 Portal de Documentación del Frontend (Quasar App)
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
 
 Bienvenido al repositorio oficial del **Frontend** de **SISA** (Sistema Integrado de Seguimiento Académico), una plataforma web de alto rendimiento y mobile-ready para la gestión, seguimiento y planificación académica a nivel universitario.
 
@@ -104,9 +109,11 @@ quasar build
 - **Móvil / Híbrido:** Capacitor JS (Network, Filesystem)
 
 ---
+
 <<<<<<< HEAD
 Desarrollado para el control y excelencia academica universitaria.
 =======
 
 Desarrollado con ❤️ para el control y excelencia académica universitaria.
->>>>>>> bb0efec01818361c4ce30bc06a0acd28515648ff
+
+> > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff

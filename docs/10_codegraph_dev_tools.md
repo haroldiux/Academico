@@ -12,49 +12,49 @@ El proyecto SISA tiene CodeGraph completamente inicializado (`.codegraph/`) y co
 
 ## 10.2 Stack de Herramientas Dev
 
-| Herramienta | Propósito | Ubicación |
-|---|---|---|
-| **CodeGraph** | Grafo de conocimiento AST del código | `.codegraph/` (raíz del proyecto) |
-| **OpenCode** | Asistente de IA para desarrollo | Configurado en `opencode.jsonc` |
-| **ESLint** | Linting de código frontend | `Academico/eslint.config.js` |
-| **Prettier** | Formateo de código | `Academico/.prettierrc` |
-| **Vitest** | Pruebas unitarias frontend | `Academico/tests/unit/` |
-| **Playwright** | Pruebas E2E y API | `Academico/tests/e2e/`, `Academico/tests/api/` |
-| **PHPUnit** | Pruebas backend | `back-2file/tests/` |
+| Herramienta    | Propósito                            | Ubicación                                      |
+| -------------- | ------------------------------------ | ---------------------------------------------- |
+| **CodeGraph**  | Grafo de conocimiento AST del código | `.codegraph/` (raíz del proyecto)              |
+| **OpenCode**   | Asistente de IA para desarrollo      | Configurado en `opencode.jsonc`                |
+| **ESLint**     | Linting de código frontend           | `Academico/eslint.config.js`                   |
+| **Prettier**   | Formateo de código                   | `Academico/.prettierrc`                        |
+| **Vitest**     | Pruebas unitarias frontend           | `Academico/tests/unit/`                        |
+| **Playwright** | Pruebas E2E y API                    | `Academico/tests/e2e/`, `Academico/tests/api/` |
+| **PHPUnit**    | Pruebas backend                      | `back-2file/tests/`                            |
 
 ## 10.3 Herramientas de CodeGraph Disponibles
 
 CodeGraph expone las siguientes herramientas MCP que pueden ser invocadas por asistentes de IA:
 
-| Herramienta | Propósito | Ejemplo de uso |
-|---|---|---|
-| `codegraph_search` | Buscar símbolos por nombre | "¿Dónde está definido `MateriasComunesSyncService`?" |
-| `codegraph_callers` | Ver quién llama a una función | "¿Qué llama a `syncUnidad()`?" |
-| `codegraph_callees` | Ver qué llama una función | "¿Qué métodos invoca `mergeAndSyncOnLink`?" |
-| `codegraph_trace` | Trazar ruta entre dos símbolos | "¿Cómo llega `guardarSeguimiento` a `propagarSeguimientoAComunes`?" |
-| `codegraph_impact` | Analizar impacto de un cambio | "¿Qué rompería si modifico `comun_token`?" |
-| `codegraph_node` | Ver detalle de un símbolo | Firma, docstring, ubicación de una función |
-| `codegraph_context` | Contexto completo para una tarea | "¿Cómo funciona el módulo de materias comunes?" |
-| `codegraph_explore` | Ver fuente de varios símbolos | Código agrupado por archivo de múltiples símbolos |
-| `codegraph_files` | Explorar estructura de archivos | "¿Qué archivos hay en `src/pages/admin/`?" |
-| `codegraph_status` | Estado del índice | Archivos pendientes de sincronizar |
+| Herramienta         | Propósito                        | Ejemplo de uso                                                      |
+| ------------------- | -------------------------------- | ------------------------------------------------------------------- |
+| `codegraph_search`  | Buscar símbolos por nombre       | "¿Dónde está definido `MateriasComunesSyncService`?"                |
+| `codegraph_callers` | Ver quién llama a una función    | "¿Qué llama a `syncUnidad()`?"                                      |
+| `codegraph_callees` | Ver qué llama una función        | "¿Qué métodos invoca `mergeAndSyncOnLink`?"                         |
+| `codegraph_trace`   | Trazar ruta entre dos símbolos   | "¿Cómo llega `guardarSeguimiento` a `propagarSeguimientoAComunes`?" |
+| `codegraph_impact`  | Analizar impacto de un cambio    | "¿Qué rompería si modifico `comun_token`?"                          |
+| `codegraph_node`    | Ver detalle de un símbolo        | Firma, docstring, ubicación de una función                          |
+| `codegraph_context` | Contexto completo para una tarea | "¿Cómo funciona el módulo de materias comunes?"                     |
+| `codegraph_explore` | Ver fuente de varios símbolos    | Código agrupado por archivo de múltiples símbolos                   |
+| `codegraph_files`   | Explorar estructura de archivos  | "¿Qué archivos hay en `src/pages/admin/`?"                          |
+| `codegraph_status`  | Estado del índice                | Archivos pendientes de sincronizar                                  |
 
 ## 10.4 Reglas de Uso para Desarrollo con IA
 
 ### Cuándo usar CodeGraph vs búsqueda tradicional
 
-| Tipo de pregunta | Usar |
-|---|---|
-| "¿Dónde se define X?" / "Buscar símbolo X" | `codegraph_search` |
-| "¿Qué función llama a Y?" | `codegraph_callers` |
-| "¿Qué llama Y?" | `codegraph_callees` |
-| "¿Cómo llega X a Y?" / "Trazar flujo de X a Y" | `codegraph_trace` (una sola llamada = ruta completa) |
-| "¿Qué rompería si cambio Z?" | `codegraph_impact` |
-| "Muéstrame firma/fuente de Y" | `codegraph_node` |
-| "Dame contexto para tarea/área" | `codegraph_context` |
-| "Ver fuente de varios símbolos" | `codegraph_explore` |
-| "¿Qué archivos hay en ruta/?" | `codegraph_files` |
-| Búsqueda literal de texto (strings, comentarios, logs) | `grep` / búsqueda nativa |
+| Tipo de pregunta                                       | Usar                                                 |
+| ------------------------------------------------------ | ---------------------------------------------------- |
+| "¿Dónde se define X?" / "Buscar símbolo X"             | `codegraph_search`                                   |
+| "¿Qué función llama a Y?"                              | `codegraph_callers`                                  |
+| "¿Qué llama Y?"                                        | `codegraph_callees`                                  |
+| "¿Cómo llega X a Y?" / "Trazar flujo de X a Y"         | `codegraph_trace` (una sola llamada = ruta completa) |
+| "¿Qué rompería si cambio Z?"                           | `codegraph_impact`                                   |
+| "Muéstrame firma/fuente de Y"                          | `codegraph_node`                                     |
+| "Dame contexto para tarea/área"                        | `codegraph_context`                                  |
+| "Ver fuente de varios símbolos"                        | `codegraph_explore`                                  |
+| "¿Qué archivos hay en ruta/?"                          | `codegraph_files`                                    |
+| Búsqueda literal de texto (strings, comentarios, logs) | `grep` / búsqueda nativa                             |
 
 ### Mejores prácticas
 
@@ -99,6 +99,7 @@ node generate_local_docs.cjs
 ```
 
 Estos scripts convierten todos los archivos `.md` de la carpeta `docs/` en páginas HTML interactivas con:
+
 - Sidebar de navegación
 - Renderizado Markdown con Marked.js
 - Diagramas Mermaid
@@ -109,12 +110,12 @@ Estos scripts convierten todos los archivos `.md` de la carpeta `docs/` en pági
 
 ## 10.7 Convenciones del Proyecto
 
-| Convención | Descripción |
-|---|---|
-| `comun_token` | UUID para agrupar materias comunes |
-| Anti-recursión | `static bool $isSyncing` en `MateriasComunesSyncService` |
-| Matching de temas | Siempre por `unidad.numero + tema.orden` |
-| Composición API | Vue 3 `<script setup>` en todo el frontend |
-| Stores | Pinia con `pinia-plugin-persistedstate` |
-| Rutas API | Prefijo `/api`, protegidas con `auth:sanctum` |
-| Offline-First | Capacitor Filesystem + Network para modo sin conexión |
+| Convención        | Descripción                                              |
+| ----------------- | -------------------------------------------------------- |
+| `comun_token`     | UUID para agrupar materias comunes                       |
+| Anti-recursión    | `static bool $isSyncing` en `MateriasComunesSyncService` |
+| Matching de temas | Siempre por `unidad.numero + tema.orden`                 |
+| Composición API   | Vue 3 `<script setup>` en todo el frontend               |
+| Stores            | Pinia con `pinia-plugin-persistedstate`                  |
+| Rutas API         | Prefijo `/api`, protegidas con `auth:sanctum`            |
+| Offline-First     | Capacitor Filesystem + Network para modo sin conexión    |

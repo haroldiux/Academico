@@ -1565,6 +1565,44 @@
                           </div>
                         </div>
 
+                        <div v-if="esExamenVirtualBanco(examen)" class="virtual-exam-box q-mt-sm">
+                          <q-chip dense color="purple-1" text-color="purple-9" size="sm">
+                            <q-icon name="computer" size="13px" class="q-mr-xs" />
+                            Examen virtual
+                          </q-chip>
+                          <div v-if="getSesionVirtualBanco(examen)?.token" class="virtual-token">
+                            Token:
+                            <strong>{{ getSesionVirtualBanco(examen).token }}</strong>
+                          </div>
+                          <div v-else class="text-caption text-grey-7">Token pendiente</div>
+                          <div class="row justify-center q-gutter-x-xs q-mt-xs">
+                            <q-btn
+                              v-if="getSesionVirtualBanco(examen)?.token"
+                              flat
+                              round
+                              dense
+                              color="indigo"
+                              icon="content_copy"
+                              size="sm"
+                              @click="copiarTokenVirtualBanco(examen)"
+                            >
+                              <q-tooltip>Copiar token para estudiantes</q-tooltip>
+                            </q-btn>
+                            <q-btn
+                              v-if="getSesionVirtualBanco(examen)?.id"
+                              flat
+                              round
+                              dense
+                              color="blue-grey"
+                              icon="groups"
+                              size="sm"
+                              @click="abrirMonitoreoVirtualBanco(examen)"
+                            >
+                              <q-tooltip>Ver estudiantes conectados</q-tooltip>
+                            </q-btn>
+                          </div>
+                        </div>
+
                         <!-- Documentos de Examen Devuelto -->
                         <div v-if="puedeMostrarDocumentosExamenDevuelto(examen)" class="q-mt-sm">
                           <q-separator class="q-mb-xs" />
@@ -4101,6 +4139,161 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="dialogMonitoreoVirtualBanco" maximized>
+      <q-card>
+        <q-bar class="bg-primary text-white">
+          <div class="text-weight-bold">Control de examen virtual</div>
+          <q-space />
+          <q-btn dense flat icon="close" v-close-popup />
+        </q-bar>
+        <q-card-section v-if="detalleVirtualBanco">
+          <div class="row items-center justify-between q-col-gutter-md q-mb-md">
+            <div class="col-12 col-md">
+              <div class="text-h6 q-mb-xs">
+                {{ detalleVirtualBanco.rol?.materia_nombre || 'Examen virtual' }}
+              </div>
+              <div class="text-caption text-grey-7">
+                Token {{ detalleVirtualBanco.token }} · Estado {{ detalleVirtualBanco.estado }}
+              </div>
+            </div>
+            <div class="col-12 col-md-auto row q-gutter-sm justify-end">
+              <q-btn
+                unelevated
+                color="green"
+                icon="play_arrow"
+                label="Iniciar examen"
+                no-caps
+                :disable="detalleVirtualBanco.estado !== 'GENERADO'"
+                :loading="accionVirtualBanco === 'iniciar'"
+                @click="iniciarExamenVirtualBanco"
+              />
+              <q-btn
+                flat
+                color="primary"
+                icon="refresh"
+                label="Actualizar"
+                no-caps
+                :loading="accionVirtualBanco === 'cargar'"
+                @click="cargarDetalleVirtualBanco()"
+              />
+            </div>
+          </div>
+
+          <div class="row q-col-gutter-md q-mb-md">
+            <div class="col-12 col-sm-6 col-md-3">
+              <div class="detail-box">
+                <span>Token</span>
+                <strong>{{ detalleVirtualBanco.token }}</strong>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <div class="detail-box">
+                <span>Estado</span>
+                <strong>{{ detalleVirtualBanco.estado }}</strong>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <div class="detail-box">
+                <span>Finaliza</span>
+                <strong>{{ detalleVirtualBanco.finaliza_en || '-' }}</strong>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <div class="detail-box">
+                <span>Ingresados</span>
+                <strong>
+                  {{ detalleVirtualBanco.attempts_count }} / {{ detalleVirtualBanco.roster_count }}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="row items-center justify-between q-mb-sm q-col-gutter-sm">
+            <div class="col-12 col-md">
+              <div class="text-weight-bold">Estudiantes registrados</div>
+              <div class="text-caption text-grey-7">
+                El docente valida asistencia y habilita el acceso antes de iniciar el examen.
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <q-input
+                v-model="busquedaMonitoreoVirtualBanco"
+                dense
+                outlined
+                clearable
+                placeholder="Buscar por codigo, nombre o estado"
+              >
+                <template #prepend>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
+            </div>
+          </div>
+
+          <q-table
+            flat
+            dense
+            :rows="rosterVirtualBancoFiltrado"
+            :columns="columnasMonitoreoVirtualBanco"
+            row-key="id"
+            :rows-per-page-options="[20, 50, 100]"
+          >
+            <template #body-cell-intento="props">
+              <q-td :props="props">
+                <q-chip
+                  v-if="props.row.intento"
+                  :color="colorIntentoVirtualBanco(props.row.intento.estado)"
+                  text-color="white"
+                  size="sm"
+                >
+                  {{ props.row.intento.estado }} / Var {{ props.row.intento.variante }}
+                </q-chip>
+                <q-chip v-else color="grey-3" text-color="grey-8" size="sm">Pendiente</q-chip>
+              </q-td>
+            </template>
+            <template #body-cell-validacion="props">
+              <q-td :props="props">
+                <q-chip
+                  dense
+                  size="sm"
+                  :color="colorValidacionVirtualBanco(props.row.validacion)"
+                  text-color="white"
+                >
+                  {{ props.row.validacion || 'PENDIENTE' }}
+                </q-chip>
+              </q-td>
+            </template>
+            <template #body-cell-acciones="props">
+              <q-td :props="props" class="text-right">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="check_circle"
+                  color="green"
+                  :loading="accionVirtualBanco === `roster-${props.row.id}-ACEPTADO`"
+                  @click="actualizarValidacionVirtualBanco(props.row, 'ACEPTADO')"
+                >
+                  <q-tooltip>Aceptar estudiante</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="cancel"
+                  color="negative"
+                  :loading="accionVirtualBanco === `roster-${props.row.id}-RECHAZADO`"
+                  @click="actualizarValidacionVirtualBanco(props.row, 'RECHAZADO')"
+                >
+                  <q-tooltip>Rechazar estudiante</q-tooltip>
+                </q-btn>
+              </q-td>
+            </template>
+          </q-table>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -4185,7 +4378,32 @@ const asignatura = computed(() => store.asignaturaActual)
 const bancoPreguntasLocal = ref([])
 // ExÒ�� �"Ò� â����Ò�â��šÒ�a�¡menes de la asignatura (desde el rol de exÒ�� �"Ò� â����Ò�â��šÒ�a�¡menes general)
 const examenesAsignatura = ref([])
+const sesionesVirtualesAsignatura = ref([])
+const dialogMonitoreoVirtualBanco = ref(false)
+const detalleVirtualBanco = ref(null)
+const busquedaMonitoreoVirtualBanco = ref('')
+const accionVirtualBanco = ref(null)
 const cargandoExamenes = ref(false)
+
+const columnasMonitoreoVirtualBanco = [
+  { name: 'codigo', label: 'Codigo', field: 'codigo', align: 'left', sortable: true },
+  { name: 'nombre', label: 'Nombre', field: 'nombre', align: 'left', sortable: true },
+  { name: 'intento', label: 'Intento', align: 'center' },
+  { name: 'validacion', label: 'Validacion', field: 'validacion', align: 'center', sortable: true },
+  {
+    name: 'respuestas',
+    label: 'Resp.',
+    field: (row) => row.intento?.respuestas_total || 0,
+    align: 'center',
+  },
+  {
+    name: 'correctas',
+    label: 'Correctas',
+    field: (row) => row.intento?.correctas_total || 0,
+    align: 'center',
+  },
+  { name: 'acciones', label: 'Acciones', align: 'right' },
+]
 
 // Generaciones manuales (para controlar el bloqueo del banco por grupo)
 const generacionesManuales = ref([])
@@ -4242,6 +4460,26 @@ const gruposBloqueados = computed(() => {
   })
 
   return bloqueados
+})
+
+const rosterVirtualBancoFiltrado = computed(() => {
+  const term = busquedaMonitoreoVirtualBanco.value?.toLowerCase().trim()
+
+  return [...(detalleVirtualBanco.value?.roster || [])]
+    .sort((a, b) =>
+      String(a.codigo || '').localeCompare(String(b.codigo || ''), 'es', {
+        numeric: true,
+        sensitivity: 'base',
+      }),
+    )
+    .filter((row) => {
+      if (!term) return true
+
+      return [row.codigo, row.nombre, row.validacion, row.intento?.estado, row.intento?.variante]
+        .join(' ')
+        .toLowerCase()
+        .includes(term)
+    })
 })
 
 const grupoImportacionBloqueado = computed(() => {
@@ -8500,10 +8738,161 @@ async function cargarExamenes() {
       : Array.isArray(data)
         ? data
         : []
+    await cargarSesionesVirtualesBanco()
   } catch (error) {
     console.error('Error al cargar exÒ�� �"Ò� â����Ò�â��šÒ�a�¡menes:', error)
   } finally {
     cargandoExamenes.value = false
+  }
+}
+
+async function cargarSesionesVirtualesBanco() {
+  const rolIds = new Set((examenesAsignatura.value || []).map((examen) => Number(examen.id)))
+  if (!rolIds.size) {
+    sesionesVirtualesAsignatura.value = []
+    return
+  }
+
+  try {
+    const gestion = examenesAsignatura.value.find((examen) => examen.gestion)?.gestion
+    const { data } = await api.get('/virtual-exams', {
+      params: gestion ? { gestion } : {},
+    })
+    sesionesVirtualesAsignatura.value = (data.data || []).filter((sesion) =>
+      rolIds.has(Number(sesion.rol_examen_id)),
+    )
+  } catch (error) {
+    console.error('Error al cargar sesiones virtuales:', error)
+    sesionesVirtualesAsignatura.value = []
+  }
+}
+
+function getSesionVirtualBanco(examen) {
+  return sesionesVirtualesAsignatura.value.find(
+    (sesion) => Number(sesion.rol_examen_id) === Number(examen?.id),
+  )
+}
+
+function esExamenVirtualBanco(examen) {
+  const modalidad = String(
+    examen?.modalidad ||
+      examen?.config_generacion?.modalidad ||
+      getSesionVirtualBanco(examen)?.estado ||
+      '',
+  )
+    .trim()
+    .toUpperCase()
+
+  return modalidad === 'VIRTUAL' || Boolean(getSesionVirtualBanco(examen))
+}
+
+function abrirMonitoreoVirtualBanco(examen) {
+  const sesion = getSesionVirtualBanco(examen)
+  if (!sesion?.id) return
+
+  detalleVirtualBanco.value = null
+  busquedaMonitoreoVirtualBanco.value = ''
+  dialogMonitoreoVirtualBanco.value = true
+  cargarDetalleVirtualBanco(sesion.id)
+}
+
+async function cargarDetalleVirtualBanco(sessionId = detalleVirtualBanco.value?.id) {
+  if (!sessionId) return
+
+  accionVirtualBanco.value = 'cargar'
+  try {
+    const { data } = await api.get(`/virtual-exams/${sessionId}`)
+    detalleVirtualBanco.value = data
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo cargar la lista de estudiantes.',
+      caption: error.response?.data?.message || error.message,
+    })
+  } finally {
+    accionVirtualBanco.value = null
+  }
+}
+
+async function iniciarExamenVirtualBanco() {
+  if (!detalleVirtualBanco.value?.id) return
+
+  accionVirtualBanco.value = 'iniciar'
+  try {
+    await api.post(`/virtual-exams/${detalleVirtualBanco.value.id}/start`)
+    $q.notify({
+      type: 'positive',
+      message: 'Examen iniciado por el docente.',
+    })
+    await cargarDetalleVirtualBanco()
+    await cargarSesionesVirtualesBanco()
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo iniciar el examen virtual.',
+      caption: error.response?.data?.message || error.message,
+    })
+  } finally {
+    accionVirtualBanco.value = null
+  }
+}
+
+async function actualizarValidacionVirtualBanco(row, estado) {
+  if (!detalleVirtualBanco.value?.id) return
+
+  const key = `roster-${row.id}-${estado}`
+  accionVirtualBanco.value = key
+  try {
+    await api.post(`/virtual-exams/${detalleVirtualBanco.value.id}/roster/${row.id}/status`, {
+      estado,
+    })
+    await cargarDetalleVirtualBanco()
+    await cargarSesionesVirtualesBanco()
+    $q.notify({
+      type: estado === 'ACEPTADO' ? 'positive' : 'warning',
+      message: `Estudiante ${estado.toLowerCase()}.`,
+    })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo actualizar la validacion.',
+      caption: error.response?.data?.message || error.message,
+    })
+  } finally {
+    accionVirtualBanco.value = null
+  }
+}
+
+function colorIntentoVirtualBanco(estado) {
+  return (
+    {
+      INGRESADO: 'orange',
+      FINALIZADO: 'green',
+      AUTO_CERRADO: 'blue-grey',
+      RECHAZADO: 'negative',
+    }[estado] || 'grey'
+  )
+}
+
+function colorValidacionVirtualBanco(estado) {
+  return (
+    {
+      ACEPTADO: 'green',
+      RECHAZADO: 'negative',
+      PENDIENTE: 'blue-grey',
+    }[estado] || 'blue-grey'
+  )
+}
+
+async function copiarTokenVirtualBanco(examen) {
+  const token = getSesionVirtualBanco(examen)?.token
+  if (!token) return
+
+  try {
+    await navigator.clipboard.writeText(token)
+    $q.notify({ type: 'positive', message: 'Token copiado.' })
+  } catch {
+    $q.notify({ type: 'info', message: `Token virtual: ${token}` })
   }
 }
 
@@ -12316,6 +12705,27 @@ function getParcialColorBanco(parcial) {
   border-radius: 0 !important;
   border: none !important;
   background: transparent !important;
+}
+
+.virtual-exam-box {
+  border: 1px solid #ddd6fe;
+  border-radius: 8px;
+  background: #faf5ff;
+  padding: 6px;
+}
+
+.virtual-token {
+  margin-top: 4px;
+  color: #4c1d95;
+  font-size: 11px;
+}
+
+.virtual-token strong {
+  display: inline-block;
+  border-radius: 4px;
+  background: #ede9fe;
+  padding: 1px 5px;
+  letter-spacing: 0.5px;
 }
 
 .field-card__input :deep(.q-field__control::before),
