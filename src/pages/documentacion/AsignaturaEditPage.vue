@@ -1289,6 +1289,29 @@
                     </div>
                   </q-tooltip>
                 </span>
+                <span v-if="puedeObtenerPreguntasBancoFinal" class="banco-action-tooltip-anchor">
+                  <q-btn
+                    round
+                    unelevated
+                    icon="playlist_add_check"
+                    class="banco-action-btn banco-action-btn--validate"
+                    aria-label="Obtener preguntas validas para Examen Final"
+                    :loading="obteniendoPreguntasBancoFinal"
+                    @click="obtenerPreguntasValidasBancoFinal"
+                  />
+                  <q-tooltip
+                    class="banco-action-tooltip"
+                    anchor="top middle"
+                    self="bottom middle"
+                    :offset="[0, 12]"
+                  >
+                    <div class="banco-action-tooltip__title">Obtener Preguntas Válidas</div>
+                    <div class="banco-action-tooltip__caption">
+                      Previsualiza y copia al Examen Final las preguntas válidas de 1er y 2do
+                      Parcial para este grupo.
+                    </div>
+                  </q-tooltip>
+                </span>
                 <span v-if="mostrarBotonValidarBanco" class="banco-action-tooltip-anchor">
                   <q-btn
                     round
@@ -2094,6 +2117,174 @@
     </q-card>
 
     <!-- ============================================================ -->
+
+    <!-- DIALOG: Reporte de Validación de Banco -->
+    <q-dialog v-model="dialogObtencionBancoFinal" persistent>
+      <q-card class="column no-wrap" style="width: 980px; max-width: 96vw; max-height: 88vh">
+        <q-toolbar class="bg-deep-purple text-white">
+          <q-icon name="playlist_add_check" size="sm" class="q-mr-sm" />
+          <q-toolbar-title>Obtener preguntas para Examen Final</q-toolbar-title>
+          <q-btn
+            flat
+            round
+            dense
+            icon="close"
+            :disable="obteniendoPreguntasBancoFinal"
+            v-close-popup
+          />
+        </q-toolbar>
+
+        <q-card-section v-if="previewObtencionBancoFinal" class="q-gutter-md scroll">
+          <div class="text-body2 text-grey-8">
+            Se revisaron las preguntas del grupo seleccionado. Todas las compatibles están marcadas
+            por defecto; desmarca las que no quieras migrar.
+          </div>
+
+          <div class="row q-col-gutter-sm">
+            <div
+              v-for="origen in previewObtencionBancoFinal.origenes"
+              :key="origen.parcial"
+              class="col-12 col-md-6"
+            >
+              <q-card flat bordered class="q-pa-sm">
+                <div class="text-weight-bold text-primary">
+                  {{ getParcialLabelBanco(origen.parcial) }}
+                </div>
+                <div class="text-caption text-grey-7">
+                  {{ origen.evaluables }} evaluables válidas ({{
+                    origen.validas.length
+                  }}
+                  registros), {{ origen.omitidas }} omitidas.
+                </div>
+                <div class="text-caption text-grey-7">
+                  Nuevas: {{ origen.nuevasEvaluables }} evaluables ({{
+                    origen.nuevas.length
+                  }}
+                  registros). Duplicadas: {{ origen.duplicadas }}.
+                </div>
+              </q-card>
+            </div>
+          </div>
+
+          <q-banner rounded class="bg-blue-1 text-blue-10">
+            <template v-slot:avatar>
+              <q-icon name="info" color="blue-8" />
+            </template>
+            Ya existen en Examen Final
+            {{ previewObtencionBancoFinal.existentesEvaluablesEF }} evaluables ({{
+              previewObtencionBancoFinal.existentesEF
+            }}
+            registros). Se omiten respuestas múltiples tipo A,C y, desde 1er Parcial, tipos que no
+            existían allí como A/B/Ambas/Ninguna o Verdadero/Falso Complejas.
+          </q-banner>
+
+          <div class="row items-center q-col-gutter-sm">
+            <div class="col">
+              <div class="text-subtitle2 text-weight-bold">Preguntas compatibles a migrar</div>
+              <div class="text-caption text-grey-7">
+                Seleccionadas: {{ totalPreguntasObtencionSeleccionadas }} de
+                {{ preguntasObtencionBancoFinal.length }} registros.
+              </div>
+            </div>
+            <div class="col-auto row q-gutter-sm">
+              <q-btn
+                flat
+                dense
+                no-caps
+                color="primary"
+                icon="done_all"
+                label="Marcar todas"
+                @click="seleccionarTodasPreguntasObtencionBancoFinal"
+              />
+              <q-btn
+                flat
+                dense
+                no-caps
+                color="grey-8"
+                icon="remove_done"
+                label="Desmarcar todas"
+                @click="desmarcarTodasPreguntasObtencionBancoFinal"
+              />
+            </div>
+          </div>
+
+          <q-list bordered separator class="rounded-borders">
+            <q-item
+              v-for="item in preguntasObtencionBancoFinal"
+              :key="item.key"
+              tag="label"
+              class="items-start"
+            >
+              <q-item-section avatar top>
+                <q-checkbox
+                  v-model="preguntasSeleccionadasObtencionBancoFinal"
+                  :val="item.key"
+                  color="primary"
+                />
+              </q-item-section>
+              <q-item-section>
+                <div class="row items-center q-gutter-xs q-mb-xs">
+                  <q-badge color="deep-purple" outline>
+                    {{ getParcialLabelBanco(item.parcialOrigen) }}
+                  </q-badge>
+                  <q-badge
+                    :color="
+                      getTipoColorBanco(item.pregunta.tipo, item.pregunta, gruposCabeceraBancoMap)
+                    "
+                    outline
+                  >
+                    {{
+                      getTipoLabelBanco(item.pregunta.tipo, item.pregunta, gruposCabeceraBancoMap)
+                    }}
+                  </q-badge>
+                  <q-badge color="orange" outline>
+                    Dificultad {{ getDificultadPreviewLabel(item.pregunta.dificultad) }}
+                  </q-badge>
+                </div>
+                <div class="text-body2 text-weight-medium">
+                  {{ limpiarHtmlBancoTexto(item.pregunta.enunciado || 'Sin enunciado') }}
+                </div>
+                <div class="text-caption text-grey-7 q-mt-xs">
+                  Respuesta:
+                  {{ formatearRespuestaBancoFinalPreview(item.pregunta) || 'Sin respuesta' }}
+                  <span v-if="item.pregunta.grupo">
+                    · Grupo interno: {{ item.pregunta.grupo }}</span
+                  >
+                </div>
+              </q-item-section>
+            </q-item>
+
+            <q-item v-if="!preguntasObtencionBancoFinal.length">
+              <q-item-section class="text-center text-grey-7 q-pa-md">
+                No hay preguntas nuevas compatibles para migrar.
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+
+        <q-separator />
+        <q-card-actions align="right" class="bg-grey-1">
+          <q-btn
+            flat
+            no-caps
+            label="Cancelar"
+            color="grey-8"
+            :disable="obteniendoPreguntasBancoFinal"
+            v-close-popup
+          />
+          <q-btn
+            unelevated
+            no-caps
+            color="primary"
+            icon="content_copy"
+            :label="`Copiar seleccionadas (${totalPreguntasObtencionSeleccionadas})`"
+            :disable="totalPreguntasObtencionSeleccionadas === 0"
+            :loading="obteniendoPreguntasBancoFinal"
+            @click="copiarPreguntasSeleccionadasBancoFinal"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <!-- DIALOG: Reporte de Validación de Banco -->
     <q-dialog v-model="showDialogValidacion" persistent>
@@ -5372,6 +5563,10 @@ const importErroresNormalizados = computed(() =>
 const importandoBanco = ref(false)
 const modoImportacion = ref('reemplazar')
 const conCartilla = ref(true)
+const obteniendoPreguntasBancoFinal = ref(false)
+const dialogObtencionBancoFinal = ref(false)
+const previewObtencionBancoFinal = ref(null)
+const preguntasSeleccionadasObtencionBancoFinal = ref([])
 const cambioCartillaDesdeBancoHabilitado = false
 const parcialSeleccionado = ref('1P')
 const filtroBancoParcialSeleccionado = ref('2P')
@@ -5399,6 +5594,17 @@ const tipoPreguntaExcelLabels = {
   OPCION_EMPAREJAMIENTO: 'Opción de Emparejamiento Ampliado',
   PROBLEMA: 'Ítems agrupados por caso clínico o problema',
   SUBPROBLEMA: 'Subítem de caso o problema',
+}
+
+const tipoPreguntaPrimerParcialLabels = {
+  FALSO_VERDADERO: 'Falso o verdadero',
+  PREGUNTA_CON_CLAVE: 'Pregunta con clave',
+  RESPUESTA_COMPUESTA: 'Selección múltiple',
+  SELECCION_SIMPLE: 'Selección simple',
+  EMPAREJAMIENTO: 'Emparejamiento',
+  OPCION_EMPAREJAMIENTO: 'Opción emparejamiento',
+  PROBLEMA: 'Problema o caso',
+  SUBPROBLEMA: 'Sub problema',
 }
 
 const tiposPreguntaOptions = [
@@ -9079,7 +9285,65 @@ function getPrimerPatron(examen) {
 
 function getTipoLabelBanco(tipo, pregunta = null, gruposCabeceraMap = null) {
   const tipoNormalizado = normalizarTipoPregunta(tipo, pregunta, gruposCabeceraMap)
+  const parcialPregunta = normalizarParcialBanco(
+    pregunta?.parcial || filtroBancoParcialSeleccionado.value || parcialSeleccionado.value,
+  )
+
+  if (parcialPregunta === '1P') {
+    return tipoPreguntaPrimerParcialLabels[tipoNormalizado] || tipoNormalizado.replaceAll('_', ' ')
+  }
+
   return tipoPreguntaLabelMap[tipoNormalizado] || tipoNormalizado.replaceAll('_', ' ')
+}
+
+function normalizarRespuestaSimpleBanco(valor) {
+  const respuesta = normalizarTextoMojibake(String(valor || ''))
+    .trim()
+    .toUpperCase()
+  const match = respuesta.match(/^([A-E])(?:\s*[:.)-]|\b|$)/)
+  return match ? match[1] : respuesta
+}
+
+function obtenerRespuestasNormalizadasBanco(respuesta) {
+  const valores = Array.isArray(respuesta) ? respuesta : [respuesta]
+
+  return valores
+    .flatMap((valor) => {
+      const texto =
+        typeof valor === 'object' && valor !== null
+          ? (valor.id ?? valor.value ?? valor.text ?? '')
+          : valor
+      return normalizarTextoMojibake(String(texto || ''))
+        .split(/\s*(?:,|;|\/|\||\+|\by\b|\be\b)\s*/i)
+        .map((item) => normalizarRespuestaSimpleBanco(item))
+    })
+    .filter((valor) => /^[A-E]$/.test(valor))
+}
+
+function tieneMultiplesRespuestasBanco(pregunta) {
+  return new Set(obtenerRespuestasNormalizadasBanco(pregunta?.respuesta_correcta)).size > 1
+}
+
+function debeOmitirseEnExportacionPrimerParcial(pregunta, gruposCabeceraMap = null) {
+  const tipoNormalizado = normalizarTipoPregunta(pregunta?.tipo, pregunta, gruposCabeceraMap)
+  return (
+    ['RESPUESTA_COMPUESTA', 'PREGUNTA_CON_CLAVE'].includes(tipoNormalizado) ||
+    tieneMultiplesRespuestasBanco(pregunta)
+  )
+}
+
+function esPreguntaValidaParaBancoFinal(pregunta, parcialOrigen, gruposCabeceraMap = null) {
+  const origen = normalizarParcialBanco(parcialOrigen || pregunta?.parcial)
+
+  if (tieneMultiplesRespuestasBanco(pregunta)) {
+    return false
+  }
+
+  if (origen === '1P') {
+    return !debeOmitirseEnExportacionPrimerParcial(pregunta, gruposCabeceraMap)
+  }
+
+  return true
 }
 
 function getTipoColorBanco(tipo, pregunta = null, gruposCabeceraMap = null) {
@@ -9284,6 +9548,14 @@ const preguntasFiltradas = computed(() => {
 
 const puedeExportarBancoPreguntas = computed(
   () => puedeVisualizarBanco.value && preguntasFiltradas.value.length > 0,
+)
+
+const puedeObtenerPreguntasBancoFinal = computed(
+  () =>
+    puedeVisualizarBanco.value &&
+    parcialBancoActualNormalizado.value === 'EF' &&
+    !!filtroBancoGrupoSeleccionado.value &&
+    !modoBancoSoloVisualDirector.value,
 )
 
 const LIMITE_ADVERTENCIA_IMPORTACION_BANCO = 80
@@ -10232,7 +10504,8 @@ async function descargarFormatoBanco() {
   const workbook = new ExcelJS.default.Workbook()
   const parcialActivo = normalizarParcialBanco(filtroBancoParcialSeleccionado.value || '1P')
   const parcialActivoLabel = getParcialLabelBanco(parcialActivo)
-  const excelTipos = tipoPreguntaExcelLabels
+  const excelTipos =
+    parcialActivo === '1P' ? tipoPreguntaPrimerParcialLabels : tipoPreguntaExcelLabels
   const tiposExcelPermitidos = [
     excelTipos.FALSO_VERDADERO,
     excelTipos.RESPUESTA_COMPUESTA,
@@ -11261,6 +11534,284 @@ async function descargarFormatoBanco() {
   }
 }
 
+function obtenerPreguntasBancoPorParcialGrupo(parcial) {
+  const parcialNormalizado = normalizarParcialBanco(parcial)
+  const grupoSeleccionado = normalizeGroupName(filtroBancoGrupoSeleccionado.value)
+
+  return (bancoPreguntasLocal.value || []).filter((pregunta) => {
+    const parcialPregunta = normalizarParcialBanco(pregunta.parcial)
+    const grupoPregunta = normalizeGroupName(obtenerGrupoTeoricoPregunta(pregunta))
+    return parcialPregunta === parcialNormalizado && grupoPregunta === grupoSeleccionado
+  })
+}
+
+function construirClaveDuplicadoBancoFinal(pregunta, gruposCabeceraMap = null) {
+  const tipo = normalizarTipoPregunta(pregunta?.tipo, pregunta, gruposCabeceraMap)
+  const grupo = normalizarTipoAliasKey(pregunta?.grupo || '')
+  const enunciado = normalizarTipoAliasKey(limpiarHtmlBancoTexto(pregunta?.enunciado || ''))
+  const respuesta = obtenerRespuestasNormalizadasBanco(pregunta?.respuesta_correcta).join(',')
+
+  return [tipo, grupo, enunciado, respuesta].join('|')
+}
+
+function limpiarHtmlBancoTexto(value) {
+  return normalizarTextoMojibake(String(value ?? ''))
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<p[^>]*>/gi, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function clonarOpcionesPreguntaBanco(opciones) {
+  if (Array.isArray(opciones)) {
+    return JSON.parse(JSON.stringify(opciones))
+  }
+
+  if (typeof opciones === 'string' && opciones.trim()) {
+    try {
+      const parsed = JSON.parse(opciones)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+
+  return []
+}
+
+function construirPayloadPreguntaBancoFinal(pregunta, parcialOrigen) {
+  return {
+    enunciado: pregunta.enunciado || '',
+    tipo: normalizarTipoPregunta(pregunta.tipo, pregunta, gruposCabeceraBancoMap.value),
+    asignatura_id: pregunta.asignatura_id || asignatura.value?.id || '',
+    sede_id: pregunta.sede_id || sedeIdBancoContextual.value || '',
+    grupoTeorico: filtroBancoGrupoSeleccionado.value || obtenerGrupoTeoricoPregunta(pregunta),
+    parcial: 'EF',
+    grupo: pregunta.grupo || '',
+    logro_esperado_id: pregunta.logro_esperado_id || pregunta.logro_id || '',
+    dificultad: pregunta.dificultad || '',
+    opciones: clonarOpcionesPreguntaBanco(pregunta.opciones),
+    respuesta_correcta: pregunta.respuesta_correcta || '',
+    origen_parcial: parcialOrigen,
+  }
+}
+
+function construirPreviewObtencionBancoFinal() {
+  const preguntas1P = obtenerPreguntasBancoPorParcialGrupo('1P')
+  const preguntas2P = obtenerPreguntasBancoPorParcialGrupo('2P')
+  const preguntasEF = obtenerPreguntasBancoPorParcialGrupo('EF')
+  const clavesExistentes = new Set(
+    preguntasEF.map((pregunta) =>
+      construirClaveDuplicadoBancoFinal(pregunta, gruposCabeceraBancoMap.value),
+    ),
+  )
+  const clavesSeleccionadas = new Set()
+  const prepararOrigen = (preguntas, parcialOrigen) => {
+    const validas = preguntas.filter((pregunta) =>
+      esPreguntaValidaParaBancoFinal(pregunta, parcialOrigen, gruposCabeceraBancoMap.value),
+    )
+    const omitidas = preguntas.length - validas.length
+    const nuevas = []
+    let duplicadas = 0
+
+    validas.forEach((pregunta) => {
+      const clave = construirClaveDuplicadoBancoFinal(pregunta, gruposCabeceraBancoMap.value)
+
+      if (clavesExistentes.has(clave) || clavesSeleccionadas.has(clave)) {
+        duplicadas += 1
+        return
+      }
+
+      clavesSeleccionadas.add(clave)
+      nuevas.push(pregunta)
+    })
+
+    return {
+      parcial: parcialOrigen,
+      total: preguntas.length,
+      validas,
+      nuevas,
+      omitidas,
+      duplicadas,
+      evaluables: validas.filter((pregunta) => obtenerTipoContableBanco(pregunta)).length,
+      nuevasEvaluables: nuevas.filter((pregunta) => obtenerTipoContableBanco(pregunta)).length,
+    }
+  }
+
+  const origenes = [prepararOrigen(preguntas1P, '1P'), prepararOrigen(preguntas2P, '2P')]
+
+  return {
+    origenes,
+    preguntasNuevas: origenes.flatMap((origen) =>
+      origen.nuevas.map((pregunta) => ({
+        key: `${origen.parcial}|${construirClaveDuplicadoBancoFinal(
+          pregunta,
+          gruposCabeceraBancoMap.value,
+        )}`,
+        pregunta,
+        parcialOrigen: origen.parcial,
+      })),
+    ),
+    existentesEF: preguntasEF.length,
+    existentesEvaluablesEF: preguntasEF.filter((pregunta) => obtenerTipoContableBanco(pregunta))
+      .length,
+  }
+}
+
+// eslint-disable-next-line no-unused-vars
+function confirmarObtencionBancoFinal(preview) {
+  const [primerParcial, segundoParcial] = preview.origenes
+  const nuevas = preview.preguntasNuevas.length
+  const nuevasEvaluables = preview.preguntasNuevas.filter(({ pregunta }) =>
+    obtenerTipoContableBanco(pregunta),
+  ).length
+
+  return new Promise((resolve) => {
+    $q.dialog({
+      title: 'Obtener preguntas para Examen Final',
+      html: true,
+      message: `
+        <div class="text-body2">
+          <p>Se revisarán las preguntas del grupo seleccionado y solo se copiarán las válidas para Examen Final.</p>
+          <ul>
+            <li><strong>1er Parcial:</strong> ${primerParcial.evaluables} evaluables válidas (${primerParcial.validas.length} registros), ${primerParcial.omitidas} omitidas.</li>
+            <li><strong>2do Parcial:</strong> ${segundoParcial.evaluables} evaluables válidas (${segundoParcial.validas.length} registros), ${segundoParcial.omitidas} omitidas.</li>
+            <li><strong>Ya existentes en Final:</strong> ${preview.existentesEvaluablesEF} evaluables (${preview.existentesEF} registros).</li>
+            <li><strong>Nuevas a copiar:</strong> ${nuevasEvaluables} evaluables (${nuevas} registros).</li>
+          </ul>
+          <p>Se omiten respuestas múltiples tipo A,C y, desde 1er Parcial, tipos que no existían allí como A/B/Ambas/Ninguna o Verdadero/Falso Complejas.</p>
+        </div>
+      `,
+      ok: {
+        label: nuevas > 0 ? 'Copiar a Final' : 'Entendido',
+        color: 'primary',
+      },
+      cancel:
+        nuevas > 0
+          ? {
+              label: 'Cancelar',
+              flat: true,
+            }
+          : false,
+      persistent: true,
+    })
+      .onOk(() => resolve(nuevas > 0))
+      .onCancel(() => resolve(false))
+      .onDismiss(() => resolve(false))
+  })
+}
+
+const preguntasObtencionBancoFinal = computed(
+  () => previewObtencionBancoFinal.value?.preguntasNuevas || [],
+)
+
+const preguntasSeleccionadasBancoFinalDetalle = computed(() => {
+  const seleccionadas = new Set(preguntasSeleccionadasObtencionBancoFinal.value)
+  return preguntasObtencionBancoFinal.value.filter((item) => seleccionadas.has(item.key))
+})
+
+const totalPreguntasObtencionSeleccionadas = computed(
+  () => preguntasSeleccionadasBancoFinalDetalle.value.length,
+)
+
+function seleccionarTodasPreguntasObtencionBancoFinal() {
+  preguntasSeleccionadasObtencionBancoFinal.value = preguntasObtencionBancoFinal.value.map(
+    (item) => item.key,
+  )
+}
+
+function desmarcarTodasPreguntasObtencionBancoFinal() {
+  preguntasSeleccionadasObtencionBancoFinal.value = []
+}
+
+function formatearRespuestaBancoFinalPreview(pregunta) {
+  return obtenerRespuestasNormalizadasBanco(pregunta?.respuesta_correcta).join(', ')
+}
+
+async function obtenerImagenPreguntaComoArchivo(pregunta) {
+  if (!pregunta?.imagen) {
+    return null
+  }
+
+  const { data } = await api.get(`/banco-preguntas/image/${pregunta.imagen}`, {
+    responseType: 'blob',
+  })
+  const extension = String(pregunta.imagen).split('.').pop() || 'jpg'
+  const type = data?.type || `image/${extension}`
+  return new File([data], `pregunta_${pregunta.id || Date.now()}.${extension}`, { type })
+}
+
+async function obtenerPreguntasValidasBancoFinal() {
+  if (!puedeObtenerPreguntasBancoFinal.value) {
+    return
+  }
+
+  const preview = construirPreviewObtencionBancoFinal()
+  previewObtencionBancoFinal.value = preview
+  preguntasSeleccionadasObtencionBancoFinal.value = preview.preguntasNuevas.map((item) => item.key)
+  dialogObtencionBancoFinal.value = true
+}
+
+async function copiarPreguntasSeleccionadasBancoFinal() {
+  const preguntasParaCopiar = preguntasSeleccionadasBancoFinalDetalle.value
+
+  if (!preguntasParaCopiar.length) {
+    return
+  }
+
+  obteniendoPreguntasBancoFinal.value = true
+  let copiadas = 0
+  let imagenesNoCopiadas = 0
+
+  try {
+    for (const { pregunta, parcialOrigen } of preguntasParaCopiar) {
+      const payload = construirPayloadPreguntaBancoFinal(pregunta, parcialOrigen)
+      let imageFile = null
+
+      try {
+        imageFile = await obtenerImagenPreguntaComoArchivo(pregunta)
+      } catch (error) {
+        imagenesNoCopiadas += 1
+        console.warn('No se pudo copiar la imagen de una pregunta al banco final:', error)
+      }
+
+      await persistirPreguntaPayload(payload, imageFile)
+      copiadas += 1
+    }
+
+    await cargarBancoPreguntas()
+    dialogObtencionBancoFinal.value = false
+
+    $q.notify({
+      type: 'positive',
+      message: `Se copiaron ${copiadas} registros válidos al Examen Final.`,
+      caption:
+        imagenesNoCopiadas > 0
+          ? `${imagenesNoCopiadas} imagen(es) no pudieron copiarse automáticamente.`
+          : 'El banco de Examen Final fue actualizado.',
+      icon: 'check_circle',
+      timeout: 7000,
+    })
+  } catch (error) {
+    console.error('Error al obtener preguntas válidas para Examen Final:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudieron copiar las preguntas válidas al Examen Final.',
+      caption: error.response?.data?.message || error.message,
+      timeout: 7000,
+    })
+  } finally {
+    obteniendoPreguntasBancoFinal.value = false
+  }
+}
+
 async function exportarBancoPreguntasActual() {
   if (!puedeExportarBancoPreguntas.value) {
     $q.notify({
@@ -11274,12 +11825,16 @@ async function exportarBancoPreguntasActual() {
   exportandoBancoPreguntas.value = true
 
   try {
-    const ExcelJS = await import('exceljs')
-    const workbook = new ExcelJS.default.Workbook()
-    const preguntasExportar = preguntasFiltradas.value || []
     const parcialActivo = normalizarParcialBanco(filtroBancoParcialSeleccionado.value || '2P')
     const parcialActivoLabel = getParcialLabelBanco(parcialActivo)
+    const preguntasExportar = preguntasFiltradas.value || []
+
+    const ExcelJS = await import('exceljs')
+    const workbook = new ExcelJS.default.Workbook()
     const grupoActivo = filtroBancoGrupoSeleccionado.value || ''
+    const preguntasEvaluablesExportadas = preguntasExportar.filter((p) =>
+      obtenerTipoContableBanco(p),
+    ).length
     const headers = [
       'tipo',
       'grupo',
@@ -11431,7 +11986,7 @@ async function exportarBancoPreguntasActual() {
     ])
     wsInst.addRow(['Banco exportado', `${parcialActivoLabel} - Grupo ${grupoActivo}`])
     wsInst.addRow(['Registros exportados', preguntasExportar.length])
-    wsInst.addRow(['Preguntas evaluables', totalPreguntasContables.value])
+    wsInst.addRow(['Preguntas evaluables', preguntasEvaluablesExportadas])
     wsInst.addRow([])
     wsInst.addRow([
       'Uso recomendado',
@@ -11578,7 +12133,7 @@ async function exportarBancoPreguntasActual() {
 
     $q.notify({
       type: 'positive',
-      message: `Banco exportado: ${totalPreguntasContables.value} preguntas evaluables.`,
+      message: `Banco exportado: ${preguntasEvaluablesExportadas} preguntas evaluables.`,
       caption: `${preguntasExportar.length} registros incluidos en el Excel.`,
       icon: 'check_circle',
     })

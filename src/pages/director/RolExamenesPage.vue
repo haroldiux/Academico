@@ -276,13 +276,7 @@
                   :disable="!examenEditable(props.row)"
                   @click="editarExamen(props.row)"
                 >
-                  <q-tooltip>
-                    {{
-                      examenEditable(props.row)
-                        ? 'Editar'
-                        : 'Solo se puede editar en estado Programado'
-                    }}
-                  </q-tooltip>
+                  <q-tooltip>{{ mensajeEdicionExamen(props.row) }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -290,10 +284,13 @@
                   dense
                   icon="delete"
                   size="sm"
-                  color="red"
+                  :color="examenEditable(props.row) ? 'red' : 'grey-5'"
+                  :disable="!examenEditable(props.row)"
                   @click="eliminarExamen(props.row)"
                 >
-                  <q-tooltip>Eliminar</q-tooltip>
+                  <q-tooltip>
+                    {{ examenEditable(props.row) ? 'Eliminar' : mensajeEdicionExamen(props.row) }}
+                  </q-tooltip>
                 </q-btn>
               </div>
               <div v-else>
@@ -545,6 +542,18 @@
         </div>
 
         <q-card-section class="q-gutter-md">
+          <q-banner
+            v-if="!puedeModificarRolExamenSeleccionado"
+            class="bg-amber-1 text-amber-10"
+            rounded
+            dense
+          >
+            <template v-slot:avatar>
+              <q-icon name="lock" color="amber-9" />
+            </template>
+            Solo el Administrador puede modificar el rol dentro de las 72 horas previas al examen o
+            cuando ya no esta en estado Programado.
+          </q-banner>
           <q-input v-model="examenForm.materia_nombre" outlined dense label="Materia" readonly />
           <div class="row q-col-gutter-md">
             <div class="col-8">
@@ -556,18 +565,39 @@
                 label="Tipo de Examen"
                 emit-value
                 map-options
+                :disable="!puedeModificarRolExamenSeleccionado"
               />
             </div>
             <div class="col-4">
-              <q-input v-model="examenForm.grupo" outlined dense label="Grupo" />
+              <q-input
+                v-model="examenForm.grupo"
+                outlined
+                dense
+                label="Grupo"
+                :disable="!puedeModificarRolExamenSeleccionado"
+              />
             </div>
           </div>
           <div class="row q-col-gutter-md">
             <div class="col-6">
-              <q-input v-model="examenForm.semana" outlined dense label="Semana" type="number" />
+              <q-input
+                v-model="examenForm.semana"
+                outlined
+                dense
+                label="Semana"
+                type="number"
+                :disable="!puedeModificarRolExamenSeleccionado"
+              />
             </div>
             <div class="col-6">
-              <q-input v-model="examenForm.fecha" outlined dense label="Fecha" type="date" />
+              <q-input
+                v-model="examenForm.fecha"
+                outlined
+                dense
+                label="Fecha"
+                type="date"
+                :disable="!puedeModificarRolExamenSeleccionado"
+              />
             </div>
           </div>
           <div class="row q-col-gutter-md">
@@ -578,16 +608,24 @@
                 dense
                 label="Hora Inicio"
                 type="time"
+                :disable="!puedeModificarRolExamenSeleccionado"
               />
             </div>
             <div class="col-6">
-              <q-input v-model="examenForm.hora_fin" outlined dense label="Hora Fin" type="time" />
+              <q-input
+                v-model="examenForm.hora_fin"
+                outlined
+                dense
+                label="Hora Fin"
+                type="time"
+                :disable="!puedeModificarRolExamenSeleccionado"
+              />
             </div>
           </div>
         </q-card-section>
 
         <q-card-actions align="right" class="q-pa-md">
-          <q-btn flat label="Cancelar" @click="showEditDialog = false" />
+          <q-btn flat label="Cancelar" @click="cerrarDialogoEdicion" />
           <q-btn
             unelevated
             color="primary"
@@ -721,6 +759,7 @@ const examenForm = ref({
   hora_inicio: '',
   hora_fin: '',
 })
+const examenOriginalEdicion = ref(null)
 
 // Options
 const gestionesOptions = [
@@ -730,6 +769,13 @@ const gestionesOptions = [
 ]
 
 const authStore = useAuthStore()
+
+const rolesAdministradoresRolExamen = [ROLES.ADMIN, ROLES.SUPER_ADMIN]
+const rolesAutoridadRolExamen = [
+  ROLES.DIRECTOR_CARRERA,
+  ROLES.DIRECCION_ACADEMICA,
+  ROLES.VICERRECTOR_SEDE,
+]
 
 const esRolGlobal = computed(() => {
   return [
@@ -805,8 +851,12 @@ const carrerasOptions = computed(() => {
 })
 
 // Permiso de Edición
+const puedeAdministrarRolExamen = computed(() => {
+  return rolesAdministradoresRolExamen.includes(authStore.rol)
+})
+
 const puedeEditar = computed(() => {
-  return [ROLES.DIRECTOR_CARRERA, ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol)
+  return puedeAdministrarRolExamen.value || rolesAutoridadRolExamen.includes(authStore.rol)
 })
 
 const tiposExamenOptions = [
@@ -899,8 +949,55 @@ function normalizarEstadoExamen(estado) {
     .toLowerCase()
 }
 
-function examenEditable(examen) {
+function examenEstaProgramado(examen) {
   return ['programado', 'programados'].includes(normalizarEstadoExamen(examen?.estado))
+}
+
+function obtenerFechaHoraExamen(examen) {
+  if (!examen?.fecha) return null
+
+  const fecha = String(examen.fecha).includes('T')
+    ? String(examen.fecha).split('T')[0]
+    : examen.fecha
+  const hora = String(examen.hora_inicio || '00:00').slice(0, 5)
+  const fechaHora = new Date(`${fecha}T${hora}:00`)
+
+  return Number.isNaN(fechaHora.getTime()) ? null : fechaHora
+}
+
+function estaEnVentanaBloqueadaRolExamen(examen) {
+  const fechaHora = obtenerFechaHoraExamen(examen)
+  if (!fechaHora) return false
+
+  const inicioBloqueo = new Date(fechaHora.getTime() - 72 * 60 * 60 * 1000)
+
+  return new Date() >= inicioBloqueo
+}
+
+function puedeModificarRolExamen(examen) {
+  if (puedeAdministrarRolExamen.value) return true
+
+  return examenEstaProgramado(examen) && !estaEnVentanaBloqueadaRolExamen(examen)
+}
+
+function examenEditable(examen) {
+  return puedeEditar.value && puedeModificarRolExamen(examen)
+}
+
+const puedeModificarRolExamenSeleccionado = computed(() => {
+  return puedeModificarRolExamen(examenOriginalEdicion.value || examenForm.value)
+})
+
+function mensajeEdicionExamen(examen) {
+  if (!puedeEditar.value) return 'Solo lectura'
+  if (puedeAdministrarRolExamen.value) return 'Editar'
+  if (!examenEstaProgramado(examen)) {
+    return 'Solo el Administrador puede editar roles que ya no estan en estado Programado'
+  }
+  if (estaEnVentanaBloqueadaRolExamen(examen)) {
+    return 'Solo el Administrador puede editar dentro de las 72 horas previas al examen'
+  }
+  return 'Editar'
 }
 
 function getEstadoLabel(estado) {
@@ -1166,7 +1263,7 @@ function editarExamen(examen) {
   if (!examenEditable(examen)) {
     $q.notify({
       type: 'warning',
-      message: 'Solo se pueden editar examenes en estado Programado',
+      message: mensajeEdicionExamen(examen),
       icon: 'lock',
     })
     return
@@ -1177,8 +1274,14 @@ function editarExamen(examen) {
     fechaFormat = fechaFormat.split('T')[0]
   }
 
+  examenOriginalEdicion.value = { ...examen, fecha: fechaFormat }
   examenForm.value = { ...examen, fecha: fechaFormat }
   showEditDialog.value = true
+}
+
+function cerrarDialogoEdicion() {
+  showEditDialog.value = false
+  examenOriginalEdicion.value = null
 }
 
 async function guardarExamen() {
@@ -1189,7 +1292,7 @@ async function guardarExamen() {
       message: 'Examen actualizado',
       icon: 'check',
     })
-    showEditDialog.value = false
+    cerrarDialogoEdicion()
   } catch (error) {
     const message = error.response?.data?.message || error.message
     $q.notify({

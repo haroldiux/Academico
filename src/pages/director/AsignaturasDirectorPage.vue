@@ -9,7 +9,7 @@
         </h4>
         <div class="row items-center q-gutter-sm q-mt-xs">
           <p class="q-ma-none" style="color: var(--text-secondary)">
-            Vista general de asignaturas por semestre
+            Vista general del plan de estudios por semestre
           </p>
           <q-chip
             v-if="authStore.rol === 'DIRECCION_ACADEMICA' || authStore.rol === 'VICERRECTOR_SEDE'"
@@ -84,7 +84,7 @@
       <div class="col-12 col-md-4">
         <q-input
           v-model="filtros.buscar"
-          label="Buscar asignatura..."
+          label="Buscar plan de estudios..."
           outlined
           dense
           bg-color="white"
@@ -119,6 +119,23 @@
           dense
         />
       </div>
+      <div class="col-12">
+        <div class="row items-center q-gutter-sm">
+          <div class="text-caption text-grey-7 text-weight-medium">Seguimiento de examen:</div>
+          <q-btn
+            v-for="opcion in opcionesSeguimientoExamen"
+            :key="opcion.value"
+            :label="opcion.label"
+            :icon="opcion.icon"
+            :color="parcialSeguimientoActivo === opcion.value ? 'primary' : 'grey-7'"
+            :outline="parcialSeguimientoActivo !== opcion.value"
+            :unelevated="parcialSeguimientoActivo === opcion.value"
+            size="sm"
+            no-caps
+            @click="alternarSeguimientoExamen(opcion.value)"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Stats -->
@@ -129,7 +146,7 @@
             <div class="row items-center no-wrap">
               <div class="col">
                 <div class="text-h4 text-weight-bold text-primary">{{ totalAsignaturas }}</div>
-                <div class="text-caption text-grey-7">Total Asignaturas</div>
+                <div class="text-caption text-grey-7">Total Plan de Estudios</div>
               </div>
               <q-icon name="library_books" size="40px" color="primary" opacity="0.2" />
             </div>
@@ -181,7 +198,7 @@
             <q-item-section>
               <q-item-label class="text-h6">{{ semestre.nombre }}</q-item-label>
               <q-item-label caption>
-                {{ contarAsignaturasUnicas(semestre.asignaturas) }} asignaturas
+                {{ contarAsignaturasUnicas(semestre.asignaturas) }} planes de estudio
                 <template
                   v-if="
                     semestre.asignaturas.length !== contarAsignaturasUnicas(semestre.asignaturas)
@@ -409,7 +426,7 @@
                       <template v-else-if="col.name === 'preguntas_2p'">
                         <div v-if="cargandoCampos2P" class="row justify-center">
                           <q-spinner-dots color="primary" size="20px">
-                            <q-tooltip>Cargando preguntas 2P</q-tooltip>
+                            <q-tooltip>Cargando preguntas {{ seguimientoExamenShort }}</q-tooltip>
                           </q-spinner-dots>
                         </div>
                         <div
@@ -421,7 +438,7 @@
                             <q-chip size="xs" color="blue-7" text-color="white" dense>
                               F: {{ props.row.preguntas_2p_stats.faciles }}
                               <q-tooltip>
-                                <div>Fáciles (2P)</div>
+                                <div>Fáciles ({{ seguimientoExamenShort }})</div>
                                 <div>
                                   Total:
                                   {{ totalPreguntasEvaluables(props.row.preguntas_2p_stats) }}
@@ -432,7 +449,7 @@
                             <q-chip size="xs" color="orange-8" text-color="white" dense>
                               M: {{ props.row.preguntas_2p_stats.medias }}
                               <q-tooltip>
-                                <div>Medias (2P)</div>
+                                <div>Medias ({{ seguimientoExamenShort }})</div>
                                 <div>
                                   Total:
                                   {{ totalPreguntasEvaluables(props.row.preguntas_2p_stats) }}
@@ -443,7 +460,7 @@
                             <q-chip size="xs" color="red-7" text-color="white" dense>
                               D: {{ props.row.preguntas_2p_stats.dificiles }}
                               <q-tooltip>
-                                <div>Difíciles (2P)</div>
+                                <div>Difíciles ({{ seguimientoExamenShort }})</div>
                                 <div>
                                   Total:
                                   {{ totalPreguntasEvaluables(props.row.preguntas_2p_stats) }}
@@ -489,7 +506,7 @@
                       <template v-else-if="col.name === 'fecha_2p'">
                         <div v-if="cargandoCampos2P" class="row justify-center">
                           <q-spinner-dots color="teal-7" size="20px">
-                            <q-tooltip>Cargando fecha 2P</q-tooltip>
+                            <q-tooltip>Cargando fecha {{ seguimientoExamenShort }}</q-tooltip>
                           </q-spinner-dots>
                         </div>
                         <div v-else class="column items-center" style="gap: 6px">
@@ -502,7 +519,7 @@
                             dense
                           >
                             {{ formatearFechaHora2P(props.row) }}
-                            <q-tooltip>Fecha del 2do Parcial</q-tooltip>
+                            <q-tooltip>Fecha de {{ seguimientoExamenLabel }}</q-tooltip>
                           </q-chip>
                           <div v-else class="text-grey-4">Sin fecha</div>
 
@@ -540,7 +557,7 @@
                       <template v-else-if="col.name === 'estado_examen_2p'">
                         <div v-if="cargandoCampos2P" class="row justify-center">
                           <q-spinner-dots color="deep-purple-6" size="20px">
-                            <q-tooltip>Cargando estado del examen 2P</q-tooltip>
+                            <q-tooltip>Cargando estado {{ seguimientoExamenShort }}</q-tooltip>
                           </q-spinner-dots>
                         </div>
                         <q-chip
@@ -552,7 +569,7 @@
                           dense
                         >
                           {{ formatearEstadoExamen2P(props.row.estado_examen_2p) }}
-                          <q-tooltip>Estado del examen 2do Parcial</q-tooltip>
+                          <q-tooltip>Estado de {{ seguimientoExamenLabel }}</q-tooltip>
                         </q-chip>
                         <div v-else class="text-grey-4">Sin estado</div>
                       </template>
@@ -643,14 +660,14 @@
                             <q-avatar icon="person" color="blue-grey-1" text-color="primary" />
                           </q-item-section>
 
-                          <q-item-section>
+                          <q-item-section v-if="parcialSeguimientoActivo">
                             <q-item-label class="text-weight-bold">{{
                               docente.nombre
                             }}</q-item-label>
                             <q-item-label caption>{{ docente.descripcion_grupos }}</q-item-label>
                           </q-item-section>
 
-                          <q-item-section>
+                          <q-item-section v-if="parcialSeguimientoActivo">
                             <div class="progreso-cell align-center">
                               <q-linear-progress
                                 :value="(docente.progreso_documentacion || 0) / 100"
@@ -774,7 +791,7 @@
                               style="gap: 4px"
                               v-if="
                                 obtenerBancoPreguntas2P(props.row, docente) ||
-                                docente.preguntas_2p_stats
+                                obtenerStatsLegacySeguimiento2P(docente)
                               "
                             >
                               <div
@@ -782,7 +799,7 @@
                                 v-if="
                                   (
                                     obtenerBancoPreguntas2P(props.row, docente) ||
-                                    docente.preguntas_2p_stats
+                                    obtenerStatsLegacySeguimiento2P(docente)
                                   ).grupo_teorico
                                 "
                               >
@@ -791,7 +808,7 @@
                                 <strong>{{
                                   (
                                     obtenerBancoPreguntas2P(props.row, docente) ||
-                                    docente.preguntas_2p_stats
+                                    obtenerStatsLegacySeguimiento2P(docente)
                                   ).grupo_teorico
                                 }}</strong>
                               </div>
@@ -809,7 +826,7 @@
                                   F:{{
                                     (
                                       obtenerBancoPreguntas2P(props.row, docente) ||
-                                      docente.preguntas_2p_stats
+                                      obtenerStatsLegacySeguimiento2P(docente)
                                     ).faciles
                                   }}
                                 </span>
@@ -826,7 +843,7 @@
                                   M:{{
                                     (
                                       obtenerBancoPreguntas2P(props.row, docente) ||
-                                      docente.preguntas_2p_stats
+                                      obtenerStatsLegacySeguimiento2P(docente)
                                     ).medias
                                   }}
                                 </span>
@@ -843,7 +860,7 @@
                                   D:{{
                                     (
                                       obtenerBancoPreguntas2P(props.row, docente) ||
-                                      docente.preguntas_2p_stats
+                                      obtenerStatsLegacySeguimiento2P(docente)
                                     ).dificiles
                                   }}
                                 </span>
@@ -851,14 +868,14 @@
                                   T:{{
                                     totalPreguntasEvaluables(
                                       obtenerBancoPreguntas2P(props.row, docente) ||
-                                        docente.preguntas_2p_stats,
+                                        obtenerStatsLegacySeguimiento2P(docente),
                                     )
                                   }}
                                   <q-tooltip>
                                     {{
                                       resumenTiposPregunta(
                                         obtenerBancoPreguntas2P(props.row, docente) ||
-                                          docente.preguntas_2p_stats,
+                                          obtenerStatsLegacySeguimiento2P(docente),
                                       )
                                     }}
                                   </q-tooltip>
@@ -878,7 +895,7 @@
                                   G1:{{
                                     contarGruposTipoPregunta(
                                       obtenerBancoPreguntas2P(props.row, docente) ||
-                                        docente.preguntas_2p_stats,
+                                        obtenerStatsLegacySeguimiento2P(docente),
                                     ).g1
                                   }}
                                 </span>
@@ -895,7 +912,7 @@
                                   G2:{{
                                     contarGruposTipoPregunta(
                                       obtenerBancoPreguntas2P(props.row, docente) ||
-                                        docente.preguntas_2p_stats,
+                                        obtenerStatsLegacySeguimiento2P(docente),
                                     ).g2
                                   }}
                                 </span>
@@ -912,14 +929,14 @@
                                   G3:{{
                                     contarGruposTipoPregunta(
                                       obtenerBancoPreguntas2P(props.row, docente) ||
-                                        docente.preguntas_2p_stats,
+                                        obtenerStatsLegacySeguimiento2P(docente),
                                     ).g3
                                   }}
                                   <q-tooltip>
                                     {{
                                       resumenGruposTipoPregunta(
                                         obtenerBancoPreguntas2P(props.row, docente) ||
-                                          docente.preguntas_2p_stats,
+                                          obtenerStatsLegacySeguimiento2P(docente),
                                       )
                                     }}
                                   </q-tooltip>
@@ -934,7 +951,7 @@
                               Solo grupos prácticos
                             </div>
                             <div v-else class="text-caption text-grey-5 text-center">
-                              Sin preguntas 2P
+                              Sin preguntas {{ seguimientoExamenShort || 'del examen' }}
                             </div>
                           </q-item-section>
 
@@ -990,7 +1007,9 @@
                                   )
                                 }}
                               </q-chip>
-                              <span v-else class="text-caption text-grey-4">Sin estado 2P</span>
+                              <span v-else class="text-caption text-grey-4">
+                                Sin estado {{ seguimientoExamenShort || 'del examen' }}
+                              </span>
                             </div>
                           </q-item-section>
 
@@ -2089,10 +2108,26 @@ const opcionesModalidadExamen = [
   { label: 'Sin', value: MODALIDAD_SIN_CARTILLA, icon: 'block' },
 ]
 
+const opcionesSeguimientoExamen = [
+  { label: '1er Parcial', short: '1P', value: '1er Parcial', icon: 'looks_one' },
+  { label: '2do Parcial', short: '2P', value: '2do Parcial', icon: 'looks_two' },
+  { label: 'Examen Final', short: 'Final', value: 'Final', icon: 'fact_check' },
+  { label: '2da Instancia', short: '2I', value: '2da Instancia', icon: 'replay' },
+]
+
+const parcialSeguimientoActivo = ref(null)
+
 const opcionesPlanes = [
   { label: 'Plan Nuevo (N)', value: 'N' },
   { label: 'Plan Antiguo (A)', value: 'A' },
 ]
+
+const seguimientoExamenActivo = computed(() => {
+  return opcionesSeguimientoExamen.find((opcion) => opcion.value === parcialSeguimientoActivo.value)
+})
+
+const seguimientoExamenLabel = computed(() => seguimientoExamenActivo.value?.label || '')
+const seguimientoExamenShort = computed(() => seguimientoExamenActivo.value?.short || '')
 
 const opcionesSedes = computed(() => {
   let sedes = sedesStore.sedes
@@ -2179,7 +2214,6 @@ async function cargarAsignaturas() {
   // Usar la sede de los filtros (manual para Nacional, automática para los demás)
   const sedeId = filtros.value.sedeId
 
-  cargandoCampos2P.value = true
   bancoPreguntas2PMap.value = {}
   rolExamenes2PMap.value = {}
 
@@ -2190,16 +2224,39 @@ async function cargarAsignaturas() {
       null, // Todos los semestres
       filtros.value.buscar, // Búsqueda backend (opcional, o filtrar en frontend)
     )
+    await cargarSeguimientoExamenActivo()
+  } catch (error) {
+    cargandoCampos2P.value = false
+    throw error
+  }
+}
+
+async function cargarSeguimientoExamenActivo() {
+  bancoPreguntas2PMap.value = {}
+  rolExamenes2PMap.value = {}
+
+  if (!parcialSeguimientoActivo.value || !filtros.value.carreraId) return
+
+  cargandoCampos2P.value = true
+  try {
     await Promise.all([
-      cargarRolExamenes2P(sedeId, filtros.value.carreraId),
-      cargarBancoPreguntas2P(),
+      cargarRolExamenes2P(
+        filtros.value.sedeId,
+        filtros.value.carreraId,
+        parcialSeguimientoActivo.value,
+      ),
+      cargarBancoPreguntas2P(parcialSeguimientoActivo.value),
     ])
   } finally {
     cargandoCampos2P.value = false
   }
 }
 
-async function cargarRolExamenes2P(sedeId, carreraId) {
+function alternarSeguimientoExamen(parcial) {
+  parcialSeguimientoActivo.value = parcialSeguimientoActivo.value === parcial ? null : parcial
+}
+
+async function cargarRolExamenes2P(sedeId, carreraId, parcial = '2do Parcial') {
   if (!sedeId || !carreraId) {
     rolExamenes2PMap.value = {}
     return
@@ -2214,7 +2271,7 @@ async function cargarRolExamenes2P(sedeId, carreraId) {
     const examenes = response.data?.data || response.data || []
 
     rolExamenes2PMap.value = examenes
-      .filter((examen) => examen.tipo_examen === '2do Parcial')
+      .filter((examen) => examen.tipo_examen === parcial)
       .reduce((map, examen) => {
         if (examen.materia_codigo) {
           const codigo = normalizarCodigoMateria(examen.materia_codigo)
@@ -2227,12 +2284,12 @@ async function cargarRolExamenes2P(sedeId, carreraId) {
         return map
       }, {})
   } catch (error) {
-    console.error('Error cargando rol de examenes 2P:', error)
+    console.error('Error cargando rol de examenes de seguimiento:', error)
     rolExamenes2PMap.value = {}
   }
 }
 
-async function cargarBancoPreguntas2P() {
+async function cargarBancoPreguntas2P(parcial = '2do Parcial') {
   const solicitudes = []
 
   asignaturasStore.asignaturas.forEach((asignatura) => {
@@ -2256,7 +2313,7 @@ async function cargarBancoPreguntas2P() {
               docente_id: docente.id,
               sede_id: sedeId,
               grupo: grupoTeorico,
-              parcial: '2do Parcial',
+              parcial,
             },
           })
           .then(async (response) => {
@@ -2273,7 +2330,7 @@ async function cargarBancoPreguntas2P() {
                   docente_id: docente.id,
                   sede_id: sedeId,
                   grupoTeorico: grupoTeorico,
-                  parcial: '2do Parcial',
+                  parcial,
                   all_docentes: true,
                 },
               })
@@ -2291,7 +2348,7 @@ async function cargarBancoPreguntas2P() {
             }
           })
           .catch((error) => {
-            console.error('Error cargando preguntas 2P:', error)
+            console.error('Error cargando preguntas de seguimiento:', error)
             return null
           }),
       )
@@ -2380,6 +2437,13 @@ watch(
 // pero como la lista no es gigante, el filtrado frontend computed es más fluido para UX.
 // Mantenemos búsqueda Frontend sobre los datos cargados.
 
+watch(
+  () => parcialSeguimientoActivo.value,
+  () => {
+    cargarSeguimientoExamenActivo()
+  },
+)
+
 // Columnas
 const columnasAsignaturasBase = [
   {
@@ -2390,7 +2454,7 @@ const columnasAsignaturasBase = [
     sortable: true,
     style: 'width: 100px',
   },
-  { name: 'asignatura', label: 'Asignatura', field: 'nombre', align: 'left', sortable: true },
+  { name: 'asignatura', label: 'Plan de Estudios', field: 'nombre', align: 'left', sortable: true },
   {
     name: 'horas',
     label: 'Horas',
@@ -2410,21 +2474,21 @@ const columnasAsignaturasBase = [
   },
   {
     name: 'preguntas_2p',
-    label: 'Preguntas 2P',
+    label: 'Preguntas',
     field: 'preguntas_2p_stats',
     align: 'center',
     style: 'width: 185px',
   },
   {
     name: 'fecha_2p',
-    label: 'Fecha 2P',
+    label: 'Fecha',
     field: 'fecha_2p',
     align: 'center',
     style: 'width: 235px',
   },
   {
     name: 'estado_examen_2p',
-    label: 'Estado Examen 2P',
+    label: 'Estado Examen',
     field: 'estado_examen_2p',
     align: 'center',
     style: 'width: 145px',
@@ -2440,10 +2504,28 @@ const columnasAsignaturasBase = [
 ]
 
 const columnasAsignaturas = computed(() => {
-  if (!esPlataforma.value) return columnasAsignaturasBase
+  const columnasSeguimiento = new Set(['preguntas_2p', 'fecha_2p', 'estado_examen_2p'])
+  const columnas = columnasAsignaturasBase
+    .filter((columna) => parcialSeguimientoActivo.value || !columnasSeguimiento.has(columna.name))
+    .map((columna) => {
+      if (!columnasSeguimiento.has(columna.name) || !seguimientoExamenShort.value) return columna
+
+      const prefijo = {
+        preguntas_2p: 'Preguntas',
+        fecha_2p: 'Fecha',
+        estado_examen_2p: 'Estado Examen',
+      }[columna.name]
+
+      return {
+        ...columna,
+        label: `${prefijo} ${seguimientoExamenShort.value}`,
+      }
+    })
+
+  if (!esPlataforma.value) return columnas
 
   const columnasOcultas = new Set(['horas', 'progreso', 'estado_examen_2p', 'estado'])
-  return columnasAsignaturasBase.filter((columna) => !columnasOcultas.has(columna.name))
+  return columnas.filter((columna) => !columnasOcultas.has(columna.name))
 })
 
 // Computed: Estadísticas
@@ -2471,13 +2553,17 @@ function crearFilaAsignaturaPorGrupo(asig, docenteGrupo = null) {
   let docenteNombreMostrar =
     docentesData.length > 1 ? 'Varios Docentes (' + docentesData.length + ')' : asig.docente_nombre
 
-  let preguntas2pMostrar = obtenerBancoPreguntas2P(asig) || asig.preguntas_2p_stats
+  const esSeguimiento2P = parcialSeguimientoActivo.value === '2do Parcial'
+  let preguntas2pMostrar =
+    obtenerBancoPreguntas2P(asig) || (esSeguimiento2P ? asig.preguntas_2p_stats : null)
   const rolExamen2P = obtenerRolExamen2P(asig)
-  let fecha2pMostrar = rolExamen2P?.fecha || asig.fecha_2p
-  let horaInicio2pMostrar = rolExamen2P?.hora_inicio || asig.hora_inicio_2p
-  let horaFin2pMostrar = rolExamen2P?.hora_fin || asig.hora_fin_2p
+  let fecha2pMostrar = rolExamen2P?.fecha || (esSeguimiento2P ? asig.fecha_2p : null)
+  let horaInicio2pMostrar =
+    rolExamen2P?.hora_inicio || (esSeguimiento2P ? asig.hora_inicio_2p : null)
+  let horaFin2pMostrar = rolExamen2P?.hora_fin || (esSeguimiento2P ? asig.hora_fin_2p : null)
   let estadoExamen2pMostrar =
-    rolExamen2P?.estado || asig.estado_examen_2p || asig.estado_rol_examen_2p
+    rolExamen2P?.estado ||
+    (esSeguimiento2P ? asig.estado_examen_2p || asig.estado_rol_examen_2p : null)
 
   if (docenteUnico) {
     const rolExamenDocente2P = obtenerRolExamen2P(asig, docenteUnico) || rolExamen2P
@@ -2485,14 +2571,16 @@ function crearFilaAsignaturaPorGrupo(asig, docenteGrupo = null) {
     indicadoresMostrar = docenteUnico.indicadores_documentacion
     docenteNombreMostrar = docenteUnico.nombre || asig.docente_nombre
     preguntas2pMostrar =
-      obtenerBancoPreguntas2P(asig, docenteUnico) || docenteUnico.preguntas_2p_stats
-    fecha2pMostrar = rolExamenDocente2P?.fecha || docenteUnico.fecha_2p
-    horaInicio2pMostrar = rolExamenDocente2P?.hora_inicio || docenteUnico.hora_inicio_2p
-    horaFin2pMostrar = rolExamenDocente2P?.hora_fin || docenteUnico.hora_fin_2p
+      obtenerBancoPreguntas2P(asig, docenteUnico) ||
+      (esSeguimiento2P ? docenteUnico.preguntas_2p_stats : null)
+    fecha2pMostrar = rolExamenDocente2P?.fecha || (esSeguimiento2P ? docenteUnico.fecha_2p : null)
+    horaInicio2pMostrar =
+      rolExamenDocente2P?.hora_inicio || (esSeguimiento2P ? docenteUnico.hora_inicio_2p : null)
+    horaFin2pMostrar =
+      rolExamenDocente2P?.hora_fin || (esSeguimiento2P ? docenteUnico.hora_fin_2p : null)
     estadoExamen2pMostrar =
       rolExamenDocente2P?.estado ||
-      docenteUnico.estado_examen_2p ||
-      docenteUnico.estado_rol_examen_2p
+      (esSeguimiento2P ? docenteUnico.estado_examen_2p || docenteUnico.estado_rol_examen_2p : null)
   }
 
   const grupoTeoricoMostrar =
@@ -2694,6 +2782,10 @@ function obtenerBancoPreguntas2P(asignatura, docente = null) {
   )
 }
 
+function obtenerStatsLegacySeguimiento2P(docente) {
+  return parcialSeguimientoActivo.value === '2do Parcial' ? docente?.preguntas_2p_stats : null
+}
+
 function obtenerContextoCartilla2P(asignatura, docente = null) {
   const docenteData =
     docente || (asignatura.docentes_data?.length === 1 ? asignatura.docentes_data[0] : null)
@@ -2707,6 +2799,7 @@ function obtenerContextoCartilla2P(asignatura, docente = null) {
   const sedeId = docenteData.sede_id || asignatura.sede_id
   const rolExamen2P = obtenerRolExamen2P(asignatura, docenteData)
   const stats = obtenerBancoPreguntas2P(asignatura, docenteData) || null
+  const usarLegacy2P = parcialSeguimientoActivo.value === '2do Parcial'
 
   return {
     asignaturaId: asignatura.id,
@@ -2717,7 +2810,8 @@ function obtenerContextoCartilla2P(asignatura, docente = null) {
     docenteNombre: docenteData.nombre_completo || docenteData.nombre || asignatura.docente_nombre,
     grupoTeorico: String(grupoTeorico).trim(),
     estadoExamen:
-      rolExamen2P?.estado || docenteData.estado_examen_2p || docenteData.estado_rol_examen_2p,
+      rolExamen2P?.estado ||
+      (usarLegacy2P ? docenteData.estado_examen_2p || docenteData.estado_rol_examen_2p : null),
     modalidad: normalizarModalidadExamen2P(rolExamen2P, stats),
     configGeneracion: rolExamen2P?.config_generacion || null,
     key: crearBancoPreguntas2PKey(asignatura.id, docenteData.id, sedeId, grupoTeorico),
@@ -2773,7 +2867,7 @@ async function confirmarCambioModalidad2P(asignatura, modalidadDestino, docente 
   if (!contexto) {
     $q.notify({
       type: 'warning',
-      message: 'No se encontró el grupo teórico del 2do Parcial para cambiar la cartilla.',
+      message: `No se encontró el grupo teórico de ${seguimientoExamenLabel.value || 'este examen'} para cambiar la cartilla.`,
     })
     return
   }
@@ -2792,7 +2886,7 @@ async function confirmarCambioModalidad2P(asignatura, modalidadDestino, docente 
 
   const estadoDestino = estadoDestinoModalidad2P(modalidadDestino).toUpperCase()
   const nuevoValor = modalidadDestino !== MODALIDAD_SIN_CARTILLA
-  const mensajeBase = `Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`
+  const mensajeBase = `Se cambiará el estado del banco ${seguimientoExamenShort.value || '2P'} del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`
   const mensaje = nuevoValor
     ? `${mensajeBase}<br><br>¿Deseas continuar?`
     : `${mensajeBase}<br><br>Al confirmar, se eliminarán las preguntas del banco para ese grupo y parcial. ¿Deseas continuar?`
@@ -2832,7 +2926,7 @@ async function guardarCambioModalidad2P(contexto, modalidadDestino) {
       sede_id: contexto.sedeId,
       docente_id: contexto.docenteId,
       grupo_teorico: contexto.grupoTeorico,
-      parcial: '2do Parcial',
+      parcial: parcialSeguimientoActivo.value || '2do Parcial',
       con_cartilla: nuevoValor,
     })
 
@@ -2848,13 +2942,17 @@ async function guardarCambioModalidad2P(contexto, modalidadDestino) {
     }
 
     await Promise.all([
-      cargarBancoPreguntas2P(),
-      cargarRolExamenes2P(filtros.value.sedeId, filtros.value.carreraId),
+      cargarBancoPreguntas2P(parcialSeguimientoActivo.value || '2do Parcial'),
+      cargarRolExamenes2P(
+        filtros.value.sedeId,
+        filtros.value.carreraId,
+        parcialSeguimientoActivo.value || '2do Parcial',
+      ),
     ])
 
     $q.notify({
       type: 'positive',
-      message: `Modalidad 2P del grupo ${contexto.grupoTeorico} cambiada a ${estadoDestinoModalidad2P(modalidadDestino)}.`,
+      message: `Modalidad ${seguimientoExamenShort.value || '2P'} del grupo ${contexto.grupoTeorico} cambiada a ${estadoDestinoModalidad2P(modalidadDestino)}.`,
       icon: 'check_circle',
     })
   } catch (error) {
@@ -2906,20 +3004,24 @@ function formatearFechaHora2P(item) {
 
 function obtenerDetalleExamenDocente2P(asignatura, docente) {
   const rolExamen2P = obtenerRolExamen2P(asignatura, docente)
+  const usarLegacy2P = parcialSeguimientoActivo.value === '2do Parcial'
 
   return {
-    fecha_2p: rolExamen2P?.fecha || docente?.fecha_2p,
-    hora_inicio_2p: rolExamen2P?.hora_inicio || docente?.hora_inicio_2p,
-    hora_fin_2p: rolExamen2P?.hora_fin || docente?.hora_fin_2p,
+    fecha_2p: rolExamen2P?.fecha || (usarLegacy2P ? docente?.fecha_2p : null),
+    hora_inicio_2p: rolExamen2P?.hora_inicio || (usarLegacy2P ? docente?.hora_inicio_2p : null),
+    hora_fin_2p: rolExamen2P?.hora_fin || (usarLegacy2P ? docente?.hora_fin_2p : null),
     estado_examen_2p:
-      rolExamen2P?.estado || docente?.estado_examen_2p || docente?.estado_rol_examen_2p,
+      rolExamen2P?.estado ||
+      (usarLegacy2P ? docente?.estado_examen_2p || docente?.estado_rol_examen_2p : null),
   }
 }
 
 function formatearFechaHoraDocente2P(asignatura, docente) {
   const detalle = obtenerDetalleExamenDocente2P(asignatura, docente)
 
-  return detalle.fecha_2p ? formatearFechaHora2P(detalle) : 'Sin fecha 2P'
+  return detalle.fecha_2p
+    ? formatearFechaHora2P(detalle)
+    : `Sin fecha ${seguimientoExamenShort.value || ''}`.trim()
 }
 
 function obtenerEstadoExamenDocente2P(asignatura, docente) {
