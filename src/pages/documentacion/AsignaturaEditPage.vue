@@ -2515,34 +2515,32 @@
               <em>Generado o superior</em>. No es posible reemplazar el banco de preguntas.
             </q-banner>
 
-            <div v-if="conCartilla">
-              <q-file
-                v-model="archivoBancoFile"
-                outlined
-                label="Seleccionar archivo Excel (.xlsx)"
-                accept=".xlsx,.xls"
-                :disable="
-                  modoBancoSinPermisoModificar ||
-                  !grupoTeoricoSeleccionado ||
-                  grupoImportacionBloqueado
-                "
-                @update:model-value="previsualizarArchivoExcel"
-              >
-                <template v-slot:prepend><q-icon name="attach_file" /></template>
-                <template v-slot:append>
-                  <q-icon
-                    name="close"
-                    v-if="archivoBancoFile"
-                    class="cursor-pointer"
-                    @click.stop.prevent="archivoBancoFile = null"
-                  />
-                </template>
-              </q-file>
+            <q-file
+              v-model="archivoBancoFile"
+              outlined
+              label="Seleccionar archivo Excel (.xlsx)"
+              accept=".xlsx,.xls"
+              :disable="
+                modoBancoSinPermisoModificar ||
+                !grupoTeoricoSeleccionado ||
+                grupoImportacionBloqueado
+              "
+              @update:model-value="previsualizarArchivoExcel"
+            >
+              <template v-slot:prepend><q-icon name="attach_file" /></template>
+              <template v-slot:append>
+                <q-icon
+                  name="close"
+                  v-if="archivoBancoFile"
+                  class="cursor-pointer"
+                  @click.stop.prevent="archivoBancoFile = null"
+                />
+              </template>
+            </q-file>
 
-              <div class="text-caption text-grey-6 q-mt-sm q-gutter-xs">
-                <q-icon name="warning" size="14px" />
-                No modifiques los encabezados ni el orden de columnas del formato descargado.
-              </div>
+            <div class="text-caption text-grey-6 q-mt-sm q-gutter-xs">
+              <q-icon name="warning" size="14px" />
+              No modifiques los encabezados ni el orden de columnas del formato descargado.
             </div>
           </div>
 
@@ -4608,6 +4606,7 @@ const parcialBancoGestionable = computed(() =>
 )
 const parcialBancoSoloExportacion = computed(() => parcialBancoActualNormalizado.value === '1P')
 const importacionAcumulativaSegundoParcial = computed(() => parcialBancoGestionable.value)
+const examenBancoActivo = computed(() => obtenerExamenProgramadoBancoActivo())
 
 const ESTADOS_ROL_EXAMEN_BLOQUEANTES = new Set([
   'generado',
@@ -5568,8 +5567,8 @@ const dialogObtencionBancoFinal = ref(false)
 const previewObtencionBancoFinal = ref(null)
 const preguntasSeleccionadasObtencionBancoFinal = ref([])
 const cambioCartillaDesdeBancoHabilitado = false
-const parcialSeleccionado = ref('1P')
-const filtroBancoParcialSeleccionado = ref('2P')
+const parcialSeleccionado = ref('EF')
+const filtroBancoParcialSeleccionado = ref('EF')
 const mostrarAccionesExcelBanco = computed(
   () => !!filtroBancoParcialSeleccionado.value && !!filtroBancoGrupoSeleccionado.value,
 )
@@ -5778,22 +5777,19 @@ watch(asignatura, (newVal) => {
   }
 })
 
-// Si se cambia a "Sin Cartilla", limpiar cualquier archivo seleccionado
-watch(conCartilla, (val) => {
-  if (!val) {
-    archivoBancoFile.value = null
-    archivoPreviewBanco.value = null
-    preguntasImportadas.value = []
-    importErrores.value = []
-    importAdvertenciasBanco.value = []
-  }
-})
-
 watch(
   [filtroBancoParcialSeleccionado, filtroBancoGrupoSeleccionado],
   ([parcial, grupo]) => {
-    parcialSeleccionado.value = parcial || '2P'
+    parcialSeleccionado.value = parcial || 'EF'
     grupoTeoricoSeleccionado.value = grupo || null
+  },
+  { immediate: true },
+)
+
+watch(
+  examenBancoActivo,
+  (examen) => {
+    conCartilla.value = resolverConCartillaDesdeRolExamen(examen)
   },
   { immediate: true },
 )
@@ -6498,7 +6494,7 @@ const buildEmptyPreguntaForm = () => ({
   opciones: ['', '', '', '', ''],
   respuesta_correcta: '',
   dificultad: '1',
-  parcial: normalizarParcialBanco(filtroBancoParcialSeleccionado.value || '2P'),
+  parcial: normalizarParcialBanco(filtroBancoParcialSeleccionado.value || 'EF'),
   grupo: filtroBancoGrupoSeleccionado.value || '',
   grupoTeorico: filtroBancoGrupoSeleccionado.value || '',
   logro_esperado_id: logrosBancoOptions.value[0]?.value || null,
@@ -6965,7 +6961,7 @@ const previewRegistroPregunta = computed(() => {
     tipoLabel: getTipoLabelBanco(tipo),
     tipoHeading: sectionCopy.title,
     instrucciones: [...(sectionCopy.lines || [])],
-    parcial: formPregunta.value.parcial || filtroBancoParcialSeleccionado.value || '2P',
+    parcial: formPregunta.value.parcial || filtroBancoParcialSeleccionado.value || 'EF',
     grupoTeorico: formPregunta.value.grupoTeorico || filtroBancoGrupoSeleccionado.value || '',
     grupoReferencia: formPregunta.value.grupo || '',
     enunciado: normalizarTextoMojibake(String(formPregunta.value.enunciado || '').trim()),
@@ -10007,6 +10003,34 @@ function obtenerExamenProgramadoBancoActivo() {
   })
 }
 
+function parseJsonSeguro(valor, fallback = null) {
+  try {
+    return JSON.parse(valor)
+  } catch {
+    return fallback
+  }
+}
+
+function resolverConCartillaDesdeRolExamen(examen) {
+  if (!examen) return true
+
+  const config =
+    typeof examen.config_generacion === 'string'
+      ? parseJsonSeguro(examen.config_generacion, {})
+      : examen.config_generacion || {}
+  const modalidad = String(examen.modalidad || config.modalidad || '').toUpperCase()
+
+  if (modalidad === 'PRESENCIAL_SIN_CARTILLA' || modalidad.includes('SIN_CARTILLA')) {
+    return false
+  }
+
+  if (config.con_cartilla === false || config.con_cartilla === 0 || config.con_cartilla === '0') {
+    return false
+  }
+
+  return true
+}
+
 function construirPreguntasPreviewExamenBanco() {
   const preguntasBase = JSON.parse(JSON.stringify(preguntasFiltradas.value || []))
   const preguntasMezcladas = mixExamQuestionOptions(preguntasBase)
@@ -12697,7 +12721,7 @@ async function confirmarImportacionBanco() {
     formData.append('grupoTeorico', grupoTeoricoSeleccionado.value || '')
     formData.append('con_cartilla', conCartilla.value ? '1' : '0')
     const parcialImportacion = normalizarParcialBanco(
-      filtroBancoParcialSeleccionado.value || parcialSeleccionado.value || '2P',
+      filtroBancoParcialSeleccionado.value || parcialSeleccionado.value || 'EF',
     )
     formData.append('parcial', parcialImportacion)
 
@@ -12891,7 +12915,7 @@ function cerrarDialogImportBanco() {
   importErrores.value = []
   importAdvertenciasBanco.value = []
   importStats.value = crearImportStatsVacios()
-  parcialSeleccionado.value = filtroBancoParcialSeleccionado.value || '2P'
+  parcialSeleccionado.value = filtroBancoParcialSeleccionado.value || 'EF'
   grupoTeoricoSeleccionado.value = filtroBancoGrupoSeleccionado.value || null
 }
 
