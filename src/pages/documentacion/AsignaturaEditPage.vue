@@ -2175,7 +2175,9 @@
               previewObtencionBancoFinal.existentesEF
             }}
             registros). Se omiten respuestas múltiples tipo A,C y, desde 1er Parcial, tipos que no
-            existían allí como A/B/Ambas/Ninguna o Verdadero/Falso Complejas.
+            existían allí como A/B/Ambas/Ninguna o Verdadero/Falso Complejas. Los grupos internos de
+            emparejamiento y casos se copiaran con prefijo 1P o 2P para evitar uniones accidentales
+            en Examen Final.
           </q-banner>
 
           <div class="row items-center q-col-gutter-sm">
@@ -2247,9 +2249,7 @@
                 <div class="text-caption text-grey-7 q-mt-xs">
                   Respuesta:
                   {{ formatearRespuestaBancoFinalPreview(item.pregunta) || 'Sin respuesta' }}
-                  <span v-if="item.pregunta.grupo">
-                    · Grupo interno: {{ item.pregunta.grupo }}</span
-                  >
+                  <span v-if="item.grupoFinal"> · Grupo interno: {{ item.grupoFinal }}</span>
                 </div>
               </q-item-section>
             </q-item>
@@ -11569,9 +11569,44 @@ function obtenerPreguntasBancoPorParcialGrupo(parcial) {
   })
 }
 
-function construirClaveDuplicadoBancoFinal(pregunta, gruposCabeceraMap = null) {
+function tipoPreguntaUsaGrupoInternoBancoFinal(pregunta, gruposCabeceraMap = null) {
   const tipo = normalizarTipoPregunta(pregunta?.tipo, pregunta, gruposCabeceraMap)
-  const grupo = normalizarTipoAliasKey(pregunta?.grupo || '')
+  return ['EMPAREJAMIENTO', 'OPCION_EMPAREJAMIENTO', 'PROBLEMA', 'SUBPROBLEMA'].includes(tipo)
+}
+
+function obtenerPrefijoParcialGrupoBancoFinal(parcialOrigen) {
+  const parcial = normalizarParcialBanco(parcialOrigen)
+  return parcial === '1P' || parcial === '2P' ? parcial : ''
+}
+
+function construirGrupoInternoBancoFinal(pregunta, parcialOrigen, gruposCabeceraMap = null) {
+  const grupoOriginal = String(pregunta?.grupo || '').trim()
+  const prefijo = obtenerPrefijoParcialGrupoBancoFinal(parcialOrigen)
+
+  if (
+    !grupoOriginal ||
+    !prefijo ||
+    !tipoPreguntaUsaGrupoInternoBancoFinal(pregunta, gruposCabeceraMap)
+  ) {
+    return grupoOriginal
+  }
+
+  if (new RegExp(`^${prefijo}\\s+`, 'i').test(grupoOriginal)) {
+    return grupoOriginal
+  }
+
+  return `${prefijo} ${grupoOriginal}`
+}
+
+function construirClaveDuplicadoBancoFinal(
+  pregunta,
+  gruposCabeceraMap = null,
+  parcialOrigen = null,
+) {
+  const tipo = normalizarTipoPregunta(pregunta?.tipo, pregunta, gruposCabeceraMap)
+  const grupo = normalizarTipoAliasKey(
+    construirGrupoInternoBancoFinal(pregunta, parcialOrigen, gruposCabeceraMap),
+  )
   const enunciado = normalizarTipoAliasKey(limpiarHtmlBancoTexto(pregunta?.enunciado || ''))
   const respuesta = obtenerRespuestasNormalizadasBanco(pregunta?.respuesta_correcta).join(',')
 
@@ -11611,6 +11646,12 @@ function clonarOpcionesPreguntaBanco(opciones) {
 }
 
 function construirPayloadPreguntaBancoFinal(pregunta, parcialOrigen) {
+  const grupoFinal = construirGrupoInternoBancoFinal(
+    pregunta,
+    parcialOrigen,
+    gruposCabeceraBancoMap.value,
+  )
+
   return {
     enunciado: pregunta.enunciado || '',
     tipo: normalizarTipoPregunta(pregunta.tipo, pregunta, gruposCabeceraBancoMap.value),
@@ -11618,7 +11659,7 @@ function construirPayloadPreguntaBancoFinal(pregunta, parcialOrigen) {
     sede_id: pregunta.sede_id || sedeIdBancoContextual.value || '',
     grupoTeorico: filtroBancoGrupoSeleccionado.value || obtenerGrupoTeoricoPregunta(pregunta),
     parcial: 'EF',
-    grupo: pregunta.grupo || '',
+    grupo: grupoFinal,
     logro_esperado_id: pregunta.logro_esperado_id || pregunta.logro_id || '',
     dificultad: pregunta.dificultad || '',
     opciones: clonarOpcionesPreguntaBanco(pregunta.opciones),
@@ -11646,7 +11687,11 @@ function construirPreviewObtencionBancoFinal() {
     let duplicadas = 0
 
     validas.forEach((pregunta) => {
-      const clave = construirClaveDuplicadoBancoFinal(pregunta, gruposCabeceraBancoMap.value)
+      const clave = construirClaveDuplicadoBancoFinal(
+        pregunta,
+        gruposCabeceraBancoMap.value,
+        parcialOrigen,
+      )
 
       if (clavesExistentes.has(clave) || clavesSeleccionadas.has(clave)) {
         duplicadas += 1
@@ -11678,9 +11723,15 @@ function construirPreviewObtencionBancoFinal() {
         key: `${origen.parcial}|${construirClaveDuplicadoBancoFinal(
           pregunta,
           gruposCabeceraBancoMap.value,
+          origen.parcial,
         )}`,
         pregunta,
         parcialOrigen: origen.parcial,
+        grupoFinal: construirGrupoInternoBancoFinal(
+          pregunta,
+          origen.parcial,
+          gruposCabeceraBancoMap.value,
+        ),
       })),
     ),
     existentesEF: preguntasEF.length,
