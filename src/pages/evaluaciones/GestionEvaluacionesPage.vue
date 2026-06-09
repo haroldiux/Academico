@@ -2144,6 +2144,7 @@ const normalizeTipo = (t) => {
 const PARCIAL_1ER = '1er Parcial'
 const PARCIAL_2DO = '2do Parcial'
 const PARCIAL_FINAL = 'Final'
+const PARCIAL_2DA_INSTANCIA = '2da Instancia'
 const DEFAULT_GESTION = '2026-I'
 const DEFAULT_DISTRIBUCION_2P = { facil: 7, medio: 16, dificil: 7 }
 const MINIMO_BANCO_FINAL = 120
@@ -2170,11 +2171,22 @@ const esFinalValor = (parcial) => {
   return value.includes('final') || value === 'ef'
 }
 
+const esSegundaInstanciaValor = (parcial) => {
+  const value = removeAccents(String(parcial || '')).toLowerCase()
+  return value.includes('instancia') || value.includes('2i')
+}
+
 const usaGeneradorCodificadoValor = (parcial) =>
-  esPrimerParcialValor(parcial) || esSegundoParcialValor(parcial) || esFinalValor(parcial)
+  esPrimerParcialValor(parcial) ||
+  esSegundoParcialValor(parcial) ||
+  esFinalValor(parcial) ||
+  esSegundaInstanciaValor(parcial)
 
 const usaGeneracionConsolidadaValor = (parcial) =>
-  esSegundoParcialValor(parcial) || esFinalValor(parcial)
+  esSegundoParcialValor(parcial) || esFinalValor(parcial) || esSegundaInstanciaValor(parcial)
+
+const obtenerParcialFuenteBancoExamen = (parcial) =>
+  esSegundaInstanciaValor(parcial) ? PARCIAL_FINAL : normalizarParcialExamen(parcial)
 
 const normalizarGrupoExamen = (value) =>
   removeAccents(String(value || ''))
@@ -2191,7 +2203,7 @@ const normalizarParcialExamen = (value) => {
   if (key.includes('2do') || key.includes('segundo') || key.includes('2p')) return PARCIAL_2DO
   if (key.includes('1er') || key.includes('primer') || key.includes('1p')) return PARCIAL_1ER
   if (key.includes('final')) return PARCIAL_FINAL
-  if (key.includes('instancia') || key.includes('2i')) return '2da Instancia'
+  if (key.includes('instancia') || key.includes('2i')) return PARCIAL_2DA_INSTANCIA
   return String(value || '').trim()
 }
 
@@ -2200,7 +2212,9 @@ const validarPreguntasSeleccionadasParaExamen = (preguntas = [], contexto = {}) 
   const sedeIdEsperada = Number(contexto.sede_id || 0)
   const docenteIdEsperado = Number(contexto.docente_id || 0)
   const grupoEsperado = normalizarGrupoExamen(contexto.grupo)
-  const parcialEsperado = normalizarParcialExamen(contexto.parcial)
+  const parcialEsperado = contexto.usarParcialFuenteBanco
+    ? obtenerParcialFuenteBancoExamen(contexto.parcial)
+    : normalizarParcialExamen(contexto.parcial)
   const inconsistencias = []
 
   ;(preguntas || []).forEach((pregunta, index) => {
@@ -2244,9 +2258,23 @@ const validarPreguntasSeleccionadasParaExamen = (preguntas = [], contexto = {}) 
 
 const obtenerDistribucionConfigurada = (configuracion, parcial) => {
   const parciales = Array.isArray(configuracion?.parciales) ? configuracion.parciales : []
-  const parcialKey = removeAccents(String(parcial || '')).toLowerCase()
+  const parcialNormalizado = normalizarParcialExamen(parcial)
+  const confExacta = parciales.find((p) => normalizarParcialExamen(p.nombre) === parcialNormalizado)
+  const parcialKey = removeAccents(String(parcialNormalizado || parcial || '')).toLowerCase()
   const confParcial = parciales.find((p) => {
     const nombre = removeAccents(String(p.nombre || '')).toLowerCase()
+    if (esSegundaInstanciaValor(parcialKey)) {
+      return nombre.includes('instancia')
+    }
+    if (esFinalValor(parcialKey)) {
+      return nombre.includes('final') && !nombre.includes('instancia')
+    }
+    if (esSegundoParcialValor(parcialKey)) {
+      return esSegundoParcialValor(nombre) && !nombre.includes('instancia')
+    }
+    if (esPrimerParcialValor(parcialKey)) {
+      return esPrimerParcialValor(nombre)
+    }
     return (
       (nombre.includes('1') && parcialKey.includes('1')) ||
       (nombre.includes('2') && parcialKey.includes('2')) ||
@@ -2254,7 +2282,7 @@ const obtenerDistribucionConfigurada = (configuracion, parcial) => {
       (nombre.includes('instancia') && parcialKey.includes('instancia'))
     )
   })
-  const distribucion = confParcial?.distribucion || null
+  const distribucion = confExacta?.distribucion || confParcial?.distribucion || null
   if (!distribucion) return null
 
   const resultado = {
@@ -2941,7 +2969,7 @@ const crearParamsBancoStats = (examen) =>
     asignatura_id: examen?.asignatura_id,
     docente_id: examen?.docente_id,
     sede_id: examen?.sede_id,
-    parcial: examen?.tipo_examen || examen?.parcial,
+    parcial: obtenerParcialFuenteBancoExamen(examen?.tipo_examen || examen?.parcial),
     grupo: examen?.grupo,
   })
 
@@ -3002,13 +3030,16 @@ const aplicarStatsBancoFila = (examen, resumenBanco) => {
 const requiereStatsBancoRemotas = (examen) => {
   if (!examenConCartilla(examen) || !examen?.asignatura_id) return false
 
+  const esGeneracionConsolidadaActual = usaGeneracionConsolidadaValor(
+    examen?.tipo_examen || examen?.parcial,
+  )
   const stats = normalizarBancoStatsFila(examen)
-  if (stats.total <= 0) return false
+  if (stats.total <= 0) return esGeneracionConsolidadaActual
 
   const sinDificultad = stats.facil + stats.medio + stats.dificil === 0
   if (sinDificultad) return true
 
-  if (!usaGeneracionConsolidadaValor(examen?.tipo_examen || examen?.parcial)) return false
+  if (!esGeneracionConsolidadaActual) return false
 
   const totalGrupos = stats.g1 + stats.g2 + stats.g3
   const tieneDetalleTipos =
@@ -3579,6 +3610,7 @@ const getManualRowValue = (row, keys) => {
 const normalizarParcialManual = (value) => {
   const key = normalizeManualCellKey(value)
   if (!key) return ''
+  if (key.includes('INSTANCIA') || key.includes('2I')) return PARCIAL_2DA_INSTANCIA
   if (key.includes('2') || key.includes('SEGUNDO') || key.includes('2P')) return PARCIAL_2DO
   if (key.includes('1') || key.includes('PRIMER') || key.includes('1P')) return '1er Parcial'
   if (key.includes('FINAL')) return 'Final'
@@ -5083,13 +5115,16 @@ const ejecutarAccionGestion = async () => {
       $q.loading.show({ message: 'Obteniendo banco de preguntas...' })
       let bancoPreguntas = []
       try {
+        const parcialBancoFuente = obtenerParcialFuenteBancoExamen(
+          examen.tipo_examen || examen.parcial,
+        )
         const resp = await api.get('/banco-preguntas', {
           params: {
             asignatura_id: examen.asignatura_id,
             docente_id: examen.docente_id,
             sede_id: examen.sede_id,
             grupoTeorico: examen.grupo,
-            parcial: examen.tipo_examen || examen.parcial,
+            parcial: parcialBancoFuente,
             all_docentes: true,
           },
         })
@@ -5115,6 +5150,7 @@ const ejecutarAccionGestion = async () => {
         docente_id: examen.docente_id,
         grupo: examen.grupo,
         parcial: examen.tipo_examen || examen.parcial,
+        usarParcialFuenteBanco: true,
       })
 
       if (!validacionBancoContexto.ok) {
@@ -5268,6 +5304,7 @@ const ejecutarAccionGestion = async () => {
           docente_id: examen.docente_id,
           grupo: examen.grupo,
           parcial: examen.tipo_examen || examen.parcial,
+          usarParcialFuenteBanco: true,
         })
 
         if (!validacionSeleccion.ok) {

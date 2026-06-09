@@ -1233,12 +1233,12 @@
           <template v-if="puedeVisualizarBanco">
             <!-- ---- Header principal ---- -->
             <div class="banco-header">
-              <div>
+              <div class="banco-header-title">
                 <div class="text-h6 text-weight-bold text-white">
                   <q-icon name="help_outline" class="q-mr-sm" />Banco de Preguntas
                 </div>
               </div>
-              <div class="banco-actions row items-center">
+              <div class="banco-actions">
                 <span v-if="mostrarAccionesExcelBanco" class="banco-action-tooltip-anchor">
                   <q-btn
                     round
@@ -1309,6 +1309,29 @@
                     <div class="banco-action-tooltip__caption">
                       Previsualiza y copia al Examen Final las preguntas válidas de 1er y 2do
                       Parcial para este grupo.
+                    </div>
+                  </q-tooltip>
+                </span>
+                <span v-if="puedeCorregirGruposBancoFinal" class="banco-action-tooltip-anchor">
+                  <q-btn
+                    round
+                    unelevated
+                    icon="rule"
+                    class="banco-action-btn banco-action-btn--validate"
+                    aria-label="Revisar grupos internos de Examen Final"
+                    :loading="corrigiendoGruposBancoFinal"
+                    @click="revisarCorreccionGruposBancoFinal"
+                  />
+                  <q-tooltip
+                    class="banco-action-tooltip"
+                    anchor="top middle"
+                    self="bottom middle"
+                    :offset="[0, 12]"
+                  >
+                    <div class="banco-action-tooltip__title">Corregir Grupos Final</div>
+                    <div class="banco-action-tooltip__caption">
+                      Revisa preguntas ya copiadas al Final y antepone 1P o 2P en grupos internos de
+                      emparejamiento y casos.
                     </div>
                   </q-tooltip>
                 </span>
@@ -5563,6 +5586,7 @@ const importandoBanco = ref(false)
 const modoImportacion = ref('reemplazar')
 const conCartilla = ref(true)
 const obteniendoPreguntasBancoFinal = ref(false)
+const corrigiendoGruposBancoFinal = ref(false)
 const dialogObtencionBancoFinal = ref(false)
 const previewObtencionBancoFinal = ref(null)
 const preguntasSeleccionadasObtencionBancoFinal = ref([])
@@ -9554,6 +9578,12 @@ const puedeObtenerPreguntasBancoFinal = computed(
     !modoBancoSoloVisualDirector.value,
 )
 
+const puedeCorregirGruposBancoFinal = computed(
+  () =>
+    puedeObtenerPreguntasBancoFinal.value &&
+    [ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol),
+)
+
 const LIMITE_ADVERTENCIA_IMPORTACION_BANCO = 80
 
 const totalPreguntasContables = computed(() => {
@@ -11668,6 +11698,185 @@ function construirPayloadPreguntaBancoFinal(pregunta, parcialOrigen) {
   }
 }
 
+function grupoInternoBancoFinalYaPrefijado(grupo) {
+  return /^(1P|2P)\s+/i.test(String(grupo || '').trim())
+}
+
+function construirPayloadCorreccionGrupoBancoFinal(pregunta, grupoFinal) {
+  return {
+    enunciado: pregunta.enunciado || '',
+    tipo: normalizarTipoPregunta(pregunta.tipo, pregunta, gruposCabeceraBancoMap.value),
+    asignatura_id: pregunta.asignatura_id || asignatura.value?.id || '',
+    sede_id: pregunta.sede_id || sedeIdBancoContextual.value || '',
+    grupoTeorico: filtroBancoGrupoSeleccionado.value || obtenerGrupoTeoricoPregunta(pregunta),
+    parcial: 'EF',
+    grupo: grupoFinal,
+    logro_esperado_id: pregunta.logro_esperado_id || pregunta.logro_id || '',
+    dificultad: pregunta.dificultad || '',
+    opciones: clonarOpcionesPreguntaBanco(pregunta.opciones),
+    respuesta_correcta: pregunta.respuesta_correcta || '',
+  }
+}
+
+function construirReporteCorreccionGruposBancoFinal() {
+  const preguntasOrigen = [
+    ...obtenerPreguntasBancoPorParcialGrupo('1P').map((pregunta) => ({
+      pregunta,
+      parcial: '1P',
+    })),
+    ...obtenerPreguntasBancoPorParcialGrupo('2P').map((pregunta) => ({
+      pregunta,
+      parcial: '2P',
+    })),
+  ].filter(({ pregunta }) =>
+    tipoPreguntaUsaGrupoInternoBancoFinal(pregunta, gruposCabeceraBancoMap.value),
+  )
+
+  const origenesPorClave = new Map()
+
+  preguntasOrigen.forEach(({ pregunta, parcial }) => {
+    const grupoFinal = construirGrupoInternoBancoFinal(
+      pregunta,
+      parcial,
+      gruposCabeceraBancoMap.value,
+    )
+    const clave = construirClaveDuplicadoBancoFinal(pregunta, gruposCabeceraBancoMap.value, null)
+
+    if (!clave || !grupoFinal) {
+      return
+    }
+
+    const registros = origenesPorClave.get(clave) || []
+    registros.push({ pregunta, parcial, grupoFinal })
+    origenesPorClave.set(clave, registros)
+  })
+
+  const revisables = obtenerPreguntasBancoPorParcialGrupo('EF').filter((pregunta) =>
+    tipoPreguntaUsaGrupoInternoBancoFinal(pregunta, gruposCabeceraBancoMap.value),
+  )
+  const corregibles = []
+  const ambiguas = []
+  const sinOrigen = []
+  let yaCorrectas = 0
+
+  revisables.forEach((pregunta) => {
+    const grupoActual = String(pregunta.grupo || '').trim()
+
+    if (!grupoActual || grupoInternoBancoFinalYaPrefijado(grupoActual)) {
+      yaCorrectas += 1
+      return
+    }
+
+    const clave = construirClaveDuplicadoBancoFinal(pregunta, gruposCabeceraBancoMap.value, null)
+    const candidatos = (origenesPorClave.get(clave) || []).filter(
+      (candidato) => candidato.grupoFinal !== grupoActual,
+    )
+    const gruposFinalesUnicos = [...new Set(candidatos.map((candidato) => candidato.grupoFinal))]
+
+    if (gruposFinalesUnicos.length === 1) {
+      corregibles.push({
+        pregunta,
+        grupoActual,
+        grupoFinal: gruposFinalesUnicos[0],
+        parcialOrigen: candidatos.find(
+          (candidato) => candidato.grupoFinal === gruposFinalesUnicos[0],
+        )?.parcial,
+      })
+    } else if (gruposFinalesUnicos.length > 1) {
+      ambiguas.push({
+        pregunta,
+        grupoActual,
+        candidatos: gruposFinalesUnicos,
+      })
+    } else {
+      sinOrigen.push({
+        pregunta,
+        grupoActual,
+      })
+    }
+  })
+
+  return {
+    total: revisables.length,
+    corregibles,
+    ambiguas,
+    sinOrigen,
+    yaCorrectas,
+  }
+}
+
+function describirPreguntaCorreccionBancoFinal(item) {
+  const tipo = getTipoLabelBanco(item.pregunta?.tipo, item.pregunta, gruposCabeceraBancoMap.value)
+  const enunciado = limpiarHtmlBancoTexto(item.pregunta?.enunciado || 'Sin enunciado')
+  return `${tipo}: ${enunciado.slice(0, 90)}${enunciado.length > 90 ? '...' : ''}`
+}
+
+function escaparHtmlBancoDialog(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function confirmarCorreccionGruposBancoFinal(reporte) {
+  const ejemplos = reporte.corregibles.slice(0, 6)
+  const ejemplosHtml = ejemplos.length
+    ? `<ul>${ejemplos
+        .map(
+          (item) =>
+            `<li><strong>${escaparHtmlBancoDialog(
+              item.grupoActual,
+            )}</strong> -> <strong>${escaparHtmlBancoDialog(
+              item.grupoFinal,
+            )}</strong>: ${escaparHtmlBancoDialog(describirPreguntaCorreccionBancoFinal(item))}</li>`,
+        )
+        .join('')}</ul>`
+    : ''
+
+  return new Promise((resolve) => {
+    $q.dialog({
+      title: 'Revisar grupos internos de Examen Final',
+      html: true,
+      message: `
+        <div class="text-body2">
+          <p>Se revisaron ${reporte.total} registros de emparejamiento/casos en Examen Final.</p>
+          <ul>
+            <li><strong>Corregibles:</strong> ${reporte.corregibles.length}</li>
+            <li><strong>Ya correctos:</strong> ${reporte.yaCorrectas}</li>
+            <li><strong>Ambiguos:</strong> ${reporte.ambiguas.length}</li>
+            <li><strong>Sin origen encontrado:</strong> ${reporte.sinOrigen.length}</li>
+          </ul>
+          ${ejemplosHtml}
+          <p>Solo se actualizaran los registros con origen unico identificado. Los ambiguos no se tocaran.</p>
+        </div>
+      `,
+      ok:
+        reporte.corregibles.length > 0
+          ? {
+              label: `Corregir ${reporte.corregibles.length}`,
+              color: 'primary',
+            }
+          : {
+              label: 'Entendido',
+              color: 'primary',
+            },
+      cancel:
+        reporte.corregibles.length > 0
+          ? {
+              label: 'Cancelar',
+              flat: true,
+            }
+          : false,
+      persistent: true,
+    })
+      .onOk(() => resolve(reporte.corregibles.length > 0))
+      .onCancel(() => resolve(false))
+      .onDismiss(() => resolve(false))
+  })
+}
+
 function construirPreviewObtencionBancoFinal() {
   const preguntas1P = obtenerPreguntasBancoPorParcialGrupo('1P')
   const preguntas2P = obtenerPreguntasBancoPorParcialGrupo('2P')
@@ -11832,6 +12041,53 @@ async function obtenerPreguntasValidasBancoFinal() {
   previewObtencionBancoFinal.value = preview
   preguntasSeleccionadasObtencionBancoFinal.value = preview.preguntasNuevas.map((item) => item.key)
   dialogObtencionBancoFinal.value = true
+}
+
+async function revisarCorreccionGruposBancoFinal() {
+  if (!puedeCorregirGruposBancoFinal.value || corrigiendoGruposBancoFinal.value) {
+    return
+  }
+
+  const reporte = construirReporteCorreccionGruposBancoFinal()
+  const debeCorregir = await confirmarCorreccionGruposBancoFinal(reporte)
+
+  if (!debeCorregir) {
+    return
+  }
+
+  corrigiendoGruposBancoFinal.value = true
+  let corregidas = 0
+
+  try {
+    for (const item of reporte.corregibles) {
+      const payload = construirPayloadCorreccionGrupoBancoFinal(item.pregunta, item.grupoFinal)
+      await persistirPreguntaPayload(payload, null, item.pregunta.id)
+      corregidas += 1
+    }
+
+    await cargarBancoPreguntas()
+
+    $q.notify({
+      type: 'positive',
+      message: `Se corrigieron ${corregidas} grupo(s) internos en Examen Final.`,
+      caption:
+        reporte.ambiguas.length || reporte.sinOrigen.length
+          ? `${reporte.ambiguas.length} ambiguo(s) y ${reporte.sinOrigen.length} sin origen no fueron modificados.`
+          : 'Los grupos internos ya quedan separados por parcial.',
+      icon: 'rule',
+      timeout: 7000,
+    })
+  } catch (error) {
+    console.error('Error al corregir grupos internos de Examen Final:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudieron corregir los grupos internos de Examen Final.',
+      caption: error.response?.data?.message || error.message,
+      timeout: 7000,
+    })
+  } finally {
+    corrigiendoGruposBancoFinal.value = false
+  }
 }
 
 async function copiarPreguntasSeleccionadasBancoFinal() {
@@ -13832,10 +14088,15 @@ function getParcialColorBanco(parcial) {
   margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   flex-wrap: wrap;
   box-shadow: 0 14px 34px rgba(76, 29, 149, 0.18);
+}
+
+.banco-header-title {
+  flex: 1 1 240px;
+  min-width: 0;
 }
 
 .banco-header .text-h6 {
@@ -13846,23 +14107,35 @@ function getParcialColorBanco(parcial) {
 }
 
 .banco-actions {
+  display: flex;
+  align-items: center;
+  flex: 1 1 560px;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
   padding: 4px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
+  border-radius: 22px;
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
 }
 
 .banco-action-tooltip-anchor {
   display: inline-flex;
+  flex: 0 0 auto;
+  min-width: 36px;
 }
 
 .banco-action-btn {
   --banco-action-accent: #e0e7ff;
+  flex: 0 0 36px;
   width: 36px;
+  min-width: 36px;
+  max-width: 36px;
   height: 36px;
   min-height: 36px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
@@ -13873,6 +14146,11 @@ function getParcialColorBanco(parcial) {
     background 0.18s ease,
     border-color 0.18s ease,
     color 0.18s ease;
+}
+
+.banco-action-btn :deep(.q-btn__content) {
+  width: 100%;
+  flex-wrap: nowrap;
 }
 
 .banco-action-btn :deep(.q-icon) {
@@ -13919,14 +14197,27 @@ function getParcialColorBanco(parcial) {
 
 .banco-action-btn--register {
   --banco-action-accent: #059669;
+  flex-basis: auto;
   width: auto;
   min-width: 136px;
+  max-width: none;
   padding: 0 14px;
   border-radius: 999px;
 }
 
 .banco-action-btn--register :deep(.q-btn__content) {
   gap: 6px;
+}
+
+@media (max-width: 720px) {
+  .banco-header {
+    padding: 16px;
+  }
+
+  .banco-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 :deep(.banco-action-tooltip) {
