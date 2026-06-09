@@ -93,7 +93,13 @@
           <q-btn unelevated color="blue-7" icon="assessment" @click="dialogStats = true">
             <q-tooltip>Ver Estadisticas del Rango</q-tooltip>
           </q-btn>
-          <q-btn unelevated color="deep-purple" icon="print" @click="imprimirListaDiaria">
+          <q-btn
+            v-if="!esVisualizadorEvaluaciones"
+            unelevated
+            color="deep-purple"
+            icon="print"
+            @click="imprimirListaDiaria"
+          >
             <q-tooltip>Imprimir Lista de Seguimiento</q-tooltip>
           </q-btn>
         </div>
@@ -1901,6 +1907,7 @@ const {
   puedeEditar,
   esEvaluaciones,
   esResponsableEvaluaciones,
+  esVisualizadorEvaluaciones,
   esDireccionAcademica,
   esDirectorCarrera,
   esVicerrectorNacional,
@@ -1934,6 +1941,10 @@ const puedeVerDocumentos = computed(
 const puedeAdministrarRestauracionExamenes = computed(() => esAdmin.value || esSuperAdmin.value)
 
 const puedeVerGeneracionManual = computed(() => {
+  if (esVisualizadorEvaluaciones.value) {
+    return false
+  }
+
   if (esAutoridadSoloLecturaEvaluaciones.value) {
     return false
   }
@@ -4706,6 +4717,11 @@ const configGestion = computed(() => {
 })
 
 const gestionarEstado = async (examen) => {
+  if (esVisualizadorEvaluaciones.value) {
+    $q.notify({ type: 'warning', message: 'Este rol solo puede visualizar evaluaciones.' })
+    return
+  }
+
   if (notificarBloqueoPorTiempo(examen)) {
     return
   }
@@ -5044,6 +5060,10 @@ const mezclarIncisos7167 = (preguntas) => {
 const ejecutarAccionGestion = async () => {
   const examen = dialogGestion.value.examen
   if (!examen) return
+  if (esVisualizadorEvaluaciones.value) {
+    $q.notify({ type: 'warning', message: 'Este rol solo puede visualizar evaluaciones.' })
+    return
+  }
   if (notificarBloqueoPorTiempo(examen)) return
 
   // Validación de disponibilidad en el banco (solo para generación de variantes)
@@ -6226,6 +6246,11 @@ const getPatronUrl = (row, p, tipo) => {
 }
 
 const abrirExamenGenerado = async (row) => {
+  if (esVisualizadorEvaluaciones.value) {
+    $q.notify({ type: 'warning', message: 'Este rol no tiene acceso a documentos.' })
+    return
+  }
+
   const variant = row?.variantes?.[0]
   if (!variant || typeof variant === 'string' || !variant.archivo) return
 
@@ -6240,6 +6265,11 @@ const abrirExamenGenerado = async (row) => {
 }
 
 const abrirPatronGenerado = async (row, tipo) => {
+  if (esVisualizadorEvaluaciones.value) {
+    $q.notify({ type: 'warning', message: 'Este rol no tiene acceso a documentos.' })
+    return
+  }
+
   const pattern = row?.patrones?.[0]
   if (!pattern || typeof pattern === 'string' || !pattern[tipo]) return
 

@@ -915,7 +915,10 @@ const opcionesRolesForm = computed(() => {
 })
 
 const rolSeleccionado = computed(() => rolesStore.getRolById(formUsuario.value.rolId))
-const requiereMultiplesSedes = computed(() => rolSeleccionado.value?.codigo === 'PLATAFORMA')
+const rolesConMultiplesSedes = ['PLATAFORMA', 'VISUALIZADOR_EVALUACIONES_SEDE']
+const requiereMultiplesSedes = computed(() =>
+  rolesConMultiplesSedes.includes(rolSeleccionado.value?.codigo),
+)
 
 const requiereCarrera = computed(() => {
   const rolesConCarrera = ['DIRECTOR_CARRERA', 'DOCENTE']
@@ -926,9 +929,12 @@ const requiereCarrera = computed(() => {
 const requiereSede = computed(() => {
   const rol = rolSeleccionado.value
   // Vicerrectorado Nacional y Responsable de Evaluaciones tienen acceso global, no requieren sede específica
-  return (
-    rol && rol.codigo !== 'VICERRECTORADO_NACIONAL' && rol.codigo !== 'RESPONSABLE_EVALUACIONES'
-  )
+  const rolesGlobalesSinSede = [
+    'VICERRECTORADO_NACIONAL',
+    'RESPONSABLE_EVALUACIONES',
+    'VISUALIZADOR_EVALUACIONES_GLOBAL',
+  ]
+  return rol && !rolesGlobalesSinSede.includes(rol.codigo)
 })
 
 const usuariosFiltrados = computed(() => {
@@ -1114,7 +1120,7 @@ function onRolChange(rolId) {
   if (rol) {
     formUsuario.value.rolNombre = rol.nombre
   }
-  if (rol?.codigo === 'PLATAFORMA') {
+  if (rolesConMultiplesSedes.includes(rol?.codigo)) {
     formUsuario.value.sedeIds = formUsuario.value.sedeId ? [formUsuario.value.sedeId] : []
   } else {
     formUsuario.value.sedeId = formUsuario.value.sedeIds?.[0] || formUsuario.value.sedeId || null

@@ -41,6 +41,15 @@ export function usePermisos() {
   const esDocente = computed(() => rol.value === ROLES.DOCENTE)
   const esEvaluaciones = computed(() => rol.value === ROLES.EVALUACIONES)
   const esResponsableEvaluaciones = computed(() => rol.value === ROLES.RESPONSABLE_EVALUACIONES)
+  const esVisualizadorEvaluacionesGlobal = computed(
+    () => rol.value === ROLES.VISUALIZADOR_EVALUACIONES_GLOBAL,
+  )
+  const esVisualizadorEvaluacionesSede = computed(
+    () => rol.value === ROLES.VISUALIZADOR_EVALUACIONES_SEDE,
+  )
+  const esVisualizadorEvaluaciones = computed(
+    () => esVisualizadorEvaluacionesGlobal.value || esVisualizadorEvaluacionesSede.value,
+  )
   const esPlataforma = computed(() => rol.value === ROLES.PLATAFORMA)
 
   // Niveles de acceso
@@ -168,6 +177,8 @@ export function usePermisos() {
       [ROLES.DOCENTE]: '/docente/dashboard',
       [ROLES.EVALUACIONES]: '/evaluaciones/dashboard',
       [ROLES.RESPONSABLE_EVALUACIONES]: '/evaluaciones/dashboard',
+      [ROLES.VISUALIZADOR_EVALUACIONES_GLOBAL]: '/admin/evaluaciones',
+      [ROLES.VISUALIZADOR_EVALUACIONES_SEDE]: '/admin/evaluaciones',
       [ROLES.PLATAFORMA]: '/director/asignaturas',
     }
     return dashboards[rol.value] || '/'
@@ -229,6 +240,10 @@ export function usePermisos() {
           to: '/admin/reporte-evaluaciones',
         },
       ]
+    }
+
+    if (esVisualizadorEvaluaciones.value) {
+      return [{ label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' }]
     }
 
     if (esEvaluaciones.value || esResponsableEvaluaciones.value) {
@@ -389,6 +404,9 @@ export function usePermisos() {
     esDocente,
     esEvaluaciones,
     esResponsableEvaluaciones,
+    esVisualizadorEvaluacionesGlobal,
+    esVisualizadorEvaluacionesSede,
+    esVisualizadorEvaluaciones,
     esPlataforma,
 
     // Niveles de acceso

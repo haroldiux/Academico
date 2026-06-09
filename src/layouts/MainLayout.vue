@@ -262,6 +262,8 @@ const rolLabel = computed(() => {
     [ROLES.DOCENTE]: 'Docente',
     [ROLES.EVALUACIONES]: 'Evaluaciones',
     [ROLES.RESPONSABLE_EVALUACIONES]: 'Responsable de Evaluaciones',
+    [ROLES.VISUALIZADOR_EVALUACIONES_GLOBAL]: 'Visualizador de Evaluaciones Global',
+    [ROLES.VISUALIZADOR_EVALUACIONES_SEDE]: 'Visualizador de Evaluaciones por Sede',
   }
   return labels[authStore.rol] || 'Usuario'
 })

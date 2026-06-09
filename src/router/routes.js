@@ -63,7 +63,15 @@
         path: 'evaluaciones/dashboard',
         name: 'evaluaciones-dashboard',
         component: () => import('pages/dashboards/EvaluacionesDashboard.vue'),
-        meta: { title: 'Panel Evaluaciones', rol: 'EVALUACIONES' },
+        meta: {
+          title: 'Panel Evaluaciones',
+          rol: [
+            'EVALUACIONES',
+            'RESPONSABLE_EVALUACIONES',
+            'VISUALIZADOR_EVALUACIONES_GLOBAL',
+            'VISUALIZADOR_EVALUACIONES_SEDE',
+          ],
+        },
       },
       {
         path: 'admin/dashboard',
@@ -379,6 +387,8 @@
                 'VICERRECTOR_NACIONAL',
                 'EVALUACIONES',
                 'RESPONSABLE_EVALUACIONES',
+                'VISUALIZADOR_EVALUACIONES_GLOBAL',
+                'VISUALIZADOR_EVALUACIONES_SEDE',
                 'ADMIN',
                 'SUPER_ADMIN',
               ],
