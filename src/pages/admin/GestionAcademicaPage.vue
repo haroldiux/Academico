@@ -228,6 +228,14 @@
             <q-chip dense size="xs" color="grey-2" text-color="grey-7">
               {{ asig.grupos?.length || 0 }} grupos
             </q-chip>
+            <q-chip
+              dense
+              size="xs"
+              :color="estadoColor(asig.estado).bg"
+              :text-color="estadoColor(asig.estado).text"
+            >
+              {{ asig.estado || 'SIN ESTADO' }}
+            </q-chip>
             <q-btn
               flat
               dense
@@ -341,6 +349,14 @@
                         :text-color="tipoColor(grupo.tipo).text"
                       >
                         {{ tipoLabel(grupo.tipo) }}
+                      </q-chip>
+                      <q-chip
+                        dense
+                        size="xs"
+                        :color="estadoColor(grupo.estado).bg"
+                        :text-color="estadoColor(grupo.estado).text"
+                      >
+                        {{ grupo.estado || 'SIN ESTADO' }}
                       </q-chip>
                     </div>
                   </div>
@@ -1579,6 +1595,19 @@ function tipoColor(tipo) {
   if (tipo === 'LABORATORIO') return { bg: 'orange-2', text: 'orange-9', border: 'orange' }
   return { bg: 'grey-2', text: 'grey-7', border: 'grey' }
 }
+function estadoColor(estado) {
+  const normalizado = String(estado || '').toUpperCase()
+  if (normalizado === 'ACTIVO' || normalizado === 'APROBADO') {
+    return { bg: 'green-2', text: 'green-9' }
+  }
+  if (normalizado === 'INACTIVO' || normalizado === 'CANCELADO') {
+    return { bg: 'red-2', text: 'red-9' }
+  }
+  if (normalizado === 'EN_PROCESO') {
+    return { bg: 'orange-2', text: 'orange-9' }
+  }
+  return { bg: 'grey-2', text: 'grey-7' }
+}
 function tipoLabel(tipo) {
   return { TEORICO: 'Teórico', PRACTICO: 'Práctico', LABORATORIO: 'Lab.' }[tipo] || tipo
 }
@@ -1664,7 +1693,7 @@ async function cargarDatos() {
   cargando.value = true
   try {
     // 1. Cargar grupos-flat con filtros
-    const params = { per_page: 500 }
+    const params = { per_page: 500, mostrar_inactivos: true }
     if (filtSede.value) params.sede_id = filtSede.value
     if (filtCarrera.value) params.carrera_id = filtCarrera.value
 
@@ -1672,7 +1701,7 @@ async function cargarDatos() {
     const grupos = rGrupos.data.data || []
 
     // 2. Cargar horarios con filtros
-    const hParams = {}
+    const hParams = { mostrar_inactivos: true }
     if (filtSede.value) hParams.sede_id = filtSede.value
     if (filtCarrera.value) hParams.carrera_id = filtCarrera.value
     const rHorarios = await api.get('/horarios', { params: hParams })

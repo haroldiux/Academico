@@ -1128,7 +1128,7 @@ function onRolChange(rolId) {
   }
 }
 
-function guardarUsuario() {
+async function guardarUsuario() {
   if (
     !formUsuario.value.nombre ||
     !formUsuario.value.apellido ||
@@ -1176,25 +1176,35 @@ function guardarUsuario() {
   }
   if (!requiereCarrera.value) payload.carrera = []
 
-  if (editando.value && usuarioSeleccionado.value) {
-    usuariosStore.updateUsuario(usuarioSeleccionado.value.id, payload)
+  try {
+    if (editando.value && usuarioSeleccionado.value) {
+      const ok = await usuariosStore.updateUsuario(usuarioSeleccionado.value.id, payload)
+      if (!ok) throw new Error('No se pudo actualizar el usuario')
+      $q.notify({
+        type: 'positive',
+        message: 'Usuario actualizado exitosamente',
+        icon: 'check_circle',
+        position: 'top',
+      })
+    } else {
+      await usuariosStore.addUsuario(payload)
+      $q.notify({
+        type: 'positive',
+        message: 'Usuario creado exitosamente',
+        icon: 'check_circle',
+        position: 'top',
+      })
+    }
+
+    cerrarDialog()
+  } catch (error) {
     $q.notify({
-      type: 'positive',
-      message: 'Usuario actualizado exitosamente',
-      icon: 'check_circle',
-      position: 'top',
-    })
-  } else {
-    usuariosStore.addUsuario(payload)
-    $q.notify({
-      type: 'positive',
-      message: 'Usuario creado exitosamente',
-      icon: 'check_circle',
+      type: 'negative',
+      message: error.response?.data?.message || error.message || 'No se pudo guardar el usuario',
+      icon: 'error',
       position: 'top',
     })
   }
-
-  cerrarDialog()
 }
 
 function confirmarResetPassword(usuario) {

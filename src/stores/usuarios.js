@@ -152,8 +152,9 @@ export const useUsuariosStore = defineStore('usuarios', () => {
       }
 
       const response = await userService.createUsuario(payload)
-      usuarios.value.push(response.data)
-      return response.data.id
+      const usuarioCreado = mapUser(response.data)
+      usuarios.value.push(usuarioCreado)
+      return usuarioCreado.id
     } finally {
       loading.value = false
     }

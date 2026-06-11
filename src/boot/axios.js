@@ -13,8 +13,14 @@ const isNative =
 
 const api = axios.create({
   baseURL: process.env.DEV
-    ? process.env.API_URL || 'http://127.0.0.1:8001/api'
-    : 'https://planificacion.unitepc.edu.bo/api',
+    ? process.env.API_BASE_URL ||
+      process.env.API_URL ||
+      process.env.VITE_API_URL ||
+      'http://127.0.0.1:8000/api'
+    : process.env.API_BASE_URL ||
+      process.env.API_URL ||
+      process.env.VITE_API_URL ||
+      'https://planificacion.unitepc.edu.bo/api',
   withCredentials: !isNative,
   headers: {
     Accept: 'application/json',
