@@ -1682,10 +1682,12 @@ onMounted(async () => {
   }
 })
 
-function onCambioSede() {
+async function onCambioSede() {
   filtCarrera.value = null
   asignaturas.value = []
-  if (filtSede.value) cargarDatos()
+  // Recargar docentes según la sede seleccionada para que el selector de grupo muestre los docentes correctos
+  await cargarDocentesSimple(filtSede.value || null)
+  if (filtSede.value) await cargarDatos()
 }
 
 async function cargarDatos() {
@@ -1812,6 +1814,7 @@ async function sincronizarAsignatura(asig) {
 
 async function recargar() {
   await Promise.all([aulasStore.fetchAulas(), bloquesStore.fetchBloques()])
+  await cargarDocentesSimple(filtSede.value || null)
   await cargarDatos()
 }
 
@@ -1974,11 +1977,11 @@ async function abrirDialogo(tipo, item, ctx = {}) {
         }
     dlg.value.asignatura = true
   } else if (tipo === 'grupo') {
+    // Recargar docentes filtrados por la sede del grupo (o la sede de la página si es nuevo)
+    // para asegurar que el docente asignado aparezca en el selector.
+    const sedeGrupo = item?.sede_id || filtSede.value || null
+    await cargarDocentesSimple(sedeGrupo)
     opcionesDocentes.value = allDocentes.value
-    // Si aún no se cargaron docentes, recargar desde endpoint ligero
-    if (opcionesDocentes.value.length === 0) {
-      await cargarDocentesSimple(filtSede.value || null)
-    }
     dlgGrupo.value = item
       ? {
           id: item.id,
