@@ -39,7 +39,7 @@
           </div>
         </div>
 
-        <div class="row justify-end q-mt-md">
+        <div class="row justify-end q-mt-md q-gutter-sm">
           <q-btn
             color="primary"
             icon="cloud_download"
@@ -49,6 +49,29 @@
             unelevated
             @click="fetchDesdeApi"
           />
+          <q-btn
+            v-if="false"
+            color="secondary"
+            icon="grid_on"
+            label="Exportar a Excel"
+            :loading="loadingExport"
+            :disable="!carreraSeleccionada"
+            unelevated
+            @click="exportarExcel"
+          >
+            <q-tooltip>Descarga un .xlsx con todas las asignaturas para editar y volver a importar</q-tooltip>
+          </q-btn>
+          <q-btn
+            v-if="false"
+            color="accent"
+            icon="upload_file"
+            label="Importar Excel"
+            :loading="loadingImport"
+            unelevated
+            @click="abrirImportacionExcel"
+          >
+            <q-tooltip>Sube un .xlsx exportado y aplica la restauracion de las asignaturas que contenga</q-tooltip>
+          </q-btn>
         </div>
       </q-card-section>
     </q-card>
@@ -187,6 +210,42 @@
               @click="downloadAsignaturaJson(props.row)"
             >
               <q-tooltip>Descargar JSON</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              color="primary"
+              icon="picture_as_pdf"
+              size="sm"
+              :loading="pdfLoadingKey === (props.row.restore_key || props.row.codigo)"
+              :disable="pdfLoadingKey === (props.row.restore_key || props.row.codigo)"
+              @click="downloadAsignaturaPdf(props.row)"
+            >
+              <q-tooltip>Descargar PDF con la estructura completa</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              color="teal"
+              icon="grid_on"
+              size="sm"
+              :loading="pacLoadingKey === (props.row.restore_key || props.row.codigo)"
+              :disable="pacLoadingKey === (props.row.restore_key || props.row.codigo)"
+              @click="downloadAsignaturaPac(props.row)"
+            >
+              <q-tooltip>Descargar Excel formato PAC (docente)</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              color="indigo"
+              icon="event_note"
+              size="sm"
+              :loading="planClaseLoadingKey === (props.row.restore_key || props.row.codigo)"
+              :disable="planClaseLoadingKey === (props.row.restore_key || props.row.codigo)"
+              @click="downloadAsignaturaPlanClase(props.row)"
+            >
+              <q-tooltip>Descargar Plan de Clase (una hoja por unidad)</q-tooltip>
             </q-btn>
             <q-btn
               flat
@@ -805,6 +864,14 @@
       style="display: none"
       @change="handleJsonImport"
     />
+
+    <input
+      ref="excelFileInput"
+      type="file"
+      accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      style="display: none"
+      @change="handleExcelImport"
+    />
   </q-page>
 </template>
 
@@ -834,6 +901,12 @@ const asignaturaVisualizada = ref(null)
 const searchTerm = ref('')
 const jsonFileInput = ref(null)
 const jsonImportTarget = ref(null)
+const excelFileInput = ref(null)
+const loadingExport = ref(false)
+const loadingImport = ref(false)
+const pdfLoadingKey = ref(null)
+const pacLoadingKey = ref(null)
+const planClaseLoadingKey = ref(null)
 const tablePagination = ref({
   sortBy: 'codigo',
   descending: false,
@@ -1363,6 +1436,168 @@ const downloadAsignaturaJson = (asignatura) => {
   })
 }
 
+const downloadAsignaturaPdf = async (asignatura) => {
+  if (!asignatura) {
+    return
+  }
+
+  const loadingKey = asignatura.restore_key || asignatura.codigo || 'asignatura'
+  pdfLoadingKey.value = loadingKey
+
+  try {
+    const response = await api.post(
+      '/restauracion/exportar-pdf-asignatura',
+      { asignatura },
+      { responseType: 'blob' },
+    )
+
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const downloadUrl = window.URL.createObjectURL(blob)
+
+    const disposition = response.headers?.['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^"]+)"?/i)
+    const fileName = match?.[1] || `programa_analitico_${asignatura.codigo || 'asignatura'}.pdf`
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+
+    $q.notify({
+      type: 'positive',
+      message: `Se descargo el PDF de ${asignatura.nombre || asignatura.codigo}.`,
+    })
+  } catch (error) {
+    console.error('Error generando PDF:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo generar el PDF. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    pdfLoadingKey.value = null
+  }
+}
+
+const downloadAsignaturaPac = async (asignatura) => {
+  if (!asignatura) {
+    return
+  }
+
+  const loadingKey = asignatura.restore_key || asignatura.codigo || 'asignatura'
+  pacLoadingKey.value = loadingKey
+
+  try {
+    const response = await api.post(
+      '/restauracion/exportar-pac-asignatura',
+      { asignatura },
+      { responseType: 'blob' },
+    )
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const downloadUrl = window.URL.createObjectURL(blob)
+
+    const disposition = response.headers?.['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^"]+)"?/i)
+    const fileName = match?.[1] || `PAC_${asignatura.codigo || 'asignatura'}.xlsx`
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+
+    $q.notify({
+      type: 'positive',
+      message: `Excel PAC generado. Completá los campos vacíos y subilo desde el modulo docente.`,
+      timeout: 6000,
+    })
+  } catch (error) {
+    console.error('Error generando PAC Excel:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo generar el Excel PAC. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    pacLoadingKey.value = null
+  }
+}
+
+const downloadAsignaturaPlanClase = async (asignatura) => {
+  if (!asignatura) {
+    return
+  }
+
+  const loadingKey = asignatura.restore_key || asignatura.codigo || 'asignatura'
+  planClaseLoadingKey.value = loadingKey
+
+  try {
+    const response = await api.post(
+      '/restauracion/exportar-plan-clase-asignatura',
+      { asignatura },
+      { responseType: 'blob' },
+    )
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const downloadUrl = window.URL.createObjectURL(blob)
+
+    const disposition = response.headers?.['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^"]+)"?/i)
+    const fileName = match?.[1] || `PlanClase_${asignatura.codigo || 'asignatura'}.xlsx`
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+
+    $q.notify({
+      type: 'positive',
+      message: `Plan de Clase generado. Cada hoja es una unidad academica.`,
+      timeout: 6000,
+    })
+  } catch (error) {
+    console.error('Error generando Plan de Clase:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo generar el Plan de Clase. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    planClaseLoadingKey.value = null
+  }
+}
+
 const abrirImportacionJson = (asignatura) => {
   if (!asignatura) {
     return
@@ -1780,6 +2015,160 @@ const fetchDesdeApi = async () => {
     })
   } finally {
     loadingFetch.value = false
+  }
+}
+
+const exportarExcel = async () => {
+  if (!apiUrl.value || !carreraSeleccionada.value || !carreraOrigenId.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'Configura URL, token y carrera antes de exportar.',
+    })
+    return
+  }
+
+  loadingExport.value = true
+  try {
+    const response = await api.get('/restauracion/exportar-excel', {
+      params: {
+        api_url: apiUrl.value,
+        token: apiToken.value,
+        carrera_id: Number(carreraOrigenId.value),
+        sede_id: sedeSeleccionadaId.value ? Number(sedeSeleccionadaId.value) : null,
+        carrera_nombre: carreraActual.value?.nombre || '',
+      },
+      responseType: 'blob',
+    })
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const downloadUrl = window.URL.createObjectURL(blob)
+
+    const disposition = response.headers?.['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^"]+)"?/i)
+    const fileName = match?.[1] || `restauracion_${Date.now()}.xlsx`
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+
+    $q.notify({
+      type: 'positive',
+      message: 'Excel generado. Edita las celdas necesarias y subelo de nuevo con "Importar Excel".',
+      timeout: 5000,
+    })
+  } catch (error) {
+    console.error('Error exportando Excel:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo generar el Excel. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    loadingExport.value = false
+  }
+}
+
+const abrirImportacionExcel = () => {
+  if (excelFileInput.value) {
+    excelFileInput.value.value = null
+    excelFileInput.value.click()
+  }
+}
+
+const handleExcelImport = async (event) => {
+  const file = event.target?.files?.[0]
+  if (!file) {
+    return
+  }
+
+  const confirm = await new Promise((resolve) => {
+    $q.dialog({
+      title: 'Confirmar importacion desde Excel',
+      message: `
+        <p>Se procesara el archivo <b>${file.name}</b> y se aplicara la restauracion a
+        <b>TODAS</b> las asignaturas que contenga.</p>
+        <p>La operacion es destructiva: cada asignatura incluida sera reemplazada en su totalidad.</p>
+        <p>Las asignaturas con error se reportaran al final y <b>no</b> se aplicaran.</p>
+      `,
+      html: true,
+      cancel: { label: 'Cancelar', flat: true, color: 'grey-8' },
+      ok: { label: 'Si, importar', color: 'primary', unelevated: true },
+      persistent: true,
+    }).onOk(() => resolve(true)).onCancel(() => resolve(false)).onDismiss(() => resolve(false))
+  })
+
+  if (!confirm) {
+    if (excelFileInput.value) excelFileInput.value.value = null
+    return
+  }
+
+  loadingImport.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await api.post('/restauracion/importar-excel', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
+    const data = response.data || {}
+    const aplicadas = data.aplicadas || []
+    const errores = data.errores || []
+
+    if (errores.length > 0) {
+      const listadoErrores = errores
+        .map((e) => `&bull; ${e.codigo || 'sin codigo'}: ${e.error}`)
+        .join('<br>')
+      $q.dialog({
+        title: `Importacion parcial: ${aplicadas.length} OK, ${errores.length} con error`,
+        message: `
+          <p><b>Aplicadas correctamente:</b></p>
+          <ul>
+            ${aplicadas.map((a) => `<li>${a.codigo} (id ${a.asignatura_id})</li>`).join('')}
+          </ul>
+          <p><b>Con error:</b></p>
+          <div style="max-height: 240px; overflow:auto;">${listadoErrores}</div>
+        `,
+        html: true,
+        ok: { label: 'Cerrar', color: 'primary' },
+      })
+    } else {
+      $q.notify({
+        type: 'positive',
+        message: data.message || `Se importaron ${aplicadas.length} asignatura(s) correctamente.`,
+        timeout: 5000,
+      })
+    }
+  } catch (error) {
+    console.error('Error importando Excel:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo importar el Excel. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    loadingImport.value = false
+    if (excelFileInput.value) {
+      excelFileInput.value.value = null
+    }
   }
 }
 
