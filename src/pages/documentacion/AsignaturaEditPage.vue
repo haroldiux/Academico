@@ -52,7 +52,7 @@
           icon="settings"
           label="Gestión"
           no-caps
-          :disable="!esDirectorOAdmin"
+          :disable="false"
         >
           <q-list>
             <q-item
@@ -103,6 +103,11 @@
               <q-item-section>Descargar Programa Analítico</q-item-section>
             </q-item>
 
+            <q-item clickable v-close-popup @click="descargarExcelPac">
+              <q-item-section avatar><q-icon name="grid_on" color="teal" /></q-item-section>
+              <q-item-section>Descargar Excel PAC</q-item-section>
+            </q-item>
+
             <q-item clickable v-close-popup @click="generarCarpetaHtml">
               <q-item-section avatar><q-icon name="auto_stories" color="green" /></q-item-section>
               <q-item-section>Ver Carpeta (HTML)</q-item-section>
@@ -150,7 +155,7 @@
       >
         <div
           class="text-h5 text-white text-weight-bold"
-          v-if="tabActual === 'datos' || tabActual === 'programa' || tabActual === 'bibliografia'"
+          v-if="tabActual === 'datos'"
         >
           PROGRAMA DE ASIGNATURA (PAC)
         </div>
@@ -170,28 +175,14 @@
           v-if="authStore.rol !== 'DOCENTE'"
           name="datos"
           icon="description"
-          label="Datos de Asignatura"
-          no-caps
-        />
-        <q-tab
-          v-if="authStore.rol !== 'DOCENTE'"
-          name="programa"
-          icon="assignment"
-          label="Programa"
-          no-caps
-        />
-        <q-tab
-          v-if="authStore.rol !== 'DOCENTE'"
-          name="bibliografia"
-          icon="auto_stories"
-          label="Bibliografía"
+          label="Programa de asignatura (PAC)"
           no-caps
         />
         <q-tab
           v-if="authStore.rol !== 'DOCENTE'"
           name="unidades"
           icon="folder_open"
-          label="Unidades de Aprendizaje"
+          label="Programa Analitico"
           no-caps
         />
         <q-tab
@@ -487,9 +478,6 @@
               </q-card-section>
             </q-card>
           </q-form>
-        </q-tab-panel>
-        <!-- Tab: Programa de Asignatura -->
-        <q-tab-panel name="programa" class="q-pa-lg">
           <q-form class="q-gutter-y-xl">
             <!-- 5. Competencias (Card) -->
             <q-card class="section-card q-mb-lg">
@@ -726,209 +714,12 @@
           </q-form>
         </q-tab-panel>
 
-        <!-- Tab: Bibliografía -->
-        <q-tab-panel name="bibliografia" class="q-pa-lg">
-          <div class="row items-center justify-between q-mb-lg">
-            <div class="text-h6 text-weight-bold">
-              <q-icon name="auto_stories" color="primary" class="q-mr-sm" />
-              Referencias Bibliográficas
-            </div>
-            <q-btn
-              v-if="puedeEditarPlanificacion"
-              unelevated
-              color="primary"
-              icon="add"
-              label="Agregar"
-              no-caps
-              @click="abrirDialogBibliografia()"
-            />
-            <q-chip v-else outline color="orange" icon="lock" label="Solo lectura (Sede)" dense />
-          </div>
-
-          <div v-if="!asignatura?.bibliografias?.length" class="text-center q-pa-xl">
-            <q-icon name="menu_book" size="64px" color="grey-5" />
-            <p class="text-h6 text-grey-6 q-mt-md">No hay bibliografías registradas</p>
-          </div>
-
-          <div v-else>
-            <!-- Bibliografía Básica -->
-            <div class="biblio-section q-mb-xl" v-if="bibliografiasBasicas.length">
-              <div class="biblio-section__header biblio-section__header--basica q-mb-md">
-                <q-icon name="star" size="24px" />
-                <span class="text-subtitle1 text-weight-bold">Bibliografía Básica</span>
-                <q-badge color="blue" text-color="white" class="q-ml-sm">{{
-                  bibliografiasBasicas.length
-                }}</q-badge>
-              </div>
-              <div class="row q-col-gutter-md">
-                <div
-                  v-for="biblio in bibliografiasBasicas"
-                  :key="biblio.id"
-                  class="col-12 col-md-6"
-                >
-                  <div class="biblio-card biblio-card--basica">
-                    <div class="biblio-card__content">
-                      <div class="biblio-card__title">{{ textoBibliografia(biblio) }}</div>
-                      <div class="biblio-card__author" v-if="!biblio.descripcion && biblio.autor">
-                        {{ biblio.autor }}
-                      </div>
-                      <div
-                        class="biblio-card__details"
-                        v-if="!biblio.descripcion && (biblio.editorial || biblio.anio)"
-                      >
-                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
-                        }}{{ biblio.anio ? ' (' + biblio.anio + ')' : '' }}
-                      </div>
-                    </div>
-                    <div class="biblio-card__actions" v-if="puedeEditarPlanificacion">
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="edit"
-                        size="sm"
-                        color="orange"
-                        @click="abrirDialogBibliografia(biblio)"
-                      />
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="delete"
-                        size="sm"
-                        color="red"
-                        @click="eliminarBibliografia(biblio)"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Bibliografía Complementaria -->
-            <div class="biblio-section" v-if="bibliografiasComplementarias.length">
-              <div class="biblio-section__header biblio-section__header--complementaria q-mb-md">
-                <q-icon name="library_books" size="24px" />
-                <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
-                <q-badge color="grey" text-color="white" class="q-ml-sm">{{
-                  bibliografiasComplementarias.length
-                }}</q-badge>
-              </div>
-              <div class="row q-col-gutter-md">
-                <div
-                  v-for="biblio in bibliografiasComplementarias"
-                  :key="biblio.id"
-                  class="col-12 col-md-6"
-                >
-                  <div class="biblio-card biblio-card--complementaria">
-                    <div class="biblio-card__content">
-                      <div class="biblio-card__title">{{ textoBibliografia(biblio) }}</div>
-                      <div class="biblio-card__author" v-if="!biblio.descripcion && biblio.autor">
-                        {{ biblio.autor }}
-                      </div>
-                      <div
-                        class="biblio-card__details"
-                        v-if="!biblio.descripcion && (biblio.editorial || biblio.anio)"
-                      >
-                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
-                        }}{{ biblio.anio ? ' (' + biblio.anio + ')' : '' }}
-                      </div>
-                    </div>
-                    <div class="biblio-card__actions" v-if="puedeEditarPlanificacion">
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="edit"
-                        size="sm"
-                        color="orange"
-                        @click="abrirDialogBibliografia(biblio)"
-                      />
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="delete"
-                        size="sm"
-                        color="red"
-                        @click="eliminarBibliografia(biblio)"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BibliografÒ�� �"Ò� â����Ò�â��šÒ�a�­a Programa AnalÒ�� �"Ò� â����Ò�â��šÒ�a�­tico (API Externa) -->
-            <div class="biblio-section q-mt-xl" v-if="bibliografiasProgramaAnalitico.length">
-              <div class="biblio-section__header biblio-section__header--api q-mb-md">
-                <q-icon name="cloud_download" size="24px" />
-                <span class="text-subtitle1 text-weight-bold"
-                  >BibliografÒ�� �"Ò� â����Ò�â��šÒ�a�­a Programa AnalÒ�� �"Ò�
-                  â����Ò�â��šÒ�a�­tico</span
-                >
-                <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
-                  bibliografiasProgramaAnalitico.length
-                }}</q-badge>
-                <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
-                  <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
-                  API Externa
-                </q-chip>
-              </div>
-              <div class="row q-col-gutter-md">
-                <div
-                  v-for="biblio in bibliografiasProgramaAnalitico"
-                  :key="biblio.id"
-                  class="col-12 col-md-6"
-                >
-                  <div class="biblio-card biblio-card--api">
-                    <div class="biblio-card__content">
-                      <div class="biblio-card__title">{{ biblio.titulo }}</div>
-                      <div
-                        class="biblio-card__author"
-                        v-if="biblio.autor && biblio.autor !== 'Ver descripción'"
-                      >
-                        {{ biblio.autor }}
-                      </div>
-                      <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
-                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
-                        }}{{ biblio.anio && biblio.anio !== 0 ? ' (' + biblio.anio + ')' : '' }}
-                      </div>
-                      <q-chip
-                        size="xs"
-                        :color="biblio.tipo?.toUpperCase() === 'BASIC' ? 'blue-2' : 'grey-2'"
-                        :text-color="biblio.tipo?.toUpperCase() === 'BASIC' ? 'blue-9' : 'grey-7'"
-                        class="q-mt-xs"
-                      >
-                        {{ biblio.tipo?.toUpperCase() === 'BASIC' ? 'Básica' : 'Complementaria' }}
-                      </q-chip>
-                    </div>
-                    <div class="biblio-card__actions">
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="visibility"
-                        size="sm"
-                        color="primary"
-                        @click="abrirDialogBibliografia(biblio)"
-                      >
-                        <q-tooltip>Ver detalles</q-tooltip>
-                      </q-btn>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </q-tab-panel>
-
-        <!-- Tab: Unidades de Aprendizaje -->
+        <!-- Tab: Programa Analitico (antiguo Unidades de Aprendizaje) -->
         <q-tab-panel name="unidades" class="q-pa-lg">
           <div class="row items-center justify-between q-mb-lg">
             <div class="text-h6 text-weight-bold">
               <q-icon name="folder_open" color="primary" class="q-mr-sm" />
-              Unidades de Aprendizaje
+              Programa Analitico
             </div>
             <div class="row q-gutter-sm">
               <q-btn
@@ -1173,9 +964,203 @@
               </q-list>
             </q-expansion-item>
           </q-list>
+
+          <!-- Bibliografía (movida desde antiguo tab 'Bibliografía') -->
+          <div class="row items-center justify-between q-mb-lg">
+            <div class="text-h6 text-weight-bold">
+              <q-icon name="auto_stories" color="primary" class="q-mr-sm" />
+              Referencias Bibliográficas
+            </div>
+            <q-btn
+              v-if="puedeEditarPlanificacion"
+              unelevated
+              color="primary"
+              icon="add"
+              label="Agregar"
+              no-caps
+              @click="abrirDialogBibliografia()"
+            />
+            <q-chip v-else outline color="orange" icon="lock" label="Solo lectura (Sede)" dense />
+          </div>
+
+          <div v-if="!asignatura?.bibliografias?.length" class="text-center q-pa-xl">
+            <q-icon name="menu_book" size="64px" color="grey-5" />
+            <p class="text-h6 text-grey-6 q-mt-md">No hay bibliografías registradas</p>
+          </div>
+
+          <div v-else>
+            <!-- Bibliografía Básica -->
+            <div class="biblio-section q-mb-xl" v-if="bibliografiasBasicas.length">
+              <div class="biblio-section__header biblio-section__header--basica q-mb-md">
+                <q-icon name="star" size="24px" />
+                <span class="text-subtitle1 text-weight-bold">Bibliografía Básica</span>
+                <q-badge color="blue" text-color="white" class="q-ml-sm">{{
+                  bibliografiasBasicas.length
+                }}</q-badge>
+              </div>
+              <div class="row q-col-gutter-md">
+                <div
+                  v-for="biblio in bibliografiasBasicas"
+                  :key="biblio.id"
+                  class="col-12 col-md-6"
+                >
+                  <div class="biblio-card biblio-card--basica">
+                    <div class="biblio-card__content">
+                      <div class="biblio-card__title">{{ textoBibliografia(biblio) }}</div>
+                      <div class="biblio-card__author" v-if="!biblio.descripcion && biblio.autor">
+                        {{ biblio.autor }}
+                      </div>
+                      <div
+                        class="biblio-card__details"
+                        v-if="!biblio.descripcion && (biblio.editorial || biblio.anio)"
+                      >
+                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
+                        }}{{ biblio.anio ? ' (' + biblio.anio + ')' : '' }}
+                      </div>
+                    </div>
+                    <div class="biblio-card__actions" v-if="puedeEditarPlanificacion">
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="edit"
+                        size="sm"
+                        color="orange"
+                        @click="abrirDialogBibliografia(biblio)"
+                      />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="delete"
+                        size="sm"
+                        color="red"
+                        @click="eliminarBibliografia(biblio)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bibliografía Complementaria -->
+            <div class="biblio-section" v-if="bibliografiasComplementarias.length">
+              <div class="biblio-section__header biblio-section__header--complementaria q-mb-md">
+                <q-icon name="library_books" size="24px" />
+                <span class="text-subtitle1 text-weight-bold">Bibliografía Complementaria</span>
+                <q-badge color="grey" text-color="white" class="q-ml-sm">{{
+                  bibliografiasComplementarias.length
+                }}</q-badge>
+              </div>
+              <div class="row q-col-gutter-md">
+                <div
+                  v-for="biblio in bibliografiasComplementarias"
+                  :key="biblio.id"
+                  class="col-12 col-md-6"
+                >
+                  <div class="biblio-card biblio-card--complementaria">
+                    <div class="biblio-card__content">
+                      <div class="biblio-card__title">{{ textoBibliografia(biblio) }}</div>
+                      <div class="biblio-card__author" v-if="!biblio.descripcion && biblio.autor">
+                        {{ biblio.autor }}
+                      </div>
+                      <div
+                        class="biblio-card__details"
+                        v-if="!biblio.descripcion && (biblio.editorial || biblio.anio)"
+                      >
+                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
+                        }}{{ biblio.anio ? ' (' + biblio.anio + ')' : '' }}
+                      </div>
+                    </div>
+                    <div class="biblio-card__actions" v-if="puedeEditarPlanificacion">
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="edit"
+                        size="sm"
+                        color="orange"
+                        @click="abrirDialogBibliografia(biblio)"
+                      />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="delete"
+                        size="sm"
+                        color="red"
+                        @click="eliminarBibliografia(biblio)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bibliografía Programa Analítico (API Externa) -->
+            <div class="biblio-section q-mt-xl" v-if="bibliografiasProgramaAnalitico.length">
+              <div class="biblio-section__header biblio-section__header--api q-mb-md">
+                <q-icon name="cloud_download" size="24px" />
+                <span class="text-subtitle1 text-weight-bold"
+                  >Bibliografía Programa Analítico</span
+                >
+                <q-badge color="deep-purple" text-color="white" class="q-ml-sm">{{
+                  bibliografiasProgramaAnalitico.length
+                }}</q-badge>
+                <q-chip size="sm" color="amber-2" text-color="amber-9" class="q-ml-auto">
+                  <q-icon name="cloud_sync" size="14px" class="q-mr-xs" />
+                  API Externa
+                </q-chip>
+              </div>
+              <div class="row q-col-gutter-md">
+                <div
+                  v-for="biblio in bibliografiasProgramaAnalitico"
+                  :key="biblio.id"
+                  class="col-12 col-md-6"
+                >
+                  <div class="biblio-card biblio-card--api">
+                    <div class="biblio-card__content">
+                      <div class="biblio-card__title">{{ biblio.titulo }}</div>
+                      <div
+                        class="biblio-card__author"
+                        v-if="biblio.autor && biblio.autor !== 'Ver descripción'"
+                      >
+                        {{ biblio.autor }}
+                      </div>
+                      <div class="biblio-card__details" v-if="biblio.editorial || biblio.anio">
+                        {{ biblio.editorial }}{{ biblio.edicion ? ', ' + biblio.edicion : ''
+                        }}{{ biblio.anio && biblio.anio !== 0 ? ' (' + biblio.anio + ')' : '' }}
+                      </div>
+                      <q-chip
+                        size="xs"
+                        :color="biblio.tipo?.toUpperCase() === 'BASIC' ? 'blue-2' : 'grey-2'"
+                        :text-color="biblio.tipo?.toUpperCase() === 'BASIC' ? 'blue-9' : 'grey-7'"
+                        class="q-mt-xs"
+                      >
+                        {{ biblio.tipo?.toUpperCase() === 'BASIC' ? 'Básica' : 'Complementaria' }}
+                      </q-chip>
+                    </div>
+                    <div class="biblio-card__actions">
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="visibility"
+                        size="sm"
+                        color="primary"
+                        @click="abrirDialogBibliografia(biblio)"
+                      >
+                        <q-tooltip>Ver detalles</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </q-tab-panel>
 
-        <!-- Tab: Cronograma de Asignatura (redirige automÒ�� �"Ò� â����Ò�â��šÒ�a�¡ticamente) -->
+        <!-- Tab: Cronograma de Asignatura (redirige autom)ticamente) -->
         <q-tab-panel name="cronograma" class="q-pa-lg">
           <div class="text-center q-pa-xl">
             <q-spinner-dots color="primary" size="40px" />
@@ -4568,6 +4553,7 @@ const carrerasStore = useCarrerasStore()
 const sedesStore = useSedesStore()
 const authStore = useAuthStore()
 const descargandoProgramaAnalitico = ref(false)
+const descargandoExcelPac = ref(false)
 
 // Estado
 // Leer el tab inicial desde los query params (para volver al tab correcto desde TemaEditPage)
@@ -4575,9 +4561,7 @@ const descargandoProgramaAnalitico = ref(false)
 const tabInicial = (() => {
   if (authStore.rol === 'DOCENTE') return 'banco'
   return route.query.tab &&
-    ['datos', 'programa', 'bibliografia', 'unidades', 'cronograma', 'banco'].includes(
-      route.query.tab,
-    )
+    ['datos', 'unidades', 'cronograma', 'banco'].includes(route.query.tab)
     ? route.query.tab
     : 'datos'
 })()
@@ -6255,6 +6239,59 @@ async function descargarProgramaAnaliticoDesdeGestion() {
     })
   } finally {
     descargandoProgramaAnalitico.value = false
+  }
+}
+
+async function descargarExcelPac() {
+  const asig = asignatura.value
+  if (!asig) {
+    $q.notify({ type: 'warning', message: 'No hay datos de asignatura cargados.' })
+    return
+  }
+
+  descargandoExcelPac.value = true
+  try {
+    const response = await api.post(
+      '/restauracion/exportar-pac-asignatura',
+      { asignatura: asig },
+      { responseType: 'blob' },
+    )
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const downloadUrl = window.URL.createObjectURL(blob)
+
+    const disposition = response.headers?.['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^"]+)"?/i)
+    const fileName = match?.[1] || `PAC_${asig.codigo || 'asignatura'}.xlsx`
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+
+    $q.notify({
+      type: 'positive',
+      message: 'Excel PAC generado correctamente.',
+      timeout: 6000,
+    })
+  } catch (error) {
+    console.error('Error generando Excel PAC desde Gestión:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob ? await error.response.data.text() : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo generar el Excel PAC. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    descargandoExcelPac.value = false
   }
 }
 
