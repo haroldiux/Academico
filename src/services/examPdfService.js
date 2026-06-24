@@ -23,6 +23,25 @@ export const shuffle = (array) => {
   return array
 }
 
+const padDatePart = (value) => String(value).padStart(2, '0')
+
+const formatFechaNombreArchivo = (fecha) => {
+  if (!fecha) return 'SinFecha'
+
+  if (fecha instanceof Date && !Number.isNaN(fecha.getTime())) {
+    return `${fecha.getFullYear()}${padDatePart(fecha.getMonth() + 1)}${padDatePart(fecha.getDate())}`
+  }
+
+  const value = String(fecha).trim()
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) return `${isoMatch[1]}${isoMatch[2]}${isoMatch[3]}`
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return 'SinFecha'
+
+  return `${parsed.getFullYear()}${padDatePart(parsed.getMonth() + 1)}${padDatePart(parsed.getDate())}`
+}
+
 export const normalizeExamQuestionType = (tipo) => {
   const value = String(tipo || '')
     .toUpperCase()
@@ -1518,7 +1537,8 @@ export const generateExamPdf = async (pdfDoc, exam, config = {}, letra = 'A', qu
 
   const cleanSede = String(exam.sede || '').replace(/\s/g, '')
   const cleanParcial = String(exam.parcial || '').replace(/\s/g, '')
-  const rawFilename = `${exam.codigo || 'EXAM'}_${cleanSede}_G${exam.grupo || ''}_${cleanParcial}_Var${letra}.pdf`
+  const cleanFecha = formatFechaNombreArchivo(exam.fecha_examen || exam.fecha)
+  const rawFilename = `${exam.codigo || 'EXAM'}_${cleanSede}_G${exam.grupo || ''}_${cleanParcial}_Var${letra}_${cleanFecha}.pdf`
   const blob = doc.output('blob')
 
   return { blob, filename: rawFilename, doc }

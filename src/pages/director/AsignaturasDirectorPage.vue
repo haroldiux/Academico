@@ -2245,11 +2245,15 @@ async function cargarSeguimientoExamenActivo() {
         filtros.value.carreraId,
         parcialSeguimientoActivo.value,
       ),
-      cargarBancoPreguntas2P(parcialSeguimientoActivo.value),
+      cargarBancoPreguntas2P(obtenerParcialBancoSeguimiento(parcialSeguimientoActivo.value)),
     ])
   } finally {
     cargandoCampos2P.value = false
   }
+}
+
+function obtenerParcialBancoSeguimiento(parcial) {
+  return parcial === '2da Instancia' ? 'Final' : parcial
 }
 
 function alternarSeguimientoExamen(parcial) {
@@ -2963,7 +2967,9 @@ async function guardarCambioModalidad2P(contexto, modalidadDestino) {
     }
 
     await Promise.all([
-      cargarBancoPreguntas2P(parcialSeguimientoActivo.value || '2do Parcial'),
+      cargarBancoPreguntas2P(
+        obtenerParcialBancoSeguimiento(parcialSeguimientoActivo.value || '2do Parcial'),
+      ),
       cargarRolExamenes2P(
         filtros.value.sedeId,
         filtros.value.carreraId,

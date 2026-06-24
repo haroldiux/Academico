@@ -67,6 +67,11 @@ const formatExamCivilDateIso = (fecha) => {
   return parts ? `${parts.year}-${parts.month}-${parts.day}` : '-'
 }
 
+const formatExamCivilDateFilename = (fecha) => {
+  const parts = getExamCivilDateParts(fecha)
+  return parts ? `${parts.year}${parts.month}${parts.day}` : 'SinFecha'
+}
+
 const shuffle = (array) => {
   let currentIndex = array.length
 
@@ -1929,7 +1934,8 @@ const normalizedCode = String(exam.codigo || 'EXAM').replace(/\s/g, '')
 const normalizedSede = String(exam.sede || '').replace(/\s/g, '')
 const normalizedGroup = String(exam.grupo || '1').replace(/\s/g, '')
 const normalizedParcial = String(exam.parcial || '').replace(/\s/g, '')
-const baseName = `${normalizedCode}_${normalizedSede}_G${normalizedGroup}_${normalizedParcial}_Var${varsJoined}`
+const normalizedFecha = formatExamCivilDateFilename(exam.fecha_examen || exam.fecha)
+const baseName = `${normalizedCode}_${normalizedSede}_G${normalizedGroup}_${normalizedParcial}_Var${varsJoined}_${normalizedFecha}`
 
 const examFilename = `${baseName}_Examen.pdf`
 const patronPdfFilename = `${baseName}_Patron.pdf`

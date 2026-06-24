@@ -2204,6 +2204,7 @@ const normalizarGrupoExamen = (value) =>
     .toUpperCase()
     .replace(/\b(GRUPO|GT)\b/g, '')
     .replace(/[^A-Z0-9]/g, '')
+    .replace(/^G(?=\d)/, '')
     .trim()
 
 const normalizarParcialExamen = (value) => {
@@ -2213,7 +2214,7 @@ const normalizarParcialExamen = (value) => {
   if (!key) return ''
   if (key.includes('2do') || key.includes('segundo') || key.includes('2p')) return PARCIAL_2DO
   if (key.includes('1er') || key.includes('primer') || key.includes('1p')) return PARCIAL_1ER
-  if (key.includes('final')) return PARCIAL_FINAL
+  if (key.includes('final') || key === 'ef') return PARCIAL_FINAL
   if (key.includes('instancia') || key.includes('2i')) return PARCIAL_2DA_INSTANCIA
   return String(value || '').trim()
 }
@@ -2670,6 +2671,24 @@ const normalizarGestionTiempos = (gestion = '2026-I') => {
   }
 
   return value
+}
+
+const normalizarTokenNombreArchivo = (value, fallback = '') =>
+  String(value || fallback).replace(/\s/g, '')
+
+const normalizarFechaNombreArchivo = (fecha) => {
+  if (!fecha) return 'SinFecha'
+
+  if (fecha instanceof Date && !Number.isNaN(fecha.getTime())) {
+    return date.formatDate(fecha, 'YYYYMMDD')
+  }
+
+  const value = String(fecha).trim()
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) return `${isoMatch[1]}${isoMatch[2]}${isoMatch[3]}`
+
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? 'SinFecha' : date.formatDate(parsed, 'YYYYMMDD')
 }
 
 const cargarTiemposEvaluacion = async () => {
@@ -3624,7 +3643,7 @@ const normalizarParcialManual = (value) => {
   if (key.includes('INSTANCIA') || key.includes('2I')) return PARCIAL_2DA_INSTANCIA
   if (key.includes('2') || key.includes('SEGUNDO') || key.includes('2P')) return PARCIAL_2DO
   if (key.includes('1') || key.includes('PRIMER') || key.includes('1P')) return '1er Parcial'
-  if (key.includes('FINAL')) return 'Final'
+  if (key.includes('FINAL') || key === 'EF') return 'Final'
   return String(value || '').trim()
 }
 
@@ -3829,9 +3848,6 @@ const onExcelUploaded = (file) => {
           } else if (p.respuesta_correcta.length > 0) {
             isInvalid = true
             reason = 'Tipos PR/EM no deben tener respuesta asignada'
-          } else if (tipo === 'EMPAREJAMIENTO' && p.opciones.length < 2) {
-            isInvalid = true
-            reason = 'Emparejamiento requiere al menos dos opciones/terminos'
           }
         } else {
           if (!['1', '2', '3'].includes(p.dificultad)) {
@@ -4256,12 +4272,13 @@ const ejecutarGeneracionManual = async () => {
     assertPatternConsistency(resultadosVariantes)
 
     // Configurar Nombres
-    const codN = String(resolvedCodigo || 'EXAM').replace(/\s/g, '')
-    const sedeN = String(resolvedSede || '').replace(/\s/g, '')
-    const gruN = String(manualConfig.value.grupo || '1').replace(/\s/g, '')
-    const parN = String(manualConfig.value.parcial || '').replace(/\s/g, '')
+    const codN = normalizarTokenNombreArchivo(resolvedCodigo, 'EXAM')
+    const sedeN = normalizarTokenNombreArchivo(resolvedSede)
+    const gruN = normalizarTokenNombreArchivo(manualConfig.value.grupo, '1')
+    const parN = normalizarTokenNombreArchivo(manualConfig.value.parcial)
     const varsN = variantesLetters.join('')
-    const baseNM = `${codN}_${sedeN}_G${gruN}_${parN}_Var${varsN}`
+    const fechaN = normalizarFechaNombreArchivo(manualConfig.value.fecha)
+    const baseNM = `${codN}_${sedeN}_G${gruN}_${parN}_Var${varsN}_${fechaN}`
 
     // Generar 1 solo Excel consolidado
     const { blob: xBlob, filename: xName } = generarPatronXLSXConsolidado(
@@ -5378,11 +5395,12 @@ const ejecutarAccionGestion = async () => {
       assertPatternConsistency(resultadosVariantes)
 
       const varsJoined = resultadosVariantes.map((r) => r.letra).join('')
-      const nCod = String(examen.codigo || 'EXAM').replace(/\s/g, '')
-      const nSede = String(examen.sede || '').replace(/\s/g, '')
-      const nGru = String(examen.grupo || '1').replace(/\s/g, '')
-      const nPar = String(examen.parcial || '').replace(/\s/g, '')
-      const baseN = `${nCod}_${nSede}_G${nGru}_${nPar}_Var${varsJoined}`
+      const nCod = normalizarTokenNombreArchivo(examen.codigo, 'EXAM')
+      const nSede = normalizarTokenNombreArchivo(examen.sede)
+      const nGru = normalizarTokenNombreArchivo(examen.grupo, '1')
+      const nPar = normalizarTokenNombreArchivo(examen.parcial)
+      const nFecha = normalizarFechaNombreArchivo(examen.fecha_examen || examen.fecha)
+      const baseN = `${nCod}_${nSede}_G${nGru}_${nPar}_Var${varsJoined}_${nFecha}`
 
       const finalExName = `${baseN}_Examen.pdf`
       const finalPatOMRName = `${baseN}_Patron.pdf`
@@ -6554,9 +6572,12 @@ const generarPatronPDF = async (pdfDoc, letra, preguntas = [], examenInput = nul
     doc.line(x, y + 3.5, x + colWidth - 5, y + 3.5)
   }
 
-  const cleanSede = String(examen.sede || '').replace(/\s/g, '')
-  const cleanParcial = String(examen.parcial || '').replace(/\s/g, '')
-  const rawFilename = `${examen.codigo || 'EXAM'}_${cleanSede}_G${examen.grupo || ''}_${cleanParcial}_PatronVar${letra}.pdf`
+  const cleanCodigo = normalizarTokenNombreArchivo(examen.codigo, 'EXAM')
+  const cleanSede = normalizarTokenNombreArchivo(examen.sede)
+  const cleanGrupo = normalizarTokenNombreArchivo(examen.grupo)
+  const cleanParcial = normalizarTokenNombreArchivo(examen.parcial)
+  const cleanFecha = normalizarFechaNombreArchivo(examen.fecha_examen || examen.fecha)
+  const rawFilename = `${cleanCodigo}_${cleanSede}_G${cleanGrupo}_${cleanParcial}_PatronVar${letra}_${cleanFecha}.pdf`
   const blob = doc.output('blob')
   return { blob, filename: rawFilename }
 }
@@ -7167,9 +7188,12 @@ const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas =
     currentY += esHeader ? 2 : 5 // Más espacio tras un caso clínico para separar de la 1er pregunta
   }
 
-  const cleanSede = String(examen.sede || '').replace(/\s/g, '')
-  const cleanParcial = String(examen.parcial || '').replace(/\s/g, '')
-  const rawFilename = `${examen.codigo || 'EXAM'}_${cleanSede}_G${examen.grupo || ''}_${cleanParcial}_Var${letra}.pdf`
+  const cleanCodigo = normalizarTokenNombreArchivo(examen.codigo, 'EXAM')
+  const cleanSede = normalizarTokenNombreArchivo(examen.sede)
+  const cleanGrupo = normalizarTokenNombreArchivo(examen.grupo)
+  const cleanParcial = normalizarTokenNombreArchivo(examen.parcial)
+  const cleanFecha = normalizarFechaNombreArchivo(examen.fecha_examen || examen.fecha)
+  const rawFilename = `${cleanCodigo}_${cleanSede}_G${cleanGrupo}_${cleanParcial}_Var${letra}_${cleanFecha}.pdf`
   const blob = doc.output('blob')
   return { blob, filename: rawFilename }
 }
