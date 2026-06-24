@@ -2300,7 +2300,7 @@ async function cargarBancoPreguntas2P(parcial = '2do Parcial') {
     if (!gruposBanco.length) return
 
     gruposBanco.forEach((docente) => {
-      const grupoTeorico = docente.grupo_teorico_nombre || docente.preguntas_2p_stats?.grupo_teorico
+      const grupoTeorico = obtenerGrupoDocente2P(docente)
       if (!docente.id || !grupoTeorico) return
 
       const sedeId = docente.sede_id || asignatura.sede_id
@@ -2587,6 +2587,8 @@ function crearFilaAsignaturaPorGrupo(asig, docenteGrupo = null) {
     docenteGrupo?.grupo_teorico_nombre ||
     docenteGrupo?.grupo_nombre ||
     docenteUnico?.grupo_teorico_nombre ||
+    docenteUnico?.grupo_nombre ||
+    asig.grupo_teorico_mostrar ||
     docenteUnico?.preguntas_2p_stats?.grupo_teorico ||
     null
 
@@ -2749,7 +2751,11 @@ function crearRolExamen2PKey(codigo, grupo) {
 
 function obtenerGrupoDocente2P(docente) {
   return (
-    docente?.grupo_teorico_nombre || docente?.grupo || docente?.preguntas_2p_stats?.grupo_teorico
+    docente?.grupo_teorico_mostrar ||
+    docente?.grupo_teorico_nombre ||
+    docente?.grupo_nombre ||
+    docente?.grupo ||
+    docente?.preguntas_2p_stats?.grupo_teorico
   )
 }
 
@@ -2770,8 +2776,7 @@ function crearBancoPreguntas2PKey(asignaturaId, docenteId, sedeId, grupoTeorico)
 
 function obtenerBancoPreguntas2P(asignatura, docente = null) {
   const docenteData = docente || asignatura.docentes_data?.[0]
-  const grupoTeorico =
-    docenteData?.grupo_teorico_nombre || docenteData?.preguntas_2p_stats?.grupo_teorico
+  const grupoTeorico = obtenerGrupoDocente2P(docenteData)
   if (!docenteData?.id || !grupoTeorico) return null
 
   const sedeId = docenteData.sede_id || asignatura.sede_id
@@ -2788,16 +2793,27 @@ function obtenerStatsLegacySeguimiento2P(docente) {
 
 function obtenerContextoCartilla2P(asignatura, docente = null) {
   const docenteData =
-    docente || (asignatura.docentes_data?.length === 1 ? asignatura.docentes_data[0] : null)
-  const grupoTeorico =
-    docenteData?.grupo_teorico_nombre ||
-    docenteData?.grupo ||
-    docenteData?.preguntas_2p_stats?.grupo_teorico
+    docente ||
+    asignatura.grupo_contexto ||
+    (asignatura.docentes_data?.length === 1 ? asignatura.docentes_data[0] : null)
+  const grupoCandidato =
+    obtenerGrupoDocente2P(docenteData) ||
+    asignatura.grupo_teorico_mostrar ||
+    asignatura.grupo_nombre ||
+    asignatura.preguntas_2p_stats?.grupo_teorico
 
-  if (!docenteData?.id || !grupoTeorico) return null
+  const rolExamen2P =
+    obtenerRolExamen2P(asignatura, docenteData || { grupo_nombre: grupoCandidato }) ||
+    obtenerRolExamen2P(asignatura)
+  const grupoTeorico = grupoCandidato || rolExamen2P?.grupo
 
-  const sedeId = docenteData.sede_id || asignatura.sede_id
-  const rolExamen2P = obtenerRolExamen2P(asignatura, docenteData)
+  if (!grupoTeorico) return null
+
+  const docenteId = docenteData?.id || docenteData?.docente_id || rolExamen2P?.docente_id || null
+  if (!docenteId && !rolExamen2P?.id) return null
+
+  const sedeId = docenteData?.sede_id || rolExamen2P?.sede_id || asignatura.sede_id
+  const keyDocenteId = docenteId || rolExamen2P?.id || 'sin-docente'
   const stats = obtenerBancoPreguntas2P(asignatura, docenteData) || null
   const usarLegacy2P = parcialSeguimientoActivo.value === '2do Parcial'
 
@@ -2806,15 +2822,19 @@ function obtenerContextoCartilla2P(asignatura, docente = null) {
     asignaturaNombre: asignatura.nombre,
     sedeId,
     rolExamenId: rolExamen2P?.id || null,
-    docenteId: docenteData.id,
-    docenteNombre: docenteData.nombre_completo || docenteData.nombre || asignatura.docente_nombre,
+    docenteId,
+    docenteNombre:
+      docenteData?.nombre_completo ||
+      docenteData?.nombre ||
+      rolExamen2P?.docente ||
+      asignatura.docente_nombre,
     grupoTeorico: String(grupoTeorico).trim(),
     estadoExamen:
       rolExamen2P?.estado ||
-      (usarLegacy2P ? docenteData.estado_examen_2p || docenteData.estado_rol_examen_2p : null),
+      (usarLegacy2P ? docenteData?.estado_examen_2p || docenteData?.estado_rol_examen_2p : null),
     modalidad: normalizarModalidadExamen2P(rolExamen2P, stats),
     configGeneracion: rolExamen2P?.config_generacion || null,
-    key: crearBancoPreguntas2PKey(asignatura.id, docenteData.id, sedeId, grupoTeorico),
+    key: crearBancoPreguntas2PKey(asignatura.id, keyDocenteId, sedeId, grupoTeorico),
     stats,
   }
 }
@@ -2924,6 +2944,7 @@ async function guardarCambioModalidad2P(contexto, modalidadDestino) {
     await api.post('/banco-preguntas/save-config', {
       asignatura_id: contexto.asignaturaId,
       sede_id: contexto.sedeId,
+      rol_examen_id: contexto.rolExamenId,
       docente_id: contexto.docenteId,
       grupo_teorico: contexto.grupoTeorico,
       parcial: parcialSeguimientoActivo.value || '2do Parcial',

@@ -15,12 +15,18 @@ export const useAsignaturasStore = defineStore(
     const totalAsignaturas = computed(() => asignaturas.value.length)
 
     // Actions
-    async function fetchAsignaturas(sedeId = null, carreraId = null, semestre = null, search = '') {
+    async function fetchAsignaturas(
+      sedeId = null,
+      carreraId = null,
+      semestre = null,
+      search = '',
+      extraParams = {},
+    ) {
       loading.value = true
       error.value = null
       try {
         // Nuevos parámetros: sede_id, carrera_id, semestre
-        const params = {}
+        const params = { ...extraParams }
         if (sedeId) params.sede_id = sedeId
         if (carreraId) params.carrera_id = carreraId
         if (semestre) params.semestre = semestre

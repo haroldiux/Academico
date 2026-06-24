@@ -1067,7 +1067,10 @@ function formatFileSize(bytes) {
 }
 
 async function cargarExamenes() {
-  await store.cargarExamenes(filtros.value)
+  await store.cargarExamenes({
+    ...filtros.value,
+    sede_id: targetSedeId.value,
+  })
 }
 
 function onFileSelected(event) {
@@ -1169,7 +1172,16 @@ async function abrirDialogoAnadir() {
 
   $q.loading.show({ message: 'Cargando materias...' })
   try {
-    await asignaturasStore.fetchAsignaturas(targetSedeId.value, filtros.value.carrera_id, null, '')
+    await asignaturasStore.fetchAsignaturas(
+      targetSedeId.value,
+      filtros.value.carrera_id,
+      null,
+      '',
+      {
+        plan_contexto: 1,
+        gestion: filtros.value.gestion,
+      },
+    )
     asignaturasRaw.value = asignaturasStore.asignaturas || []
     asignaturasOptions.value = [...asignaturasRaw.value]
 
