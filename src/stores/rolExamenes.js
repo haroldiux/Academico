@@ -115,6 +115,35 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
   }
 
   /**
+   * Subir Excel simple con rol de 2da instancia
+   */
+  async function uploadSegundaInstancia(file, gestion, carreraId, sedeId) {
+    uploading.value = true
+    error.value = null
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await rolExamenesService.uploadSegundaInstancia(formData, {
+        gestion,
+        carrera_id: carreraId,
+        sede_id: sedeId,
+      })
+
+      await cargarExamenes({ gestion, carrera_id: carreraId, sede_id: sedeId })
+
+      return response.data
+    } catch (err) {
+      console.error('Error subiendo Excel de 2da instancia:', err)
+      error.value = err.response?.data?.message || err.message || 'Error al subir archivo'
+      throw err
+    } finally {
+      uploading.value = false
+    }
+  }
+
+  /**
    * Obtener exámenes para una materia específica
    */
   async function getExamenesMateria(materiaId, gestion) {
@@ -208,6 +237,31 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
   }
 
   /**
+   * Descargar plantilla Excel para 2da instancia
+   */
+  async function downloadSegundaInstanciaTemplate(gestion, carreraId, sedeId) {
+    try {
+      const response = await rolExamenesService.downloadSegundaInstanciaTemplate({
+        gestion,
+        carrera_id: carreraId,
+        sede_id: sedeId,
+      })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'plantilla_2da_instancia.xlsx')
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      return true
+    } catch (err) {
+      console.error('Error descargando plantilla de 2da instancia:', err)
+      throw err
+    }
+  }
+
+  /**
    * Eliminar todos los exámenes (Bulk Delete)
    */
   async function deleteAll(gestion, carreraId, sedeId) {
@@ -248,11 +302,13 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
     // Actions
     cargarExamenes,
     uploadExcel,
+    uploadSegundaInstancia,
     getExamenesMateria,
     actualizarExamen,
     eliminarExamen,
     crearExamen,
     downloadTemplate,
+    downloadSegundaInstanciaTemplate,
     deleteAll,
     limpiar,
   }

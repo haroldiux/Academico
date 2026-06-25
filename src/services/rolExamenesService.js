@@ -18,6 +18,18 @@ export default {
   },
 
   /**
+   * Subir Excel simple con rol de 2da instancia
+   * @param {FormData} formData - Archivo Excel
+   * @param {Object} params - gestion, carrera_id, sede_id
+   */
+  uploadSegundaInstancia(formData, params = {}) {
+    return api.post('/rol-examenes/upload-segunda-instancia', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      params,
+    })
+  },
+
+  /**
    * Obtener rol de exámenes por gestión y carrera
    */
   getRolExamenes(params = {}) {
@@ -60,6 +72,16 @@ export default {
   downloadTemplate() {
     return api.get('/rol-examenes/template', {
       responseType: 'blob',
+    })
+  },
+
+  /**
+   * Descargar plantilla Excel para 2da instancia
+   */
+  downloadSegundaInstanciaTemplate(params = {}) {
+    return api.get('/rol-examenes/template-segunda-instancia', {
+      responseType: 'blob',
+      params,
     })
   },
 

@@ -43,6 +43,15 @@
           @click="showUploadDialog = true"
         />
         <q-btn
+          v-if="puedeSubirSegundaInstancia"
+          unelevated
+          color="red"
+          icon="assignment_return"
+          label="Subir 2da Instancia"
+          no-caps
+          @click="abrirDialogoSegundaInstancia"
+        />
+        <q-btn
           v-if="puedeEditar"
           unelevated
           color="blue"
@@ -315,6 +324,16 @@
                 @click="showUploadDialog = true"
               />
               <q-btn
+                v-if="puedeSubirSegundaInstancia"
+                unelevated
+                color="red"
+                icon="assignment_return"
+                label="Subir 2da Instancia"
+                no-caps
+                class="q-ml-sm"
+                @click="abrirDialogoSegundaInstancia"
+              />
+              <q-btn
                 v-if="puedeEditar"
                 unelevated
                 color="blue"
@@ -407,6 +426,108 @@
     </q-dialog>
 
     <!-- Dialog Añadir Examen Manual -->
+    <q-dialog v-model="showSegundaInstanciaUploadDialog">
+      <q-card style="min-width: 520px">
+        <div class="dialog-header bg-red">
+          <h3><q-icon name="assignment_return" class="q-mr-sm" />Subir Rol 2da Instancia</h3>
+        </div>
+
+        <q-card-section>
+          <q-banner class="bg-red-1 text-red-10 q-mb-md" rounded dense>
+            <template v-slot:avatar>
+              <q-icon name="info" color="red" />
+            </template>
+            Descarga la plantilla base, completa los campos obligatorios y vuelve a subirla desde
+            este modal. El archivo importara solamente registros de <b>2da Instancia</b>.
+          </q-banner>
+
+          <div class="q-mb-md">
+            <q-btn
+              outline
+              color="red"
+              icon="download"
+              label="Descargar Excel Base"
+              no-caps
+              :loading="downloadingSegundaInstanciaTemplate"
+              @click="descargarPlantillaSegundaInstancia"
+            />
+          </div>
+
+          <q-list bordered separator class="rounded-borders q-mb-md">
+            <q-item>
+              <q-item-section avatar>
+                <q-icon color="red" name="view_column" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Codigo Materia, Grupo, Semana, Fecha, Hora Inicio, Hora Fin</q-item-label>
+                <q-item-label caption>
+                  Son los mismos datos del registro manual, con tipo fijo: 2da Instancia.
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+
+          <div
+            class="text-center q-pa-lg upload-zone upload-zone-red"
+            @dragover.prevent
+            @drop.prevent="onDropSegundaInstancia"
+          >
+            <input
+              type="file"
+              ref="segundaInstanciaFileInput"
+              @change="onSegundaInstanciaFileSelected"
+              accept=".xlsx,.xls"
+              style="display: none"
+            />
+
+            <div v-if="!selectedSegundaInstanciaFile">
+              <q-icon name="cloud_upload" size="64px" color="grey-4" />
+              <p class="text-grey-6 q-mt-md">Arrastra el Excel completado aqui o</p>
+              <q-btn
+                outline
+                color="red"
+                label="Seleccionar Archivo"
+                no-caps
+                @click="$refs.segundaInstanciaFileInput.click()"
+              />
+            </div>
+
+            <div v-else>
+              <q-icon name="description" size="48px" color="red" />
+              <p class="text-subtitle1 q-mt-sm text-weight-medium">
+                {{ selectedSegundaInstanciaFile.name }}
+              </p>
+              <p class="text-caption text-grey-6">
+                {{ formatFileSize(selectedSegundaInstanciaFile.size) }}
+              </p>
+              <q-btn
+                flat
+                color="red"
+                label="Quitar"
+                no-caps
+                icon="close"
+                @click="selectedSegundaInstanciaFile = null"
+              />
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancelar" @click="showSegundaInstanciaUploadDialog = false" />
+          <q-btn
+            unelevated
+            color="red"
+            label="Subir 2da Instancia"
+            icon="upload"
+            no-caps
+            :disable="!selectedSegundaInstanciaFile"
+            :loading="uploading"
+            @click="subirSegundaInstanciaExcel"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <q-dialog v-model="showAddDialog">
       <q-card style="min-width: 450px">
         <div class="dialog-header bg-blue text-white">
@@ -721,11 +842,13 @@ const asignaturasStore = useAsignaturasStore()
 
 // State
 const showUploadDialog = ref(false)
+const showSegundaInstanciaUploadDialog = ref(false)
 const showEditDialog = ref(false)
 const showAddDialog = ref(false)
 const asignaturasOptions = ref([])
 const asignaturasRaw = ref([])
 const loadingAdd = ref(false)
+const downloadingSegundaInstanciaTemplate = ref(false)
 
 const nuevoExamenForm = ref({
   materia: null,
@@ -738,6 +861,7 @@ const nuevoExamenForm = ref({
 })
 
 const selectedFile = ref(null)
+const selectedSegundaInstanciaFile = ref(null)
 const busqueda = ref('')
 const filtroSemestre = ref(null)
 const filtroTipo = ref(null)
@@ -857,6 +981,10 @@ const puedeAdministrarRolExamen = computed(() => {
 
 const puedeEditar = computed(() => {
   return puedeAdministrarRolExamen.value || rolesAutoridadRolExamen.includes(authStore.rol)
+})
+
+const puedeSubirSegundaInstancia = computed(() => {
+  return [ROLES.DIRECTOR_CARRERA, ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol)
 })
 
 const tiposExamenOptions = [
@@ -1081,6 +1209,132 @@ function onDrop(event) {
   const files = event.dataTransfer.files
   if (files.length) {
     selectedFile.value = files[0]
+  }
+}
+
+function abrirDialogoSegundaInstancia() {
+  if (!filtros.value.carrera_id) {
+    $q.notify({
+      type: 'warning',
+      message: 'Debe seleccionar una carrera antes de subir el rol de 2da instancia.',
+      icon: 'warning',
+    })
+    return
+  }
+
+  selectedSegundaInstanciaFile.value = null
+  showSegundaInstanciaUploadDialog.value = true
+}
+
+function onSegundaInstanciaFileSelected(event) {
+  selectedSegundaInstanciaFile.value = event.target.files[0]
+}
+
+function onDropSegundaInstancia(event) {
+  const files = event.dataTransfer.files
+  if (files.length) {
+    selectedSegundaInstanciaFile.value = files[0]
+  }
+}
+
+async function descargarPlantillaSegundaInstancia() {
+  downloadingSegundaInstanciaTemplate.value = true
+  try {
+    await store.downloadSegundaInstanciaTemplate(
+      filtros.value.gestion,
+      filtros.value.carrera_id,
+      targetSedeId.value,
+    )
+    $q.notify({
+      type: 'positive',
+      message: 'Plantilla descargada correctamente.',
+      icon: 'download_done',
+    })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al descargar plantilla: ' + (error?.response?.data?.message || error.message),
+      icon: 'error',
+    })
+  } finally {
+    downloadingSegundaInstanciaTemplate.value = false
+  }
+}
+
+function mostrarResultadoImportacion(response, titulo = 'Resultado de la Importacion') {
+  if (
+    (response.errors && response.errors.length > 0) ||
+    (response.warnings && response.warnings.length > 0)
+  ) {
+    let html = '<div class="text-left">'
+
+    if (response.imported > 0) {
+      html += `<div class="text-positive q-mb-sm"><b>Se importaron ${response.imported} registros correctamente.</b></div>`
+    } else {
+      html += `<div class="text-grey-8 q-mb-sm">No se importaron registros.</div>`
+    }
+
+    if (response.errors && response.errors.length > 0) {
+      html += `<div class="text-red text-weight-bold q-mt-md">Errores (registros no importados):</div>`
+      html += `<ul class="q-pl-md text-red-9">`
+      response.errors.forEach((e) => (html += `<li>${e}</li>`))
+      html += `</ul>`
+    }
+
+    if (response.warnings && response.warnings.length > 0) {
+      html += `<div class="text-orange-9 text-weight-bold q-mt-md">Advertencias (registros importados):</div>`
+      html += `<ul class="q-pl-md text-orange-10">`
+      response.warnings.forEach((w) => (html += `<li>${w}</li>`))
+      html += `</ul>`
+    }
+
+    html += '</div>'
+
+    $q.dialog({
+      title: titulo,
+      message: html,
+      html: true,
+      ok: 'Entendido',
+    })
+    return
+  }
+
+  $q.notify({
+    type: 'positive',
+    message: `Se importaron ${response.imported} registros correctamente.`,
+    icon: 'check_circle',
+  })
+}
+
+async function subirSegundaInstanciaExcel() {
+  if (!selectedSegundaInstanciaFile.value) return
+
+  if (!filtros.value.carrera_id) {
+    $q.notify({
+      type: 'warning',
+      message: 'Debe seleccionar una carrera antes de subir el archivo.',
+      icon: 'warning',
+    })
+    return
+  }
+
+  try {
+    const response = await store.uploadSegundaInstancia(
+      selectedSegundaInstanciaFile.value,
+      filtros.value.gestion,
+      filtros.value.carrera_id,
+      targetSedeId.value,
+    )
+
+    mostrarResultadoImportacion(response, 'Resultado de la Importacion 2da Instancia')
+    showSegundaInstanciaUploadDialog.value = false
+    selectedSegundaInstanciaFile.value = null
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al subir archivo: ' + (error?.response?.data?.message || error.message),
+      icon: 'error',
+    })
   }
 }
 
@@ -1488,6 +1742,10 @@ onMounted(async () => {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 }
 
+.dialog-header.bg-red {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
 .dialog-header h3 {
   margin: 0;
   font-size: 1.25rem;
@@ -1504,5 +1762,10 @@ onMounted(async () => {
 .upload-zone:hover {
   border-color: #10b981;
   background: rgba(16, 185, 129, 0.05);
+}
+
+.upload-zone-red:hover {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
 }
 </style>
