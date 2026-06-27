@@ -12,21 +12,12 @@ Esta documentación ha sido elaborada bajo estándares rigurosos de arquitectura
 
 El ecosistema de SISA 2.0 está construido sobre las siguientes versiones de frameworks y entornos de ejecución validadas en producción:
 
-<<<<<<< HEAD
-
-- **Backend API:** **Laravel v12.x** corriendo bajo **PHP v8.2+** (tipado estricto y optimización de memoria).
-- **Base de Datos:** **MySQL v8.0** con almacenamiento estructurado y columnas dinámicas JSON.
-- **Frontend SPA / Mobile:** **Quasar Framework v2.x** powered by **Vue 3** (`<script setup>` + Composition API) y empaquetador ultrarrápido **Vite**.
-- **Gestor de Estado:** **Pinia Stores** con persistencia local en disco físico.
-- **Capa Híbrida Nativa:** **Capacitor v6.x** para acceso a hardware nativo (cámara, sistema de archivos nativo, sensores de georreferenciación y conectividad).
-- # **Herramientas Dev:** **CodeGraph** (grafo de conocimiento AST), **OpenCode** (asistente IA), **ESLint + Prettier**, **Vitest + Playwright** (testing), **PHPUnit** (backend).
-
-* **Backend API:** **Laravel v12.x** corriendo bajo **PHP v8.2+** (tipado estricto y optimización de memoria).
-* **Base de Datos:** **MySQL v8.0** con almacenamiento estructurado y columnas dinámicas JSON.
-* **Frontend SPA / Mobile:** **Quasar Framework v2.x** powered by **Vue 3** (`<script setup>` + Composition API) y empaquetador ultrarrápido **Vite**.
-* **Gestor de Estado:** **Pinia Stores** con persistencia local en disco físico.
-* **Capa Híbrida Nativa:** **Capacitor v6.x** para acceso a hardware nativo (cámara, sistema de archivos nativo, sensores de georreferenciación y conectividad).
-  > > > > > > > bb0efec01818361c4ce30bc06a0acd28515648ff
+*   **Backend API:** **Laravel v12.x** corriendo bajo **PHP v8.2+** (tipado estricto y optimización de memoria).
+*   **Base de Datos:** **MySQL v8.0** con almacenamiento estructurado y columnas dinámicas JSON.
+*   **Frontend SPA / Mobile:** **Quasar Framework v2.x** powered by **Vue 3** (`<script setup>` + Composition API) y empaquetador ultrarrápido **Vite**.
+*   **Gestor de Estado:** **Pinia Stores** con persistencia local en disco físico.
+*   **Capa Híbrida Nativa:** **Capacitor v6.x** para acceso a hardware nativo (cámara, sistema de archivos nativo, sensores de georreferenciación y conectividad).
+*   **Herramientas Dev:** **CodeGraph** (grafo de conocimiento AST), **OpenCode** (asistente IA), **ESLint + Prettier**, **Vitest + Playwright** (testing), **PHPUnit** (backend).
 
 ---
 
