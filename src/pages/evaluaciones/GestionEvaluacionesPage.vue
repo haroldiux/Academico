@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <q-page class="gestion-eval-page">
     <!-- Header Section -->
     <div class="page-header q-mb-lg">
@@ -21,6 +21,16 @@
             label="Actualizar"
             no-caps
             @click="cargarDatos"
+          />
+          <q-btn
+            v-if="puedeVerGeneracionManual && activeTab === 'manual'"
+            unelevated
+            color="green-7"
+            icon="add"
+            label="Nueva Generación"
+            class="q-ml-sm"
+            no-caps
+            @click="abrirGeneracionManual"
           />
         </div>
       </div>
@@ -2569,7 +2579,7 @@ const fetchSedes = async () => {
   }
 }
 
-const fetchCarreras = async (sedeId) => {
+const fetchCarreras = async (sedeId, campusId = null) => {
   if (!sedeId) {
     carrerasOptions.value = []
     return
@@ -2858,6 +2868,7 @@ const dialogGestion = ref({
 })
 
 const dialogStats = ref(false)
+const configOrigenActual = ref('nacional')
 
 const tempConfig = ref({
   cantVariantes: 1,
@@ -6576,11 +6587,11 @@ const generarPatronXLSXConsolidado = (resultadosVariantes, customName, codigoAsi
   XLSX.utils.book_append_sheet(wb, ws, 'Patron')
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
   const blob = new Blob([wbout], { type: 'application/octet-stream' })
-  const rawFilename = `${examen.materia_codigo}_${examen.sede.replace(/\s/g, '')}_G${examen.grupo}_${examen.parcial.replace(/\s/g, '')}_PatronVar${letra}.xlsx`
+  const rawFilename = customName || 'PatronConsolidado.xlsx'
   return { blob, filename: rawFilename }
 }
 
-const generarExamenPDF = (examen, config, letra = 'A') => {
+const generarExamenPDF = async (pdfDoc, examen, config, letra = 'A', preguntas = []) => {
   const formatMap = {
     Carta: 'letter',
     Oficio: 'legal',
@@ -6658,7 +6669,6 @@ const generarExamenPDF = (examen, config, letra = 'A') => {
   autoTable(doc, {
     startY: margin,
     margin: { left: margin, right: margin },
-    body: body,
     theme: 'grid',
     styles: {
       fontSize: 11,
@@ -7166,6 +7176,8 @@ const generarExamenPDF = (examen, config, letra = 'A') => {
   const cleanFecha = normalizarFechaNombreArchivo(examen.fecha_examen || examen.fecha)
   const rawFilename = `${cleanCodigo}_${cleanSede}_G${cleanGrupo}_${cleanParcial}_Var${letra}_${cleanFecha}.pdf`
   const blob = doc.output('blob')
+  return { blob, filename: rawFilename }
+}
 
 async function compressImage(blob, maxWidth = 800, quality = 0.7) {
   return new Promise((resolve, reject) => {
