@@ -34,7 +34,11 @@
         <!-- Ocultado por solicitud: se usará plantilla institucional externa -->
         <!-- <q-btn v-if="puedeEditar" outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" /> -->
         <q-btn
-          v-if="[ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol)"
+          v-if="
+            [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.DIRECTOR_CARRERA].includes(
+              authStore.rol,
+            )
+          "
           unelevated
           color="green"
           icon="upload_file"
@@ -306,7 +310,11 @@
               <q-icon name="event_busy" size="64px" color="grey-4" />
               <p class="text-grey-6 q-mt-md">No hay exámenes cargados para esta gestión</p>
               <q-btn
-                v-if="[ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol)"
+                v-if="
+                  [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.DIRECTOR_CARRERA].includes(
+                    authStore.rol,
+                  )
+                "
                 unelevated
                 color="green"
                 icon="upload_file"
@@ -387,6 +395,24 @@
                 @click="selectedFile = null"
               />
             </div>
+          </div>
+
+          <q-separator class="q-my-md" />
+
+          <q-toggle
+            v-model="reemplazarExistentes"
+            label="Reemplazar exámenes existentes (borrar y reinsertar)"
+            color="orange"
+            :disable="switchDisabled"
+          />
+          <div v-if="switchDisabled" class="text-caption text-grey-7 q-mt-xs">
+            <q-icon name="lock" size="14px" />
+            Bloqueado: como Director de Carrera solo puede agregar/actualizar, nunca
+            borrar el rol del sistema.
+          </div>
+          <div v-else class="text-caption text-grey-7 q-mt-xs">
+            Si está apagado (modo aditivo), los exámenes que estén en el sistema pero
+            no en el Excel se conservarán.
           </div>
         </q-card-section>
 
@@ -704,7 +730,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
 import { useAuthStore, ROLES } from 'src/stores/auth'
@@ -738,6 +764,7 @@ const nuevoExamenForm = ref({
 })
 
 const selectedFile = ref(null)
+const reemplazarExistentes = ref(false)
 const busqueda = ref('')
 const filtroSemestre = ref(null)
 const filtroTipo = ref(null)
@@ -857,6 +884,19 @@ const puedeAdministrarRolExamen = computed(() => {
 
 const puedeEditar = computed(() => {
   return puedeAdministrarRolExamen.value || rolesAutoridadRolExamen.includes(authStore.rol)
+})
+
+// Switch "Reemplazar existentes" bloqueado para Director de Carrera
+const switchDisabled = computed(() => authStore.rol === ROLES.DIRECTOR_CARRERA)
+
+// Reset y forzado defensivo del toggle al abrir/cerrar el diálogo
+watch(showUploadDialog, (open) => {
+  if (open) {
+    reemplazarExistentes.value = switchDisabled.value ? false : false
+  }
+})
+watch(switchDisabled, (locked) => {
+  if (locked) reemplazarExistentes.value = false
 })
 
 const tiposExamenOptions = [
@@ -1102,6 +1142,7 @@ async function subirExcel() {
       filtros.value.gestion,
       filtros.value.carrera_id,
       targetSedeId.value,
+      reemplazarExistentes.value,
     )
 
     // Show warnings/errors if any
@@ -1113,7 +1154,10 @@ async function subirExcel() {
       let html = '<div class="text-left">'
 
       if (response.imported > 0) {
-        html += `<div class="text-positive q-mb-sm"><b>✔ Se importaron ${response.imported} registros correctamente.</b></div>`
+        const modo = response.replaced
+          ? `<div class="text-orange-9 q-mb-xs">Modo: REEMPLAZO (se eliminaron ${response.deleted_before ?? 0} registros previos antes de reinsertar).</div>`
+          : `<div class="text-blue-9 q-mb-xs">Modo: ADITIVO (sin eliminar registros existentes del sistema).</div>`
+        html += `<div class="text-positive q-mb-sm"><b>✔ Se importaron ${response.imported} registros correctamente.</b></div>${modo}`
       } else {
         html += `<div class="text-grey-8 q-mb-sm">No se importaron registros.</div>`
       }
@@ -1142,9 +1186,12 @@ async function subirExcel() {
         ok: 'Entendido',
       })
     } else {
+      const modoTxt = response.replaced
+        ? ` (modo reemplazo: se borraron ${response.deleted_before ?? 0} previos)`
+        : ' (modo aditivo, sin borrar)'
       $q.notify({
         type: 'positive',
-        message: `Se importaron ${response.imported} registros correctamente.`,
+        message: `Se importaron ${response.imported} registros correctamente${modoTxt}.`,
         icon: 'check_circle',
       })
     }
