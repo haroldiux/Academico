@@ -267,6 +267,10 @@ const rolLabel = computed(() => {
     [ROLES.ADMIN]: 'Administrador',
     [ROLES.DOCENTE]: 'Docente',
     [ROLES.DIRECTOR_CARRERA]: 'Director de Carrera',
+    [ROLES.EVALUACIONES]: 'Evaluaciones',
+    [ROLES.RESPONSABLE_EVALUACIONES]: 'Responsable de Evaluaciones',
+    [ROLES.VISUALIZADOR_EVALUACIONES_GLOBAL]: 'Visualizador de Evaluaciones Global',
+    [ROLES.VISUALIZADOR_EVALUACIONES_SEDE]: 'Visualizador de Evaluaciones por Sede',
     [ROLES.DIRECCION_ACADEMICA]: 'Dirección Académica',
   }
   return labels[authStore.rol] || 'Usuario'

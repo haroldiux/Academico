@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Servicio para generar la Carpeta Pedagógica Docente en PDF
  * Estructura: PORT, INDICE, MVP, HR, PA, PAC, CT-P, PCT/PCP
  */
@@ -14,10 +14,18 @@ const COLORS = {
   blanco: [255, 255, 255],
 }
 
+const PROGRAMA_ANALITICO_HEADER = {
+  top: 7,
+  bottomLineY: 22,
+  contentStartY: 36,
+}
+
+let logoProgramaAnaliticoPromise = null
+
 /**
  * Genera la Carpeta Pedagógica Docente completa
  */
-export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) {
+export async function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) {
   const doc = new jsPDF('p', 'mm', 'letter')
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
@@ -109,12 +117,21 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   // PROGRAMA ANALÍTICO (PA)
   // ==========================================
   doc.addPage()
+  const logoProgramaAnalitico = await obtenerLogoProgramaAnalitico(
+    opciones.logoProgramaAnalitico || null,
+  )
+  const totalPaginasProgramaAnalitico = contarPaginasProgramaAnalitico({
+    asignatura: asignaturaObj,
+    carreraNombre,
+    logo: logoProgramaAnalitico,
+  })
   generarProgramaAnalitico(doc, {
     asignatura: asignaturaObj,
     carrera: carreraObj,
     carreraNombre,
     pageWidth,
-    margin,
+    totalPaginas: totalPaginasProgramaAnalitico,
+    logo: logoProgramaAnalitico,
   })
 
   // ==========================================
@@ -138,6 +155,39 @@ export function generarCarpetaDocente(asignatura, carrera, sede, opciones = {}) 
   // Guardar PDF con nombre correcto
   const nombreArchivo =
     'Carpeta_Docente_' + (asignaturaObj.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
+  doc.save(nombreArchivo)
+
+  return doc
+}
+
+export async function generarProgramaAnaliticoPDF(asignatura, carrera, opciones = {}) {
+  const doc = new jsPDF('p', 'mm', 'letter')
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  const asignaturaObj = asignatura.asignatura_obj || asignatura
+  const carreraNombre =
+    typeof carrera === 'object' ? carrera?.nombre || 'Sin Carrera' : carrera || 'Sin Carrera'
+  const logoProgramaAnalitico = await obtenerLogoProgramaAnalitico(
+    opciones.logoProgramaAnalitico || null,
+  )
+
+  const totalPaginasProgramaAnalitico = contarPaginasProgramaAnalitico({
+    asignatura: asignaturaObj,
+    carreraNombre,
+    logo: logoProgramaAnalitico,
+  })
+
+  generarProgramaAnalitico(doc, {
+    asignatura: asignaturaObj,
+    carrera,
+    carreraNombre,
+    pageWidth,
+    totalPaginas: totalPaginasProgramaAnalitico,
+    logo: logoProgramaAnalitico,
+  })
+
+  const nombreArchivo =
+    'Programa_Analitico_' + (asignaturaObj.codigo || 'ASIG').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
   doc.save(nombreArchivo)
 
   return doc
@@ -521,125 +571,606 @@ function generarHorariosExamenes(doc, { data, pageWidth, margin }) {
 /**
  * PROGRAMA ANALÍTICO (PA)
  */
-function generarProgramaAnalitico(doc, { asignatura, carrera, carreraNombre, pageWidth, margin }) {
-  let y = 15
+function generarProgramaAnalitico(
+  doc,
+  { asignatura, carrera, carreraNombre, pageWidth, totalPaginas = 1, logo = null },
+) {
+  renderProgramaAnalitico(doc, {
+    asignatura,
+    carrera,
+    carreraNombre,
+    pageWidth,
+    totalPaginas,
+    logo,
+  })
+}
 
-  // Cabecera institucional
-  doc.setFontSize(8)
+function contarPaginasProgramaAnalitico({ asignatura, carreraNombre = '', logo = null }) {
+  const tempDoc = new jsPDF('p', 'mm', 'letter')
+  renderProgramaAnalitico(tempDoc, {
+    asignatura,
+    carreraNombre,
+    pageWidth: tempDoc.internal.pageSize.getWidth(),
+    totalPaginas: 1,
+    logo,
+  })
+  return tempDoc.getNumberOfPages()
+}
+
+function renderProgramaAnalitico(
+  doc,
+  { asignatura, carreraNombre = '', pageWidth, totalPaginas, logo },
+) {
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const contentWidth = 168
+  const sectionLeft = (pageWidth - contentWidth) / 2
+  const tableWidth = contentWidth
+  const tableLeft = sectionLeft
+  const temaIndent = 6
+  const temaLeft = sectionLeft + temaIndent
+  const temaWidth = contentWidth - temaIndent
+  const lineHeightFactorGeneral = 1.15
+  const espacioTituloATabla = 11
+  const espacioDespuesTabla = 13
+  const espacioDespuesTituloUnidad = 7
+  const espacioDespuesTituloTema = 2
+  const espacioEntreTemas = 6
+  const espacioEntreUnidades = 4
+  const espacioEntreReferenciasBibliograficas = 2
+  const lineHeightUnidad = lineHeightFactorGeneral
+  const lineHeightTemaTitulo = lineHeightFactorGeneral
+  const lineHeightTemaCuerpo = lineHeightFactorGeneral
+  const fontSizeUnidad = 11
+  const fontSizeTema = 11
+  const fontSizeBibliografia = 11
+  const fontSizeTabla = 5.8
+  const fontSizeTablaBody = 8
+  const tableCellPadding = 0.5
+
+  let y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
+  let temaGlobal = 1
+
+  const unidades = normalizarUnidadesProgramaAnalitico(asignatura.unidades)
+  const bibliografias = normalizarBibliografiasProgramaAnalitico(asignatura)
+  const programa = normalizarProgramaPlanEstudios(asignatura.plan_estudios)
+  const hrsSemestre =
+    Number(asignatura.hrs_semestre_impresion) || calcularHrsSemestreImpresion(asignatura)
+  const semestre = asignatura.semestre ? `${asignatura.semestre}°` : ''
+  const tituloMateria = String(asignatura.nombre || asignatura.asignatura || '')
+    .trim()
+    .toUpperCase()
+
   doc.setTextColor(0, 0, 0)
-  doc.setFont('helvetica', 'bold')
-  doc.text('UNIVERSIDAD TÉCNICA PRIVADA COSMOS', pageWidth / 2, y, { align: 'center' })
-  y += 4
-  doc.text('"UNITEPC"', pageWidth / 2, y, { align: 'center' })
-  y += 4
-  doc.text(`CARRERA: ${(carreraNombre || 'SIN CARRERA').toUpperCase()}`, pageWidth / 2, y, {
+  doc.setFont('times', 'bold')
+  doc.setFontSize(11)
+  doc.text(`PROGRAMA ANALÍTICO: ${tituloMateria || 'SIN ASIGNATURA'}`, pageWidth / 2, y, {
     align: 'center',
   })
 
-  y += 10
+  y += espacioTituloATabla
 
-  // Título
-  doc.setFillColor(...COLORS.morado)
-  doc.rect(margin, y, pageWidth - margin * 2, 10, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(12)
-  doc.text('PROGRAMA ANALÍTICO', pageWidth / 2, y + 7, { align: 'center' })
-
-  y += 15
-
-  // Tabla de datos de asignatura
   autoTable(doc, {
     startY: y,
-    margin: { left: margin, right: margin },
+    margin: { left: tableLeft, right: tableLeft },
+    tableWidth,
     theme: 'grid',
-    styles: { fontSize: 8, cellPadding: 2 },
-    head: [['CÓDIGO', 'ASIGNATURA', 'CRÉDITOS', 'HRS/SEMESTRE', 'PROGRAMA', 'SEMESTRE', 'Nº HOJA']],
-    headStyles: { fillColor: COLORS.gris, textColor: 0, fontStyle: 'bold', halign: 'center' },
+    styles: {
+      font: 'times',
+      fontSize: fontSizeTabla,
+      cellPadding: tableCellPadding,
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1,
+      textColor: 0,
+      halign: 'center',
+      valign: 'middle',
+      overflow: 'linebreak',
+    },
+    headStyles: {
+      fillColor: [255, 255, 255],
+      textColor: 0,
+      fontStyle: 'bold',
+      halign: 'center',
+      valign: 'middle',
+    },
+    bodyStyles: {
+      fontSize: fontSizeTablaBody,
+      halign: 'center',
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { cellWidth: 16 },
+      1: { cellWidth: 15 },
+      2: { cellWidth: 40 },
+      3: { cellWidth: 14 },
+      4: { cellWidth: 15 },
+      5: { cellWidth: 15 },
+      6: { cellWidth: 19 },
+      7: { cellWidth: 18 },
+      8: { cellWidth: 16 },
+    },
+    head: [
+      [
+        { content: 'CÓDIGO', rowSpan: 2 },
+        { content: 'SEMESTRE', rowSpan: 2 },
+        { content: 'ASIGNATURA', rowSpan: 2 },
+        { content: 'CRÉDITOS', rowSpan: 2 },
+        { content: 'HORAS', colSpan: 2 },
+        { content: 'HRS. SEMESTRE', rowSpan: 2 },
+        { content: 'PROGRAMA', rowSpan: 2 },
+        { content: 'N° HOJA', rowSpan: 2 },
+      ],
+      [{ content: 'TEÓRICAS' }, { content: 'PRÁCTICAS' }],
+    ],
     body: [
       [
-        asignatura.codigo,
-        asignatura.nombre,
-        asignatura.creditos || 4,
-        (asignatura.horas_teoricas || 0) + (asignatura.horas_practicas || 0),
-        carrera.codigo,
-        `${asignatura.semestre}º SEM`,
-        '1',
+        asignatura.codigo || '',
+        semestre,
+        asignatura.nombre || '',
+        String(asignatura.creditos ?? ''),
+        String(asignatura.horas_teoricas ?? 0),
+        String(asignatura.horas_practicas ?? 0),
+        String(hrsSemestre),
+        programa,
+        String(totalPaginas || 1),
       ],
     ],
-    bodyStyles: { halign: 'center' },
   })
 
-  y = doc.lastAutoTable.finalY + 10
-
-  // Contenido por unidades
-  const unidades = asignatura.unidades || []
-
-  doc.setFontSize(9)
-  doc.setTextColor(0, 0, 0)
+  y = doc.lastAutoTable.finalY + espacioDespuesTabla
 
   unidades.forEach((unidad) => {
-    // Verificar espacio
-    if (y > 240) {
+    if (y > pageHeight - 35) {
       doc.addPage()
-      y = 20
+      y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
     }
 
-    doc.setFont('helvetica', 'bold')
-    doc.text(`UNIDAD ${unidad.numero}: ${unidad.titulo.toUpperCase()}`, margin, y)
-    y += 6
+    const unidadTitulo = `UNIDAD DE APRENDIZAJE ${toRomanNumeral(unidad.numero)}: ${String(unidad.titulo || '').toUpperCase()}`
+    const unidadLineas = doc.splitTextToSize(unidadTitulo, contentWidth)
 
-    const temas = unidad.temas || []
-    temas.forEach((tema) => {
-      if (y > 250) {
+    doc.setFont('times', 'bold')
+    doc.setFontSize(fontSizeUnidad)
+    const alturaUnidad = obtenerAlturaTexto(doc, unidadLineas, {
+      maxWidth: contentWidth,
+      lineHeightFactor: lineHeightUnidad,
+    })
+    doc.text(unidadLineas, sectionLeft, y, { lineHeightFactor: lineHeightUnidad })
+    y += alturaUnidad + espacioDespuesTituloUnidad
+
+    unidad.temas.forEach((tema) => {
+      const tituloTema = `TEMA N°${temaGlobal}.- ${String(tema.titulo || '').toUpperCase()}`
+      const cuerpoTema = normalizarTextoImpresionTema(tema)
+      const tituloLineas = doc.splitTextToSize(tituloTema, temaWidth)
+      const cuerpoLineas = doc.splitTextToSize(cuerpoTema, temaWidth)
+      doc.setFont('times', 'normal')
+      doc.setFontSize(fontSizeTema)
+      const alturaTituloTema = obtenerAlturaTexto(doc, tituloLineas, {
+        maxWidth: temaWidth,
+        lineHeightFactor: lineHeightTemaTitulo,
+      })
+      doc.setFont('times', 'normal')
+      doc.setFontSize(fontSizeTema)
+      const alturaCuerpoTema = cuerpoLineas.length
+        ? obtenerAlturaTexto(doc, cuerpoLineas, {
+            maxWidth: temaWidth,
+            lineHeightFactor: lineHeightTemaCuerpo,
+          })
+        : 0
+      const altoTema =
+        alturaTituloTema + espacioDespuesTituloTema + alturaCuerpoTema + espacioEntreTemas
+
+      if (y + altoTema > pageHeight - 18) {
         doc.addPage()
-        y = 20
+        y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
       }
 
-      doc.setFont('helvetica', 'bold')
-      doc.text(`TEMA ${tema.numero}: ${tema.titulo.toUpperCase()}`, margin, y)
-      y += 5
+      doc.setFont('times', 'normal')
+      doc.setFontSize(fontSizeTema)
+      doc.text(tituloLineas, temaLeft, y, { lineHeightFactor: lineHeightTemaTitulo })
+      y += alturaTituloTema
 
-      // Contenidos resumidos
-      doc.setFont('helvetica', 'normal')
-      const contenidos = Array.isArray(tema.contenidos) ? tema.contenidos : []
-      const contenidoTexto = contenidos
-        .map((c) => (typeof c === 'string' ? c : c.titulo || ''))
-        .join('. ')
-      if (contenidoTexto) {
-        const lines = doc.splitTextToSize(contenidoTexto, pageWidth - margin * 2)
-        doc.text(lines.slice(0, 2), margin, y)
-        y += lines.slice(0, 2).length * 4 + 4
+      if (cuerpoLineas.length > 0) {
+        y += espacioDespuesTituloTema
+        doc.setFont('times', 'normal')
+        doc.setFontSize(fontSizeTema)
+        doc.text(cuerpoLineas, temaLeft, y, {
+          maxWidth: temaWidth,
+          align: 'justify',
+          lineHeightFactor: lineHeightTemaCuerpo,
+        })
+        y += alturaCuerpoTema
       }
+
+      y += espacioEntreTemas
+      temaGlobal += 1
     })
 
-    y += 5
+    y += espacioEntreUnidades
   })
 
-  // Bibliografía
-  if (y > 200) {
-    doc.addPage()
-    y = 20
+  if (bibliografias.length > 0) {
+    const bibliografiaOficial = bibliografias.filter(
+      (referencia) => referencia.tipoNormalizado === 'oficial',
+    )
+    const bibliografiaComplementaria = bibliografias.filter(
+      (referencia) => referencia.tipoNormalizado !== 'oficial',
+    )
+    const seccionesBibliografia = [
+      { titulo: 'BIBLIOGRAFÍA OFICIAL', referencias: bibliografiaOficial },
+      { titulo: 'BIBLIOGRAFÍA COMPLEMENTARIA', referencias: bibliografiaComplementaria },
+    ].filter((seccion) => seccion.referencias.length > 0)
+
+    const alturaBibliografia =
+      seccionesBibliografia.reduce((total, seccion) => {
+        const alturaReferencias = seccion.referencias.reduce((acumulado, referencia) => {
+          const lineas = doc.splitTextToSize(referencia.texto, contentWidth - 10)
+          return (
+            acumulado +
+            obtenerAlturaTexto(doc, lineas, {
+              maxWidth: contentWidth - 10,
+              lineHeightFactor: lineHeightFactorGeneral,
+            }) +
+            espacioEntreReferenciasBibliograficas
+          )
+        }, 0)
+
+        return total + 8 + alturaReferencias + 5
+      }, 0) + 4
+
+    if (y + alturaBibliografia > pageHeight - 18) {
+      doc.addPage()
+      y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
+    }
+
+    seccionesBibliografia.forEach((seccion, indice) => {
+      if (indice > 0) {
+        y += 4
+      }
+
+      doc.setFont('times', 'bold')
+      doc.setFontSize(fontSizeBibliografia)
+      doc.text(seccion.titulo, sectionLeft, y)
+      y += 8
+
+      doc.setFont('times', 'normal')
+      doc.setFontSize(fontSizeBibliografia)
+      seccion.referencias.forEach((referencia) => {
+        const alturaReferencia = medirReferenciaBibliograficaProgramaAnalitico(
+          doc,
+          referencia.texto,
+          {
+            anchoDisponible: contentWidth,
+            fontSize: fontSizeBibliografia,
+            lineHeightFactor: lineHeightFactorGeneral,
+          },
+        )
+
+        if (y + alturaReferencia > pageHeight - 18) {
+          doc.addPage()
+          y = dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre)
+        }
+
+        y = dibujarReferenciaBibliograficaProgramaAnalitico(doc, referencia.texto, sectionLeft, y, {
+          anchoDisponible: contentWidth,
+          fontSize: fontSizeBibliografia,
+          lineHeightFactor: lineHeightFactorGeneral,
+        })
+        y += espacioEntreReferenciasBibliograficas
+      })
+    })
+  }
+}
+
+function obtenerAlturaTexto(doc, lineas, opciones = {}) {
+  const texto = Array.isArray(lineas) ? lineas : [lineas]
+
+  if (!texto.length) {
+    return 0
   }
 
-  y += 5
-  doc.setFont('helvetica', 'bold')
-  doc.text('BIBLIOGRAFÍA PRINCIPAL:', margin, y)
-  y += 5
+  try {
+    const lineHeightFactor = Number(opciones?.lineHeightFactor) || 1
+    const fontSize = doc.getFontSize()
+    const scaleFactor = doc.internal.scaleFactor || 1
+    const baseLineHeight = fontSize / scaleFactor
 
-  doc.setFont('helvetica', 'normal')
-  const bibliografia = asignatura.bibliografia || [
-    '"Ingeniería de Software". Ian Sommerville. 10ª Ed.',
-    '"Patrones de Diseño". Gamma, Helm, Johnson, Vlissides.',
+    if (texto.length === 1) {
+      return baseLineHeight
+    }
+
+    return baseLineHeight + baseLineHeight * lineHeightFactor * (texto.length - 1)
+  } catch {
+    const lineHeightFactor = Number(opciones?.lineHeightFactor) || 1
+    return texto.length * 3.5 * lineHeightFactor
+  }
+}
+
+function dibujarCabeceraProgramaAnalitico(doc, pageWidth, logo, carreraNombre = '') {
+  const headerTop = PROGRAMA_ANALITICO_HEADER.top
+  const lineY = PROGRAMA_ANALITICO_HEADER.bottomLineY
+  const carreraTexto = String(carreraNombre || 'Sin Carrera')
+    .trim()
+    .toUpperCase()
+  const textX = 10
+  const dividerX = pageWidth - 53
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(6.5)
+  doc.setTextColor(182, 150, 226)
+  doc.text('UNIVERSIDAD TÉCNICA PRIVADA COSMOS “UNITEPC”', textX, headerTop + 2)
+  doc.text(`CARRERA: ${carreraTexto}`, textX, headerTop + 6)
+
+  doc.setDrawColor(207, 191, 225)
+  doc.setLineWidth(0.45)
+  doc.line(dividerX, headerTop - 0.5, dividerX, lineY)
+
+  if (logo) {
+    doc.addImage(logo, 'PNG', pageWidth - 31, headerTop - 0.5, 16, 12)
+  }
+
+  doc.setDrawColor(98, 216, 218)
+  doc.setLineWidth(0.4)
+  doc.line(7, lineY, pageWidth - 7, lineY)
+
+  doc.setTextColor(0, 0, 0)
+  return PROGRAMA_ANALITICO_HEADER.contentStartY
+}
+
+function medirReferenciaBibliograficaProgramaAnalitico(
+  doc,
+  texto,
+  { anchoDisponible, fontSize, lineHeightFactor },
+) {
+  doc.setFont('times', 'normal')
+  doc.setFontSize(fontSize)
+  const anchoTexto = Math.max(anchoDisponible - 10, 20)
+  const lineas = doc.splitTextToSize(texto, anchoTexto)
+
+  return obtenerAlturaTexto(doc, lineas, {
+    maxWidth: anchoTexto,
+    lineHeightFactor,
+  })
+}
+
+function dibujarReferenciaBibliograficaProgramaAnalitico(
+  doc,
+  texto,
+  x,
+  y,
+  { anchoDisponible, fontSize, lineHeightFactor },
+) {
+  const checkOffsetX = 2.5
+  const textX = x + 8
+  const anchoTexto = Math.max(anchoDisponible - 10, 20)
+  const lineas = doc.splitTextToSize(texto, anchoTexto)
+  const alturaTexto = obtenerAlturaTexto(doc, lineas, {
+    maxWidth: anchoTexto,
+    lineHeightFactor,
+  })
+
+  dibujarPalomitaProgramaAnalitico(doc, x + checkOffsetX, y - 1.2)
+  doc.setFont('times', 'normal')
+  doc.setFontSize(fontSize)
+  doc.text(lineas, textX, y, {
+    maxWidth: anchoTexto,
+    align: 'justify',
+    lineHeightFactor,
+  })
+
+  return y + alturaTexto
+}
+
+function dibujarPalomitaProgramaAnalitico(doc, x, y) {
+  doc.setDrawColor(0, 0, 0)
+  doc.setLineWidth(0.6)
+  doc.line(x, y + 1.8, x + 1.2, y + 3.4)
+  doc.line(x + 1.2, y + 3.4, x + 4.2, y)
+}
+
+async function obtenerLogoProgramaAnalitico(logoOverride = null) {
+  if (logoOverride) return logoOverride
+
+  if (!logoProgramaAnaliticoPromise) {
+    logoProgramaAnaliticoPromise = convertirImagenABase64('/icons/LOGO%20UNITEPC.png')
+  }
+
+  return logoProgramaAnaliticoPromise
+}
+
+async function convertirImagenABase64(url) {
+  try {
+    const response = await fetch(url)
+    const blob = await response.blob()
+
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  } catch (error) {
+    console.error('No se pudo cargar el logo institucional para el Programa Analítico:', error)
+    return null
+  }
+}
+
+function normalizarUnidadesProgramaAnalitico(unidades = []) {
+  return [...(Array.isArray(unidades) ? unidades : [])]
+    .sort((a, b) => {
+      const numeroA = Number(a?.numero) || 0
+      const numeroB = Number(b?.numero) || 0
+      return numeroA - numeroB
+    })
+    .map((unidad) => ({
+      ...unidad,
+      temas: [...(Array.isArray(unidad?.temas) ? unidad.temas : [])].sort((a, b) => {
+        const ordenA = Number(a?.orden) || 0
+        const ordenB = Number(b?.orden) || 0
+        return ordenA - ordenB
+      }),
+    }))
+}
+
+function normalizarBibliografiasProgramaAnalitico(asignatura) {
+  const bibliografias = Array.isArray(asignatura?.bibliografias)
+    ? asignatura.bibliografias
+    : Array.isArray(asignatura?.bibliografia)
+      ? asignatura.bibliografia
+      : []
+
+  return bibliografias
+    .map((referencia) => {
+      if (typeof referencia === 'string') {
+        return { texto: referencia.trim(), tipoNormalizado: 'oficial' }
+      }
+
+      const texto =
+        referencia?.texto ||
+        referencia?.descripcion ||
+        [
+          referencia?.autor,
+          referencia?.titulo,
+          referencia?.editorial,
+          referencia?.edicion,
+          referencia?.anio,
+        ]
+          .filter(Boolean)
+          .join('. ')
+
+      return {
+        texto: String(texto || '').trim(),
+        tipoNormalizado: normalizarTipoBibliografiaProgramaAnalitico(referencia),
+      }
+    })
+    .filter((referencia) => Boolean(referencia?.texto))
+}
+
+function normalizarTipoBibliografiaProgramaAnalitico(referencia) {
+  const tipoOriginal =
+    referencia?.tipo ||
+    referencia?.categoria ||
+    referencia?.tipo_bibliografia ||
+    referencia?.clasificacion ||
+    ''
+
+  const tipo = String(tipoOriginal)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+
+  if (!tipo) {
+    return 'oficial'
+  }
+
+  if (
+    tipo === 'basica' ||
+    tipo === 'basic' ||
+    tipo === 'principal' ||
+    tipo === 'oficial' ||
+    tipo.includes('basic') ||
+    tipo.includes('princi') ||
+    tipo.includes('ofici')
+  ) {
+    return 'oficial'
+  }
+
+  if (tipo === 'complementaria' || tipo === 'complementario' || tipo.includes('complement')) {
+    return 'complementaria'
+  }
+
+  return tipo
+}
+
+function normalizarTextoImpresionTema(tema) {
+  const contenidoLista = extraerListaContenidoTema(tema)
+  const contenidoImpresion = asegurarPuntoFinal(
+    formatearTextoSentenceCase(limpiarTextoProgramaAnalitico(tema?.contenido_impresion)),
+  )
+
+  return contenidoLista || contenidoImpresion || 'Contenido pendiente de registro.'
+}
+
+function extraerListaContenidoTema(tema) {
+  const partes = []
+
+  if (Array.isArray(tema?.contenido_items)) {
+    tema.contenido_items.forEach((item) => {
+      const valor =
+        typeof item === 'string' ? item : item?.titulo || item?.descripcion || item?.texto || ''
+      const limpio = asegurarPuntoFinal(
+        formatearTextoSentenceCase(limpiarTextoProgramaAnalitico(valor)),
+      )
+      if (limpio) partes.push(limpio)
+    })
+  }
+
+  return partes.join(' ')
+}
+
+function limpiarTextoProgramaAnalitico(texto) {
+  return String(texto || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/^[\s\-*.o•]+/gm, '')
+    .replace(/\.{2,}/g, '.')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function formatearTextoSentenceCase(texto) {
+  const limpio = limpiarTextoProgramaAnalitico(texto)
+  if (!limpio) return ''
+
+  const minusculas = limpio.toLocaleLowerCase('es')
+  return minusculas.replace(/(^\s*|[.!?]\s+)([a-záéíóúñü])/gu, (match, prefijo, letra) => {
+    return `${prefijo}${letra.toLocaleUpperCase('es')}`
+  })
+}
+
+function asegurarPuntoFinal(texto) {
+  const limpio = limpiarTextoProgramaAnalitico(texto)
+  if (!limpio) return ''
+
+  return /[.!?]$/.test(limpio) ? limpio : `${limpio}.`
+}
+
+function calcularHrsSemestreImpresion(asignatura) {
+  const horasTeoricas = Number(asignatura?.horas_teoricas) || 0
+  const horasPracticas = Number(asignatura?.horas_practicas) || 0
+  const horasSemanales = horasTeoricas + horasPracticas
+
+  if (horasSemanales > 0) {
+    return horasSemanales * 20
+  }
+
+  const cargaHorariaTotal = Number(asignatura?.carga_horaria_total) || 0
+  if (cargaHorariaTotal > 0) {
+    return cargaHorariaTotal
+  }
+
+  return 0
+}
+
+function normalizarProgramaPlanEstudios(planEstudios) {
+  const plan = String(planEstudios || '')
+    .trim()
+    .toUpperCase()
+  return plan === 'A' ? 'A' : 'N'
+}
+
+function toRomanNumeral(value) {
+  const numero = Number(value) || 0
+  const romanos = [
+    ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'],
+    ['', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC'],
   ]
 
-  bibliografia.forEach((ref) => {
-    if (y > 260) {
-      doc.addPage()
-      y = 20
-    }
-    doc.text(`- ${ref}`, margin, y)
-    y += 5
-  })
+  if (numero <= 0 || numero >= 100) {
+    return String(value || '')
+  }
+
+  const decenas = romanos[1][Math.floor(numero / 10)]
+  const unidades = romanos[0][numero % 10]
+  return `${decenas}${unidades}`
 }
 
 /**

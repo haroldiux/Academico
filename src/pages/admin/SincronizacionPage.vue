@@ -42,6 +42,7 @@
       <q-tab name="multiple" icon="checklist" label="Múltiples Carreras" no-caps />
       <q-tab name="sede" icon="location_city" label="Por Sede" no-caps />
       <q-tab name="materia" icon="menu_book" label="Por Materia" no-caps />
+      <q-tab name="asignatura" icon="subject" label="Por Asignatura" no-caps />
     </q-tabs>
     <q-separator class="q-mb-lg" />
 
@@ -464,6 +465,121 @@
           </q-card>
         </div>
       </q-tab-panel>
+
+      <!-- ═══════════════════════════════════════════════
+           TAB 5: POR ASIGNATURA (sede + carrera + asignatura específica)
+           ═══════════════════════════════════════════════ -->
+      <q-tab-panel name="asignatura" class="q-pa-none">
+        <div class="row q-gutter-lg">
+          <!-- Formulario -->
+          <q-card flat bordered class="col-12 col-md-4">
+            <q-card-section>
+              <div class="text-subtitle1 text-weight-bold q-mb-md">
+                <q-icon name="tune" class="q-mr-xs" color="indigo" />
+                Configuración
+              </div>
+              <q-select
+                v-model="selSedeAsignatura"
+                :options="opcionesSedes"
+                option-label="nombre"
+                option-value="id"
+                emit-value
+                map-options
+                outlined
+                dense
+                label="Sede"
+                class="q-mb-md"
+              />
+              <q-select
+                v-model="selCarreraAsignatura"
+                :options="opcionesCarrerasAsignatura"
+                outlined
+                dense
+                label="Carrera"
+                use-input
+                fill-input
+                hide-selected
+                input-debounce="0"
+                @filter="filtrarCarrerasAsignatura"
+                class="q-mb-md"
+              >
+                <template #no-option>
+                  <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
+                </template>
+              </q-select>
+              <q-select
+                v-model="selAsignatura"
+                :options="opcionesAsignaturas"
+                option-label="nombre"
+                option-value="codigo"
+                emit-value
+                map-options
+                outlined
+                dense
+                label="Asignatura"
+                clearable
+                input-debounce="200"
+                class="q-mb-lg"
+                :disable="!selSedeAsignatura || !selCarreraAsignatura || loadingAsignaturas"
+              >
+                <template #no-option>
+                  <q-item><q-item-section class="text-grey">Sin resultados</q-item-section></q-item>
+                </template>
+                <template #loading>
+                  <q-item
+                    ><q-item-section class="text-grey"
+                      >Cargando asignaturas...</q-item-section
+                    ></q-item
+                  >
+                </template>
+              </q-select>
+              <q-btn
+                unelevated
+                color="indigo"
+                icon="sync"
+                label="Sincronizar Asignatura"
+                no-caps
+                class="full-width"
+                :loading="loadingAsignatura"
+                :disable="!selSedeAsignatura || !selCarreraAsignatura || !selAsignatura"
+                @click="syncAsignatura"
+              />
+            </q-card-section>
+          </q-card>
+
+          <!-- Resultado -->
+          <q-card flat bordered class="col-12 col-md-7" v-if="resultadoAsignatura">
+            <q-card-section>
+              <div class="text-subtitle1 text-weight-bold q-mb-md">
+                <q-icon
+                  :name="resultadoAsignatura.ok ? 'check_circle' : 'error'"
+                  :color="resultadoAsignatura.ok ? 'positive' : 'negative'"
+                  class="q-mr-xs"
+                />
+                Resultado — {{ resultadoAsignatura.codigo_asignatura }} /
+                {{ resultadoAsignatura.carrera }} / {{ resultadoAsignatura.sede }}
+              </div>
+              <template v-if="resultadoAsignatura.ok">
+                <div class="row q-col-gutter-md">
+                  <div class="col-6 col-sm-3" v-for="(val, key) in statsAsignatura" :key="key">
+                    <div class="stat-box">
+                      <div class="stat-val">{{ val.valor }}</div>
+                      <div class="stat-label">{{ val.label }}</div>
+                    </div>
+                  </div>
+                </div>
+                <q-chip color="green-1" text-color="green-9" icon="timer" class="q-mt-md">
+                  Duración: {{ resultadoAsignatura.duracion }}s
+                </q-chip>
+              </template>
+              <q-banner v-else rounded class="bg-red-1 text-red-9">
+                <template #avatar><q-icon name="error" color="negative" /></template>
+                {{ resultadoAsignatura.error }}
+              </q-banner>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-tab-panel>
     </q-tab-panels>
 
     <!-- ═══════════════════════════════════════════════
@@ -518,6 +634,7 @@
               { label: 'Por Carrera', value: 'carrera' },
               { label: 'Por Sede', value: 'sede' },
               { label: 'Por Materia', value: 'materia' },
+              { label: 'Por Asignatura', value: 'asignatura' },
             ]"
             option-label="label"
             option-value="value"
@@ -724,6 +841,34 @@
             icon="library_add"
             no-caps
           />
+          <q-tab
+            name="grupos_inactivados"
+            v-if="diffData.diff?.grupos_inactivados?.length"
+            :label="`Inactivados (${diffData.diff.grupos_inactivados.length})`"
+            icon="pause_circle"
+            no-caps
+          />
+          <q-tab
+            name="duplicados_fusionados"
+            v-if="diffData.diff?.duplicados_fusionados?.length"
+            :label="`Fusionados (${diffData.diff.duplicados_fusionados.length})`"
+            icon="merge"
+            no-caps
+          />
+          <q-tab
+            name="asignaturas_desvinculadas"
+            v-if="diffData.diff?.asignaturas_desvinculadas?.length"
+            :label="`Desvinculadas (${diffData.diff.asignaturas_desvinculadas.length})`"
+            icon="link_off"
+            no-caps
+          />
+          <q-tab
+            name="conflictos_locales"
+            v-if="diffData.diff?.conflictos_locales?.length"
+            :label="`Conflictos (${diffData.diff.conflictos_locales.length})`"
+            icon="warning"
+            no-caps
+          />
         </q-tabs>
 
         <q-tab-panels v-model="tabDiff" animated>
@@ -870,6 +1015,125 @@
                 <q-item-section>{{ a }}</q-item-section>
               </q-item>
             </q-list>
+          </q-tab-panel>
+
+          <!-- Grupos inactivados -->
+          <q-tab-panel name="grupos_inactivados" class="q-pa-none">
+            <q-banner class="bg-grey-2 q-mb-sm" dense>
+              <template #avatar><q-icon name="info" color="grey-7" /></template>
+              Estos grupos ya no están en la API. Se marcaron como INACTIVOS y no aparecerán en el
+              sistema.
+            </q-banner>
+            <q-table
+              :rows="diffData.diff?.grupos_inactivados ?? []"
+              :columns="colsGruposInactivados"
+              row-key="id"
+              dense
+              flat
+              :rows-per-page-options="[0]"
+              hide-pagination
+            />
+          </q-tab-panel>
+
+          <!-- Duplicados fusionados -->
+          <q-tab-panel name="duplicados_fusionados" class="q-pa-none">
+            <q-banner class="bg-purple-1 q-mb-sm" dense>
+              <template #avatar><q-icon name="merge" color="purple" /></template>
+              Se detectaron asignaturas duplicadas. El banco de preguntas fue migrado al registro
+              correcto.
+            </q-banner>
+            <q-table
+              :rows="diffData.diff?.duplicados_fusionados ?? []"
+              :columns="colsDuplicadosFusionados"
+              row-key="correcta_id"
+              dense
+              flat
+              :rows-per-page-options="[0]"
+              hide-pagination
+            >
+              <template #body-cell-preguntas_migradas="props">
+                <q-td :props="props">
+                  <q-chip dense size="sm" color="purple-1" text-color="purple-9" icon="quiz">
+                    {{ props.value }} preguntas
+                  </q-chip>
+                </q-td>
+              </template>
+            </q-table>
+          </q-tab-panel>
+
+          <!-- Asignaturas desvinculadas -->
+          <q-tab-panel name="asignaturas_desvinculadas" class="q-pa-none">
+            <q-banner class="bg-brown-1 q-mb-sm" dense>
+              <template #avatar><q-icon name="link_off" color="brown" /></template>
+              Estas asignaturas no tienen grupos activos en esta carrera/sede. Se desvincularon del
+              plan pero su contenido (banco de preguntas, documentación) se conserva.
+            </q-banner>
+            <q-list bordered separator>
+              <q-item v-for="a in diffData.diff?.asignaturas_desvinculadas ?? []" :key="a.id" dense>
+                <q-item-section avatar>
+                  <q-icon name="link_off" color="brown" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ a.nombre }}</q-item-label>
+                  <q-item-label caption>{{ a.codigo }} · Plan {{ a.plan ?? 'N' }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-tab-panel>
+
+          <!-- Conflictos locales -->
+          <q-tab-panel name="conflictos_locales" class="q-pa-none">
+            <q-banner class="bg-deep-orange-1 q-mb-sm" dense>
+              <template #avatar><q-icon name="warning" color="deep-orange" /></template>
+              Estos grupos fueron modificados localmente pero la API tiene datos diferentes. Decide
+              qué versión conservar.
+            </q-banner>
+            <q-table
+              :rows="diffData.diff?.conflictos_locales ?? []"
+              :columns="colsConflictos"
+              row-key="grupo_id"
+              dense
+              flat
+              :rows-per-page-options="[0]"
+              hide-pagination
+            >
+              <template #body-cell-valor_local="props">
+                <q-td :props="props">
+                  <q-chip dense size="sm" color="blue-1" text-color="blue-9" icon="edit">
+                    {{ props.value }}
+                  </q-chip>
+                </q-td>
+              </template>
+              <template #body-cell-valor_api="props">
+                <q-td :props="props">
+                  <q-chip dense size="sm" color="green-1" text-color="green-9" icon="cloud">
+                    {{ props.value }}
+                  </q-chip>
+                </q-td>
+              </template>
+              <template #body-cell-acciones="props">
+                <q-td :props="props">
+                  <div class="row q-gutter-xs no-wrap">
+                    <q-btn
+                      dense
+                      size="xs"
+                      unelevated
+                      color="green"
+                      label="Aceptar API"
+                      @click="resolverConflicto(props.row, 'aceptar_api')"
+                    />
+                    <q-btn
+                      dense
+                      size="xs"
+                      unelevated
+                      color="blue-grey"
+                      label="Mantener local"
+                      @click="resolverConflicto(props.row, 'mantener_local')"
+                    />
+                  </div>
+                </q-td>
+              </template>
+            </q-table>
           </q-tab-panel>
         </q-tab-panels>
       </q-card-section>
@@ -1119,6 +1383,191 @@ async function syncMateria() {
   }
 }
 
+// ─── Tab: Por Asignatura ──────────────────────────────────────────────────────
+
+const selSedeAsignatura = ref(1)
+const selCarreraAsignatura = ref('CARMED')
+const carrerasAsignaturaMap = ref(new Map()) // sigla → {id, sigla, nombre}
+const carrerasAsignaturaBase = ref([...CARRERAS]) // fuente de verdad para la sede actual
+const opcionesCarrerasAsignatura = ref([...CARRERAS])
+const selAsignatura = ref(null)
+const opcionesAsignaturas = ref([])
+const todasAsignaturas = ref([]) // Fuente de verdad (sin filtrar)
+const loadingAsignaturas = ref(false)
+const loadingAsignatura = ref(false)
+const resultadoAsignatura = ref(null)
+
+function filtrarCarrerasAsignatura(val, update) {
+  update(() => {
+    const needle = val.toLowerCase()
+    opcionesCarrerasAsignatura.value = needle
+      ? carrerasAsignaturaBase.value.filter((c) => c.toLowerCase().includes(needle))
+      : [...carrerasAsignaturaBase.value]
+  })
+}
+
+async function cargarCarrerasAsignaturaPorSede() {
+  if (!selSedeAsignatura.value) {
+    carrerasAsignaturaBase.value = []
+    carrerasAsignaturaMap.value = new Map()
+    opcionesCarrerasAsignatura.value = []
+    selCarreraAsignatura.value = null
+    return
+  }
+
+  try {
+    const res = await api.get('/carreras', {
+      params: { sede_id: selSedeAsignatura.value },
+    })
+    const carreras = Array.isArray(res.data) ? res.data : res.data.data || []
+
+    if (carreras.length > 0) {
+      const map = new Map()
+      const siglas = carreras
+        .filter((c) => c.sigla)
+        .map((c) => {
+          map.set(c.sigla.toUpperCase(), c)
+          return c.sigla.toUpperCase()
+        })
+        .sort()
+      carrerasAsignaturaMap.value = map
+      carrerasAsignaturaBase.value = siglas
+      opcionesCarrerasAsignatura.value = [...siglas]
+    } else {
+      // Fallback: si no hay carreras para esta sede, usar lista estática
+      carrerasAsignaturaMap.value = new Map()
+      carrerasAsignaturaBase.value = [...CARRERAS]
+      opcionesCarrerasAsignatura.value = [...CARRERAS]
+    }
+  } catch (e) {
+    console.warn('[Sync] Error cargando carreras por sede:', e.message)
+    carrerasAsignaturaMap.value = new Map()
+    carrerasAsignaturaBase.value = [...CARRERAS]
+    opcionesCarrerasAsignatura.value = [...CARRERAS]
+  }
+}
+
+async function cargarAsignaturas() {
+  if (!selSedeAsignatura.value || !selCarreraAsignatura.value) {
+    opcionesAsignaturas.value = []
+    todasAsignaturas.value = []
+    selAsignatura.value = null
+    return
+  }
+
+  loadingAsignaturas.value = true
+  try {
+    // Endpoint externo: obtiene las materias de TODOS los planes (la API ya
+    // devuelve el plan correcto por sede; no filtramos para mostrar todo)
+    const params = {
+      gestion: gestion.value,
+      carrera: selCarreraAsignatura.value.toLowerCase(),
+      sede: selSedeAsignatura.value,
+      // sin plan_estudios → devuelve N y A
+    }
+    console.log('[Sync] Cargando asignaturas con params:', params)
+
+    const res = await api.get('/grupos-externo/plan-n', { params })
+    console.log('[Sync] Respuesta plan-n:', res.data)
+
+    const data = res.data?.data || res.data || []
+    console.log('[Sync] Datos recibidos:', data.length, 'items')
+
+    if (!Array.isArray(data) || data.length === 0) {
+      console.warn('[Sync] No se recibieron asignaturas del endpoint externo')
+      // Fallback: intentar cargar asignaturas locales de esta carrera/sede
+      try {
+        const carreraObj = carrerasAsignaturaMap.value.get(selCarreraAsignatura.value)
+        const carreraId = carreraObj?.id || selCarreraAsignatura.value
+        const localRes = await api.get('/asignaturas', {
+          params: {
+            carrera_id: carreraId,
+            sede_id: selSedeAsignatura.value,
+          },
+        })
+        const localData = localRes.data?.data || localRes.data || []
+        console.log('[Sync] Fallback locales:', localData.length, 'items')
+        const lista = localData.map((m) => ({
+          codigo: m.codigo,
+          nombre: `${m.codigo} — ${m.nombre}`,
+          semestre: m.semestre,
+          plan_estudios: m.plan_estudios || 'N',
+        }))
+        todasAsignaturas.value = lista
+        opcionesAsignaturas.value = [...lista]
+      } catch (fallbackErr) {
+        console.error('[Sync] Fallback también falló:', fallbackErr)
+        opcionesAsignaturas.value = []
+        todasAsignaturas.value = []
+      }
+      return
+    }
+
+    const lista = data.map((m) => ({
+      codigo: m.codigo,
+      nombre: `${m.codigo} — ${m.nombre}`,
+      semestre: m.semestre,
+      plan_estudios: m.plan_estudios || 'N',
+    }))
+
+    todasAsignaturas.value = lista
+    opcionesAsignaturas.value = [...lista]
+    console.log('[Sync] Asignaturas cargadas:', lista.length)
+  } catch (e) {
+    console.error('[Sync] Error cargando asignaturas:', e)
+    $q.notify({
+      type: 'negative',
+      message: 'Error al cargar asignaturas: ' + (e.response?.data?.message || e.message),
+    })
+    opcionesAsignaturas.value = []
+    todasAsignaturas.value = []
+  } finally {
+    loadingAsignaturas.value = false
+  }
+}
+
+const statsAsignatura = computed(() => {
+  if (!resultadoAsignatura.value?.stats) return {}
+  const s = resultadoAsignatura.value.stats
+  return {
+    total: { label: 'Registros', valor: s.total ?? 0 },
+    docentes: { label: 'Docentes', valor: s.docentes ?? 0 },
+    grupos: { label: 'Grupos', valor: s.grupos ?? 0 },
+    horarios: { label: 'Horarios', valor: s.horarios ?? 0 },
+  }
+})
+
+async function syncAsignatura() {
+  loadingAsignatura.value = true
+  resultadoAsignatura.value = null
+  try {
+    const res = await api.post('/sync/asignatura', {
+      gestion: gestion.value,
+      sede_id: selSedeAsignatura.value,
+      carrera: selCarreraAsignatura.value,
+      codigo_asignatura: selAsignatura.value,
+      // plan_estudios se omite: cada item de la API ya trae su planEst real
+    })
+    resultadoAsignatura.value = res.data
+    $q.notify({
+      type: res.data.ok ? 'positive' : 'negative',
+      message: res.data.ok ? 'Asignatura sincronizada exitosamente' : 'Error en sincronización',
+    })
+    cargarLogs()
+  } catch (e) {
+    resultadoAsignatura.value = {
+      ok: false,
+      error: e.response?.data?.message || e.message,
+      codigo_asignatura: selAsignatura.value,
+      carrera: selCarreraAsignatura.value,
+      sede: '',
+    }
+    $q.notify({ type: 'negative', message: 'Error: ' + (e.response?.data?.message || e.message) })
+  } finally {
+    loadingAsignatura.value = false
+  }
+}
+
 // ─── Historial ───────────────────────────────────────────────────────────────
 
 const logs = ref([])
@@ -1219,6 +1668,34 @@ const resumenChips = computed(() => {
       color: 'indigo',
       icon: 'library_add',
     }
+  if (r.grupos_inactivados)
+    chips.grupos_inactivados = {
+      label: 'Grupos inactivados',
+      valor: r.grupos_inactivados,
+      color: 'grey',
+      icon: 'pause_circle',
+    }
+  if (r.duplicados_fusionados)
+    chips.duplicados_fusionados = {
+      label: 'Duplicados fusionados',
+      valor: r.duplicados_fusionados,
+      color: 'purple',
+      icon: 'merge',
+    }
+  if (r.asignaturas_desvinculadas)
+    chips.asignaturas_desvinculadas = {
+      label: 'Asignaturas desvinculadas',
+      valor: r.asignaturas_desvinculadas,
+      color: 'brown',
+      icon: 'link_off',
+    }
+  if (r.conflictos_locales)
+    chips.conflictos_locales = {
+      label: 'Conflictos locales',
+      valor: r.conflictos_locales,
+      color: 'deep-orange',
+      icon: 'warning',
+    }
   return chips
 })
 
@@ -1246,6 +1723,39 @@ const colsHorariosEliminados = [
   { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
   { name: 'horario', label: 'Horario', field: 'horario', align: 'left' },
 ]
+const colsGruposInactivados = [
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'codigo', label: 'Código', field: 'codigo', align: 'center' },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
+]
+const colsDuplicadosFusionados = [
+  {
+    name: 'correcta_nombre',
+    label: 'Asignatura correcta',
+    field: 'correcta_nombre',
+    align: 'left',
+  },
+  {
+    name: 'duplicada_nombre',
+    label: 'Duplicado eliminado',
+    field: 'duplicada_nombre',
+    align: 'left',
+  },
+  {
+    name: 'preguntas_migradas',
+    label: 'Preguntas migradas',
+    field: (row) => row.preguntas?.migradas ?? 0,
+    align: 'center',
+  },
+]
+const colsConflictos = [
+  { name: 'asignatura', label: 'Asignatura', field: 'asignatura', align: 'left' },
+  { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center' },
+  { name: 'campo', label: 'Campo', field: 'campo', align: 'center' },
+  { name: 'valor_local', label: 'Valor local', field: 'valor_local', align: 'left' },
+  { name: 'valor_api', label: 'Valor API', field: 'valor_api', align: 'left' },
+  { name: 'acciones', label: 'Acción', field: 'acciones', align: 'center' },
+]
 
 async function verDiff(logId) {
   showDiff.value = true
@@ -1257,7 +1767,10 @@ async function verDiff(logId) {
     diffData.value = res.data
     // Auto-seleccionar primer tab con datos
     const d = res.data.diff
-    if (d?.grupos_nuevos?.length) tabDiff.value = 'grupos_nuevos'
+    if (d?.conflictos_locales?.length) tabDiff.value = 'conflictos_locales'
+    else if (d?.grupos_inactivados?.length) tabDiff.value = 'grupos_inactivados'
+    else if (d?.duplicados_fusionados?.length) tabDiff.value = 'duplicados_fusionados'
+    else if (d?.grupos_nuevos?.length) tabDiff.value = 'grupos_nuevos'
     else if (d?.grupos_docente_cambio?.length) tabDiff.value = 'docente_cambio'
     else if (d?.grupos_horario_cambio?.length) tabDiff.value = 'horario_cambio'
     else if (d?.horarios_eliminados?.length) tabDiff.value = 'horarios_eliminados'
@@ -1269,6 +1782,29 @@ async function verDiff(logId) {
     showDiff.value = false
   } finally {
     loadingDiff.value = false
+  }
+}
+
+async function resolverConflicto(conflicto, accion) {
+  try {
+    await api.post('/sync/resolver-conflictos', {
+      grupo_id: conflicto.grupo_id,
+      accion,
+      docente_ci_api: accion === 'aceptar_api' ? conflicto.docente_ci_api : undefined,
+    })
+    // Quitar el conflicto de la lista local
+    if (diffData.value?.diff?.conflictos_locales) {
+      diffData.value.diff.conflictos_locales = diffData.value.diff.conflictos_locales.filter(
+        (c) => c.grupo_id !== conflicto.grupo_id,
+      )
+    }
+    $q.notify({
+      type: 'positive',
+      message:
+        accion === 'aceptar_api' ? 'Actualizado con datos de la API' : 'Mantenidos datos locales',
+    })
+  } catch {
+    $q.notify({ type: 'negative', message: 'Error al resolver el conflicto' })
   }
 }
 
@@ -1289,13 +1825,49 @@ async function cargarLogs() {
 }
 
 function modoIcon(modo) {
-  return { carrera: 'school', sede: 'location_city', materia: 'menu_book' }[modo] ?? 'sync'
+  return (
+    { carrera: 'school', sede: 'location_city', materia: 'menu_book', asignatura: 'subject' }[
+      modo
+    ] ?? 'sync'
+  )
 }
 
 // Recargar logs al cambiar filtros
 watch([filtroSede, filtroCarrera, filtroModo], () => cargarLogs())
 
-onMounted(() => cargarLogs())
+// Cargar carreras y asignaturas automaticamente al entrar a la pestaña "Por Asignatura"
+watch(tab, async (nuevoTab) => {
+  if (nuevoTab === 'asignatura') {
+    await cargarCarrerasAsignaturaPorSede()
+    await cargarAsignaturas()
+  }
+})
+
+// Recargar carreras disponibles cuando cambia la sede (en tab asignatura)
+watch(selSedeAsignatura, async () => {
+  if (tab.value === 'asignatura') {
+    selCarreraAsignatura.value = null
+    selAsignatura.value = null
+    await cargarCarrerasAsignaturaPorSede()
+  }
+})
+
+// Recargar asignaturas cuando cambia la carrera (en tab asignatura)
+watch(selCarreraAsignatura, async () => {
+  if (tab.value === 'asignatura') {
+    selAsignatura.value = null
+    await cargarAsignaturas()
+  }
+})
+
+onMounted(async () => {
+  cargarLogs()
+  // Si entramos directamente a la pestaña asignatura, cargar carreras y asignaturas
+  if (tab.value === 'asignatura') {
+    await cargarCarrerasAsignaturaPorSede()
+    await cargarAsignaturas()
+  }
+})
 </script>
 
 <style scoped>

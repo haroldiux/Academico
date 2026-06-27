@@ -12,7 +12,7 @@
         <div class="text-h6 q-mb-sm text-grey-8">1. Origen de datos</div>
 
         <div class="row q-col-gutter-md items-start">
-          <div class="col-12 col-md-4">
+          <div class="col-12">
             <q-select
               v-model="carreraSeleccionada"
               :options="carrerasOpciones"
@@ -29,53 +29,49 @@
               </template>
             </q-select>
           </div>
-
-          <div class="col-12 col-md-4">
-            <q-input v-model="apiUrl" label="URL base API externa" outlined dense>
-              <template #prepend>
-                <q-icon name="language" />
-              </template>
-              <template #hint>Ej: http://localhost:8500</template>
-            </q-input>
-          </div>
-
-          <div class="col-12 col-md-4">
-            <q-input v-model="apiToken" label="Token de autenticacion" outlined dense>
-              <template #prepend>
-                <q-icon name="key" />
-              </template>
-            </q-input>
-          </div>
         </div>
 
         <div class="row q-col-gutter-md q-mt-sm">
-          <div class="col-12 col-md-4">
+          <div class="col-12">
             <q-banner dense rounded class="bg-blue-1 text-blue-9">
-              Sede destino: {{ sedeSeleccionadaId || 'No detectada' }}
-            </q-banner>
-          </div>
-          <div class="col-12 col-md-4">
-            <q-banner dense rounded class="bg-grey-2 text-grey-9">
-              Plan destino: {{ planEstudiosSeleccionado || 'N' }}
-            </q-banner>
-          </div>
-          <div class="col-12 col-md-4">
-            <q-banner dense rounded class="bg-teal-1 text-teal-9">
-              {{ carrerasOpciones.length }} carrera(s) habilitada(s)
+              Sede destino: {{ sedeSeleccionadaNombre || 'No detectada' }}
             </q-banner>
           </div>
         </div>
 
-        <div class="row justify-end q-mt-md">
+        <div class="row justify-end q-mt-md q-gutter-sm">
           <q-btn
             color="primary"
             icon="cloud_download"
             label="Extraer asignaturas"
             :loading="loadingFetch"
-            :disable="!carreraSeleccionada || !apiUrl || !apiToken"
+            :disable="!carreraSeleccionada"
             unelevated
             @click="fetchDesdeApi"
           />
+          <q-btn
+            v-if="false"
+            color="secondary"
+            icon="grid_on"
+            label="Exportar a Excel"
+            :loading="loadingExport"
+            :disable="!carreraSeleccionada"
+            unelevated
+            @click="exportarExcel"
+          >
+            <q-tooltip>Descarga un .xlsx con todas las asignaturas para editar y volver a importar</q-tooltip>
+          </q-btn>
+          <q-btn
+            v-if="false"
+            color="accent"
+            icon="upload_file"
+            label="Importar Excel"
+            :loading="loadingImport"
+            unelevated
+            @click="abrirImportacionExcel"
+          >
+            <q-tooltip>Sube un .xlsx exportado y aplica la restauracion de las asignaturas que contenga</q-tooltip>
+          </q-btn>
         </div>
       </q-card-section>
     </q-card>
@@ -115,17 +111,56 @@
         bordered
         class="bg-white"
       >
-        <template #body-cell-plan_estudios="props">
-          <q-td :props="props" class="text-center">
-            <q-chip color="orange-1" text-color="orange-9" size="sm">
-              {{ props.row.plan_estudios || 'N' }}
-            </q-chip>
-          </q-td>
-        </template>
-
         <template #body-cell-estado_local="props">
           <q-td :props="props" class="text-center">
+            <q-btn-dropdown
+              v-if="
+                canOpenLocalFolder(props.row.local_status) &&
+                getLocalStatusDocentes(props.row.local_status).length > 1
+              "
+              unelevated
+              size="sm"
+              color="positive"
+              text-color="white"
+              icon-right="arrow_outward"
+              :label="props.row.local_status.label"
+              no-caps
+            >
+              <q-list dense style="min-width: 260px">
+                <q-item
+                  v-for="docente in getLocalStatusDocentes(props.row.local_status)"
+                  :key="`local-doc-${props.row.restore_key}-${docente.docente_id}`"
+                  clickable
+                  v-close-popup
+                  @click="openLocalFolder(props.row.local_status, docente.docente_id)"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="person" color="primary" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>{{ docente.docente_nombre || 'Docente' }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-icon name="arrow_forward" color="positive" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
+
+            <q-btn
+              v-else-if="canOpenLocalFolder(props.row.local_status)"
+              unelevated
+              size="sm"
+              color="positive"
+              text-color="white"
+              icon-right="arrow_outward"
+              :label="props.row.local_status.label"
+              no-caps
+              @click="openLocalFolder(props.row.local_status)"
+            />
+
             <q-chip
+              v-else
               :color="getLocalStatusColor(props.row.local_status)"
               :text-color="getLocalStatusTextColor(props.row.local_status)"
               size="sm"
@@ -146,19 +181,10 @@
           </q-td>
         </template>
 
-        <template #body-cell-docentes_count="props">
+        <template #body-cell-temas_count="props">
           <q-td :props="props" class="text-center">
-            <q-chip v-if="props.row.stats.docentes" color="teal-1" text-color="teal-8" size="sm">
-              {{ props.row.stats.docentes }} docentes
-            </q-chip>
-            <span v-else class="text-grey text-caption">Sin docentes</span>
-          </q-td>
-        </template>
-
-        <template #body-cell-planificaciones_count="props">
-          <q-td :props="props" class="text-center">
-            <q-chip color="purple-1" text-color="deep-purple-8" size="sm">
-              {{ props.row.stats.planificaciones }} planificaciones
+            <q-chip color="cyan-1" text-color="cyan-9" size="sm">
+              {{ props.row.stats.temas }} temas
             </q-chip>
           </q-td>
         </template>
@@ -184,6 +210,42 @@
               @click="downloadAsignaturaJson(props.row)"
             >
               <q-tooltip>Descargar JSON</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              color="primary"
+              icon="picture_as_pdf"
+              size="sm"
+              :loading="pdfLoadingKey === (props.row.restore_key || props.row.codigo)"
+              :disable="pdfLoadingKey === (props.row.restore_key || props.row.codigo)"
+              @click="downloadAsignaturaPdf(props.row)"
+            >
+              <q-tooltip>Descargar PDF con la estructura completa</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              color="teal"
+              icon="grid_on"
+              size="sm"
+              :loading="pacLoadingKey === (props.row.restore_key || props.row.codigo)"
+              :disable="pacLoadingKey === (props.row.restore_key || props.row.codigo)"
+              @click="downloadAsignaturaPac(props.row)"
+            >
+              <q-tooltip>Descargar Excel formato PAC (docente)</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              color="indigo"
+              icon="event_note"
+              size="sm"
+              :loading="planClaseLoadingKey === (props.row.restore_key || props.row.codigo)"
+              :disable="planClaseLoadingKey === (props.row.restore_key || props.row.codigo)"
+              @click="downloadAsignaturaPlanClase(props.row)"
+            >
+              <q-tooltip>Descargar Plan de Clase (una hoja por unidad)</q-tooltip>
             </q-btn>
             <q-btn
               flat
@@ -240,7 +302,7 @@
               </div>
               <div class="col-auto">
                 <q-chip color="purple-1" text-color="deep-purple-8">
-                  {{ asignaturaVisualizada.stats.planificaciones }} planificaciones
+                  {{ asignaturaVisualizada.stats.planificaciones }} docentes con planificación
                 </q-chip>
               </div>
               <div class="col-auto">
@@ -276,10 +338,7 @@
                     </div>
                     <div class="detail-label q-mt-sm">Sede</div>
                     <div class="detail-value">
-                      {{
-                        asignaturaVisualizada.carrera?.sede ||
-                        `ID ${asignaturaVisualizada.sede_id || 'N/D'}`
-                      }}
+                      {{ getAsignaturaSedeNombre(asignaturaVisualizada) || 'No disponible' }}
                     </div>
                     <div class="detail-label q-mt-sm">Semestre</div>
                     <div class="detail-value">
@@ -300,7 +359,7 @@
                       {{ asignaturaVisualizada.stats.unidades }} /
                       {{ asignaturaVisualizada.stats.temas }}
                     </div>
-                    <div class="detail-label q-mt-sm">Docentes / Planificaciones</div>
+                    <div class="detail-label q-mt-sm">Docentes / Docentes con planificación</div>
                     <div class="detail-value">
                       {{ asignaturaVisualizada.stats.docentes }} /
                       {{ asignaturaVisualizada.stats.planificaciones }}
@@ -314,7 +373,7 @@
                   <q-card-section>
                     <div class="text-subtitle2 text-negative q-mb-sm">Advertencia</div>
                     <div class="text-body2">
-                      Esta vista muestra lo que se volvera a crear en SIDOPA. Al confirmar, se
+                      Esta vista muestra lo que se volvera a crear en SISTEMA. Al confirmar, se
                       purgara la estructura local actual de la materia y se reconstruira con la
                       informacion del origen.
                     </div>
@@ -805,12 +864,21 @@
       style="display: none"
       @change="handleJsonImport"
     />
+
+    <input
+      ref="excelFileInput"
+      type="file"
+      accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      style="display: none"
+      @change="handleExcelImport"
+    />
   </q-page>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'src/stores/auth'
 import { useCarrerasStore } from 'src/stores/carreras'
@@ -819,11 +887,12 @@ const SOURCE_URL_STORAGE_KEY = 'sidopa.restauracion.apiUrl'
 const SOURCE_TOKEN_STORAGE_KEY = 'sidopa.restauracion.apiToken'
 
 const $q = useQuasar()
+const router = useRouter()
 const authStore = useAuthStore()
 const carrerasStore = useCarrerasStore()
 
 const carreraSeleccionada = ref(null)
-const apiUrl = ref('http://localhost:8500')
+const apiUrl = ref('https://api.sisa.xpertiaplus.com')
 const apiToken = ref('unitepc-programas-2026')
 const asignaturas = ref([])
 const loadingFetch = ref(false)
@@ -832,6 +901,12 @@ const asignaturaVisualizada = ref(null)
 const searchTerm = ref('')
 const jsonFileInput = ref(null)
 const jsonImportTarget = ref(null)
+const excelFileInput = ref(null)
+const loadingExport = ref(false)
+const loadingImport = ref(false)
+const pdfLoadingKey = ref(null)
+const pacLoadingKey = ref(null)
+const planClaseLoadingKey = ref(null)
 const tablePagination = ref({
   sortBy: 'codigo',
   descending: false,
@@ -841,11 +916,9 @@ const tablePagination = ref({
 const columns = [
   { name: 'codigo', label: 'Sigla', field: 'codigo', align: 'left', sortable: true },
   { name: 'nombre', label: 'Asignatura', field: 'nombre', align: 'left', sortable: true },
-  { name: 'plan_estudios', label: 'Plan', field: 'plan_estudios', align: 'center', sortable: true },
   { name: 'estado_local', label: 'Estado local', align: 'center' },
   { name: 'unidades_count', label: 'Estructura', align: 'center' },
-  { name: 'docentes_count', label: 'Docentes', align: 'center' },
-  { name: 'planificaciones_count', label: 'Planificaciones', align: 'center' },
+  { name: 'temas_count', label: 'Temas', align: 'center' },
   { name: 'acciones', label: 'Acciones', align: 'center' },
 ]
 
@@ -869,6 +942,53 @@ const carreraActual = computed(
       (carrera) => Number(carrera.id) === Number(carreraSeleccionada.value),
     ) || null,
 )
+
+// Mapeo interno del modulo Restaurar Programas: SIGLA SIDOPA -> id carrera en SISA.
+// Solo se usa para la extraccion externa, sin afectar otros modulos.
+const SISA_CARRERA_ID_BY_SIGLA = {
+  CARCCP: 1,
+  CARAYE: 2,
+  CARNYD: 3,
+  CARODO: 4,
+  CARFIS: 5,
+  CARFON: 6,
+  CARENL: 7,
+  CARSON: 8,
+  CARICO: 9,
+  CARMED: 10,
+  CARCAD: 25,
+  CARCPU: 26,
+  CARECO: 27,
+  CARCIC: 28,
+  CARADM: 29,
+  CARCSO: 30,
+  CARCNE: 31,
+  CARDER: 32,
+  CARELE: 33,
+  CARSIS: 34,
+  CARIBI: 35,
+  CARVET: 36,
+  CARBYF: 37,
+  CARPRO: 38,
+}
+
+const carreraOrigenId = computed(() => {
+  const mappedId = Number(carreraActual.value?.codigo_api || 0)
+  if (Number.isFinite(mappedId) && mappedId > 0) {
+    return mappedId
+  }
+
+  const sigla = String(carreraActual.value?.sigla || '')
+    .trim()
+    .toUpperCase()
+  const mappedBySigla = Number(SISA_CARRERA_ID_BY_SIGLA[sigla] || 0)
+  if (Number.isFinite(mappedBySigla) && mappedBySigla > 0) {
+    return mappedBySigla
+  }
+
+  const localId = Number(carreraSeleccionada.value || 0)
+  return Number.isFinite(localId) && localId > 0 ? localId : null
+})
 
 const normalizeSearchText = (value) =>
   String(value || '')
@@ -908,9 +1028,44 @@ const sedeSeleccionadaId = computed(() => {
   )
 })
 
+const sedeSeleccionadaNombre = computed(() => {
+  const carrera = carreraActual.value
+  const nameFromCarrera = carrera?.sede || carrera?.sede_nombre || carrera?.nombre_sede
+  if (nameFromCarrera) {
+    return nameFromCarrera
+  }
+
+  const nameFromUser = authStore.usuarioActual?.sede?.nombre || authStore.usuarioActual?.sede_nombre
+  if (nameFromUser) {
+    return nameFromUser
+  }
+
+  const selectedSedeId = Number(sedeSeleccionadaId.value || 0)
+  if (selectedSedeId > 0) {
+    const carreraMatch = carrerasStore.carreras.find(
+      (item) =>
+        Number(item?.sede_id || 0) === selectedSedeId ||
+        (Array.isArray(item?.sedes_ids) && item.sedes_ids.includes(selectedSedeId)),
+    )
+    const nameFromMatch =
+      carreraMatch?.sede || carreraMatch?.sede_nombre || carreraMatch?.nombre_sede
+    if (nameFromMatch) {
+      return nameFromMatch
+    }
+  }
+
+  return null
+})
+
 const planEstudiosSeleccionado = computed(
   () => sanitizePlanEstudios(carreraActual.value?.plan_estudios) || 'N',
 )
+
+const getAsignaturaSedeNombre = (asignatura = {}) =>
+  asignatura?.carrera?.sede ||
+  asignatura?.local_status?.navigation?.nombre_sede ||
+  sedeSeleccionadaNombre.value ||
+  null
 
 onMounted(async () => {
   const storedUrl = localStorage.getItem(SOURCE_URL_STORAGE_KEY)
@@ -1137,6 +1292,7 @@ const DEFAULT_LOCAL_STATUS = {
   label: 'Sin verificar',
   resumen: 'Aun no se verifico el estado local de esta asignatura.',
   tiene_contenido: false,
+  navigation: null,
   stats: {
     pac_campos: 0,
     unidades: 0,
@@ -1171,6 +1327,46 @@ const getLocalStatusColor = (status = DEFAULT_LOCAL_STATUS) => {
 const getLocalStatusTextColor = (status = DEFAULT_LOCAL_STATUS) =>
   ['grey-4', 'blue-grey-2'].includes(getLocalStatusColor(status)) ? 'grey-9' : 'white'
 
+const canOpenLocalFolder = (status = DEFAULT_LOCAL_STATUS) =>
+  status?.estado === 'restaurada' && Number(status?.navigation?.asignatura_id) > 0
+
+const getLocalStatusDocentes = (status = DEFAULT_LOCAL_STATUS) =>
+  Array.isArray(status?.navigation?.docentes) ? status.navigation.docentes : []
+
+const buildLocalFolderQuery = (status = DEFAULT_LOCAL_STATUS, docenteId = null) => {
+  const navigation = status?.navigation || {}
+  const query = {}
+
+  if (navigation.sede_id) {
+    query.sede_id = String(navigation.sede_id)
+  }
+  if (navigation.nombre_sede) {
+    query.nombre_sede = String(navigation.nombre_sede)
+  }
+
+  const targetDocenteId = docenteId || getLocalStatusDocentes(status)[0]?.docente_id || null
+
+  if (targetDocenteId) {
+    query.docente_id = String(targetDocenteId)
+  }
+
+  return query
+}
+
+const openLocalFolder = (status = DEFAULT_LOCAL_STATUS, docenteId = null) => {
+  if (!canOpenLocalFolder(status)) {
+    return
+  }
+
+  const asignaturaId = Number(status.navigation.asignatura_id)
+  const target = router.resolve({
+    path: `/documentacion/${asignaturaId}`,
+    query: buildLocalFolderQuery(status, docenteId),
+  })
+
+  window.open(target.href, '_blank', 'noopener,noreferrer')
+}
+
 const buildExportPayload = (asignatura) => {
   if (!asignatura) {
     return null
@@ -1180,8 +1376,8 @@ const buildExportPayload = (asignatura) => {
     codigo: asignatura.codigo,
     nombre: asignatura.nombre,
     sigla: asignatura.sigla || asignatura.codigo,
-    carrera_id: asignatura.carrera_id || carreraSeleccionada.value,
-    sede_id: asignatura.sede_id || sedeSeleccionadaId.value,
+    carrera_id: Number(carreraSeleccionada.value) || asignatura.carrera_id || null,
+    sede_id: Number(sedeSeleccionadaId.value) || asignatura.sede_id || null,
     plan_estudios:
       sanitizePlanEstudios(asignatura.plan_estudios) || planEstudiosSeleccionado.value || 'N',
     semestre: asignatura.semestre || null,
@@ -1204,8 +1400,8 @@ const buildExportPayload = (asignatura) => {
       materia_origen: {
         codigo: asignatura.codigo,
         nombre: asignatura.nombre,
-        carrera_id: asignatura.carrera_id || carreraSeleccionada.value,
-        sede_id: asignatura.sede_id || sedeSeleccionadaId.value,
+        carrera_id: Number(carreraSeleccionada.value) || asignatura.carrera_id || null,
+        sede_id: Number(sedeSeleccionadaId.value) || asignatura.sede_id || null,
         plan_estudios:
           sanitizePlanEstudios(asignatura.plan_estudios) || planEstudiosSeleccionado.value || 'N',
       },
@@ -1238,6 +1434,168 @@ const downloadAsignaturaJson = (asignatura) => {
     type: 'positive',
     message: `Se descargo el JSON de ${exportPayload.nombre}.`,
   })
+}
+
+const downloadAsignaturaPdf = async (asignatura) => {
+  if (!asignatura) {
+    return
+  }
+
+  const loadingKey = asignatura.restore_key || asignatura.codigo || 'asignatura'
+  pdfLoadingKey.value = loadingKey
+
+  try {
+    const response = await api.post(
+      '/restauracion/exportar-pdf-asignatura',
+      { asignatura },
+      { responseType: 'blob' },
+    )
+
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const downloadUrl = window.URL.createObjectURL(blob)
+
+    const disposition = response.headers?.['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^"]+)"?/i)
+    const fileName = match?.[1] || `programa_analitico_${asignatura.codigo || 'asignatura'}.pdf`
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+
+    $q.notify({
+      type: 'positive',
+      message: `Se descargo el PDF de ${asignatura.nombre || asignatura.codigo}.`,
+    })
+  } catch (error) {
+    console.error('Error generando PDF:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo generar el PDF. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    pdfLoadingKey.value = null
+  }
+}
+
+const downloadAsignaturaPac = async (asignatura) => {
+  if (!asignatura) {
+    return
+  }
+
+  const loadingKey = asignatura.restore_key || asignatura.codigo || 'asignatura'
+  pacLoadingKey.value = loadingKey
+
+  try {
+    const response = await api.post(
+      '/restauracion/exportar-pac-asignatura',
+      { asignatura },
+      { responseType: 'blob' },
+    )
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const downloadUrl = window.URL.createObjectURL(blob)
+
+    const disposition = response.headers?.['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^"]+)"?/i)
+    const fileName = match?.[1] || `PAC_${asignatura.codigo || 'asignatura'}.xlsx`
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+
+    $q.notify({
+      type: 'positive',
+      message: `Excel PAC generado. Completá los campos vacíos y subilo desde el modulo docente.`,
+      timeout: 6000,
+    })
+  } catch (error) {
+    console.error('Error generando PAC Excel:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo generar el Excel PAC. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    pacLoadingKey.value = null
+  }
+}
+
+const downloadAsignaturaPlanClase = async (asignatura) => {
+  if (!asignatura) {
+    return
+  }
+
+  const loadingKey = asignatura.restore_key || asignatura.codigo || 'asignatura'
+  planClaseLoadingKey.value = loadingKey
+
+  try {
+    const response = await api.post(
+      '/restauracion/exportar-plan-clase-asignatura',
+      { asignatura },
+      { responseType: 'blob' },
+    )
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const downloadUrl = window.URL.createObjectURL(blob)
+
+    const disposition = response.headers?.['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^"]+)"?/i)
+    const fileName = match?.[1] || `PlanClase_${asignatura.codigo || 'asignatura'}.xlsx`
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+
+    $q.notify({
+      type: 'positive',
+      message: `Plan de Clase generado. Cada hoja es una unidad academica.`,
+      timeout: 6000,
+    })
+  } catch (error) {
+    console.error('Error generando Plan de Clase:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo generar el Plan de Clase. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    planClaseLoadingKey.value = null
+  }
 }
 
 const abrirImportacionJson = (asignatura) => {
@@ -1303,11 +1661,13 @@ const buildImportedRestorePayload = (targetAsignatura, importedPayload) => {
   return {
     ...importedAsignatura,
     restore_key: targetAsignatura.restore_key,
+    asignatura_id:
+      targetAsignatura?.local_status?.asignatura_id || targetAsignatura?.asignatura_id || null,
     codigo: targetAsignatura.codigo,
     nombre: targetAsignatura.nombre,
     sigla: targetAsignatura.sigla || targetAsignatura.codigo,
-    carrera_id: targetAsignatura.carrera_id || carreraSeleccionada.value,
-    sede_id: targetAsignatura.sede_id || sedeSeleccionadaId.value,
+    carrera_id: Number(carreraSeleccionada.value) || targetAsignatura.carrera_id || null,
+    sede_id: Number(sedeSeleccionadaId.value) || targetAsignatura.sede_id || null,
     plan_estudios:
       sanitizePlanEstudios(targetAsignatura.plan_estudios) || planEstudiosSeleccionado.value || 'N',
     semestre: targetAsignatura.semestre || importedAsignatura.semestre || null,
@@ -1367,20 +1727,104 @@ const normalizeUnidad = (unidad = {}) => ({
   temas: Array.isArray(unidad.temas) ? unidad.temas.map(normalizeTema) : [],
 })
 
+const normalizeIdentityToken = (value) =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+
+const resolveDocenteKey = (docente = {}, fallback = '') => {
+  const numericIds = [docente.docente_id, docente.id, docente.user_id]
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0)
+
+  if (numericIds.length) {
+    return `id:${numericIds[0]}`
+  }
+
+  const email = normalizeIdentityToken(
+    docente.docente_email || docente.email || docente.user_email || docente.user?.email,
+  )
+  if (email) {
+    return `email:${email}`
+  }
+
+  const ci = normalizeIdentityToken(docente.docente_ci || docente.ci || docente.user?.ci)
+  if (ci) {
+    return `ci:${ci}`
+  }
+
+  const name = normalizeSearchText(
+    docente.docente_nombre ||
+      docente.nombre_completo ||
+      docente.nombre ||
+      `${docente.nombres || ''} ${docente.apellidos || ''}`,
+  )
+  if (name) {
+    return `name:${name}`
+  }
+
+  return fallback ? `fallback:${fallback}` : null
+}
+
+const countUniqueDocentes = (docentes = []) => {
+  const keys = new Set()
+
+  docentes.forEach((docente, index) => {
+    const key = resolveDocenteKey(docente, `docente-${index}`)
+    if (key) {
+      keys.add(key)
+    }
+  })
+
+  return keys.size
+}
+
+const countDocentesConPlanificacion = (temas = []) => {
+  const keys = new Set()
+
+  temas.forEach((tema) => {
+    const planificaciones = Array.isArray(tema?.planificaciones_personales)
+      ? tema.planificaciones_personales
+      : []
+
+    planificaciones.forEach((planificacion) => {
+      const key = resolveDocenteKey(
+        {
+          docente_id: planificacion?.docente_id,
+          user_id: planificacion?.user_id,
+          docente_email: planificacion?.docente_email,
+          email: planificacion?.email,
+          docente_ci: planificacion?.docente_ci,
+          ci: planificacion?.ci,
+          docente_nombre: planificacion?.docente_nombre,
+          nombre: planificacion?.nombre,
+          nombres: planificacion?.nombres,
+          apellidos: planificacion?.apellidos,
+        },
+        '',
+      )
+
+      if (key) {
+        keys.add(key)
+      }
+    })
+  })
+
+  return keys.size
+}
+
 const normalizeAsignatura = (asignatura = {}, index = 0) => {
   const unidades = Array.isArray(asignatura.unidades)
     ? asignatura.unidades.map(normalizeUnidad)
     : []
   const temas = unidades.flatMap((unidad) => unidad.temas)
-  const planificaciones = temas.reduce(
-    (total, tema) => total + tema.planificaciones_personales.length,
-    0,
-  )
 
   const normalized = {
     ...asignatura,
-    carrera_id: asignatura.carrera_id || carreraSeleccionada.value,
-    sede_id: asignatura.sede_id || sedeSeleccionadaId.value,
+    origen_carrera_id: asignatura.carrera_id || null,
+    origen_sede_id: asignatura.sede_id || null,
+    carrera_id: Number(carreraSeleccionada.value) || asignatura.carrera_id || null,
+    sede_id: Number(sedeSeleccionadaId.value) || asignatura.sede_id || null,
     plan_estudios:
       sanitizePlanEstudios(asignatura.plan_estudios) || planEstudiosSeleccionado.value || 'N',
     docentes: Array.isArray(asignatura.docentes) ? asignatura.docentes : [],
@@ -1399,29 +1843,84 @@ const normalizeAsignatura = (asignatura = {}, index = 0) => {
   normalized.stats = {
     unidades: unidades.length,
     temas: temas.length,
-    docentes: normalized.docentes.length,
-    planificaciones,
+    docentes: countUniqueDocentes(normalized.docentes),
+    planificaciones: countDocentesConPlanificacion(temas),
   }
   normalized.local_status = normalized.local_status || { ...DEFAULT_LOCAL_STATUS }
 
   return normalized
 }
 
+const looksLikeAsignatura = (item) => {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return false
+  }
+
+  const hasIdentity =
+    'codigo' in item ||
+    'sigla' in item ||
+    'materia_codigo' in item ||
+    'asignatura_codigo' in item ||
+    'nombre' in item ||
+    'nombre_asignatura' in item
+
+  const hasAcademicStructure =
+    Array.isArray(item.unidades) ||
+    Array.isArray(item.temas) ||
+    Array.isArray(item.docentes) ||
+    'plan_estudios' in item ||
+    'carrera_id' in item ||
+    'sede_id' in item
+
+  return hasIdentity && hasAcademicStructure
+}
+
 const extractAsignaturasFromResponse = (payload) => {
-  if (Array.isArray(payload?.data?.asignaturas)) {
-    return payload.data.asignaturas
+  const directCandidates = [
+    payload?.data?.asignaturas,
+    payload?.asignaturas,
+    payload?.data?.data?.asignaturas,
+    payload?.result?.asignaturas,
+    payload?.items,
+    payload?.data,
+    payload,
+  ]
+
+  for (const candidate of directCandidates) {
+    if (Array.isArray(candidate) && candidate.some(looksLikeAsignatura)) {
+      return candidate
+    }
   }
 
-  if (Array.isArray(payload?.asignaturas)) {
-    return payload.asignaturas
-  }
+  // Fallback: recorre todo el payload y toma el primer arreglo que "parezca" lista de asignaturas.
+  const queue = [payload]
+  const visited = new Set()
 
-  if (Array.isArray(payload?.data)) {
-    return payload.data
-  }
+  while (queue.length) {
+    const current = queue.shift()
+    if (!current || typeof current !== 'object' || visited.has(current)) {
+      continue
+    }
+    visited.add(current)
 
-  if (Array.isArray(payload)) {
-    return payload
+    if (Array.isArray(current)) {
+      if (current.some(looksLikeAsignatura)) {
+        return current
+      }
+
+      for (const entry of current) {
+        if (entry && typeof entry === 'object') {
+          queue.push(entry)
+        }
+      }
+      continue
+    }
+
+    for (const value of Object.values(current)) {
+      if (value && typeof value === 'object') {
+        queue.push(value)
+      }
+    }
   }
 
   return []
@@ -1436,9 +1935,10 @@ const hydrateLocalStatus = async (items) => {
     const response = await api.post('/restauracion/estado-asignaturas', {
       asignaturas: items.map((item) => ({
         restore_key: item.restore_key,
+        asignatura_id: item?.local_status?.asignatura_id || item?.asignatura_id || null,
         codigo: item.codigo,
-        carrera_id: item.carrera_id || carreraSeleccionada.value,
-        sede_id: item.sede_id || sedeSeleccionadaId.value,
+        carrera_id: Number(carreraSeleccionada.value) || item.carrera_id || null,
+        sede_id: Number(sedeSeleccionadaId.value) || item.sede_id || null,
         plan_estudios:
           sanitizePlanEstudios(item.plan_estudios) || planEstudiosSeleccionado.value || 'N',
       })),
@@ -1467,7 +1967,7 @@ const hydrateLocalStatus = async (items) => {
 }
 
 const fetchDesdeApi = async () => {
-  if (!apiUrl.value || !carreraSeleccionada.value) {
+  if (!apiUrl.value || !carreraSeleccionada.value || !carreraOrigenId.value) {
     return
   }
 
@@ -1475,33 +1975,27 @@ const fetchDesdeApi = async () => {
   asignaturas.value = []
 
   try {
-    const params = new URLSearchParams({
-      carrera_id: String(carreraSeleccionada.value),
+    const response = await api.post('/restauracion/extraccion-api', {
+      api_url: apiUrl.value,
       token: apiToken.value,
+      carrera_id: Number(carreraOrigenId.value),
+      sede_id: sedeSeleccionadaId.value ? Number(sedeSeleccionadaId.value) : null,
     })
 
-    if (sedeSeleccionadaId.value) {
-      params.set('sede_id', String(sedeSeleccionadaId.value))
-    }
-
-    const urlRequest = `${apiUrl.value.replace(/\/$/, '')}/api/export/documentacion-carrera?${params.toString()}`
-    const response = await fetch(urlRequest, {
-      headers: apiToken.value ? { Authorization: `Bearer ${apiToken.value}` } : {},
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-
-    const payload = await response.json()
+    const payload = response.data
     const extraidas = extractAsignaturasFromResponse(payload).map((item, index) =>
       normalizeAsignatura(item, index),
     )
 
     if (extraidas.length === 0) {
+      console.warn('RESTAURACION API: formato no reconocido en payload', payload)
+      const topLevelKeys =
+        payload && typeof payload === 'object' ? Object.keys(payload).slice(0, 8).join(', ') : ''
       $q.notify({
         type: 'warning',
-        message: 'La respuesta del origen no contiene asignaturas en un formato compatible.',
+        message: topLevelKeys
+          ? `La respuesta del origen no contiene asignaturas en formato compatible. Llaves: ${topLevelKeys}`
+          : 'La respuesta del origen no contiene asignaturas en un formato compatible.',
       })
       return
     }
@@ -1513,12 +2007,168 @@ const fetchDesdeApi = async () => {
     })
   } catch (error) {
     console.error('Error fetching API:', error)
+    const backendMessage =
+      error.response?.data?.message || error.response?.data?.error || error.message
     $q.notify({
       type: 'negative',
-      message: 'No se pudo conectar a la API externa. Verifica la URL, el token o la sede.',
+      message: `No se pudo conectar a la API externa. ${backendMessage}`,
     })
   } finally {
     loadingFetch.value = false
+  }
+}
+
+const exportarExcel = async () => {
+  if (!apiUrl.value || !carreraSeleccionada.value || !carreraOrigenId.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'Configura URL, token y carrera antes de exportar.',
+    })
+    return
+  }
+
+  loadingExport.value = true
+  try {
+    const response = await api.get('/restauracion/exportar-excel', {
+      params: {
+        api_url: apiUrl.value,
+        token: apiToken.value,
+        carrera_id: Number(carreraOrigenId.value),
+        sede_id: sedeSeleccionadaId.value ? Number(sedeSeleccionadaId.value) : null,
+        carrera_nombre: carreraActual.value?.nombre || '',
+      },
+      responseType: 'blob',
+    })
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const downloadUrl = window.URL.createObjectURL(blob)
+
+    const disposition = response.headers?.['content-disposition'] || ''
+    const match = disposition.match(/filename="?([^"]+)"?/i)
+    const fileName = match?.[1] || `restauracion_${Date.now()}.xlsx`
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
+
+    $q.notify({
+      type: 'positive',
+      message: 'Excel generado. Edita las celdas necesarias y subelo de nuevo con "Importar Excel".',
+      timeout: 5000,
+    })
+  } catch (error) {
+    console.error('Error exportando Excel:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo generar el Excel. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    loadingExport.value = false
+  }
+}
+
+const abrirImportacionExcel = () => {
+  if (excelFileInput.value) {
+    excelFileInput.value.value = null
+    excelFileInput.value.click()
+  }
+}
+
+const handleExcelImport = async (event) => {
+  const file = event.target?.files?.[0]
+  if (!file) {
+    return
+  }
+
+  const confirm = await new Promise((resolve) => {
+    $q.dialog({
+      title: 'Confirmar importacion desde Excel',
+      message: `
+        <p>Se procesara el archivo <b>${file.name}</b> y se aplicara la restauracion a
+        <b>TODAS</b> las asignaturas que contenga.</p>
+        <p>La operacion es destructiva: cada asignatura incluida sera reemplazada en su totalidad.</p>
+        <p>Las asignaturas con error se reportaran al final y <b>no</b> se aplicaran.</p>
+      `,
+      html: true,
+      cancel: { label: 'Cancelar', flat: true, color: 'grey-8' },
+      ok: { label: 'Si, importar', color: 'primary', unelevated: true },
+      persistent: true,
+    }).onOk(() => resolve(true)).onCancel(() => resolve(false)).onDismiss(() => resolve(false))
+  })
+
+  if (!confirm) {
+    if (excelFileInput.value) excelFileInput.value.value = null
+    return
+  }
+
+  loadingImport.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await api.post('/restauracion/importar-excel', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
+    const data = response.data || {}
+    const aplicadas = data.aplicadas || []
+    const errores = data.errores || []
+
+    if (errores.length > 0) {
+      const listadoErrores = errores
+        .map((e) => `&bull; ${e.codigo || 'sin codigo'}: ${e.error}`)
+        .join('<br>')
+      $q.dialog({
+        title: `Importacion parcial: ${aplicadas.length} OK, ${errores.length} con error`,
+        message: `
+          <p><b>Aplicadas correctamente:</b></p>
+          <ul>
+            ${aplicadas.map((a) => `<li>${a.codigo} (id ${a.asignatura_id})</li>`).join('')}
+          </ul>
+          <p><b>Con error:</b></p>
+          <div style="max-height: 240px; overflow:auto;">${listadoErrores}</div>
+        `,
+        html: true,
+        ok: { label: 'Cerrar', color: 'primary' },
+      })
+    } else {
+      $q.notify({
+        type: 'positive',
+        message: data.message || `Se importaron ${aplicadas.length} asignatura(s) correctamente.`,
+        timeout: 5000,
+      })
+    }
+  } catch (error) {
+    console.error('Error importando Excel:', error)
+    const backendMessage =
+      error.response?.data?.message ||
+      (error.response?.data instanceof Blob
+        ? await error.response.data.text()
+        : null) ||
+      error.message
+    $q.notify({
+      type: 'negative',
+      message: `No se pudo importar el Excel. ${backendMessage}`,
+      timeout: 6000,
+    })
+  } finally {
+    loadingImport.value = false
+    if (excelFileInput.value) {
+      excelFileInput.value.value = null
+    }
   }
 }
 
@@ -1549,6 +2199,7 @@ const handleJsonImport = async (event) => {
       title: 'Confirmar restauracion desde JSON',
       message: `
         <p>Se aplicara el contenido del archivo sobre <b>${targetAsignatura.nombre}</b>.</p>
+        ${buildContenidoExistenteWarning(targetAsignatura.local_status)}
         <p class="q-mb-none">
           Origen del archivo: <b>${restorePayload.imported_from?.nombre || 'Sin nombre'}</b>
           (${restorePayload.imported_from?.codigo || 'Sin codigo'})
@@ -1586,14 +2237,43 @@ const handleJsonImport = async (event) => {
 
 const buildRestorePayload = (asignatura) => ({
   ...asignatura,
-  carrera_id: asignatura.carrera_id || carreraSeleccionada.value,
-  sede_id: asignatura.sede_id || sedeSeleccionadaId.value,
+  asignatura_id: asignatura?.local_status?.asignatura_id || asignatura?.asignatura_id || null,
+  carrera_id: Number(carreraSeleccionada.value) || asignatura.carrera_id || null,
+  sede_id: Number(sedeSeleccionadaId.value) || asignatura.sede_id || null,
   plan_estudios:
     sanitizePlanEstudios(asignatura.plan_estudios) || planEstudiosSeleccionado.value || 'N',
 })
 
+const buildContenidoExistenteWarning = (status = DEFAULT_LOCAL_STATUS) => {
+  if (!status?.tiene_contenido) {
+    return ''
+  }
+
+  return `
+    <p class="text-weight-bold text-negative q-mb-sm">Advertencia</p>
+    <p class="text-negative">
+      La asignatura destino ya tiene contenido local.
+      Ese contenido se borrara antes de restaurar la nueva estructura.
+    </p>
+  `
+}
+
 const confirmarRestauracion = (asignatura) => {
   if (!asignatura) {
+    return
+  }
+
+  if (
+    asignatura?.local_status?.estado === 'ambigua' &&
+    !asignatura?.local_status?.asignatura_id &&
+    !asignatura?.asignatura_id
+  ) {
+    $q.notify({
+      type: 'warning',
+      message:
+        'No se puede restaurar porque la materia local es ambigua (mismo codigo en multiples registros). Filtra por plan/sede o depura duplicados locales.',
+      timeout: 6000,
+    })
     return
   }
 
@@ -1605,6 +2285,7 @@ const confirmarRestauracion = (asignatura) => {
       <br><br>
       Estado actual detectado: <b>${asignatura.local_status?.label || 'Sin verificar'}</b>.
       <br><br>
+      ${buildContenidoExistenteWarning(asignatura.local_status)}
       Se restaurara usando el plan <b>${asignatura.plan_estudios || 'N'}</b> para la carrera <b>${asignatura.carrera_id}</b>
       y la sede <b>${asignatura.sede_id || 'N/D'}</b>.
       <br><br>

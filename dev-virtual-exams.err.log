@@ -1,0 +1,541 @@
+npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "resolution-mode". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ App • ⚠️  ️️Setting port to closest one available: 9002
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'normalizarModalidadExamen' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\evaluaciones\GestionEvaluacionesPage.vue:[33m4335[39m:[33m18[39m
+
+  [0m [90m 4333 |[39m         e[33m.[39mbanco_por_grupo_tipo [33m||[39m e[33m.[39mpor_grupo_tipo [33m||[39m e[33m.[39mbanco_stats[33m?[39m[33m.[39mpor_grupo_tipo [33m||[39m {}[33m,[39m
+   [90m 4334 |[39m       banco_stats[33m:[39m normalizarBancoStatsFila(e)[33m,[39m
+  [31m[1m>[22m[39m[90m 4335 |[39m       modalidad[33m:[39m normalizarModalidadExamen(e)[33m,[39m
+   [90m      |[39m                  [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 4336 |[39m       estado[33m:[39m normalizarEstadoExamen(e[33m.[39mestado[33m,[39m e)[33m,[39m
+   [90m 4337 |[39m       sede_id[33m:[39m e[33m.[39msede_id[33m,[39m
+   [90m 4338 |[39m       carrera_id[33m:[39m e[33m.[39mcarrera_id[33m,[39m[0m
+
+[31m[ESLint] Found 1 error and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2243[39m:[33m10[39m
+
+  [0m [90m 2241 |[39m }
+   [90m 2242 |[39m
+  [31m[1m>[22m[39m[90m 2243 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2244 |[39m   [36mreturn[39m obtenerContextoCartilla2P(asignatura[33m,[39m docente)[33m?[39m[33m.[39mstats[33m?[39m[33m.[39mcon_cartilla [33m!==[39m [36mfalse[39m
+   [90m 2245 |[39m }
+   [90m 2246 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'confirmarCambioCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2252[39m:[33m16[39m
+
+  [0m [90m 2250 |[39m }
+   [90m 2251 |[39m
+  [31m[1m>[22m[39m[90m 2252 |[39m [36masync[39m [36mfunction[39m confirmarCambioCartilla2P(asignatura[33m,[39m nuevoValor[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2253 |[39m   [36mconst[39m contexto [33m=[39m obtenerContextoCartilla2P(asignatura[33m,[39m docente)
+   [90m 2254 |[39m
+   [90m 2255 |[39m   [36mif[39m ([33m![39mcontexto) {[0m
+
+[31m[ESLint] Found 2 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2253[39m:[33m10[39m
+
+  [0m [90m 2251 |[39m }
+   [90m 2252 |[39m
+  [31m[1m>[22m[39m[90m 2253 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2254 |[39m   [36mreturn[39m obtenerContextoCartilla2P(asignatura[33m,[39m docente)[33m?[39m[33m.[39mstats[33m?[39m[33m.[39mcon_cartilla [33m!==[39m [36mfalse[39m
+   [90m 2255 |[39m }
+   [90m 2256 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'confirmarCambioCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2262[39m:[33m16[39m
+
+  [0m [90m 2260 |[39m }
+   [90m 2261 |[39m
+  [31m[1m>[22m[39m[90m 2262 |[39m [36masync[39m [36mfunction[39m confirmarCambioCartilla2P(asignatura[33m,[39m nuevoValor[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2263 |[39m   [36mconst[39m contexto [33m=[39m obtenerContextoCartilla2P(asignatura[33m,[39m docente)
+   [90m 2264 |[39m
+   [90m 2265 |[39m   [36mif[39m ([33m![39mcontexto) {[0m
+
+[31m[ESLint] Found 2 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'normalizarModalidadExamen2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2243[39m:[33m16[39m
+
+  [0m [90m 2241 |[39m     estadoExamen[33m:[39m
+   [90m 2242 |[39m       rolExamen2P[33m?[39m[33m.[39mestado [33m||[39m docenteData[33m.[39mestado_examen_2p [33m||[39m docenteData[33m.[39mestado_rol_examen_2p[33m,[39m
+  [31m[1m>[22m[39m[90m 2243 |[39m     modalidad[33m:[39m normalizarModalidadExamen2P(rolExamen2P[33m,[39m stats)[33m,[39m
+   [90m      |[39m                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2244 |[39m     configGeneracion[33m:[39m rolExamen2P[33m?[39m[33m.[39mconfig_generacion [33m||[39m [36mnull[39m[33m,[39m
+   [90m 2245 |[39m     key[33m:[39m crearBancoPreguntas2PKey(asignatura[33m.[39mid[33m,[39m docenteData[33m.[39mid[33m,[39m sedeId[33m,[39m grupoTeorico)[33m,[39m
+   [90m 2246 |[39m     stats[33m,[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2257[39m:[33m10[39m
+
+  [0m [90m 2255 |[39m }
+   [90m 2256 |[39m
+  [31m[1m>[22m[39m[90m 2257 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2258 |[39m   [36mreturn[39m obtenerContextoCartilla2P(asignatura[33m,[39m docente)[33m?[39m[33m.[39mstats[33m?[39m[33m.[39mcon_cartilla [33m!==[39m [36mfalse[39m
+   [90m 2259 |[39m }
+   [90m 2260 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'confirmarCambioCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2266[39m:[33m16[39m
+
+  [0m [90m 2264 |[39m }
+   [90m 2265 |[39m
+  [31m[1m>[22m[39m[90m 2266 |[39m [36masync[39m [36mfunction[39m confirmarCambioCartilla2P(asignatura[33m,[39m nuevoValor[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2267 |[39m   [36mconst[39m contexto [33m=[39m obtenerContextoCartilla2P(asignatura[33m,[39m docente)
+   [90m 2268 |[39m
+   [90m 2269 |[39m   [36mif[39m ([33m![39mcontexto) {[0m
+
+[31m[ESLint] Found 3 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'confirmarCambioCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2296[39m:[33m16[39m
+
+  [0m [90m 2294 |[39m }
+   [90m 2295 |[39m
+  [31m[1m>[22m[39m[90m 2296 |[39m [36masync[39m [36mfunction[39m confirmarCambioCartilla2P(asignatura[33m,[39m nuevoValor[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2297 |[39m   [36mconst[39m contexto [33m=[39m obtenerContextoCartilla2P(asignatura[33m,[39m docente)
+   [90m 2298 |[39m
+   [90m 2299 |[39m   [36mif[39m ([33m![39mcontexto) {[0m
+
+[31m[ESLint] Found 2 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2317[39m:[33m25[39m
+
+  [0m [90m 2315 |[39m   }
+   [90m 2316 |[39m
+  [31m[1m>[22m[39m[90m 2317 |[39m   [36mconst[39m estadoDestino [33m=[39m nuevoValor [33m?[39m [32m'CON CARTILLA'[39m [33m:[39m [32m'SIN CARTILLA'[39m
+   [90m      |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2318 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+   [90m 2319 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor
+   [90m 2320 |[39m     [33m?[39m [32m`${mensajeBase}<br><br>¿Deseas continuar?`[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2319[39m:[33m19[39m
+
+  [0m [90m 2317 |[39m   [36mconst[39m estadoDestino [33m=[39m nuevoValor [33m?[39m [32m'CON CARTILLA'[39m [33m:[39m [32m'SIN CARTILLA'[39m
+   [90m 2318 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+  [31m[1m>[22m[39m[90m 2319 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor
+   [90m      |[39m                   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2320 |[39m     [33m?[39m [32m`${mensajeBase}<br><br>¿Deseas continuar?`[39m
+   [90m 2321 |[39m     [33m:[39m [32m`${mensajeBase}<br><br>Al confirmar, se eliminarán las preguntas del banco para ese grupo y parcial. ¿Deseas continuar?`[39m
+   [90m 2322 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2330[39m:[33m14[39m
+
+  [0m [90m 2328 |[39m     ok[33m:[39m {
+   [90m 2329 |[39m       label[33m:[39m [32m'Confirmar'[39m[33m,[39m
+  [31m[1m>[22m[39m[90m 2330 |[39m       color[33m:[39m nuevoValor [33m?[39m [32m'primary'[39m [33m:[39m [32m'negative'[39m[33m,[39m
+   [90m      |[39m              [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2331 |[39m       unelevated[33m:[39m [36mtrue[39m[33m,[39m
+   [90m 2332 |[39m       noCaps[33m:[39m [36mtrue[39m[33m,[39m
+   [90m 2333 |[39m     }[33m,[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2340[39m:[33m39[39m
+
+  [0m [90m 2338 |[39m     }[33m,[39m
+   [90m 2339 |[39m   })[33m.[39monOk(() [33m=>[39m {
+  [31m[1m>[22m[39m[90m 2340 |[39m     guardarCambioCartilla2P(contexto[33m,[39m nuevoValor)
+   [90m      |[39m                                       [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2341 |[39m   })
+   [90m 2342 |[39m }
+   [90m 2343 |[39m[0m
+
+[31m[ESLint] Found 5 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2319[39m:[33m25[39m
+
+  [0m [90m 2317 |[39m   }
+   [90m 2318 |[39m
+  [31m[1m>[22m[39m[90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m nuevoValor [33m?[39m [32m'CON CARTILLA'[39m [33m:[39m [32m'SIN CARTILLA'[39m
+   [90m      |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2320 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+   [90m 2321 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor
+   [90m 2322 |[39m     [33m?[39m [32m`${mensajeBase}<br><br>¿Deseas continuar?`[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2321[39m:[33m19[39m
+
+  [0m [90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m nuevoValor [33m?[39m [32m'CON CARTILLA'[39m [33m:[39m [32m'SIN CARTILLA'[39m
+   [90m 2320 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+  [31m[1m>[22m[39m[90m 2321 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor
+   [90m      |[39m                   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2322 |[39m     [33m?[39m [32m`${mensajeBase}<br><br>¿Deseas continuar?`[39m
+   [90m 2323 |[39m     [33m:[39m [32m`${mensajeBase}<br><br>Al confirmar, se eliminarán las preguntas del banco para ese grupo y parcial. ¿Deseas continuar?`[39m
+   [90m 2324 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2332[39m:[33m14[39m
+
+  [0m [90m 2330 |[39m     ok[33m:[39m {
+   [90m 2331 |[39m       label[33m:[39m [32m'Confirmar'[39m[33m,[39m
+  [31m[1m>[22m[39m[90m 2332 |[39m       color[33m:[39m nuevoValor [33m?[39m [32m'primary'[39m [33m:[39m [32m'negative'[39m[33m,[39m
+   [90m      |[39m              [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2333 |[39m       unelevated[33m:[39m [36mtrue[39m[33m,[39m
+   [90m 2334 |[39m       noCaps[33m:[39m [36mtrue[39m[33m,[39m
+   [90m 2335 |[39m     }[33m,[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2342[39m:[33m39[39m
+
+  [0m [90m 2340 |[39m     }[33m,[39m
+   [90m 2341 |[39m   })[33m.[39monOk(() [33m=>[39m {
+  [31m[1m>[22m[39m[90m 2342 |[39m     guardarCambioCartilla2P(contexto[33m,[39m nuevoValor)
+   [90m      |[39m                                       [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2343 |[39m   })
+   [90m 2344 |[39m }
+   [90m 2345 |[39m[0m
+
+[31m[ESLint] Found 5 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'estadoDestinoModalidad2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2319[39m:[33m25[39m
+
+  [0m [90m 2317 |[39m   }
+   [90m 2318 |[39m
+  [31m[1m>[22m[39m[90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m estadoDestinoModalidad2P(modalidadDestino)[33m.[39mtoUpperCase()
+   [90m      |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2320 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+   [90m 2321 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor
+   [90m 2322 |[39m     [33m?[39m [32m`${mensajeBase}<br><br>¿Deseas continuar?`[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2321[39m:[33m19[39m
+
+  [0m [90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m estadoDestinoModalidad2P(modalidadDestino)[33m.[39mtoUpperCase()
+   [90m 2320 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+  [31m[1m>[22m[39m[90m 2321 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor
+   [90m      |[39m                   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2322 |[39m     [33m?[39m [32m`${mensajeBase}<br><br>¿Deseas continuar?`[39m
+   [90m 2323 |[39m     [33m:[39m [32m`${mensajeBase}<br><br>Al confirmar, se eliminarán las preguntas del banco para ese grupo y parcial. ¿Deseas continuar?`[39m
+   [90m 2324 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2332[39m:[33m14[39m
+
+  [0m [90m 2330 |[39m     ok[33m:[39m {
+   [90m 2331 |[39m       label[33m:[39m [32m'Confirmar'[39m[33m,[39m
+  [31m[1m>[22m[39m[90m 2332 |[39m       color[33m:[39m nuevoValor [33m?[39m [32m'primary'[39m [33m:[39m [32m'negative'[39m[33m,[39m
+   [90m      |[39m              [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2333 |[39m       unelevated[33m:[39m [36mtrue[39m[33m,[39m
+   [90m 2334 |[39m       noCaps[33m:[39m [36mtrue[39m[33m,[39m
+   [90m 2335 |[39m     }[33m,[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2342[39m:[33m39[39m
+
+  [0m [90m 2340 |[39m     }[33m,[39m
+   [90m 2341 |[39m   })[33m.[39monOk(() [33m=>[39m {
+  [31m[1m>[22m[39m[90m 2342 |[39m     guardarCambioCartilla2P(contexto[33m,[39m nuevoValor)
+   [90m      |[39m                                       [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2343 |[39m   })
+   [90m 2344 |[39m }
+   [90m 2345 |[39m[0m
+
+[31m[ESLint] Found 5 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'estadoDestinoModalidad2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2319[39m:[33m25[39m
+
+  [0m [90m 2317 |[39m   }
+   [90m 2318 |[39m
+  [31m[1m>[22m[39m[90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m estadoDestinoModalidad2P(modalidadDestino)[33m.[39mtoUpperCase()
+   [90m      |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2320 |[39m   [36mconst[39m nuevoValor [33m=[39m modalidadDestino [33m!==[39m [33mMODALIDAD_SIN_CARTILLA[39m
+   [90m 2321 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+   [90m 2322 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor[0m
+
+[31m[ESLint] Found 2 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'estadoDestinoModalidad2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2319[39m:[33m25[39m
+
+  [0m [90m 2317 |[39m   }
+   [90m 2318 |[39m
+  [31m[1m>[22m[39m[90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m estadoDestinoModalidad2P(modalidadDestino)[33m.[39mtoUpperCase()
+   [90m      |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2320 |[39m   [36mconst[39m nuevoValor [33m=[39m modalidadDestino [33m!==[39m [33mMODALIDAD_SIN_CARTILLA[39m
+   [90m 2321 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+   [90m 2322 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'guardarCambioModalidad2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2343[39m:[33m5[39m
+
+  [0m [90m 2341 |[39m     }[33m,[39m
+   [90m 2342 |[39m   })[33m.[39monOk(() [33m=>[39m {
+  [31m[1m>[22m[39m[90m 2343 |[39m     guardarCambioModalidad2P(contexto[33m,[39m modalidadDestino)
+   [90m      |[39m     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2344 |[39m   })
+   [90m 2345 |[39m }
+   [90m 2346 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'guardarCambioCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2347[39m:[33m16[39m
+
+  [0m [90m 2345 |[39m }
+   [90m 2346 |[39m
+  [31m[1m>[22m[39m[90m 2347 |[39m [36masync[39m [36mfunction[39m guardarCambioCartilla2P(contexto[33m,[39m nuevoValor) {
+   [90m      |[39m                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2348 |[39m   guardandoCartilla2PMap[33m.[39mvalue [33m=[39m {
+   [90m 2349 |[39m     [33m...[39mguardandoCartilla2PMap[33m.[39mvalue[33m,[39m
+   [90m 2350 |[39m     [contexto[33m.[39mkey][33m:[39m [36mtrue[39m[33m,[39m[0m
+
+[31m[ESLint] Found 4 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'estadoDestinoModalidad2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2319[39m:[33m25[39m
+
+  [0m [90m 2317 |[39m   }
+   [90m 2318 |[39m
+  [31m[1m>[22m[39m[90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m estadoDestinoModalidad2P(modalidadDestino)[33m.[39mtoUpperCase()
+   [90m      |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2320 |[39m   [36mconst[39m nuevoValor [33m=[39m modalidadDestino [33m!==[39m [33mMODALIDAD_SIN_CARTILLA[39m
+   [90m 2321 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+   [90m 2322 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'modalidadDestino' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2347[39m:[33m51[39m
+
+  [0m [90m 2345 |[39m }
+   [90m 2346 |[39m
+  [31m[1m>[22m[39m[90m 2347 |[39m [36masync[39m [36mfunction[39m guardarCambioModalidad2P(contexto[33m,[39m modalidadDestino) {
+   [90m      |[39m                                                   [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2348 |[39m   guardandoCartilla2PMap[33m.[39mvalue [33m=[39m {
+   [90m 2349 |[39m     [33m...[39mguardandoCartilla2PMap[33m.[39mvalue[33m,[39m
+   [90m 2350 |[39m     [contexto[33m.[39mkey][33m:[39m [36mtrue[39m[33m,[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2360[39m:[33m21[39m
+
+  [0m [90m 2358 |[39m       grupo_teorico[33m:[39m contexto[33m.[39mgrupoTeorico[33m,[39m
+   [90m 2359 |[39m       parcial[33m:[39m [32m'2do Parcial'[39m[33m,[39m
+  [31m[1m>[22m[39m[90m 2360 |[39m       con_cartilla[33m:[39m nuevoValor[33m,[39m
+   [90m      |[39m                     [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2361 |[39m     })
+   [90m 2362 |[39m
+   [90m 2363 |[39m     [36mawait[39m cargarBancoPreguntas2P()[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'nuevoValor' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2367[39m:[33m16[39m
+
+  [0m [90m 2365 |[39m     $q[33m.[39mnotify({
+   [90m 2366 |[39m       type[33m:[39m [32m'positive'[39m[33m,[39m
+  [31m[1m>[22m[39m[90m 2367 |[39m       message[33m:[39m nuevoValor
+   [90m      |[39m                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2368 |[39m         [33m?[39m [32m`Banco 2P del grupo ${contexto.grupoTeorico} restablecido a Con Cartilla.`[39m
+   [90m 2369 |[39m         [33m:[39m [32m`Banco 2P del grupo ${contexto.grupoTeorico} cambiado a Sin Cartilla.`[39m[33m,[39m
+   [90m 2370 |[39m       icon[33m:[39m [32m'check_circle'[39m[33m,[39m[0m
+
+[31m[ESLint] Found 5 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'estadoDestinoModalidad2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2319[39m:[33m25[39m
+
+  [0m [90m 2317 |[39m   }
+   [90m 2318 |[39m
+  [31m[1m>[22m[39m[90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m estadoDestinoModalidad2P(modalidadDestino)[33m.[39mtoUpperCase()
+   [90m      |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2320 |[39m   [36mconst[39m nuevoValor [33m=[39m modalidadDestino [33m!==[39m [33mMODALIDAD_SIN_CARTILLA[39m
+   [90m 2321 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+   [90m 2322 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor[0m
+
+[31m[ESLint] Found 2 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'estadoDestinoModalidad2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2319[39m:[33m25[39m
+
+  [0m [90m 2317 |[39m   }
+   [90m 2318 |[39m
+  [31m[1m>[22m[39m[90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m estadoDestinoModalidad2P(modalidadDestino)[33m.[39mtoUpperCase()
+   [90m      |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2320 |[39m   [36mconst[39m nuevoValor [33m=[39m modalidadDestino [33m!==[39m [33mMODALIDAD_SIN_CARTILLA[39m
+   [90m 2321 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+   [90m 2322 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor[0m
+
+[31m[ESLint] Found 2 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'estadoDestinoModalidad2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2319[39m:[33m25[39m
+
+  [0m [90m 2317 |[39m   }
+   [90m 2318 |[39m
+  [31m[1m>[22m[39m[90m 2319 |[39m   [36mconst[39m estadoDestino [33m=[39m estadoDestinoModalidad2P(modalidadDestino)[33m.[39mtoUpperCase()
+   [90m      |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2320 |[39m   [36mconst[39m nuevoValor [33m=[39m modalidadDestino [33m!==[39m [33mMODALIDAD_SIN_CARTILLA[39m
+   [90m 2321 |[39m   [36mconst[39m mensajeBase [33m=[39m [32m`Se cambiará el estado del banco 2P del grupo <strong>${contexto.grupoTeorico}</strong> a <strong>${estadoDestino}</strong>.`[39m
+   [90m 2322 |[39m   [36mconst[39m mensaje [33m=[39m nuevoValor[0m
+
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'estadoDestinoModalidad2P' is not defined. (no-undef)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2383[39m:[33m78[39m
+
+  [0m [90m 2381 |[39m     $q[33m.[39mnotify({
+   [90m 2382 |[39m       type[33m:[39m [32m'positive'[39m[33m,[39m
+  [31m[1m>[22m[39m[90m 2383 |[39m       message[33m:[39m [32m`Modalidad 2P del grupo ${contexto.grupoTeorico} cambiada a ${estadoDestinoModalidad2P(modalidadDestino)}.`[39m[33m,[39m
+   [90m      |[39m                                                                              [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2384 |[39m       icon[33m:[39m [32m'check_circle'[39m[33m,[39m
+   [90m 2385 |[39m     })
+   [90m 2386 |[39m   } [36mcatch[39m (error) {[0m
+
+[31m[ESLint] Found 3 errors and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[31m[ESLint] Found 1 error and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[31m[ESLint] Found 1 error and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'examenConCartilla2P' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\director\AsignaturasDirectorPage.vue:[33m2287[39m:[33m10[39m
+
+  [0m [90m 2285 |[39m }
+   [90m 2286 |[39m
+  [31m[1m>[22m[39m[90m 2287 |[39m [36mfunction[39m examenConCartilla2P(asignatura[33m,[39m docente [33m=[39m [36mnull[39m) {
+   [90m      |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 2288 |[39m   [36mreturn[39m modalidadExamen2P(asignatura[33m,[39m docente) [33m===[39m [33mMODALIDAD_CON_CARTILLA[39m
+   [90m 2289 |[39m }
+   [90m 2290 |[39m[0m
+
+[31m[ESLint] Found 1 error and 0 warning[39m
+[1m[30m[101m ERROR(ESLint) [49m[39m[22m 'abrirNomina' is defined but never used. (no-unused-vars)
+[1m[30m[106m FILE [49m[39m[22m C:\laragon\www\sidopa\Academico\src\pages\evaluaciones\VirtualExamsPage.vue:[33m725[39m:[33m10[39m
+
+  [0m [90m 723 |[39m }
+   [90m 724 |[39m
+  [31m[1m>[22m[39m[90m 725 |[39m [36mfunction[39m abrirNomina(row) {
+   [90m     |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 726 |[39m   sesionActual[33m.[39mvalue [33m=[39m row
+   [90m 727 |[39m   nominaTexto[33m.[39mvalue [33m=[39m [32m''[39m
+   [90m 728 |[39m   dialogNomina[33m.[39mvalue [33m=[39m [36mtrue[39m[0m
+
+[31m[ESLint] Found 1 error and 0 warning[39m

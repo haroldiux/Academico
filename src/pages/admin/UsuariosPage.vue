@@ -204,6 +204,31 @@
           </q-td>
         </template>
 
+        <!-- Sede Column -->
+        <template v-slot:body-cell-sede="props">
+          <q-td :props="props">
+            <q-select
+              v-if="getSedesUsuario(props.row).length > 1"
+              :model-value="props.row.sedeId"
+              :options="getOpcionesSedesUsuario(props.row)"
+              dense
+              outlined
+              emit-value
+              map-options
+              class="sede-select-table"
+              @update:model-value="actualizarSedeUsuario(props.row, $event)"
+            >
+              <template v-slot:prepend>
+                <q-icon name="apartment" color="primary" size="18px" />
+              </template>
+            </q-select>
+            <span v-else-if="props.row.sedeNombre" class="text-body2">
+              {{ props.row.sedeNombre }}
+            </span>
+            <span v-else class="text-caption" style="color: var(--text-secondary)">N/A</span>
+          </q-td>
+        </template>
+
         <!-- Estado Column -->
         <template v-slot:body-cell-estado="props">
           <q-td :props="props">
@@ -461,16 +486,24 @@
                 <!-- Sede Selector (Condicional o siempre visible) -->
                 <div class="col-12 col-md-6 animate-fade" v-if="requiereSede">
                   <q-select
-                    v-model="formUsuario.sedeId"
+                    :model-value="requiereMultiplesSedes ? formUsuario.sedeIds : formUsuario.sedeId"
                     label="Sede Académica"
                     outlined
                     dense
-                    :options="opcionesSedes"
+                    :options="opcionesSedesForm"
                     emit-value
                     map-options
                     clearable
-                    :rules="[(val) => !requiereSede || !!val || 'La Sede es requerida']"
+                    :multiple="requiereMultiplesSedes"
+                    :use-chips="requiereMultiplesSedes"
+                    :rules="[
+                      (val) =>
+                        !requiereSede ||
+                        (requiereMultiplesSedes ? val && val.length > 0 : !!val) ||
+                        'La Sede es requerida',
+                    ]"
                     class="input-rounded bg-white"
+                    @update:model-value="actualizarSedesForm"
                   >
                     <template v-slot:prepend>
                       <q-icon name="apartment" color="indigo" />
@@ -776,6 +809,7 @@ const formUsuarioInicial = {
   estado: 'activo',
   carrera: [],
   sedeId: null,
+  sedeIds: [],
 }
 
 const formUsuario = ref({ ...formUsuarioInicial })
@@ -820,6 +854,18 @@ const opcionesSedes = computed(() => {
     label: s.nombre,
     value: s.id,
   }))
+})
+
+const opcionesSedesForm = computed(() => {
+  const sedesUsuario = getSedesUsuario(usuarioSeleccionado.value)
+  if (editando.value && sedesUsuario.length > 1) {
+    return sedesUsuario.map((sede) => ({
+      label: sede.nombre,
+      value: sede.id,
+    }))
+  }
+
+  return opcionesSedes.value
 })
 
 // Opciones base de carreras (reactivas al store y sede seleccionada)
@@ -868,17 +914,27 @@ const opcionesRolesForm = computed(() => {
   }))
 })
 
+const rolSeleccionado = computed(() => rolesStore.getRolById(formUsuario.value.rolId))
+const rolesConMultiplesSedes = ['PLATAFORMA', 'VISUALIZADOR_EVALUACIONES_SEDE']
+const requiereMultiplesSedes = computed(() =>
+  rolesConMultiplesSedes.includes(rolSeleccionado.value?.codigo),
+)
+
 const requiereCarrera = computed(() => {
   const rolesConCarrera = ['DIRECTOR_CARRERA', 'DOCENTE']
-  const rol = rolesStore.getRolById(formUsuario.value.rolId)
-  return rol && rolesConCarrera.includes(rol.codigo)
+  return rolSeleccionado.value && rolesConCarrera.includes(rolSeleccionado.value.codigo)
 })
 
 // Verificar si requiere sede (casi todos menos Admin Global tal vez, pero asumiremos todos para director)
 const requiereSede = computed(() => {
-  const rol = rolesStore.getRolById(formUsuario.value.rolId)
-  // Vicerrectorado Nacional tiene acceso global, no requiere sede específica
-  return rol && rol.codigo !== 'VICERRECTORADO_NACIONAL'
+  const rol = rolSeleccionado.value
+  // Vicerrectorado Nacional y Responsable de Evaluaciones tienen acceso global, no requieren sede específica
+  const rolesGlobalesSinSede = [
+    'VICERRECTORADO_NACIONAL',
+    'RESPONSABLE_EVALUACIONES',
+    'VISUALIZADOR_EVALUACIONES_GLOBAL',
+  ]
+  return rol && !rolesGlobalesSinSede.includes(rol.codigo)
 })
 
 const usuariosFiltrados = computed(() => {
@@ -947,6 +1003,69 @@ function limpiarFiltros() {
   filtros.value = { busqueda: '', rol: null, estado: null }
 }
 
+function getSedesUsuario(usuario) {
+  if (!usuario) return []
+
+  if (Array.isArray(usuario.sedesAsignadas) && usuario.sedesAsignadas.length) {
+    return usuario.sedesAsignadas
+  }
+
+  if (Array.isArray(usuario.sedes_asignadas) && usuario.sedes_asignadas.length) {
+    return usuario.sedes_asignadas
+      .map((sede) => ({
+        id: Number(sede.id),
+        nombre: sede.nombre,
+      }))
+      .filter((sede) => sede.id)
+  }
+
+  return usuario.sedeId || usuario.sedeNombre
+    ? [{ id: Number(usuario.sedeId), nombre: usuario.sedeNombre }]
+    : []
+}
+
+function getOpcionesSedesUsuario(usuario) {
+  return getSedesUsuario(usuario).map((sede) => ({
+    label: sede.nombre,
+    value: sede.id,
+  }))
+}
+
+async function actualizarSedeUsuario(usuario, sedeId) {
+  const sedeAnterior = usuario.sedeId
+  const ok = await usuariosStore.updateUsuario(usuario.id, { sedeId })
+
+  if (ok) {
+    $q.notify({
+      type: 'positive',
+      message: 'Sede del usuario actualizada',
+      icon: 'check_circle',
+      position: 'top',
+    })
+    return
+  }
+
+  usuario.sedeId = sedeAnterior
+  $q.notify({
+    type: 'negative',
+    message: 'No se pudo actualizar la sede del usuario',
+    icon: 'error',
+    position: 'top',
+  })
+}
+
+function actualizarSedesForm(value) {
+  if (requiereMultiplesSedes.value) {
+    const sedeIds = Array.isArray(value) ? value : value ? [value] : []
+    formUsuario.value.sedeIds = sedeIds
+    formUsuario.value.sedeId = sedeIds[0] || null
+    return
+  }
+
+  formUsuario.value.sedeId = value || null
+  formUsuario.value.sedeIds = value ? [value] : []
+}
+
 function abrirDialogNuevo() {
   editando.value = false
   formUsuario.value = { ...formUsuarioInicial }
@@ -960,6 +1079,7 @@ function editarUsuario(usuario) {
 
   // Usar los IDs ya procesados por el store
   const carrerasVal = usuario.carreraIds || []
+  const sedesUsuario = getSedesUsuario(usuario)
 
   formUsuario.value = {
     nombre: usuario.nombre,
@@ -971,7 +1091,8 @@ function editarUsuario(usuario) {
     rolNombre: usuario.rolNombre,
     estado: usuario.estado,
     carrera: carrerasVal,
-    sedeId: usuario.sedeId,
+    sedeId: usuario.sedeId || sedesUsuario[0]?.id || null,
+    sedeIds: sedesUsuario.map((sede) => sede.id),
   }
   showDialogUsuario.value = true
   actualizarOpcionesCarreras()
@@ -999,9 +1120,15 @@ function onRolChange(rolId) {
   if (rol) {
     formUsuario.value.rolNombre = rol.nombre
   }
+  if (rolesConMultiplesSedes.includes(rol?.codigo)) {
+    formUsuario.value.sedeIds = formUsuario.value.sedeId ? [formUsuario.value.sedeId] : []
+  } else {
+    formUsuario.value.sedeId = formUsuario.value.sedeIds?.[0] || formUsuario.value.sedeId || null
+    formUsuario.value.sedeIds = formUsuario.value.sedeId ? [formUsuario.value.sedeId] : []
+  }
 }
 
-function guardarUsuario() {
+async function guardarUsuario() {
   if (
     !formUsuario.value.nombre ||
     !formUsuario.value.apellido ||
@@ -1029,34 +1156,55 @@ function guardarUsuario() {
     return
   }
 
-  if (requiereSede.value && !formUsuario.value.sedeId) {
+  if (
+    requiereSede.value &&
+    (requiereMultiplesSedes.value ? !formUsuario.value.sedeIds?.length : !formUsuario.value.sedeId)
+  ) {
     $q.notify({ type: 'warning', message: 'Seleccione la Sede', icon: 'warning' })
     return
   }
 
   const payload = { ...formUsuario.value }
-  if (!requiereSede.value) payload.sedeId = null
+  if (requiereMultiplesSedes.value) {
+    payload.sedeId = payload.sedeIds?.[0] || null
+  } else {
+    payload.sedeIds = payload.sedeId ? [payload.sedeId] : []
+  }
+  if (!requiereSede.value) {
+    payload.sedeId = null
+    payload.sedeIds = []
+  }
   if (!requiereCarrera.value) payload.carrera = []
 
-  if (editando.value && usuarioSeleccionado.value) {
-    usuariosStore.updateUsuario(usuarioSeleccionado.value.id, payload)
+  try {
+    if (editando.value && usuarioSeleccionado.value) {
+      const ok = await usuariosStore.updateUsuario(usuarioSeleccionado.value.id, payload)
+      if (!ok) throw new Error('No se pudo actualizar el usuario')
+      $q.notify({
+        type: 'positive',
+        message: 'Usuario actualizado exitosamente',
+        icon: 'check_circle',
+        position: 'top',
+      })
+    } else {
+      await usuariosStore.addUsuario(payload)
+      $q.notify({
+        type: 'positive',
+        message: 'Usuario creado exitosamente',
+        icon: 'check_circle',
+        position: 'top',
+      })
+    }
+
+    cerrarDialog()
+  } catch (error) {
     $q.notify({
-      type: 'positive',
-      message: 'Usuario actualizado exitosamente',
-      icon: 'check_circle',
-      position: 'top',
-    })
-  } else {
-    usuariosStore.addUsuario(payload)
-    $q.notify({
-      type: 'positive',
-      message: 'Usuario creado exitosamente',
-      icon: 'check_circle',
+      type: 'negative',
+      message: error.response?.data?.message || error.message || 'No se pudo guardar el usuario',
+      icon: 'error',
       position: 'top',
     })
   }
-
-  cerrarDialog()
 }
 
 function confirmarResetPassword(usuario) {
@@ -1234,6 +1382,11 @@ function eliminarUsuario() {
 .table-main :deep(td) {
   color: var(--text-primary) !important;
   border-bottom: 1px solid var(--border-color) !important;
+}
+
+.sede-select-table {
+  min-width: 180px;
+  max-width: 240px;
 }
 
 /* Dialog */

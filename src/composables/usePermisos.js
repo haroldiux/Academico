@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+﻿import { computed } from 'vue'
 import { useAuthStore, ROLES, PERMISOS_ROL } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { useCarrerasStore } from 'src/stores/carreras'
@@ -41,6 +41,16 @@ export function usePermisos() {
   const esDocente = computed(() => rol.value === ROLES.DOCENTE)
   const esEvaluaciones = computed(() => rol.value === ROLES.EVALUACIONES)
   const esResponsableEvaluaciones = computed(() => rol.value === ROLES.RESPONSABLE_EVALUACIONES)
+  const esVisualizadorEvaluacionesGlobal = computed(
+    () => rol.value === ROLES.VISUALIZADOR_EVALUACIONES_GLOBAL,
+  )
+  const esVisualizadorEvaluacionesSede = computed(
+    () => rol.value === ROLES.VISUALIZADOR_EVALUACIONES_SEDE,
+  )
+  const esVisualizadorEvaluaciones = computed(
+    () => esVisualizadorEvaluacionesGlobal.value || esVisualizadorEvaluacionesSede.value,
+  )
+  const esPlataforma = computed(() => rol.value === ROLES.PLATAFORMA)
 
   // Niveles de acceso
   const tieneAccesoGlobal = computed(() => alcance.value === 'global')
@@ -167,6 +177,9 @@ export function usePermisos() {
       [ROLES.DOCENTE]: '/docente/dashboard',
       [ROLES.EVALUACIONES]: '/evaluaciones/dashboard',
       [ROLES.RESPONSABLE_EVALUACIONES]: '/evaluaciones/dashboard',
+      [ROLES.VISUALIZADOR_EVALUACIONES_GLOBAL]: '/admin/evaluaciones',
+      [ROLES.VISUALIZADOR_EVALUACIONES_SEDE]: '/admin/evaluaciones',
+      [ROLES.PLATAFORMA]: '/director/asignaturas',
     }
     return dashboards[rol.value] || '/'
   }
@@ -178,8 +191,11 @@ export function usePermisos() {
     const itemsBase = [{ label: 'Dashboard', icon: 'dashboard', to: getDashboardRoute() }]
 
     // Items según rol
+    if (esPlataforma.value) {
+      return [{ label: 'Plan de Estudios', icon: 'layers', to: '/director/asignaturas' }]
+    }
+
     if (esDocente.value) {
-      // Docentes: solo Mis Asignaturas (web y app nativa)
       return [{ label: 'Mis Asignaturas', icon: 'menu_book', to: '/documentacion' }]
     }
 
@@ -196,6 +212,12 @@ export function usePermisos() {
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        {
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
+        },
         { label: 'Información Carrera', icon: 'business', to: '/director/contexto' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
       ]
@@ -210,13 +232,13 @@ export function usePermisos() {
         // { label: 'Materias Comunes', icon: 'merge_type', to: '/director/materias-comunes' },
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
-        {
-          label: 'Monitoreo de Carreras',
-          icon: 'monitoring',
-          to: '/vicerrector/monitoreo-carreras',
-        },
-        { label: 'Mallas Curriculares', icon: 'account_tree', to: '/director/mallas-curriculares' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
+        { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        {
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
+        },
       ]
       // Solo Dirección Académica ve el panel de estado por carrera
       if (esDireccionAcademica.value) {
@@ -234,6 +256,10 @@ export function usePermisos() {
       return items
     }
 
+    if (esVisualizadorEvaluaciones.value) {
+      return [{ label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' }]
+    }
+
     if (esEvaluaciones.value || esResponsableEvaluaciones.value) {
       const items = [
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
@@ -243,6 +269,11 @@ export function usePermisos() {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
+        })
+        items.push({
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
         })
       }
       return items
@@ -258,22 +289,17 @@ export function usePermisos() {
         { label: 'Docentes', icon: 'people', to: '/director/docentes' },
         { label: 'Centro de Reportes', icon: 'assessment', to: '/director/reportes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
+        { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
-        {
-          label: 'Rol Exámenes por Carrera',
-          icon: 'fact_check',
-          to: '/vicerrector/rol-examenes-nacional',
-        },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
         },
-        { label: 'Reportes Nacionales', icon: 'analytics', to: '/vicerrector/reportes' },
         {
-          label: 'Monitoreo de Carreras',
-          icon: 'monitoring',
-          to: '/vicerrector/monitoreo-carreras',
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
         },
       ]
     }
@@ -287,14 +313,25 @@ export function usePermisos() {
         { label: 'Carreras', icon: 'school', to: '/admin/carreras' },
         { label: 'Asignaturas', icon: 'menu_book', to: '/admin/asignaturas' },
         { label: 'Plan de Estudios', icon: 'layers', to: '/director/asignaturas' },
+        {
+          label: 'Restaurar Programas',
+          icon: 'cloud_download',
+          to: '/director/restaurar-programas',
+        },
         { label: 'Grupos', icon: 'groups', to: '/admin/grupos' },
         { label: 'Docentes', icon: 'person', to: '/admin/docentes' },
         { label: 'Mallas Curriculares', icon: 'account_tree', to: '/admin/mallas-curriculares' },
         { label: 'Gestión de Evaluaciones', icon: 'assignment', to: '/admin/evaluaciones' },
+        { label: 'Verificador de Patrones', icon: 'fact_check', to: '/admin/verificador-patrones' },
         {
           label: 'Adm. Evaluaciones',
           icon: 'manage_accounts',
           to: '/admin/administracion-evaluaciones',
+        },
+        {
+          label: 'Reporte Evaluaciones',
+          icon: 'query_stats',
+          to: '/admin/reporte-evaluaciones',
         },
         { label: 'Rol Exámenes (Eval)', icon: 'fact_check', to: '/evaluaciones/rol-examenes' },
         { label: 'Rol de Exámenes', icon: 'event_note', to: '/director/rol-examenes' },
@@ -308,6 +345,11 @@ export function usePermisos() {
           icon: 'settings_backup_restore',
           to: '/admin/recuperacion-manual',
         },
+        {
+          label: 'Banco por Plan',
+          icon: 'rule_folder',
+          to: '/admin/auditoria-banco-plan',
+        },
       ]
       // Opciones adicionales solo para SUPER_ADMIN
       if (esSuperAdmin.value) {
@@ -315,6 +357,11 @@ export function usePermisos() {
           label: 'Gestión Académica',
           icon: 'grid_view',
           to: '/admin/gestion-academica',
+        })
+        items.push({
+          label: 'Recuperación Bancos',
+          icon: 'healing',
+          to: '/admin/restauracion-bancos',
         })
         items.push({
           label: 'Sincronización',
@@ -370,6 +417,11 @@ export function usePermisos() {
     esDirectorCarrera,
     esDocente,
     esEvaluaciones,
+    esResponsableEvaluaciones,
+    esVisualizadorEvaluacionesGlobal,
+    esVisualizadorEvaluacionesSede,
+    esVisualizadorEvaluaciones,
+    esPlataforma,
 
     // Niveles de acceso
     tieneAccesoGlobal,

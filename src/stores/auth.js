@@ -13,6 +13,9 @@ export const ROLES = {
   DOCENTE: 'DOCENTE',
   EVALUACIONES: 'EVALUACIONES',
   RESPONSABLE_EVALUACIONES: 'RESPONSABLE_EVALUACIONES',
+  VISUALIZADOR_EVALUACIONES_GLOBAL: 'VISUALIZADOR_EVALUACIONES_GLOBAL',
+  VISUALIZADOR_EVALUACIONES_SEDE: 'VISUALIZADOR_EVALUACIONES_SEDE',
+  PLATAFORMA: 'PLATAFORMA',
 }
 
 // Mapeo de nombres de rol de BD a constantes del frontend
@@ -28,6 +31,13 @@ const ROLE_NAME_MAP = {
   DOCENTE: ROLES.DOCENTE,
   EVALUACIONES: ROLES.EVALUACIONES,
   RESPONSABLE_EVALUACIONES: ROLES.RESPONSABLE_EVALUACIONES,
+  VISUALIZADOR_EVALUACIONES_GLOBAL: ROLES.VISUALIZADOR_EVALUACIONES_GLOBAL,
+  VISUALIZADOR_EVALUACIONES_SEDE: ROLES.VISUALIZADOR_EVALUACIONES_SEDE,
+  PLATAFORMA: ROLES.PLATAFORMA,
+  'RESPONSABLE DE EVALUACIONES': ROLES.RESPONSABLE_EVALUACIONES,
+  'RESPONSABLE EVALUACIONES': ROLES.RESPONSABLE_EVALUACIONES,
+  'VISUALIZADOR DE EVALUACIONES GLOBAL': ROLES.VISUALIZADOR_EVALUACIONES_GLOBAL,
+  'VISUALIZADOR DE EVALUACIONES POR SEDE': ROLES.VISUALIZADOR_EVALUACIONES_SEDE,
   // Variaciones de texto
   'DIRECCIÓN ACADÉMICA': ROLES.DIRECCION_ACADEMICA,
   'DIRECCION ACADEMICA': ROLES.DIRECCION_ACADEMICA,
@@ -39,6 +49,51 @@ export function normalizeRoleName(roleName) {
   if (!roleName) return ROLES.DOCENTE
   const normalized = ROLE_NAME_MAP[roleName.toUpperCase().trim()]
   return normalized || ROLES.DOCENTE
+}
+
+function normalizeCampusAssignments(user) {
+  const asignados = Array.isArray(user.campus_asignados) ? user.campus_asignados : []
+  if (asignados.length) return asignados
+  return user.campus_id ? [{ ...user.campus, id: user.campus_id }] : []
+}
+
+function normalizeSedeAssignments(user, campusAsignados = []) {
+  const sedes = Array.isArray(user.sedes_asignadas) ? user.sedes_asignadas : []
+  const unique = new Map()
+
+  sedes.forEach((sede) => {
+    const id = Number(sede.id || sede.value)
+    if (id) unique.set(id, { id, nombre: sede.nombre || sede.label || `Sede ${id}` })
+  })
+
+  campusAsignados.forEach((campus) => {
+    const id = Number(campus.sede_id || campus.sede?.id)
+    if (!id || unique.has(id)) return
+    unique.set(id, {
+      id,
+      nombre:
+        typeof campus.sede === 'string'
+          ? campus.sede
+          : campus.sede?.nombre || campus.sede_nombre || `Sede ${id}`,
+    })
+  })
+
+  const sedeDirectaId = Number(
+    user.director?.sede_id ||
+      user.director?.sede?.id ||
+      user.docente?.sede_id ||
+      user.docente?.sede?.id ||
+      user.sede_id ||
+      user.sede?.id,
+  )
+  if (sedeDirectaId && !unique.has(sedeDirectaId)) {
+    unique.set(sedeDirectaId, {
+      id: sedeDirectaId,
+      nombre: user.docente?.sede?.nombre || user.sede?.nombre || `Sede ${sedeDirectaId}`,
+    })
+  }
+
+  return [...unique.values()]
 }
 
 // Permisos por rol
@@ -106,6 +161,27 @@ export const PERMISOS_ROL = {
     dashboard: 'EvaluacionesDashboard',
     descripcion: 'Gestión nacional de evaluaciones y administración',
   },
+  [ROLES.VISUALIZADOR_EVALUACIONES_GLOBAL]: {
+    nivel: 42,
+    puedeEditar: false,
+    alcance: 'global',
+    dashboard: 'EvaluacionesDashboard',
+    descripcion: 'Consulta global de evaluaciones sin documentos ni modificaciones',
+  },
+  [ROLES.VISUALIZADOR_EVALUACIONES_SEDE]: {
+    nivel: 41,
+    puedeEditar: false,
+    alcance: 'sede',
+    dashboard: 'EvaluacionesDashboard',
+    descripcion: 'Consulta de evaluaciones por sedes asignadas sin documentos ni modificaciones',
+  },
+  [ROLES.PLATAFORMA]: {
+    nivel: 35,
+    puedeEditar: false,
+    alcance: 'sede',
+    dashboard: 'PlanEstudiosDashboard',
+    descripcion: 'Acceso operativo al plan de estudios',
+  },
 }
 
 export const useAuthStore = defineStore(
@@ -149,6 +225,20 @@ export const useAuthStore = defineStore(
         // Normalizar rol: BD puede enviar 'VICERRECTORADO', frontend usa 'VICERRECTOR_NACIONAL'
         const rolRaw = user.rol?.codigo || user.rol?.nombre || 'DOCENTE'
         const rolNombre = normalizeRoleName(rolRaw)
+        const campusAsignados = normalizeCampusAssignments(user)
+        const campusIds = campusAsignados.map((campus) => campus.id).filter(Boolean)
+        const sedesAsignadas = normalizeSedeAssignments(user, campusAsignados)
+        const sedeIds = sedesAsignadas.map((sede) => sede.id).filter(Boolean)
+        const sedePrincipalId =
+          user.director?.sede_id ||
+          user.director?.sede?.id ||
+          user.docente?.sede_id ||
+          user.docente?.sede?.id ||
+          user.sede_id ||
+          user.campus?.sede_id ||
+          user.campus?.sede?.id ||
+          sedeIds[0] ||
+          null
 
         usuarioActual.value = {
           id: user.id,
@@ -156,15 +246,12 @@ export const useAuthStore = defineStore(
           email: user.email,
           ci: user.ci,
           rol: rolNombre,
-          campus_id: user.campus_id || null,
-          // Fix: prioritize docente.sede_id, then user.sede_id, then campus.sede_id
-          sede_id:
-            user.docente?.sede_id ||
-            user.docente?.sede?.id ||
-            user.sede_id ||
-            user.campus?.sede_id ||
-            user.campus?.sede?.id ||
-            null,
+          campus_id: user.campus_id || campusIds[0] || null,
+          campus_ids: campusIds,
+          campus_asignados: campusAsignados,
+          sede_id: sedePrincipalId,
+          sede_ids: sedeIds,
+          sedes_asignadas: sedesAsignadas,
           // Persist full sede object for UI use if available
           docente: {
             ...user.docente,
@@ -173,7 +260,7 @@ export const useAuthStore = defineStore(
           carrera_id: user.director?.carrera_id || user.carrera_id || null,
           avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
           materias_asignadas: (() => {
-            // Group grupos by asignatura_id to avoid duplicate cards
+            // Group grupos by asignatura_id + sede_id to show separate cards per sede
             const gruposRaw = user.docente?.grupos || []
             const grouped = {}
 
@@ -181,6 +268,10 @@ export const useAuthStore = defineStore(
               const asig = g.asignatura || {}
               const asigId = asig.id || g.asignatura_id
               if (!asigId) continue
+
+              // Clave compuesta: misma asignatura en sedes distintas → entradas separadas
+              const sedeId = g.sede_id || null
+              const groupKey = `${asigId}_${sedeId ?? 'null'}`
 
               // Format this group's schedule
               const horariosFmt =
@@ -191,9 +282,10 @@ export const useAuthStore = defineStore(
                   )
                   .join(', ') || ''
 
-              if (!grouped[asigId]) {
-                grouped[asigId] = {
+              if (!grouped[groupKey]) {
+                grouped[groupKey] = {
                   id: asigId,
+                  sede_id: sedeId,
                   nombre: asig.nombre || 'Desconocida',
                   codigo: asig.codigo || '---',
                   semestre: asig.semestre || g.semestre,
@@ -204,13 +296,13 @@ export const useAuthStore = defineStore(
                     pendientes: 0,
                   },
                   carreras: asig.carreras?.map((c) => c.nombre) || [],
-                  grupos: [], // All groups for this subject
+                  grupos: [], // All groups for this subject+sede
                   pivot: {}, // Legacy: first group's data
                 }
               }
 
               // Add this group to the list
-              grouped[asigId].grupos.push({
+              grouped[groupKey].grupos.push({
                 id: g.id,
                 nombre: g.nombre,
                 tipo: g.tipo,
@@ -222,8 +314,8 @@ export const useAuthStore = defineStore(
               })
 
               // Set pivot to first group's data (legacy compatibility)
-              if (!grouped[asigId].pivot.grupo) {
-                grouped[asigId].pivot = {
+              if (!grouped[groupKey].pivot.grupo) {
+                grouped[groupKey].pivot = {
                   grupo: g.nombre,
                   aula: g.aula_id,
                   horario: horariosFmt || 'Por definir',
@@ -253,6 +345,7 @@ export const useAuthStore = defineStore(
           director: user.director
             ? {
                 ...user.director,
+                sede: user.director.sede,
                 carrera: user.director.carrera,
                 carreras: user.director.carreras, // If multiple
               }
@@ -363,6 +456,20 @@ export const useAuthStore = defineStore(
         // Re-utilizar lógica de normalización de login
         const rolRaw = user.rol?.codigo || user.rol?.nombre || 'DOCENTE'
         const rolNombre = normalizeRoleName(rolRaw)
+        const campusAsignados = normalizeCampusAssignments(user)
+        const campusIds = campusAsignados.map((campus) => campus.id).filter(Boolean)
+        const sedesAsignadas = normalizeSedeAssignments(user, campusAsignados)
+        const sedeIds = sedesAsignadas.map((sede) => sede.id).filter(Boolean)
+        const sedePrincipalId =
+          user.director?.sede_id ||
+          user.director?.sede?.id ||
+          user.docente?.sede_id ||
+          user.docente?.sede?.id ||
+          user.sede_id ||
+          user.campus?.sede_id ||
+          user.campus?.sede?.id ||
+          sedeIds[0] ||
+          null
 
         usuarioActual.value = {
           ...usuarioActual.value,
@@ -371,14 +478,12 @@ export const useAuthStore = defineStore(
           email: user.email,
           ci: user.ci,
           rol: rolNombre,
-          campus_id: user.campus_id || null,
-          sede_id:
-            user.docente?.sede_id ||
-            user.docente?.sede?.id ||
-            user.sede_id ||
-            user.campus?.sede_id ||
-            user.campus?.sede?.id ||
-            null,
+          campus_id: user.campus_id || campusIds[0] || null,
+          campus_ids: campusIds,
+          campus_asignados: campusAsignados,
+          sede_id: sedePrincipalId,
+          sede_ids: sedeIds,
+          sedes_asignadas: sedesAsignadas,
           carrera_id: user.director?.carrera_id || user.carrera_id || null,
           docente: {
             ...user.docente,
@@ -386,7 +491,7 @@ export const useAuthStore = defineStore(
           },
           avatar: (user.nombre?.[0] || 'U') + (user.apellido?.[0] || ''),
           materias_asignadas: (() => {
-            // Group grupos by asignatura_id to avoid duplicate cards
+            // Group grupos by asignatura_id + sede_id to show separate cards per sede
             const gruposRaw = user.docente?.grupos || []
             const grouped = {}
 
@@ -394,6 +499,10 @@ export const useAuthStore = defineStore(
               const asig = g.asignatura || {}
               const asigId = asig.id || g.asignatura_id
               if (!asigId) continue
+
+              // Clave compuesta: misma asignatura en sedes distintas → entradas separadas
+              const sedeId = g.sede_id || null
+              const groupKey = `${asigId}_${sedeId ?? 'null'}`
 
               // Format this group's schedule
               const horariosFmt =
@@ -404,9 +513,10 @@ export const useAuthStore = defineStore(
                   )
                   .join(', ') || ''
 
-              if (!grouped[asigId]) {
-                grouped[asigId] = {
+              if (!grouped[groupKey]) {
+                grouped[groupKey] = {
                   id: asigId,
+                  sede_id: sedeId,
                   nombre: asig.nombre || 'Desconocida',
                   codigo: asig.codigo || '---',
                   semestre: asig.semestre || g.semestre,
@@ -424,19 +534,20 @@ export const useAuthStore = defineStore(
                 }
               }
 
-              grouped[asigId].grupos.push({
+              grouped[groupKey].grupos.push({
                 id: g.id,
                 nombre: g.nombre,
                 tipo: g.tipo,
                 turno: g.turno,
                 gestion: g.gestion,
                 carrera_id: g.carrera_id,
+                sede_id: g.sede_id,
                 horario: horariosFmt,
                 sede_nombre: g.sede?.nombre, // Guardar también por grupo
               })
 
-              if (!grouped[asigId].pivot.grupo) {
-                grouped[asigId].pivot = {
+              if (!grouped[groupKey].pivot.grupo) {
+                grouped[groupKey].pivot = {
                   grupo: g.nombre,
                   aula: g.aula_id,
                   horario: horariosFmt || 'Por definir',
@@ -464,6 +575,7 @@ export const useAuthStore = defineStore(
           director: user.director
             ? {
                 ...user.director,
+                sede: user.director.sede,
                 carrera: user.director.carrera,
                 carreras: user.director.carreras,
               }
@@ -499,7 +611,9 @@ export const useAuthStore = defineStore(
 
       if (alcanceActual === 'global') return true
       if (alcanceActual === 'sede' || alcanceActual === 'carrera' || alcanceActual === 'asignado') {
-        return usuarioActual.value.sede_id === sedeIdObjetivo
+        return (usuarioActual.value.sede_ids || [usuarioActual.value.sede_id]).includes(
+          Number(sedeIdObjetivo),
+        )
       }
       return false
     }
@@ -511,7 +625,9 @@ export const useAuthStore = defineStore(
 
       if (alcanceActual === 'global') return true
       if (alcanceActual === 'sede') {
-        return usuarioActual.value.sede_id === sedeIdObjetivo
+        return (usuarioActual.value.sede_ids || [usuarioActual.value.sede_id]).includes(
+          Number(sedeIdObjetivo),
+        )
       }
       if (alcanceActual === 'carrera') {
         return (
@@ -529,7 +645,9 @@ export const useAuthStore = defineStore(
 
       if (alcanceActual === 'global') return true
       if (alcanceActual === 'sede') {
-        return usuarioActual.value.sede_id === sedeIdMateria
+        return (usuarioActual.value.sede_ids || [usuarioActual.value.sede_id]).includes(
+          Number(sedeIdMateria),
+        )
       }
       if (alcanceActual === 'carrera') {
         return (

@@ -28,6 +28,20 @@ export const useDocentesStore = defineStore('docentes', () => {
     }
   }
 
+  /**
+   * Endpoint ligero: solo id + nombre_completo + sede_id.
+   * Usar este en selectores (evita errores de memoria del endpoint completo).
+   */
+  async function fetchDocentesSimple(params = {}) {
+    try {
+      const response = await api.get('/docentes-simple', { params })
+      return response.data // Array directo: [{id, nombre_completo, sede_id}]
+    } catch (error) {
+      console.error('Error fetching docentes-simple:', error)
+      return []
+    }
+  }
+
   async function syncDocentes() {
     loading.value = true
     try {
@@ -86,6 +100,7 @@ export const useDocentesStore = defineStore('docentes', () => {
     docentes,
     loading,
     fetchDocentes,
+    fetchDocentesSimple,
     syncDocentes,
     createDocente,
     updateDocente,

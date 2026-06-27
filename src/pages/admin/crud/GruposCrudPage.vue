@@ -94,7 +94,7 @@
             </q-select>
           </div>
         </div>
-        <div class="row q-mt-sm">
+        <div class="row q-mt-sm items-center q-gutter-md">
           <q-btn
             v-if="hasActiveFilters"
             flat
@@ -103,6 +103,12 @@
             icon="clear_all"
             @click="clearFilters"
             size="sm"
+          />
+          <q-toggle
+            v-model="mostrarInactivos"
+            label="Mostrar grupos inactivos"
+            color="grey-7"
+            @update:model-value="() => loadData(1)"
           />
         </div>
       </q-card-section>
@@ -735,6 +741,7 @@ const filterSede = ref(null)
 const filterCarrera = ref(null)
 const filterTexto = ref('')
 const filterPlan = ref(null)
+const mostrarInactivos = ref(false)
 
 // ── Datos tabla ──
 const grupos = ref([])
@@ -894,6 +901,7 @@ async function loadData(page = 1) {
     if (filterCarrera.value) params.carrera_id = filterCarrera.value
     if (filterTexto.value) params.search = filterTexto.value
     if (filterPlan.value) params.plan_estudios = filterPlan.value
+    if (mostrarInactivos.value) params.mostrar_inactivos = true
     const resp = await api.get('/grupos-flat', { params })
     grupos.value = resp.data.data || []
     currentPage.value = resp.data.meta?.current_page || 1

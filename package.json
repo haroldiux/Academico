@@ -9,7 +9,22 @@
   "scripts": {
     "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{js,cjs,mjs,vue}\"",
     "format": "prettier --write \"**/*.{js,vue,css,html,md,json}\" --ignore-path .gitignore",
-    "test": "echo \"No test specified\" && exit 0",
+    "test": "npm run test:all",
+    "test:all": "npm run test:unit && npm run test:api && npm run test:e2e",
+    "test:full-report": "npm run test:unit && npm run test:api && node -e \"console.log('\\n⏳ Esperando 60s para evitar rate-limit...'); setTimeout(()=>process.exit(0),60000)\" && npm run test:e2e && echo '\\n📊 Reportes generados:' && echo '   • REPORTE_IMPORTACION_EXCEL.md' && echo '   • REPORTE_REGISTRO_MANUAL.md'",
+    "test:report-excel": "playwright test tests/api/banco-preguntas.spec.js tests/e2e/docente-banco-import.spec.js --workers=1 && echo '\\n📊 Reporte: REPORTE_IMPORTACION_EXCEL.md'",
+    "test:report-manual": "playwright test tests/api/banco-preguntas-tipos.spec.js tests/e2e/docente-banco-manual-validation.spec.js --workers=1 && echo '\\n📊 Reporte: REPORTE_REGISTRO_MANUAL.md'",
+    "test:open-report": "echo '\\n📄 Mostrando reporte...' && type ..\\TESTING_REPORT.md 2>nul || cat ../TESTING_REPORT.md 2>/dev/null || echo 'Reporte no encontrado.'",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:api": "playwright test tests/api",
+    "test:e2e": "playwright test tests/e2e",
+    "test:e2e:smoke": "playwright test tests/e2e --grep @smoke",
+    "test:e2e:headed": "playwright test tests/e2e --headed --workers=1",
+    "test:e2e:debug": "playwright test tests/e2e --headed --debug --workers=1",
+    "test:fixtures": "node tests/support/generate-excel-fixtures.mjs",
+    "test:install-browsers": "playwright install chromium",
+    "test:report": "playwright show-report playwright-report",
     "dev": "quasar dev",
     "build": "quasar build",
     "postinstall": "quasar prepare"
@@ -20,7 +35,7 @@
     "@capacitor/core": "^7.0.0",
     "@capacitor/filesystem": "^7.0.0",
     "@capacitor/geolocation": "^7.0.0",
-    "@capacitor/network": "^7.0.0",
+    "@capacitor/network": "^7.0.4",
     "@capacitor/preferences": "^7.0.0",
     "@quasar/extras": "^1.16.4",
     "@vueuse/core": "^14.2.1",
@@ -40,6 +55,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
+    "@playwright/test": "^1.59.1",
     "@quasar/app-vite": "^2.1.0",
     "@vue/eslint-config-prettier": "^10.1.0",
     "autoprefixer": "^10.4.23",
@@ -50,6 +66,7 @@
     "prettier": "^3.3.3",
     "tailwindcss": "^4.1.18",
     "vite-plugin-checker": "^0.10.3",
+    "vitest": "^4.1.5",
     "vue-eslint-parser": "^10.2.0"
   },
   "engines": {

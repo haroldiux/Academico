@@ -86,8 +86,11 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
 
   /**
    * Subir Excel con rol de exámenes
+   * @param {boolean} replace Si true, el backend borrará los exámenes existentes para
+   *   (gestion, carrera, sede) antes de reinsertar. Si false, modo aditivo.
+   *   Para DIRECTOR_CARRERA el backend ignora este flag y siempre hace modo aditivo.
    */
-  async function uploadExcel(file, gestion, carreraId, sedeId) {
+  async function uploadExcel(file, gestion, carreraId, sedeId, replace = false) {
     uploading.value = true
     error.value = null
 
@@ -99,6 +102,7 @@ export const useRolExamenesStore = defineStore('rolExamenes', () => {
         gestion,
         carrera_id: carreraId,
         sede_id: sedeId,
+        replace: replace ? 1 : 0,
       })
 
       // Recargar exámenes después de subir

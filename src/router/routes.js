@@ -1,10 +1,16 @@
-const routes = [
+﻿const routes = [
   // Login (fuera del MainLayout)
   {
     path: '/login',
     name: 'login',
     component: () => import('pages/LoginPage.vue'),
     meta: { title: 'Iniciar Sesión', public: true },
+  },
+  {
+    path: '/examen-virtual',
+    name: 'examen-virtual-publico',
+    component: () => import('pages/PublicVirtualExamPage.vue'),
+    meta: { title: 'Examen Virtual', public: true },
   },
   {
     path: '/',
@@ -57,7 +63,15 @@ const routes = [
         path: 'evaluaciones/dashboard',
         name: 'evaluaciones-dashboard',
         component: () => import('pages/dashboards/EvaluacionesDashboard.vue'),
-        meta: { title: 'Panel Evaluaciones', rol: 'EVALUACIONES' },
+        meta: {
+          title: 'Panel Evaluaciones',
+          rol: [
+            'EVALUACIONES',
+            'RESPONSABLE_EVALUACIONES',
+            'VISUALIZADOR_EVALUACIONES_GLOBAL',
+            'VISUALIZADOR_EVALUACIONES_SEDE',
+          ],
+        },
       },
       {
         path: 'admin/dashboard',
@@ -227,6 +241,23 @@ const routes = [
                 'VICERRECTOR_NACIONAL',
                 'ADMIN',
                 'SUPER_ADMIN',
+                'PLATAFORMA',
+              ],
+            },
+          },
+          {
+            path: 'restaurar-programas',
+            name: 'director-restaurar-programas',
+            component: () => import('pages/director/RestaurarProgramasPage.vue'),
+            meta: {
+              title: 'Restaurar Programas',
+              rol: [
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'ADMIN',
+                'SUPER_ADMIN',
               ],
             },
           },
@@ -310,6 +341,12 @@ const routes = [
             component: () => import('pages/admin/GestionAcademicaPage.vue'),
             meta: { title: 'Gestión Académica', rol: 'SUPER_ADMIN' },
           },
+          {
+            path: 'restauracion-bancos',
+            name: 'restauracion-bancos',
+            component: () => import('pages/admin/RestauracionBancosPage.vue'),
+            meta: { title: 'Recuperación de Bancos', rol: 'SUPER_ADMIN' },
+          },
           // Rutas legacy mantenidas por compatibilidad con el menú lateral
           {
             path: 'carreras-admin',
@@ -378,12 +415,26 @@ const routes = [
             meta: {
               title: 'Gestión de Evaluaciones',
               rol: [
+                'DIRECCION_ACADEMICA',
+                'DIRECTOR_CARRERA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'EVALUACIONES',
+                'RESPONSABLE_EVALUACIONES',
+                'VISUALIZADOR_EVALUACIONES_GLOBAL',
+                'VISUALIZADOR_EVALUACIONES_SEDE',
                 'ADMIN',
                 'SUPER_ADMIN',
-                'VICERRECTOR_NACIONAL',
-                'DIRECCION_ACADEMICA',
-                'EVALUACIONES',
               ],
+            },
+          },
+          {
+            path: 'verificador-patrones',
+            name: 'admin-verificador-patrones',
+            component: () => import('pages/evaluaciones/PatternVerifierPage.vue'),
+            meta: {
+              title: 'Verificador de Patrones',
+              rol: ['ADMIN', 'SUPER_ADMIN'],
             },
           },
           {
@@ -393,6 +444,24 @@ const routes = [
             meta: {
               title: 'Administración de Evaluaciones',
               rol: ['VICERRECTOR_NACIONAL', 'ADMIN', 'SUPER_ADMIN'],
+            },
+          },
+          {
+            path: 'reporte-evaluaciones',
+            name: 'reporte-evaluaciones',
+            component: () => import('pages/admin/ReporteEvaluacionesPage.vue'),
+            meta: {
+              title: 'Reporte Evaluaciones',
+              rol: [
+                'EVALUACIONES',
+                'RESPONSABLE_EVALUACIONES',
+                'DIRECTOR_CARRERA',
+                'DIRECCION_ACADEMICA',
+                'VICERRECTOR_SEDE',
+                'VICERRECTOR_NACIONAL',
+                'ADMIN',
+                'SUPER_ADMIN',
+              ],
             },
           },
           {
@@ -412,6 +481,12 @@ const routes = [
             name: 'recuperacion-manual',
             component: () => import('pages/admin/RecuperacionManualPage.vue'),
             meta: { title: 'Recuperación Manual', rol: ['SUPER_ADMIN', 'ADMIN'] },
+          },
+          {
+            path: 'auditoria-banco-plan',
+            name: 'auditoria-banco-plan',
+            component: () => import('pages/admin/AuditoriaBancoPlanPage.vue'),
+            meta: { title: 'Banco por Plan de Estudios', rol: ['SUPER_ADMIN', 'ADMIN'] },
           },
           {
             path: 'mallas-curriculares',
@@ -493,6 +568,15 @@ const routes = [
         meta: {
           title: 'Rol de Exámenes',
           rol: ['EVALUACIONES', 'ADMIN', 'SUPER_ADMIN', 'VICERRECTOR_NACIONAL'],
+        },
+      },
+      {
+        path: 'evaluaciones/examenes-virtuales',
+        name: 'evaluaciones-examenes-virtuales',
+        component: () => import('pages/evaluaciones/VirtualExamsPage.vue'),
+        meta: {
+          title: 'Exámenes Virtuales',
+          rol: ['DOCENTE', 'EVALUACIONES', 'RESPONSABLE_EVALUACIONES', 'ADMIN', 'SUPER_ADMIN'],
         },
       },
     ],

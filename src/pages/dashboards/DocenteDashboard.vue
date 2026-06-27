@@ -94,9 +94,9 @@
         <div v-else class="items-list">
           <div
             v-for="asig in asignaturasFiltradas.slice(0, 5)"
-            :key="asig.id"
+            :key="asig._entry_key || `${asig.id}_${asig.sede_id || 'sin-sede'}`"
             class="list-item"
-            @click="$router.push(`/documentacion/${asig.id}`)"
+            @click="abrirDocumentacion(asig)"
           >
             <div
               class="item-icon"
@@ -195,6 +195,7 @@
 
 <script setup>
 import { computed, ref, watchEffect } from 'vue' // Vue composition API
+import { useRouter } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth'
 import { useSedesStore } from 'src/stores/sedes'
 import { useAsignaturasStore } from 'src/stores/asignaturas'
@@ -202,6 +203,7 @@ import { useAsignaturasStore } from 'src/stores/asignaturas'
 const authStore = useAuthStore()
 const sedesStore = useSedesStore()
 const asignaturasStore = useAsignaturasStore()
+const router = useRouter()
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -224,9 +226,18 @@ watchEffect(async () => {
     const id = typeof m === 'object' ? m.id : m
     try {
       const params = {}
-      if (m?.pivot?.sede_id) params.sede_id = m.pivot.sede_id
+      const sedeId = m?.sede_id || m?.pivot?.sede_id || null
+      if (sedeId) params.sede_id = sedeId
       const res = await asignaturaService.getAsignatura(id, params)
-      return res.data ? { ...res.data, pivot: m.pivot || null } : null
+      return res.data
+        ? {
+            ...res.data,
+            sede_id: sedeId || res.data.sede_id,
+            _entry_key: `${id}_${sedeId ?? 'null'}`,
+            pivot: m.pivot || null,
+            grupos: m.grupos || res.data.grupos || [],
+          }
+        : null
     } catch {
       return null
     }
@@ -273,11 +284,30 @@ const notificaciones = ref(2)
 
 // Para el listado: priorizar datos con progreso_documentacion del store si están cargados
 const asignaturasFiltradas = computed(() => {
+  const misKeys = new Set(
+    misAsignaturas.value.map((a) => `${a.id}_${a.sede_id || a.pivot?.sede_id || 'null'}`),
+  )
   const misIds = misAsignaturas.value.map((a) => a.id)
-  const storeAsigs = asignaturasStore.asignaturas.filter((a) => misIds.includes(a.id))
+  const storeAsigs = asignaturasStore.asignaturas.filter(
+    (a) => misKeys.has(a._entry_key) || misIds.includes(a.id),
+  )
   if (storeAsigs.length > 0) return storeAsigs
   return misAsignaturas.value
 })
+
+function abrirDocumentacion(asig) {
+  const sedeId = asig.sede_id || asig.pivot?.sede_id || asig.grupos?.[0]?.sede_id || null
+  const carreraId = asig.carrera_id || asig.grupos?.[0]?.carrera_id || null
+  const query = {}
+
+  if (sedeId) query.sede_id = sedeId
+  if (carreraId) query.carrera_id = carreraId
+
+  router.push({
+    path: `/documentacion/${asig.id}`,
+    query,
+  })
+}
 
 /** Obtiene el porcentaje de progreso correcto para una asignatura */
 function getProgreso(asig) {

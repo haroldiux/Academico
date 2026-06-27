@@ -12,7 +12,8 @@
         </p>
       </div>
       <div class="col-auto row q-gutter-sm">
-        <q-btn
+        <!-- Ocultado por solicitud -->
+        <!-- <q-btn
           v-if="puedeEditar && store.examenes.length > 0"
           outline
           color="red"
@@ -20,7 +21,7 @@
           label="Borrar Todo"
           no-caps
           @click="eliminarTodo"
-        />
+        /> -->
         <q-btn
           v-if="authStore.rol === 'VICERRECTOR_SEDE'"
           outline
@@ -33,13 +34,26 @@
         <!-- Ocultado por solicitud: se usará plantilla institucional externa -->
         <!-- <q-btn v-if="puedeEditar" outline color="blue" icon="download" label="Descargar Plantilla" no-caps @click="descargarPlantilla" /> -->
         <q-btn
-          v-if="puedeEditar"
+          v-if="
+            [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.DIRECTOR_CARRERA].includes(
+              authStore.rol,
+            )
+          "
           unelevated
           color="green"
           icon="upload_file"
           label="Subir Excel"
           no-caps
           @click="showUploadDialog = true"
+        />
+        <q-btn
+          v-if="puedeEditar"
+          unelevated
+          color="blue"
+          icon="add"
+          label="Añadir Manual"
+          no-caps
+          @click="abrirDialogoAnadir"
         />
       </div>
     </div>
@@ -179,6 +193,14 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-estado="props">
+            <q-td :props="props" class="text-center">
+              <q-chip :color="getEstadoColor(props.row.estado)" text-color="white" size="sm" dense>
+                {{ getEstadoLabel(props.row.estado) }}
+              </q-chip>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-fecha_dia="props">
             <q-td
               :props="props"
@@ -254,10 +276,11 @@
                   dense
                   icon="edit"
                   size="sm"
-                  color="primary"
+                  :color="examenEditable(props.row) ? 'primary' : 'grey-5'"
+                  :disable="!examenEditable(props.row)"
                   @click="editarExamen(props.row)"
                 >
-                  <q-tooltip>Editar</q-tooltip>
+                  <q-tooltip>{{ mensajeEdicionExamen(props.row) }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -265,10 +288,13 @@
                   dense
                   icon="delete"
                   size="sm"
-                  color="red"
+                  :color="examenEditable(props.row) ? 'red' : 'grey-5'"
+                  :disable="!examenEditable(props.row)"
                   @click="eliminarExamen(props.row)"
                 >
-                  <q-tooltip>Eliminar</q-tooltip>
+                  <q-tooltip>
+                    {{ examenEditable(props.row) ? 'Eliminar' : mensajeEdicionExamen(props.row) }}
+                  </q-tooltip>
                 </q-btn>
               </div>
               <div v-else>
@@ -284,13 +310,26 @@
               <q-icon name="event_busy" size="64px" color="grey-4" />
               <p class="text-grey-6 q-mt-md">No hay exámenes cargados para esta gestión</p>
               <q-btn
-                v-if="puedeEditar"
+                v-if="
+                  [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.DIRECTOR_CARRERA].includes(
+                    authStore.rol,
+                  )
+                "
                 unelevated
                 color="green"
                 icon="upload_file"
                 label="Subir Excel"
                 no-caps
                 @click="showUploadDialog = true"
+              />
+              <q-btn
+                v-if="puedeEditar"
+                unelevated
+                color="blue"
+                icon="add"
+                label="Añadir Manual"
+                no-caps
+                @click="abrirDialogoAnadir"
               />
             </div>
           </template>
@@ -357,6 +396,24 @@
               />
             </div>
           </div>
+
+          <q-separator class="q-my-md" />
+
+          <q-toggle
+            v-model="reemplazarExistentes"
+            label="Reemplazar exámenes existentes (borrar y reinsertar)"
+            color="orange"
+            :disable="switchDisabled"
+          />
+          <div v-if="switchDisabled" class="text-caption text-grey-7 q-mt-xs">
+            <q-icon name="lock" size="14px" />
+            Bloqueado: como Director de Carrera solo puede agregar/actualizar, nunca
+            borrar el rol del sistema.
+          </div>
+          <div v-else class="text-caption text-grey-7 q-mt-xs">
+            Si está apagado (modo aditivo), los exámenes que estén en el sistema pero
+            no en el Excel se conservarán.
+          </div>
         </q-card-section>
 
         <q-card-actions align="right" class="q-pa-md">
@@ -375,6 +432,134 @@
       </q-card>
     </q-dialog>
 
+    <!-- Dialog Añadir Examen Manual -->
+    <q-dialog v-model="showAddDialog">
+      <q-card style="min-width: 450px">
+        <div class="dialog-header bg-blue text-white">
+          <h3><q-icon name="add_circle" class="q-mr-sm" />Añadir Examen</h3>
+        </div>
+
+        <q-card-section class="q-gutter-md">
+          <q-select
+            v-model="nuevoExamenForm.materia"
+            :options="asignaturasOptions"
+            outlined
+            dense
+            label="Materia *"
+            use-input
+            fill-input
+            hide-selected
+            clearable
+            @filter="filterAsignaturas"
+            :option-label="getMateriaLabel"
+            option-value="codigo"
+            hint="Escribe para buscar (código o nombre)"
+          >
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey"> No se encontraron resultados </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.nombre }}</q-item-label>
+                  <q-item-label caption>
+                    {{ scope.opt.codigo }}
+                    <q-badge
+                      v-if="scope.opt.plan_estudios === 'A'"
+                      color="orange-2"
+                      text-color="orange-9"
+                      class="q-ml-sm"
+                    >
+                      Plan Antiguo
+                    </q-badge>
+                    <q-badge
+                      v-else-if="scope.opt.plan_estudios === 'N'"
+                      color="blue-2"
+                      text-color="blue-9"
+                      class="q-ml-sm"
+                    >
+                      Plan Nuevo
+                    </q-badge>
+                    <q-badge v-else color="grey-3" text-color="grey-8" class="q-ml-sm">
+                      Sin plan definido
+                    </q-badge>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+
+          <div class="row q-col-gutter-md">
+            <div class="col-8">
+              <q-select
+                v-model="nuevoExamenForm.tipo_examen"
+                :options="tiposExamenOptions"
+                outlined
+                dense
+                label="Tipo de Examen *"
+                emit-value
+                map-options
+              />
+            </div>
+            <div class="col-4">
+              <q-input v-model="nuevoExamenForm.grupo" outlined dense label="Grupo *" />
+            </div>
+          </div>
+          <div class="row q-col-gutter-md">
+            <div class="col-6">
+              <q-input
+                v-model="nuevoExamenForm.semana"
+                outlined
+                dense
+                label="Semana *"
+                type="number"
+                min="1"
+                max="25"
+              />
+            </div>
+            <div class="col-6">
+              <q-input v-model="nuevoExamenForm.fecha" outlined dense label="Fecha *" type="date" />
+            </div>
+          </div>
+          <div class="row q-col-gutter-md">
+            <div class="col-6">
+              <q-input
+                v-model="nuevoExamenForm.hora_inicio"
+                outlined
+                dense
+                label="Hora Inicio *"
+                type="time"
+              />
+            </div>
+            <div class="col-6">
+              <q-input
+                v-model="nuevoExamenForm.hora_fin"
+                outlined
+                dense
+                label="Hora Fin *"
+                type="time"
+              />
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancelar" @click="showAddDialog = false" />
+          <q-btn
+            unelevated
+            color="primary"
+            label="Guardar"
+            icon="save"
+            no-caps
+            :loading="loadingAdd"
+            @click="guardarNuevoExamen"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Dialog Editar Examen -->
     <q-dialog v-model="showEditDialog">
       <q-card style="min-width: 450px">
@@ -383,22 +568,62 @@
         </div>
 
         <q-card-section class="q-gutter-md">
-          <q-input v-model="examenForm.materia_nombre" outlined dense label="Materia" readonly />
-          <q-select
-            v-model="examenForm.tipo_examen"
-            :options="tiposExamenOptions"
-            outlined
+          <q-banner
+            v-if="!puedeModificarRolExamenSeleccionado"
+            class="bg-amber-1 text-amber-10"
+            rounded
             dense
-            label="Tipo de Examen"
-            emit-value
-            map-options
-          />
+          >
+            <template v-slot:avatar>
+              <q-icon name="lock" color="amber-9" />
+            </template>
+            Solo el Administrador puede modificar el rol dentro de las 72 horas previas al examen o
+            cuando ya no esta en estado Programado.
+          </q-banner>
+          <q-input v-model="examenForm.materia_nombre" outlined dense label="Materia" readonly />
+          <div class="row q-col-gutter-md">
+            <div class="col-8">
+              <q-select
+                v-model="examenForm.tipo_examen"
+                :options="tiposExamenOptions"
+                outlined
+                dense
+                label="Tipo de Examen"
+                emit-value
+                map-options
+                :disable="!puedeModificarRolExamenSeleccionado"
+              />
+            </div>
+            <div class="col-4">
+              <q-input
+                v-model="examenForm.grupo"
+                outlined
+                dense
+                label="Grupo"
+                :disable="!puedeModificarRolExamenSeleccionado"
+              />
+            </div>
+          </div>
           <div class="row q-col-gutter-md">
             <div class="col-6">
-              <q-input v-model="examenForm.semana" outlined dense label="Semana" type="number" />
+              <q-input
+                v-model="examenForm.semana"
+                outlined
+                dense
+                label="Semana"
+                type="number"
+                :disable="!puedeModificarRolExamenSeleccionado"
+              />
             </div>
             <div class="col-6">
-              <q-input v-model="examenForm.fecha" outlined dense label="Fecha" type="date" />
+              <q-input
+                v-model="examenForm.fecha"
+                outlined
+                dense
+                label="Fecha"
+                type="date"
+                :disable="!puedeModificarRolExamenSeleccionado"
+              />
             </div>
           </div>
           <div class="row q-col-gutter-md">
@@ -409,16 +634,24 @@
                 dense
                 label="Hora Inicio"
                 type="time"
+                :disable="!puedeModificarRolExamenSeleccionado"
               />
             </div>
             <div class="col-6">
-              <q-input v-model="examenForm.hora_fin" outlined dense label="Hora Fin" type="time" />
+              <q-input
+                v-model="examenForm.hora_fin"
+                outlined
+                dense
+                label="Hora Fin"
+                type="time"
+                :disable="!puedeModificarRolExamenSeleccionado"
+              />
             </div>
           </div>
         </q-card-section>
 
         <q-card-actions align="right" class="q-pa-md">
-          <q-btn flat label="Cancelar" @click="showEditDialog = false" />
+          <q-btn flat label="Cancelar" @click="cerrarDialogoEdicion" />
           <q-btn
             unelevated
             color="primary"
@@ -497,23 +730,41 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRolExamenesStore } from 'src/stores/rolExamenes'
 import { useAuthStore, ROLES } from 'src/stores/auth'
 import { useCarrerasStore } from 'src/stores/carreras'
 import { useSedesStore } from 'src/stores/sedes'
+import { useAsignaturasStore } from 'src/stores/asignaturas'
 import rolExamenesService from 'src/services/rolExamenesService'
 
 const $q = useQuasar()
 const store = useRolExamenesStore()
 const carrerasStore = useCarrerasStore()
 const sedesStore = useSedesStore()
+const asignaturasStore = useAsignaturasStore()
 
 // State
 const showUploadDialog = ref(false)
 const showEditDialog = ref(false)
+const showAddDialog = ref(false)
+const asignaturasOptions = ref([])
+const asignaturasRaw = ref([])
+const loadingAdd = ref(false)
+
+const nuevoExamenForm = ref({
+  materia: null,
+  tipo_examen: '',
+  grupo: '',
+  semana: '',
+  fecha: '',
+  hora_inicio: '',
+  hora_fin: '',
+})
+
 const selectedFile = ref(null)
+const reemplazarExistentes = ref(false)
 const busqueda = ref('')
 const filtroSemestre = ref(null)
 const filtroTipo = ref(null)
@@ -529,11 +780,13 @@ const examenForm = ref({
   materia_codigo: '',
   materia_nombre: '',
   tipo_examen: '',
+  grupo: '',
   semana: 0,
   fecha: '',
   hora_inicio: '',
   hora_fin: '',
 })
+const examenOriginalEdicion = ref(null)
 
 // Options
 const gestionesOptions = [
@@ -544,6 +797,13 @@ const gestionesOptions = [
 
 const authStore = useAuthStore()
 
+const rolesAdministradoresRolExamen = [ROLES.ADMIN, ROLES.SUPER_ADMIN]
+const rolesAutoridadRolExamen = [
+  ROLES.DIRECTOR_CARRERA,
+  ROLES.DIRECCION_ACADEMICA,
+  ROLES.VICERRECTOR_SEDE,
+]
+
 const esRolGlobal = computed(() => {
   return [
     ROLES.ADMIN,
@@ -551,14 +811,25 @@ const esRolGlobal = computed(() => {
     ROLES.VICERRECTOR_NACIONAL,
     ROLES.EVALUACIONES,
     ROLES.RESPONSABLE_EVALUACIONES,
+    ROLES.VICERRECTOR_SEDE,
+    ROLES.DIRECCION_ACADEMICA,
   ].includes(authStore.rol)
 })
 
 const sedesOptions = computed(() => {
-  return sedesStore.sedesActivas.map((s) => ({
+  const all = sedesStore.sedesActivas.map((s) => ({
     label: s.nombre,
     value: s.id,
   }))
+
+  if (
+    [ROLES.VICERRECTOR_SEDE, ROLES.DIRECCION_ACADEMICA].includes(authStore.rol) &&
+    authStore.sedeId
+  ) {
+    return all.filter((s) => Number(s.value) === Number(authStore.sedeId))
+  }
+
+  return all
 })
 
 function onSedeChange() {
@@ -582,8 +853,8 @@ const carrerasOptions = computed(() => {
     return []
   }
 
-  // Para Vicerrector Sede
-  if (authStore.rol === ROLES.VICERRECTOR_SEDE) {
+  // Para Vicerrector Sede y Dirección Académica
+  if (authStore.rol === ROLES.VICERRECTOR_SEDE || authStore.rol === ROLES.DIRECCION_ACADEMICA) {
     return carrerasStore.getCarrerasBySede(authStore.sedeId).map((c) => ({
       label: c.nombre,
       value: c.id,
@@ -607,8 +878,25 @@ const carrerasOptions = computed(() => {
 })
 
 // Permiso de Edición
+const puedeAdministrarRolExamen = computed(() => {
+  return rolesAdministradoresRolExamen.includes(authStore.rol)
+})
+
 const puedeEditar = computed(() => {
-  return [ROLES.DIRECTOR_CARRERA, ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(authStore.rol)
+  return puedeAdministrarRolExamen.value || rolesAutoridadRolExamen.includes(authStore.rol)
+})
+
+// Switch "Reemplazar existentes" bloqueado para Director de Carrera
+const switchDisabled = computed(() => authStore.rol === ROLES.DIRECTOR_CARRERA)
+
+// Reset y forzado defensivo del toggle al abrir/cerrar el diálogo
+watch(showUploadDialog, (open) => {
+  if (open) {
+    reemplazarExistentes.value = switchDisabled.value ? false : false
+  }
+})
+watch(switchDisabled, (locked) => {
+  if (locked) reemplazarExistentes.value = false
 })
 
 const tiposExamenOptions = [
@@ -636,6 +924,7 @@ const columns = [
   { name: 'semestre', label: 'Sem.', field: 'semestre', align: 'center', sortable: true },
   { name: 'grupo', label: 'Grupo', field: 'grupo', align: 'center', sortable: true },
   { name: 'tipo_examen', label: 'Tipo', field: 'tipo_examen', align: 'center', sortable: true },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', sortable: true },
   { name: 'semana', label: 'Semana', field: 'semana', align: 'center', sortable: true },
   { name: 'fecha_dia', label: 'Día', field: 'fecha_dia', align: 'center', sortable: true },
   { name: 'fecha', label: 'Fecha', field: 'fecha', align: 'center', sortable: true },
@@ -670,6 +959,15 @@ const examenesFiltrados = computed(() => {
 })
 
 // Methods
+function getMateriaLabel(opt) {
+  if (!opt) return ''
+  let label = opt.nombre
+  if (opt.plan_estudios === 'A') label += ' - Plan Antiguo'
+  else if (opt.plan_estudios === 'N') label += ' - Plan Nuevo'
+  else label += ' - (Sin plan definido)'
+  return label
+}
+
 function getExamenColor(tipo) {
   switch (tipo) {
     case '1er Parcial':
@@ -683,6 +981,105 @@ function getExamenColor(tipo) {
     default:
       return 'grey'
   }
+}
+
+function normalizarEstadoExamen(estado) {
+  return String(estado || 'programados')
+    .trim()
+    .toLowerCase()
+}
+
+function examenEstaProgramado(examen) {
+  return ['programado', 'programados'].includes(normalizarEstadoExamen(examen?.estado))
+}
+
+function obtenerFechaHoraExamen(examen) {
+  if (!examen?.fecha) return null
+
+  const fecha = String(examen.fecha).includes('T')
+    ? String(examen.fecha).split('T')[0]
+    : examen.fecha
+  const hora = String(examen.hora_inicio || '00:00').slice(0, 5)
+  const fechaHora = new Date(`${fecha}T${hora}:00`)
+
+  return Number.isNaN(fechaHora.getTime()) ? null : fechaHora
+}
+
+function estaEnVentanaBloqueadaRolExamen(examen) {
+  const fechaHora = obtenerFechaHoraExamen(examen)
+  if (!fechaHora) return false
+
+  const inicioBloqueo = new Date(fechaHora.getTime() - 72 * 60 * 60 * 1000)
+
+  return new Date() >= inicioBloqueo
+}
+
+function puedeModificarRolExamen(examen) {
+  if (puedeAdministrarRolExamen.value) return true
+
+  return examenEstaProgramado(examen) && !estaEnVentanaBloqueadaRolExamen(examen)
+}
+
+function examenEditable(examen) {
+  return puedeEditar.value && puedeModificarRolExamen(examen)
+}
+
+const puedeModificarRolExamenSeleccionado = computed(() => {
+  return puedeModificarRolExamen(examenOriginalEdicion.value || examenForm.value)
+})
+
+function mensajeEdicionExamen(examen) {
+  if (!puedeEditar.value) return 'Solo lectura'
+  if (puedeAdministrarRolExamen.value) return 'Editar'
+  if (!examenEstaProgramado(examen)) {
+    return 'Solo el Administrador puede editar roles que ya no estan en estado Programado'
+  }
+  if (estaEnVentanaBloqueadaRolExamen(examen)) {
+    return 'Solo el Administrador puede editar dentro de las 72 horas previas al examen'
+  }
+  return 'Editar'
+}
+
+function getEstadoLabel(estado) {
+  const map = {
+    programado: 'Programado',
+    programados: 'Programado',
+    generado: 'Generado',
+    generados: 'Generado',
+    impreso: 'Impreso',
+    impresos: 'Impreso',
+    entregado: 'Entregado',
+    entregados: 'Entregado',
+    devuelto: 'Devuelto',
+    devueltos: 'Devuelto',
+    revisado: 'Revisado',
+    revisados: 'Revisado',
+    subido: 'Subido',
+    subidos: 'Subido',
+  }
+
+  return map[normalizarEstadoExamen(estado)] || String(estado || 'Programado')
+}
+
+function getEstadoColor(estado) {
+  const map = {
+    programado: 'blue',
+    programados: 'blue',
+    generado: 'purple',
+    generados: 'purple',
+    impreso: 'teal',
+    impresos: 'teal',
+    entregado: 'green',
+    entregados: 'green',
+    devuelto: 'orange',
+    devueltos: 'orange',
+    revisado: 'indigo',
+    revisados: 'indigo',
+    subido: 'positive',
+    subidos: 'positive',
+  }
+
+  return map[normalizarEstadoExamen(estado)] || 'grey'
 }
 
 function formatDate(date) {
@@ -710,7 +1107,10 @@ function formatFileSize(bytes) {
 }
 
 async function cargarExamenes() {
-  await store.cargarExamenes(filtros.value)
+  await store.cargarExamenes({
+    ...filtros.value,
+    sede_id: targetSedeId.value,
+  })
 }
 
 function onFileSelected(event) {
@@ -742,6 +1142,7 @@ async function subirExcel() {
       filtros.value.gestion,
       filtros.value.carrera_id,
       targetSedeId.value,
+      reemplazarExistentes.value,
     )
 
     // Show warnings/errors if any
@@ -753,7 +1154,10 @@ async function subirExcel() {
       let html = '<div class="text-left">'
 
       if (response.imported > 0) {
-        html += `<div class="text-positive q-mb-sm"><b>✔ Se importaron ${response.imported} registros correctamente.</b></div>`
+        const modo = response.replaced
+          ? `<div class="text-orange-9 q-mb-xs">Modo: REEMPLAZO (se eliminaron ${response.deleted_before ?? 0} registros previos antes de reinsertar).</div>`
+          : `<div class="text-blue-9 q-mb-xs">Modo: ADITIVO (sin eliminar registros existentes del sistema).</div>`
+        html += `<div class="text-positive q-mb-sm"><b>✔ Se importaron ${response.imported} registros correctamente.</b></div>${modo}`
       } else {
         html += `<div class="text-grey-8 q-mb-sm">No se importaron registros.</div>`
       }
@@ -782,9 +1186,12 @@ async function subirExcel() {
         ok: 'Entendido',
       })
     } else {
+      const modoTxt = response.replaced
+        ? ` (modo reemplazo: se borraron ${response.deleted_before ?? 0} previos)`
+        : ' (modo aditivo, sin borrar)'
       $q.notify({
         type: 'positive',
-        message: `Se importaron ${response.imported} registros correctamente.`,
+        message: `Se importaron ${response.imported} registros correctamente${modoTxt}.`,
         icon: 'check_circle',
       })
     }
@@ -800,9 +1207,140 @@ async function subirExcel() {
   }
 }
 
+async function abrirDialogoAnadir() {
+  if (!filtros.value.carrera_id) {
+    $q.notify({
+      type: 'warning',
+      message: 'Debe seleccionar una carrera antes de añadir un examen.',
+      icon: 'warning',
+    })
+    return
+  }
+
+  $q.loading.show({ message: 'Cargando materias...' })
+  try {
+    await asignaturasStore.fetchAsignaturas(
+      targetSedeId.value,
+      filtros.value.carrera_id,
+      null,
+      '',
+      {
+        plan_contexto: 1,
+        gestion: filtros.value.gestion,
+      },
+    )
+    asignaturasRaw.value = asignaturasStore.asignaturas || []
+    asignaturasOptions.value = [...asignaturasRaw.value]
+
+    nuevoExamenForm.value = {
+      materia: null,
+      tipo_examen: '',
+      grupo: '',
+      semana: '',
+      fecha: '',
+      hora_inicio: '',
+      hora_fin: '',
+    }
+    showAddDialog.value = true
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al cargar asignaturas: ' + (error.message || ''),
+    })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
+function filterAsignaturas(val, update) {
+  update(() => {
+    if (val === '') {
+      asignaturasOptions.value = asignaturasRaw.value
+    } else {
+      const needle = val.toLowerCase()
+      asignaturasOptions.value = asignaturasRaw.value.filter(
+        (v) =>
+          (v.nombre && v.nombre.toLowerCase().indexOf(needle) > -1) ||
+          (v.codigo && v.codigo.toLowerCase().indexOf(needle) > -1),
+      )
+    }
+  })
+}
+
+async function guardarNuevoExamen() {
+  if (
+    !nuevoExamenForm.value.materia ||
+    !nuevoExamenForm.value.tipo_examen ||
+    !nuevoExamenForm.value.grupo ||
+    !nuevoExamenForm.value.semana ||
+    !nuevoExamenForm.value.fecha ||
+    !nuevoExamenForm.value.hora_inicio ||
+    !nuevoExamenForm.value.hora_fin
+  ) {
+    $q.notify({
+      type: 'warning',
+      message: 'Por favor, complete todos los campos requeridos',
+    })
+    return
+  }
+
+  loadingAdd.value = true
+  const data = {
+    gestion: filtros.value.gestion,
+    carrera_id: filtros.value.carrera_id,
+    materia_codigo: nuevoExamenForm.value.materia.codigo,
+    materia_nombre: nuevoExamenForm.value.materia.nombre,
+    tipo_examen: nuevoExamenForm.value.tipo_examen,
+    grupo: nuevoExamenForm.value.grupo,
+    semana: Number(nuevoExamenForm.value.semana),
+    fecha: nuevoExamenForm.value.fecha,
+    hora_inicio: nuevoExamenForm.value.hora_inicio,
+    hora_fin: nuevoExamenForm.value.hora_fin,
+    sede_id: targetSedeId.value,
+  }
+
+  try {
+    await store.crearExamen(data)
+    $q.notify({
+      type: 'positive',
+      message: 'Examen creado correctamente',
+      icon: 'check',
+    })
+    showAddDialog.value = false
+    await cargarExamenes()
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al crear examen: ' + (error?.response?.data?.message || error.message),
+    })
+  } finally {
+    loadingAdd.value = false
+  }
+}
+
 function editarExamen(examen) {
-  examenForm.value = { ...examen }
+  if (!examenEditable(examen)) {
+    $q.notify({
+      type: 'warning',
+      message: mensajeEdicionExamen(examen),
+      icon: 'lock',
+    })
+    return
+  }
+
+  let fechaFormat = examen.fecha || ''
+  if (fechaFormat.includes('T')) {
+    fechaFormat = fechaFormat.split('T')[0]
+  }
+
+  examenOriginalEdicion.value = { ...examen, fecha: fechaFormat }
+  examenForm.value = { ...examen, fecha: fechaFormat }
   showEditDialog.value = true
+}
+
+function cerrarDialogoEdicion() {
+  showEditDialog.value = false
+  examenOriginalEdicion.value = null
 }
 
 async function guardarExamen() {
@@ -813,11 +1351,12 @@ async function guardarExamen() {
       message: 'Examen actualizado',
       icon: 'check',
     })
-    showEditDialog.value = false
+    cerrarDialogoEdicion()
   } catch (error) {
+    const message = error.response?.data?.message || error.message
     $q.notify({
       type: 'negative',
-      message: 'Error al actualizar: ' + error.message,
+      message: 'Error al actualizar: ' + message,
       icon: 'error',
     })
   }
@@ -847,7 +1386,7 @@ function eliminarExamen(examen) {
   })
 }
 
-function eliminarTodo() {
+/* function eliminarTodo() {
   if (!filtros.value.carrera_id) {
     $q.notify({
       type: 'warning',
@@ -890,7 +1429,7 @@ function eliminarTodo() {
       })
     }
   })
-}
+} */
 
 // Reporte State
 const showReportDialog = ref(false)
@@ -951,6 +1490,14 @@ onMounted(async () => {
   if (esRolGlobal.value) {
     if (sedesStore.sedes.length === 0) await sedesStore.fetchSedes()
     if (carrerasStore.carreras.length === 0) await carrerasStore.fetchCarreras()
+
+    // Pre-seleccionar sede para autoridades de sede que ahora son "global-like" en la UI
+    if (
+      [ROLES.VICERRECTOR_SEDE, ROLES.DIRECCION_ACADEMICA].includes(authStore.rol) &&
+      authStore.sedeId
+    ) {
+      filtros.value.sede_id = Number(authStore.sedeId)
+    }
   }
 
   // Auto-seleccionar si hay carreras disponibles y ninguna seleccionada

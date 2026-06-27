@@ -244,7 +244,7 @@
             <div>
               <div class="tab-title">Usuarios de Evaluaciones</div>
               <div class="tab-subtitle">
-                Asigna usuarios con el rol Evaluaciones a un campus específico
+                Asigna usuarios con el rol Evaluaciones a uno o más campus
               </div>
             </div>
             <q-btn
@@ -295,9 +295,18 @@
             </template>
             <template v-slot:body-cell-campus="props">
               <q-td :props="props">
-                <q-chip color="deep-purple" text-color="white" size="sm" dense>
-                  {{ props.row.campus }}
-                </q-chip>
+                <div class="campus-chip-container">
+                  <q-chip
+                    v-for="camp in getCampusChips(props.row)"
+                    :key="camp.id || camp.nombre"
+                    color="deep-purple"
+                    text-color="white"
+                    size="sm"
+                    dense
+                  >
+                    {{ camp.nombre }}
+                  </q-chip>
+                </div>
               </q-td>
             </template>
             <template v-slot:body-cell-carreras="props">
@@ -313,6 +322,28 @@
                     class="q-mr-xs"
                     >{{ c }}</q-chip
                   >
+                </div>
+              </q-td>
+            </template>
+            <template v-slot:body-cell-acceso="props">
+              <q-td :props="props">
+                <div class="row items-center justify-center no-wrap q-gutter-xs">
+                  <q-toggle
+                    :model-value="props.row.estado"
+                    color="positive"
+                    checked-icon="lock_open"
+                    unchecked-icon="lock"
+                    size="sm"
+                    @update:model-value="toggleAccesoUsuario(props.row, $event)"
+                  />
+                  <q-chip
+                    :color="props.row.estado ? 'green-1' : 'red-1'"
+                    :text-color="props.row.estado ? 'green-9' : 'red-9'"
+                    size="sm"
+                    dense
+                  >
+                    {{ props.row.estado ? 'Activo' : 'Inactivo' }}
+                  </q-chip>
                 </div>
               </q-td>
             </template>
@@ -781,6 +812,7 @@
               use-input
               input-debounce="300"
               placeholder="Buscar usuario..."
+              :disable="Boolean(usuarioForm.id)"
             />
           </template>
 
@@ -813,10 +845,12 @@
 
           <q-select
             v-if="usuarioForm.rol_id !== 9"
-            v-model="usuarioForm.campus_id"
+            v-model="usuarioForm.campus_ids"
             :options="campusOptions"
             outlined
-            label="Campus Asignado *"
+            multiple
+            use-chips
+            label="Campus Asignados *"
             emit-value
             map-options
             class="q-mt-md"
@@ -867,6 +901,7 @@ const usuarioForm = ref({
   id: null,
   usuario_id: null,
   campus_id: null,
+  campus_ids: [],
   crear_nuevo: false,
   rol_id: 7,
   nombre: '',
@@ -938,6 +973,7 @@ const columnasUsuarios = [
   { name: 'usuario', label: 'Usuario', field: 'nombre', align: 'left' },
   { name: 'campus', label: 'Campus', field: 'campus', align: 'left' },
   { name: 'carreras', label: 'Carreras Asignadas', field: 'carreras', align: 'left' },
+  { name: 'acceso', label: 'Acceso al Sistema', field: 'estado', align: 'center' },
   { name: 'acciones', label: 'Acciones', field: 'acciones', align: 'center' },
 ]
 
@@ -969,8 +1005,66 @@ const carrerasCampusFiltradas = computed(() => {
 
 const usuariosFiltrados = computed(() => {
   if (!filtroCampusUsuarios.value) return usuarios.value
-  return usuarios.value.filter((u) => u.campus_id === filtroCampusUsuarios.value)
+  const campusFiltro = Number(filtroCampusUsuarios.value)
+  return usuarios.value.filter((u) => {
+    const campusIds = Array.isArray(u.campus_ids) ? u.campus_ids.map(Number) : []
+    return campusIds.includes(campusFiltro) || Number(u.campus_id) === campusFiltro
+  })
 })
+
+function normalizarCampusIdsUsuario(usuario) {
+  const campusIds = Array.isArray(usuario.campus_ids) ? usuario.campus_ids : []
+  const campusAsignadosIds = Array.isArray(usuario.campus_asignados)
+    ? usuario.campus_asignados.map((campus) => campus.id)
+    : []
+  const ids = [...campusIds, ...campusAsignadosIds, usuario.campus_id]
+
+  return [...new Set(ids.map(Number).filter(Boolean))]
+}
+
+function normalizarCampusAsignadosUsuario(usuario, campusIds) {
+  if (Array.isArray(usuario.campus_asignados) && usuario.campus_asignados.length) {
+    return usuario.campus_asignados
+      .map((campus) => ({
+        ...campus,
+        id: Number(campus.id),
+        nombre: campus.nombre || campus.label || `Campus ${campus.id}`,
+      }))
+      .filter((campus) => campus.id)
+  }
+
+  return campusIds.map((campusId) => {
+    const option = campusOptions.value.find((campus) => Number(campus.value) === campusId)
+    const nombre = option?.label?.split(' - ')[0] || usuario.campus || `Campus ${campusId}`
+    return { id: campusId, nombre }
+  })
+}
+
+function getCampusChips(usuario) {
+  if (Array.isArray(usuario.campus_asignados) && usuario.campus_asignados.length) {
+    return usuario.campus_asignados
+  }
+
+  return usuario.campus ? [{ id: usuario.campus_id, nombre: usuario.campus }] : []
+}
+
+function crearUsuarioOption(usuario) {
+  const value = Number(usuario.id)
+  const nombre = [usuario.nombre, usuario.apellido].filter(Boolean).join(' ').trim()
+  const label = `${nombre || usuario.name || 'Usuario'}${usuario.email ? ` (${usuario.email})` : ''}`
+
+  return value ? { label, value } : null
+}
+
+function asegurarUsuarioDisponible(usuario) {
+  const option = crearUsuarioOption(usuario)
+  if (!option) return
+
+  const existe = usuariosDisponibles.value.some((item) => Number(item.value) === option.value)
+  if (!existe) {
+    usuariosDisponibles.value = [option, ...usuariosDisponibles.value]
+  }
+}
 
 function sumaDistribucion(parcial) {
   return (
@@ -1126,10 +1220,14 @@ function eliminarCarreraCampus(row) {
 
 function abrirDialogUsuario(usuario = null) {
   if (usuario) {
+    asegurarUsuarioDisponible(usuario)
+    const campusIds = normalizarCampusIdsUsuario(usuario)
+
     usuarioForm.value = {
       ...usuario,
       usuario_id: usuario.id,
-      campus_id: usuario.campus_id,
+      campus_id: campusIds[0] || null,
+      campus_ids: campusIds,
       crear_nuevo: false,
       rol_id: usuario.rol_id || 7, // Por defecto para edición si no viene el rol
     }
@@ -1138,6 +1236,7 @@ function abrirDialogUsuario(usuario = null) {
       id: null,
       usuario_id: null,
       campus_id: null,
+      campus_ids: [],
       crear_nuevo: true, // Por defecto true para facilitar el flujo
       rol_id: 7,
       nombre: '',
@@ -1153,29 +1252,47 @@ function abrirDialogUsuario(usuario = null) {
 async function cargarUsuarios() {
   try {
     const { data } = await api.get('/evaluadores')
-    usuarios.value = data.data || data
+    const list = data.data || data
+    usuarios.value = list.map((usuario) => {
+      const campusIds = normalizarCampusIdsUsuario(usuario)
+      return {
+        ...usuario,
+        campus_id: Number(usuario.campus_id) || campusIds[0] || null,
+        campus_ids: campusIds,
+        campus_asignados: normalizarCampusAsignadosUsuario(usuario, campusIds),
+        carreras: Array.isArray(usuario.carreras) ? usuario.carreras : [],
+        estado: normalizarEstadoUsuario(usuario.estado),
+      }
+    })
   } catch (err) {
     console.error('Error cargando los usuarios evaluadores', err)
   }
+}
+
+function normalizarEstadoUsuario(estado) {
+  if (typeof estado === 'boolean') return estado
+  if (typeof estado === 'number') return estado === 1
+  return ['activo', 'true', '1', 'si', 'sí'].includes(String(estado || '').toLowerCase())
 }
 
 async function cargarUsuariosDisponibles() {
   try {
     const { data } = await api.get('/evaluadores/disponibles')
     const list = data.data || data
-    usuariosDisponibles.value = list.map((u) => ({
-      label: `${u.nombre} (${u.email})`,
-      value: u.id,
-    }))
+    usuariosDisponibles.value = list.map(crearUsuarioOption).filter(Boolean)
   } catch (err) {
     console.error('Error cargando evaluadores disponibles', err)
   }
 }
 
 async function guardarUsuario() {
-  // Si es responsable nacional, no necesita campus_id
-  if (usuarioForm.value.rol_id !== 9 && !usuarioForm.value.campus_id) {
-    $q.notify({ type: 'warning', message: 'Debe seleccionar un campus asignado' })
+  const campusIds = Array.isArray(usuarioForm.value.campus_ids)
+    ? usuarioForm.value.campus_ids.map(Number).filter(Boolean)
+    : []
+
+  // Si es responsable nacional, no necesita campus
+  if (usuarioForm.value.rol_id !== 9 && campusIds.length === 0) {
+    $q.notify({ type: 'warning', message: 'Debe seleccionar al menos un campus asignado' })
     return
   }
 
@@ -1185,16 +1302,20 @@ async function guardarUsuario() {
   }
 
   try {
-    const payload = { ...usuarioForm.value }
+    const payload = {
+      ...usuarioForm.value,
+      campus_id: campusIds[0] || null,
+      campus_ids: campusIds,
+    }
     // Si es responsable nacional, usamos un campus_id ficticio en la URL (será ignorado por el backend)
-    const campusIdUrl = usuarioForm.value.rol_id === 9 ? 1 : usuarioForm.value.campus_id
+    const campusIdUrl = usuarioForm.value.rol_id === 9 ? 1 : campusIds[0]
     await api.post(`/campus/${campusIdUrl}/evaluadores`, payload)
 
     $q.notify({ type: 'positive', message: 'Evaluador asignado correctamente' })
     showDialogUsuario.value = false
 
-    cargarUsuarios()
-    cargarUsuariosDisponibles()
+    await cargarUsuarios()
+    await cargarUsuariosDisponibles()
   } catch (error) {
     console.error('Error asignando evaluador a campus', error)
     $q.notify({
@@ -1205,22 +1326,59 @@ async function guardarUsuario() {
 }
 
 function eliminarUsuario(row) {
-  if (!row.campus_id || !row.id) return
+  const campusIds =
+    Array.isArray(row.campus_ids) && row.campus_ids.length
+      ? row.campus_ids
+      : row.campus_id
+        ? [row.campus_id]
+        : []
+
+  if (!campusIds.length || !row.id) return
 
   $q.dialog({
     title: 'Quitar Evaluador',
-    message: `¿Quitar a "${row.nombre}" del campus "${row.campus}"?`,
+    message: `¿Quitar a "${row.nombre}" de todos sus campus asignados?`,
     ok: { label: 'Quitar', color: 'red', unelevated: true },
     cancel: { label: 'Cancelar', flat: true },
   }).onOk(async () => {
     try {
-      await api.delete(`/campus/${row.campus_id}/evaluadores/${row.id}`)
+      for (const campusId of campusIds) {
+        await api.delete(`/campus/${campusId}/evaluadores/${row.id}`)
+      }
       $q.notify({ type: 'warning', message: 'Evaluador removido' })
       cargarUsuarios()
       cargarUsuariosDisponibles()
     } catch (error) {
       console.error('Error removiendo evaluador', error)
       $q.notify({ type: 'negative', message: 'No se pudo quitar la asignación de este usuario' })
+    }
+  })
+}
+
+function toggleAccesoUsuario(row, nuevoEstado) {
+  const accion = nuevoEstado ? 'activar' : 'desactivar'
+  const estadoTexto = nuevoEstado ? 'activo' : 'inactivo'
+
+  $q.dialog({
+    title: `${nuevoEstado ? 'Activar' : 'Desactivar'} acceso`,
+    message: `¿Desea ${accion} el acceso al sistema para "${row.nombre}"?`,
+    ok: {
+      label: nuevoEstado ? 'Activar acceso' : 'Desactivar acceso',
+      color: nuevoEstado ? 'positive' : 'negative',
+      unelevated: true,
+    },
+    cancel: { label: 'Cancelar', flat: true },
+  }).onOk(async () => {
+    try {
+      await api.put(`/usuarios/${row.id}`, { estado: estadoTexto })
+      row.estado = nuevoEstado
+      $q.notify({
+        type: nuevoEstado ? 'positive' : 'warning',
+        message: `Acceso ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`,
+      })
+    } catch (error) {
+      console.error('Error cambiando acceso del evaluador', error)
+      $q.notify({ type: 'negative', message: 'No se pudo actualizar el acceso del usuario' })
     }
   })
 }
@@ -1430,6 +1588,13 @@ onMounted(() => {
   max-width: 350px;
   overflow-x: auto;
   padding-bottom: 4px;
+}
+
+.campus-chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 260px;
 }
 
 /* Scrollbar sutil para el container de chips */
